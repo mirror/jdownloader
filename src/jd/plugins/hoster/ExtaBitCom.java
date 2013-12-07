@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -95,8 +96,21 @@ public class ExtaBitCom extends PluginForHost {
         br.setCookie("http://extabit.com", "language", "en");
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
+        final String[][] hostList = { { "uploaded", "uploaded.to", "uploaded.net", "ul.to" }, { "netload", "netload.in" }, { "freakshare", "freakshare.com" }, { "turbobit", "turbobit.net" }, { "depositfiles", "depositfiles.com" }, { "filefactory", "filefactory.com" }, { "redtube", "redtube.com" }, { "tube8", "tube8.com" }, { "uploading", "uploading.com" }, { "wrzuta", "wrzuta.pl" }, { "extabit", "extabit.com" }, { "bitshare", "bitshare.com" }, { "filepost", "filepost.com" }, { "rapidgator", "rapidgator.net" }, { "letitbit", "letitbit.net" }, { "crocko", "crocko.com" }, { "megashares", "megashares.com" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "vipfile", "vip-file.com" }, { "mediafire", "mediafire.com" }, { "shareonline", "share-online.biz" }, { "hellupload", "hellupload.com" }, { "fastshare", "fastshare.cz" }, { "egofiles", "egofiles.com" },
+                { "putlocker", "putlocker.com" }, { "ultramegabit", "ultramegabit.com" }, { "lumfile", "lumfile.com" }, { "ryushare", "ryushare.com" }, { "luckyshare", "luckyshare.net" }, { "catshare", "catshare.net" }, { "creafile", "creafile.net" }, { "filesmonster", "filesmonster.com" }, { "cloudzer", "cloudzer.net" }, { "fileparadox", "fileparadox.in" }, { "novafile", "novafile.com" }, { "depfile", "depfile.com" }, { "4shared", "4shared.com" }, { "keep2share", "keep2share.cc" }, { "5fantastic", "5fantastic.pl" }, { "dizzcloud", "dizzcloud.com" }, { "sharingmaster", "sharingmaster.com" }, { "datafile", "datafile.com" } };
+        for (final String hostSet[] : hostList) {
+            if (br.containsHTML("/services/" + hostSet[0] + "\\.big")) {
+                for (int i = 1; i <= hostSet.length - 1; i++) {
+                    final String originalDomain = hostSet[i];
+                }
+            }
+        }
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final UnknownHostException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("(File not found|Such file doesn\\'t exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)download Extabit.com \\- file hosting</title>").getMatch(0);
         if (filename == null) {
