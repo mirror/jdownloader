@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayOutputStream;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -165,7 +166,22 @@ public class PremiumizeMe extends PluginForHost {
             maxConnections = 1;
         }
         br.setCurrentURL(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
+        } catch (final SocketTimeoutException e) {
+            logger.info("premiumize.me: SocketTimeoutException on downloadstart");
+            int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_sockettimeout", 1);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 5) {
+                timesFailed++;
+                link.setProperty("timesfailedpremiumizeme_sockettimeout", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+            } else {
+                link.setProperty("timesfailedpremiumizeme_sockettimeout", Property.NULL);
+                logger.info("premiumize.me: SocketTimeoutException on downloadstart -> Show 'Connection problems' error'");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection problems", 5 * 60 * 1000l);
+            }
+        }
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             if (!this.dl.startDownload()) {
@@ -206,9 +222,9 @@ public class PremiumizeMe extends PluginForHost {
             sendErrorLog(link, account);
             handleAPIErrors(br, account, link);
             logger.info("premiumize.me: Unknown error2");
-            int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown2", 0);
+            int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown2", 1);
             link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
+            if (timesFailed <= 3) {
                 timesFailed++;
                 link.setProperty("timesfailedpremiumizeme_unknown2", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
