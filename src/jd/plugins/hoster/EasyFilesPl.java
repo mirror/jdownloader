@@ -176,6 +176,7 @@ public class EasyFilesPl extends PluginForHost {
                     success = true;
                     break;
                 }
+                this.sleep(5000l, link);
             }
             if (!success) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             safeAPIRequest("http://" + NICE_HOST + "/api.php?cmd=get_link&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);

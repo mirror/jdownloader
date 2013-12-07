@@ -203,11 +203,9 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (parameter.matches(PATTERN_AUDIO_ALBUM)) {
                         /** Audio album */
                         decryptedLinks = decryptAudioAlbum(decryptedLinks, parameter);
-                        logger.info("Decrypted " + decryptedLinks.size() + " audio-links out of a audio-album-link");
                     } else {
                         /** Single playlists */
                         decryptedLinks = decryptAudioPlaylist(decryptedLinks, parameter);
-                        logger.info("Decrypted " + decryptedLinks.size() + " audio-links out of a audio-playlist-link");
                     }
                 } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ALL)) {
                     /** Single video */
@@ -217,31 +215,27 @@ public class VKontakteRu extends PluginForDecrypt {
                      * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
                      */
                     decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " video-links out of a video album");
                 } else if (parameter.matches(PATTERN_VIDEO_COMMUNITY_ALBUM)) {
                     /**
                      * Community-Albums Exaple: http://vk.com/video?gid=41589556
                      */
                     decryptCommunityVideoAlbum(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " community-video-links out of a community-video-album");
                 } else if (parameter.matches(PATTERN_PHOTO_ALBUM)) {
                     /**
                      * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " photo-links out of a single-photo-album-link");
                 } else if (parameter.matches(PATTERN_PHOTO_ALBUMS)) {
                     /**
                      * Photo albums lists/overviews Example: http://vk.com/albums46486585
                      */
+                    if (br.containsHTML("class=\"photos_no_content\"")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " photo-album-links out of a multiple-photo-albums-link");
                 } else if (parameter.matches(PATTERN_WALL_POST_LINK)) {
                     /**
                      * Single posts of wall links: https://vk.com/wall-28122291_906
                      */
                     decryptedLinks = decryptWallPost(decryptedLinks, parameter);
-                    logger.info("Decrypted " + decryptedLinks.size() + " total links out of a wall-post-link");
                     if (decryptedLinks.size() == 0) {
                         logger.info("Check your plugin settings -> They affect the results!");
                     }
@@ -280,10 +274,13 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 throw e;
             }
-            if (decryptedLinks != null && decryptedLinks.size() > 0) {
-                logger.info("Done, decrypted: " + decryptedLinks.size() + " links!");
-                sleep(2500l, param);
-            }
+            sleep(2500l, param);
+        }
+        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+            logger.info("Done, decrypted: " + decryptedLinks.size() + " links!");
+        } else if (decryptedLinks == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         return decryptedLinks;
 
