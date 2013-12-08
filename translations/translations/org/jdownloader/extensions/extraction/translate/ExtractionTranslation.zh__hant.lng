@@ -52,6 +52,7 @@ extractprogress_label=已解壓縮 %s1：%s2 個檔案
 failed=解壓縮失敗：%s1
 failed_no_details=解壓縮失敗
 file_exists=檔案存在
+file_exists_message=在解壓縮一個壓縮檔時發生問題。\r\n要解壓縮的檔案已經存在您的硬碟上。請選擇如何處理：
 file_exists_not=檔案不存在
 filename=檔名
 files2=個檔案
