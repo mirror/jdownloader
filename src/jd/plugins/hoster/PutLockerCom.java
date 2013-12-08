@@ -172,6 +172,7 @@ public class PutLockerCom extends PluginForHost {
             chunks = 1;
         }
         br.setFollowRedirects(true);
+        logger.info("putlocker.com: Download will start soon");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
@@ -182,6 +183,7 @@ public class PutLockerCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error 416", 10 * 60 * 1000l);
             }
+            logger.warning("putlocker.com: final link leads to html code...");
             br.followConnection();
             // My experience was that such files just don't work, i wasn't able
             // to download a link with this error in 3 days!
@@ -203,7 +205,7 @@ public class PutLockerCom extends PluginForHost {
                     downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                logger.info("putlocker.com: Unknown error1");
+                logger.warning("putlocker.com: Unknown error1");
                 int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown1", 0);
                 downloadLink.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 2) {
@@ -223,7 +225,7 @@ public class PutLockerCom extends PluginForHost {
                 downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            logger.info("putlocker.com: Unknown error2");
+            logger.warning("putlocker.com: Unknown error2");
             int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown2", 0);
             downloadLink.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
@@ -237,7 +239,7 @@ public class PutLockerCom extends PluginForHost {
             }
 
         } catch (final InterruptedException e) {
-            logger.info("putlocker.com: Unknown error3");
+            logger.warning("putlocker.com: Unknown error3");
             int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown3", 0);
             downloadLink.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
