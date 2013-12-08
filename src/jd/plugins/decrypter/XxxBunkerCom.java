@@ -143,6 +143,7 @@ public class XxxBunkerCom extends PluginForDecrypt {
                     br2.getPage(Encoding.htmlDecode(externID));
                     String relayurl = br2.getRegex("<relayurl>([^<>\"]*?)</relayurl>").getMatch(0);
                     externID = br2.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
+                    if (relayurl == null) relayurl = externID;
                     if (relayurl == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
