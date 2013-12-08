@@ -66,7 +66,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
     @Override
     public boolean canHandle(Challenge<?> c) {
         // do not use && config.isEnabled() here. config.ismouse() is the enable config for the mouse solver
-        return c instanceof ClickCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && config.ismouse() && super.canHandle(c);
+        return c instanceof ClickCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.ismouse() && super.canHandle(c);
     }
 
     public String getAPIROOT() {
