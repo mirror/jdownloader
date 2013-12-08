@@ -194,6 +194,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     }
 
                 } else {
+
                     if (excludeFilteredLinks) {
                         if (cachedSelectionInfo.filteredList == null) {
                             cachedSelectionInfo.filteredList = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements(), true);
