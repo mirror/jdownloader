@@ -39,7 +39,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public String[] getPublisherEventIDs() {
-        return (String[]) eventIDs.toArray();
+        return (String[]) eventIDs.toArray(new String[] {});
     }
 
     @Override
