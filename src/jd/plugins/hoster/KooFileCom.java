@@ -116,7 +116,7 @@ public class KooFileCom extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0; // tested
+            chunks = -3; // tested max 30 total connections
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -973,7 +973,7 @@ public class KooFileCom extends PluginForHost {
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
     private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
     private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
-    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
+    private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(10);
 
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
@@ -1459,7 +1459,7 @@ public class KooFileCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

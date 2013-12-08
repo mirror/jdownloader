@@ -148,10 +148,12 @@ public class SaveTv extends PluginForHost {
             checkAccountNeededDialog();
             return AvailableStatus.UNCHECKABLE;
         }
-        checkFeatureDialog();
-        checkFeatureDialog2();
-        checkFeatureDialog3();
-        checkFeatureDialog4();
+        synchronized (LOCK) {
+            checkFeatureDialog();
+            checkFeatureDialog2();
+            checkFeatureDialog3();
+            checkFeatureDialog4();
+        }
         if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
             link.getLinkStatus().setStatusText("Linkcheck deaktiviert - korrekter Dateiname erscheint erst beim Downloadstart");
             return AvailableStatus.TRUE;
@@ -284,11 +286,8 @@ public class SaveTv extends PluginForHost {
                 if (episodename != null && episodename.contains("Originaltitel")) {
                     episodename = seriesInfo.getMatch(3);
                 }
-                if (seriestitle == null || episodename == null) {
-                    logger.warning("Save.tv: Availablecheck failed!");
-                    link.setProperty(LASTFAILEDSTRING, LASTFAILED_PLUGIN_DEFECT);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                if (seriestitle == null) seriestitle = site_title;
+                if (episodename == null) episodename = this.getPluginConfig().getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
                 seriestitle = Encoding.htmlDecode(seriestitle.trim());
                 episodename = Encoding.htmlDecode(episodename.trim());
                 if (episodename.matches(SERIESINFORMATION))
