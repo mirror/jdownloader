@@ -28,6 +28,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -45,7 +46,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 /** Works exactly like sockshare.com */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/(file|embed)/[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/((file|embed)|mobile/file)/[A-Z0-9]+" }, flags = { 2 })
 public class PutLockerCom extends PluginForHost {
 
     private final String        MAINPAGE = "http://www.putlocker.com";
@@ -63,7 +64,7 @@ public class PutLockerCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/file/"));
+        link.setUrlDownload("http://www.putlocker.com/file/" + new Regex(link.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
     }
 
     @Override
