@@ -11,6 +11,7 @@ import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -22,6 +23,7 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     private SelectionInfo<?, ?> selection;
     private ExtTextField        tf;
     private FolderChooser       fc;
+    private String              preSet = null;
 
     public NewPackageDialog(SelectionInfo<?, ?> selection) {
         super(0, _GUI._.NewPackageDialog_NewPackageDialog_(), null, null, null);
@@ -67,12 +69,16 @@ public class NewPackageDialog extends AbstractDialog<Object> {
         p.add(new JLabel(_GUI._.NewPackageDialog_layoutDialogContent_saveto()));
         fc = new FolderChooser();
 
-        if (selection.isLinkContext() || selection.isPackageContext()) {
-            File path = LinkTreeUtils.getRawDownloadDirectory(selection.getContextPackage());
-            fc.setText(path.getAbsolutePath());
+        File path = null;
+        if (StringUtils.isNotEmpty(preSet)) {
+            fc.setText(preSet);
         } else {
-            File path = LinkTreeUtils.getRawDownloadDirectory(selection.getFirstPackage());
-            fc.setText(path.getAbsolutePath());
+            if (selection.isLinkContext() || selection.isPackageContext()) {
+                path = LinkTreeUtils.getRawDownloadDirectory(selection.getContextPackage());
+            } else {
+                path = LinkTreeUtils.getRawDownloadDirectory(selection.getFirstPackage());
+            }
+            if (path != null) fc.setText(path.getAbsolutePath());
         }
         p.add(fc, "pushx,growx");
         return p;
@@ -98,6 +104,10 @@ public class NewPackageDialog extends AbstractDialog<Object> {
 
     public String getName() {
         return tf.getText();
+    }
+
+    public void setDownloadFolder(String path) {
+        preSet = path;
     }
 
     public String getDownloadFolder() {

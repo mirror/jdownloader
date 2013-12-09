@@ -101,7 +101,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
     public void setText(String t) {
         setting = true;
         try {
-
             setPath(t);
         } finally {
             setting = false;

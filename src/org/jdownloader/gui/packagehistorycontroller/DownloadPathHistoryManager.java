@@ -1,7 +1,6 @@
 package org.jdownloader.gui.packagehistorycontroller;
 
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.appwork.utils.Lists;
@@ -21,8 +20,7 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> {
     }
 
     /**
-     * Create a new instance of PackageHistoryManager. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of PackageHistoryManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private DownloadPathHistoryManager() {
         super(CFG_LINKGRABBER.CFG.getDownloadDestinationHistory(), 25);
@@ -36,10 +34,8 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> {
     }
 
     @Override
-    protected void save(ArrayList<DownloadPath> list) {
-
+    protected void save(List<DownloadPath> list) {
         CFG_LINKGRABBER.CFG.setDownloadDestinationHistory(list);
-
     }
 
     @Override
@@ -49,19 +45,15 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> {
 
     public List<String> listPathes(String... strings) {
         List<DownloadPath> l = list();
-        ArrayList<String> ret = new ArrayList<String>();
-        HashSet<String> dupe = new HashSet<String>();
-        for (String s : strings) {
-            if (StringUtils.isNotEmpty(s) && dupe.add(s)) {
-                ret.add(s);
+        LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+        if (strings != null) {
+            for (String s : strings) {
+                if (StringUtils.isNotEmpty(s)) dupe.add(s);
             }
         }
         for (DownloadPath p : l) {
-            if (dupe.add(p.getName())) {
-                ret.add(p.getName());
-            }
+            if (p != null && StringUtils.isNotEmpty(p.getName())) dupe.add(p.getName());
         }
-
-        return Lists.unique(ret);
+        return Lists.unique(dupe);
     }
 }

@@ -1,6 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.addlinksdialog;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -18,15 +18,15 @@ public interface LinkgrabberSettings extends ConfigInterface {
 
     @DefaultJsonObject("[]")
     @AboutConfig
-    ArrayList<DownloadPath> getDownloadDestinationHistory();
+    List<DownloadPath> getDownloadDestinationHistory();
 
-    void setDownloadDestinationHistory(ArrayList<DownloadPath> value);
+    void setDownloadDestinationHistory(List<DownloadPath> value);
 
     @DefaultJsonObject("[]")
     @AboutConfig
-    ArrayList<PackageHistoryEntry> getPackageNameHistory();
+    List<PackageHistoryEntry> getPackageNameHistory();
 
-    void setPackageNameHistory(ArrayList<PackageHistoryEntry> value);
+    void setPackageNameHistory(List<PackageHistoryEntry> value);
 
     @AboutConfig
     @DefaultBooleanValue(true)

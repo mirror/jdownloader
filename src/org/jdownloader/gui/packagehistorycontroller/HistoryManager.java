@@ -15,13 +15,13 @@ public abstract class HistoryManager<T extends HistoryEntry> {
     private ArrayList<T> packageHistory;
     private boolean      changed = false;
 
-    public HistoryManager(ArrayList<T> packageNameHistory, int max) {
+    public HistoryManager(List<T> packageNameHistory, int max) {
 
         if (packageNameHistory == null) {
             packageNameHistory = new ArrayList<T>();
         }
-        this.packageHistory = packageNameHistory;
-        Collections.sort(packageHistory);
+        Collections.sort(packageNameHistory);
+        this.packageHistory = new ArrayList<T>(packageNameHistory);
         for (Iterator<T> it = packageHistory.iterator(); it.hasNext();) {
             T next = it.next();
             if (next == null || StringUtils.isEmpty(next.getName())) {
@@ -29,7 +29,6 @@ public abstract class HistoryManager<T extends HistoryEntry> {
                 continue;
             }
             if (packageHistory.size() > max && max > 0) {
-
                 it.remove();
 
             }
@@ -41,18 +40,18 @@ public abstract class HistoryManager<T extends HistoryEntry> {
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {
                 if (changed) {
-                    save(packageHistory);
+                    save(list());
                 }
             }
         });
 
     }
 
-    public List<T> list() {
-        return packageHistory;
+    public synchronized List<T> list() {
+        return Collections.unmodifiableList(packageHistory);
     }
 
-    public void add(String packageName) {
+    public synchronized void add(String packageName) {
         if (!StringUtils.isEmpty(packageName)) {
             changed = true;
             boolean found = false;
@@ -67,16 +66,13 @@ public abstract class HistoryManager<T extends HistoryEntry> {
                 T newOne = createNew(packageName);
                 newOne.setTime(System.currentTimeMillis());
                 packageHistory.add(newOne);
-
             }
-
             Collections.sort(packageHistory);
-
         }
     }
 
     abstract protected T createNew(String name);
 
-    abstract protected void save(ArrayList<T> list);
+    abstract protected void save(List<T> list);
 
 }
