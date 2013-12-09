@@ -203,7 +203,8 @@ public class LinkCrawler {
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
      * 
-     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this child
+     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
+     * child
      * 
      * @param thisGeneration
      * @return
@@ -298,8 +299,8 @@ public class LinkCrawler {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             if (insideCrawlerPlugin()) {
                 /*
-                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
-                 * results
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
                  */
                 distribute(possibleCryptedLinks);
                 return;
@@ -530,8 +531,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -574,8 +575,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -654,7 +655,8 @@ public class LinkCrawler {
                     }
                     if (unnknownHandler != null) {
                         /*
-                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
+                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable
+                         * by a Plugin
                          */
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);
@@ -1402,7 +1404,7 @@ public class LinkCrawler {
         link.setBrokenCrawlerHandler(null);
         link.setUnknownHandler(null);
         /* specialHandling: Crypted A - > B - > Final C , and A equals C */
-        boolean specialHandling = (origin != link) && (origin.getLinkID().equals(link.getLinkID()));
+        boolean specialHandling = origin != null && (origin != link) && (origin.getLinkID().equals(link.getLinkID()));
         if (isDoDuplicateFinderFinalCheck()) {
             synchronized (duplicateFinderFinal) {
                 if (!duplicateFinderFinal.add(link.getLinkID()) && !specialHandling) { return; }
