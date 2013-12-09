@@ -132,6 +132,7 @@ BuyAndAddPremiumAccount_layoutDialogContent_pass=Passwort eingeben...
 CESBubbleContent_CESBubbleContent_credits=Account:
 CESBubbleContent_CESBubbleContent_status=Status:
 CESBubbleContent_CESBubbleContent_wait=Schicke Captcha zu %s2 in %s1
+CESBubbleSupport_CESBubbleSupport=ein Captcha-Lösungsdienst läuft gerade
 CESBubble_CESBubble=Ferngesteuertes Captcha: %s1
 CESSettingsPanel_CESSettingsPanel_choose_=Löser:
 CESSettingsPanel_runInEDT_header=Captcha-Austauschdienst: %s1
