@@ -1,0 +1,13 @@
+JDGui_windowClosing_try_answer_totaskbar=Минимизировать в панель задач
+JDGui_windowClosing_try_answer_tray=Спрятать в трей
+JDGui_windowClosing_try_asnwer_close=Выйти из JDownloader
+JDGui_windowClosing_try_msg_2=Пожалуйста, выберите действие:\n- Выход из JDownloader (Отменить все запущенные процессы)\n- Минимизировать в панель задач (Загрузка будет продолжена)\n- Спрятать в трей (Загрузка будет продолжена в фоне)
+JDGui_windowClosing_try_title=Закрытие JDownloader...
+OnCloseAction_exit=Выйти из приложения
+OnCloseAction_totaskbar=Минимизировать в панель задач
+OnCloseAction_totray=Спрятать в трей
+OnMinimizeAction_totaskbar=Минимизировать в панель задач
+OnMinimizeAction_totray=Спрятать в трей
+getName=Иконка в трее
+plugins_optional_JDLightTray_startMinimized=Запускать свернуто
+popup_exit=Выйти из JDownloader
