@@ -412,6 +412,8 @@ public class Rapidshare extends PluginForHost {
 
             long lastWrite = -1;
 
+            //
+
             @Override
             protected void addChunk(final Chunk chunk) {
                 final Chunk newChunk = new Chunk(chunk.getStartByte(), chunk.getEndByte(), this.connection, this) {
