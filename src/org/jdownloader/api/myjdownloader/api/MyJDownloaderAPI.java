@@ -32,7 +32,6 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
 
     @Override
     protected byte[] base64decode(String base64encodedString) {
-
         return Base64.decode(base64encodedString);
 
     }
