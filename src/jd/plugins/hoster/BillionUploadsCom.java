@@ -107,7 +107,7 @@ public class BillionUploadsCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects, uses cloudflare, maybe sister site fileom.com?
-    // mods:
+    // mods: many, do NOT upgrade!
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -242,7 +242,7 @@ public class BillionUploadsCom extends PluginForHost {
             }
         }
 
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|requires an additional security check)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;

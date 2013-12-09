@@ -190,6 +190,7 @@ public class FileFactory extends PluginForHost {
                 sb.append("&Submit=Check+Links");
                 br.postPage(br.getURL(), sb.toString());
                 for (final DownloadLink dl : links) {
+                    dl.setName(new Regex(dl.getDownloadURL(), "filefactory\\.com/(.+)").getMatch(0));
                     if (br.getRedirectLocation() != null && (br.getRedirectLocation().endsWith("/member/setpwd.php") || br.getRedirectLocation().endsWith("/member/setdob.php"))) {
                         // password needs changing or dob needs setting.
                         dl.setAvailable(true);
@@ -403,7 +404,7 @@ public class FileFactory extends PluginForHost {
                     if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
                     // stable is lame
                     br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                    br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "Submit=Continue");
+                    br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&Submit=Continue");
                     br.getHeaders().put("Content-Type", null);
                     if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
                 }
@@ -540,8 +541,8 @@ public class FileFactory extends PluginForHost {
 
     public void handleTrafficShare(final DownloadLink downloadLink) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl, Unknown until proven
-         * otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
+         * Unknown until proven otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);
@@ -634,6 +635,7 @@ public class FileFactory extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         prepBrowser(br);
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "filefactory\\.com/(.+)").getMatch(0));
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
             try {
@@ -666,12 +668,17 @@ public class FileFactory extends PluginForHost {
             }
         }
         if (br.containsHTML("This file has been deleted\\.|have been deleted") || br.getURL().contains("error.php?code=254")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("This file is no longer available due to an unexpected server error") || br.getURL().contains("error.php?code=252")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(NOT_AVAILABLE) && !br.containsHTML(NO_SLOT)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN)) {
             return AvailableStatus.UNCHECKABLE;
         } else if (br.containsHTML(PASSWORDPROTECTED)) {
+            final String fileName = br.getRegex("<title>([^<>\"]*?)\\- FileFactory</title>").getMatch(0);
+            if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setName(Encoding.htmlDecode(fileName.trim()));
             downloadLink.getLinkStatus().setStatusText("This link is password protected");
+            downloadLink.setAvailable(true);
         } else {
             if (isPremiumOnly(br)) {
                 downloadLink.getLinkStatus().setErrorMessage("This file is only available to Premium Members");
@@ -694,7 +701,7 @@ public class FileFactory extends PluginForHost {
                     if (fileName == null) fileName = br.getRegex("<title>([^<>\"]*?) - FileFactory</title>").getMatch(0);
                     fileSize = br.getRegex(regex).getMatch(1);
                 }
-                if (fileName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 downloadLink.setName(Encoding.htmlDecode(fileName.trim()));
                 if (fileSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
                 downloadLink.setAvailable(true);

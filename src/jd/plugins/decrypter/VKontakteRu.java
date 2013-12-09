@@ -296,7 +296,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (new Regex(parameter, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
             postData = "act=load_audios_silent&al=1&edit=0&id=0&gid=" + new Regex(parameter, "(\\d+)$").getMatch(0);
         } else {
-            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "((\\-)?\\d+)$").getMatch(0);
+            postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "((\\-)?\\d+)$").getMatch(0) + "&please_dont_ddos=2";
         }
         br.postPage("http://vk.com/audio", postData);
         final String completeData = br.getRegex("\\{\"all\":\\[(\\[.*?\\])\\]\\}").getMatch(0);

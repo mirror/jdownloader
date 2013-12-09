@@ -219,7 +219,8 @@ public class TwojLimitPl extends PluginForHost {
         sleep(1 * 1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
         /*
-         * I realy wanted to use Content Disposition below, but it just don't work for resume at hotfile
+         * I realy wanted to use Content Disposition below, but it just don't work for resume at hotfile -> Doesn't matter anymore, hotfile
+         * is offline
          */
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
         // error

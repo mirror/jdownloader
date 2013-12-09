@@ -478,7 +478,8 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String click = br.getRegex("var click_url = \"(https?://(?!adfoc\\.us/)[^\"]+)").getMatch(0);
+            String click = br.getRegex("var click_url = \"(https?://[^\"]+)").getMatch(0);
+            if (click != null && click.equals(parameter)) click = null;
             if (click == null) {
                 click = br.getRegex("(http://adfoc\\.us/serve/click/\\?id=[a-z0-9]+\\&servehash=[a-z0-9]+\\&timestamp=\\d+)").getMatch(0);
                 if (click != null) {

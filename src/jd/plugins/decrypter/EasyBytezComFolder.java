@@ -37,6 +37,7 @@ public class EasyBytezComFolder extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setCookie("http://easybytez.com", "", "");
         br.getPage(parameter);
+
         int lastPage = 1;
         final String[] allPages = br.getRegex("<a href=\\'\\?\\&amp;page=(\\d+)\\'").getColumn(0);
         if (allPages != null && allPages.length != 0) {
@@ -52,6 +53,10 @@ public class EasyBytezComFolder extends PluginForDecrypt {
                 links = br.getRegex("<td><a href=\"(http://(www\\.)?easybytez\\.com/[a-z0-9]{12})\"").getColumn(0);
             }
             if (links == null || links.length == 0) {
+                if (br.containsHTML(">The selected folder contains the following files")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }

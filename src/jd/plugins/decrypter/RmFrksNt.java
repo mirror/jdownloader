@@ -58,8 +58,9 @@ public class RmFrksNt extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.rom-freaks.net/" + link));
             }
         } else {
-            if (br.containsHTML("onClick=\"DL\\(this\\);")) {
-                logger.info("Link is broken or offline: " + parameter);
+            final boolean siteBroken = true;
+            if (br.containsHTML("onClick=\"DL\\(this\\);") || siteBroken) {
+                logger.info("Link/Site is broken or offline: " + parameter);
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<title>Download - NDS ROMs \\- \\d+(.*?)</title>").getMatch(0);

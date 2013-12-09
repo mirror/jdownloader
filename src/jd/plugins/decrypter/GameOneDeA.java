@@ -46,7 +46,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://((www|m)\\.)?gameone\\.de/(?!playtube/)(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "https?://((www|m)\\.)?gameone\\.de/(?!playtube/)(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
 
     public class ReplacerInputStream extends InputStream {
@@ -103,7 +103,7 @@ public class GameOneDeA extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("https://", "http://");
         if (parameter.startsWith("http://feedproxy.google.com")) {
             br.getPage(parameter);
             parameter = br.getRedirectLocation();

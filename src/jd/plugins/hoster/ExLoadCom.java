@@ -240,7 +240,7 @@ public class ExLoadCom extends PluginForHost {
             }
         }
 
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration))|color=\"gray\">\\(\\)</font>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;

@@ -104,11 +104,6 @@ public class AllDebridCom extends PluginForHost {
                             logger.severe(e.toString());
                         }
                         try {
-                            if (host.equals("hotfile.com") && accDetails.get("limite_hf") != null && Integer.parseInt(accDetails.get("limite_hf")) == 0) continue;
-                        } catch (final Throwable e) {
-                            logger.severe(e.toString());
-                        }
-                        try {
                             if (host.equals("filesmonster.com") && accDetails.get("limite_fm") != null && Integer.parseInt(accDetails.get("limite_fm")) == 0) continue;
                         } catch (final Throwable e) {
                             logger.severe(e.toString());

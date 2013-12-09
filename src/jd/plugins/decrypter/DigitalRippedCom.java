@@ -34,10 +34,11 @@ public class DigitalRippedCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?digitaldripped\\.com/(ads\\d+.+|disclaimer|terms|contact|advertise|ajax.+|js.+|\\?p=.+|archives|lilb\\.htm)";
+    private static final String INVALIDLINKS = "http://(www\\.)?digitaldripped\\.com/(ads\\d+.+|disclaimer|terms|contact|advertise|ajax.+|js.+|\\?p=.+|archives|lilb\\.htm|ad/.+|submit|rss|song/archive|topsongs|mixtapes|dmca|disclaimer|tos)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         final String parameter = param.toString();
         try {
             br.getPage(parameter);
@@ -48,7 +49,8 @@ public class DigitalRippedCom extends PluginForDecrypt {
             logger.info("Cannot decrypt link (unsupported link): " + parameter);
             return decryptedLinks;
         }
-        if (br.getRequest().getHttpConnection().getContentType().contains("text/plain")) {
+        final String contenttype = br.getRequest().getHttpConnection().getContentType();
+        if (contenttype.contains("text/plain")) {
             final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -56,6 +58,9 @@ public class DigitalRippedCom extends PluginForDecrypt {
             }
             for (final String singleLink : links)
                 if (!singleLink.contains("digitalripped.com/")) decryptedLinks.add(createDownloadlink(singleLink));
+        } else if (contenttype.matches("(application/javascript|text/javascript|text/css)")) {
+            logger.info("Cannot decrypt link (unsupported link): " + parameter);
+            return decryptedLinks;
         } else {
             String finallink = null;
             if (br.containsHTML("http\\-equiv=\"refresh\">") || br.containsHTML(">404 Not Found<") || parameter.matches(INVALIDLINKS)) {
@@ -64,6 +69,7 @@ public class DigitalRippedCom extends PluginForDecrypt {
             } else {
                 finallink = br.getRegex("<a class=\"download\\-btn\" target=\"[^<>\"\\']+\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
                 if (finallink == null) finallink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) finallink = br.getRegex("mp3:\"(http://[^<>\"]*?)\"").getMatch(0);
             }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -74,5 +80,4 @@ public class DigitalRippedCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
