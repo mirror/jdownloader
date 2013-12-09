@@ -280,7 +280,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 fp.setName(fpName);
                 boolean dynamicLoadAlreadyDecrypted = false;
                 final ArrayList<String> allids = new ArrayList<String>();
-                long totalPicsNum = 100;
+                // Use this as default as an additional fail safe
+                long totalPicsNum = 5000;
                 if (totalPicCount != null) totalPicsNum = Long.parseLong(totalPicCount.replaceAll("(\\.|,)", ""));
                 int lastDecryptedPicsNum = 0;
                 int decryptedPicsNum = 0;

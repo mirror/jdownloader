@@ -33,6 +33,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -201,6 +202,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
         }
+        if (br.containsHTML(">Share-Online \\- Server Maintenance<|>MAINTENANCE</h1>")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), 30 * 60 * 1000l); }
         // shared IP error
         if (br.containsHTML("<strong>The usage of different IPs is not possible!</strong>")) {
             /* disabled as it causes problem, added debug to find cause */
@@ -494,9 +496,14 @@ public class ShareOnlineBiz extends PluginForHost {
         br.getHeaders().put("Cache-Control", null);
         br.setCookie("http://www.share-online.biz", "page_language", "english");
         // redirects!
-        br.getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
+        try {
+            br.getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
+        } catch (final BrowserException e) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 502) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.unknownservererror", "Unknown server error"), 1 * 60 * 60 * 1000l);
+        }
         if (br.getURL().contains("/failure/proxy/1")) throw new PluginException(LinkStatus.ERROR_FATAL, "Proxy error");
-        Browser brc = br.cloneBrowser();
+        final Browser brc = br.cloneBrowser();
         try {
             brc.openGetConnection("/template/images/corp/uploadking.php?show=last");
         } finally {
