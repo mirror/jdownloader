@@ -19,6 +19,7 @@ import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.remoteapi.responsewrapper.DataObject;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
@@ -71,27 +72,29 @@ public class RemoteAPIController {
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
             @Override
             public String toString(RemoteAPIRequest request, RemoteAPIResponse response, Object responseData) {
-                try {
-                    if (request instanceof SessionRemoteAPIRequest) {
-                        MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
-                        return JSonStorage.serializeToJson(new DataObject(responseData, ri.getRid()));
-
-                    }
-                } catch (Throwable e) {
-                    throw new WTFException(e);
-                }
-                throw new WTFException();
-
+                return JSonStorage.serializeToJson(responseData);
             }
 
             @Override
             public void sendText(RemoteAPIRequest request, RemoteAPIResponse response, String text) throws UnsupportedEncodingException, IOException {
-                super.sendText(request, response, text);
+                try {
+                    if (request instanceof SessionRemoteAPIRequest) {
+                        MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
+
+                        super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
+                        }, null), ri.getRid())));
+                    } else {
+                        throw new WTFException();
+                    }
+                } catch (Throwable e) {
+                    throw new WTFException(e);
+                }
+
             }
 
             @Override
             protected RemoteAPIResponse createRemoteAPIResponseObject(HttpResponse response) {
-                return super.createRemoteAPIResponseObject(response);
+                return new MyJDRmoteAPIResponse(response, this);
             }
 
             @Override
