@@ -22,6 +22,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
@@ -56,6 +57,7 @@ import org.jdownloader.logging.LogController;
 public class RemoteAPIController {
 
     private static RemoteAPIController INSTANCE = new RemoteAPIController();
+    private final boolean              isJared  = Application.isJared(RemoteAPIController.class);
 
     public static RemoteAPIController getInstance() {
         return INSTANCE;
@@ -111,8 +113,8 @@ public class RemoteAPIController {
                     JSonRequest jsonRequest;
                     try {
                         jsonRequest = ((MyJDownloaderPostRequest) request).getJsonRequest();
-
                         if (jsonRequest == null) throw new BasicRemoteAPIException("no JSONRequest", ResponseCode.ERROR_BAD_REQUEST);
+                        if (!isJared) logger.info(JSonStorage.toString(jsonRequest));
                         if (StringUtils.isEmpty(jsonRequest.getUrl())) throw new BasicRemoteAPIException("JSonRequest URL is empty", ResponseCode.ERROR_BAD_REQUEST);
                         if (!StringUtils.equals(request.getRequestedURL(), jsonRequest.getUrl())) throw new BasicRemoteAPIException("JSonRequest URL=" + jsonRequest.getUrl() + " does not match " + request.getRequestedURL(), ResponseCode.ERROR_BAD_REQUEST);
                         if (!validateRID(jsonRequest.getRid(), ((MyJDownloaderPostRequest) request).getRequestConnectToken())) throw new BasicRemoteAPIException("JSonRequest URL=" + jsonRequest.getUrl() + " has duplicated RID=" + jsonRequest.getRid(), ResponseCode.ERROR_BAD_REQUEST);
@@ -121,7 +123,6 @@ public class RemoteAPIController {
                     }
                 }
                 MyJDownloaderRequestInterface ri = (MyJDownloaderRequestInterface) request;
-
                 try {
                     if (!validateRID(ri.getRid(), ri.getRequestConnectToken())) throw new BasicRemoteAPIException("JSonRequest URL=" + request.getRequestedURL() + " has duplicated RID=" + ri.getRid(), ResponseCode.ERROR_BAD_REQUEST);
                 } catch (IOException e) {
