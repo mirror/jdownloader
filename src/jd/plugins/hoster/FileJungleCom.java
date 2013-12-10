@@ -95,6 +95,10 @@ public class FileJungleCom extends PluginForHost {
                 }
                 checkbr.postPage("http://www.filejungle.com/check_links.php", sb.toString());
                 for (final DownloadLink dl : links) {
+                    if (br.toString().length() < 50) {
+                        dl.setAvailable(false);
+                        continue;
+                    }
                     final String linkpart = new Regex(dl.getDownloadURL(), "(filejungle\\.com/f/.+)").getMatch(0);
                     if (linkpart == null) {
                         logger.warning("Filejungle availablecheck is broken!");

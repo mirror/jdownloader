@@ -221,12 +221,13 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("imgpizza.com/")) {
             finallink = parameter.replace("/viewer.php?file=", "/images/");
         } else if (parameter.contains("imgserve.net/")) {
+            br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.containsHTML(">Image Removed or Bad Link")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            finallink = br.getRegex("class=\\'centred\\' src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            finallink = br.getRegex("class=\\'centred(_resized)?\\' src=\\'(http://[^<>\"]*?)\\'").getMatch(1);
         }
         if (finallink == null) {
             logger.warning("Imagehoster-Decrypter broken for link: " + parameter);

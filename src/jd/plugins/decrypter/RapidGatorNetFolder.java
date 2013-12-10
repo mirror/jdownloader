@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -52,7 +53,12 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         JDUtilities.getPluginForHost("rapidgator.net");
         jd.plugins.hoster.RapidGatorNet.prepareBrowser(br);
         // normal stuff
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("E_FOLDERNOTFOUND")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

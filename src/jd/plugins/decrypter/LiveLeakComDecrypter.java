@@ -44,6 +44,12 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         // Handle embedded links
         if (parameter.matches("http://(www\\.)?liveleak\\.com/ll_embed\\?f=[a-z0-9]+")) {
+            if (br.containsHTML("File not found or deleted\\!")) {
+                final DownloadLink dl = createDownloadlink("http://liveleakvideodecrypted.com/" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+                dl.setAvailable(false);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             final String originalID = br.getRegex("\\&item_token=([a-z0-9]+_\\d+)\\&embed=").getMatch(0);
             if (originalID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

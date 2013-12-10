@@ -63,6 +63,7 @@ public class KsRLCm extends PluginForDecrypt {
         }
 
         linkurl = br.getRedirectLocation();
+        if (linkurl == null) linkurl = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
 
         if (linkurl == null) return null;
 

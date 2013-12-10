@@ -47,6 +47,8 @@ public class LibGen extends PluginForDecrypt {
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
 
         String[] links = br.getRegex("<url\\d+>(https?://[^<]+)</url\\d+>").getColumn(0);
+        // Hmm maybe just try to get all mirrors
+        if (links == null || links.length == 0) links = br.getRegex("<td align='center' width='11,1%'><a href=\\'(http[^<>\"]*?)'").getColumn(0);
         if (links == null || links.length == 0) return null;
         if (links != null && links.length != 0) {
             for (String dl : links)

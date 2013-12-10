@@ -105,6 +105,8 @@ public class Rdrctr extends PluginForDecrypt {
                 offline = true;
             } else if (parameter.contains("yep.it") && br.containsHTML(">Put your URL here<")) {
                 offline = true;
+            } else if (parameter.contains("mediafiremoviez.com/") && br.containsHTML(">Error 404|>Nothing found for")) {
+                offline = true;
             }
             if (offline) {
                 logger.info("Link offline or invalid: " + parameter);

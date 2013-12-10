@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -40,7 +41,12 @@ public class ImagesHackUs extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
         if (br.getURL().equals("http://imageshack.us/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
