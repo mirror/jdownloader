@@ -64,6 +64,7 @@ public class AccountGroupStorable implements Storable {
             }
             if (childsP.size() > 0) {
                 AccountGroup ret = new AccountGroup(childsP);
+                ret.setRule(rule);
                 ret.setName(getName());
                 return ret;
             }
