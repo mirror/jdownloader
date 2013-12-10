@@ -129,7 +129,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     // }
     // KeyHandler<?> kh = ((AdvancedConfigInterfaceEntry) ace).getKeyHandler();
     //
-    // QueryResponseMap infoMap = new QueryResponseMap();
+    // org.jdownloader.myjdownloader.client.json.JsonMap infoMap = new org.jdownloader.myjdownloader.client.json.JsonMap();
     // if (query.fieldRequested("value")) {
     // infoMap.put("value", kh.getValue());
     // }

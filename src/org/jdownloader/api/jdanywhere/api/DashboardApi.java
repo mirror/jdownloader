@@ -97,7 +97,7 @@ public class DashboardApi implements IDashboardApi {
     }
 
     public synchronized Object getCompleteState() {
-        HashMap<String, Object> ret = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap ret = new org.jdownloader.myjdownloader.client.json.JsonMap();
         int running = DownloadWatchDog.getInstance().getActiveDownloads();
         ret.put("running", running > 0);
         ret.put("limit", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());

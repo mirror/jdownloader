@@ -85,7 +85,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     GenericConfigEventListener<Integer> downloadSpeedLimitEventListener            = new GenericConfigEventListener<Integer>() {
                                                                                        public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                                                                                           HashMap<String, Object> data = new HashMap<String, Object>();
+                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                                                                            data.put("message", "Limitspeed");
                                                                                            data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "DOWNLOAD_SPEED_LIMIT");
@@ -105,7 +105,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                        }
 
                                                                                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                                           HashMap<String, Object> data = new HashMap<String, Object>();
+                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                                                                            data.put("message", "LimitspeedActivated");
                                                                                            data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "DOWNLOAD_SPEED_LIMIT_ENABLED");
@@ -117,7 +117,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     GenericConfigEventListener<Integer> maxSimultaneDownloadsEventListenr          = new GenericConfigEventListener<Integer>() {
                                                                                        public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                                                                                           HashMap<String, Object> data = new HashMap<String, Object>();
+                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                                                                            data.put("message", "MaxDL");
                                                                                            data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_SIMULTANE_DOWNLOADS");
@@ -133,7 +133,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     GenericConfigEventListener<Integer> maxChunksPerFileEventListener              = new GenericConfigEventListener<Integer>() {
 
                                                                                        public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                                                                                           HashMap<String, Object> data = new HashMap<String, Object>();
+                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                                                                            data.put("message", "MaxConDL");
                                                                                            data.put("data", CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_CHUNKS_PER_FILE");
@@ -149,7 +149,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     GenericConfigEventListener<Integer> maxSiumultaneDownloadsPerHostEventListener = new GenericConfigEventListener<Integer>() {
 
                                                                                        public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                                                                                           HashMap<String, Object> data = new HashMap<String, Object>();
+                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                                                                            data.put("message", "MaxConHost");
                                                                                            data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_SIMULTANE_DOWNLOADS_PER_HOST");
@@ -168,7 +168,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                        }
 
                                                                                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                                           HashMap<String, Object> data = new HashMap<String, Object>();
+                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                                                                            data.put("message", "MaxConHostActivated");
                                                                                            data.put("data", CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_DOWNLOADS_PER_HOST_ENABLED");
@@ -184,7 +184,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                        }
 
                                                                                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                                           HashMap<String, Object> data = new HashMap<String, Object>();
+                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                                                                            data.put("message", "Reconnect");
                                                                                            data.put("data", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "AUTO_RECONNECT_ENABLED");
@@ -200,7 +200,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                                                                                        }
 
                                                                                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                                           HashMap<String, Object> data = new HashMap<String, Object>();
+                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                                                                            data.put("message", "Premium");
                                                                                            data.put("data", CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
                                                                                            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "USE_AVAILABLE_ACCOUNTS");
@@ -251,26 +251,26 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     }
 
     private void downloadApiLinkAdded(DownloadLink link) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("linkID", link.getUniqueID().toString());
         data.put("packageID", link.getFilePackage().getUniqueID().toString());
         publishEvent(EVENTID.DOWNLOADLINKADDED, data);
     }
 
     private void downloadApiLinkRemoved(DownloadLink link) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("linkID", link.getUniqueID().toString());
         publishEvent(EVENTID.DOWNLOADLINKREMOVED, data);
     }
 
     private void downloadApiPackageAdded(FilePackage fpkg) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("packageID", fpkg.getUniqueID().toString());
         publishEvent(EVENTID.DOWNLOADPACKAGEADDED, data);
     }
 
     private void downloadApiPackageRemoved(FilePackage fpkg) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("packageID", fpkg.getUniqueID().toString());
         publishEvent(EVENTID.DOWNLOADPACKAGEREMOVED, data);
     }
@@ -296,7 +296,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         apiJob.setHoster(challenge.getPlugin().getHost());
         apiJob.setCaptchaCategory(challenge.getExplain());
         apiJob.setCount(captchCount);
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("message", type);
         data.put("data", apiJob);
         publishEvent(EVENTID.CAPTCHA, data);
@@ -304,7 +304,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     }
 
     public void onStateChange(StateEvent event) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("message", "Running State Changed");
         data.put("data", event.getNewState().getLabel());
         publishEvent(EVENTID.RUNNINGSTATE, data, "RUNNINGSTATE");
@@ -315,7 +315,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     private void linkCollectorApiLinkAdded(CrawledLink link) {
         if (link.getParentNode().getUniqueID() != null) {
-            HashMap<String, Object> data = new HashMap<String, Object>();
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
             data.put("packageID", link.getParentNode().getUniqueID().toString());
             data.put("linkID", link.getUniqueID().toString());
             publishEvent(EVENTID.LINKCOLLECTORLINKADDED, data);
@@ -328,19 +328,19 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
             linkIDs.add(link.getDownloadLink().getUniqueID().toString());
         }
 
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("linkIDs", linkIDs);
         publishEvent(EVENTID.LINKCOLLECTORLINKREMOVED, data);
     }
 
     private void linkCollectorApiPackageAdded(CrawledPackage cpkg) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("packageID", cpkg.getUniqueID().toString());
         publishEvent(EVENTID.LINKCOLLECTORPACKAGEADDED, data);
     }
 
     private void linkCollectorApiPackageRemoved(CrawledPackage cpkg) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
         data.put("packageID", cpkg.getUniqueID().toString());
         publishEvent(EVENTID.LINKCOLLECTORPACKAGEREMOVED, data);
     }
@@ -362,7 +362,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         if (event.getParameter() instanceof CrawledLink) {
             CrawledLink cl = (CrawledLink) event.getParameter();
             if (cl != null) {
-                HashMap<String, Object> data = new HashMap<String, Object>();
+                org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                 Object param = event.getParameter(1);
                 if (param instanceof CrawledLinkProperty) {
                     String id;
@@ -399,7 +399,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         } else if (event.getParameter() instanceof CrawledPackage) {
             CrawledPackage cl = (CrawledPackage) event.getParameter();
             if (cl != null) {
-                HashMap<String, Object> data = new HashMap<String, Object>();
+                org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                 Object param = event.getParameter(1);
                 if (param instanceof CrawledPackageProperty) {
                     data.put("packageID", cl.getUniqueID().toString());
@@ -610,7 +610,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         if (node instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) node;
             if (dl != null) {
-                HashMap<String, Object> data = new HashMap<String, Object>();
+                org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
                 if (param instanceof DownloadLinkProperty) {
 
@@ -644,7 +644,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                             data.put("action", "Finished");
                             publishEvent(EVENTID.LINKCHANGED, data);
                             if (dl.getFilePackage().getFinishedDate() > 0) {
-                                data = new HashMap<String, Object>();
+                                data = new org.jdownloader.myjdownloader.client.json.JsonMap();
                                 data.put("packageID", dl.getFilePackage().getUniqueID().toString());
                                 data.put("action", "PackageFinished");
                                 publishEvent(EVENTID.PACKAGEFINISHED, data);
@@ -685,7 +685,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         } else if (node instanceof FilePackage) {
             FilePackage dl = (FilePackage) node;
             if (dl != null) {
-                HashMap<String, Object> data = new HashMap<String, Object>();
+                org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
                 if (param instanceof FilePackageProperty) {
                     data.put("packageID", dl.getUniqueID().toString());

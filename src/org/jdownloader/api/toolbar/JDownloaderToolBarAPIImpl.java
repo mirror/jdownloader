@@ -174,7 +174,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     public synchronized Object getStatus() {
-        HashMap<String, Object> ret = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap ret = new org.jdownloader.myjdownloader.client.json.JsonMap();
         int running = DownloadWatchDog.getInstance().getActiveDownloads();
         ret.put("running", running > 0);
         ret.put("limit", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
@@ -264,7 +264,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     public Object addLinksFromDOM(RemoteAPIRequest request) {
-        HashMap<String, Object> ret = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap ret = new org.jdownloader.myjdownloader.client.json.JsonMap();
         try {
             ChunkedDom chunkedDom = getCompleteDOM(request);
             if (chunkedDom != null) {
@@ -416,7 +416,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     public Object checkLinksFromDOM(RemoteAPIRequest request) {
-        HashMap<String, Object> ret = new HashMap<String, Object>();
+        org.jdownloader.myjdownloader.client.json.JsonMap ret = new org.jdownloader.myjdownloader.client.json.JsonMap();
         ret.put("checkid", null);
         try {
             boolean hosterOnly = "true".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "hosteronly"));

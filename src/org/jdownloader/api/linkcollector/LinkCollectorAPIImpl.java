@@ -1,6 +1,7 @@
 package org.jdownloader.api.linkcollector;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,7 +19,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -61,7 +61,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 CrawledPackageAPIStorable cps = new CrawledPackageAPIStorable(pkg);
                 final CrawledPackageView view = new CrawledPackageView();
                 view.setItems(pkg.getChildren());
-                QueryResponseMap infomap = new QueryResponseMap();
+                org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
                     infomap.put("saveTo", pkg.getRawDownloadFolder());
                 }
@@ -189,7 +189,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             CrawledLink cl = links.get(i);
             CrawledLinkAPIStorable cls = new CrawledLinkAPIStorable(cl);
 
-            QueryResponseMap infomap = new QueryResponseMap();
+            org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
             if (queryParams._getQueryParam("size", Boolean.class, false)) {
                 infomap.put("size", cl.getSize());

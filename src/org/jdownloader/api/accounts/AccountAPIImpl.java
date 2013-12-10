@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,7 +17,6 @@ import jd.plugins.AccountInfo;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -46,7 +46,7 @@ public class AccountAPIImpl implements AccountAPI {
         for (int i = startWith; i < Math.min(startWith + maxResults, accs.size()); i++) {
             Account acc = accs.get(i);
             AccountAPIStorable accas = new AccountAPIStorable(acc);
-            QueryResponseMap infoMap = new QueryResponseMap();
+            org.jdownloader.myjdownloader.client.json.JsonMap infoMap = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
             if (queryParams.fieldRequested("username")) infoMap.put("username", acc.getUser());
             if (queryParams.fieldRequested("validUntil")) {
@@ -90,13 +90,13 @@ public class AccountAPIImpl implements AccountAPI {
     }
 
     @Override
-    public QueryResponseMap listPremiumHosterUrls() {
+    public HashMap<String, String> listPremiumHosterUrls() {
 
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
 
-        QueryResponseMap ret = new QueryResponseMap();
+        HashMap<String, String> ret = new HashMap<String, String>();
         for (LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) {
                 plugins.add(lhp);

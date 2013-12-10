@@ -1,6 +1,7 @@
 package org.jdownloader.api.polling;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
@@ -12,7 +13,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.api.captcha.CaptchaAPI;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.jd.AggregatedNumbersAPIStorable;
@@ -70,7 +70,7 @@ public class PollingAPIImpl implements PollingAPI {
             lc.readUnlock(lcrl);
         }
 
-        QueryResponseMap eventData = new QueryResponseMap();
+        org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", new AggregatedNumbersAPIStorable(new AggregatedNumbers(selDc), new AggregatedCrawlerNumbers(selLc)));
         prs.setEventData(eventData);
 
@@ -120,7 +120,7 @@ public class PollingAPIImpl implements PollingAPI {
             fpas.add(fps);
         }
 
-        QueryResponseMap eventData = new QueryResponseMap();
+        org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", fpas);
         prs.setEventData(eventData);
 
@@ -131,7 +131,7 @@ public class PollingAPIImpl implements PollingAPI {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("jdState");
 
-        QueryResponseMap eventData = new QueryResponseMap();
+        org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", dwd.getStateMachine().getState().getLabel());
 
         prs.setEventData(eventData);
@@ -151,7 +151,7 @@ public class PollingAPIImpl implements PollingAPI {
             status = "IDLE";
         }
 
-        QueryResponseMap eventData = new QueryResponseMap();
+        org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", status);
         prs.setEventData(eventData);
 
@@ -164,7 +164,7 @@ public class PollingAPIImpl implements PollingAPI {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("captchasWaiting");
 
-        QueryResponseMap eventData = new QueryResponseMap();
+        org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", captchaAPI.list());
         prs.setEventData(eventData);
 

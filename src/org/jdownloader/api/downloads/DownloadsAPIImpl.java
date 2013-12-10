@@ -1,6 +1,7 @@
 package org.jdownloader.api.downloads;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,7 +13,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.QueryResponseMap;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.plugins.FinalLinkState;
 
@@ -73,7 +73,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 DownloadLinkAggregator aggregate = new DownloadLinkAggregator(fp);
                 FilePackageAPIStorable fps = new FilePackageAPIStorable(fp);
 
-                QueryResponseMap infomap = new QueryResponseMap();
+                org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
                     infomap.put("saveTo", fp.getDownloadDirectory());
@@ -207,7 +207,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             DownloadLink dl = links.get(i);
             DownloadLinkAPIStorable dls = new DownloadLinkAPIStorable(dl);
 
-            QueryResponseMap infomap = new QueryResponseMap();
+            org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
             if (queryParams._getQueryParam("host", Boolean.class, false)) {
                 infomap.put("host", dl.getHost());

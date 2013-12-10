@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 
@@ -58,9 +57,9 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
     }
 
     @Override
-    protected String post(final String query, final String object, final byte[] keyAndIV) throws ExceptionResponse {
+    protected byte[] post(final String query, final String object, final byte[] keyAndIV) throws ExceptionResponse {
         HTTPConnection con = null;
-        String ret = null;
+        byte[] ret = null;
         try {
             if (keyAndIV != null) {
                 br.putRequestHeader("Accept-Encoding", "gzip_aes");
@@ -73,22 +72,24 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
                     if ("gzip_aes".equals(content_Encoding)) {
                         final byte[] aes = IO.readStream(-1, con.getInputStream());
                         final byte[] decrypted = this.decrypt(aes, keyAndIV);
-                        ret = IO.readInputStreamToString(new GZIPInputStream(new ByteArrayInputStream(decrypted)));
+                        ret = IO.readStream(-1, new GZIPInputStream(new ByteArrayInputStream(decrypted)));
+                    } else if (content_Encoding == null) {
+                        return IO.readStream(-1, con.getInputStream());
                     } else {
                         final byte[] aes = IO.readStream(-1, new Base64InputStream(con.getInputStream()));
                         final byte[] decrypted = this.decrypt(aes, keyAndIV);
-                        ret = new String(decrypted, "UTF-8");
+                        ret = decrypted;
                     }
                 } else {
-                    ret = IO.readInputStreamToString(con.getInputStream());
+                    ret = IO.readStream(-1, con.getInputStream());
                 }
             } else {
                 br.putRequestHeader("Accept-Encoding", null);
-                ret = br.postPage(new URL(this.getServerRoot() + query), object == null ? "" : object);
+                ret = br.postPage(new URL(this.getServerRoot() + query), object == null ? "" : object).getBytes("UTF-8");
                 con = br.getConnection();
             }
             // System.out.println(con);
-            if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) { throw new ExceptionResponse(ret, con.getResponseCode()); }
+            if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) { throw new ExceptionResponse(toString(ret), con.getResponseCode()); }
             return ret;
         } catch (final ExceptionResponse e) {
             throw e;
@@ -102,11 +103,10 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         }
     }
 
-    protected AtomicLong              TIMESTAMP    = new AtomicLong(System.currentTimeMillis() + 1);
-    protected volatile String         connectToken = null;
+    protected AtomicLong            TIMESTAMP    = new AtomicLong(System.currentTimeMillis() + 1);
+    protected volatile String       connectToken = null;
 
-    private MyJDownloaderController   extension;
-    private HashMap<String, RIDArray> rids;
+    private MyJDownloaderController extension;
 
     public static int getRevision() {
         String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
@@ -122,7 +122,6 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         br = new BasicHTTP();
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
         br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
-        rids = new HashMap<String, RIDArray>();
 
     }
 
@@ -130,46 +129,4 @@ public class MyJDownloaderAPI extends AbstractMyJDClient {
         return logger;
     }
 
-    /* TODO: add session support, currently all sessions share the same validateRID */
-    public synchronized boolean validateRID(long rid, String sessionToken) {
-        if (true) return true;
-        // TODO CLeanup
-        RIDArray ridList = rids.get(sessionToken);
-        if (ridList == null) {
-            ridList = new RIDArray();
-            rids.put(sessionToken, ridList);
-        }
-
-        // lowest RID
-        System.out.println("RID " + rid + " " + sessionToken);
-        long lowestRid = Long.MIN_VALUE;
-        RIDEntry next;
-        for (Iterator<RIDEntry> it = ridList.iterator(); it.hasNext();) {
-            next = it.next();
-            if (next.getRid() == rid) {
-                // dupe rid is always bad
-                logger.warning("received an RID Dupe. Possible Replay Attack avoided");
-                return false;
-            }
-            if (System.currentTimeMillis() - next.getTimestamp() > 15000) {
-                it.remove();
-                if (next.getRid() > lowestRid) {
-                    lowestRid = next.getRid();
-                }
-
-            }
-        }
-        if (lowestRid > ridList.getMinAcceptedRID()) {
-            ridList.setMinAcceptedRID(lowestRid);
-        }
-        if (rid <= ridList.getMinAcceptedRID()) {
-            // rid too low
-            logger.warning("received an outdated RID. Possible Replay Attack avoided");
-            return false;
-        }
-        RIDEntry ride = new RIDEntry(rid);
-        ridList.add(ride);
-
-        return true;
-    }
 }

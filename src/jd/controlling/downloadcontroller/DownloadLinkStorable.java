@@ -231,7 +231,7 @@ public class DownloadLinkStorable implements Storable {
     public void setPropertiesString(String propertiesString) {
         if (propertiesString != null && propertiesString.startsWith(CRYPTED)) {
             byte[] bytes = Base64.decodeFast(propertiesString.substring(CRYPTED.length()));
-            Map<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<HashMap<String, Object>>() {
+            Map<String, Object> properties = JSonStorage.restoreFromString(JDCrypt.decrypt(bytes, KEY), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
             });
             link.setProperties(properties);
         }

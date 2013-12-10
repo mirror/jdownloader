@@ -182,7 +182,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
     }
 
     @Override
-    public void answer(long id, final HashMap<String, Object> data) throws BadOrderException, InvalidIdException {
+    public void answer(long id, final org.jdownloader.myjdownloader.client.json.JsonMap data) throws BadOrderException, InvalidIdException {
         ApiHandle handle = null;
 
         synchronized (map) {
@@ -216,7 +216,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
                     }
 
                 }
-                HashMap<String, Object> d = data;
+                org.jdownloader.myjdownloader.client.json.JsonMap d = data;
                 String key = method.getName().toLowerCase(Locale.ENGLISH);
                 if (key.startsWith("get")) {
                     key = key.substring(3);

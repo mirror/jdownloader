@@ -22,7 +22,6 @@ import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.remoteapi.exceptions.ApiInterfaceNotAvailable;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
@@ -31,8 +30,10 @@ import org.appwork.utils.net.DeChunkingOutputStream;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.HeadRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
-import org.appwork.utils.net.httpserver.requests.JSonRequest;
+import org.appwork.utils.net.httpserver.requests.OptionsRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.RemoteAPIController;
@@ -65,7 +66,20 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         logger = api.getLogger();
     }
 
+    protected GetRequest buildGetRequest() {
+        return new MyJDownloaderGetRequest(this);
+    }
+
+    protected HeadRequest buildHeadRequest() {
+        return new MyJDownloaderHeadRequest(this);
+    }
+
+    protected OptionsRequest buildOptionsRequest() {
+        return new MyJDownloaderOptionsRequest(this);
+    }
+
     protected PostRequest buildPostRequest() {
+
         return new MyJDownloaderPostRequest(this);
     }
 
@@ -145,20 +159,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
             this.clientSocket.close();
         } catch (final Throwable nothing) {
         }
-    }
-
-    public boolean isJSonRequestValid(JSonRequest aesJsonRequest) throws IOException {
-        try {
-            if (aesJsonRequest == null) throw new IOException("no JSONRequest");
-            if (StringUtils.isEmpty(aesJsonRequest.getUrl())) throw new IOException("JSonRequest URL is empty");
-            if (!StringUtils.equals(getRequest().getRequestedURL(), aesJsonRequest.getUrl())) throw new IOException("JSonRequest URL=" + aesJsonRequest.getUrl() + " does not match " + getRequest().getRequestedURL());
-            if (!api.validateRID(aesJsonRequest.getRid(), getRequestConnectToken())) throw new IOException("JSonRequest URL=" + aesJsonRequest.getUrl() + " has duplicated RID=" + aesJsonRequest.getRid());
-            logger.info("Go Request " + JSonStorage.serializeToJson(aesJsonRequest));
-        } catch (IOException e) {
-            logger.log(e);
-            throw e;
-        }
-        return true;
     }
 
     @Override

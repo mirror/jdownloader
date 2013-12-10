@@ -626,6 +626,7 @@ public class MyJDownloaderConnectThread extends Thread {
         } catch (MyJDownloaderException e) {
             invalidateSession();
             ensureValidSession(connectionHelper);
+            return;
         }
         boolean deviceBound = false;
         try {

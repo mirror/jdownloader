@@ -47,9 +47,9 @@ public class JDAPIImpl implements JDAPI {
 
     @Override
     public Integer getCoreRevision() {
-        HashMap<String, Object> map = null;
+        org.jdownloader.myjdownloader.client.json.JsonMap map = null;
         try {
-            map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+            map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<org.jdownloader.myjdownloader.client.json.JsonMap>() {
             });
             return (Integer) map.get("JDownloaderRevision");
 

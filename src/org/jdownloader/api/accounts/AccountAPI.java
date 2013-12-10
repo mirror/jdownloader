@@ -1,9 +1,9 @@
 package org.jdownloader.api.accounts;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -30,7 +30,7 @@ public interface AccountAPI extends RemoteAPIInterface {
 
     void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) throws InternalApiException;
 
-    QueryResponseMap listPremiumHosterUrls();
+    HashMap<String, String> listPremiumHosterUrls();
 
     boolean updateAccount(Long accountId, String username, String password);
 

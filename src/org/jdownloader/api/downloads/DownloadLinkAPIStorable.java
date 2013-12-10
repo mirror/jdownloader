@@ -1,8 +1,9 @@
 package org.jdownloader.api.downloads;
 
+import java.util.HashMap;
+
 import jd.plugins.DownloadLink;
 
-import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.storage.Storable;
 
 public class DownloadLinkAPIStorable implements Storable {
@@ -23,16 +24,16 @@ public class DownloadLinkAPIStorable implements Storable {
     public void setName(String name) {
     }
 
-    public QueryResponseMap getInfoMap() {
+    public org.jdownloader.myjdownloader.client.json.JsonMap getInfoMap() {
         return infoMap;
     }
 
-    public void setInfoMap(QueryResponseMap infoMap) {
+    public void setInfoMap(org.jdownloader.myjdownloader.client.json.JsonMap infoMap) {
         this.infoMap = infoMap;
     }
 
-    private DownloadLink     link;
-    private QueryResponseMap infoMap = null;
+    private DownloadLink            link;
+    private org.jdownloader.myjdownloader.client.json.JsonMap infoMap = null;
 
     public DownloadLinkAPIStorable(/* Storable */) {
         this.link = null;

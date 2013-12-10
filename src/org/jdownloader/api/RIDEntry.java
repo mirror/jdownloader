@@ -1,4 +1,4 @@
-package org.jdownloader.api.myjdownloader.api;
+package org.jdownloader.api;
 
 public class RIDEntry {
 

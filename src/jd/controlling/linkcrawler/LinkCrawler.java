@@ -1404,6 +1404,7 @@ public class LinkCrawler {
         link.setBrokenCrawlerHandler(null);
         link.setUnknownHandler(null);
         /* specialHandling: Crypted A - > B - > Final C , and A equals C */
+        // if link comes from flashgot, origin might be null
         boolean specialHandling = origin != null && (origin != link) && (origin.getLinkID().equals(link.getLinkID()));
         if (isDoDuplicateFinderFinalCheck()) {
             synchronized (duplicateFinderFinal) {

@@ -784,9 +784,11 @@ public class TbCm extends PluginForDecrypt {
                     // 256k mp4
                     this.put(ITAG.DASH_AUDIO_256K_AAC, new Object[] { DestinationFormat.AUDIO_DASH, "AAC_256k", "AAC", "Stereo", "high(256k)" });
                     // 128k webm
-                    // this.put(ITAG.DASH_AUDIO_128K_WEBM, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_128k", "WEBM", "Stereo", "middle(128k)" });
+                    // this.put(ITAG.DASH_AUDIO_128K_WEBM, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_128k", "WEBM", "Stereo",
+                    // "middle(128k)" });
                     // 192k webm
-                    // this.put(ITAG.DASH_AUDIO_192K_WEBM, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_256k", "WEBM", "Stereo", "high(256k)" });
+                    // this.put(ITAG.DASH_AUDIO_192K_WEBM, new Object[] { DestinationFormat.AUDIO_DASH, "WEBM_256k", "WEBM", "Stereo",
+                    // "high(256k)" });
 
                 }
             }
@@ -920,8 +922,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
                  */
                 HashMap<ITAG, String[]> useTags = new HashMap<ITAG, String[]>(availableItags);
                 if (best) {
@@ -929,7 +931,6 @@ public class TbCm extends PluginForDecrypt {
                     List<ITAG[]> bestQualityTags = new ArrayList<ITAG[]>();
                     bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_AUDIO_ORIGINAL });
                     bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, ITAG.DASH_VIDEO_1080P_H264, ITAG.WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS });
-                    bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, ITAG.DASH_VIDEO_720P_H264 });
                     bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, ITAG.DASH_VIDEO_720P_H264 });
                     bestQualityTags.add(new ITAG[] { ITAG.MP4_VIDEO_520P_H264_AUDIO_AAC_3D });
                     bestQualityTags.add(new ITAG[] { ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, ITAG.WEBM_VIDEO_480P_VP8_AUDIO_VORBIS, ITAG.DASH_VIDEO_480P_H264 });

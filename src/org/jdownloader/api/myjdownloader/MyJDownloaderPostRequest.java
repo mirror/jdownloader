@@ -22,49 +22,123 @@ import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.httpserver.requests.JSonRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 
-public class MyJDownloaderPostRequest extends PostRequest {
+public class MyJDownloaderPostRequest extends PostRequest implements MyJDownloaderRequestInterface {
 
-    private MyJDownloaderHttpConnection myJDConnection;
+    private JSonRequest jsonRequest;
+    private String      jqueryCallback;
+    private String      signature;
+    private long        requestID;
 
     public MyJDownloaderPostRequest(MyJDownloaderHttpConnection myJDownloaderHttpConnection) {
         super(myJDownloaderHttpConnection);
-        myJDConnection = myJDownloaderHttpConnection;
+
+    }
+
+    @Override
+    public void setRequestedURLParameters(LinkedList<String[]> requestedURLParameters) {
+        super.setRequestedURLParameters(requestedURLParameters);
+        if (requestedURLParameters != null) {
+            for (final String[] param : requestedURLParameters) {
+                if (param[1] != null) {
+                    /* key=value(parameter) */
+                    if ("callback".equalsIgnoreCase(param[0])) {
+                        /* filter jquery callback */
+                        jqueryCallback = param[1];
+                        continue;
+                    } else if ("signature".equalsIgnoreCase(param[0])) {
+                        /* filter url signature */
+                        signature = param[1];
+                        continue;
+                    } else if ("rid".equalsIgnoreCase(param[0])) {
+                        requestID = Long.parseLong(param[1]);
+                        continue;
+                    }
+
+                }
+            }
+        }
+    }
+
+    @Override
+    public MyJDownloaderHttpConnection getConnection() {
+        return (MyJDownloaderHttpConnection) super.getConnection();
+    }
+
+    public String getRequestConnectToken() {
+        return getConnection().getRequestConnectToken();
     }
 
     public synchronized LinkedList<String[]> getPostParameter() throws IOException {
         if (postParameterParsed) { return postParameters; }
-        JSonRequest jsonRequest = null;
-        final byte[] jsonBytes = IO.readStream(-1, getInputStream());
-        final String json = new String(jsonBytes, "UTF-8");
-        jsonRequest = JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
-        });
 
-        if (!this.myJDConnection.isJSonRequestValid(jsonRequest)) {
-            //
-            throw new IOException("Invalid AESJSON Request");
-        }
         postParameters = new LinkedList<String[]>();
-        for (final Object parameter : jsonRequest.getParams()) {
-            if (parameter instanceof JSonObject) {
-                /*
-                 * JSonObject has customized .toString which converts Map to Json!
-                 */
-                postParameters.add(new String[] { parameter.toString(), null });
-            } else {
-                final String jsonParameter = parameter + "";
-                postParameters.add(new String[] { jsonParameter, null });
+        Object[] params = getJsonRequest().getParams();
+        if (params != null) {
+            for (final Object parameter : params) {
+                if (parameter instanceof JSonObject) {
+                    /*
+                     * JSonObject has customized .toString which converts Map to Json!
+                     */
+                    postParameters.add(new String[] { parameter.toString(), null });
+                } else {
+                    final String jsonParameter = parameter + "";
+                    postParameters.add(new String[] { jsonParameter, null });
+                }
             }
         }
         postParameterParsed = true;
+
+        for (final String[] param : postParameters) {
+            if (param[1] != null) {
+                /* key=value(parameter) */
+                if ("callback".equalsIgnoreCase(param[0])) {
+                    /* filter jquery callback */
+                    jqueryCallback = param[1];
+                    continue;
+                } else if ("signature".equalsIgnoreCase(param[0])) {
+                    /* filter url signature */
+                    signature = param[1];
+                    continue;
+                } else if ("rid".equalsIgnoreCase(param[0])) {
+                    requestID = Long.parseLong(param[1]);
+                    continue;
+                }
+
+            }
+        }
         return postParameters;
+    }
+
+    @Override
+    public String getSignature() {
+        return signature;
+    }
+
+    @Override
+    public long getRid() throws IOException {
+        return getJsonRequest().getRid();
+    }
+
+    public JSonRequest getJsonRequest() throws IOException {
+        if (jsonRequest != null) return jsonRequest;
+        synchronized (this) {
+            if (jsonRequest != null) return jsonRequest;
+
+            final byte[] jsonBytes = IO.readStream(-1, getInputStream());
+            final String json = new String(jsonBytes, "UTF-8");
+            jsonRequest = JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
+            });
+
+            return jsonRequest;
+        }
     }
 
     @Override
     public synchronized InputStream getInputStream() throws IOException {
         try {
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(myJDConnection.getPayloadEncryptionToken(), 0, 16));
-            final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(myJDConnection.getPayloadEncryptionToken(), 16, 32), "AES");
+            final IvParameterSpec ivSpec = new IvParameterSpec(Arrays.copyOfRange(getConnection().getPayloadEncryptionToken(), 0, 16));
+            final SecretKeySpec skeySpec = new SecretKeySpec(Arrays.copyOfRange(getConnection().getPayloadEncryptionToken(), 16, 32), "AES");
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new CipherInputStream(new Base64InputStream(super.getInputStream()), cipher);
         } catch (final NoSuchPaddingException e) {
@@ -77,6 +151,11 @@ public class MyJDownloaderPostRequest extends PostRequest {
             throw new IOException(e);
         }
 
+    }
+
+    @Override
+    public String getJqueryCallback() {
+        return jqueryCallback;
     }
 
 }
