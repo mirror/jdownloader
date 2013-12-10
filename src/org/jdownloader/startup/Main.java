@@ -220,11 +220,8 @@ public class Main {
 
             @Override
             public <T> T jsonToObject(String dec, final Type clazz) {
-                return (T) JSonStorage.restoreFromString(dec, new TypeRef() {
-                    @Override
-                    public Type getType() {
-                        return clazz;
-                    }
+                return (T) JSonStorage.restoreFromString(dec, new TypeRef(clazz) {
+
                 });
             }
         };

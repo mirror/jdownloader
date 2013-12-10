@@ -631,6 +631,7 @@ public class MyJDownloaderConnectThread extends Thread {
         boolean deviceBound = false;
         try {
             lapi.connect(getEmail(), getPassword());
+            // Thread.sleep(1000);
             DeviceData device = lapi.bindDevice(new DeviceData(CFG_MYJD.CFG.getUniqueDeviceID(), "jd", getDeviceName()));
             if (StringUtils.isNotEmpty(device.getId())) {
                 if (!device.getId().equals(CFG_MYJD.CFG.getUniqueDeviceID())) {
