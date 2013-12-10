@@ -1,6 +1,5 @@
 package org.jdownloader.api.accounts;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,13 +123,14 @@ public class AccountAPIImpl implements AccountAPI {
     public void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) throws InternalApiException {
         OutputStream out = null;
         try {
+
             /* we force content type to image/png and allow caching of the image */
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
             LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
             if (plugin != null) ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.exception(e);
             throw new InternalApiException(e);
         } finally {

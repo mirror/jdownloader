@@ -16,7 +16,7 @@ import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     public AdvancedConfigManagerAPIImpl() {
-        System.out.println(1);
+
     }
 
     public ArrayList<AdvancedConfigAPIEntry> list(String pattern, boolean returnDescription, boolean returnValues, boolean returnDefaultValues) {
