@@ -3,18 +3,20 @@ package org.jdownloader.api.accounts;
 import java.util.HashMap;
 import java.util.List;
 
-import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 
 @ApiNamespace("accounts")
 public interface AccountAPI extends RemoteAPIInterface {
     public boolean addAccount(String premiumHoster, String username, String password);
 
-    public List<AccountAPIStorable> queryAccounts(APIQuery query);
+    @AllowNonStorableObjects
+    public List<AccountAPIStorable> queryAccounts(AccountQuery query);
 
     public List<String> listPremiumHoster();
 

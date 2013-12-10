@@ -16,7 +16,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
 import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -25,12 +24,13 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class AccountAPIImpl implements AccountAPI {
 
-    public List<AccountAPIStorable> queryAccounts(APIQuery queryParams) {
+    public List<AccountAPIStorable> queryAccounts(AccountQuery queryParams) {
 
         List<Account> accs = AccountController.getInstance().list();
 
@@ -46,29 +46,36 @@ public class AccountAPIImpl implements AccountAPI {
         for (int i = startWith; i < Math.min(startWith + maxResults, accs.size()); i++) {
             Account acc = accs.get(i);
             AccountAPIStorable accas = new AccountAPIStorable(acc);
-            org.jdownloader.myjdownloader.client.json.JsonMap infoMap = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
-            if (queryParams.fieldRequested("username")) infoMap.put("username", acc.getUser());
-            if (queryParams.fieldRequested("validUntil")) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("validUntil", ai.getValidUntil());
-            }
-            if (queryParams.fieldRequested("trafficLeft")) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("trafficLeft", ai.getTrafficLeft());
-            }
-            if (queryParams.fieldRequested("trafficMax")) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("trafficMax", ai.getTrafficMax());
-            }
-            if (queryParams.fieldRequested("enabled")) {
-                infoMap.put("enabled", acc.isEnabled());
-            }
-            if (queryParams.fieldRequested("valid")) {
-                infoMap.put("valid", acc.isValid());
+            if (queryParams.isUserName()) {
+                accas.setUsername(acc.getUser());
             }
 
-            accas.setInfoMap(infoMap);
+            if (queryParams.isValidUntil()) {
+                AccountInfo ai = acc.getAccountInfo();
+                if (ai != null) {
+                    accas.setValidUntil(ai.getValidUntil());
+                }
+            }
+            if (queryParams.isTrafficLeft()) {
+                AccountInfo ai = acc.getAccountInfo();
+                if (ai != null) {
+                    accas.setTrafficLeft(ai.getTrafficLeft());
+
+                }
+            }
+            if (queryParams.isTrafficMax()) {
+                AccountInfo ai = acc.getAccountInfo();
+                accas.setTrafficMax(ai.getTrafficMax());
+
+            }
+            if (queryParams.isEnabled()) {
+                accas.setEnabled(acc.isEnabled());
+            }
+            if (queryParams.isValid()) {
+                accas.setValid(acc.isValid());
+            }
+
             ret.add(accas);
         }
         return ret;

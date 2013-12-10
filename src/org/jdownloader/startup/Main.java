@@ -20,6 +20,7 @@ package org.jdownloader.startup;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.logging.LogManager;
@@ -29,6 +30,8 @@ import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.JsonSerializer;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.txtresource.TranslationFactory;
@@ -42,6 +45,9 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.logging.ExtLogManager;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.json.JSonHandler;
+import org.jdownloader.myjdownloader.client.json.JsonFactoryInterface;
+import org.jdownloader.myjdownloader.client.json.MyJDJsonMapper;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
@@ -194,6 +200,34 @@ public class Main {
 
         JacksonMapper jm = new JacksonMapper();
         JSonStorage.setMapper(jm);
+        // add Serializer to Handle JsonFactoryInterface from MyJDownloaderCLient Project
+        jm.addSerializer(new JsonSerializer() {
+
+            @Override
+            public String toJSonString(Object list) {
+                if (list instanceof JsonFactoryInterface) { return ((JsonFactoryInterface) list).toJsonString(); }
+                return null;
+            }
+
+        });
+        // set MyJDownloaderCLient JsonHandler
+        MyJDJsonMapper.HANDLER = new JSonHandler() {
+
+            @Override
+            public String objectToJSon(Object payload) {
+                return JSonStorage.serializeToJson(payload);
+            }
+
+            @Override
+            public <T> T jsonToObject(String dec, final Type clazz) {
+                return (T) JSonStorage.restoreFromString(dec, new TypeRef() {
+                    @Override
+                    public Type getType() {
+                        return clazz;
+                    }
+                });
+            }
+        };
 
         checkLanguageSwitch(args);
         try {
