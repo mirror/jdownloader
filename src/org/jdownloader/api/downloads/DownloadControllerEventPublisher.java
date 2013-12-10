@@ -152,4 +152,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         }
     }
 
+    @Override
+    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
+    }
+
 }

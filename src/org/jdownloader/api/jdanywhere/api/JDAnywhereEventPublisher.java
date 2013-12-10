@@ -738,4 +738,8 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
     }
 
+    @Override
+    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
+    }
+
 }

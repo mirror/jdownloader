@@ -144,4 +144,8 @@ public class LinkCollectorEventPublisher implements EventPublisher, LinkCollecto
     @Override
     public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
     }
+
+    @Override
+    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
+    }
 }

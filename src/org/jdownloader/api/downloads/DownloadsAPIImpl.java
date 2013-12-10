@@ -1,7 +1,6 @@
 package org.jdownloader.api.downloads;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +16,8 @@ import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadsAPIImpl implements DownloadsAPI {
+
+    private final DownloadWatchDogEventPublisher eventPublisher;
 
     public boolean start() {
         DownloadWatchDog.getInstance().startDownloads();
@@ -36,6 +37,10 @@ public class DownloadsAPIImpl implements DownloadsAPI {
     @Override
     public String getJDState() {
         return DownloadWatchDog.getInstance().getStateMachine().getState().getLabel();
+    }
+
+    public DownloadsAPIImpl(DownloadWatchDogEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     @Override

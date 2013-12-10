@@ -152,7 +152,10 @@ public class RemoteAPIController {
         register(CaptchaAPISolver.getInstance());
         register(CaptchaAPISolver.getInstance().getEventPublisher());
         register(new JDAPIImpl());
-        register(new DownloadsAPIImpl());
+        DownloadWatchDogEventPublisher downloadWatchDogEventPublisher = new DownloadWatchDogEventPublisher();
+        DownloadsAPIImpl downloadsAPI;
+        register(downloadsAPI = new DownloadsAPIImpl(downloadWatchDogEventPublisher));
+        register(downloadWatchDogEventPublisher);
         register(new AdvancedConfigManagerAPIImpl());
         register(new JDownloaderToolBarAPIImpl());
         register(new AccountAPIImpl());
@@ -162,13 +165,9 @@ public class RemoteAPIController {
         register(new ExtractionAPIImpl());
         register(new LinkCrawlerAPIImpl());
         register(new PluginsAPIImpl());
-
         register(new ExternInterfaceImpl());
-
-        register(new DownloadWatchDogEventPublisher());
-
-        register(new LinkCollectorEventPublisher());
         register(new DownloadControllerEventPublisher());
+        register(new LinkCollectorEventPublisher());
         register(new ExtensionsAPIImpl());
         register(new UpdateAPIImpl());
         register(new LinkCrawlerEventPublisher());
@@ -177,7 +176,7 @@ public class RemoteAPIController {
         register(wrapper.getEventPublisher());
         register(wrapper.getApi());
 
-        JDAnywhereAPI.getInstance().init(this);
+        JDAnywhereAPI.getInstance().init(this, downloadsAPI);
     }
 
     private HashMap<String, RIDArray> rids;

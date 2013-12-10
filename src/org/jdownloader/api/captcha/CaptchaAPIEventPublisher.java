@@ -88,4 +88,8 @@ public class CaptchaAPIEventPublisher implements EventPublisher {
         eventSenders.remove(eventsAPI);
 
     }
+
+    @Override
+    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
+    }
 }

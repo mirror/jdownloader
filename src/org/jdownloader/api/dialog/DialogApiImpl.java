@@ -281,4 +281,8 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
         }
         return ret;
     }
+
+    @Override
+    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
+    }
 }

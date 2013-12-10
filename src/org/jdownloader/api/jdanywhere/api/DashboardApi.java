@@ -6,7 +6,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -27,7 +26,6 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
-import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jdanywhere.api.interfaces.IDashboardApi;
 import org.jdownloader.api.jdanywhere.api.storable.RunningObjectStorable;
 import org.jdownloader.api.polling.PollingAPIImpl;
@@ -37,7 +35,6 @@ import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
 public class DashboardApi implements IDashboardApi {
-    DownloadsAPIImpl          dlAPI = new DownloadsAPIImpl();
     PollingAPIImpl            plAPI = new PollingAPIImpl();
     JDownloaderToolBarAPIImpl tbAPI = new JDownloaderToolBarAPIImpl();
 
@@ -52,7 +49,8 @@ public class DashboardApi implements IDashboardApi {
      */
     @Override
     public boolean start() {
-        return dlAPI.start();
+        DownloadWatchDog.getInstance().startDownloads();
+        return true;
     }
 
     /*
@@ -62,7 +60,8 @@ public class DashboardApi implements IDashboardApi {
      */
     @Override
     public boolean stop() {
-        return dlAPI.stop();
+        DownloadWatchDog.getInstance().stopDownloads();
+        return true;
     }
 
     /*
@@ -213,8 +212,7 @@ public class DashboardApi implements IDashboardApi {
     /*
      * (non-Javadoc)
      * 
-     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org .appwork.remoteapi.RemoteAPIRequest,
-     * org.appwork.remoteapi.RemoteAPIResponse)
+     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org .appwork.remoteapi.RemoteAPIRequest, org.appwork.remoteapi.RemoteAPIResponse)
      */
     @Override
     public void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException {

@@ -5,6 +5,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.jdanywhere.api.CaptchaApi;
 import org.jdownloader.api.jdanywhere.api.ContentApi;
 import org.jdownloader.api.jdanywhere.api.DashboardApi;
@@ -49,6 +50,7 @@ public class JDAnywhereAPI implements GenericConfigEventListener<Boolean> {
 
     private JDAnywhereEventPublisher events;
     private RemoteAPIController      controller;
+    private DownloadsAPIImpl         downloadsAPI;
 
     protected void stop() {
         logger.info("Stop API");
@@ -68,7 +70,7 @@ public class JDAnywhereAPI implements GenericConfigEventListener<Boolean> {
         controller.register(cma = new CaptchaApi());
         controller.register(coma = new ContentApi());
         controller.register(dba = new DashboardApi());
-        controller.register(dla = new DownloadLinkApi());
+        controller.register(dla = new DownloadLinkApi(downloadsAPI));
         controller.register(fpa = new FilePackageApi());
         controller.register(lca = new LinkCrawlerApi());
         controller.register(eva = new EventsAPI());
@@ -76,8 +78,9 @@ public class JDAnywhereAPI implements GenericConfigEventListener<Boolean> {
 
     }
 
-    public void init(RemoteAPIController remoteAPIController) {
+    public void init(RemoteAPIController remoteAPIController, DownloadsAPIImpl downloadsAPI) {
         this.controller = remoteAPIController;
+        this.downloadsAPI = downloadsAPI;
         CFG_API.JDANYWHERE_API_ENABLED.getEventSender().addListener(this, true);
         onConfigValueModified(null, true);
     }

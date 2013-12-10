@@ -10,14 +10,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.storage.JSonStorage;
-import org.jdownloader.api.downloads.DownloadsAPIImpl;
+import org.jdownloader.api.downloads.DownloadsAPI;
 import org.jdownloader.api.jdanywhere.api.interfaces.IDownloadLinkApi;
 import org.jdownloader.api.jdanywhere.api.storable.DownloadLinkInfoStorable;
 import org.jdownloader.api.jdanywhere.api.storable.DownloadLinkStorable;
 
 public class DownloadLinkApi implements IDownloadLinkApi {
 
-    DownloadsAPIImpl dlAPI = new DownloadsAPIImpl();
+    private final DownloadsAPI dlAPI;
+
+    public DownloadLinkApi(DownloadsAPI dlAPI) {
+        this.dlAPI = dlAPI;
+    }
 
     /*
      * (non-Javadoc)

@@ -13,6 +13,7 @@ import org.appwork.remoteapi.events.SimpleEventObject;
 public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadWatchdogListener {
 
     private enum EVENTID {
+        UPDATE,
         RUNNING,
         PAUSED,
         STOPPED
@@ -22,7 +23,7 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
     private final String[]                    eventIDs;
 
     public DownloadWatchDogEventPublisher() {
-        eventIDs = new String[] { EVENTID.PAUSED.name(), EVENTID.RUNNING.name(), EVENTID.STOPPED.name() };
+        eventIDs = new String[] { EVENTID.PAUSED.name(), EVENTID.RUNNING.name(), EVENTID.STOPPED.name(), EVENTID.UPDATE.name() };
     }
 
     @Override
@@ -96,5 +97,9 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController) {
         // not implemented yet
+    }
+
+    @Override
+    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
     }
 }

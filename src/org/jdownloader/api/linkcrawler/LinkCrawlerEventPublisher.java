@@ -59,4 +59,8 @@ public class LinkCrawlerEventPublisher implements EventPublisher, LinkCrawlerLis
         }
     }
 
+    @Override
+    public void terminatedSubscription(EventsSender eventsSender, long subscriptionid) {
+    }
+
 }
