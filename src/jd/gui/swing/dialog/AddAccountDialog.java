@@ -108,16 +108,15 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         if (ac.getAccountInfo() != null) {
             if (ac.getAccountInfo().isExpired()) {
                 Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(ac.getAccountInfo().getStatus()), null, _GUI._.accountdialog_check_expired_renew(), null);
-                AccountController.getInstance().addAccount(ac);
+                AccountController.getInstance().addAccount(ac, false);
                 return true;
 
             } else if (!ac.isValid()) {
-
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(ac.getAccountInfo().getStatus()));
                 return false;
             } else {
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(ac.getAccountInfo().getStatus()));
-                AccountController.getInstance().addAccount(ac);
+                AccountController.getInstance().addAccount(ac, false);
                 return true;
 
             }

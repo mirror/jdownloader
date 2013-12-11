@@ -22,9 +22,18 @@ import org.appwork.utils.event.SimpleEvent;
 
 public class AccountControllerEvent extends SimpleEvent<AccountController, Account, AccountControllerEvent.Types> {
 
+    protected boolean forceCheck = true;
+
+    public boolean isForceCheck() {
+        return forceCheck;
+    }
+
+    public void setForceCheck(boolean forceCheck) {
+        this.forceCheck = forceCheck;
+    }
+
     public AccountControllerEvent(AccountController caller, Types type, Account... parameters) {
         super(caller, type, parameters);
-
     }
 
     public static enum Types {

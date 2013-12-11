@@ -521,6 +521,10 @@ public class AccountController implements AccountControllerListener {
     }
 
     public void addAccount(final Account account) {
+        addAccount(account, true);
+    }
+
+    public void addAccount(final Account account, boolean forceCheck) {
         if (account == null) return;
         if (account.getPlugin() == null) {
             PluginForHost plugin = new PluginFinder().assignPlugin(account, true, null);
@@ -545,7 +549,9 @@ public class AccountController implements AccountControllerListener {
             accs.add(account);
             account.setAccountController(this);
         }
-        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
+        AccountControllerEvent event = new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account);
+        event.setForceCheck(forceCheck);
+        this.broadcaster.fireEvent(event);
     }
 
     public boolean removeAccount(final Account account) {
@@ -581,7 +587,7 @@ public class AccountController implements AccountControllerListener {
             return;
         }
         if (acc != null && !(Thread.currentThread() instanceof AccountCheckerThread)) {
-            AccountChecker.getInstance().check(acc, true);
+            AccountChecker.getInstance().check(acc, event.isForceCheck());
         }
     }
 
@@ -604,7 +610,7 @@ public class AccountController implements AccountControllerListener {
         Iterator<Account> it = ret.iterator();
         while (it.hasNext()) {
             Account next = it.next();
-            if (!next.isEnabled() || !next.isValid() || next.isTempDisabled()) {
+            if (!next.isEnabled() || !next.isValid() || next.isTempDisabled() || next.getPlugin() == null) {
                 /* we remove every invalid/disabled/tempdisabled/blocked account */
                 it.remove();
             }
