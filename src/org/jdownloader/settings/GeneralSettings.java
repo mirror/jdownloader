@@ -88,6 +88,13 @@ public interface GeneralSettings extends ConfigInterface {
     MirrorDetectionDecision getMirrorDetectionDecision();
 
     @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Mirrordetection works caseinsensitive on filename")
+    boolean isForceMirrorDetectionCaseInsensitive();
+
+    void setForceMirrorDetectionCaseInsensitive(boolean b);
+
+    @AboutConfig
     @DefaultIntValue(10000)
     @SpinnerValidator(min = 1, max = 10000)
     @DescriptionForConfigEntry("Filesize must be x equal to be a mirror. 10000 = 100%")
