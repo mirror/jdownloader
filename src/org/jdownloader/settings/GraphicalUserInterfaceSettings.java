@@ -843,4 +843,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isPropertiesPanelHeightNormalized();
 
     void setPropertiesPanelHeightNormalized(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOSRSurveyEnabled();
+
+    void setOSRSurveyEnabled(boolean b);
 }

@@ -16,12 +16,25 @@
 
 package jd.gui.swing.jdgui;
 
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.font.TextAttribute;
+import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
@@ -32,17 +45,30 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class MainTabbedPane extends JTabbedPane {
+public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
     private static final long     serialVersionUID = -1531827591735215594L;
+    private static final boolean  OSR_ENABLED      = false;
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
+    private AbstractIcon          osrIcon;
+    private String                osrText;
+    private Font                  osrFont;
+    private Color                 osrColor;
+    private Rectangle             osrBounds;
+    private boolean               osrMouseOver     = false;
 
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) INSTANCE = new MainTabbedPane();
@@ -98,6 +124,27 @@ public class MainTabbedPane extends JTabbedPane {
         this.setMinimumSize(new Dimension(300, 100));
         this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         this.setOpaque(false);
+        osrIcon = new AbstractIcon("osrlogo", 18);
+        osrText = _GUI._.osr_label();
+        JLabel dummyLbl = new JLabel();
+        osrFont = dummyLbl.getFont();
+        CFG_GUI.OSRSURVEY_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                repaint();
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
+        Map<TextAttribute, Integer> fontAttributes = new HashMap<TextAttribute, Integer>();
+        fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+        osrFont = (osrFont.deriveFont(osrFont.getStyle() ^ Font.BOLD).deriveFont(fontAttributes));
+        addMouseMotionListener(this);
+        addMouseListener(this);
+        osrColor = dummyLbl.getForeground();
 
         this.addChangeListener(new ChangeListener() {
 
@@ -137,6 +184,22 @@ public class MainTabbedPane extends JTabbedPane {
     public void paint(Graphics g) {
         super.paint(g);
         if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(false);
+        if (CFG_GUI.CFG.isOSRSurveyEnabled() && OSR_ENABLED) {
+            int height = 22;
+            osrIcon = new AbstractIcon("osrlogo2", height);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setFont(osrFont);
+            g2.setColor(Color.GRAY);
+
+            Rectangle2D bounds = g2.getFontMetrics().getStringBounds(osrText, g2);
+            int width = (int) (osrIcon.getIconWidth() + 5 + bounds.getWidth()) + 5;
+            // g2.setColor(Color.RED);
+            // g2.drawRect(getWidth() - width, 2, width, height);
+
+            g2.drawString(osrText, getWidth() - width, (int) (2 + (height - bounds.getHeight()) / 2) + (int) bounds.getHeight());
+            osrIcon.paintIcon(this, g2, getWidth() - osrIcon.getIconWidth() - 2, 2 + (height - osrIcon.getIconHeight()) / 2);
+            osrBounds = new Rectangle(getWidth() - width, 2, width, height);
+        }
     }
 
     /**
@@ -192,6 +255,54 @@ public class MainTabbedPane extends JTabbedPane {
 
     public boolean isDownloadView() {
         return getSelectedView() instanceof DownloadsView;
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+
+        if (osrBounds != null && osrBounds.contains(e.getPoint()) && !osrMouseOver && CFG_GUI.CFG.isOSRSurveyEnabled() && OSR_ENABLED) {
+            osrMouseOver = true;
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        } else if (osrMouseOver && (osrBounds == null || !osrBounds.contains(e.getPoint()))) {
+            osrMouseOver = false;
+            setCursor(null);
+
+        }
+
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (osrMouseOver && CFG_GUI.CFG.isOSRSurveyEnabled() && OSR_ENABLED) {
+            new Thread("OSR") {
+                public void run() {
+                    OSRSurvey.getInstance().start();
+
+                }
+            }.start();
+
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
     }
 
     // public void mouseClicked(MouseEvent e) {

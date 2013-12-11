@@ -3901,4 +3901,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Information overwrites packagizer rules" })
     String AddLinksDialog_getDefaultButtonPanel_overwrite_packagizer();
 
+    @Default(lngs = { "en" }, values = { "New Survey available!" })
+    String osr_label();
+
+    @Default(lngs = { "en" }, values = { "Open Source Survey" })
+    String osr_dialog_title();
+
+    @Default(lngs = { "en" }, values = { "<html><b>JDownloader</b> has partnered with the <b>Open Source Research Group at Friedrich-Alexander University Erlangen-Nürnberg</b> to conduct a series of surveys.  The research is intended to improve the JDownloader experience and/or promote academic research into applied software development. There is no financial motivation behind this collaboration, but the whole JDownloader Project will profit from the survey results.<br>Please consider taking a moment to support this research.</html>" })
+    String osr_dialog_message();
+
+    @Default(lngs = { "en" }, values = { "Start Survey" })
+    String osr_start();
+
 }
