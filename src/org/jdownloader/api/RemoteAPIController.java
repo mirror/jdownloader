@@ -28,7 +28,6 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
-import org.appwork.utils.net.httpserver.requests.JSonRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.accounts.AccountAPIImpl;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
@@ -82,9 +81,12 @@ public class RemoteAPIController {
                 try {
                     if (request instanceof SessionRemoteAPIRequest) {
                         MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
-
-                        super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
-                        }, null), ri.getRid())), chunked);
+                        if (ri.getApiVersion() > 0) {
+                            super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
+                            }, null), ri.getRid())), chunked);
+                        } else {
+                            super.sendText(request, response, text, chunked);
+                        }
                     } else {
                         throw new WTFException();
                     }
@@ -110,7 +112,7 @@ public class RemoteAPIController {
                 super.validateRequest(request);
 
                 if (request instanceof MyJDownloaderPostRequest) {
-                    JSonRequest jsonRequest;
+                    org.jdownloader.myjdownloader.client.json.JSonRequest jsonRequest;
                     try {
                         jsonRequest = ((MyJDownloaderPostRequest) request).getJsonRequest();
                         if (jsonRequest == null) throw new BasicRemoteAPIException("no JSONRequest", ResponseCode.ERROR_BAD_REQUEST);

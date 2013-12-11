@@ -19,44 +19,52 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.utils.IO;
 import org.appwork.utils.net.Base64InputStream;
-import org.appwork.utils.net.httpserver.requests.JSonRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.jdownloader.api.myjdownloader.MyJDownloaderGetRequest.GetData;
+import org.jdownloader.myjdownloader.client.json.JSonRequest;
 
 public class MyJDownloaderPostRequest extends PostRequest implements MyJDownloaderRequestInterface {
 
     private JSonRequest jsonRequest;
-    private String      jqueryCallback;
-    private String      signature;
-    private long        requestID;
 
     public MyJDownloaderPostRequest(MyJDownloaderHttpConnection myJDownloaderHttpConnection) {
         super(myJDownloaderHttpConnection);
 
     }
 
-    @Override
-    public void setRequestedURLParameters(LinkedList<String[]> requestedURLParameters) {
-        super.setRequestedURLParameters(requestedURLParameters);
-        if (requestedURLParameters != null) {
-            for (final String[] param : requestedURLParameters) {
-                if (param[1] != null) {
-                    /* key=value(parameter) */
-                    if ("callback".equalsIgnoreCase(param[0])) {
-                        /* filter jquery callback */
-                        jqueryCallback = param[1];
-                        continue;
-                    } else if ("signature".equalsIgnoreCase(param[0])) {
-                        /* filter url signature */
-                        signature = param[1];
-                        continue;
-                    } else if ("rid".equalsIgnoreCase(param[0])) {
-                        requestID = Long.parseLong(param[1]);
-                        continue;
-                    }
+    private GetData requestProperties = GetData.EMPTY;
 
-                }
-            }
+    @Override
+    public void setRequestedURLParameters(final LinkedList<String[]> requestedURLParameters) {
+        super.setRequestedURLParameters(requestedURLParameters);
+
+        requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);
+
+    }
+
+    public int getApiVersion() {
+        if (requestProperties.apiVersion >= 0) { return requestProperties.apiVersion; }
+        JSonRequest jsonr;
+
+        try {
+            jsonr = getJsonRequest();
+
+            if (jsonr != null) { return jsonr.getApiVer(); }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        return -1;
+
+    }
+
+    @Override
+    public String getSignature() {
+        return requestProperties.signature;
+    }
+
+    @Override
+    public String getJqueryCallback() {
+        return requestProperties.callback;
     }
 
     @Override
@@ -91,16 +99,19 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         for (final String[] param : postParameters) {
             if (param[1] != null) {
                 /* key=value(parameter) */
-                if ("callback".equalsIgnoreCase(param[0])) {
+                if (MyJDownloaderGetRequest.CALLBACK.equalsIgnoreCase(param[0])) {
                     /* filter jquery callback */
-                    jqueryCallback = param[1];
+                    requestProperties.callback = param[1];
                     continue;
-                } else if ("signature".equalsIgnoreCase(param[0])) {
+                } else if (MyJDownloaderGetRequest.SIGNATURE.equalsIgnoreCase(param[0])) {
                     /* filter url signature */
-                    signature = param[1];
+                    requestProperties.signature = param[1];
                     continue;
-                } else if ("rid".equalsIgnoreCase(param[0])) {
-                    requestID = Long.parseLong(param[1]);
+                } else if (MyJDownloaderGetRequest.RID.equalsIgnoreCase(param[0])) {
+                    requestProperties.rid = Long.parseLong(param[1]);
+                    continue;
+                } else if (MyJDownloaderGetRequest.API_VERSION.equalsIgnoreCase(param[0])) {
+                    requestProperties.apiVersion = Integer.parseInt(param[1]);
                     continue;
                 }
 
@@ -110,19 +121,23 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
     }
 
     @Override
-    public String getSignature() {
-        return signature;
-    }
-
-    @Override
     public long getRid() throws IOException {
-        return getJsonRequest().getRid();
+        if (requestProperties.rid >= 0) { return requestProperties.rid; }
+        JSonRequest jsonr;
+
+        jsonr = getJsonRequest();
+
+        if (jsonr != null) {
+
+        return jsonr.getRid(); }
+        return -1;
+
     }
 
     public JSonRequest getJsonRequest() throws IOException {
-        if (jsonRequest != null) return jsonRequest;
+        if (jsonRequest != null) { return jsonRequest; }
         synchronized (this) {
-            if (jsonRequest != null) return jsonRequest;
+            if (jsonRequest != null) { return jsonRequest; }
 
             final byte[] jsonBytes = IO.readStream(-1, getInputStream());
             final String json = new String(jsonBytes, "UTF-8");
@@ -151,11 +166,6 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
             throw new IOException(e);
         }
 
-    }
-
-    @Override
-    public String getJqueryCallback() {
-        return jqueryCallback;
     }
 
 }

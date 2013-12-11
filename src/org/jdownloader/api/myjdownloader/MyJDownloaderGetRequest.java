@@ -8,33 +8,46 @@ import org.appwork.utils.net.httpserver.requests.GetRequest;
 
 public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloaderRequestInterface {
 
-    private String jqueryCallback;
-    private String signature;
-    private long   requestID = -1;
+    public static final String API_VERSION = "apiVer";
+    public static final String RID         = "rid";
+    public static final String SIGNATURE   = "signature";
+    public static final String CALLBACK    = "callback";
 
-    @Override
-    public void setRequestedURLParameters(LinkedList<String[]> requestedURLParameters) {
-        super.setRequestedURLParameters(requestedURLParameters);
+    public static class GetData {
+        public static final GetData EMPTY      = new GetData();
+        public long                 rid        = -1;
+        public int                  apiVersion = -1;
+        public String               signature  = null;
+        public String               callback   = null;
+
+    }
+
+    public static GetData parseGetData(final LinkedList<String[]> requestedURLParameters) {
+        final GetData ret = new GetData();
         if (requestedURLParameters != null) {
             for (final String[] param : requestedURLParameters) {
                 if (param[1] != null) {
                     /* key=value(parameter) */
-                    if ("callback".equalsIgnoreCase(param[0])) {
+                    if (MyJDownloaderGetRequest.CALLBACK.equalsIgnoreCase(param[0])) {
                         /* filter jquery callback */
-                        jqueryCallback = param[1];
+                        ret.callback = param[1];
                         continue;
-                    } else if ("signature".equalsIgnoreCase(param[0])) {
+                    } else if (MyJDownloaderGetRequest.SIGNATURE.equalsIgnoreCase(param[0])) {
                         /* filter url signature */
-                        signature = param[1];
+                        ret.signature = param[1];
                         continue;
-                    } else if ("rid".equalsIgnoreCase(param[0])) {
-                        requestID = Long.parseLong(param[1]);
+                    } else if (MyJDownloaderGetRequest.RID.equalsIgnoreCase(param[0])) {
+                        ret.rid = Long.parseLong(param[1]);
+                        continue;
+                    } else if (MyJDownloaderGetRequest.API_VERSION.equalsIgnoreCase(param[0])) {
+                        ret.apiVersion = Integer.parseInt(param[1]);
                         continue;
                     }
 
                 }
             }
         }
+        return ret;
     }
 
     public MyJDownloaderGetRequest(HttpConnection connection) {
@@ -51,18 +64,33 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
         return (MyJDownloaderHttpConnection) super.getConnection();
     }
 
+    private GetData requestProperties = GetData.EMPTY;
+
+    @Override
+    public void setRequestedURLParameters(final LinkedList<String[]> requestedURLParameters) {
+        super.setRequestedURLParameters(requestedURLParameters);
+
+        requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);
+
+    }
+
+    public int getApiVersion() {
+        return requestProperties.apiVersion;
+    }
+
     @Override
     public long getRid() throws IOException {
-        return requestID;
+        return requestProperties.rid;
     }
 
     @Override
     public String getSignature() {
-        return signature;
+        return requestProperties.signature;
     }
 
     @Override
     public String getJqueryCallback() {
-        return jqueryCallback;
+        return requestProperties.callback;
     }
+
 }

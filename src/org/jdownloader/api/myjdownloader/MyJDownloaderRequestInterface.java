@@ -12,4 +12,6 @@ public interface MyJDownloaderRequestInterface {
     public String getSignature();
 
     public String getJqueryCallback();
+
+    public int getApiVersion();
 }
