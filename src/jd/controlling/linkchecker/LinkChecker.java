@@ -415,6 +415,11 @@ public class LinkChecker<E extends CheckableLink> {
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 availableStatus = AvailableStatus.FALSE;
                 break;
+            case LinkStatus.ERROR_PREMIUM:
+                if (e.getValue() == PluginException.VALUE_ID_PREMIUM_ONLY) {
+                    availableStatus = AvailableStatus.UNCHECKABLE;
+                    break;
+                }
             default:
                 availableStatus = AvailableStatus.UNCHECKABLE;
                 plgToUse.errLog(e, plgToUse.getBrowser(), link);

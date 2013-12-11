@@ -112,12 +112,15 @@ public class YoutubeDash extends Youtube {
         final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
         if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink"); }
         final HashMap<Integer, String[]> linksFound = ((jd.plugins.decrypter.TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), this.prem, this.br, 0);
-        String[] linkFound = linksFound.get(downloadLink.getProperty(DASH_VIDEO));
-        if (linkFound != null && linkFound.length > 0) dashVideoURL = linkFound[0];
-        linkFound = linksFound.get(downloadLink.getProperty(DASH_AUDIO));
-        if (linkFound != null && linkFound.length > 0) dashAudioURL = linkFound[0];
+        if (linksFound != null) {
+            String[] linkFound = linksFound.get(downloadLink.getProperty(DASH_VIDEO));
+            if (linkFound != null && linkFound.length > 0) dashVideoURL = linkFound[0];
+            linkFound = linksFound.get(downloadLink.getProperty(DASH_AUDIO));
+            if (linkFound != null && linkFound.length > 0) dashAudioURL = linkFound[0];
+        }
         if (dashAudioURL == null || dashVideoURL == null) {
             if (this.br.containsHTML("<div\\s+id=\"verify-age-actions\">")) { throw new PluginException(PluginException.VALUE_ID_PREMIUM_ONLY); }
+            if (this.br.containsHTML("This video may be inappropriate for some users")) { throw new PluginException(PluginException.VALUE_ID_PREMIUM_ONLY); }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;

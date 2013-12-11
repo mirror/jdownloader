@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Icon;
 
@@ -78,11 +79,14 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         return availableTableFilters;
     }
 
-    private ScheduledExecutorService queue = DelayedRunnable.getNewScheduledExecutorService();
+    private ScheduledExecutorService queue                 = DelayedRunnable.getNewScheduledExecutorService();
 
     private final DelayedRunnable    asyncRecreateFast;
 
     private final Storage            storage;
+
+    private final AtomicBoolean      repaintFired          = new AtomicBoolean(false);
+    private final AtomicBoolean      structureChangedFired = new AtomicBoolean(false);
 
     public PackageControllerTableModel(final PackageController<PackageType, ChildrenType> pc, String id) {
         super(id);
@@ -130,42 +134,53 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     private void fireRepaint() {
-        pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+        if (repaintFired.compareAndSet(false, true)) {
+            pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
-            @Override
-            protected Void run() throws RuntimeException {
-                ArrayList<ChildrenView<ChildrenType>> viewUpdates = new ArrayList<ChildrenView<ChildrenType>>();
-                for (AbstractNode node : getTableData()) {
-                    if (node instanceof AbstractPackageNode) {
-                        ChildrenView<ChildrenType> view = ((AbstractPackageNode) node).getView();
-                        if (view.updateRequired()) viewUpdates.add(view);
+                @Override
+                protected Void run() throws RuntimeException {
+                    try {
+                        ArrayList<ChildrenView<ChildrenType>> viewUpdates = new ArrayList<ChildrenView<ChildrenType>>();
+                        for (AbstractNode node : getTableData()) {
+                            if (node instanceof AbstractPackageNode) {
+                                ChildrenView<ChildrenType> view = ((AbstractPackageNode) node).getView();
+                                if (view.updateRequired()) viewUpdates.add(view);
+                            }
+                        }
+                        for (ChildrenView<ChildrenType> view : viewUpdates) {
+                            view.aggregate();
+                        }
+                    } finally {
+                        repaintFired.set(false);
                     }
+                    new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            /* we just want to repaint */
+                            getTable().repaint();
+                        }
+                    };
+                    return null;
                 }
-                for (ChildrenView<ChildrenType> view : viewUpdates) {
-                    view.aggregate();
-                }
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        /* we just want to repaint */
-                        getTable().repaint();
-                    }
-                };
-                return null;
-            }
-        });
+            });
+        }
     }
 
     private void fireStructureChange() {
-        pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+        if (structureChangedFired.compareAndSet(false, true)) {
+            pc.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
-            @Override
-            protected Void run() throws RuntimeException {
-                _fireTableStructureChanged(getTableData(), true);
-                return null;
-            }
-
-        });
+                @Override
+                protected Void run() throws RuntimeException {
+                    try {
+                        _fireTableStructureChanged(getTableData(), true);
+                    } finally {
+                        structureChangedFired.set(false);
+                    }
+                    return null;
+                }
+            });
+        }
     }
 
     public void resetSorting() {
@@ -375,8 +390,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     /*
-     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
-     * the new ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of the new ArrayList
      */
     @Override
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {

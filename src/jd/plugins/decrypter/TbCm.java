@@ -476,8 +476,7 @@ public class TbCm extends PluginForDecrypt {
         ArrayList<String[]> linkstodecrypt = new ArrayList<String[]>();
 
         boolean prem = false;
-        if (!isJDownloader2()) {
-            logger.info("Youtube is currently broken in the Stable version of JDownloader!");
+        if (isJDownloader2()) {
             final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
             if (accounts != null && accounts.size() != 0) {
                 Iterator<Account> it = accounts.iterator();
@@ -922,8 +921,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 HashMap<ITAG, String[]> useTags = new HashMap<ITAG, String[]>(availableItags);
                 if (best) {
@@ -1067,6 +1066,7 @@ public class TbCm extends PluginForDecrypt {
                     for (final Info info : next.getValue()) {
                         String currentFilename = null;
                         final DownloadLink thislink = this.createDownloadlink("youtubeJD" + info.link);
+                        thislink.setAvailable(true);
                         thislink.setProperty("ALLOW_DUPE", true);
                         filePackage.add(thislink);
                         thislink.setBrowserUrl(currentVideoUrl);
@@ -1097,6 +1097,7 @@ public class TbCm extends PluginForDecrypt {
                             thislink.setProperty("DASH", true);
                             long completeSize = info.size + bestDashAudio.size;
                             thislink.setProperty("size", completeSize);
+                            thislink.setDownloadSize(completeSize);
                             thislink.setProperty("DASH_AUDIO", bestDashAudio.itag.getITAG());
                             thislink.setProperty("DASH_AUDIO_SIZE", bestDashAudio.size);
                             thislink.setProperty("DASH_VIDEO", info.itag.getITAG());
@@ -1132,7 +1133,11 @@ public class TbCm extends PluginForDecrypt {
                                 thislink.setProperty("name", audioName);
                             }
                             thislink.setProperty("size", info.size);
-                            if (info.size > 0) thislink.setProperty("VERIFIEDFILESIZE", info.size);
+
+                            if (info.size > 0) {
+                                thislink.setDownloadSize(info.size);
+                                thislink.setProperty("VERIFIEDFILESIZE", info.size);
+                            }
                         }
                         /** FILENAME PART2 END */
                         thislink.setProperty("convertto", convertTo.name());
@@ -1509,6 +1514,15 @@ public class TbCm extends PluginForDecrypt {
                 }
             }
         }
+        // if (br.containsHTML("This video may be inappropriate for some users")) {
+        // /* commented because those are the regex to login/verify */
+        // String verifyURL = br.getRegex("(https?://accounts.google.com/ServiceLogin\\?ltmpl=verifyage.*?)\"").getMatch(0);
+        // if (verifyURL == null) verifyURL = br.getRegex("(https?://accounts.google.com/ServiceLogin\\?.*?ltmpl=verifyage.*?)\"").getMatch(0);
+        // if (verifyURL != null) {
+        // verifyURL = Encoding.htmlDecode(verifyURL);
+        // br.getPage(verifyURL);
+        // }
+        // }
         /* html5_fmt_map */
         if (br.getRegex(YT_FILENAME_PATTERN).count() != 0 && fileNameFound == false) {
             YT_FILENAME = Encoding.htmlDecode(br.getRegex(YT_FILENAME_PATTERN).getMatch(0).trim());
