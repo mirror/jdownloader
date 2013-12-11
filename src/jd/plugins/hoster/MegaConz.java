@@ -91,7 +91,13 @@ public class MegaConz extends PluginForHost {
         }
         String at = br.getRegex("\"at\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
         if (at == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String fileInfo = decrypt(at, keyString);
+        String fileInfo = null;
+        try {
+            fileInfo = decrypt(at, keyString);
+        } catch (final StringIndexOutOfBoundsException e) {
+            /* key is incomplete */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fileName = new Regex(fileInfo, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
         if (fileName == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         link.setFinalFileName(fileName);
