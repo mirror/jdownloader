@@ -1,25 +1,26 @@
-package org.jdownloader.api.accounts;
+package org.jdownloader.api.accounts.v2;
 
+import java.util.HashMap;
 import java.util.List;
 
-import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.InternalApiException;
-import org.jdownloader.myjdownloader.client.json.JsonMap;
+import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 
-@ApiNamespace("accounts")
-@Deprecated
-public interface AccountAPI extends RemoteAPIInterface {
+@ApiNamespace("accountsv2")
+public interface AccountAPIV2 extends RemoteAPIInterface {
     public boolean addAccount(String premiumHoster, String username, String password);
 
-    public List<AccountAPIStorable> queryAccounts(APIQuery query);
+    @AllowNonStorableObjects
+    public List<AccountAPIStorableV2> queryAccounts(AccountQuery query);
 
     public List<String> listPremiumHoster();
 
-    public AccountAPIStorable getAccountInfo(long id);
+    public AccountAPIStorableV2 getAccountInfo(long id);
 
     public boolean removeAccounts(Long[] ids);
 
@@ -31,7 +32,7 @@ public interface AccountAPI extends RemoteAPIInterface {
 
     void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) throws InternalApiException;
 
-    JsonMap listPremiumHosterUrls();
+    HashMap<String, String> listPremiumHosterUrls();
 
     boolean updateAccount(Long accountId, String username, String password);
 

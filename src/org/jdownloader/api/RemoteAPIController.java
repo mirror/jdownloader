@@ -30,6 +30,7 @@ import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.api.accounts.AccountAPIImpl;
+import org.jdownloader.api.accounts.v2.AccountAPIImplV2;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.cnl2.ExternInterfaceImpl;
 import org.jdownloader.api.config.AdvancedConfigManagerAPIImpl;
@@ -167,6 +168,7 @@ public class RemoteAPIController {
         register(new AdvancedConfigManagerAPIImpl());
         register(new JDownloaderToolBarAPIImpl());
         register(new AccountAPIImpl());
+        register(new AccountAPIImplV2());
         register(new LinkCollectorAPIImpl());
         register(new ContentAPIImpl());
         register(new PollingAPIImpl());

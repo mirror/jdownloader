@@ -1,10 +1,10 @@
-package org.jdownloader.api.accounts;
+package org.jdownloader.api.accounts.v2;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -15,7 +15,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
 import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
@@ -24,18 +23,21 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.myjdownloader.client.json.JsonMap;
+import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
-@Deprecated
-public class AccountAPIImpl implements AccountAPI {
-    @Deprecated
-    public List<AccountAPIStorable> queryAccounts(APIQuery queryParams) {
+public class AccountAPIImplV2 implements AccountAPIV2 {
+
+    public AccountAPIImplV2() {
+
+    }
+
+    public List<AccountAPIStorableV2> queryAccounts(AccountQuery queryParams) {
 
         List<Account> accs = AccountController.getInstance().list();
 
-        java.util.List<AccountAPIStorable> ret = new ArrayList<AccountAPIStorable>();
+        java.util.List<AccountAPIStorableV2> ret = new ArrayList<AccountAPIStorableV2>();
 
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
@@ -46,36 +48,42 @@ public class AccountAPIImpl implements AccountAPI {
 
         for (int i = startWith; i < Math.min(startWith + maxResults, accs.size()); i++) {
             Account acc = accs.get(i);
-            AccountAPIStorable accas = new AccountAPIStorable(acc);
-            JsonMap infoMap = new JsonMap();
+            AccountAPIStorableV2 accas = new AccountAPIStorableV2(acc);
 
-            if (queryParams.fieldRequested("username")) infoMap.put("username", acc.getUser());
-            if (queryParams.fieldRequested("validUntil")) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("validUntil", ai.getValidUntil());
-            }
-            if (queryParams.fieldRequested("trafficLeft")) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("trafficLeft", ai.getTrafficLeft());
-            }
-            if (queryParams.fieldRequested("trafficMax")) {
-                AccountInfo ai = acc.getAccountInfo();
-                if (ai != null) infoMap.put("trafficMax", ai.getTrafficMax());
-            }
-            if (queryParams.fieldRequested("enabled")) {
-                infoMap.put("enabled", acc.isEnabled());
-            }
-            if (queryParams.fieldRequested("valid")) {
-                infoMap.put("valid", acc.isValid());
+            if (queryParams.isUserName()) {
+                accas.setUsername(acc.getUser());
             }
 
-            accas.setInfoMap(infoMap);
+            if (queryParams.isValidUntil()) {
+                AccountInfo ai = acc.getAccountInfo();
+                if (ai != null) {
+                    accas.setValidUntil(ai.getValidUntil());
+                }
+            }
+            if (queryParams.isTrafficLeft()) {
+                AccountInfo ai = acc.getAccountInfo();
+                if (ai != null) {
+                    accas.setTrafficLeft(ai.getTrafficLeft());
+
+                }
+            }
+            if (queryParams.isTrafficMax()) {
+                AccountInfo ai = acc.getAccountInfo();
+                accas.setTrafficMax(ai.getTrafficMax());
+
+            }
+            if (queryParams.isEnabled()) {
+                accas.setEnabled(acc.isEnabled());
+            }
+            if (queryParams.isValid()) {
+                accas.setValid(acc.isValid());
+            }
+
             ret.add(accas);
         }
         return ret;
     }
 
-    @Deprecated
     public List<String> listPremiumHoster() {
 
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
@@ -91,15 +99,14 @@ public class AccountAPIImpl implements AccountAPI {
         return ret;
     }
 
-    @Deprecated
     @Override
-    public JsonMap listPremiumHosterUrls() {
+    public HashMap<String, String> listPremiumHosterUrls() {
 
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
         final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
 
-        JsonMap ret = new JsonMap();
+        HashMap<String, String> ret = new HashMap<String, String>();
         for (LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) {
                 plugins.add(lhp);
@@ -109,7 +116,6 @@ public class AccountAPIImpl implements AccountAPI {
         return ret;
     }
 
-    @Deprecated
     @Override
     public String getPremiumHosterUrl(String hoster) {
         if (hoster == null) { return null; }
@@ -117,20 +123,18 @@ public class AccountAPIImpl implements AccountAPI {
         return AccountController.createFullBuyPremiumUrl(HostPluginController.getInstance().get(hoster).getPremiumUrl(), "captcha/webinterface");
     }
 
-    @Deprecated
     @Override
     public void premiumHosterIcon(RemoteAPIRequest request, RemoteAPIResponse response, String premiumHoster) throws InternalApiException {
         OutputStream out = null;
         try {
+
             /* we force content type to image/png and allow caching of the image */
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CACHE_CONTROL, "public,max-age=60", false));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "image/png", false));
             out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), false);
-
             LazyHostPlugin plugin = HostPluginController.getInstance().get(premiumHoster);
             if (plugin != null) ImageIO.write(IconIO.toBufferedImage(DomainInfo.getInstance(plugin.getHost()).getFavIcon()), "png", out);
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.exception(e);
             throw new InternalApiException(e);
         } finally {
@@ -141,7 +145,6 @@ public class AccountAPIImpl implements AccountAPI {
         }
     }
 
-    @Deprecated
     public boolean removeAccounts(Long[] ids) {
         java.util.List<Account> removeACCs = getAccountbyIDs(ids);
         for (Account acc : removeACCs) {
@@ -150,7 +153,6 @@ public class AccountAPIImpl implements AccountAPI {
         return true;
     }
 
-    @Deprecated
     private java.util.List<Account> getAccountbyIDs(Long IDs[]) {
         java.util.List<Long> todoIDs = new ArrayList<Long>(Arrays.asList(IDs));
         java.util.List<Account> accs = new ArrayList<Account>();
@@ -171,19 +173,16 @@ public class AccountAPIImpl implements AccountAPI {
         return accs;
     }
 
-    @Deprecated
     @Override
     public boolean enableAccounts(final List<Long> linkIds) {
         return setEnabledState(true, linkIds.toArray(new Long[linkIds.size()]));
     }
 
-    @Deprecated
     @Override
     public boolean disableAccounts(final List<Long> linkIds) {
         return setEnabledState(false, linkIds.toArray(new Long[linkIds.size()]));
     }
 
-    @Deprecated
     public boolean setEnabledState(boolean enabled, Long[] ids) {
         java.util.List<Account> accs = getAccountbyIDs(ids);
         for (Account acc : accs) {
@@ -192,14 +191,12 @@ public class AccountAPIImpl implements AccountAPI {
         return true;
     }
 
-    @Deprecated
-    public AccountAPIStorable getAccountInfo(long id) {
+    public AccountAPIStorableV2 getAccountInfo(long id) {
         java.util.List<Account> accs = getAccountbyIDs(new Long[] { id });
-        if (accs.size() == 1) { return new AccountAPIStorable(accs.get(0)); }
+        if (accs.size() == 1) { return new AccountAPIStorableV2(accs.get(0)); }
         return null;
     }
 
-    @Deprecated
     @Override
     public boolean addAccount(String premiumHoster, String username, String password) {
         Account acc = new Account(username, password);
@@ -208,7 +205,6 @@ public class AccountAPIImpl implements AccountAPI {
         return true;
     }
 
-    @Deprecated
     @Override
     public boolean updateAccount(Long accountId, String username, String password) {
         if (accountId == null) return false;
