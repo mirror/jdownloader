@@ -145,7 +145,8 @@ public class ShareLinkLi extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        /* disabled because single check provides more information and wished */
+        if (urls == null || urls.length == 0 || true) { return false; }
         try {
             final Browser br = new Browser();
             prepBrowser(br);
