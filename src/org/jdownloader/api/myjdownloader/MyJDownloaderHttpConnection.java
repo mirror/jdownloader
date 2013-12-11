@@ -106,6 +106,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         } else {
             apiException = (BasicRemoteAPIException) e;
         }
+        logger.log(apiException);
         this.response = new HttpResponse(this);
 
         return apiException.handle(this.response);

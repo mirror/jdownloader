@@ -200,15 +200,19 @@ public class Main {
 
         JacksonMapper jm = new JacksonMapper();
         JSonStorage.setMapper(jm);
+
         // add Serializer to Handle JsonFactoryInterface from MyJDownloaderCLient Project
-        jm.addSerializer(new JsonSerializer() {
+        jm.addSerializer(JsonFactoryInterface.class, new JsonSerializer<JsonFactoryInterface>() {
 
             @Override
-            public String toJSonString(Object list) {
-                if (list instanceof JsonFactoryInterface) { return ((JsonFactoryInterface) list).toJsonString(); }
-                return null;
+            public String toJSonString(JsonFactoryInterface list) {
+                return ((JsonFactoryInterface) list).toJsonString();
             }
 
+            @Override
+            public boolean canSerialize(Object arg0) {
+                return arg0 instanceof JsonFactoryInterface;
+            }
         });
         // set MyJDownloaderCLient JsonHandler
         MyJDJsonMapper.HANDLER = new JSonHandler() {
