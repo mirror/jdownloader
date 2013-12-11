@@ -65,7 +65,7 @@ public class ClipfishDe extends PluginForHost {
                 if (downloadLink.getProperty("convertto") != null) {
                     JDUtilities.getPluginForDecrypt("youtube.com");
                     final jd.plugins.decrypter.TbCm.DestinationFormat convertTo = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-                    final jd.plugins.decrypter.TbCm.DestinationFormat inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOFLV;
+                    final jd.plugins.decrypter.TbCm.DestinationFormat inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_FLV;
                     /* to load the TbCm plugin */
 
                     if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, inType, convertTo)) {

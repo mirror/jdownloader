@@ -71,6 +71,7 @@ import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
@@ -1779,4 +1780,23 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     }
 
+    public void setActiveVariantForLink(final CrawledLink crawledLink, final LinkVariant linkVariant) {
+        getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                CrawledPackage parent = crawledLink.getParentNode();
+                if (parent == null || parent.getControlledBy() != LinkCollector.this) {
+                    /* link is no longer controlled by this controller */
+                    return null;
+                }
+                if (!crawledLink.hasVariantSupport()) {
+                    /* link does not support variants */
+                    return null;
+                }
+                return null;
+            }
+
+        });
+    }
 }

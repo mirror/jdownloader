@@ -112,8 +112,8 @@ public class ClpfshD extends PluginForDecrypt {
          */
         if (cType.equals("audio")) {
             JDUtilities.getPluginForDecrypt("youtube.com");
-            addLink(cryptedLink, decryptedLinks, name, downloadLink, jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOFLV);
-            addLink(cryptedLink, decryptedLinks, name, downloadLink, jd.plugins.decrypter.TbCm.DestinationFormat.AUDIOMP3);
+            addLink(cryptedLink, decryptedLinks, name, downloadLink, jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_FLV);
+            addLink(cryptedLink, decryptedLinks, name, downloadLink, jd.plugins.decrypter.TbCm.DestinationFormat.AUDIO_MP3);
         } else {
             String ext = pathToflv.substring(pathToflv.lastIndexOf(".") + 1, pathToflv.length());
             if (pathToflv.startsWith("rtmp")) {

@@ -9,6 +9,8 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -28,6 +30,7 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.DownloadPluginProgress;
 import jd.plugins.download.raf.HashResult;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
@@ -44,44 +47,59 @@ import org.jdownloader.gui.views.SelectionInfo.PluginView;
 public class YoutubeDash extends Youtube {
 
     public static enum YoutubeVariant implements LinkVariant {
-        MP4_480 {
+        WEBM_1080(null, "1080p WebM-Video"),
+        WEBM_720(null, "720p WebM-Video"),
+        WEBM_480(null, "480p WebM-Video"),
+        WEBM_360(null, "360p WebM-Video"),
 
-            @Override
-            public String getName() {
-                return "480p Mp4-Video";
-            }
+        WEBM_3D_720(null, "720p WebM-3D-Video"),
+        WEBM_3D_360_128(null, "360p WebM-3D-Video(128K Audio)"),
+        WEBM_3D_360_192(null, "360p WebM-3D-Video(192k Audio)"),
 
-            @Override
-            public Icon getIcon() {
-                return null;
-            }
+        MP4_360(null, "360p MP4-Video"),
+        MP4_480(null, "480p MP4-Video"),
+        MP4_720(null, "720p MP4-Video"),
+        MP4_1080(null, "1080p MP4-Video"),
+        MP4_ORIGINAL(null, "Original MP4-Video"),
 
-        },
-        MP4_720 {
+        MP4_3D_240(null, "240p MP4-3D-Video"),
+        MP4_3D_360(null, "360p MP4-3D-Video"),
+        MP4_3D_520(null, "520p MP4-3D-Video"),
+        MP4_3D_720(null, "720p MP4-3D-Video"),
 
-            @Override
-            public String getName() {
-                return "720p Mp4-Video";
-            }
+        THREEGP_144(null, "144p 3GP Video"),
+        THREEGP_240_LOW(null, "240p 3GP Video(low)"),
+        THREEGP_240_HIGH(null, "240p 3GP Video(high)"),
 
-            @Override
-            public Icon getIcon() {
-                return null;
-            }
+        FLV_240_LOW(null, "240p FLV-Video(low)"),
+        FLV_240_HIGH(null, "240p FLV-Video(high)"),
+        FLV_360(null, "360p FLV-Video"),
+        FLV_480(null, "480p FLV-Video"),
 
-        },
-        MP4_1080 {
+        MP4_DASH_144(null, "144p MP4-Video(dash)"),
+        MP4_DASH_240(null, "240p MP4-Video(dash)"),
+        MP4_DASH_360(null, "360p MP4-Video(dash)"),
+        MP4_DASH_480(null, "480p MP4-Video(dash)"),
+        MP4_DASH_720(null, "720p MP4-Video(dash)"),
+        MP4_DASH_1080(null, "1080p MP4-Video(dash)"),
+        MP4_DASH_ORIGINAL(null, "Original MP4-Video(dash)");
 
-            @Override
-            public String getName() {
-                return "1080p Mp4-Video";
-            }
+        private final Icon   icon;
+        private final String name;
 
-            @Override
-            public Icon getIcon() {
-                return null;
-            }
+        private YoutubeVariant(Icon icon, String name) {
+            this.icon = icon;
+            this.name = name;
+        }
 
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public Icon getIcon() {
+            return icon;
         }
     }
 
@@ -96,6 +114,8 @@ public class YoutubeDash extends Youtube {
     private final String DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
     private final String DASH_VIDEO_CHUNKS   = "DASH_VIDEO_CHUNKS";
     private final String DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
+
+    private final String ENABLE_VARIANTS     = "ENABLE_VARIANTS";
 
     protected String     dashAudioURL        = null;
     protected String     dashVideoURL        = null;
@@ -528,5 +548,10 @@ public class YoutubeDash extends Youtube {
     @Override
     public void extendLinkgrabberContextMenu(JComponent parent, PluginView<CrawledLink> pv) {
         super.extendLinkgrabberContextMenu(parent, pv);
+    }
+
+    protected void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_VARIANTS, JDL.L("plugins.hoster.youtube.variants", "Enable Variants Support?")).setDefaultValue(false));
+        super.setConfigElements();
     }
 }

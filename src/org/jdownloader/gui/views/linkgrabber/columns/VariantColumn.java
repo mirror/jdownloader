@@ -6,6 +6,7 @@ import javax.swing.ComboBoxModel;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -36,13 +37,13 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
             if (((CrawledLink) object).hasVariantSupport()) {
                 ret = ((CrawledLink) object).gethPlugin().getVariantPopupComponent(((CrawledLink) object).getDownloadLink());
             }
-        } else if (object instanceof DownloadLink) {
+        } else if (false && object instanceof DownloadLink) {
+            /* DownloadTable does not have VariantSupport yet */
             if (((DownloadLink) object).hasVariantSupport()) {
                 ret = ((DownloadLink) object).getDefaultPlugin().getVariantPopupComponent(((DownloadLink) object));
             }
         }
         if (ret != null) return ret;
-
         return super.getPopupElement(object, selected);
     }
 
@@ -62,84 +63,23 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         return selectedItem.getIcon();
     }
 
-    // protected boolean startEdit(final AbstractNode value, final int row) {
-    // final JPopupMenu popup = new JPopupMenu();
-    // try {
-    // final HashSet<LinkVariant> selected = new HashSet<LinkVariant>(getSelectedItems(value));
-    // final ComboBoxModel<LinkVariant> dm = updateModel(null, value);
-    // for (int i = 0; i < dm.getSize(); i++) {
-    // final LinkVariant o = dm.getElementAt(i);
-    // final JComponent bt = getPopupElement(o, selected.contains(o));
-    // if (bt instanceof AbstractButton) {
-    // ((AbstractButton) bt).addActionListener(new ActionListener() {
-    //
-    // @Override
-    // public void actionPerformed(final ActionEvent e) {
-    // setValue(o, value);
-    // popup.setVisible(false);
-    //
-    // }
-    // });
-    // }
-    // popup.add(bt);
-    // }
-    //
-    // final Rectangle bounds = getModel().getTable().getCellRect(row, getIndex(), true);
-    // final Dimension pref = popup.getPreferredSize();
-    // popup.setPreferredSize(new Dimension(Math.max(pref.width, bounds.width), pref.height));
-    // popup.show(getModel().getTable(), bounds.x, bounds.y + bounds.height);
-    // return true;
-    // } catch (final Exception e1) {
-    // e1.printStackTrace();
-    // }
-    // return false;
-    // }
-
     @Override
     public boolean isEditable(final AbstractNode object) {
         if (object instanceof CrawledLink) {
             if (((CrawledLink) object).hasVariantSupport()) { return ((CrawledLink) object).gethPlugin().hasVariantToChooseFrom(((CrawledLink) object).getDownloadLink()); }
-        } else if (object instanceof DownloadLink) {
+        } else if (false && object instanceof DownloadLink) {
+            /* DownloadTable does not have VariantSupport yet */
             if (((DownloadLink) object).hasVariantSupport()) { return ((DownloadLink) object).getDefaultPlugin().hasVariantToChooseFrom(((DownloadLink) object)); }
         }
         return false;
     }
 
-    // @Override
-    // public void configureRendererComponent(final AbstractNode value, final boolean isSelected, final boolean hasFocus, final int row,
-    // final int column) {
-    // // TODO Auto-generated method stub
-    // LinkVariant selected = getSelectedItem(value);
-    // rendererPanel.setEditable(isEditable(value));
-    // if (selected == null) {
-    // rendererField.setText(null);
-    // rendererIcon.setText(null);
-    // return;
-    // }
-    //
-    // rendererIcon.setIcon(null);
-    //
-    // String str = modelItemToString(selected);
-    // if (str == null) {
-    // // under substance, setting setText(null) somehow sets the label
-    // // opaque.
-    // str = "";
-    // }
-    //
-    // if (getTableColumn() != null) {
-    // rendererField.setText(SwingUtilities2.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()),
-    // str, getTableColumn().getWidth() - 18 - 5));
-    // } else {
-    // rendererField.setText(str);
-    // }
-    //
-    // }
-
     protected LinkVariant getSelectedItem(AbstractNode object) {
         if (object instanceof CrawledLink) {
             if (!((CrawledLink) object).hasVariantSupport()) return null;
             return ((CrawledLink) object).gethPlugin().getActiveVariantByLink(((CrawledLink) object).getDownloadLink());
-        } else if (object instanceof DownloadLink) {
+        } else if (false && object instanceof DownloadLink) {
+            /* DownloadTable does not have VariantSupport yet */
             if (!((DownloadLink) object).hasVariantSupport()) return null;
             return ((DownloadLink) object).getDefaultPlugin().getActiveVariantByLink(((DownloadLink) object));
         }
@@ -149,9 +89,9 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     @Override
     protected void setSelectedItem(AbstractNode object, LinkVariant value) {
         if (object instanceof CrawledLink) {
-            ((CrawledLink) object).gethPlugin().setActiveVariantByLink(((CrawledLink) object).getDownloadLink(), value);
+            LinkCollector.getInstance().setActiveVariantForLink((CrawledLink) object, value);
         } else if (object instanceof DownloadLink) {
-            ((DownloadLink) object).getDefaultPlugin().setActiveVariantByLink(((DownloadLink) object), value);
+            /* DownloadTable does not have VariantSupport yet */
         }
     }
 

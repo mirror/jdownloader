@@ -61,10 +61,10 @@ public class SpiegelDe extends PluginForHost {
                     JDUtilities.getPluginForDecrypt("youtube.com");
                     final jd.plugins.decrypter.TbCm.DestinationFormat convertTo = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
                     jd.plugins.decrypter.TbCm.DestinationFormat inType;
-                    if (convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOIPHONE || convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOMP4 || convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO3GP) {
+                    if (convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOIPHONE || convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_MP4 || convertTo == jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_3GP) {
                         inType = convertTo;
                     } else {
-                        inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOFLV;
+                        inType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_FLV;
                     }
                     /* to load the TbCm plugin */
                     // JDUtilities.getPluginForDecrypt("youtube.com");

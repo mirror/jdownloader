@@ -426,8 +426,8 @@ public class Youtube extends PluginForHost {
         if (downloadLink.getProperty("convertto") != null) {
             JDUtilities.getPluginForDecrypt("youtube.com");
             final jd.plugins.decrypter.TbCm.DestinationFormat convertto = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-            jd.plugins.decrypter.TbCm.DestinationFormat InType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOFLV;
-            if (convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOWEBM) || convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEOMP4) || convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO3GP)) {
+            jd.plugins.decrypter.TbCm.DestinationFormat InType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_FLV;
+            if (convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_WEBM) || convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_MP4) || convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_3GP)) {
                 InType = convertto;
             }
             if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, InType, convertto)) {
@@ -527,7 +527,7 @@ public class Youtube extends PluginForHost {
     public static final String  defaultCustomFilename    = "*videoname**quality**ext*";
     public static final boolean defaultCustomPreferHTTPS = false;
 
-    private void setConfigElements() {
+    protected void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), ISVIDEOANDPLAYLIST, new String[] { JDL.L("plugins.host.youtube.isvideoandplaylist.video", "Only add video"), JDL.L("plugins.host.youtube.isvideoandplaylist.playlist", "Add playlist and video"), JDL.L("plugins.host.youtube.isvideoandplaylist.ask", "Ask everytime") }, JDL.L("plugins.host.youtube.isvideoandplaylist", "If a video also contains a playlist?")).setDefaultValue(2));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
