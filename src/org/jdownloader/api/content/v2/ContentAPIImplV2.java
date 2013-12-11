@@ -1,6 +1,5 @@
-package org.jdownloader.api.content;
+package org.jdownloader.api.content.v2;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -11,6 +10,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.remoteapi.exceptions.APIFileNotFoundException;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
@@ -18,13 +18,12 @@ import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 
-@Deprecated
-public class ContentAPIImpl implements ContentAPI {
-    @Deprecated
-    public void favicon(RemoteAPIRequest request, RemoteAPIResponse response, String hostername) throws FileNotFoundException, InternalApiException {
+public class ContentAPIImplV2 implements ContentAPIV2 {
+
+    public void getFavIcon(RemoteAPIRequest request, RemoteAPIResponse response, String hostername) throws InternalApiException, APIFileNotFoundException {
         DomainInfo info = DomainInfo.getInstance(hostername);
         Icon favIcon = info.getFavIcon();
-        if (favIcon == null) throw new FileNotFoundException();
+        if (favIcon == null) throw new APIFileNotFoundException();
         OutputStream out = null;
         try {
             /* we force content type to image/png and allow caching of the image */
@@ -44,9 +43,8 @@ public class ContentAPIImpl implements ContentAPI {
         }
     }
 
-    @Deprecated
     @Override
-    public void fileIcon(RemoteAPIRequest request, RemoteAPIResponse response, String extension) throws InternalApiException {
+    public void getFileIcon(RemoteAPIRequest request, RemoteAPIResponse response, String extension) throws InternalApiException {
         OutputStream out = null;
         try {
             /* we force content type to image/png and allow caching of the image */
