@@ -73,7 +73,13 @@ public class RemoteAPIController {
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
             @Override
             public String toString(RemoteAPIRequest request, RemoteAPIResponse response, Object responseData) {
-                return JSonStorage.serializeToJson(responseData);
+                MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
+                if (ri.getApiVersion() > 0) {
+                    return JSonStorage.serializeToJson(responseData);
+                } else {
+                    return super.toString(request, response, responseData);
+                }
+
             }
 
             @Override
