@@ -48,11 +48,10 @@ public class PhotoShareRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Ошибка 404: файл не найден<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Ошибка 404: файл не найден<") || br.getURL().contains("/login/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("\\'title\\': \\'([^<>\"]*?)\\'").getMatch(0);
         DLLINK = br.getRegex("src=\"/images/full\\.gif\" .*?<a href=\"(http://\\d+\\.[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

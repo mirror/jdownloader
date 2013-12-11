@@ -569,6 +569,8 @@ public class TbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
+            // NOTE: This will stop at 1050 links - probably because youtube doesn't provide more "load more videos" links hmm
+            int segmentCounter = 1;
             do {
                 try {
                     if (this.isAbort()) {
@@ -605,7 +607,10 @@ public class TbCm extends PluginForDecrypt {
                 if (next != null) {
                     Thread.sleep(1000);
                     br.getPage(Encoding.htmlDecode(next));
+                    segmentCounter++;
                 }
+                logger.info("youtube.com/user: Found " + videoNumberCounter + " links");
+                logger.info("youtube.com/user: Decrypted segment " + segmentCounter);
             } while (next != null);
         } else {
             // Handle single video
@@ -921,8 +926,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
                  */
                 HashMap<ITAG, String[]> useTags = new HashMap<ITAG, String[]>(availableItags);
                 if (best) {
@@ -1517,7 +1522,8 @@ public class TbCm extends PluginForDecrypt {
         // if (br.containsHTML("This video may be inappropriate for some users")) {
         // /* commented because those are the regex to login/verify */
         // String verifyURL = br.getRegex("(https?://accounts.google.com/ServiceLogin\\?ltmpl=verifyage.*?)\"").getMatch(0);
-        // if (verifyURL == null) verifyURL = br.getRegex("(https?://accounts.google.com/ServiceLogin\\?.*?ltmpl=verifyage.*?)\"").getMatch(0);
+        // if (verifyURL == null) verifyURL =
+        // br.getRegex("(https?://accounts.google.com/ServiceLogin\\?.*?ltmpl=verifyage.*?)\"").getMatch(0);
         // if (verifyURL != null) {
         // verifyURL = Encoding.htmlDecode(verifyURL);
         // br.getPage(verifyURL);

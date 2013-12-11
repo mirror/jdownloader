@@ -40,7 +40,7 @@ public class MngTrdCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         // return error message for invalid url
-        if (br.containsHTML(">Error \\- Page Not Found<")) {
+        if (br.containsHTML(">Error \\- Page Not Found<|This series is on our <a")) {
             logger.warning("Invalid URL: " + parameter);
             return decryptedLinks;
         }

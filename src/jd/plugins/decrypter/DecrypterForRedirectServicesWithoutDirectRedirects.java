@@ -58,7 +58,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().toLowerCase();
+        String parameter = param.toString();
         br.setFollowRedirects(false);
         br.setReadTimeout(60 * 1000);
         boolean dh = false;

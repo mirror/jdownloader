@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.net.ConnectException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Random;
@@ -100,6 +101,8 @@ public class ExtaBitCom extends PluginForHost {
         try {
             br.getPage(downloadLink.getDownloadURL());
         } catch (final UnknownHostException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (final ConnectException ec) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("(File not found|Such file doesn\\'t exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

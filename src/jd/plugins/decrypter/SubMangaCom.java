@@ -41,7 +41,7 @@ public class SubMangaCom extends PluginForDecrypt {
     // other: decided to write like unixmanga.
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("www.", "");
         br.setFollowRedirects(false);
@@ -51,7 +51,7 @@ public class SubMangaCom extends PluginForDecrypt {
             return null;
         }
         // We get the title
-        String[][] title = br.getRegex("<strong>submanga\\.com</strong></a> \\&rsaquo; <a href=\"[^>]+>[^<]+</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a></td><th width=\"1%\">").getMatches();
+        final String[][] title = br.getRegex("<strong>submanga\\.com</strong></a> \\&rsaquo; <a href=\"[^>]+>[^<]+</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a></td><th width=\"1%\">").getMatches();
         if (title == null || title.length == 0) {
             logger.warning("Title not found! : " + parameter);
             return null;
@@ -69,7 +69,6 @@ public class SubMangaCom extends PluginForDecrypt {
             format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
         }
 
-        progress.setRange(numberOfPages);
         FilePackage fp = FilePackage.getInstance();
         fp.setName(useTitle);
 
@@ -86,7 +85,6 @@ public class SubMangaCom extends PluginForDecrypt {
                     // load next page for the 'for' loop.
                     br.getPage(parameter + "/" + (i + 1));
                 }
-                progress.increase(1);
                 continue;
             }
             String extension = img.substring(img.lastIndexOf("."));
@@ -104,7 +102,6 @@ public class SubMangaCom extends PluginForDecrypt {
                 // load next page for the 'for' loop.
                 br.getPage(parameter + "/" + (i + 1));
             }
-            progress.increase(1);
         }
         logger.warning("Task Complete! : " + parameter);
         return decryptedLinks;

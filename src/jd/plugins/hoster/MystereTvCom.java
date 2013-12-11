@@ -70,7 +70,7 @@ public class MystereTvCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.mystere-tv.com/") || br.containsHTML("<title>Paranormal \\- Ovni \\- Mystere TV </title>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.getURL().equals("http://www.mystere-tv.com/") || br.containsHTML("<title>Paranormal \\- Ovni \\- Mystere TV </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1 class=\"videoTitle\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<br /><br /><strong><u>(.*?)</u></strong>").getMatch(0);
@@ -82,7 +82,8 @@ public class MystereTvCom extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("\"?(http://(www\\.)?mystere\\-tv\\.(net|com)/flv/[\\w-\\.\\?=]+)\"?").getMatch(0);
         }
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename != null && DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");

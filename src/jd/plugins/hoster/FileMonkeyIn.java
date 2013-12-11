@@ -20,12 +20,16 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -47,13 +51,14 @@ public class FileMonkeyIn extends PluginForHost {
         public String string = null;
     }
 
-    private static final String    mainURL       = "https://www.filemonkey.in";
-    private final String           apiURL        = "https://www.filemonkey.in/api/v1";
-    private static Object          LOCK          = new Object();
-    private static StringContainer agent         = new StringContainer();
-    private static AtomicBoolean   useAPI        = new AtomicBoolean(true);
-    private final boolean          supportsHTTPS = true;
-    private final boolean          enforcesHTTPS = true;
+    private static final String    mainURL             = "https://www.filemonkey.in";
+    private final String           apiURL              = "https://www.filemonkey.in/api/v1";
+    private static Object          LOCK                = new Object();
+    private static StringContainer agent               = new StringContainer();
+    private static AtomicBoolean   useAPI              = new AtomicBoolean(true);
+    private final boolean          supportsHTTPS       = true;
+    private final boolean          enforcesHTTPS       = true;
+    private static final short     MAXSIM_FREE_ACCOUNT = 1;
 
     public FileMonkeyIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -210,7 +215,6 @@ public class FileMonkeyIn extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
-        br = new Browser();
         prepareBrowser(br);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
@@ -261,6 +265,11 @@ public class FileMonkeyIn extends PluginForHost {
         synchronized (LOCK) {
             if (useAPI.get()) {
                 ai = fetchAccountInfo_API(account, ai);
+            } else {
+                logger.info("API use not possible -> Treating account as free account");
+                ai.setStatus("Registered (free) user");
+                account.setProperty("free", true);
+                maxPrem.set(MAXSIM_FREE_ACCOUNT);
             }
         }
         return ai;
@@ -296,11 +305,11 @@ public class FileMonkeyIn extends PluginForHost {
                     /* premium account */
                     final String traffic_left = getJson("trafficleft_bytes");
                     if (traffic_left != null) ai.setTrafficLeft(Long.parseLong(traffic_left));
-                    // us ms to expire, works best with time zone difference and incorrect systemtime.
-                    final String ms_expire = getJson("premium_mstoexpire");
-                    if (ms_expire != null) ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(ms_expire));
                     final boolean is_premium = Boolean.parseBoolean(getJson("ispremium"));
                     if (is_premium && !ai.isExpired()) {
+                        // us ms to expire, works best with time zone difference and incorrect systemtime.
+                        final String ms_expire = getJson("premium_mstoexpire");
+                        if (ms_expire != null) ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(ms_expire));
                         account.setProperty("free", false);
                         ai.setStatus("Premium account");
                         try {
@@ -312,10 +321,10 @@ public class FileMonkeyIn extends PluginForHost {
                         }
                     } else {
                         account.setProperty("free", true);
-                        ai.setStatus("Free account");
+                        ai.setStatus("Registered (free) user");
                         try {
-                            maxPrem.set(-1);
-                            account.setMaxSimultanDownloads(-1);
+                            maxPrem.set(MAXSIM_FREE_ACCOUNT);
+                            account.setMaxSimultanDownloads(MAXSIM_FREE_ACCOUNT);
                             account.setConcurrentUsePossible(true);
                         } catch (final Throwable e) {
                             // not available in old Stable 0.9.581
@@ -387,7 +396,11 @@ public class FileMonkeyIn extends PluginForHost {
         final String fuid = getFUID(downloadLink);
         synchronized (LOCK) {
             if (account.getBooleanProperty("free", false)) {
-                handleFree(downloadLink);
+                logger.info("Handling free-account download...");
+                // We have to login via site to get the free account advantages
+                login_web(account, false, downloadLink);
+                br.getPage(downloadLink.getDownloadURL());
+                doFree(downloadLink);
                 return;
             }
             String apikey = login_API(account);
@@ -420,6 +433,68 @@ public class FileMonkeyIn extends PluginForHost {
 
     public void handlePremium_web(final DownloadLink link, final Account account) throws Exception {
         if (true) return;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login_web(final Account account, final boolean force, final DownloadLink dl) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                prepareBrowser(br);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(mainURL, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.getPage("https://www.filemonkey.in/login");
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.findID();
+                rc.load();
+                for (int i = 1; i <= 5; i++) {
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, dl);
+                    br.postPage("https://www.filemonkey.in/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                    if (br.containsHTML("google\\.com/recaptcha/")) {
+                        rc.reload();
+                        continue;
+                    }
+                    break;
+                }
+                if (br.containsHTML("google\\.com/recaptcha/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                final String lang = System.getProperty("user.language");
+                if (br.getCookie(mainURL, "logincookie") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(mainURL);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
     }
 
     private String getJson(final String source, final String search) {

@@ -49,6 +49,7 @@ public class DeviantArtCom extends PluginForHost {
 
     private String              DLLINK                     = null;
     private final String        COOKIE_HOST                = "http://www.deviantart.com";
+    private final String        INVALIDLINKS               = "https?://(www\\.)?forum\\.deviantart\\.com/art/general";
     private final String        MATURECONTENTFILTER        = ">Mature Content Filter<";
     private static Object       LOCK                       = new Object();
     private static final String FASTLINKCHECK              = "FASTLINKCHECK";
@@ -81,6 +82,7 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Workaround for a strange bug - DLLINK is not null at the beginning so if multiple links are to be checked they will all get the
         // same filenames
         DLLINK = null;
