@@ -56,9 +56,13 @@ public class PanBaiduCom extends PluginForHost {
             downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         } else {
             DLLINK = downloadLink.getStringProperty("dlink", null);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                // We might need to enter a captcha to get the link so let's just stop here
+                downloadLink.setAvailable(true);
+                return AvailableStatus.TRUE;
+            }
             DLLINK = DLLINK.replace("\\", "");
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
@@ -108,6 +112,28 @@ public class PanBaiduCom extends PluginForHost {
             DLLINK = br.getRegex("dlink\\\\\":\\\\\"(http[^\"]+)\\\\\"").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = Encoding.htmlDecode(DLLINK.replace("\\\\/", "/"));
+        } else {
+            if (DLLINK == null) {
+                final boolean pluginBroken = true;
+                if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String shareid = downloadLink.getStringProperty("origurl_shareid", null);
+                final String uk = downloadLink.getStringProperty("origurl_uk", null);
+                final String fsid = downloadLink.getStringProperty("important_fsid", null);
+                final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + System.currentTimeMillis() + "&sign=9ca631d53c430fd600ff4f137ca6c80c230574ee&bdstoken=null&channel=chunlei&clienttype=0&web=1";
+                br.postPage(postLink, "fid_list=%5B" + fsid + "%5D");
+                for (int i = 1; i <= 3; i++) {
+                    final String captchaLink = getJson("img");
+                    if (captchaLink == null) {
+                        break;
+                    }
+                    final String captchaid = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
+                    final String code = getCaptchaCode(captchaLink, downloadLink);
+                    br.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
+                }
+                if (getJson("img") != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                DLLINK = getJson("dlink");
+                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -119,6 +145,7 @@ public class PanBaiduCom extends PluginForHost {
         dl.startDownload();
     }
 
+    // Possibly outdated and/or not needed anymore
     private String refreshFinalLink(final DownloadLink downloadLink) throws Exception {
         String dir = downloadLink.getStringProperty("dirName");
         String parameter = downloadLink.getStringProperty("mainLink");
@@ -137,6 +164,13 @@ public class PanBaiduCom extends PluginForHost {
             if (ret.containsKey("md5") && hash.equalsIgnoreCase(ret.get("md5"))) return ret.get("dlink");
         }
         return null;
+    }
+
+    private String getJson(final String parameter) {
+        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
     }
 
     @Override

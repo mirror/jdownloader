@@ -92,6 +92,7 @@ public class PanBaiduCom extends PluginForDecrypt {
 
             if (!(ret.containsKey("headurl") || ret.containsKey("parent_path"))) continue;
             dir = new Regex(ret.get("headurl"), "filename=(.*?)$").getMatch(0);
+            if (dir == null) dir = ret.get("server_filename");
             ret.put("path", dir);
             dir = ret.get("parent_path") + "%2F" + dir;
             if (singleFolder != null && !singleFolder.equals(dir)) continue;// only selected folder
@@ -135,9 +136,14 @@ public class PanBaiduCom extends PluginForDecrypt {
                     getDownloadLinks(decryptedLinks, parameter, dirName + "-" + folderName, unescape(path));
                 }
             }
-
-            DownloadLink dl = generateDownloadLink(ret, parameter, dir);
-            if (dl.getStringProperty("dlink", null) != null) {
+            final String shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
+            final String uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
+            final String fsid = ret.get("fs_id");
+            if (shareid != null && uk != null && fsid != null) {
+                final DownloadLink dl = generateDownloadLink(ret, parameter, dir);
+                dl.setProperty("origurl_shareid", shareid);
+                dl.setProperty("origurl_uk", uk);
+                dl.setProperty("important_fsid", fsid);
                 fp.add(dl);
                 try {
                     distribute(dl);

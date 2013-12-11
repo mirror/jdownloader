@@ -162,6 +162,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                int counter = 1;
                 for (final String item : items) {
                     final String permalink = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("permalink", item);
                     if (permalink == null) {
@@ -169,6 +170,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + usernameOfSet + "/" + permalink);
+                    dl.setProperty("setsposition", counter + ".");
                     final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item, false);
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);
@@ -190,6 +192,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                             logger.info("Failed to get 500x500 thumbnail...");
                         }
                     }
+                    counter++;
                 }
             } else {
                 // Decrypt all tracks of a user
