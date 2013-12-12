@@ -157,6 +157,7 @@ public class UniBytesCom extends PluginForHost {
                 if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
                 String ipBlockedTime = br.getRegex("guestDownloadDelayValue\">(\\d+)</span>").getMatch(0);
                 if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
+                if (ipBlockedTime == null) ipBlockedTime = br.getRegex("Wait for\\s+(\\d+)\\s+min").getMatch(0);
                 if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
                 // step1
                 String stepForward = br.getRegex("\"(/" + uid + "/free\\?step=[^\"]+)").getMatch(0);
@@ -169,6 +170,8 @@ public class UniBytesCom extends PluginForHost {
                     stepForward = br.getRegex("\"(/" + uid + "/link\\?step=[^\"]+)").getMatch(0);
                     if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     br.getPage(stepForward);
+                    if (ipBlockedTime == null) ipBlockedTime = br.getRegex("Wait for\\s+(\\d+)\\s+min").getMatch(0);
+                    if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
                     dllink = br.getRegex(freeDlLink).getMatch(0);
                     if (dllink == null) {
                         logger.warning("dllink equals null!");
