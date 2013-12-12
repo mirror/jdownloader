@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cosmobox.org" }, urls = { "https?://(www\\.)?cosmobox\\.org/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cosmobox.org" }, urls = { "https?://(www\\.)?cosmobox\\.org/(vidembed\\-)?[a-z0-9]{12}(\\.html)?" }, flags = { 2 })
 public class CosmoBoxOrg extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -103,10 +103,6 @@ public class CosmoBoxOrg extends PluginForHost {
         }
         // strip video hosting url's to reduce possible duped links.
         link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
-        // output the hostmask as we wish based on COOKIE_HOST url!
-        final String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
-        final String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
-        link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 
     @Override
