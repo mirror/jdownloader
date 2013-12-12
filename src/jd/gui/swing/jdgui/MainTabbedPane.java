@@ -60,7 +60,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
     private static final long     serialVersionUID = -1531827591735215594L;
-    private static final boolean  OSR_ENABLED      = false;
+    private static final boolean  OSR_ENABLED      = true;
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
     private AbstractIcon          osrIcon;

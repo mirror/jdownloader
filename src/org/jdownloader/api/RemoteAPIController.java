@@ -24,11 +24,11 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.accounts.AccountAPIImpl;
 import org.jdownloader.api.accounts.v2.AccountAPIImplV2;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
@@ -40,6 +40,8 @@ import org.jdownloader.api.dialog.RemoteAPIIOHandlerWrapper;
 import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.DownloadWatchDogEventPublisher;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
+import org.jdownloader.api.downloads.v2.DownloadWatchdogAPIImpl;
+import org.jdownloader.api.downloads.v2.DownloadsAPIImplV2;
 import org.jdownloader.api.extensions.ExtensionsAPIImpl;
 import org.jdownloader.api.extraction.ExtractionAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
@@ -156,7 +158,7 @@ public class RemoteAPIController {
                 HttpServer.getInstance().registerRequestHandler(3128, true, sessionc);
             }
         } catch (Throwable e) {
-            Log.exception(e);
+            logger.log(e);
         }
         register(eventsapi = new EventsAPI());
         register(CaptchaAPISolver.getInstance());
@@ -164,7 +166,9 @@ public class RemoteAPIController {
         register(new JDAPIImpl());
         DownloadWatchDogEventPublisher downloadWatchDogEventPublisher = new DownloadWatchDogEventPublisher();
         DownloadsAPIImpl downloadsAPI;
-        register(downloadsAPI = new DownloadsAPIImpl(downloadWatchDogEventPublisher));
+        register(downloadsAPI = new DownloadsAPIImpl());
+        register(new DownloadsAPIImplV2());
+        register(new DownloadWatchdogAPIImpl());
         register(downloadWatchDogEventPublisher);
         register(new AdvancedConfigManagerAPIImpl());
         register(new JDownloaderToolBarAPIImpl());
@@ -246,7 +250,8 @@ public class RemoteAPIController {
             rapi.register(x);
             return true;
         } catch (final Throwable e) {
-            Log.exception(e);
+            logger.log(e);
+            Dialog.getInstance().showExceptionDialog("Bad API Interface", e.getMessage(), e);
             return false;
         }
     }
@@ -257,7 +262,7 @@ public class RemoteAPIController {
             rapi.unregister(x);
             return true;
         } catch (final Throwable e) {
-            Log.exception(e);
+            logger.log(e);
             return false;
         }
     }

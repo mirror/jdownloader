@@ -9,7 +9,7 @@ import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.storage.config.annotations.AllowStorage;
 import org.jdownloader.settings.advanced.AdvancedConfigAPIEntry;
 
-@ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigManagerAPI.NAMESPACE)
+@ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface.NAMESPACE)
 public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
 
     @ApiDoc("list all available config entries")

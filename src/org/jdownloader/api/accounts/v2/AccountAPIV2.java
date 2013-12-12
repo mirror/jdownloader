@@ -8,7 +8,7 @@ import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 
-@ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.AccountAPIV2.NAMESPACE)
+@ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface.NAMESPACE)
 public interface AccountAPIV2 extends RemoteAPIInterface {
     public boolean addAccount(String premiumHoster, String username, String password);
 

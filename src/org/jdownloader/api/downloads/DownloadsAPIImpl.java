@@ -15,9 +15,8 @@ import org.appwork.remoteapi.APIQuery;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.plugins.FinalLinkState;
 
+@Deprecated
 public class DownloadsAPIImpl implements DownloadsAPI {
-
-    private final DownloadWatchDogEventPublisher eventPublisher;
 
     public boolean start() {
         DownloadWatchDog.getInstance().startDownloads();
@@ -39,8 +38,8 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         return DownloadWatchDog.getInstance().getStateMachine().getState().getLabel();
     }
 
-    public DownloadsAPIImpl(DownloadWatchDogEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
+    public DownloadsAPIImpl() {
+
     }
 
     @Override

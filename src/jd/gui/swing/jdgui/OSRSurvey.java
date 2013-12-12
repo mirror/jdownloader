@@ -4,6 +4,8 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
@@ -12,7 +14,10 @@ import javax.swing.JLabel;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
+import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition.CloseReason;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
 import org.jdownloader.gui.translate._GUI;
@@ -119,9 +124,25 @@ public class OSRSurvey {
             };
 
             UIOManager.I().show(null, d);
+            if (d.getCloseReason() == CloseReason.OK) {
+                ArrayList<String> urls = new ArrayList<String>();
+
+                String lng = ("de".equalsIgnoreCase(TranslationFactory.getDesiredLanguage()) ? "de" : "en");
+                urls.add("http://osr-surveys.cs.fau.de/index.php/771316/lang-" + lng);
+                urls.add("http://osr-surveys.cs.fau.de/index.php/583851/lang-" + lng);
+                urls.add("http://osr-surveys.cs.fau.de/index.php/618667/lang-" + lng);
+                urls.add("http://osr-surveys.cs.fau.de/index.php/621434/lang-" + lng);
+                urls.add("http://osr-surveys.cs.fau.de/index.php/976745/lang-" + lng);
+                urls.add("http://osr-surveys.cs.fau.de/index.php/815453/lang-" + lng);
+                urls.add("http://osr-surveys.cs.fau.de/index.php/984994/lang-" + lng);
+
+                CrossSystem.openURLOrShowMessage(urls.get(new Random().nextInt(urls.size())));
+
+            }
 
         } finally {
             running.set(false);
         }
     }
+
 }

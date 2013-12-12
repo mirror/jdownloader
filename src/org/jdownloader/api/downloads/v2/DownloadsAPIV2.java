@@ -1,28 +1,16 @@
-package org.jdownloader.api.downloads;
+package org.jdownloader.api.downloads.v2;
 
 import java.util.List;
 
-import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 
-@ApiNamespace("downloads")
-@Deprecated
-public interface DownloadsAPI extends RemoteAPIInterface {
-    /*
-     * Controlls
-     */
-    boolean start();
+@ApiNamespace("downloadsV2")
+public interface DownloadsAPIV2 extends RemoteAPIInterface {
 
-    boolean stop();
+    void setEnabled(boolean enabled, long[] linkIds, long[] packageIds);
 
-    boolean pause(Boolean value);
-
-    String getJDState();
-
-    /*
-     * Queries
-     */
+    int packageCount();
 
     /**
      * Query Packages currently in downloads
@@ -44,7 +32,26 @@ public interface DownloadsAPI extends RemoteAPIInterface {
      * @return
      */
 
-    List<FilePackageAPIStorable> queryPackages(APIQuery queryParams);
+    List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams);
+
+    void removeLinks(final long[] linkIds, final long[] packageIds);
+
+    void renamePackage(Long packageId, String newName);
+
+    void resetLinks(long[] linkIds, long[] packageIds);
+
+    /**
+     * Returns the new Counter if the counter does not equal oldCounterValue If the value changed, we should update the structure. Use this
+     * method to check whether a structure update is required or not
+     * 
+     * @param oldCounterValue
+     * @return
+     */
+    long getStructureChangeCounter(long oldCounterValue);
+
+    void movePackages(long[] packageIds, long afterDestPackageId);
+
+    void moveLinks(long[] linkIds, long afterLinkID, long destPackageID);
 
     /**
      * Query Packages links in downloads
@@ -58,7 +65,7 @@ public interface DownloadsAPI extends RemoteAPIInterface {
      * @param queryParams
      *            Hashmap with the following allowed values:
      * 
-     *            Optional selectors: packageUUIDs, List<Long>, links contained in the packages with given uuids are returned, if empty all
+     *            Optional selectors: packageUUIDs, long[], links contained in the packages with given uuids are returned, if empty all
      *            links are returned startAt, Integer, index of first element to be returned maxResults, Integer, total number of elements
      *            to be returned
      * 
@@ -66,49 +73,6 @@ public interface DownloadsAPI extends RemoteAPIInterface {
      * 
      * @return
      */
-    List<DownloadLinkAPIStorable> queryLinks(APIQuery queryParams);
+    List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams);
 
-    /*
-     * Functions
-     */
-    boolean removeLinks(final List<Long> linkIds);
-
-    boolean removeLinks(final List<Long> linkIds, final List<Long> packageIds);
-
-    boolean forceDownload(List<Long> linkIds, List<Long> packageIds);
-
-    boolean forceDownload(final List<Long> linkIds);
-
-    boolean enableLinks(List<Long> linkIds);
-
-    boolean enableLinks(List<Long> linkIds, List<Long> packageIds);
-
-    boolean disableLinks(List<Long> linkIds);
-
-    boolean disableLinks(List<Long> linkIds, List<Long> packageIds);
-
-    boolean resetLinks(List<Long> linkIds);
-
-    boolean resetLinks(List<Long> linkIds, List<Long> packageIds);
-
-    boolean renamePackage(Long packageId, String newName);
-
-    /*
-     * Sorting
-     */
-    boolean movePackages(APIQuery query);
-
-    boolean moveLinks(APIQuery query);
-
-    /*
-     * Info
-     */
-    int speed();
-
-    int packageCount();
-
-    /*
-     * Changed?
-     */
-    Long getChildrenChanged(Long structureWatermark);
 }
