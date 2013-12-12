@@ -73,10 +73,8 @@ public class DownloadsAPIImpl implements DownloadsAPI {
             FilePackage fp = packages.get(i);
             boolean readL = fp.getModifyLock().readLock();
             try {
-
                 DownloadLinkAggregator aggregate = new DownloadLinkAggregator(fp);
                 FilePackageAPIStorable fps = new FilePackageAPIStorable(fp);
-
                 org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
 
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
