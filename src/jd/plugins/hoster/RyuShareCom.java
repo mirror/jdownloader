@@ -79,6 +79,8 @@ public class RyuShareCom extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://ryushare.com";
+    private final String               NICE_HOST                    = "ryushare.com";
+    private final String               NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\-|\\.)", "");
     // domain names used within download links.
     private final String               DOMAINS                      = "(ryushare\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -475,7 +477,18 @@ public class RyuShareCom extends PluginForHost {
                 br.followConnection();
                 correctBR();
                 checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info(NICE_HOST + ": Final link is no file");
+                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinunknowndlerror", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinunknowndlerror", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link is no file");
+                } else {
+                    downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinunknowndlerror", Property.NULL);
+                    logger.info(NICE_HOST + ": Final link is null -> Plugin is broken");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         } else {
             // we can not 'rename' filename once the download started, could be problematic!
@@ -685,7 +698,8 @@ public class RyuShareCom extends PluginForHost {
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (cbr.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        if (cbr.containsHTML(">403 \\- Forbidden</")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
     }
 
     @Override
