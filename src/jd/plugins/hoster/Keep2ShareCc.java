@@ -448,17 +448,26 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        HashMap<String, String> cookies = login(account, false, null);
+        boolean fresh = false;
+        Object after = null;
+        synchronized (LOCK) {
+            Object before = account.getProperty("cookies", null);
+            after = login(account, false, null);
+            fresh = before != after;
+        }
         br.getPage(MAINPAGE + "/site/profile.html");
         if (br.getURL().contains("login.html")) {
             logger.info("Redirected to login page, seems cookies are no longer valid!");
             synchronized (LOCK) {
-                if (cookies == account.getProperty("cookies", null)) {
+                if (after == account.getProperty("cookies", null)) {
                     account.setProperty("cookies", Property.NULL);
+                }
+                if (fresh) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (br.containsHTML("class=\"free\">Free</a>")) {
             br.getPage(link.getDownloadURL());
@@ -486,14 +495,15 @@ public class Keep2ShareCc extends PluginForHost {
             if (dllink == null) {
                 if (br.containsHTML("Traffic limit exceed\\!<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 synchronized (LOCK) {
-                    if (cookies == account.getProperty("cookies", null) && !account.getBooleanProperty("retried_once", false)) {
+                    if (after == account.getProperty("cookies", null)) {
                         account.setProperty("cookies", Property.NULL);
-                        account.setProperty("retried_once", true);
+                    }
+                    if (fresh) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = Encoding.htmlDecode(dllink);
             if (!dllink.startsWith("http")) {
