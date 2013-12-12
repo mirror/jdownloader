@@ -56,6 +56,9 @@ public class QiannaoCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL());
 
+        // No_access|user_banned|file_deleted|strange_exception
+        if (br.containsHTML("<span> 资源已被禁止访问</span>|用户已被禁用。</span>|<span> 资源已被删除</span>|<span>java\\.io\\.FileNotFoundException")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         // Cookies needed to start the download
         final String vid = br.getRegex("setCookie\\(\"vid\", \"([a-z0-9]+)\"").getMatch(0);
         if (vid != null) br.setCookie("http://qiannao.com/", "vid", vid);

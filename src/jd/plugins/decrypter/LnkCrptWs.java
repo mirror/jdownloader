@@ -390,16 +390,17 @@ public class LnkCrptWs extends PluginForDecrypt {
     }
 
     public static class SolveMedia {
-        private final Browser br;
-        private String        challenge;
-        private String        chId;
-        private String        captchaAddress;
-        private String        server;
-        private String        path;
-        public Browser        smBr;
-        private Form          verify;
-        private boolean       secure   = false;
-        private boolean       noscript = true;
+        private final Browser      br;
+        private String             challenge;
+        private String             chId;
+        private String             captchaAddress;
+        private String             server;
+        private String             path;
+        public static final String FAIL_CAUSE_CKEY_MISSING = "SolveMedia Module fails --> Probably a host side bug/wrong key";
+        private Form               verify;
+        private boolean            secure                  = false;
+        private boolean            noscript                = true;
+        public Browser             smBr;
 
         public SolveMedia(final Browser br) {
             this.br = br;
@@ -432,6 +433,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 // when we retry solving a solvemedia session, we reuse smBr, browser already contains the info we need!
                 smBr.getPage(server + path + challenge);
             }
+            if (smBr.containsHTML(">error: domain / ckey mismatch")) throw new Exception(FAIL_CAUSE_CKEY_MISSING);
             if (noscript) {
                 verify = smBr.getForm(0);
                 captchaAddress = smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);

@@ -34,12 +34,26 @@ public class PurevolumeComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?purevolume\\.com/(search|signup|faq|artist_promotion|labels|news|festivals|events|advertise|past_features|login|charts|support|top_songs|about_us|browse|people)";
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("id=\"page_not_found\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.getURL().contains("purevolume.com/login") || parameter.matches(INVALIDLINKS)) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
         String type = "Artist";
         String songId = br.getRegex("\'Artist\'\\s?,\\s?\'(\\d+)\'").getMatch(0);
         if (songId == null) {

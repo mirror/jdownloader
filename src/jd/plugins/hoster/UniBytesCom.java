@@ -170,6 +170,7 @@ public class UniBytesCom extends PluginForHost {
                     stepForward = br.getRegex("\"(/" + uid + "/link\\?step=[^\"]+)").getMatch(0);
                     if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     br.getPage(stepForward);
+                    if (br.containsHTML("\">Somebody else is already downloading using")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 2 * 60 * 1001l);
                     if (ipBlockedTime == null) ipBlockedTime = br.getRegex("Wait for\\s+(\\d+)\\s+min").getMatch(0);
                     if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
                     dllink = br.getRegex(freeDlLink).getMatch(0);

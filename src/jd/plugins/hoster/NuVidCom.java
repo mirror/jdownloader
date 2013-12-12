@@ -53,6 +53,7 @@ public class NuVidCom extends PluginForHost {
         final String vkey = new Regex(Encoding.htmlDecode(linkPart), "vkey=([0-9a-f]+)").getMatch(0);
         br.getPage("http://www.nuvid.com" + Encoding.htmlDecode(linkPart) + "&pkey=" + JDHash.getMD5(vkey + Encoding.Base64Decode("aHlyMTRUaTFBYVB0OHhS")));
         DLLINK = br.getRegex("<video_file>(http://.*?)</video_file>").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("<video_file><\\!\\[CDATA\\[(http://.*?)\\]\\]></video_file>").getMatch(0);
     }
 
     @Override

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -113,13 +114,23 @@ public class PanBaiduCom extends PluginForHost {
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = Encoding.htmlDecode(DLLINK.replace("\\\\/", "/"));
         } else {
+            DLLINK = checkDirectLink(downloadLink, "panbaidudirectlink");
             if (DLLINK == null) {
-                final boolean pluginBroken = true;
+                final boolean pluginBroken = false;
                 if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String original_url = downloadLink.getStringProperty("mainLink", null);
+                br.getPage(original_url);
+                final String sign = br.getRegex("FileUtils\\.share_sign=\"([a-z0-9]+)\"").getMatch(0);
+                final String tsamp = br.getRegex("FileUtils\\.share_timestamp=\"(\\d+)\"").getMatch(0);
+                if (sign == null || tsamp == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 final String shareid = downloadLink.getStringProperty("origurl_shareid", null);
                 final String uk = downloadLink.getStringProperty("origurl_uk", null);
                 final String fsid = downloadLink.getStringProperty("important_fsid", null);
-                final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + System.currentTimeMillis() + "&sign=9ca631d53c430fd600ff4f137ca6c80c230574ee&bdstoken=null&channel=chunlei&clienttype=0&web=1";
+                // br.getPage("http://pan.baidu.com/share/autoincre?channel=chunlei&clienttype=0&web=1&type=1&shareid=" + shareid + "&uk=" +
+                // uk + "&t=" + System.currentTimeMillis() + "&_=" + System.currentTimeMillis() +
+                // "&bdstoken=null&channel=chunlei&clienttype=0&web=1");
+                final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + tsamp + "&sign=" + sign + "&bdstoken=null&channel=chunlei&clienttype=0&web=1";
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage(postLink, "fid_list=%5B" + fsid + "%5D");
                 for (int i = 1; i <= 3; i++) {
                     final String captchaLink = getJson("img");
@@ -142,14 +153,15 @@ public class PanBaiduCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         if (passCode != null) downloadLink.setProperty("pass", passCode);
+        downloadLink.setProperty("panbaidudirectlink", DLLINK);
         dl.startDownload();
     }
 
     // Possibly outdated and/or not needed anymore
     private String refreshFinalLink(final DownloadLink downloadLink) throws Exception {
-        String dir = downloadLink.getStringProperty("dirName");
-        String parameter = downloadLink.getStringProperty("mainLink");
-        String hash = downloadLink.getStringProperty("md5");
+        final String dir = downloadLink.getStringProperty("dirName", null);
+        final String parameter = downloadLink.getStringProperty("mainLink", null);
+        final String hash = downloadLink.getStringProperty("md5");
         if (dir == null || parameter == null || hash == null) return null;
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -171,6 +183,26 @@ public class PanBaiduCom extends PluginForHost {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
         if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
         return result;
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     @Override

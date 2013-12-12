@@ -171,27 +171,48 @@ public class EasyFilesPl extends PluginForHost {
             showMessage(link, "Phase 2/3: Checking status of internal download on " + NICE_HOST);
             boolean success = false;
             for (int i = 1; i <= 120; i++) {
-                safeAPIRequest("http://" + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
+                apiRequest("http://" + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
                 if (br.containsHTML("downloaded")) {
                     success = true;
                     break;
+                } else if (!br.toString().trim().matches("\\d{1,3}(\\.\\d{1,2})?")) {
+                    logger.info(NICE_HOST + ": Fails to download link to server");
+                    break;
                 }
+                logger.info(NICE_HOST + ": Progress of internal download of current link: " + this.br.toString().trim());
                 this.sleep(5000l, link);
             }
-            if (!success) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (!success) {
+                handleAPIErrors(this.br, acc, link);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             safeAPIRequest("http://" + NICE_HOST + "/api.php?cmd=get_link&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
 
             dllink = br.toString();
-            if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
-                logger.info(NICE_HOST + ": Final link is null");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull", 0);
+            if (br.toString().trim().equals("error")) {
+                logger.info(NICE_HOST + ": Final link is null_1");
+                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull_1", 0);
                 link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 2) {
                     timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull", timesFailed);
+                    link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_1", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
                 } else {
-                    link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull", Property.NULL);
+                    link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_1", Property.NULL);
+                    logger.info(NICE_HOST + ": Final link is null -> Disabling current host");
+                    tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                }
+            }
+            if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
+                logger.info(NICE_HOST + ": Final link is null_2");
+                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull_2", 0);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_2", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+                } else {
+                    link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_2", Property.NULL);
                     logger.info(NICE_HOST + ": Final link is null -> Plugin is broken");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

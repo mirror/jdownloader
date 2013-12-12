@@ -35,15 +35,19 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidu\\.com/(share/link(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(#dir/path=.+)?)|netdisk/(singlepublic\\?fid=|extractpublic\\?username=)[\\w\\%]+|s/\\w+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidu\\.com/(share/link(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(#dir/path=%2F.+)?)|netdisk/(singlepublic\\?fid=|extractpublic\\?username=)[\\w\\%]+|s/\\w+)" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static boolean pluginloaded = false;
+    private static boolean      pluginloaded            = false;
+    private static final String TYPE_DIRECT_FOLDER_LINK = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+#dir/path=%2F.+";
+    private static final String TYPE_FOLDER_LINK_NORMAL = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+";
+    private static final String TYPE_FOLDER_LINK_SHORT  = "http://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+";
 
+    // TODO: TYPE_FOLDER_LINK_SHORT and normal links can also be single files
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -66,7 +70,20 @@ public class PanBaiduCom extends PluginForDecrypt {
         String singleFolder = new Regex(parameter, "#dir/path=(.*?)$").getMatch(0);
         String correctedBR = br.toString().replaceAll("\\\\\\\\", "\\\\").replaceAll("\\\\\"", "\"");// save unicode backslash
         String dir = null;
-
+        // Jump into folder or get content of the main link
+        if (parameter.matches(TYPE_DIRECT_FOLDER_LINK)) {
+            final String dirName = new Regex(parameter, "dir/path=%2F(.+)").getMatch(0);
+            dir = "%2F" + dirName;
+            getDownloadLinks(decryptedLinks, parameter, dirName, dir);
+        } else if (parameter.matches(TYPE_FOLDER_LINK_SHORT)) {
+            final String uk = br.getRegex("FileUtils\\.share_uk=\"(\\d+)\"").getMatch(0);
+            final String shareid = br.getRegex("FileUtils\\.share_id=\"(\\d+)\"").getMatch(0);
+            if (uk == null || shareid == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            parameter = "http://pan.baidu.com/share/link?shareid=" + shareid + "&uk=" + uk;
+        }
         /* create HashMap with json key/value pair */
         String json = new Regex(correctedBR, "\"\\[(\\{.*?\\})\\]\"").getMatch(0);
         if (json == null) json = new Regex(correctedBR, "\"(\\{.*?\\})\"").getMatch(0);
@@ -97,7 +114,7 @@ public class PanBaiduCom extends PluginForDecrypt {
             dir = ret.get("parent_path") + "%2F" + dir;
             if (singleFolder != null && !singleFolder.equals(dir)) continue;// only selected folder
             if (ret.containsKey("md5") && !"".equals(ret.get("md5"))) {// file in root
-                DownloadLink dl = generateDownloadLink(ret, parameter, dir);
+                final DownloadLink dl = generateDownloadLink(ret, parameter, dir);
                 decryptedLinks.add(dl);
             } else {
                 getDownloadLinks(decryptedLinks, parameter, ret.get("path"), dir);// folder in root
@@ -111,7 +128,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void getDownloadLinks(ArrayList<DownloadLink> decryptedLinks, final String parameter, String dirName, String dir) throws Exception {
+    private void getDownloadLinks(final ArrayList<DownloadLink> decryptedLinks, final String parameter, String dirName, String dir) throws Exception {
         if (dirName == null || dir == null) return;
         FilePackage fp = null;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -127,15 +144,16 @@ public class PanBaiduCom extends PluginForDecrypt {
                 ret.put(link[0], link[1]);
             }
 
-            /* subfolder in folder */
-            if (!ret.containsKey("dlink")) {
-                if ("1".equals(ret.get("isdir"))) {
-                    String folderName = ret.get("server_filename");
-                    String path = ret.get("path");
-                    if (folderName == null || path == null) continue;
-                    getDownloadLinks(decryptedLinks, parameter, dirName + "-" + folderName, unescape(path));
-                }
-            }
+            // TODO: Add subfolder support in a better way
+            // /* subfolder in folder */
+            // if (!ret.containsKey("dlink")) {
+            // if ("1".equals(ret.get("isdir"))) {
+            // String folderName = ret.get("server_filename");
+            // String path = ret.get("path");
+            // if (folderName == null || path == null) continue;
+            // getDownloadLinks(decryptedLinks, parameter, dirName + "-" + folderName, unescape(path));
+            // }
+            // }
             final String shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
             final String uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
             final String fsid = ret.get("fs_id");
