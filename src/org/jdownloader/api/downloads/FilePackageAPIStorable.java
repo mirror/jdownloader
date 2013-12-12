@@ -3,9 +3,8 @@ package org.jdownloader.api.downloads;
 import jd.plugins.FilePackage;
 
 import org.appwork.storage.Storable;
-import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
-public class FilePackageAPIStorable extends AbstractJsonData implements Storable {
+public class FilePackageAPIStorable implements Storable {
     private FilePackage                                       pkg;
     private org.jdownloader.myjdownloader.client.json.JsonMap infoMap = null;
 
@@ -35,5 +34,4 @@ public class FilePackageAPIStorable extends AbstractJsonData implements Storable
     public void setInfoMap(org.jdownloader.myjdownloader.client.json.JsonMap infoMap) {
         this.infoMap = infoMap;
     }
-
 }
