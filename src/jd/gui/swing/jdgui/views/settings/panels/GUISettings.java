@@ -184,6 +184,32 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                             return true;
 
                         }
+                        if (pathname.getName().startsWith("RememberRelativeLocator")) {
+                            pathname.deleteOnExit();
+                            return true;
+
+                        }
+                        if (pathname.getName().startsWith("RememberAbsoluteLocator-")) {
+                            pathname.deleteOnExit();
+                            return true;
+
+                        }
+                        if (pathname.getName().startsWith("RememberAbsoluteLocator-")) {
+                            pathname.deleteOnExit();
+                            return true;
+
+                        }
+                        if (pathname.getName().startsWith("gui.windows.dimensionsandlocations")) {
+                            pathname.deleteOnExit();
+                            return true;
+
+                        }
+                        if (pathname.getName().startsWith("RememberLastDimensor-")) {
+                            pathname.deleteOnExit();
+                            return true;
+
+                        }
+
                         if (pathname.getName().startsWith("CaptchaDialogDimensions")) {
                             pathname.deleteOnExit();
                             return true;
