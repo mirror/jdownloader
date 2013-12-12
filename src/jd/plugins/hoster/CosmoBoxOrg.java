@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cosmobox.org" }, urls = { "https?://(www\\.)?cosmobox\\.org/(vidembed\\-)?[a-z0-9]{12}(\\.html)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cosmobox.org" }, urls = { "https?://(www\\.)?cosmobox\\.org/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class CosmoBoxOrg extends PluginForHost {
 
     private String               correctedBR                  = "";
