@@ -1175,8 +1175,11 @@ public class TbCm extends PluginForDecrypt {
                             }
                             if (infoLink != null) {
                                 if (variants.size() > 1) {
-                                    infoLink.setProperty("VARIANT", bestVideo.itag.getVariantID());
-                                    infoLink.setProperty("VARIANTS", variants);
+                                    if (bestVideo != null) {
+                                        infoLink.setProperty("VARIANT", bestVideo.itag.getVariantID());
+                                        infoLink.setProperty("VARIANTS", variants);
+                                        setVariantsSupport(infoLink, true);
+                                    }
                                 }
                                 infoLink.setProperty("LINKDUPEID", "ytID" + ytID + "." + convertTo.name());
                                 if (filePackage != null) filePackage.add(infoLink);
@@ -1187,10 +1190,14 @@ public class TbCm extends PluginForDecrypt {
                         }
                     } else {
                         for (final Info info : next.getValue()) {
-                            final DownloadLink infoLink = this.createDownloadlink(formattedFilename, currentVideoUrl, ytID, YT_FILENAME, convertTo, formatInName, info, null);
-                            infoLink.setProperty("LINKDUPEID", "ytID" + ytID + "." + info.itag.getITAG());
-                            if (filePackage != null) filePackage.add(infoLink);
-                            decryptedLinks.add(infoLink);
+                            final DownloadLink infoLink = this.createDownloadlink(formattedFilename, currentVideoUrl, ytID, YT_FILENAME, convertTo, formatInName, info, bestDashAudio);
+                            if (infoLink != null) {
+                                infoLink.setProperty("LINKDUPEID", "ytID" + ytID + "." + info.itag.getITAG());
+                                if (filePackage != null) filePackage.add(infoLink);
+                                decryptedLinks.add(infoLink);
+                            } else {
+                                logger.info("createDownloadLink failed for " + convertTo.name());
+                            }
                         }
                     }
                 }
@@ -1306,9 +1313,11 @@ public class TbCm extends PluginForDecrypt {
         if (videoInfo != null) {
             desc = videoInfo.desc;
             thislink = this.createDownloadlink("youtubeJD" + videoInfo.link);
-        } else {
+        } else if (audioInfo != null) {
             desc = audioInfo.desc;
             thislink = this.createDownloadlink("youtubeJD" + audioInfo.link);
+        } else {
+            return null;
         }
         if (formatInName == false) {
             desc = "";
@@ -1339,6 +1348,7 @@ public class TbCm extends PluginForDecrypt {
             currentFilename = formattedFilename;
         }
         if (DestinationFormat.AUDIO_DASH_AAC.equals(convertTo)) {
+            if (audioInfo == null) return null;
             /* special AUDIO-DASH handling */
             thislink.setFinalFileName(currentFilename);
             thislink.setProperty("name", currentFilename);
@@ -1395,6 +1405,9 @@ public class TbCm extends PluginForDecrypt {
         thislink.setProperty("fmtNew", videoInfo.itag.getITAG());
         thislink.setProperty("ytID", ytID);
         return thislink;
+    }
+
+    protected void setVariantsSupport(DownloadLink link, boolean variantsSupported) {
     }
 
     private DownloadLink createThumbnailDownloadLink(String name, String link, String browserurl, FilePackage filePackage) {

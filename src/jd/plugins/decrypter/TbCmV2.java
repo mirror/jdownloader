@@ -28,9 +28,7 @@ public class TbCmV2 extends TbCm {
     };
 
     @Override
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink ret = super.createDownloadlink(link);
-        ret.setVariantSupport(true);
-        return ret;
+    protected void setVariantsSupport(DownloadLink link, boolean variantsSupported) {
+        link.setVariantSupport(variantsSupported);
     }
 }
