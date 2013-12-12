@@ -61,6 +61,8 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
     private static final String  COOKIE_HOST                  = "http://ForDevsToPlayWith.com";
+    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
     private static final String  DOMAINS                      = "(ForDevsToPlayWith\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
@@ -89,7 +91,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String               fuid                         = null;
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.4.0
+    // XfileSharingProBasic Version 2.6.4.1
     // mods:
     // limit-info:
     // protocol: no https
@@ -400,7 +402,18 @@ public class XFileSharingProBasic extends PluginForHost {
             br.followConnection();
             correctBR();
             checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                logger.info(NICE_HOST + ": Final link is no file -> Retrying");
+                timesFailed++;
+                downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+            } else {
+                downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", Property.NULL);
+                logger.info(NICE_HOST + ": Final link is no file -> Plugin is broken");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         fixFilename(downloadLink);
@@ -769,7 +782,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         // If the account is expired we'll accept it as a free account
         final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-        long expiretime = -1;
+        long expiretime = 0;
         if (expire != null) expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
             ai.setStatus("Registered (free) user");
@@ -898,7 +911,18 @@ public class XFileSharingProBasic extends PluginForHost {
                 br.followConnection();
                 correctBR();
                 checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    logger.info(NICE_HOST + ": Final link is no file -> Retrying");
+                    timesFailed++;
+                    downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+                } else {
+                    downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", Property.NULL);
+                    logger.info(NICE_HOST + ": Final link is no file -> Plugin is broken");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             fixFilename(downloadLink);
             downloadLink.setProperty("premlink", dllink);
