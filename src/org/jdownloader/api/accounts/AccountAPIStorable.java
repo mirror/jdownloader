@@ -12,11 +12,15 @@ public class AccountAPIStorable implements Storable {
     private JsonMap infoMap = null;
 
     public long getUUID() {
-        return acc.getId().getID();
+        Account lacc = acc;
+        if (lacc != null) return lacc.getId().getID();
+        return 0;
     }
 
     public String getHostname() {
-        return acc.getHoster();
+        Account lacc = acc;
+        if (lacc != null) return lacc.getHoster();
+        return null;
     }
 
     public JsonMap getInfoMap() {

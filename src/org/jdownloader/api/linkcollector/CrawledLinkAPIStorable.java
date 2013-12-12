@@ -1,14 +1,12 @@
 package org.jdownloader.api.linkcollector;
 
-import java.util.HashMap;
-
 import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.storage.Storable;
 
 public class CrawledLinkAPIStorable implements Storable {
 
-    private CrawledLink             link;
+    private CrawledLink                                       link;
     private org.jdownloader.myjdownloader.client.json.JsonMap infoMap;
 
     public CrawledLinkAPIStorable(/* Storable */) {
@@ -20,12 +18,16 @@ public class CrawledLinkAPIStorable implements Storable {
     }
 
     public Long getUuid() {
-        return link.getUniqueID().getID();
+        CrawledLink llink = link;
+        if (llink != null) return llink.getUniqueID().getID();
+        return 0l;
     }
 
     // to be compatbile with older API version
     public Long getUniqueID() {
-        return link.getUniqueID().getID();
+        CrawledLink llink = link;
+        if (llink != null) return llink.getUniqueID().getID();
+        return 0l;
     }
 
     public void setName(String name) {
@@ -33,7 +35,9 @@ public class CrawledLinkAPIStorable implements Storable {
     }
 
     public String getName() {
-        return this.link.getName();
+        CrawledLink llink = link;
+        if (llink != null) return llink.getName();
+        return null;
     }
 
     public org.jdownloader.myjdownloader.client.json.JsonMap getInfoMap() {

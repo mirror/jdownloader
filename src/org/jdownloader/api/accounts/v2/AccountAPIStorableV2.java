@@ -13,7 +13,6 @@ public class AccountAPIStorableV2 extends org.jdownloader.myjdownloader.client.b
 
     public AccountAPIStorableV2(Account acc) {
         super();
-
         setUUID(acc.getId().getID());
         setHostname(acc.getHoster());
     }

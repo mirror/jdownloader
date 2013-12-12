@@ -1,14 +1,12 @@
 package org.jdownloader.api.linkcollector;
 
-import java.util.HashMap;
-
 import jd.controlling.linkcrawler.CrawledPackage;
 
 import org.appwork.storage.Storable;
 
 public class CrawledPackageAPIStorable implements Storable {
 
-    private CrawledPackage          pkg;
+    private CrawledPackage                                    pkg;
     private org.jdownloader.myjdownloader.client.json.JsonMap infoMap = null;
 
     public CrawledPackageAPIStorable(/* Storable */) {
@@ -20,11 +18,15 @@ public class CrawledPackageAPIStorable implements Storable {
     }
 
     public String getName() {
-        return pkg.getName();
+        CrawledPackage lpkg = pkg;
+        if (lpkg != null) return lpkg.getName();
+        return null;
     }
 
     public long getUUID() {
-        return pkg.getUniqueID().getID();
+        CrawledPackage lpkg = pkg;
+        if (lpkg != null) return lpkg.getUniqueID().getID();
+        return 0;
     }
 
     public org.jdownloader.myjdownloader.client.json.JsonMap getInfoMap() {
