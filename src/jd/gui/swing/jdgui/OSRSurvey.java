@@ -4,6 +4,7 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -11,6 +12,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
@@ -48,6 +51,13 @@ public class OSRSurvey {
         if (running.get()) return;
         running.set(true);
         try {
+
+            try {
+                Browser br = new Browser();
+                br.openGetConnection("http://stats.appwork.org/piwik/piwik.php?idsite=6&rec=1&action_name=CALL_Dialog");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             ConfirmDialog d = new ConfirmDialog(0, _GUI._.osr_dialog_title(), "", null, _GUI._.osr_start(), null) {
                 private AbstractIcon header;
                 {
@@ -136,8 +146,23 @@ public class OSRSurvey {
                 urls.add("http://osr-surveys.cs.fau.de/index.php/815453/lang-" + lng);
                 urls.add("http://osr-surveys.cs.fau.de/index.php/984994/lang-" + lng);
 
-                CrossSystem.openURLOrShowMessage(urls.get(new Random().nextInt(urls.size())));
+                String url;
+                CrossSystem.openURLOrShowMessage(url = urls.get(new Random().nextInt(urls.size())));
 
+                Browser br = new Browser();
+                try {
+                    br.openGetConnection("http://stats.appwork.org/piwik/piwik.php?idsite=6&rec=1&action_name=CALL_DialogOK");
+                    br.openGetConnection("http://stats.appwork.org/piwik/piwik.php?idsite=6&rec=1&action_name=CALL_" + Encoding.urlEncode(url));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    Browser br = new Browser();
+                    br.openGetConnection("http://stats.appwork.org/piwik/piwik.php?idsite=6&rec=1&action_name=CALL_DialogCancel");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
         } finally {

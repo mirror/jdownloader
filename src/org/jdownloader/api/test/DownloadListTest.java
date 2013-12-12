@@ -15,6 +15,19 @@ public class DownloadListTest extends Test {
     public void run(Storage config, AbstractMyJDClient api) throws Exception {
         DownloadsListInterface link = api.link(DownloadsListInterface.class, chooseDevice(api));
         List<DownloadLinkStorable> smallList = link.queryLinks(new LinkQuery());
+        LinkQuery query = new LinkQuery();
+        query.setBytesLoaded(true);
+        query.setBytesTotal(true);
+        query.setEnabled(true);
+        query.setEta(true);
+        query.setExtractionStatus(true);
+        query.setFinished(true);
+        query.setHost(true);
+        query.setRunning(true);
+        query.setSkipped(true);
+        query.setSpeed(true);
+        query.setUrl(true);
+        List<DownloadLinkStorable> bigList = link.queryLinks(query);
 
         System.out.println(1);
     }
