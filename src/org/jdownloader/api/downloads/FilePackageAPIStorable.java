@@ -17,11 +17,15 @@ public class FilePackageAPIStorable extends AbstractJsonData implements Storable
     }
 
     public String getName() {
-        return pkg.getName();
+        FilePackage lpkg = pkg;
+        if (lpkg != null) return lpkg.getName();
+        return null;
     }
 
     public long getUUID() {
-        return pkg.getUniqueID().getID();
+        FilePackage lpkg = pkg;
+        if (lpkg != null) return lpkg.getUniqueID().getID();
+        return 0;
     }
 
     public org.jdownloader.myjdownloader.client.json.JsonMap getInfoMap() {

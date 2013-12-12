@@ -40,17 +40,24 @@ public class LinkStatusAPIStorable implements Storable {
     }
 
     public Long getRemainingWaittime() {
-        ConditionalSkipReason cond = link.getConditionalSkipReason();
-        if (cond instanceof TimeOutCondition) { return Math.max(0, ((TimeOutCondition) cond).getTimeOutLeft()); }
+        DownloadLink llink = link;
+        if (llink != null) {
+            ConditionalSkipReason cond = llink.getConditionalSkipReason();
+            if (cond instanceof TimeOutCondition) { return Math.max(0, ((TimeOutCondition) cond).getTimeOutLeft()); }
+        }
         return 0l;
     }
 
     public Boolean getFinished() {
-        return FinalLinkState.CheckFinished(link.getFinalLinkState());
+        DownloadLink llink = link;
+        if (llink != null) FinalLinkState.CheckFinished(llink.getFinalLinkState());
+        return false;
     }
 
     public Boolean getFailed() {
-        return FinalLinkState.CheckFailed(link.getFinalLinkState());
+        DownloadLink llink = link;
+        if (llink != null) return FinalLinkState.CheckFailed(llink.getFinalLinkState());
+        return false;
     }
 
 }
