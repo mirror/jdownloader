@@ -271,8 +271,7 @@ public class TestClient {
                         ret = br.postPage(new URL(getServerRoot() + query), object == null ? "" : object).getBytes("UTF-8");
                         con = br.getConnection();
                     }
-                    System.out.println(con);
-                    System.out.println(ret);
+                    System.out.println(new String(ret, "UTF-8"));
 
                     if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
                         //
