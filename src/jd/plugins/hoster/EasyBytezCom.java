@@ -106,7 +106,7 @@ public class EasyBytezCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
-    // mods:
+    // mods:fetchAccountInfo [Treat expired premium accounts as free accounts]
     // other: sister site, zingload.com
 
     private void setConstants(final Account account) {
@@ -717,12 +717,6 @@ public class EasyBytezCom extends PluginForHost {
         } else if (!br.getURL().contains(myAccount)) {
             getPage(myAccount);
         }
-        // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
-            account.setProperty("free", true);
-        } else {
-            account.setProperty("free", false);
-        }
         final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
@@ -744,38 +738,12 @@ public class EasyBytezCom extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (account.getBooleanProperty("free")) {
-            ai.setStatus("Registered (free) User");
-            account.setProperty("totalMaxSim", 20);
-        } else {
+        final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        if (!inValidate(expireDay)) {
+            account.setProperty("free", false);
             long expire = 0, expireD = 0, expireS = 0;
-            final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
             if (!inValidate(expireDay)) {
                 expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
-            }
-            if (inValidate(expireDay) || useAltExpire) {
-                // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
-                getPage("/?op=payments");
-                String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
-                if (!inValidate(expireSecond)) {
-                    String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                    String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                    String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                    if (!inValidate(tmpYears)) years = Integer.parseInt(tmpYears);
-                    if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
-                    if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
-                    if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
-                    if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
-                    expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-                }
-                if (expireD == 0 && expireS == 0) {
-                    ai.setExpired(true);
-                    account.setValid(false);
-                    return ai;
-                }
             }
             if (expireS != 0) {
                 expire = expireS;
@@ -784,7 +752,19 @@ public class EasyBytezCom extends PluginForHost {
             }
             account.setProperty("totalMaxSim", 20);
             ai.setValidUntil(expire);
-            ai.setStatus("Premium User");
+            if (ai.isExpired()) {
+                ai.setValidUntil(-1);
+                account.setProperty("free", true);
+                ai.setStatus("Registered (free) User");
+                account.setProperty("totalMaxSim", 20);
+            } else {
+                ai.setStatus("Premium User");
+            }
+
+        } else {
+            account.setProperty("free", true);
+            ai.setStatus("Registered (free) User");
+            account.setProperty("totalMaxSim", 20);
         }
         return ai;
     }
@@ -1472,7 +1452,7 @@ public class EasyBytezCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
