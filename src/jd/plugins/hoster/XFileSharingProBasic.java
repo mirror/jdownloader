@@ -86,9 +86,10 @@ public class XFileSharingProBasic extends PluginForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
+    private String               fuid                         = null;
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.3.0
+    // XfileSharingProBasic Version 2.6.4.0
     // mods:
     // limit-info:
     // protocol: no https
@@ -147,6 +148,7 @@ public class XFileSharingProBasic extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
+        setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -177,7 +179,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(2);
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
@@ -192,7 +194,7 @@ public class XFileSharingProBasic extends PluginForHost {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                                 if (fileInfo[0] == null) {
                                     // Link of the box without filesize
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/[a-z0-9]{12}/([^<>\"]*?)</textarea").getMatch(2);
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
                                 }
                             }
                         }
@@ -232,7 +234,7 @@ public class XFileSharingProBasic extends PluginForHost {
             try {
                 logger.info("Trying to get link via vidembed");
                 final Browser brv = br.cloneBrowser();
-                brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+                brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) logger.info("Failed to get link via vidembed");
             } catch (final Throwable e) {
@@ -580,32 +582,61 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     /**
-     * @param downloadLink
-     */
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     * 
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+            return true;
+        else
+            return false;
+    }
+
+    /**
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
+     * which is based on fuid.
+     * 
+     * @version 0.2
+     * @author raztoki
+     * */
     private void fixFilename(final DownloadLink downloadLink) {
-        String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
-        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        String newExtension = null;
-        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename == null) {
-            logger.info("Server filename is null, keeping filename: " + oldName);
-        } else {
-            if (serverFilename.contains(".")) {
-                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-            } else {
-                logger.info("HTTP headers don't contain filename.extension information");
-            }
-        }
-        if (newExtension != null && !oldName.endsWith(newExtension)) {
-            String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5) {
-                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            } else {
-                downloadLink.setFinalFileName(oldName + newExtension);
-            }
-        }
+        String orgName = null;
+        String orgExt = null;
+        String servName = null;
+        String servExt = null;
+        String orgNameExt = downloadLink.getFinalFileName();
+        if (orgNameExt == null) orgNameExt = downloadLink.getName();
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        if (!inValidate(orgExt))
+            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+        else
+            orgName = orgNameExt;
+        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
+        String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
+            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+        } else
+            servName = servNameExt;
+        String FFN = null;
+        if (orgName.equalsIgnoreCase(fuid.toLowerCase()))
+            FFN = servNameExt;
+        else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+            // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
+            FFN = servNameExt;
+        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+            FFN = orgName + servExt;
+        else
+            FFN = orgNameExt;
+        downloadLink.setFinalFileName(FFN);
+    }
+
+    private void setFUID(final DownloadLink dl) {
+        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
