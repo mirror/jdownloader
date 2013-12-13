@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -66,8 +67,11 @@ public class QqCom extends PluginForHost {
                 final String redirect = br.getRegex("window\\.location=\"(http[^\"]+)").getMatch(0);
                 if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.getPage(redirect);
+            } else {
+                // Offline links should also get nice filenames
+                link.setName(new Regex(link.getDownloadURL(), "filedownload\\.php\\?code=(.+)").getMatch(0));
             }
-            if (br.containsHTML("(>分享文件已过期或者链接错误，请确认后重试。<|>想了解更多有关QQ旋风资源分享的信息，请访问 <a href=)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(>分享文件已过期或者链接错误，请确认后重试。<|>想了解更多有关QQ旋风资源分享的信息，请访问 <a href=|>很抱歉，此资源已被删除或包含敏感信息不能查看啦<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("filename:\"([^<>\"]+)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("class=\"a_filename\" href=\"###\" title=\"([^<>\"]+)\"").getMatch(0);

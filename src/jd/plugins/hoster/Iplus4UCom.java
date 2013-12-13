@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,18 +27,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "iplus4u.com" }, urls = { "http://(www\\.)?iplus4u\\.com/owncloud/public\\.php\\?service=files\\&t=[a-z0-9]{32}" }, flags = { 0 })
+public class Iplus4UCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promptfile.com" }, urls = { "http://(www\\.)?promptfile\\.com/l/[A-Z0-9]+\\-[A-Z0-9]+" }, flags = { 0 })
-public class PromptFileCom extends PluginForHost {
-
-    public PromptFileCom(PluginWrapper wrapper) {
+    public Iplus4UCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.promptfile.com/terms";
+        return "http://iplus4u.com/";
     }
 
     @Override
@@ -47,36 +44,23 @@ public class PromptFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.promptfile.com/?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fInfo = br.getRegex("<span style=\"text\\-decoration:none;cursor:text;\" title=\"([^<>\"]*?)\">([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? [A-Za-z]{2,5})\\)</span>");
-        final String filename = fInfo.getMatch(1);
-        final String filesize = fInfo.getMatch(2);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("class='error'>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("name=\"filename\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String cHash = br.getRegex("name=\"chash\" value=\"([a-z0-9]+)\"").getMatch(0);
-        if (cHash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(br.getURL(), "chash=" + cHash);
-        final String dllink = br.getRegex("(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]+)(\\'|\")").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        final String dllink = br.getURL() + "&download";
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             br.followConnection();
-            if (br.containsHTML("file unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File unavailable", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public void reset() {
     }
 
     @Override
@@ -88,4 +72,11 @@ public class PromptFileCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetPluginGlobals() {
+    }
 }

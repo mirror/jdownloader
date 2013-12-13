@@ -559,7 +559,7 @@ public class TbCm extends PluginForDecrypt {
         if (new Regex(parameter, "(" + playListRegex + "|" + courseListRegex + "|" + userGridGCRegex + ")").matches() || choice == 1) {
             luid = getListID(parameter);
             String page = parameter;
-
+            int segmentCounter = 1;
             do {
                 try {
                     if (this.isAbort()) {
@@ -598,6 +598,9 @@ public class TbCm extends PluginForDecrypt {
                 }
                 // not all pages are shown on first page! Grab next and continue loop
                 next = br.getRegex("<a href=\"(/playlist\\?list=" + luid + "\\&amp;page=\\d+)\"[^\r\n]+>Next").getMatch(0);
+                logger.info("youtube.com/playlist: Found " + videoNumberCounter + " links");
+                logger.info("youtube.com/playlist: Decrypted segment " + segmentCounter);
+                segmentCounter++;
             } while (next != null);
         }
         // user support
@@ -967,8 +970,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
                  */
                 HashMap<ITAG, String[]> useTags = new HashMap<ITAG, String[]>(availableItags);
                 if (best) {

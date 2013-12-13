@@ -94,10 +94,14 @@ public class BoxNet extends PluginForHost {
             String fileID = parameter.getStringProperty("fileid", null);
             if (fileID == null) {
                 br.getPage(parameter.getDownloadURL());
+                if (br.getURL().contains("box.com/login")) {
+                    parameter.getLinkStatus().setStatusText("Only downloadable for registered users");
+                    parameter.setAvailable(true);
+                    return AvailableStatus.TRUE;
+                }
                 if (br.containsHTML("(this shared file or folder link has been removed|<title>Box \\- Free Online File Storage, Internet File Sharing, RSS Sharing, Access Documents \\&amp; Files Anywhere, Backup Data, Share Files</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 if (br.getURL().equals("https://www.box.com/freeshare")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                fileID = br.getRegex("var file_id = \\'(\\d+)\\'").getMatch(0);
-                if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                fileID = findFID();
             }
             final String sharedName = new Regex(parameter.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -156,17 +160,16 @@ public class BoxNet extends PluginForHost {
         // requestFileInformation...
         br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(SLINK) && DLLINK == null) {
-            if (DLLINK == null) {
-                String fid = br.getRegex("var file_id = \\'(\\d+)\\';").getMatch(0);
-                if (fid == null) {
-                    fid = br.getRegex(",typed_id: \\'f_(\\d+)\\'").getMatch(0);
-                    if (fid == null) {
-                        fid = br.getRegex("\\&amp;file_id=f_(\\d+)\\&amp").getMatch(0);
-                        if (fid == null) {
-                            fid = br.getRegex("var single_item_collection = \\{ (\\d+) : item \\};").getMatch(0);
-                        }
-                    }
+            if (br.getURL().contains("box.com/login")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
                 }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
+            }
+            if (DLLINK == null) {
+                final String fid = findFID();
                 if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 DLLINK = "http://www.box.com/download/external/f_" + fid + "/0/" + link.getName() + "?shared_file_page=1&shared_name=" + new Regex(link.getDownloadURL(), "http://www\\.box\\.[^/]+/s/(.+)").getMatch(0);
             }
@@ -181,6 +184,24 @@ public class BoxNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String findFID() throws PluginException {
+        String fid = br.getRegex("var file_id = \\'(\\d+)\\';").getMatch(0);
+        if (fid == null) {
+            fid = br.getRegex(",typed_id: \\'f_(\\d+)\\'").getMatch(0);
+            if (fid == null) {
+                fid = br.getRegex("\\&amp;file_id=f_(\\d+)\\&amp").getMatch(0);
+                if (fid == null) {
+                    fid = br.getRegex("var single_item_collection = \\{ (\\d+) : item \\};").getMatch(0);
+                    if (fid == null) {
+                        fid = br.getRegex("itemTypedID: \"f_(\\d+)\"").getMatch(0);
+                    }
+                }
+            }
+        }
+        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return fid;
     }
 
     @Override
