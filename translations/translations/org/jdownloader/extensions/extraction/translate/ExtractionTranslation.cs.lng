@@ -1,4 +1,5 @@
 IfFileExistsDialog_layoutDialogContent_archive=Archiv:
+IfFileExistsDialog_layoutDialogContent_newName=Nový název:
 ValidateArchiveAction_ValidateArchiveAction=Zkontrolovat %s1
 ValidateArchiveAction_ValidateArchiveAction_multi=Zkontrolovat archivy
 ValidateArchiveAction_ValidateArchiveAction_object_=Zkontrolovat archivy
@@ -98,6 +99,7 @@ settings_cpupriority_middle=Střední
 settings_extract_to_archive_folder=Rozbalit do následující složky
 settings_extract_to_path=Rozbalit do
 settings_extractto=Složka pro rozbalení
+settings_if_file_exists=Pokud soubor existuje...
 settings_multi=Speciální nastavení (Pouze pro rar, 7z a zip. Ne pro rozdělené soubory)
 settings_multi_use_original_file_date=Použít původní datum souboru, pokud je to možné
 settings_overwrite=Přepsat stávající soubory?

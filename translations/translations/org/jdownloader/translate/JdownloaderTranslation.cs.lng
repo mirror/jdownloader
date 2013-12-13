@@ -32,6 +32,7 @@ LinkSource_DOWNLOADED_CONTAINER=Stažený kontejner
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Dok (pouze Mac)
 LinkSource_MYJD=MyJDownloader
+LinkSource_PASTE_LINKS_ACTION=Akce vložení odkazů
 LinkSource_START_PARAMETER=Spustit parametr
 LinkSource_TOOLBAR=Panel nástrojů
 LinkgrabberFilterRule_duplicate=%s1 (kopie)
