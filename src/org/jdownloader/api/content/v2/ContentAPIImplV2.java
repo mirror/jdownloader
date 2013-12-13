@@ -17,8 +17,13 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.ContentInterface;
 
 public class ContentAPIImplV2 implements ContentAPIV2 {
+    public ContentAPIImplV2() {
+        RemoteAPIController.validateInterfaces(ContentAPIV2.class, ContentInterface.class);
+    }
 
     public void getFavIcon(RemoteAPIRequest request, RemoteAPIResponse response, String hostername) throws InternalApiException, APIFileNotFoundException {
         DomainInfo info = DomainInfo.getInstance(hostername);

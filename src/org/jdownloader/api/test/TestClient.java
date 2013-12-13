@@ -68,6 +68,8 @@ public class TestClient {
     }
 
     public static abstract class Test {
+        private static DeviceData lastDevice;
+
         public abstract void run(Storage config, AbstractMyJDClient api) throws Exception;
 
         public String getName() {
@@ -78,8 +80,15 @@ public class TestClient {
             final DeviceList list = api.listDevices();
             if (list.getList().size() == 0) { throw new RuntimeException("No Device Connected"); }
             if (list.getList().size() == 1) { return list.getList().get(0).getId(); }
-            final int device = Dialog.getInstance().showComboDialog(0, "Choose Device", "Choose Device", list.getList().toArray(new DeviceData[] {}), 0, null, null, null, null);
-            final String dev = list.getList().get(device).getId();
+
+            int defIndex = 0;
+            ArrayList<DeviceData> devList = list.getList();
+            if (lastDevice != null) defIndex = devList.indexOf(lastDevice);
+            if (defIndex < 0) defIndex = 0;
+            final int device = Dialog.getInstance().showComboDialog(0, "Choose Device", "Choose Device", devList.toArray(new DeviceData[] {}), defIndex, null, null, null, null);
+            lastDevice = list.getList().get(device);
+            final String dev = lastDevice.getId();
+
             return dev;
         }
     }
@@ -152,7 +161,6 @@ public class TestClient {
      * @throws InterruptedException
      */
     public static void main(final String[] args) throws APIException, MyJDownloaderException, DialogClosedException, DialogCanceledException, IOException, InterruptedException {
-        final BasicHTTP br = new BasicHTTP();
 
         register(LOGIN = new TestLogin());
         register(new ConfigTest());
@@ -218,12 +226,6 @@ public class TestClient {
 
         });
         AbstractDialog.setDefaultLocator(new RememberAbsoluteDialogLocator("MYJDTest"));
-        br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
-        final int[] codes = new int[999];
-        for (int i = 0; i < codes.length; i++) {
-            codes[i] = i;
-        }
-        br.setAllowedResponseCodes(codes);
 
         final AbstractMyJDClient api = new AbstractMyJDClient("Java Test Application") {
 
@@ -241,6 +243,15 @@ public class TestClient {
             protected byte[] post(final String query, final String object, final byte[] keyAndIV) throws ExceptionResponse {
                 HTTPConnection con = null;
                 byte[] ret = null;
+                final BasicHTTP br = new BasicHTTP();
+
+                br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
+                final int[] codes = new int[999];
+                for (int i = 0; i < codes.length; i++) {
+                    codes[i] = i;
+                }
+                br.setAllowedResponseCodes(codes);
+
                 try {
                     if (keyAndIV != null) {
                         br.putRequestHeader("Accept-Encoding", "gzip_aes");

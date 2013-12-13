@@ -10,7 +10,7 @@ import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 
 @ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface.NAMESPACE)
 public interface AccountAPIV2 extends RemoteAPIInterface {
-    public boolean addAccount(String premiumHoster, String username, String password);
+    public void addAccount(String premiumHoster, String username, String password);
 
     @AllowNonStorableObjects
     public List<AccountAPIStorableV2> listAccounts(AccountQuery query);
@@ -19,15 +19,15 @@ public interface AccountAPIV2 extends RemoteAPIInterface {
 
     public AccountAPIStorableV2 getAccountInfo(long id);
 
-    public boolean removeAccounts(long[] ids);
+    public void removeAccounts(long[] ids);
 
-    public boolean enableAccounts(long[] ids);
+    public void enableAccounts(long[] ids);
 
-    public boolean disableAccounts(long[] ids);
+    public void disableAccounts(long[] ids);
 
     HashMap<String, String> listPremiumHosterUrls();
 
-    boolean setUserNameAndPassword(Long accountId, String username, String password);
+    boolean setUserNameAndPassword(long accountId, String username, String password);
 
     String getPremiumHosterUrl(String hoster);
 }

@@ -10,13 +10,15 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface;
 import org.jdownloader.settings.advanced.AdvancedConfigAPIEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     public AdvancedConfigManagerAPIImpl() {
-
+        RemoteAPIController.validateInterfaces(AdvancedConfigManagerAPI.class, AdvancedConfigInterface.class);
     }
 
     public ArrayList<AdvancedConfigAPIEntry> list(String pattern, boolean returnDescription, boolean returnValues, boolean returnDefaultValues) {

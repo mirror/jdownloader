@@ -2,9 +2,12 @@ package org.jdownloader.api;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -14,8 +17,10 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.SessionRemoteAPI;
 import org.appwork.remoteapi.SessionRemoteAPIRequest;
+import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsAPI;
+import org.appwork.remoteapi.events.EventsAPIInterface;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.remoteapi.responsewrapper.DataObject;
 import org.appwork.storage.JSonStorage;
@@ -28,6 +33,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.accounts.AccountAPIImpl;
 import org.jdownloader.api.accounts.v2.AccountAPIImplV2;
@@ -41,7 +47,7 @@ import org.jdownloader.api.downloads.DownloadControllerEventPublisher;
 import org.jdownloader.api.downloads.DownloadWatchDogEventPublisher;
 import org.jdownloader.api.downloads.DownloadsAPIImpl;
 import org.jdownloader.api.downloads.v2.DownloadWatchdogAPIImpl;
-import org.jdownloader.api.downloads.v2.DownloadsAPIImplV2;
+import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.api.extensions.ExtensionsAPIImpl;
 import org.jdownloader.api.extraction.ExtractionAPIImpl;
 import org.jdownloader.api.jd.JDAPIImpl;
@@ -56,6 +62,11 @@ import org.jdownloader.api.plugins.PluginsAPIImpl;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.bindings.ClientApiNameSpace;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
+import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
 public class RemoteAPIController {
 
@@ -161,13 +172,14 @@ public class RemoteAPIController {
             logger.log(e);
         }
         register(eventsapi = new EventsAPI());
+        validateInterfaces(EventsAPIInterface.class, EventsInterface.class);
         register(CaptchaAPISolver.getInstance());
         register(CaptchaAPISolver.getInstance().getEventPublisher());
         register(new JDAPIImpl());
         DownloadWatchDogEventPublisher downloadWatchDogEventPublisher = new DownloadWatchDogEventPublisher();
         DownloadsAPIImpl downloadsAPI;
         register(downloadsAPI = new DownloadsAPIImpl());
-        register(new DownloadsAPIImplV2());
+        register(new DownloadsAPIV2Impl());
         register(new DownloadWatchdogAPIImpl());
         register(downloadWatchDogEventPublisher);
         register(new AdvancedConfigManagerAPIImpl());
@@ -275,6 +287,75 @@ public class RemoteAPIController {
     public boolean unregister(EventPublisher publisher) {
         if (publisher == null) return false;
         return eventsapi.unregister(publisher);
+    }
+
+    public static void validateInterfaces(Class<? extends RemoteAPIInterface> deviceInterface, Class<? extends Linkable> clientInterface) {
+        if (Application.isJared(RemoteAPIController.class)) return;
+        try {
+            String deviceNameSpace = deviceInterface.getSimpleName();
+            String clientNameSpace = clientInterface.getSimpleName();
+            ApiNamespace deviceNameSpaceAnnotation = deviceInterface.getAnnotation(ApiNamespace.class);
+            ClientApiNameSpace clientNameSpaceAnnotation = clientInterface.getAnnotation(ClientApiNameSpace.class);
+
+            if (deviceNameSpaceAnnotation != null) deviceNameSpace = deviceNameSpaceAnnotation.value();
+            if (clientNameSpaceAnnotation != null) clientNameSpace = clientNameSpaceAnnotation.value();
+
+            if (!StringUtils.equals(deviceNameSpace, clientNameSpace)) { throw new Exception("DeviceNameSpace: " + deviceNameSpace + " != Clientnamespace " + clientNameSpace); }
+
+            HashMap<String, Method> deviceMap = createMethodMap(deviceInterface.getDeclaredMethods());
+
+            HashMap<String, Method> clientMap = createMethodMap(clientInterface.getDeclaredMethods());
+
+            for (Entry<String, Method> e : deviceMap.entrySet()) {
+                Method device = e.getValue();
+                Method client = clientMap.get(e.getKey());
+                if (client == null) {
+
+                    //
+                    throw new Exception(e.getKey() + " Missing in " + clientInterface);
+                }
+
+            }
+
+            for (Entry<String, Method> e : clientMap.entrySet()) {
+                Method client = e.getValue();
+                Method device = clientMap.get(e.getKey());
+                if (device == null) {
+                    //
+                    throw new Exception(e.getKey() + " Missing in " + clientInterface);
+                }
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Dialog.getInstance().showExceptionDialog("Error In API Interface Declaration", e.getMessage(), e);
+        }
+    }
+
+    public static HashMap<String, Method> createMethodMap(Method[] deviceMethods) throws Exception {
+        HashMap<String, Method> deviceMap = new HashMap<String, Method>();
+        for (Method m : deviceMethods) {
+            String name = m.getName();
+            Class<?>[] actualTypes = m.getParameterTypes();
+
+            ArrayList<Class<?>> params = new ArrayList<Class<?>>();
+            for (Class<?> c : actualTypes) {
+                if (Clazz.isInstanceof(c, RemoteAPIRequest.class)) continue;
+                if (Clazz.isInstanceof(c, RemoteAPIResponse.class)) continue;
+                Class<?> sc = c.getSuperclass();
+                Package pkg = AbstractMyJDClient.class.getPackage();
+                if (sc != null && sc != AbstractJsonData.class && sc.getName().startsWith(pkg.getName()) && !c.getName().startsWith(pkg.getName())) {
+                    c = sc;
+                }
+                params.add(c);
+            }
+            String id = name + "(" + params + ")";
+
+            Method oldMethod;
+            if ((oldMethod = deviceMap.put(id, m)) != null) { throw new Exception("Dupe Method definition: " + m + " - " + oldMethod); }
+        }
+        return deviceMap;
     }
 
 }

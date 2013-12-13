@@ -2,6 +2,9 @@ package org.jdownloader.api.downloads.v2;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
+import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadControllerInterface;
+
 public class DownloadWatchdogAPIImpl implements DownloadWatchdogAPI {
 
     public boolean start() {
@@ -25,7 +28,7 @@ public class DownloadWatchdogAPIImpl implements DownloadWatchdogAPI {
     }
 
     public DownloadWatchdogAPIImpl() {
-
+        RemoteAPIController.validateInterfaces(DownloadWatchdogAPI.class, DownloadControllerInterface.class);
     }
 
     @Override
@@ -39,7 +42,7 @@ public class DownloadWatchdogAPIImpl implements DownloadWatchdogAPI {
 
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
 
-        dwd.forceDownload(org.jdownloader.api.downloads.v2.DownloadsAPIImplV2.getSelectionInfo(linkIds, packageIds).getChildren());
+        dwd.forceDownload(org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl.getSelectionInfo(linkIds, packageIds).getChildren());
 
     }
 

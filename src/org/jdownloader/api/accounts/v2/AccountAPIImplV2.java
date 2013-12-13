@@ -10,14 +10,17 @@ import jd.controlling.AccountController;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public class AccountAPIImplV2 implements AccountAPIV2 {
 
     public AccountAPIImplV2() {
-
+        RemoteAPIController.validateInterfaces(AccountAPIV2.class, AccountInterface.class);
     }
 
     public List<AccountAPIStorableV2> listAccounts(AccountQuery queryParams) {
@@ -110,12 +113,12 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         return AccountController.createFullBuyPremiumUrl(HostPluginController.getInstance().get(hoster).getPremiumUrl(), "captcha/webinterface");
     }
 
-    public boolean removeAccounts(long[] ids) {
+    public void removeAccounts(long[] ids) {
         java.util.List<Account> removeACCs = getAccountbyIDs(ids);
         for (Account acc : removeACCs) {
             AccountController.getInstance().removeAccount(acc);
         }
-        return true;
+
     }
 
     private java.util.List<Account> getAccountbyIDs(long[] ids) {
@@ -137,21 +140,21 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
     }
 
     @Override
-    public boolean enableAccounts(final long[] linkIds) {
-        return setEnabledState(true, linkIds);
+    public void enableAccounts(final long[] linkIds) {
+        setEnabledState(true, linkIds);
     }
 
     @Override
-    public boolean disableAccounts(long[] linkIds) {
-        return setEnabledState(false, linkIds);
+    public void disableAccounts(long[] linkIds) {
+        setEnabledState(false, linkIds);
     }
 
-    public boolean setEnabledState(boolean enabled, long[] ids) {
+    public void setEnabledState(boolean enabled, long[] ids) {
         java.util.List<Account> accs = getAccountbyIDs(ids);
         for (Account acc : accs) {
             acc.setEnabled(enabled);
         }
-        return true;
+
     }
 
     public AccountAPIStorableV2 getAccountInfo(long id) {
@@ -161,28 +164,27 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
     }
 
     @Override
-    public boolean addAccount(String premiumHoster, String username, String password) {
+    public void addAccount(String premiumHoster, String username, String password) {
         Account acc = new Account(username, password);
         acc.setHoster(premiumHoster);
         AccountController.getInstance().addAccount(acc);
-        return true;
+
     }
 
     @Override
-    public boolean setUserNameAndPassword(Long accountId, String username, String password) {
-        if (accountId == null) return false;
+    public boolean setUserNameAndPassword(long accountId, String username, String password) {
 
         for (Account acc : AccountController.getInstance().list()) {
-            if (accountId.equals(acc.getId().getID())) {
-                if (username != null && !username.isEmpty()) {
+            if (accountId == acc.getId().getID()) {
+                if (StringUtils.isNotEmpty(username)) {
                     acc.setUser(username);
                 }
-                if (password != null && !password.isEmpty()) {
+                if (StringUtils.isNotEmpty(password)) {
                     acc.setPass(password);
                 }
                 return true;
             }
         }
-        return true;
+        return false;
     }
 }

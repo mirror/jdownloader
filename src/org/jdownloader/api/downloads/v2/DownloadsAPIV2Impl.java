@@ -13,13 +13,15 @@ import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
 
 import org.jdownloader.DomainInfo;
+import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
 import org.jdownloader.plugins.FinalLinkState;
 
-public class DownloadsAPIImplV2 implements DownloadsAPIV2 {
+public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
-    public DownloadsAPIImplV2() {
-
+    public DownloadsAPIV2Impl() {
+        RemoteAPIController.validateInterfaces(DownloadsAPIV2.class, DownloadsListInterface.class);
     }
 
     @Override
@@ -373,4 +375,5 @@ public class DownloadsAPIImplV2 implements DownloadsAPIV2 {
         DownloadWatchDog.getInstance().reset(getSelectionInfo(linkIds, packageIds).getChildren());
 
     }
+
 }

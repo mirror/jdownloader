@@ -82,7 +82,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerStructureRefresh() {
-        SimpleEventObject eventObject = new SimpleEventObject(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE.name(), null);
+        SimpleEventObject eventObject = new SimpleEventObject(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE.name(), DownloadControllerEvent.TYPE.REFRESH_STRUCTURE.name());
         for (EventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
@@ -90,7 +90,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
     @Override
     public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
-        SimpleEventObject eventObject = new SimpleEventObject(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE.name(), null);
+        SimpleEventObject eventObject = new SimpleEventObject(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE.name(), DownloadControllerEvent.TYPE.REFRESH_STRUCTURE.name());
         for (EventsSender eventSender : eventSenders) {
             eventSender.publishEvent(eventObject, null);
         }
