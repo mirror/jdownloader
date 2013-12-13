@@ -21,9 +21,11 @@ import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.events.EventPublisher;
 import org.appwork.remoteapi.events.EventsAPI;
 import org.appwork.remoteapi.events.EventsAPIInterface;
+import org.appwork.remoteapi.events.json.EventObjectStorable;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.remoteapi.responsewrapper.DataObject;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
@@ -64,6 +66,7 @@ import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
 import org.jdownloader.myjdownloader.client.bindings.ClientApiNameSpace;
+import org.jdownloader.myjdownloader.client.bindings.events.json.MyJDEvent;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.EventsInterface;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.Linkable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
@@ -82,12 +85,31 @@ public class RemoteAPIController {
     private EventsAPI                          eventsapi;
     private LogSource                          logger;
 
+    public static class MyJDownloaderEvent extends MyJDEvent implements Storable {
+        public MyJDownloaderEvent() {
+
+        }
+    }
+
     private RemoteAPIController() {
         logger = LogController.getInstance().getLogger(RemoteAPIController.class.getName());
         rids = new HashMap<String, RIDArray>();
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
             @Override
             public String toString(RemoteAPIRequest request, RemoteAPIResponse response, Object responseData) {
+                // Convert EventData Objects
+                if (responseData instanceof List && ((List) responseData).size() > 0 && ((List) responseData).get(0) instanceof EventObjectStorable) {
+
+                    ArrayList<MyJDownloaderEvent> newResponse = new ArrayList<MyJDownloaderEvent>();
+                    for (Object o : ((List) responseData)) {
+                        MyJDownloaderEvent ret = new MyJDownloaderEvent();
+                        ret.setEventData(((EventObjectStorable) o).getEventdata());
+                        ret.setEventid(((EventObjectStorable) o).getEventid());
+                        ret.setPublisher(((EventObjectStorable) o).getPublisher());
+                        newResponse.add(ret);
+                    }
+                    responseData = newResponse;
+                }
                 MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
                 if (ri.getApiVersion() > 0) {
                     return JSonStorage.serializeToJson(responseData);

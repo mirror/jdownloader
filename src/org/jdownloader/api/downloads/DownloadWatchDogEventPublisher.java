@@ -24,6 +24,7 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
 
     public DownloadWatchDogEventPublisher() {
         eventIDs = new String[] { EVENTID.PAUSED.name(), EVENTID.RUNNING.name(), EVENTID.STOPPED.name(), EVENTID.UPDATE.name() };
+
     }
 
     @Override

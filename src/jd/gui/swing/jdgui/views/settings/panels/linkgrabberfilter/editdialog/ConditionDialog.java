@@ -534,7 +534,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
             @Override
             public void stateChanged(ChangeEvent e) {
+
                 if (cbPackage.isSelected()) {
+                    cbPackage.removeChangeListener(this);
                     JDGui.help(_GUI._.ConditionDialog_help_packagecondition_title(), _GUI._.ConditionDialog_help_packagecondition_msg(), NewTheme.I().getIcon(IconKey.ICON_PACKAGE_OPEN, 32));
                 }
             }
