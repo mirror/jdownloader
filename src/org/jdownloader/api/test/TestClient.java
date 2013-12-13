@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -21,7 +20,6 @@ import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
@@ -41,7 +39,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialog.LoginData;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
-import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface;
 import org.jdownloader.myjdownloader.client.exceptions.APIException;
@@ -70,13 +68,13 @@ public class TestClient {
     public static abstract class Test {
         private static DeviceData lastDevice;
 
-        public abstract void run(Storage config, AbstractMyJDClient api) throws Exception;
+        public abstract void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception;
 
         public String getName() {
             return getClass().getSimpleName();
         }
 
-        protected static String chooseDevice(final AbstractMyJDClient api) throws MyJDownloaderException, DialogClosedException, DialogCanceledException {
+        protected static String chooseDevice(final AbstractMyJDClientForDesktopJVM api) throws MyJDownloaderException, DialogClosedException, DialogCanceledException {
             final DeviceList list = api.listDevices();
             if (list.getList().size() == 0) { throw new RuntimeException("No Device Connected"); }
             if (list.getList().size() == 1) { return list.getList().get(0).getId(); }
@@ -96,7 +94,7 @@ public class TestClient {
     public static class TestLogin extends Test {
 
         @Override
-        public void run(Storage config, AbstractMyJDClient api) throws Exception {
+        public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
             final LoginDialog login = new LoginDialog(0);
             login.setMessage("MyJDownloader Account Logins");
             login.setRememberDefault(true);
@@ -133,7 +131,7 @@ public class TestClient {
     public static class ConfigTest extends Test {
 
         @Override
-        public void run(Storage config, AbstractMyJDClient api) throws Exception {
+        public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
             final AdvancedConfigInterface link = api.link(AdvancedConfigInterface.class, chooseDevice(api));
             ArrayList<AdvancedConfigEntryDataStorable> fullList = link.list(".*", true, true, true);
             ArrayList<AdvancedConfigEntryDataStorable> captchacondif = link.list(".*captcha.*", false, true, false);
@@ -196,7 +194,7 @@ public class TestClient {
         JacksonMapper jm;
         JSonStorage.setMapper(jm = new JacksonMapper());
 
-        MyJDJsonMapper.HANDLER = new JSonHandler() {
+        MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
 
             @Override
             public String objectToJSon(final Object payload) {
@@ -227,7 +225,7 @@ public class TestClient {
         });
         AbstractDialog.setDefaultLocator(new RememberAbsoluteDialogLocator("MYJDTest"));
 
-        final AbstractMyJDClient api = new AbstractMyJDClient("Java Test Application") {
+        final AbstractMyJDClientForDesktopJVM api = new AbstractMyJDClientForDesktopJVM("Java Test Application") {
 
             @Override
             protected byte[] base64decode(final String base64encodedString) {
@@ -300,16 +298,6 @@ public class TestClient {
                     }
                 }
 
-            }
-
-            @Override
-            public String urlencode(final String text) {
-                try {
-                    return URLEncoder.encode(text, "UTF-8");
-                } catch (final UnsupportedEncodingException e) {
-                    throw new WTFException(e);
-
-                }
             }
 
         };

@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +14,6 @@ import javax.crypto.CipherOutputStream;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.SessionRemoteAPIRequest;
@@ -174,11 +172,9 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 payloadEncryptionToken = session.getServerEncryptionToken();
             } else {
                 // The request origin is a remote client
-                try {
-                    payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
-                } catch (NoSuchAlgorithmException e) {
-                    throw new WTFException(e);
-                }
+
+                payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
+
             }
         } catch (final MyJDownloaderException e) {
             throw new IOException(e);

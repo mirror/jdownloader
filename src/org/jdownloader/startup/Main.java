@@ -215,7 +215,7 @@ public class Main {
             }
         });
         // set MyJDownloaderCLient JsonHandler
-        MyJDJsonMapper.HANDLER = new JSonHandler() {
+        MyJDJsonMapper.HANDLER = new JSonHandler<Type>() {
 
             @Override
             public String objectToJSon(Object payload) {

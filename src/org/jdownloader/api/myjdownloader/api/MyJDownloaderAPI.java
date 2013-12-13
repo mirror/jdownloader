@@ -20,11 +20,11 @@ import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
-import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
-public class MyJDownloaderAPI extends AbstractMyJDClient {
+public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     private BasicHTTP br;
     private LogSource logger;

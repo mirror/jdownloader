@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import org.appwork.storage.Storage;
 import org.jdownloader.api.test.TestClient.Test;
-import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 import org.jdownloader.myjdownloader.client.bindings.AccountStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface;
@@ -12,7 +12,7 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface
 public class AccountTest extends Test {
 
     @Override
-    public void run(Storage config, AbstractMyJDClient api) throws Exception {
+    public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
         //
         final AccountInterface accounts = api.link(AccountInterface.class, chooseDevice(api));
         final ArrayList<String> premiumhoster = accounts.listPremiumHoster();

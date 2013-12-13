@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.appwork.storage.Storage;
 import org.jdownloader.api.test.TestClient.Test;
-import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.DownloadLinkStorable;
 import org.jdownloader.myjdownloader.client.bindings.LinkQuery;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
@@ -12,7 +12,7 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInt
 public class DownloadListTest extends Test {
 
     @Override
-    public void run(Storage config, AbstractMyJDClient api) throws Exception {
+    public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
         DownloadsListInterface link = api.link(DownloadsListInterface.class, chooseDevice(api));
         List<DownloadLinkStorable> smallList = link.queryLinks(new LinkQuery());
         LinkQuery query = new LinkQuery();

@@ -5,7 +5,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialog.LoginData;
 import org.jdownloader.api.test.TestClient.Test;
-import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.exceptions.EmailNotValidatedException;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.myjdownloader.client.json.CaptchaChallenge;
@@ -13,7 +13,7 @@ import org.jdownloader.myjdownloader.client.json.CaptchaChallenge;
 public class RegisterTest extends Test {
 
     @Override
-    public void run(Storage config, AbstractMyJDClient api) throws Exception {
+    public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
         final LoginDialog login = new LoginDialog(0);
         login.setMessage("MyJDownloader Account Register");
         login.setRememberDefault(true);

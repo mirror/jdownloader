@@ -8,7 +8,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.test.TestClient.Test;
-import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
+import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.events.EventDistributor;
 import org.jdownloader.myjdownloader.client.bindings.events.EventsDistributorListener;
 import org.jdownloader.myjdownloader.client.bindings.events.json.PublisherResponse;
@@ -20,7 +20,7 @@ public class EventsTest extends Test {
     private EventDistributor ed;
 
     @Override
-    public void run(Storage config, AbstractMyJDClient api) throws Exception {
+    public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
         if (thread != null) {
             final String pattern;
             final String event = Dialog.getInstance().showInputDialog("Subscribe to");
