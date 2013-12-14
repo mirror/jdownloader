@@ -306,7 +306,7 @@ public class FilePlanetaCom extends PluginForHost {
             }
         }
         if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("([0-9\\.]+ [KMG ]b(ytes)?)").getMatch(0);
+            fileInfo[1] = cbr.getRegex("([0-9\\.]+ [KMG]?b(ytes)?)").getMatch(0);
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
