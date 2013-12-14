@@ -105,9 +105,11 @@ public class UltraMegaBitCom extends PluginForHost {
         final String c = getCaptchaCode(cf, downloadLink);
         dlform.put("recaptcha_response_field", c);
         dlform.put("recaptcha_challenge_field", rc.getChallenge());
+        dlform.remove(null);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("<b>Fatal error</b>:")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
             if (br.containsHTML("<div id=\"file_delay_carousel\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             if (br.containsHTML("guests are only able to download 1 file every")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
             if (br.containsHTML(">Account limitation notice|files smaller than")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
