@@ -1,4 +1,5 @@
 IfFileExistsDialog_layoutDialogContent_archive=Archív:
+IfFileExistsDialog_layoutDialogContent_newName=Nový názov:
 ValidateArchiveAction_ValidateArchiveAction=Skontrolovať %s1
 ValidateArchiveAction_ValidateArchiveAction_multi=Skontrolovať archívy
 ValidateArchiveAction_ValidateArchiveAction_object_=Skontrolovať archív(y)
