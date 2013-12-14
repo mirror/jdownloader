@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?video\\.xnxx\\.com/video[0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xnxx.com" }, urls = { "http://[\\w\\.]*?(video\\.)?xnxx\\.com/video[0-9]+" }, flags = { 0 })
 public class XnXxCom extends PluginForHost {
 
     public XnXxCom(PluginWrapper wrapper) {
@@ -63,7 +63,7 @@ public class XnXxCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(Page not found|This page may be in preparation, please check back in a few minutes)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)- XNXX\\.COM</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.+) - XNXX\\.COM</title>").getMatch(0);
         if (filename == null) {
             br.getRegex("<span class=\"style5\"><strong>(.*?)</strong>").getMatch(0);
             if (filename == null) {
