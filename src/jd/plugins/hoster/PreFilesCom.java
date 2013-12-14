@@ -373,6 +373,9 @@ public class PreFilesCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "\"(http://srv\\d+\\.prefiles\\.com(:\\d+)?/files/\\d+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "\"(http://[0-9\\.]+/cgi\\-bin/dl\\.cgi/[^<>\"]*?)\"").getMatch(0);
+            }
         }
         return dllink;
     }

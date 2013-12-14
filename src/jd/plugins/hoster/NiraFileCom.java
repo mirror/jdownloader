@@ -43,6 +43,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -79,7 +80,7 @@ public class NiraFileCom extends PluginForHost {
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://nirafile.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(nirafile\\.com|sapoor\\.in)";
+    private final String               DOMAINS                      = "(nirafile\\.com|sapoor\\.in|dmicro\\.sapoor\\.in)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
@@ -105,7 +106,8 @@ public class NiraFileCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
-    // mods: finalllink server issues, added longtimeout
+    // mods: finalllink server issues, added longtimeout, requestFileInformation [Added BrowserException errorhandling], correctBR [Removed
+    // a regex to find the final downloadlink]
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -217,7 +219,11 @@ public class NiraFileCom extends PluginForHost {
             altAvailStat(downloadLink, fileInfo);
         }
 
-        getPage(downloadLink.getDownloadURL());
+        try {
+            getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (this.br.getRequest().getHttpConnection().getResponseCode() == 521) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
@@ -514,7 +520,6 @@ public class NiraFileCom extends PluginForHost {
                 toClean = toClean.replace(f.getHtmlCode(), "");
             }
         }
-        regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
@@ -1459,7 +1464,7 @@ public class NiraFileCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

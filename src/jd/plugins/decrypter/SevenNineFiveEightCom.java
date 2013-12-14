@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "7958.com" }, urls = { "^https?://(?!www\\.)[a-z0-9]+\\.7958\\.com/(folder\\-\\d+)?$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "7958.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.7958\\.com/folder\\-\\d+" }, flags = { 0 })
 public class SevenNineFiveEightCom extends PluginForDecrypt {
 
     private String id      = null;
@@ -77,7 +77,8 @@ public class SevenNineFiveEightCom extends PluginForDecrypt {
         }
 
         parsePage(set, decryptedLinks);
-        parseNextPage(set, decryptedLinks);
+        // Buggy -> Disabled
+        // parseNextPage(set, decryptedLinks);
 
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -97,9 +98,9 @@ public class SevenNineFiveEightCom extends PluginForDecrypt {
             String link = new Regex(filter, "(" + profile + "/down_\\d+\\.html)").getMatch(0);
             String folder = new Regex(filter, "(" + profile + "/folder\\-\\d+)").getMatch(0);
             if (link == null && folder == null) break;
-            String fuid = new Regex(link, "\\d+\\.html)").getMatch(0);
+            String fuid = new Regex(link, "(\\d+)\\.html").getMatch(0);
             if (link != null && !list.contains(link)) {
-                DownloadLink dl = createDownloadlink(link);
+                final DownloadLink dl = createDownloadlink(link);
                 String filename = new Regex(filter, "<td class=\"cb\"><a href=\"" + link + "\"[^>]+>(.*?)</a></td>").getMatch(0);
                 String filesize = new Regex(filter, ">(\\d+(\\.\\d+)? ?(KB|MB|GB))</td>").getMatch(0);
                 if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));

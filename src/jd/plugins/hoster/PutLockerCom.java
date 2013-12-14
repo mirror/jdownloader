@@ -232,6 +232,11 @@ public class PutLockerCom extends PluginForHost {
             if (timesFailed <= 2) {
                 timesFailed++;
                 downloadLink.setProperty("timesfailedputlockercom_unknown2", timesFailed);
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) == false) {
+                    logger.warning("putlocker.com: Unknown error2 -> Retrying without chunkload");
+                    downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error2");
             } else {
                 downloadLink.setProperty("timesfailedputlockercom_unknown2", Property.NULL);

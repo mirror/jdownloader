@@ -53,7 +53,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            if (br.containsHTML("Image not found|>Image violated our terms of service|>The requested image could not be located")) {
+            if (br.containsHTML("Image not found|>Image violated our terms of service|>The requested image could not be located|>The image has been deleted")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
