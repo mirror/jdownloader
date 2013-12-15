@@ -68,14 +68,18 @@ public class FiveFantasticPl extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("X-MicrosoftAjax", "Delta=true");
         // Download
-        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24panelLogowania%24updPanelLogowania%7Cctl00%24panelLogowania%24dvZamknijLogowanie&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24panelLogowania%24txtLogin=&ctl00%24panelLogowania%24txtPass=&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&__EVENTTARGET=ctl00%24panelLogowania%24dvZamknijLogowanie&__EVENTARGUMENT=&__ASYNCPOST=true&");
+        // old
+        // &__EVENTTARGET=ctl00%24panelLogowania%24dvZamknijLogowanie
+        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24panelLogowania%24updPanelLogowania%7Cctl00%24panelLogowania%24dvZamknijLogowanie&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24panelLogowania%24txtLogin=&ctl00%24panelLogowania%24txtPass=&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&__EVENTTARGET=ctl00$ctnMetryka$metrykaPliku$lnkPobierz&__EVENTARGUMENT=&__ASYNCPOST=true&");
+
+        if (br.containsHTML("Przepraszamy, plik jest chwilowo niedostepny")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Link temporary unavailable!", 60 * 1000L); }
         this.sleep(3000, downloadLink);
         // Select FREE download
         br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updPobieraniePliku%7Cctl00%24ctnMetryka%24metrykaPliku%24lnkZgodaNaPobierz&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24lnkZgodaNaPobierz&__EVENTARGUMENT=&__ASYNCPOST=true&");
         this.sleep(3000, downloadLink);
         // Confirm TOS
-        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updPobieraniePliku%7Cctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&ctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin=on&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin&__EVENTARGUMENT=&__LASTFOCUS=&__ASYNCPOST=true&");
-        if (br.containsHTML("Z Twojego numeru IP jest już pobierany plik. Poczekaj na zwolnienie zasobów, albo ściągnij plik za punkty")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download in progress detected from your IP!", 10 * 60 * 1000l); }
+        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updPobieraniePliku%7Cctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&ctl00%24ctnMetryka%24metrykaPliku%24chkAkcepujeRegulamin=on&__EVENTTARGET=ctl00$ctnMetryka$metrykaPliku$chkAkcepujeRegulamin\\&__EVENTARGUMENT=\\&__LASTFOCUS=&__ASYNCPOST=true&");
+        if (br.containsHTML("Z Twojego numeru IP jest już pobierany plik. Poczekaj na zwolnienie zasobów, albo ściągnij plik za punkty")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download in progress detected from your IP!", 5 * 60 * 1000l); }
         final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.5fantastic\\.pl/download\\.php\\?[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
