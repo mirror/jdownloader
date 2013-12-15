@@ -63,6 +63,7 @@ decrypter_invalidaccount=Nebyl nalezen žádný platný účet
 decrypter_unknownerror=Neznámá chyba
 decrypter_wrongcaptcha=Špatná kód captcha
 decrypter_wrongpassword=Špatné heslo
+dialog_optional_showRestartRequiredMessage_msg=Vaše změny vyžadují restartování JDownloaderu, aby se projevily. Restartovat nyní?
 dialog_optional_showRestartRequiredMessage_title=Vyžadován restart
 dialog_title_exception=Došlo k chybě!
 download_connection_normal=Stahování
