@@ -987,7 +987,37 @@ public class TbCm extends PluginForDecrypt {
                     bestQualityTags.add(new ITAG[] { ITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, ITAG.DASH_VIDEO_144P_H264 });
                     for (ITAG[] tags : bestQualityTags) {
                         for (ITAG tag : tags) {
-                            if (availableItags.containsKey(tag) && allowedItags.containsKey(tag)) bestFound.put(tag, availableItags.get(tag));
+                            if (availableItags.containsKey(tag) && allowedItags.containsKey(tag) && bestFound.isEmpty()) bestFound.put(tag, availableItags.get(tag)); // Quick'n'dirty
+                                                                                                                                                                      // fix.
+                                                                                                                                                                      // JD
+                                                                                                                                                                      // actually
+                                                                                                                                                                      // shows
+                                                                                                                                                                      // the
+                                                                                                                                                                      // "best"
+                                                                                                                                                                      // version
+                                                                                                                                                                      // of
+                                                                                                                                                                      // each
+                                                                                                                                                                      // resolution
+                                                                                                                                                                      // but
+                                                                                                                                                                      // should
+                                                                                                                                                                      // show
+                                                                                                                                                                      // the
+                                                                                                                                                                      // over
+                                                                                                                                                                      // all
+                                                                                                                                                                      // best
+                                                                                                                                                                      // resolution(
+                                                                                                                                                                      // if
+                                                                                                                                                                      // "1080p"
+                                                                                                                                                                      // available
+                                                                                                                                                                      // and
+                                                                                                                                                                      // no
+                                                                                                                                                                      // "original"
+                                                                                                                                                                      // is
+                                                                                                                                                                      // present,
+                                                                                                                                                                      // drop
+                                                                                                                                                                      // all
+                                                                                                                                                                      // other
+                                                                                                                                                                      // resolutions)
                         }
                     }
                     if (bestFound.isEmpty()) {
