@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -58,7 +59,7 @@ public class CMS extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "top-hitz.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "hardcoremetal.bz", "saugking.net", "sceneload.to", "serienfreaks.to", "warez-load.com", "dream-team.bz/cms", "pirate-loads.to", "filefarm.biz", "cineload.ws", "ddl-heaven.net" };
+        return new String[] { "top-hitz.com", "fettrap.com", "omega-music.com", "saugking.net", "sceneload.to", "serienfreaks.to", "warez-load.com", "dream-team.bz/cms", "pirate-loads.to", "filefarm.biz", "cineload.ws", "ddl-heaven.net" };
     }
 
     /**
@@ -261,6 +262,9 @@ public class CMS extends PluginForDecrypt {
             }
         } catch (final PluginException e2) {
             throw e2;
+        } catch (final UnknownHostException e) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         } catch (final IOException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
             return null;

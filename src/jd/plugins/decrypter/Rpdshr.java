@@ -27,6 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 
@@ -61,28 +62,28 @@ public class Rpdshr extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    protected void parseLines(CryptedLink param, ArrayList<DownloadLink> decryptedLinks, String shareID, String packageName, String[] lines) throws IOException {
+    protected void parseLines(final CryptedLink param, final ArrayList<DownloadLink> decryptedLinks, final String shareID, final String packageName, final String[] lines) throws IOException {
         FilePackage fp = null;
         if (StringUtils.isNotEmpty(packageName)) {
             fp = FilePackage.getInstance();
             fp.setName(packageName);
 
         }
-        for (String line : lines) {
+        for (final String line : lines) {
             if (line.startsWith(FILE)) {
-                String[] properties = line.substring(FILE.length()).split("\\,");
-                String fileID = properties[0];
-                String fileName = properties[1];
+                final String[] properties = line.substring(FILE.length()).split("\\,");
+                final String fileID = properties[0];
+                final String fileName = properties[1];
                 // String serverID = properties[2];
                 // String owner = properties[3];
                 // String ctime = properties[4];
                 String size = properties[5];
-                DownloadLink newLink = new DownloadLink(null, fileName, getHost(), "http://rapidshare.com/files/" + fileID + "/" + fileName, true);
+                final DownloadLink newLink = new DownloadLink(JDUtilities.getPluginForHost("rapidshare.com"), fileName, getHost(), "http://rapidshare.com/files/" + fileID + "/" + fileName, true);
                 newLink.setAvailable(true);
                 newLink.setBrowserUrl(param.getCryptedUrl());
                 newLink.setFinalFileName(fileName);
-                newLink.setProperty("shareID", shareID);
-                newLink.setProperty("fileID", fileID);
+                newLink.setProperty("shareid", shareID);
+                newLink.setProperty("fileid", fileID);
                 newLink.setDownloadSize(Long.parseLong(size));
 
                 decryptedLinks.add(newLink);

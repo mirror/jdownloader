@@ -65,6 +65,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         String album = inforegex.getMatch(0);
         final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
         if (links == null || links.length == 0 || artist == null || album == null || date == null) {
+            if (br.containsHTML("class='download-link buy-link'")) {
+                logger.info("Seems like this album can't be downloaded: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

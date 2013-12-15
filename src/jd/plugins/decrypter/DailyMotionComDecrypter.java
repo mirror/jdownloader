@@ -77,11 +77,17 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     private static final String             TYPE_VIDEO     = "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)";
     private static final String             TYPE_USER      = "https?://(www\\.)?dailymotion\\.com/user/[A-Za-z0-9]+/\\d+";
+    private static final String             TYPE_INVALID   = "https?://(www\\.)?dailymotion\\.com/playlist";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         PARAMETER = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("https://", "http://");
         br.setFollowRedirects(true);
+
+        if (PARAMETER.matches(TYPE_INVALID)) {
+            logger.info("Invalid link: " + PARAMETER);
+            return decryptedLinks;
+        }
 
         /** Login if account available */
         final PluginForHost dailymotionHosterplugin = JDUtilities.getPluginForHost("dailymotion.com");

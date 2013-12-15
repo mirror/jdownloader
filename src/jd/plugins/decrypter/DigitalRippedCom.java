@@ -34,7 +34,7 @@ public class DigitalRippedCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?digitaldripped\\.com/(ads\\d+.+|disclaimer|terms|contact|advertise|ajax.+|js.+|\\?p=.+|archives|lilb\\.htm|ad/.+|submit|rss|song/archive|topsongs|mixtapes|dmca|disclaimer|tos)";
+    private static final String INVALIDLINKS = "http://(www\\.)?digitaldripped\\.com/(ads\\d+.+|disclai?mer|terms|contact|advertise|ajax.+|js.+|\\?p=.+|archives|lilb\\.htm|ad/.+|submit|rss|song/archive|topsongs|mixtapes|dmca|disclaimer|tos)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -47,6 +47,10 @@ public class DigitalRippedCom extends PluginForDecrypt {
             return decryptedLinks;
         } catch (final IllegalStateException e) {
             logger.info("Cannot decrypt link (unsupported link): " + parameter);
+            return decryptedLinks;
+        }
+        if ("http://digitaldripped.com/".equals(this.br.getURL())) {
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         final String contenttype = br.getRequest().getHttpConnection().getContentType();

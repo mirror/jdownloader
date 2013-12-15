@@ -84,36 +84,40 @@ public class AnySendCom extends PluginForHost {
         prepBrowser(br);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<title>Removed download \\| AnySend</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Browser XMLBR = br.cloneBrowser();
+        final Browser XMLBR = br.cloneBrowser();
         prepXML(XMLBR);
         String visitorid = br.getCookie("http://www.anysend.com/", "PAPVisitorId");
         XMLBR.getPage("http://affiliates.anysend.com/scripts/track.php?accountId=default1&tracking=1&url=H_anysend.com%2F%2F" + getFID(link) + "&referrer=&getParams=&anchor=&isInIframe=false&cookies=");
         visitorid = XMLBR.getRegex("setVisitor\\('([A-Za-z0-9]+)'\\);").getMatch(0);
-        String continuelink = br.getRegex("\"(http://(www\\.)?download\\.anysend\\.com/download/download\\.php\\?key=[A-Z0-9]{32}\\&aff=[A-Za-z0-9]+\\&visid=)\"").getMatch(0);
-        if (continuelink == null || visitorid == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.setCookie("http://www.anysend.com/", "PAPVisitorId", visitorid);
-        continuelink += visitorid;
-        br.getPage(continuelink);
-        if (br.containsHTML(">Your download is no longer available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"filename\">([^<>\"]+)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
+        String continuelink = br.getRegex("\"(http://(www\\.)?download\\.anysend\\.com/download/download\\.php\\?key=[A-Z0-9]{32}[^<>\"]*?)\"").getMatch(0);
+        String filename = null, filesize = null;
+        if (continuelink != null) {
+            br.setCookie("http://www.anysend.com/", "PAPVisitorId", visitorid);
+            continuelink += visitorid;
+            br.getPage(continuelink);
+            if (br.containsHTML(">Your download is no longer available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("class=\"filename\">([^<>\"]+)</h1>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex(">File Name:</div>(.*?)</div>").getMatch(0);
+                filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)(\\.\\.\\.)?</div>").getMatch(0);
+                    filename = br.getRegex(">File Name:</div>(.*?)</div>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)(\\.\\.\\.)?</div>").getMatch(0);
+                    }
                 }
             }
-        }
-        String filesize = br.getRegex("id=\"files-size\">([^<>\"]+)</td>").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex(">File Size: (\\d+((\\.|,)\\d+)? ?(KB|MB|GB))<").getMatch(0);
+            filesize = br.getRegex("id=\"files-size\">([^<>\"]+)</td>").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex(">File Size:</div>(.*?)</div>").getMatch(0);
+                filesize = br.getRegex(">File Size: (\\d+((\\.|,)\\d+)? ?(KB|MB|GB))<").getMatch(0);
                 if (filesize == null) {
-                    filesize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)</span>").getMatch(0);
+                    filesize = br.getRegex(">File Size:</div>(.*?)</div>").getMatch(0);
+                    if (filesize == null) {
+                        filesize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)</span>").getMatch(0);
+                    }
                 }
             }
+        } else {
+            filename = br.getRegex("<title>([^<>\"]*?)download \\| AnySend</title>").getMatch(0);
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -127,6 +131,7 @@ public class AnySendCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
         String dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) dllink = "http://50.7.55.162/anysend/download/" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0) + "/" + Encoding.urlEncode(downloadLink.getName());
         if (dllink == null) {
             final String a = br.getRegex("a:'([A-Za-z0-9]+)'").getMatch(0);
             final String v = br.getRegex("v:'([A-Za-z0-9]+)'").getMatch(0);

@@ -161,6 +161,8 @@ public class Rapidshare extends PluginForHost {
 
     private static AtomicBoolean   ReadTimeoutHotFix = new AtomicBoolean(false);
 
+    private String                 dllink            = null;
+
     public static class StringContainer {
         public String string = null;
 
@@ -552,7 +554,7 @@ public class Rapidshare extends PluginForHost {
         return 100;
     }
 
-    private void handleErrors(DownloadLink link, final Browser br) throws PluginException {
+    private void handleErrors(final DownloadLink link, final Browser br) throws PluginException {
         String error = null;
         if (this.br.toString().startsWith("ERROR: ")) {
             error = this.br.getRegex("ERROR: ([^\r\n]+)").getMatch(0);
@@ -566,13 +568,29 @@ public class Rapidshare extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l);
             }
             if (error.startsWith("Download permission denied by")) {
-                // Errorhandling before: File not found
+                boolean nowdownloadable = true;
                 try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    logger.info("Trying workaround for the rapidshare.com serverside permissions bug");
+                    br.getPage("https://api.rapidshare.com/cgi-bin/rsapi.cgi?rsource=web&sub=checkfiles&files=" + getID(link.getDownloadURL()) + "&filenames=" + Encoding.urlEncode(link.getName()) + "&cbid=4&cbf=rsapi.system.jsonp.callback&callt=" + System.currentTimeMillis());
+                    br.getRequest().setHtmlCode(br.toString().replace("\\n", ""));
+                    final String shareid = link.getStringProperty("shareid", null);
+                    if (!br.containsHTML("Download permission denied by") && br.containsHTML(link.getName()) && shareid != null) {
+                        final String apitext = br.getRegex("rsapi\\.system\\.jsonp\\.callback\\(4,\"(.*?)\"\\)").getMatch(0);
+                        final String[] data = apitext.split(",");
+                        dllink = "https://rs" + data[3] + data[5] + ".rapidshare.com/cgi-bin/rsapi.cgi?sub=download&share=" + shareid + "&fileid=" + getID(link.getDownloadURL()) + "&filename=" + Encoding.urlEncode(link.getName()) + "&bin=1";
+                        nowdownloadable = false;
+                    }
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
                 }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader");
+                if (nowdownloadable) {
+                    // Errorhandling before: File not found
+                    try {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    } catch (final Throwable e) {
+                        if (e instanceof PluginException) throw (PluginException) e;
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader");
+                }
             } else if (error.startsWith("This server's filesystem is in maintenance")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server's filesystem is in maintenance.", 2 * 60 * 60 * 1000l);
             } else if ("RapidPro expired.".equals(error)) {
@@ -631,46 +649,49 @@ public class Rapidshare extends PluginForHost {
             }
             this.queryAPI(this.br, query);
             this.handleErrors(downloadLink, this.br);
-            // RS URL wird aufgerufen
-            // this.br.getPage(link);
-            final String host = this.br.getRegex("DL:(.*?),").getMatch(0);
-            final String auth = this.br.getRegex("DL:(.*?),(.*?),").getMatch(1);
-            final String wait = this.br.getRegex("DL:(.*?),(.*?),(\\d+)").getMatch(2);
-            if (wait == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            this.sleep(Long.parseLong(wait) * 1000l, downloadLink);
 
-            String directurl = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download&dlauth=" + auth + "&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName();
-            /* needed for secured links */
-            if (link.getSecMD5() != null) {
-                directurl += "&seclinkmd5=" + link.getSecMD5();
-            }
-            if (link.getSecTimout() != null) {
-                directurl += "&seclinktimeout=" + link.getSecTimout();
-            }
-            logger.finest("Direct-Download: Server-Selection not available!");
+            // Check if we already have the final downloadling because of the permissions bug workaround
+            if (dllink == null) {
+                // RS URL wird aufgerufen
+                // this.br.getPage(link);
+                final String host = this.br.getRegex("DL:(.*?),").getMatch(0);
+                final String auth = this.br.getRegex("DL:(.*?),(.*?),").getMatch(1);
+                final String wait = this.br.getRegex("DL:(.*?),(.*?),(\\d+)").getMatch(2);
+                if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                this.sleep(Long.parseLong(wait) * 1000l, downloadLink);
+                dllink = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download&dlauth=" + auth + "&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName();
+                /* needed for secured links */
+                if (link.getSecMD5() != null) {
+                    dllink += "&seclinkmd5=" + link.getSecMD5();
+                }
+                if (link.getSecTimout() != null) {
+                    dllink += "&seclinktimeout=" + link.getSecTimout();
+                }
+                logger.finest("Direct-Download: Server-Selection not available!");
 
-            this.br.setFollowRedirects(true);
-            try {
-                br.setVerbose(true);
-            } catch (final Throwable e) {
-                /* only available after 0.9xx version */
-            }
+                this.br.setFollowRedirects(true);
+                try {
+                    br.setVerbose(true);
+                } catch (final Throwable e) {
+                    /* only available after 0.9xx version */
+                }
 
-            // if (this.getPluginConfig().getBooleanProperty("notifyShown",
-            // false) == false) {
-            // this.getPluginConfig().setProperty("notifyShown", true);
-            // try {
-            // this.getPluginConfig().save();
-            // } catch (final Throwable e) {
-            // }
-            // UserIO.getInstance().requestMessageDialog(UserIO.NO_COUNTDOWN,
-            // "Rapidshare Speed Limitation",
-            // "Rapidshare disabled the ability to resume downloads that were stopped for free users and also limited the average download speed to 30 kb/s.\r\nBecause of the way they are doing this, it may look like the download is frozen!\r\n\r\nDon't worry - it's not. It's just waiting for the next piece of the file to be transferred.\r\n\r\nThe pauses in between are added by Rapidshare in order to make the overall average speed slower for free-users.");
-            // }
+                // if (this.getPluginConfig().getBooleanProperty("notifyShown",
+                // false) == false) {
+                // this.getPluginConfig().setProperty("notifyShown", true);
+                // try {
+                // this.getPluginConfig().save();
+                // } catch (final Throwable e) {
+                // }
+                // UserIO.getInstance().requestMessageDialog(UserIO.NO_COUNTDOWN,
+                // "Rapidshare Speed Limitation",
+                // "Rapidshare disabled the ability to resume downloads that were stopped for free users and also limited the average download speed to 30 kb/s.\r\nBecause of the way they are doing this, it may look like the download is frozen!\r\n\r\nDon't worry - it's not. It's just waiting for the next piece of the file to be transferred.\r\n\r\nThe pauses in between are added by Rapidshare in order to make the overall average speed slower for free-users.");
+                // }
+            }
             if (downloadLink.getDownloadSize() > 30 * 1024 * 1024 && oldStyle() && false) {
-                this.dl = this.createHackedDownloadInterface(this, this.br, downloadLink, directurl);
+                this.dl = this.createHackedDownloadInterface(this, this.br, downloadLink, dllink);
             } else {
-                this.dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, true, 1);
+                this.dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             }
             final URLConnectionAdapter urlConnection = this.dl.getConnection();
             if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
