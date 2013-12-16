@@ -88,6 +88,7 @@ settings_cpupriority_middle=Stredná
 settings_extract_to_archive_folder=Rozbaliť do nasledujúceho priečinka
 settings_extract_to_path=Rozbaliť do
 settings_extractto=Priečinok pre rozbalenie
+settings_if_file_exists=Pokiaľ súbor existuje...
 settings_multi=Špeciálne nastavenia (iba pre RAR, 7z a zip. Nie je určené pre rozdelené súbory)
 settings_multi_use_original_file_date=Pokiaľ je možné, použiť pôvodný dátum súboru
 settings_overwrite=Prepísať existujúce súbory?
