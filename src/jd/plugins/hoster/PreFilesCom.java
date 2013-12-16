@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -565,14 +566,14 @@ public class PreFilesCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            String expire = new Regex(correctedBR, "((January|February|March|April|May|June|July|August|September|October|November|December) \\d{1,2}, \\d{4})").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd, yyyy", Locale.ENGLISH));
                 try {
                     maxPrem.set(20);
                     account.setMaxSimultanDownloads(maxPrem.get());
@@ -613,8 +614,8 @@ public class PreFilesCom extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                getPage(COOKIE_HOST + "/my-account.html");
-                if (!new Regex(correctedBR, "Account type: Premium").matches()) {
+                getPage(COOKIE_HOST + "/settings");
+                if (!new Regex(correctedBR, "<li>Premium until").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);

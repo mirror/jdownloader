@@ -290,7 +290,7 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             // Offline link
-            if (br.containsHTML("No results containing all your search terms were found")) {
+            if (br.containsHTML("No results containing all your search terms were found|Searches related to <span")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }

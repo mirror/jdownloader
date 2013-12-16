@@ -57,6 +57,7 @@ public class BookFiOrg extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("class=\"notFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (parameter.contains("/md5/")) {
             // bookfi
             String bookid = br.getRegex("<a href=\"(book/\\d+)\" ><h3").getMatch(0);
@@ -73,7 +74,7 @@ public class BookFiOrg extends PluginForHost {
         if (info == null) {
             // bookos
             info = br.getRegex("<a class=\"button active dnthandler\" href=\"([^\"]+)\">.*?\\([^,]+, ([^\\)]+?)\\)</a>").getRow(0);
-            if (info == null || info[0] == null || info[1] == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (info == null || info[0] == null || info[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Goes to download link to find out filename
         String filename = br.getRegex("<h2 style=\"display:inline\">([^<>\"]*?)</h2>").getMatch(0);

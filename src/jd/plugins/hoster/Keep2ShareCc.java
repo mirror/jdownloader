@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://(www\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc/file/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keep2share.cc" }, urls = { "http://keep2sharedecrypted\\.cc/file/[a-z0-9]+" }, flags = { 2 })
 public class Keep2ShareCc extends PluginForHost {
 
     public Keep2ShareCc(PluginWrapper wrapper) {
@@ -63,7 +63,7 @@ public class Keep2ShareCc extends PluginForHost {
         return "http://k2s.cc/page/terms.html";
     }
 
-    private final String           DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
+    public static final String     DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
     private final String           MAINPAGE         = "http://keep2share.cc";
     private final String           DOMAINS          = "(https?://(www\\.)?(keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
 
@@ -77,7 +77,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("://[a-zA-Z0-9\\.]+\\.cc/", "://keep2share.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "keep2share.cc/"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
