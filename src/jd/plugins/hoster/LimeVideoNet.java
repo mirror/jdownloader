@@ -319,6 +319,7 @@ public class LimeVideoNet extends PluginForHost {
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                    if (br.containsHTML("/installilivid\\.html\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible");
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {

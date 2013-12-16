@@ -86,6 +86,7 @@ public class SoundcloudCom extends PluginForHost {
 
     private void doFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (url == null && link.getBooleanProperty("notdownloadable", false)) throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -199,9 +200,16 @@ public class SoundcloudCom extends PluginForHost {
     private void checkDirectLink(final DownloadLink downloadLink, final String property) {
         URLConnectionAdapter con = null;
         try {
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             con = br2.openGetConnection(url);
-            if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 401) {
+            if (con.getResponseCode() == 401) {
+                downloadLink.setProperty(property, Property.NULL);
+                downloadLink.setProperty("notdownloadable", true);
+                url = null;
+                return;
+            }
+            downloadLink.setProperty("notdownloadable", false);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                 downloadLink.setProperty(property, Property.NULL);
                 url = null;
                 return;
