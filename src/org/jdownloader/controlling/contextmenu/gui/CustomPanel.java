@@ -242,9 +242,9 @@ public class CustomPanel extends MigPanel {
                     }
 
                 };
-                cb.setHelpText(gs.getAnnotation(Customizer.class).name());
-                cb.setText(value);
 
+                cb.setText(value);
+                add(new JLabel(gs.getAnnotation(Customizer.class).name()), "growx,spanx,wrap");
                 add(cb, "growx,spanx,wrap,pushx,growx");
             }
         } catch (Exception e) {

@@ -3914,4 +3914,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Start Survey" })
     String osr_start();
 
+    @Default(lngs = { "en" }, values = { "Copy Information" })
+    String CopyGenericContextAction();
+
+    @Default(lngs = { "en" }, values = { "Copy Information: %s1" })
+    String CopyGenericContextAction_tt(String copyPattern);
+
 }
