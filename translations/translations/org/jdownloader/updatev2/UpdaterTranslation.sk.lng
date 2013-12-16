@@ -48,6 +48,7 @@ installframe_statusmsg_preparing_eta=Odhadovaný zostávajúci čas: %s1
 installframe_statusmsg_selfupdate=Nájdená nová verzia programu JDownloader
 installframe_statusmsg_selfupdate_validating=Overujem inštaláciu\nMôže to trvať až 5 minút...
 installframe_statusmsg_waitingforapplication=Čakanie na aplikáciu!
+installframe_statusmsg_waitingforapplication2=Čakanie na aplikáciu!\nSkontrolujte povolenie na zápis: %s1
 lit_cancel_install=Preskočiť inštaláciu
 literally_cancel=Zrušiť
 literally_close=Zavrieť
