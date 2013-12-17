@@ -79,7 +79,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 break;
             }
             if (!br.containsHTML("\"errno\":0")) throw new DecrypterException(DecrypterException.PASSWORD);
-            parameter = "http://pan.baidu.com/share/link?shareid=" + shareid + "&uk=" + uk;
+            parameter = getPlainLink(parameter);
             link_password_cookie = br.getCookie("http://pan.baidu.com/", "BDCLND");
             br.getHeaders().remove("X-Requested-With");
             br.getPage(parameter);
@@ -248,7 +248,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         }
         if (dl.getStringProperty("server_filename") != null) dl.setFinalFileName(Encoding.htmlDecode(unescape(dl.getStringProperty("server_filename"))));
         if (dl.getStringProperty("size") != null) dl.setDownloadSize(Long.parseLong(dl.getStringProperty("size")));
-        dl.setProperty("mainLink", parameter.replace("/share/init?", "/share/link?"));
+        dl.setProperty("mainLink", getPlainLink(parameter));
         dl.setProperty("dirName", dir);
         dl.setProperty("origurl_shareid", shareid);
         dl.setProperty("origurl_uk", uk);
@@ -256,6 +256,10 @@ public class PanBaiduCom extends PluginForDecrypt {
         dl.setProperty("important_link_password_cookie", link_password_cookie);
         dl.setAvailable(true);
         return dl;
+    }
+
+    private String getPlainLink(final String input) {
+        return input.replace("/share/init?", "/share/link?");
     }
 
     /* NO OVERRIDE!! */

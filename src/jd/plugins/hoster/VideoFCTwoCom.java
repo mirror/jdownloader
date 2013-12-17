@@ -133,17 +133,17 @@ public class VideoFCTwoCom extends PluginForHost {
         br.getPage(userinfo);
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
-        if (expire == null) {
-            if (br.containsHTML("Free Member")) {
-                ai.setValidUntil(-1);
-                ai.setStatus("Registered (free) User");
-            } else {
-                account.setValid(false);
-                return ai;
-            }
-        } else {
+        if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
             ai.setStatus("Premium User");
+        } else if (br.containsHTML(">Paying Member</span>")) {
+            ai.setStatus("Premium User");
+        } else if (br.containsHTML("Free Member")) {
+            ai.setValidUntil(-1);
+            ai.setStatus("Registered (free) User");
+        } else {
+            account.setValid(false);
+            return ai;
         }
         account.setValid(true);
 
