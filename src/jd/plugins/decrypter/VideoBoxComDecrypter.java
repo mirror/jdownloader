@@ -162,7 +162,7 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.VideoBoxCom) hosterPlugin).login(aa, false, this.br);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             return false;
         }

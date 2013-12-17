@@ -18,8 +18,6 @@ package jd.plugins;
 
 import jd.config.Property;
 import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.accountchecker.AccountCheckerThread;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -52,8 +50,6 @@ public class Account extends Property {
         this.concurrentUsePossible = concurrentUsePossible;
     }
 
-    private boolean        valid              = true;
-
     private transient long tmpDisabledTimeout = -1;
 
     public long getTmpDisabledTimeout() {
@@ -72,6 +68,10 @@ public class Account extends Property {
     private transient AccountController ac           = null;
     private transient PluginForHost     plugin       = null;
     private transient boolean           isMulti      = false;
+
+    private AccountError                error;
+
+    private String                      errorString;
 
     public PluginForHost getPlugin() {
         return plugin;
@@ -130,17 +130,25 @@ public class Account extends Property {
     }
 
     public boolean isValid() {
-        return valid;
+        return getError() == null;
     }
 
     public long getLastValidTimestamp() {
         return getLongProperty(LATEST_VALID_TIMESTAMP, -1);
     }
 
+    /**
+     * @Deprecated Use #setError
+     * @param b
+     */
+    @Deprecated
     public void setValid(final boolean b) {
-        valid = b;
-        if (valid == false) {
-            this.setEnabled(false);
+        if (b) {
+            if (getError() == AccountError.INVALID) {
+                setError(null);
+            }
+        } else {
+            setError(AccountError.INVALID);
         }
     }
 
@@ -207,6 +215,46 @@ public class Account extends Property {
         }
     }
 
+    public static enum AccountProperty {
+        ENABLED,
+        ERROR,
+        PASSWORD,
+        TEMP_DISABLED,
+        USERNAME,
+        ERROR_STRING;
+    }
+
+    public static enum AccountError {
+        EXPIRED,
+        INVALID,
+        PLUGIN_ERROR;
+    }
+
+    public void setError(final AccountError error) {
+        if (this.error != error) {
+            this.error = error;
+
+            notifyUpdate(AccountProperty.ERROR);
+
+        }
+    }
+
+    public AccountError getError() {
+        return error;
+    }
+
+    public void setErrorString(final String error) {
+        if (this.errorString != error) {
+            this.errorString = error;
+            notifyUpdate(AccountProperty.ERROR_STRING);
+        }
+    }
+
+    public String getErrorString() {
+
+        return errorString;
+    }
+
     public void setEnabled(final boolean enabled) {
         if (this.enabled != enabled) {
             this.enabled = enabled;
@@ -214,7 +262,7 @@ public class Account extends Property {
             if (enabled && (!isValid() || ai != null && ai.isExpired())) {
                 setUpdateTime(0);
             }
-            notifyUpdate(enabled);
+            notifyUpdate(AccountProperty.ENABLED);
         }
     }
 
@@ -231,12 +279,30 @@ public class Account extends Property {
         return System.currentTimeMillis() - updatetime >= getRefreshTimeout();
     }
 
-    private void notifyUpdate(boolean recheckRequired) {
-        AccountController lac = ac;
-        if (lac != null) {
-            if (Thread.currentThread() instanceof AccountCheckerThread) return;
-            lac.getBroadcaster().fireEvent(new AccountControllerEvent(lac, AccountControllerEvent.Types.UPDATE, this));
+    public static interface AccountChangeHandler {
+
+        void fireAccountPropertyChange(Account account, AccountProperty property);
+
+    }
+
+    private AccountChangeHandler notifyHandler = null;
+
+    public AccountChangeHandler getNotifyHandler() {
+        AccountChangeHandler ret = notifyHandler;
+        if (ret == null) { return AccountController.getInstance(); }
+        return ret;
+    }
+
+    public void setNotifyHandler(AccountChangeHandler notifyHandler) {
+        this.notifyHandler = notifyHandler;
+    }
+
+    private void notifyUpdate(AccountProperty property) {
+        AccountChangeHandler noti = getNotifyHandler();
+        if (noti != null) {
+            noti.fireAccountPropertyChange(this, property);
         }
+
     }
 
     public void setPass(String newPass) {
@@ -245,7 +311,7 @@ public class Account extends Property {
             this.pass = newPass;
             accinfo = null;
             setUpdateTime(0);
-            notifyUpdate(true);
+            notifyUpdate(AccountProperty.PASSWORD);
         }
     }
 
@@ -264,7 +330,7 @@ public class Account extends Property {
                 notify = true;
             }
         }
-        if (notify) notifyUpdate(false);
+        if (notify) notifyUpdate(AccountProperty.TEMP_DISABLED);
     }
 
     public void setUser(String newUser) {
@@ -273,7 +339,7 @@ public class Account extends Property {
             this.user = newUser;
             accinfo = null;
             setUpdateTime(0);
-            notifyUpdate(true);
+            notifyUpdate(AccountProperty.USERNAME);
         }
     }
 

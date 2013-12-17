@@ -124,7 +124,7 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.LiveMixTapesCom) hostPlugin).login(this.br, aa);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             return false;
         }

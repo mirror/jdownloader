@@ -25,7 +25,7 @@ import org.appwork.utils.net.meteredconnection.MeteredInputStream;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
-import org.jdownloader.api.HttpServer;
+import org.jdownloader.api.DeprecatedAPIHttpServerController;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.ByteRange;
 import org.jdownloader.extensions.streaming.StreamLinker;
@@ -54,7 +54,7 @@ public abstract class Transcoder {
     public void close() {
         logger.info("Closed: " + this);
         if (streamHandler != null) {
-            HttpServer.getInstance().unregisterRequestHandler(streamHandler);
+            DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(streamHandler);
         }
         if (process != null) {
             process.destroy();
@@ -90,7 +90,7 @@ public abstract class Transcoder {
             addException(e);
 
         } finally {
-            HttpServer.getInstance().unregisterRequestHandler(streamHandler);
+            DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(streamHandler);
             if (exception != null) throw exception;
         }
     }
@@ -100,7 +100,7 @@ public abstract class Transcoder {
     protected abstract String[] getFFMpegCommandLine(String string);
 
     protected void initStreamHandler() throws IOException {
-        streamHandler = HttpServer.getInstance().registerRequestHandler(port, true, new HttpRequestHandler() {
+        streamHandler = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, new HttpRequestHandler() {
 
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {

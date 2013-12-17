@@ -65,6 +65,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -603,7 +604,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -1112,7 +1114,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             break;
         case ACCOUNT_INVALID:
             if (onDetach) {
-                candidate.getCachedAccount().getAccount().setValid(false);
+                candidate.getCachedAccount().getAccount().setError(AccountError.PLUGIN_ERROR);
                 return;
             }
             break;
@@ -2522,7 +2524,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                                 @Override
                                 public void execute(DownloadSession currentSession) {
-                                    currentSession.removeAccountCache(event.getParameter().getHoster());
+                                    currentSession.removeAccountCache(event.getAccount().getHoster());
                                 }
 
                                 @Override
@@ -2744,8 +2746,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }

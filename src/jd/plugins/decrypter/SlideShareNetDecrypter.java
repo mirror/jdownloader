@@ -117,7 +117,7 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.SlideShareNet) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             return false;
         }

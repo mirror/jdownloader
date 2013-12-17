@@ -3920,4 +3920,28 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Copy Information: %s1" })
     String CopyGenericContextAction_tt(String copyPattern);
 
+    @Default(lngs = { "en" }, values = { "Status" })
+    String premiumaccounttablemodel_column_status();
+
+    @Default(lngs = { "en" }, values = { "Account is ok" })
+    String PremiumAccountTableModel_getStringValue_account_ok_();
+
+    @Default(lngs = { "en" }, values = { "Account expired" })
+    String PremiumAccountTableModel_getStringValue_status_expired();
+
+    @Default(lngs = { "en" }, values = { "Logins wrong" })
+    String PremiumAccountTableModel_getStringValue_status_invalid();
+
+    @Default(lngs = { "en" }, values = { "Plugin Error" })
+    String PremiumAccountTableModel_getStringValue_status_plugin_error();
+
+    @Default(lngs = { "en" }, values = { "Unknown Error" })
+    String PremiumAccountTableModel_getStringValue_status_unknown_error();
+
+    @Default(lngs = { "en" }, values = { "Temporarily disabled" })
+    String PremiumAccountTableModel_getStringValue_temp_disabled();
+
+    @Default(lngs = { "en" }, values = { "Account is ok: %s1" })
+    String PremiumAccountTableModel_getStringValue_account_ok_2(String ret);
+
 }

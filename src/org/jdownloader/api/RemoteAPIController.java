@@ -110,6 +110,10 @@ public class RemoteAPIController {
                     }
                     responseData = newResponse;
                 }
+                if (((SessionRemoteAPIRequest) request).getApiRequest() instanceof DeprecatedRemoteAPIRequest) { return JSonStorage.serializeToJson(responseData);
+                // ((DeprecatedRemoteAPIRequest)((SessionRemoteAPIRequest) request).getApiRequest()).getRequest()
+
+                }
                 MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
                 if (ri.getApiVersion() > 0) {
                     return JSonStorage.serializeToJson(responseData);
@@ -123,6 +127,13 @@ public class RemoteAPIController {
             public void sendText(RemoteAPIRequest request, RemoteAPIResponse response, String text, boolean chunked) throws UnsupportedEncodingException, IOException {
                 try {
                     if (request instanceof SessionRemoteAPIRequest) {
+                        if (((SessionRemoteAPIRequest) request).getApiRequest() instanceof DeprecatedRemoteAPIRequest) {
+                            //
+                            super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
+                            }, null), -1)), chunked);
+                            return;
+
+                        }
                         MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
                         if (ri.getApiVersion() > 0) {
                             super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
@@ -146,14 +157,20 @@ public class RemoteAPIController {
 
             @Override
             protected RemoteAPIRequest createRemoteAPIRequestObject(HttpRequest request, String[] intf, InterfaceHandler<?> interfaceHandler, List<String> parameters, String jqueryCallback) throws IOException {
+                if (request instanceof DeprecatedAPIRequestInterface) {
 
+                return new DeprecatedRemoteAPIRequest(interfaceHandler, intf[2], parameters.toArray(new String[] {}), (DeprecatedAPIRequestInterface) request, jqueryCallback);
+                //
+                }
                 return new MyJDRemoteAPIRequest(interfaceHandler, intf[2], parameters.toArray(new String[] {}), (MyJDownloaderRequestInterface) request);
             }
 
             @Override
             protected void validateRequest(HttpRequest request) throws BasicRemoteAPIException {
                 super.validateRequest(request);
+                if (request instanceof DeprecatedAPIRequestInterface) {
 
+                return; }
                 if (request instanceof MyJDownloaderPostRequest) {
                     org.jdownloader.myjdownloader.client.json.JSonRequest jsonRequest;
                     try {
@@ -188,7 +205,7 @@ public class RemoteAPIController {
             sessionc.registerSessionRequestHandler(rapi);
             rapi.register(sessionc);
             if (JsonConfig.create(RemoteAPIConfig.class).isDeprecatedApiEnabled()) {
-                HttpServer.getInstance().registerRequestHandler(3128, true, sessionc);
+                DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(3128, true, sessionc);
             }
         } catch (Throwable e) {
             logger.log(e);

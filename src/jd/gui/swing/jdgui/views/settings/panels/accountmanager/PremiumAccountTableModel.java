@@ -30,6 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
@@ -38,11 +39,14 @@ import org.appwork.swing.exttable.columns.ExtDateColumn;
 import org.appwork.swing.exttable.columns.ExtPasswordEditorColumn;
 import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 import sun.swing.SwingUtilities2;
@@ -100,7 +104,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     public void onAccountControllerEvent(AccountControllerEvent event) {
                         if (accountListPanel.isShown()) {
                             switch (event.getType()) {
-                            case UPDATE:
+                            case ACCOUNT_PROPERTY_UPDATE:
                                 /* just repaint */
                                 delayedUpdate.run();
                                 break;
@@ -237,6 +241,89 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             @Override
             public String getStringValue(AccountEntry value) {
                 return value.getAccount().getHoster();
+            }
+
+        });
+
+        this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_status()) {
+
+            private static final long serialVersionUID = -3693931358975303164L;
+
+            @Override
+            public boolean isEnabled(AccountEntry obj) {
+                return obj.getAccount().isEnabled();
+            }
+
+            @Override
+            public boolean isHidable() {
+                return true;
+            }
+
+            @Override
+            protected Icon getIcon(AccountEntry value) {
+                if (value.getAccount().getError() == null) {
+
+                    if (value.getAccount().isTempDisabled()) { return new AbstractIcon(IconKey.ICON_WAIT, 16); }
+                    return new AbstractIcon(IconKey.ICON_OK, 16);
+                }
+                switch (value.getAccount().getError()) {
+                case EXPIRED:
+                    return new ExtMergedIcon(new AbstractIcon(IconKey.ICON_ERROR, 18)).add(new AbstractIcon(IconKey.ICON_WAIT, 12), 6, 6);
+                case INVALID:
+
+                    return new AbstractIcon(IconKey.ICON_ERROR, 16);
+                case PLUGIN_ERROR:
+                    return new AbstractIcon(IconKey.ICON_ERROR, 16);
+                }
+
+                return new AbstractIcon(IconKey.ICON_OK, 16);
+            }
+
+            @Override
+            public int getDefaultWidth() {
+                return 160;
+            }
+
+            @Override
+            public int getMinWidth() {
+                return 24;
+            }
+
+            // @Override
+            // protected String getTooltipText(AccountEntry obj) {
+            // return obj.getAccount().getHoster();
+            // }
+
+            @Override
+            public String getStringValue(AccountEntry value) {
+                if (value.getAccount().getError() == null) {
+                    AccountInfo ai = value.getAccount().getAccountInfo();
+                    String ret = ai.getStatus();
+                    if (StringUtils.isEmpty(ret)) {
+                        if (value.getAccount().isTempDisabled()) {
+                            if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
+                            ret = _GUI._.PremiumAccountTableModel_getStringValue_temp_disabled();
+                        } else {
+                            ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_();
+                        }
+                    } else {
+                        ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
+                    }
+                    return ret;
+                }
+                if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
+                switch (value.getAccount().getError()) {
+                case EXPIRED:
+                    return _GUI._.PremiumAccountTableModel_getStringValue_status_expired();
+                case INVALID:
+
+                    return _GUI._.PremiumAccountTableModel_getStringValue_status_invalid();
+                case PLUGIN_ERROR:
+                    return _GUI._.PremiumAccountTableModel_getStringValue_status_plugin_error();
+                default:
+                    return _GUI._.PremiumAccountTableModel_getStringValue_status_unknown_error();
+                }
+
             }
 
         });

@@ -79,7 +79,7 @@ public class WallBaseCc extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.WallBaseCc) plg).login(this.br, aa, force);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             return false;
         }

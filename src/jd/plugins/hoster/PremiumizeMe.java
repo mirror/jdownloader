@@ -253,6 +253,11 @@ public class PremiumizeMe extends PluginForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
+        // if (true) {
+        // if (true) {
+        //
+        // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Debug", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        // }
         handleAPIErrors(br, account, link);
         String dllink = br.getRegex("location\":\"(http[^\"]+)").getMatch(0);
         if (dllink == null) {
@@ -308,6 +313,7 @@ public class PremiumizeMe extends PluginForHost {
             // ai.setTrafficLeft(AVERAGE(Integer.parseInt(fairUse.trim()) *
             // 100));
         }
+
         String trafficleft_bytes = br.getRegex("trafficleft_bytes\":(-?[\\d\\.]+)").getMatch(0);
         if (trafficleft_bytes != null) {
             ai.setTrafficMax(SizeFormatter.getSize("220 GByte", true, true));

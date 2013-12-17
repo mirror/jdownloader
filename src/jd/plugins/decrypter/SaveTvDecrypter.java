@@ -421,7 +421,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.SaveTv) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             return false;
         }

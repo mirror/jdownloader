@@ -177,7 +177,7 @@ public class FlickrCom extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.FlickrCom) flickrPlugin).login(aa, false, this.br);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             logger.info("Account seems to be invalid!");
             return false;

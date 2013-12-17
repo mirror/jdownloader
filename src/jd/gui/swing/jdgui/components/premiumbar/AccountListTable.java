@@ -30,6 +30,24 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
         // this.setShowVerticalLines(false);
         // this.setShowGrid(false);
         // this.setShowHorizontalLines(false);
+
+        // this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(Color.BLACK,
+        // ColorUtils.getAlphaInstance(Color.RED, 50), null) {
+        // public int getPriority() {
+        // return Integer.MAX_VALUE - 1;
+        // }
+        //
+        // @Override
+        // protected Color getBackground(Color current) {
+        // return super.getBackground(current);
+        // }
+        //
+        // @Override
+        // public boolean accept(ExtColumn<AccountEntry> column, AccountEntry value, boolean selected, boolean focus, int row) {
+        // return false;
+        // }
+        //
+        // });
     }
 
     @Override

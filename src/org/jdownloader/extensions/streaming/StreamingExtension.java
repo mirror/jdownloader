@@ -23,7 +23,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.api.HttpServer;
+import org.jdownloader.api.DeprecatedAPIHttpServerController;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
@@ -83,7 +83,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
             if (streamServerHandler != null) {
 
-                HttpServer.getInstance().unregisterRequestHandler(streamServerHandler);
+                DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(streamServerHandler);
             }
         } finally {
 
@@ -109,7 +109,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         vlcstreamingAPI = new HttpApiImpl(this, this.mediaServer);
 
         try {
-            streamServerHandler = HttpServer.getInstance().registerRequestHandler(getSettings().getStreamServerPort(), false, vlcstreamingAPI);
+            streamServerHandler = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(getSettings().getStreamServerPort(), false, vlcstreamingAPI);
         } catch (IOException e) {
             e.printStackTrace();
             throw new StartException(e);

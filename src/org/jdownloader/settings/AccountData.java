@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 
 import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
 
 public class AccountData implements Storable {
     private Map<String, Object> properties;
@@ -55,7 +57,7 @@ public class AccountData implements Storable {
     private boolean             active;
     private boolean             enabled;
     private boolean             tempDisabled;
-    private boolean             valid;
+    private boolean             valid                 = true;
 
     private boolean             trafficUnlimited;
     private boolean             specialtraffic;
@@ -64,6 +66,10 @@ public class AccountData implements Storable {
     private boolean             concurrentUsePossible = true;
 
     private long                id                    = -1;
+
+    private String              errorType;
+
+    private String              errorString;
 
     public long getId() {
         return id;
@@ -81,7 +87,7 @@ public class AccountData implements Storable {
         this.concurrentUsePossible = concurrentUsePossible;
     }
 
-    public AccountData() {
+    public AccountData(/* Storable */) {
         // reuqired by Storable
     }
 
@@ -90,6 +96,8 @@ public class AccountData implements Storable {
         // WARNING: only storable or primitives should be used here
         ret.properties = a.getProperties();
         ret.id = a.getId().getID();
+        ret.errorType = enumToString(a.getError());
+        ret.errorString = a.getErrorString();
         if (a.getAccountInfo() != null) {
             ret.infoProperties = a.getAccountInfo().getProperties();
             if (ret.infoProperties == null) {
@@ -109,13 +117,32 @@ public class AccountData implements Storable {
         ret.concurrentUsePossible = a.isConcurrentUsePossible();
         ret.enabled = a.isEnabled();
         ret.tempDisabled = a.isTempDisabled();
-        ret.valid = a.isValid();
         ret.hoster = a.getHoster();
         ret.maxSimultanDownloads = a.getMaxSimultanDownloads();
         ret.password = a.getPass();
         ret.user = a.getUser();
 
         return ret;
+    }
+
+    public String getErrorType() {
+        return errorType;
+    }
+
+    public void setErrorType(String errorType) {
+        this.errorType = errorType;
+    }
+
+    public String getErrorString() {
+        return errorString;
+    }
+
+    public void setErrorString(String errorString) {
+        this.errorString = errorString;
+    }
+
+    private static String enumToString(AccountError error) {
+        return error == null ? null : error.toString();
     }
 
     public Map<String, Object> getInfoProperties() {
@@ -182,11 +209,13 @@ public class AccountData implements Storable {
         this.tempDisabled = tempDisabled;
     }
 
-    public boolean isValid() {
+    @Deprecated
+    private boolean isValid() {
         return valid;
     }
 
-    public void setValid(boolean valid) {
+    @Deprecated
+    private void setValid(boolean valid) {
         this.valid = valid;
     }
 
@@ -236,7 +265,17 @@ public class AccountData implements Storable {
         ret.setProperties(properties);
         ret.setTempDisabled(tempDisabled);
         ret.setUser(user);
-        ret.setValid(valid);
+        ret.setErrorString(errorString);
+        if (StringUtils.isNotEmpty(errorType)) {
+            try {
+                ret.setError(AccountError.valueOf(errorType));
+            } catch (Exception e) {
+
+            }
+        }
+        if (!valid && ret.getError() == null) {
+            ret.setError(AccountError.INVALID);
+        }
 
         return ret;
     }

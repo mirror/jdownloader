@@ -230,6 +230,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
 
         });
+
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_user()) {
 
             private static final long serialVersionUID = -8070328156326837828L;
@@ -551,7 +552,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
     public void onAccountControllerEvent(AccountControllerEvent event) {
 
         switch (event.getType()) {
-        case UPDATE:
+        case ACCOUNT_PROPERTY_UPDATE:
             /* just repaint */
             delayedUpdate.run();
             break;

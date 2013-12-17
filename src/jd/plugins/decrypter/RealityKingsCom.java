@@ -105,7 +105,7 @@ public class RealityKingsCom extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.RealityKingsCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             return false;
         }

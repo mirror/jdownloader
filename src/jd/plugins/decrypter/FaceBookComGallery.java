@@ -558,7 +558,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 }
                 return true;
             } catch (final PluginException e) {
-                aa.setEnabled(false);
+
                 aa.setValid(false);
                 logger.info("Account seems to be invalid, returnung empty linklist!");
                 return false;

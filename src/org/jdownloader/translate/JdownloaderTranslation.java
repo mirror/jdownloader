@@ -508,4 +508,16 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Downloaded Container" })
     String LinkSource_DOWNLOADED_CONTAINER();
 
+    @Default(lngs = { "en" }, values = { "Plugin outdated" })
+    String AccountController_updateAccountInfo_status_plugin_defect();
+
+    @Default(lngs = { "en" }, values = { "Logins wrong" })
+    String AccountController_updateAccountInfo_status_logins_wrong();
+
+    @Default(lngs = { "en" }, values = { "Cannot check Account" })
+    String AccountController_updateAccountInfo_status_uncheckable();
+
+    @Default(lngs = { "en" }, values = { "No Traffic left" })
+    String AccountController_updateAccountInfo_status_traffic_reached();
+
 }

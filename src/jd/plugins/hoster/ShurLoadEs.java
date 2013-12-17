@@ -79,7 +79,7 @@ public class ShurLoadEs extends PluginForHost {
                         br.followConnection();
                         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.php")) {
                             aa.setValid(false);
-                            aa.setEnabled(false);
+
                             return false;
                         } else {
                             dl.setAvailable(false);

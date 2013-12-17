@@ -95,7 +95,7 @@ public class XArt extends PluginForDecrypt {
                 return false;
             }
         } catch (final PluginException e) {
-            account.setEnabled(false);
+
             account.setValid(false);
             return false;
         }

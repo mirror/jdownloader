@@ -103,7 +103,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.EroProfileCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             return false;
         }

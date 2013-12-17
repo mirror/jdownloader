@@ -112,7 +112,7 @@ public class ConexaomegaCom extends PluginForHost {
         br.setReadTimeout(60 * 1000);
         if (!login(account, true)) {
             account.setValid(false);
-            account.setEnabled(false);
+
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -126,7 +126,7 @@ public class ConexaomegaCom extends PluginForHost {
         final String expireDays = br.getRegex(">Seu plano expira em (\\d+) dias\\.</strong>").getMatch(0);
         if (expireDays == null) {
             account.setValid(false);
-            account.setEnabled(false);
+
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount invalid!\r\nAccount ungültig!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
 

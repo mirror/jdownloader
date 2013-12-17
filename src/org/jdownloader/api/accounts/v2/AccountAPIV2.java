@@ -17,8 +17,6 @@ public interface AccountAPIV2 extends RemoteAPIInterface {
 
     public List<String> listPremiumHoster();
 
-    public AccountAPIStorableV2 getAccountInfo(long id);
-
     public void removeAccounts(long[] ids);
 
     public void enableAccounts(long[] ids);

@@ -1,6 +1,8 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -24,6 +26,12 @@ public class ZeroAPremium extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         throw new PluginException(LinkStatus.ERROR_FATAL, "DUMMY PLUGIN");
+    }
+
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        account.setValid(false);
+        return ai;
     }
 
     @Override

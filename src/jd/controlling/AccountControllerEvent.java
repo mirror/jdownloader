@@ -20,9 +20,18 @@ import jd.plugins.Account;
 
 import org.appwork.utils.event.SimpleEvent;
 
-public class AccountControllerEvent extends SimpleEvent<AccountController, Account, AccountControllerEvent.Types> {
+public class AccountControllerEvent extends SimpleEvent<AccountController, Object, AccountControllerEvent.Types> {
 
     protected boolean forceCheck = true;
+    private Account   account;
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
 
     public boolean isForceCheck() {
         return forceCheck;
@@ -32,16 +41,16 @@ public class AccountControllerEvent extends SimpleEvent<AccountController, Accou
         this.forceCheck = forceCheck;
     }
 
-    public AccountControllerEvent(AccountController caller, Types type, Account... parameters) {
+    public AccountControllerEvent(AccountController caller, Types type, Account account, Object... parameters) {
         super(caller, type, parameters);
+        this.account = account;
     }
 
     public static enum Types {
         ADDED,
         REMOVED,
-        UPDATE,
-        EXPIRED,
-        INVALID
+        ACCOUNT_PROPERTY_UPDATE
+
     }
 
 }

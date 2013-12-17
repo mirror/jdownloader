@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -14,7 +15,10 @@ import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtComponentRowHighlighter;
+import org.appwork.utils.ColorUtils;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
@@ -23,6 +27,55 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
     public PremiumAccountTable(AccountListPanel accountListPanel) {
         super(new PremiumAccountTableModel(accountListPanel));
         this.setSearchEnabled(true);
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>((LAFOptions.getInstance().getColorForTableSelectedRowsForeground()), (LAFOptions.getInstance().getColorForTableSelectedRowsBackground()), null) {
+            public int getPriority() {
+                return Integer.MAX_VALUE - 1;
+            }
+
+            @Override
+            public boolean accept(ExtColumn<AccountEntry> column, AccountEntry value, boolean selected, boolean focus, int row) {
+                return selected;
+            }
+
+        });
+
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(Color.BLACK, ColorUtils.getAlphaInstance(Color.ORANGE, 50), null) {
+            public int getPriority() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            protected Color getBackground(Color current) {
+                return super.getBackground(current);
+            }
+
+            @Override
+            public boolean accept(ExtColumn<AccountEntry> column, AccountEntry value, boolean selected, boolean focus, int row) {
+                return value.getAccount().isTempDisabled();
+            }
+
+        });
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(Color.BLACK, ColorUtils.getAlphaInstance(Color.RED, 50), null) {
+            public int getPriority() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            protected Color getBackground(Color current) {
+                return super.getBackground(current);
+            }
+
+            @Override
+            public boolean accept(ExtColumn<AccountEntry> column, AccountEntry value, boolean selected, boolean focus, int row) {
+                return !value.getAccount().isValid();
+            }
+
+        });
+    }
+
+    @Override
+    protected void addSelectionHighlighter() {
+        super.addSelectionHighlighter();
     }
 
     /*

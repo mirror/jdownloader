@@ -233,6 +233,11 @@ public class TestClient {
             }
 
             @Override
+            protected void log(String json) {
+                System.out.println(json);
+            }
+
+            @Override
             protected String base64Encode(final byte[] encryptedBytes) {
                 return Base64.encodeToString(encryptedBytes, false);
             }
@@ -280,7 +285,6 @@ public class TestClient {
                         ret = br.postPage(new URL(getServerRoot() + query), object == null ? "" : object).getBytes("UTF-8");
                         con = br.getConnection();
                     }
-                    System.out.println(new String(ret, "UTF-8"));
 
                     if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
                         //

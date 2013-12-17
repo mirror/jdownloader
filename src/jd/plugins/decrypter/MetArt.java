@@ -47,7 +47,7 @@ public class MetArt extends PluginForDecrypt {
             con = br.openGetConnection(parameter.toString());
             if (con.getResponseCode() == 401) {
                 useAcc.setValid(false);
-                useAcc.setEnabled(false);
+
                 throw new DecrypterException("Account invalid!");
             }
             br.followConnection();

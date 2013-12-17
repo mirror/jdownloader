@@ -87,7 +87,7 @@ public class HastaTeamCom extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.HastaTeamComHoster) hosterPlugin).login(this.br, aa, false);
         } catch (final PluginException e) {
-            aa.setEnabled(false);
+
             aa.setValid(false);
             return false;
         }

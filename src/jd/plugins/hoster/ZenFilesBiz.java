@@ -673,6 +673,7 @@ public class ZenFilesBiz extends PluginForHost {
         try {
             login(account, true);
         } catch (final PluginException e) {
+
             account.setValid(false);
             throw e;
         }

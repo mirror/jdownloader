@@ -122,7 +122,7 @@ public class FreeWayMe extends PluginForHost {
             }
         } else if (br.toString().equalsIgnoreCase("Banned")) {
             account.setValid(false);
-            account.setEnabled(false);
+
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {

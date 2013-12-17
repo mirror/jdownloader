@@ -8,6 +8,7 @@ import java.util.List;
 
 import jd.controlling.AccountController;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 
 import org.appwork.utils.StringUtils;
@@ -38,8 +39,13 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
 
         for (int i = startWith; i < Math.min(startWith + maxResults, accs.size()); i++) {
             Account acc = accs.get(i);
+            if (queryParams.getUUIDList() != null && !queryParams.getUUIDList().contains(acc.getId().getID())) continue;
             AccountAPIStorableV2 accas = new AccountAPIStorableV2(acc);
 
+            if (queryParams.isError()) {
+                accas.setErrorString(acc.getErrorString());
+                accas.setErrorType(enumToString(acc.getError()));
+            }
             if (queryParams.isUserName()) {
                 accas.setUsername(acc.getUser());
             }
@@ -72,6 +78,11 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
             ret.add(accas);
         }
         return ret;
+    }
+
+    private String enumToString(AccountError error) {
+        if (error == null) return null;
+        return error.name();
     }
 
     public List<String> listPremiumHoster() {
@@ -157,12 +168,6 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
 
     }
 
-    public AccountAPIStorableV2 getAccountInfo(long id) {
-        java.util.List<Account> accs = getAccountbyIDs(new long[] { id });
-        if (accs.size() == 1) { return new AccountAPIStorableV2(accs.get(0)); }
-        return null;
-    }
-
     @Override
     public void addAccount(String premiumHoster, String username, String password) {
         Account acc = new Account(username, password);
@@ -187,4 +192,5 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         }
         return false;
     }
+
 }
