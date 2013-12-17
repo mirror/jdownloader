@@ -84,6 +84,10 @@ public class VideoOneCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            if (externID.contains("hardsextube.com/video/")) { // Fix for crypted version 
+                decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + embedID + "/"));
+                return decryptedLinks;
+            }
             if (externID.contains("redtube.com/")) {
                 externID += "?" + embedID;
             } else {
