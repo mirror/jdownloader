@@ -41,9 +41,12 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-rapid.cz" }, urls = { "http://(www\\.)?(share\\-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|srapid|share\\-free)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz)/stahuj/([0-9]+/.+|[a-z0-9]+)" }, flags = { 2 })
 public class ShareRapidCz extends PluginForHost {
 
-    private static AtomicInteger maxPrem  = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                         = new AtomicInteger(1);
 
-    private static final String  MAINPAGE = "http://share-rapid.com/";
+    private static final String  MAINPAGE                        = "http://share-rapid.com/";
+    private static Object        LOCK                            = new Object();
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    private static AtomicInteger totalMaxSimultanPremiumDownload = new AtomicInteger(1);
 
     public ShareRapidCz(final PluginWrapper wrapper) {
         super(wrapper);
@@ -91,7 +94,9 @@ public class ShareRapidCz extends PluginForHost {
             trafficleft = br.getMatch("<td>GB:</td><td>([^<>\"]*?)<a");
             if (trafficleft != null) {
                 logger.info("Available traffic equals: " + trafficleft);
-                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+                // Don't set the traffic
+                // ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+                ai.setUnlimitedTraffic();
                 realTraffic = SizeFormatter.getSize(trafficleft);
                 trafficleft = ", " + trafficleft.trim() + " traffic left";
             } else {
@@ -112,6 +117,7 @@ public class ShareRapidCz extends PluginForHost {
             if (maxSimultanDownloads != null) {
                 try {
                     final int maxSimultan = Integer.parseInt(maxSimultanDownloads);
+                    totalMaxSimultanPremiumDownload.set(maxSimultan);
                     maxPrem.set(maxSimultan);
                     account.setMaxSimultanDownloads(maxSimultan);
                 } catch (final Throwable e) {
@@ -186,6 +192,7 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        String dllink = null;
         requestFileInformation(downloadLink);
         login(account);
         br.getPage(downloadLink.getDownloadURL());
@@ -195,14 +202,23 @@ public class ShareRapidCz extends PluginForHost {
             logger.info("share-rapid.cz: Not enough traffic left!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
         boolean nonTrafficPremium = false;
         if (dllink == null) {
             if (br.containsHTML(">Stahování zdarma je možné jen přes náš")) {
                 nonTrafficPremium = true;
             }
         }
+        // Handling for free accounts and premium accounts without enough traffic
         if (nonTrafficPremium == true || (dllink == null && account.getBooleanProperty("freeaccount"))) {
+            // Set max simultan downloads to 1, also for premium accounts which usually allow more because we're downloading as
+            // free(registered) user here
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+                /* not available in 0.9xxx */
+            }
             final Browser br2 = new Browser();
             br2.getHeaders().put("User-Agent", "share-rapid downloader");
             br2.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -240,7 +256,15 @@ public class ShareRapidCz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            // add a download slot
+            controlPremium(+1);
+            // start the dl
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlPremium(-1);
+        }
     }
 
     public void login(final Account account) throws Exception {
@@ -292,6 +316,12 @@ public class ShareRapidCz extends PluginForHost {
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    public synchronized void controlPremium(final int num) {
+        logger.info("maxPrem was = " + maxPrem.get());
+        maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), totalMaxSimultanPremiumDownload.get()));
+        logger.info("maxPrem now = " + maxPrem.get());
     }
 
     @Override

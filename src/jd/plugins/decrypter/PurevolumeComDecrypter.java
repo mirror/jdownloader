@@ -34,7 +34,7 @@ public class PurevolumeComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?purevolume\\.com/(search|signup|faq|artist_promotion|labels|news|festivals|events|advertise|past_features|login|charts|support|top_songs|about_us|browse|people)";
+    private static final String INVALIDLINKS = "http://(www\\.)?purevolume\\.com/(search|signup|faq|artist_promotion|labels|news|festivals|events|advertise|past_features|login|charts|support|top_songs|about_us|browse|people|pure_promos_about|link_to_purevolume|terms_of_use|top_downloads|albums)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

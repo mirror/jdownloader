@@ -30,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "instagram.com" }, urls = { "http://(www\\.)?(instagram\\.com|instagr\\.am)/p/[A-Za-z0-9]+" }, flags = { 0 })
-public class InstaGramCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgdino.com" }, urls = { "http://(www\\.)?imgdino\\.com/viewer\\.php\\?file=[^<>\"/]+" }, flags = { 0 })
+public class ImgDinoCom extends PluginForHost {
 
-    public InstaGramCom(PluginWrapper wrapper) {
+    public ImgDinoCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,11 +41,7 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://instagram.com/about/legal/terms/#";
-    }
-
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/"));
+        return "http://imgdino.com/terms";
     }
 
     @Override
@@ -53,23 +49,17 @@ public class InstaGramCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Oops, an error occurred") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        DLLINK = br.getRegex("\"video_url\":\"(http[^<>\"]*?)\"").getMatch(0);
-        // Maybe we have a picture
-        if (DLLINK == null) DLLINK = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (br.containsHTML("<h1>Error</h1><br>|does not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = new Regex(downloadLink.getDownloadURL(), "file=(.+)").getMatch(0);
+        // Downloadlink
+        DLLINK = br.getRegex("\"(http://(www\\.)imgdino\\.com/download\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+        // Or directlink -> The same
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(www\\.)?img\\d+\\.imgdino\\.com/images/[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK.replace("\\", ""));
-        final String username = br.getRegex("\"owner\".*?\"username\":\"([^<>\"]*?)\"").getMatch(0);
-        final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        String filename = null;
-        if (username != null) {
-            filename = username + " - " + linkid;
-        } else {
-            filename = linkid;
-        }
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) ext = ".jpg";
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

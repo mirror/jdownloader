@@ -46,6 +46,10 @@ public class PhotoShareRu extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML(">Альбом пуст<")) {
+            logger.info("Link offline (album empty): " + parameter);
+            return decryptedLinks;
+        }
 
         final Regex fpn = br.getRegex("<h1 style=\"margin: 0px; padding: 0px;\">([^<>\"]*?)</h1>([^<>\"]*?)</div>");
         if (fpn.getMatches().length != 1) {

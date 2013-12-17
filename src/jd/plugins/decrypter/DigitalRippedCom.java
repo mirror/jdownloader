@@ -34,11 +34,11 @@ public class DigitalRippedCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?digitaldripped\\.com/(ads\\d+.+|disclai?mer|terms|contact|advertise|ajax.+|js.+|\\?p=.+|archives|lilb\\.htm|ad/.+|submit|rss|song/archive|topsongs|mixtapes|dmca|disclaimer|tos)";
+    private static final String INVALIDLINKS = "http://(www\\.)?digitaldripped\\.com/(ads\\d+.+|disclai?mer|terms|contact|advertise|ajax.+|js.+|\\?p=.+|archives|lilb\\.htm|ad/.+|submit|rss|song/archive|topsongs|mixtapes|dmca|disclaimer|tos|song/list\\?artist=.+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         final String parameter = param.toString();
         try {
             br.getPage(parameter);
@@ -71,7 +71,12 @@ public class DigitalRippedCom extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             } else {
-                finallink = br.getRegex("<a class=\"download\\-btn\" target=\"[^<>\"\\']+\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+                finallink = br.getRedirectLocation();
+                if (finallink != null && finallink.contains("digitalripped.com/")) {
+                    br.getPage(br.getRedirectLocation());
+                    finallink = null;
+                }
+                if (finallink == null) finallink = br.getRegex("<a class=\"download\\-btn\" target=\"[^<>\"\\']+\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
                 if (finallink == null) finallink = br.getRegex("<source src=\"(http[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) finallink = br.getRegex("mp3:\"(http://[^<>\"]*?)\"").getMatch(0);
             }

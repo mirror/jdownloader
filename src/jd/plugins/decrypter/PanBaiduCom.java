@@ -26,6 +26,7 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -74,13 +75,10 @@ public class PanBaiduCom extends PluginForDecrypt {
             for (int i = 1; i <= 3; i++) {
                 link_password = getUserInput("Password for " + linkpart + "?", param);
                 br.postPage("http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
-                if (br.containsHTML("\\{\"errno\":\\-12,")) continue;
+                if (!br.containsHTML("\"errno\":0")) continue;
                 break;
             }
-            if (br.containsHTML("\\{\"errno\":\\-12,")) {
-                logger.info("Couldn't decrypt link, password wrong: " + parameter);
-                return decryptedLinks;
-            }
+            if (!br.containsHTML("\"errno\":0")) throw new DecrypterException(DecrypterException.PASSWORD);
             parameter = "http://pan.baidu.com/share/link?shareid=" + shareid + "&uk=" + uk;
             link_password_cookie = br.getCookie("http://pan.baidu.com/", "BDCLND");
             br.getHeaders().remove("X-Requested-With");
@@ -169,11 +167,19 @@ public class PanBaiduCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void getDownloadLinks(final ArrayList<DownloadLink> decryptedLinks, final String parameter, String dirName, String dir) throws Exception {
+    private void getDownloadLinks(final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String dirName, final String dir) throws Exception {
         if (dirName == null || dir == null) return;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         FilePackage fp = null;
         br.getPage(getFolder(parameter, dir));
+        // Folder empty
+        if (br.containsHTML("\"errno\":2")) {
+            final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            dl.setProperty("offline", true);
+            dl.setFinalFileName(Encoding.htmlDecode(dirName));
+            decryptedLinks.add(dl);
+            return;
+        }
         fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(unescape(dirName)));
         HashMap<String, String> ret = new HashMap<String, String>();
@@ -242,7 +248,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         }
         if (dl.getStringProperty("server_filename") != null) dl.setFinalFileName(Encoding.htmlDecode(unescape(dl.getStringProperty("server_filename"))));
         if (dl.getStringProperty("size") != null) dl.setDownloadSize(Long.parseLong(dl.getStringProperty("size")));
-        dl.setProperty("mainLink", parameter);
+        dl.setProperty("mainLink", parameter.replace("/share/init?", "/share/link?"));
         dl.setProperty("dirName", dir);
         dl.setProperty("origurl_shareid", shareid);
         dl.setProperty("origurl_uk", uk);

@@ -52,7 +52,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://[\\w\\.]*?rapidshare\\.com/(files/\\d+/.*?(\"|\r|\n|$|\\?)|\\#\\!download(\\||%7C)\\d+.*?(\\||%7C)\\d+(\\||%7C).+?($|(\\||%7C)\\d+))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://[\\w\\.]*?rapidshare\\.com/(files/\\d+/.*?(\"|\r|\n|$|\\?)|(desktop/)?download/\\d+p\\d+/\\d+/[A-Za-z0-9=]+/\\d+/\\d+/\\d+/\\d+/[A-Fa-f0-9]{32}/refer|\\#\\!download(\\||%7C)\\d+.*?(\\||%7C)\\d+(\\||%7C).+?($|(\\||%7C)\\d+))" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
 
     public static class RSLink {
@@ -162,6 +162,8 @@ public class Rapidshare extends PluginForHost {
     private static AtomicBoolean   ReadTimeoutHotFix = new AtomicBoolean(false);
 
     private String                 dllink            = null;
+
+    private static final String    LINKTYPE_DOWNLOAD = "https?://(www\\.)?rapidshare\\.com/(desktop/)?download/\\d+p\\d+/\\d+/[A-Za-z0-9=]+/\\d+/\\d+/\\d+/\\d+/[A-Z0-9]{32}/refer";
 
     public static class StringContainer {
         public String string = null;
@@ -377,7 +379,20 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(this.getCorrectedURL(link.getDownloadURL()));
+        final String originalURL = link.getDownloadURL();
+        String correctedURL = null;
+        if (originalURL.matches(LINKTYPE_DOWNLOAD)) {
+            final Regex type_download_regex = new Regex(originalURL, "download/\\d+p\\d+/(\\d+)/([A-Za-z0-9=]+)/.+([A-Z0-9]{32})/refer");
+            final String fid = type_download_regex.getMatch(0);
+            final String filename = Encoding.Base64Decode(type_download_regex.getMatch(1));
+            final String shareid = type_download_regex.getMatch(2);
+            link.setProperty("shareid", shareid);
+            link.setName(filename);
+            correctedURL = "http://rapidshare.com/files/" + fid + "/" + filename;
+        } else {
+            correctedURL = this.getCorrectedURL(link.getDownloadURL());
+        }
+        link.setUrlDownload(correctedURL);
     }
 
     private RAFDownload createHackedDownloadInterface(PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {

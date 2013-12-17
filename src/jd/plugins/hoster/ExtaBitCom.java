@@ -433,7 +433,7 @@ public class ExtaBitCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ExtaBitCom.SKIPFREELIMITS, JDL.L("plugins.hoster.ExtaBitCom.skipfreelimits", "Free Mode: Try to skip captchas, speed-limits and waittimes.\r\nWARNING: This can cause bugs/problems - if you experience bugs/problems with downloads from extabit.com with this enabled, disable it again!")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ExtaBitCom.SKIPFREELIMITS, JDL.L("plugins.hoster.ExtaBitCom.skipfreelimits", "Free Premium Mode: Try to skip captchas, speed-limits and waittimes.\r\nWARNING: This can cause bugs/problems - if you experience bugs/problems with downloads from extabit.com with this enabled, disable it again!")).setDefaultValue(false));
     }
 
     @Override

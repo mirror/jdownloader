@@ -97,12 +97,14 @@ public class PanBaiduCom extends PluginForHost {
             }
             br.getPage(original_url);
             // Fallback handling if the password cookie didn't work
-            if (link_password != null && br.getURL().contains(TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED)) {
+            if (link_password != null && br.getURL().matches(TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED)) {
                 br.postPage("http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
-                if (br.containsHTML("\\{\"errno\":\\-12,")) {
+                if (!br.containsHTML("\"errno\":0")) {
                     // Wrong password -> Impossible
+                    logger.warning("pan.baidu.com: Couldn't download password protected link even though the password is given...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                br.getPage(original_url);
             }
             final String sign = br.getRegex("FileUtils\\.share_sign=\"([a-z0-9]+)\"").getMatch(0);
             final String tsamp = br.getRegex("FileUtils\\.share_timestamp=\"(\\d+)\"").getMatch(0);

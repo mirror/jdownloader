@@ -429,7 +429,7 @@ public class FourSharedCom extends PluginForHost {
             ai.setTrafficMax(SizeFormatter.getSize(traffic[2]));
         }
         ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire) * 24 * 60 * 60 * 1000l));
-        if ("FREE  (<a href=\"/premium.jsp\">Upgrade</a>)".equalsIgnoreCase(accType)) {
+        if ("FREE (<a href=\"/premium.jsp\">Upgrade</a>)".equalsIgnoreCase(accType) || br.containsHTML(">FREE \\(<a")) {
             ai.setStatus("Registered (free) User");
             account.setValid(true);
             account.setProperty("nopremium", true);
@@ -455,7 +455,8 @@ public class FourSharedCom extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.foursharedcom.passwordprotected", "This link is password protected"));
                 filename = br.getRegex("id=\"fileNameText\">([^<>\"]*?)</h1>").getMatch(0);
             } else {
-                filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
+                filename = br.getRegex("filename:\\'([^<>\"]*?)\\'").getMatch(0);
+                if (filename == null) filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
                     if (filename == null) {

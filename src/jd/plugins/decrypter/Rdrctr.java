@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -84,7 +85,12 @@ public class Rdrctr extends PluginForDecrypt {
 
         // Workaround for ponyurl.com Links
         parameter = parameter.replace("ponyurl.com/", "ponyurl.com/forward.php?");
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final SocketTimeoutException e) {
+            logger.info("Link offline (server offline?): " + parameter);
+            return decryptedLinks;
+        }
         String redirectcheck = br.getRedirectLocation();
         String declink2 = null;
 
@@ -111,7 +117,7 @@ public class Rdrctr extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(declink));
                     return decryptedLinks;
                 }
-                if (br.containsHTML(">404 Page Not Found|bannedsextapes\\.com/")) offline = true;
+                if (br.containsHTML(">404 Page Not Found|bannedsextapes\\.com/|\"error\":\"Please enter a valid URL") || br.getRequest().getHttpConnection().getResponseCode() == 404) offline = true;
             }
             if (offline) {
                 logger.info("Link offline or invalid: " + parameter);

@@ -30,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "instagram.com" }, urls = { "http://(www\\.)?(instagram\\.com|instagr\\.am)/p/[A-Za-z0-9]+" }, flags = { 0 })
-public class InstaGramCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "220.ro" }, urls = { "http://(www\\.)?220\\.ro/(embi/[A-Za-z0-9]+|[a-z0-9\\-]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9]+/)" }, flags = { 0 })
+public class TwoHundredTwentyRo extends PluginForHost {
 
-    public InstaGramCom(PluginWrapper wrapper) {
+    public TwoHundredTwentyRo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,11 +41,16 @@ public class InstaGramCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://instagram.com/about/legal/terms/#";
+        return "http://www.220.ro/index.php?module=rules";
     }
 
+    private static final String TYPE_EMBEDDED = "http://(www\\.)?220\\.ro/embi/[A-Za-z0-9]+";
+
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("instagr.am/", "instagram.com/"));
+        final String addedlink = link.getDownloadURL();
+        if (addedlink.matches(TYPE_EMBEDDED)) {
+            link.setUrlDownload("http://www.220.ro/animale/" + System.currentTimeMillis() + "/" + new Regex(addedlink, "([A-Za-z0-9]+)$").getMatch(0) + "/");
+        }
     }
 
     @Override
@@ -53,20 +58,11 @@ public class InstaGramCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Oops, an error occurred") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        DLLINK = br.getRegex("\"video_url\":\"(http[^<>\"]*?)\"").getMatch(0);
-        // Maybe we have a picture
-        if (DLLINK == null) DLLINK = br.getRegex("property=\"og:image\" content=\"(http[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK.replace("\\", ""));
-        final String username = br.getRegex("\"owner\".*?\"username\":\"([^<>\"]*?)\"").getMatch(0);
-        final String linkid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        String filename = null;
-        if (username != null) {
-            filename = username + " - " + linkid;
-        } else {
-            filename = linkid;
-        }
+        if (br.getURL().contains("err=cont_not_found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\\'(http://s\\d+\\.220\\.[a-z0-9\\.]+/\\?mmid=[a-z0-9]+\\&plm=k\\.mp4)\\'").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";

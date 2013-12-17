@@ -31,7 +31,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://(www\\.)?rapidshare\\.com/share/[A-Fa-f0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://(www\\.)?rapidshare\\.com/(download/)?share/[A-Fa-f0-9]{32}" }, flags = { 0 })
 public class Rpdshr extends PluginForDecrypt {
 
     private static final String FOLDER = "folder:";
@@ -43,7 +43,7 @@ public class Rpdshr extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String shareID = new Regex(param.getCryptedUrl(), "rapidshare\\.com/share/([A-Fa-f0-9]+)").getMatch(0);
+        final String shareID = new Regex(param.getCryptedUrl(), "/share/([A-Fa-f0-9]+)").getMatch(0);
 
         // sub=sharelinkcontent
         // Description: list folder content

@@ -529,9 +529,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 finallink = br.getRegex("http\\-equiv=\"Refresh\" content=\"\\d+; URL=(.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("url.cn/")) {
-            br.setFollowRedirects(true);
+            br.setFollowRedirects(false);
             br.getPage(parameter);
-            finallink = br.getRegex("window\\.location=\"(.*?)\"").getMatch(0);
+            finallink = br.getRedirectLocation();
+            if (finallink != null && finallink.contains("url.cn/")) {
+                br.getPage(br.getRedirectLocation());
+                finallink = null;
+            }
+            if (finallink == null) finallink = br.getRegex("window\\.location=\"(.*?)\"").getMatch(0);
         } else if (parameter.contains("guardlink.org/")) {
             finallink = br.getRegex("<iframe src=\"([^<>\"\\']+)\"").getMatch(0);
             if (finallink != null) {

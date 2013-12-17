@@ -69,7 +69,10 @@ public class RlGalleriesNt extends PluginForDecrypt {
         final Browser brc = br.cloneBrowser();
         for (final String aLink : links) {
             try {
-                if (isAbort()) break;
+                if (isAbort()) {
+                    logger.info("Decryption process aborted by user, stopping...");
+                    break;
+                }
             } catch (final Throwable e) {
             }
             logger.info("Decrypting link " + counter + " of " + links.length);
