@@ -78,6 +78,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public void delayedrun() {
+                System.out.println("Refill");
                 _refill();
             }
 
@@ -91,6 +92,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public void delayedrun() {
+                System.out.println("Update");
                 _update();
             }
 
@@ -104,9 +106,12 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     public void onAccountControllerEvent(AccountControllerEvent event) {
                         if (accountListPanel.isShown()) {
                             switch (event.getType()) {
+                            case ACCOUNT_CHECKED:
                             case ACCOUNT_PROPERTY_UPDATE:
                                 /* just repaint */
+                                System.out.println("refresh");
                                 delayedUpdate.run();
+
                                 break;
                             default:
                                 /* structure changed */
@@ -261,6 +266,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             protected Icon getIcon(AccountEntry value) {
+                if (value.getAccount().isChecking()) { return new AbstractIcon(IconKey.ICON_REFRESH, 16); }
                 if (value.getAccount().getError() == null) {
 
                     if (value.getAccount().isTempDisabled()) { return new AbstractIcon(IconKey.ICON_WAIT, 16); }
@@ -296,9 +302,10 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public String getStringValue(AccountEntry value) {
+                if (value.getAccount().isChecking()) { return _GUI._.PremiumAccountTableModel_refresh(); }
                 if (value.getAccount().getError() == null) {
                     AccountInfo ai = value.getAccount().getAccountInfo();
-                    String ret = ai.getStatus();
+                    String ret = ai == null ? null : ai.getStatus();
                     if (StringUtils.isEmpty(ret)) {
                         if (value.getAccount().isTempDisabled()) {
                             if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
@@ -307,7 +314,13 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                             ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_();
                         }
                     } else {
-                        ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
+                        if (value.getAccount().isTempDisabled()) {
+                            if (StringUtils.isNotEmpty(value.getAccount().getErrorString())) { return value.getAccount().getErrorString(); }
+                            ret = _GUI._.PremiumAccountTableModel_getStringValue_temp_disabled2(ret);
+                        } else {
+                            ret = _GUI._.PremiumAccountTableModel_getStringValue_account_ok_2(ret);
+                        }
+
                     }
                     return ret;
                 }

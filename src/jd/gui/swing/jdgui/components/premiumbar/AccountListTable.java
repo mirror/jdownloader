@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JPopupMenu;
+import javax.swing.JTable;
 
 import jd.gui.swing.jdgui.BasicJDTable;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
@@ -27,6 +28,7 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
         ToolTipController.getInstance().unregister(this);
         this.setBackground(null);
         setOpaque(false);
+        setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         // this.setShowVerticalLines(false);
         // this.setShowGrid(false);
         // this.setShowHorizontalLines(false);

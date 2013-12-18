@@ -3929,7 +3929,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Account expired" })
     String PremiumAccountTableModel_getStringValue_status_expired();
 
-    @Default(lngs = { "en" }, values = { "Logins wrong" })
+    @Default(lngs = { "en" }, values = { "Invalid logins" })
     String PremiumAccountTableModel_getStringValue_status_invalid();
 
     @Default(lngs = { "en" }, values = { "Plugin Error" })
@@ -3941,7 +3941,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Temporarily disabled" })
     String PremiumAccountTableModel_getStringValue_temp_disabled();
 
+    @Default(lngs = { "en" }, values = { "Temporarily disabled: %s1" })
+    String PremiumAccountTableModel_getStringValue_temp_disabled2(String ret);
+
     @Default(lngs = { "en" }, values = { "Account is ok: %s1" })
     String PremiumAccountTableModel_getStringValue_account_ok_2(String ret);
+
+    @Default(lngs = { "en" }, values = { "Loading information..." })
+    String PremiumAccountTableModel_refresh();
 
 }

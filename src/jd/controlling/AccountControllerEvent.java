@@ -49,7 +49,8 @@ public class AccountControllerEvent extends SimpleEvent<AccountController, Objec
     public static enum Types {
         ADDED,
         REMOVED,
-        ACCOUNT_PROPERTY_UPDATE
+        ACCOUNT_PROPERTY_UPDATE,
+        ACCOUNT_CHECKED
 
     }
 

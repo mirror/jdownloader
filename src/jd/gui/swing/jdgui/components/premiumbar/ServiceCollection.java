@@ -18,20 +18,34 @@ public abstract class ServiceCollection<T> extends ArrayList<T> implements Compa
 
     public abstract boolean isEnabled();
 
+    public int getInvalidCount() {
+        return 0;
+    }
+
     @Override
     public int compareTo(ServiceCollection<?> o) {
         int ret = new Boolean(o.isEnabled()).compareTo(new Boolean(isEnabled()));
         if (ret == 0) {
-            if (o.isEnabled()) {
-                // sort on name
-                ret = getName().compareTo(o.getName());
-            } else {
-                // last enabled one should be the first
-                ret = new Long(o.getLastActiveTimestamp()).compareTo(getLastActiveTimestamp());
+            ret = new Boolean(o.isInUse()).compareTo(new Boolean(isInUse()));
+            if (ret == 0) {
+                ret = new Integer(getInvalidCount()).compareTo(new Integer(o.getInvalidCount()));
+                if (ret == 0) {
+                    if (o.isEnabled()) {
+                        // sort on name
+                        ret = getName().compareTo(o.getName());
+                    } else {
+                        // last enabled one should be the first
+                        ret = new Long(o.getLastActiveTimestamp()).compareTo(getLastActiveTimestamp());
+                    }
+                }
             }
         }
         return ret;
 
+    }
+
+    protected boolean isInUse() {
+        return isEnabled();
     }
 
     protected abstract long getLastActiveTimestamp();

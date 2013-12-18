@@ -2,6 +2,7 @@ package jd.gui.swing.jdgui.components.premiumbar;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.util.ArrayList;
@@ -25,8 +26,8 @@ import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import net.miginfocom.swing.MigLayout;
 
-import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.utils.swing.SwingUtils;
@@ -57,7 +58,17 @@ public class AccountTooltip extends PanelToolTip {
 
     public AccountTooltip(AccountTooltipOwner owner, AccountServiceCollection accountCollection) {
 
-        super(new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
+        super(new TooltipPanel("ins 0,wrap 1", "[]", "[][][][][grow,fill]") {
+            @Override
+            public Dimension getPreferredSize() {
+                Dimension pref = super.getPreferredSize();
+                // pref.width = 850;
+                // pref.height = 600;
+                System.out.println(pref);
+                return pref;
+            }
+        });
+
         this.owner = owner;
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
         List<Account> accs = AccountController.getInstance().list();
@@ -89,20 +100,21 @@ public class AccountTooltip extends PanelToolTip {
         JLabel label = new JLabel(txt, accountCollection.getDomainInfo().getFavIcon(), JLabel.LEFT);
         SwingUtils.toBold(label);
         label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
-        panel.add(label, "gapleft 5");
+        panel.add(label, "gapleft 5,pushx,growx");
         panel.add(table.getTableHeader());
         panel.add(table);
 
         if (accountCollection.isMulti()) {
-            MigPanel domainPanel = new MigPanel("ins 0,wrap 3", "[grow,fill][grow,fill][grow,fill]", "[]");
-            domainPanel.setOpaque(false);
+            panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill]"));
+
             label = new JLabel(_GUI._.AccountTooltip_AccountTooltip_supported_hosters());
             SwingUtils.toBold(label);
             label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
             panel.add(label);
-
-            final JList list = new JList(getDomainInfos(accountCollection).toArray(new DomainInfo[] {}));
-            list.setLayoutOrientation(JList.HORIZONTAL_WRAP);
+            List<DomainInfo> dis = getDomainInfos(accountCollection);
+            final JList list = new JList(dis.toArray(new DomainInfo[] {}));
+            // list.setPreferredSize(new Dimension(400, 750));
+            list.setLayoutOrientation(JList.VERTICAL_WRAP);
             final ListCellRenderer org = list.getCellRenderer();
             list.setCellRenderer(new ListCellRenderer() {
 
@@ -118,6 +130,8 @@ public class AccountTooltip extends PanelToolTip {
                     return ret;
                 }
             });
+
+            list.setVisibleRowCount(dis.size() / 5);
             // list.setFixedCellHeight(22);
             // list.setFixedCellWidth(22);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -125,6 +139,8 @@ public class AccountTooltip extends PanelToolTip {
 
             panel.add(list);
 
+        } else {
+            panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
         }
         // panel.add(sp = new JScrollPane(table));
         // sp.setBackground(null);
@@ -134,6 +150,11 @@ public class AccountTooltip extends PanelToolTip {
 
         // panel.setPreferredSize(new Dimension(500, 100));
         // panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 400));
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        return super.getPreferredSize();
     }
 
     private List<DomainInfo> getDomainInfos(AccountServiceCollection accountCollection) {

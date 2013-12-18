@@ -187,7 +187,7 @@ public class AccountController implements AccountControllerListener, AccountChan
         String passwordBefore = account.getPass();
         boolean tempDisabledBefore = account.isTempDisabled();
         String userBefore = account.getUser();
-
+        account.setChecking(true);
         try {
             if (!forceupdate) {
                 if (account.lastUpdateTime() != 0) {
@@ -400,6 +400,7 @@ public class AccountController implements AccountControllerListener, AccountChan
             }
             return ai;
         } finally {
+            account.setChecking(false);
             if (enabledBefore != account.isEnabled()) {
 
                 getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, AccountProperty.ENABLED, false));
@@ -420,7 +421,7 @@ public class AccountController implements AccountControllerListener, AccountChan
             if (tempDisabledBefore != account.isTempDisabled()) {
                 getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, AccountProperty.TEMP_DISABLED, false));
             }
-
+            getBroadcaster().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));
         }
     }
 
@@ -705,6 +706,7 @@ public class AccountController implements AccountControllerListener, AccountChan
         case ERROR:
         case ERROR_STRING:
         case TEMP_DISABLED:
+
             getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, property, false));
             return;
         default:

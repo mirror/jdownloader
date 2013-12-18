@@ -16,6 +16,8 @@
 
 package jd.plugins;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import jd.config.Property;
 import jd.controlling.AccountController;
 
@@ -166,6 +168,16 @@ public class Account extends Property {
 
     public void setHoster(final String h) {
         hoster = h;
+    }
+
+    private AtomicBoolean checking = new AtomicBoolean(false);
+
+    public void setChecking(boolean b) {
+        checking.set(b);
+    }
+
+    public boolean isChecking() {
+        return checking.get();
     }
 
     public AccountInfo getAccountInfo() {

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import jd.SecondLevelLaunch;
@@ -105,6 +106,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
             @Override
             public void delayedrun() {
+
                 redraw();
             }
 
@@ -210,8 +212,10 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                     }
                     setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
                     for (int i = 0; i < max; i++) {
-
-                        add(services.removeFirst().createIconComponent(ServicePanel.this), "gapleft 0,gapright 0");
+                        JComponent c = services.removeFirst().createIconComponent(ServicePanel.this);
+                        if (c != null) {
+                            add(c, "gapleft 0,gapright 0");
+                        }
 
                     }
                     revalidate();
@@ -234,7 +238,9 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
         HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
         for (Account acc : accs) {
             AccountInfo ai = acc.getAccountInfo();
-            if (!acc.isValid() || (ai != null && ai.isExpired())) continue;
+
+            if (acc.getLastValidTimestamp() < 0 && acc.getError() != null) continue;
+            if ((System.currentTimeMillis() - acc.getLastValidTimestamp()) < 14 * 7 * 24 * 60 * 60 * 1000 && acc.getError() != null) continue;
 
             PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
             DomainInfo domainInfo;
