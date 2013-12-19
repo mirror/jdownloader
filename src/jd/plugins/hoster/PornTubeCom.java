@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -67,6 +68,19 @@ public class PornTubeCom extends PluginForHost {
         if (br.containsHTML("(page-not-found\\.jpg\"|<title>Error 404 \\- Page not Found \\| PornTube\\.com</title>|alt=\"Page not Found\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) | PornTube \\&#174;</title>").getMatch(0);
         if (filename == null) filename = br.getRegex(">Videos</a> \\&gt; </strong>([^<>\"]*?)</h2>").getMatch(0);
+        final Regex info = br.getRegex("\\.ready\\(function\\(\\) \\{embedPlayer\\((\\d+), \\d+, \\[(.*?)\\],");
+        final String mediaID = info.getMatch(0);
+        String availablequalities = info.getMatch(1);
+        if (availablequalities != null) {
+            availablequalities = availablequalities.replace(",", "+");
+        } else {
+            availablequalities = "1080+720+480+360+240";
+        }
+        if (mediaID == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("Origin", "http://www.porntube.com");
+        br.postPage("http://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
+        // seems to be listed in order highest quality to lowest. 20130513
         getDllink();
         String ext = "mp4";
         if (DLLINK.contains(".flv")) ext = "flv";
@@ -92,25 +106,32 @@ public class PornTubeCom extends PluginForHost {
     }
 
     private void getDllink() throws PluginException, IOException {
-        DLLINK = br.getRegex("addVariable\\(\'config\', \'(/.*?)\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\'(/xml/index\\?id=[0-9\\-]+)\'").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        br.getPage("http://www.porntube.com" + Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        final String[] qualities = { "720p", "480p", "360p", "240p" };
+        String finallink = null;
+        final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
         for (final String quality : qualities) {
-            DLLINK = getQuality(quality);
-            if (DLLINK != null) break;
+            if (br.containsHTML("\"" + quality + "\"")) {
+                finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
+                if (finallink != null && checkDirectLink(finallink) != null) break;
+            }
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = finallink;
     }
 
-    private String getQuality(final String quality) {
-        return br.getRegex("label=\"" + quality + "\"( [a-z0-9]+=\"[a-z0-9]+\")?><file>(http://[^<>\"]*?)</file>").getMatch(1);
+    private String checkDirectLink(String directlink) {
+        if (directlink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(directlink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    directlink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                directlink = null;
+            }
+        }
+        return directlink;
     }
 
     @Override

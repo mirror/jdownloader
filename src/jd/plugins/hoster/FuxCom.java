@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -62,15 +63,23 @@ public class FuxCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Fux \\- Error \\- Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>)") || br.getURL().matches(".+/video\\?error=\\d+")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>Fux \\- Error \\- Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>|class='videoNotAvailable')") || br.getURL().matches(".+/video\\?error=\\d+")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- FUX</title>").getMatch(0);
-            if (filename == null) {
-                logger.warning("Couldn't find 'filename'");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
+        final Regex info = br.getRegex("\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+), \\d+, \\[(.*?)\\]\\);");
+        final String mediaID = info.getMatch(0);
+        String availablequalities = info.getMatch(1);
+        if (availablequalities != null) {
+            availablequalities = availablequalities.replace(",", "+");
+        } else {
+            availablequalities = "1080+720+480+360+240";
+        }
+        if (mediaID == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("Origin", "http://www.fux.com");
+        br.postPage("http://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
         // seems to be listed in order highest quality to lowest. 20130513
         String DLLINK = getDllink();
         if (DLLINK == null) {
@@ -106,21 +115,31 @@ public class FuxCom extends PluginForHost {
     }
 
     final String getDllink() {
-        String allLinks = br.getRegex("var playerPlaylistSources = \\[(.*?)\\]").getMatch(0);
-        if (allLinks == null) return null;
-        allLinks = allLinks.replace("\\", "");
         String finallink = null;
-        final String[] linkList = allLinks.split(",\\{");
-        final String[] qualities = new String[] { "360p", "240p" };
+        final String[] qualities = new String[] { "1080", "720", "480", "360", "240" };
         for (final String quality : qualities) {
-            for (final String linkInfo : linkList) {
-                if (linkInfo.contains("\"" + quality + "\"")) {
-                    finallink = new Regex(linkInfo, "\"file\":\"(http[^<>\"]*?)\"").getMatch(0);
-                    break;
-                }
+            if (br.containsHTML("\"" + quality + "\"")) {
+                finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
+                if (finallink != null && checkDirectLink(finallink) != null) break;
             }
         }
         return finallink;
+    }
+
+    private String checkDirectLink(String directlink) {
+        if (directlink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(directlink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    directlink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                directlink = null;
+            }
+        }
+        return directlink;
     }
 
     @Override

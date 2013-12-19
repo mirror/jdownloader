@@ -225,6 +225,7 @@ public class FileMonkeyIn extends PluginForHost {
                 final double reconWait = Double.parseDouble(reconnectWait) * 60;
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (long) reconWait * 1001 + 10000);
             }
+            br.postPage(br.getURL(), "action=freedownload");
             if (dllink == null) {
                 final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                 final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
