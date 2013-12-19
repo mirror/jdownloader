@@ -19,8 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,9 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "http://(www\\.)?microsoft\\.com/(en\\-us|de\\-de)/download/(details|confirmation)\\.aspx\\?id=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "http://download\\.microsoft\\.com/download/\\d+/[A-Z0-9]+/[A-Z0-9]+/[A-Za-z0-9\\-]+/[^<>\"/]+" }, flags = { 0 })
 public class MicrosoftCom extends PluginForHost {
 
     public MicrosoftCom(PluginWrapper wrapper) {
@@ -42,34 +40,32 @@ public class MicrosoftCom extends PluginForHost {
         return "http://www.microsoft.com/en-us/legal/intellectualproperty/copyright/default.aspx";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.microsoft.com/en-us/download/details.aspx?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">We are sorry, the page you requested cannot be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String finfotable = br.getRegex("<table class=\"fileinfo\">(.*?)</table>").getMatch(0);
-        if (finfotable == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String[] tableContent = new Regex(finfotable, "<p>([^<>\"]*?)</p>").getColumn(0);
-        if (tableContent == null || tableContent.length < 4) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String filename = tableContent[2];
-        final String filesize = tableContent[3];
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
+                link.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("var downloadFileUrl = \"(https?://[^<>\"]*?)\";").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

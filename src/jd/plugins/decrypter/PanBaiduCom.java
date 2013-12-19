@@ -42,9 +42,9 @@ public class PanBaiduCom extends PluginForDecrypt {
     }
 
     private static boolean      pluginloaded                               = false;
-    private static final String TYPE_DIRECT_FOLDER_LINK                    = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+#dir/path=%2F.+";
-    private static final String TYPE_FOLDER_LINK_NORMAL                    = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+";
-    private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
+    private static final String TYPE_DIRECT_FOLDER_LINK                    = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+#dir/path=%2F.+";
+    private static final String TYPE_FOLDER_LINK_NORMAL                    = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
+    private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String TYPE_FOLDER_LINK_SHORT                     = "http://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+";
 
     private String              link_password                              = null;
@@ -170,61 +170,71 @@ public class PanBaiduCom extends PluginForDecrypt {
     private void getDownloadLinks(final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String dirName, final String dir) throws Exception {
         if (dirName == null || dir == null) return;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        FilePackage fp = null;
-        br.getPage(getFolder(parameter, dir));
-        // Folder empty
-        if (br.containsHTML("\"errno\":2")) {
-            final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            dl.setProperty("offline", true);
-            dl.setFinalFileName(Encoding.htmlDecode(dirName));
-            decryptedLinks.add(dl);
-            return;
-        }
-        fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(unescape(dirName)));
-        HashMap<String, String> ret = new HashMap<String, String>();
-        String list = br.getRegex("\"list\":\\[(\\{.*?\\})\\]").getMatch(0);
-
-        for (String[] links : new Regex((list == null ? "" : list), "\\{(.*?)\\}").getMatches()) {
-
-            for (String[] link : new Regex(links[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
-                ret.put(link[0], link[1]);
-            }
-
-            // TODO: Add subfolder support in a better way
-            // /* subfolder in folder */
-            // if (!ret.containsKey("dlink")) {
-            // if ("1".equals(ret.get("isdir"))) {
-            // String folderName = ret.get("server_filename");
-            // String path = ret.get("path");
-            // if (folderName == null || path == null) continue;
-            // getDownloadLinks(decryptedLinks, parameter, dirName + "-" + folderName, unescape(path));
-            // }
-            // }
-            final String shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
-            final String uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
-            final String fsid = ret.get("fs_id");
-            if (shareid != null && uk != null && fsid != null) {
-                final DownloadLink dl = generateDownloadLink(ret, parameter, dir);
-                dl.setProperty("important_fsid", fsid);
-                fp.add(dl);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                }
+        int currentpage = 1;
+        final int maxpages = 10;
+        final int maxlinksperpage = 100;
+        int currentlinksnum = 0;
+        do {
+            br.getPage(getFolder(parameter, dir, currentpage));
+            // Folder empty
+            if (br.containsHTML("\"errno\":2")) {
+                final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                dl.setProperty("offline", true);
+                dl.setFinalFileName(Encoding.htmlDecode(dirName));
                 decryptedLinks.add(dl);
+                return;
             }
-        }
+            HashMap<String, String> ret = new HashMap<String, String>();
+            String list = br.getRegex("\"list\":\\[(\\{.*?\\})\\]").getMatch(0);
+            final String[][] linkInfo = new Regex((list == null ? "" : list), "\\{(.*?)\\}").getMatches();
+            if (linkInfo != null && linkInfo.length != 0) {
+                currentlinksnum = linkInfo.length;
+                for (final String[] links : linkInfo) {
+
+                    for (String[] link : new Regex(links[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
+                        ret.put(link[0], link[1]);
+                    }
+
+                    // TODO: Add subfolder support in a better way
+                    // /* subfolder in folder */
+                    // if (!ret.containsKey("dlink")) {
+                    // if ("1".equals(ret.get("isdir"))) {
+                    // String folderName = ret.get("server_filename");
+                    // String path = ret.get("path");
+                    // if (folderName == null || path == null) continue;
+                    // getDownloadLinks(decryptedLinks, parameter, dirName + "-" + folderName, unescape(path));
+                    // }
+                    // }
+                    final String shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
+                    final String uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
+                    final String fsid = ret.get("fs_id");
+                    if (shareid != null && uk != null && fsid != null) {
+                        final DownloadLink dl = generateDownloadLink(ret, parameter, dir);
+                        dl.setProperty("important_fsid", fsid);
+                        fp.add(dl);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            /* does not exist in 09581 */
+                        }
+                        decryptedLinks.add(dl);
+                    }
+                }
+            }
+            currentpage++;
+        } while (currentlinksnum >= maxlinksperpage && currentpage <= maxpages);
+
     }
 
-    private String getFolder(final String parameter, String dir) {
+    private String getFolder(final String parameter, String dir, final int page) {
         dir = unescape(dir);
         String shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
         if (shareid == null) shareid = new Regex(parameter, "/s/(.*)").getMatch(0);
         String uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
         if (uk == null) uk = br.getRegex("uk=(\\d+)").getMatch(0);
-        return "http://pan.baidu.com/share/list?channel=chunlei&clienttype=0&web=1&num=100&t=" + System.currentTimeMillis() + "&page=1&dir=" + dir + "&t=0." + +System.currentTimeMillis() + "&uk=" + (uk != null ? uk : "") + "&shareid=" + (shareid != null ? shareid : "") + "&_=" + System.currentTimeMillis();
+        return "http://pan.baidu.com/share/list?channel=chunlei&clienttype=0&web=1&num=100&t=" + System.currentTimeMillis() + "&page=" + page + "&dir=" + dir + "&t=0." + +System.currentTimeMillis() + "&uk=" + (uk != null ? uk : "") + "&shareid=" + (shareid != null ? shareid : "") + "&_=" + System.currentTimeMillis();
     }
 
     private static synchronized String unescape(final String s) {

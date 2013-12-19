@@ -29,20 +29,21 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cybersansar.com" }, urls = { "http://(www\\.)?cybersansar\\.com/(thumbnail_view\\.php\\?gal_id=\\d+|wallpaper_download\\.php\\?wid=\\d+|video_download\\.php\\?vid=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cybersansar.com" }, urls = { "http://(www\\.)?cybersansar\\.com(\\.np)?/((ev_)?thumbnail_view\\.php\\?gal_id=\\d+|wallpaper_download\\.php\\?wid=\\d+|video_download\\.php\\?vid=\\d+)" }, flags = { 0 })
 public class CyberSansarCom extends PluginForDecrypt {
 
     public CyberSansarCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String VIDEOLINK     = "http://(www\\.)?cybersansar\\.com/video_download\\.php\\?vid=\\d+";
-    private static final String THUMBNAILLINK = "http://(www\\.)?cybersansar\\.com/thumbnail_view\\.php\\?gal_id=\\d+";
-    private static final String WALLPAPERLINK = "http://(www\\.)?cybersansar\\.com/wallpaper_download\\.php\\?wid=\\d+";
+    private static final String VIDEOLINK      = "http://(www\\.)?cybersansar\\.com/video_download\\.php\\?vid=\\d+";
+    private static final String THUMBNAILLINK  = "http://(www\\.)?cybersansar\\.com/thumbnail_view\\.php\\?gal_id=\\d+";
+    private static final String THUMBNAILLINK2 = "http://(www\\.)?cybersansar\\.com/ev_?thumbnail_view\\.php\\?gal_id=\\d+";
+    private static final String WALLPAPERLINK  = "http://(www\\.)?cybersansar\\.com/wallpaper_download\\.php\\?wid=\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("cybersansar.com.np/", "cybersansar.com/");
         br.getPage(parameter);
         if (parameter.matches(WALLPAPERLINK)) {
             final String wallpaper1 = br.getRegex("\"(graphics/wallpaper/model/[^<>\"]*?\\.jpg)\"").getMatch(0);
@@ -68,6 +69,28 @@ public class CyberSansarCom extends PluginForDecrypt {
             }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        } else if (parameter.matches(THUMBNAILLINK2)) {
+            String eventname = br.getRegex("class=\"title\\-event\">([^<>\"]*?)</td>").getMatch(0);
+            final String[] thumbnails = br.getRegex("class=\"photolink\"><img src=\"(graphics/[^<>\"]*?\\.jpg)\"").getColumn(0);
+            if ((thumbnails == null || thumbnails.length == 0) && (eventname != null)) {
+                logger.info("Gallery is empty: " + parameter);
+                return decryptedLinks;
+            }
+            if (eventname == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            eventname = Encoding.htmlDecode(eventname.trim());
+            final DecimalFormat df = new DecimalFormat("0000");
+            int counter = 1;
+            for (String singleLink : thumbnails) {
+                final DownloadLink dl = createDownloadlink("directhttp://http://cybersansar.com/" + Encoding.htmlDecode(singleLink).replace("/thumb/", "/"));
+                dl.setFinalFileName(eventname + "_" + df.format(counter) + ".jpg");
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                counter++;
+            }
+
         } else {
             final Regex fpName = br.getRegex(">Gallery </span><span class=\"model\\-title\\-grey\">(\\d+)</span> <span class=\"model\\-title\\-grey\\-small\">of</span> <span class=\"model\\-title\\-grey\">([^<>\"]*?)</span>");
             final String model_name = fpName.getMatch(1);
@@ -81,11 +104,12 @@ public class CyberSansarCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DecimalFormat df = new DecimalFormat("0000");
+            final DecimalFormat df = new DecimalFormat("0000");
             int counter = 1;
             for (String singleLink : thumbnails) {
                 final DownloadLink dl = createDownloadlink("directhttp://http://cybersansar.com/" + Encoding.htmlDecode(singleLink).replace("/thumb/", "/"));
                 dl.setFinalFileName(model_name + "_" + gallery_num + "_" + df.format(counter) + ".jpg");
+                dl.setAvailable(true);
                 decryptedLinks.add(dl);
                 counter++;
             }

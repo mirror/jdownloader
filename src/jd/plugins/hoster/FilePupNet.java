@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepup.net" }, urls = { "http://(www\\.)?sp\\d+\\.filepup\\.net/files/[A-Za-z0-9]+(/[^<>\"/]+)?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepup.net" }, urls = { "http://(www\\.)?(sp\\d+\\.)?filepup\\.net/files/[A-Za-z0-9]+(/[^<>\"/]+)?\\.html" }, flags = { 0 })
 public class FilePupNet extends PluginForHost {
 
     public FilePupNet(PluginWrapper wrapper) {

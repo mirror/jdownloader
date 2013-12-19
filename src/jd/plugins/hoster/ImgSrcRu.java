@@ -42,6 +42,7 @@ public class ImgSrcRu extends PluginForHost {
     private String  ddlink   = null;
     private String  password = null;
     private boolean loaded   = false;
+    private String  js       = null;
 
     public ImgSrcRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -102,9 +103,9 @@ public class ImgSrcRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         prepBrowser(br, false);
         getPage(downloadLink.getDownloadURL(), downloadLink);
-        String js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var r='[a-zA-Z0-9]+';[\r\n\t ]+var o=[^<]+)</script>").getMatch(0);
+        js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var r='[a-zA-Z0-9]+';[\r\n\t ]+var o=[^<]+)</script>").getMatch(0);
         if (js != null) {
-            ddlink = processJS(js);
+            getDllink();
             if (ddlink != null) {
                 final URLConnectionAdapter con = br.openGetConnection(ddlink);
                 if (con.getContentType().contains("html")) {
@@ -122,7 +123,7 @@ public class ImgSrcRu extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String processJS(String js) {
+    private String processJS() {
         // process the javascript within rhino vs doing this!!
 
         String r = new Regex(js, "r='(.*?)';").getMatch(0);
@@ -153,13 +154,22 @@ public class ImgSrcRu extends PluginForHost {
         best = best.replace("'+n+'", n);
         best = best.replace("'+o.charAt(0)+'", o.substring(0, 1));
         best = best.replaceAll("[ \\+']", "");
+        ddlink = best;
 
         return best;
+    }
+
+    private void getDllink() {
+        processJS();
+        if (ddlink == null) {
+            ddlink = br.getRegex("name=bb onclick=\\'select\\(\\);\\' type=text style=\\'\\{width:\\d+;\\}\\' value=\\'\\[URL=[^<>\"]+\\]\\[IMG\\](http://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
+        }
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (ddlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
