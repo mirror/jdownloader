@@ -3950,4 +3950,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Loading information..." })
     String PremiumAccountTableModel_refresh();
 
+    @Default(lngs = { "en" }, values = { "Import Accounts?" })
+    String AccountLoader_onNewFile_title();
+
+    @Default(lngs = { "en" }, values = { "Do you want to import these Premium Accounts:\r\n%s1?" })
+    String AccountLoader_onNewFile_msg(String absolutePath);
+
+    @Default(lngs = { "en" }, values = { "Could not import and new Accounts..." })
+    String AccountLoader_onNewFile_noaccounts();
+
+    @Default(lngs = { "en" }, values = { "Imported %s1 account(s)" })
+    String AccountLoader_onNewFile_accounts_imported(int size);
+
 }

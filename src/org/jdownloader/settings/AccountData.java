@@ -4,7 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.plugins.Account;
+import jd.plugins.Account.AccountChangeHandler;
 import jd.plugins.Account.AccountError;
+import jd.plugins.Account.AccountProperty;
 import jd.plugins.AccountInfo;
 
 import org.appwork.storage.Storable;
@@ -245,6 +247,13 @@ public class AccountData implements Storable {
 
     public Account toAccount() {
         Account ret = new Account(user, password);
+        ret.setNotifyHandler(new AccountChangeHandler() {
+
+            @Override
+            public void fireAccountPropertyChange(Account account, AccountProperty property) {
+                // no events
+            }
+        });
         if (infoProperties != null) {
             AccountInfo ai = new AccountInfo();
             ret.setAccountInfo(ai);
@@ -276,7 +285,8 @@ public class AccountData implements Storable {
         if (!valid && ret.getError() == null) {
             ret.setError(AccountError.INVALID);
         }
-
+        // enable events
+        ret.setNotifyHandler(null);
         return ret;
     }
 }

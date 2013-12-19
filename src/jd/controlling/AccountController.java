@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -103,7 +104,7 @@ public class AccountController implements AccountControllerListener, AccountChan
                 return "ShutdownEvent: Save AccountController";
             }
         });
-        ACCOUNTS = loadAccounts();
+        ACCOUNTS = loadAccounts(config);
         MULTIHOSTER_ACCOUNTS = new HashMap<String, List<Account>>();
         final Collection<List<Account>> accsc = ACCOUNTS.values();
         for (final java.util.List<Account> accs : accsc) {
@@ -429,7 +430,7 @@ public class AccountController implements AccountControllerListener, AccountChan
         return INSTANCE;
     }
 
-    private synchronized HashMap<String, java.util.List<Account>> loadAccounts() {
+    private synchronized HashMap<String, java.util.List<Account>> loadAccounts(AccountSettings config) {
         HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
         if (dat == null) {
             try {
@@ -713,6 +714,21 @@ public class AccountController implements AccountControllerListener, AccountChan
             getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, property, true));
         }
 
+    }
+
+    public List<Account> importAccounts(File f) {
+        AccountSettings cfg = JsonConfig.create(new File(f.getParent(), "org.jdownloader.settings.AccountSettings"), AccountSettings.class);
+        HashMap<String, List<Account>> accounts = loadAccounts(cfg);
+        ArrayList<Account> added = new ArrayList<Account>();
+        for (Entry<String, List<Account>> es : accounts.entrySet()) {
+            for (Account ad : es.getValue()) {
+                addAccount(ad);
+                added.add(ad);
+
+            }
+
+        }
+        return added;
     }
 
 }

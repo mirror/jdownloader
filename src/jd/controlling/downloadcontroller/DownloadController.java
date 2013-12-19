@@ -64,6 +64,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.afterdownload.AccountLoader;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.controlling.DownloadLinkWalker;
 import org.jdownloader.controlling.FileCreationManager;
@@ -233,6 +234,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 changesSaver.run();
             }
         });
+
+        new AccountLoader().init();
     }
 
     public void requestSaving() {
