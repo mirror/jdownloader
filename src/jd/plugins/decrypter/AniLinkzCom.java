@@ -26,6 +26,7 @@ import javax.script.ScriptEngineManager;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -106,7 +107,17 @@ public class AniLinkzCom extends PluginForDecrypt {
         // only allow one thread! To minimise/reduce loads.
         synchronized (LOCK) {
             prepBrowser(br);
-            getPage(parameter);
+
+            try {
+                getPage(parameter);
+            } catch (final BrowserException e) {
+                logger.info("Link offline (Server error): " + parameter);
+                final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
+                dl.setProperty("OFFLINE", true);
+                dl.setAvailable(false);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             boolean offline = false;
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/home/anilinkz/public_html/")) {
                 logger.info("Incorrect Link! Redirecting to search page...");
@@ -124,7 +135,7 @@ public class AniLinkzCom extends PluginForDecrypt {
                 offline = true;
             }
             if (offline) {
-                DownloadLink dl = createDownloadlink("directhttp://" + parameter);
+                final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
                 dl.setProperty("OFFLINE", true);
                 dl.setAvailable(false);
                 decryptedLinks.add(dl);

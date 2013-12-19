@@ -38,7 +38,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder|minifolder)/[^\"' /]+(/[^\"' ]+\\?sID=[a-zA-z0-9]{16})?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(dir|folder|minifolder)/\\d+/[a-z0-9]+" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
     public FrShrdFldr(final PluginWrapper wrapper) {
@@ -59,7 +59,7 @@ public class FrShrdFldr extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         host = new Regex(param.toString(), "(https?://[^/]+)").getMatch(0);
-        uid = new Regex(param.toString(), "\\.com/(dir|folder|minifolder)/([^/#]+)").getMatch(1);
+        uid = new Regex(param.toString(), "\\.com/(dir|folder|minifolder)/(.+)").getMatch(1);
         parameter = new Regex(param.toString(), "(https?://(www\\.)?4shared(\\-china)?\\.com/)").getMatch(0);
         parameter = parameter + "folder/" + uid;
         br.setFollowRedirects(true);
