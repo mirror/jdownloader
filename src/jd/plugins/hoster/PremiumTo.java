@@ -16,12 +16,16 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -33,7 +37,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-ldgdhzsdfeztkucs" }, flags = { 2 })
+//http://torrent.premium.to/t/6FC871997F59B65E2FFEF2E2A8E91396A7D957C9/2146 
+//http://torrent.premium.to/z/6FC871997F59B65E2FFEF2E2A8E91396A7D957C9 
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*" }, flags = { 2 })
 public class PremiumTo extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -149,8 +155,31 @@ public class PremiumTo extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+
+        login(br, account);
+
+        String url = link.getDownloadURL();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
+        dl.startDownload();
+    }
+
+    private void login(Browser br, Account acc) throws IOException, PluginException {
+        String user = Encoding.urlEncode(acc.getUser());
+        String pw = Encoding.urlEncode(acc.getPass());
+        br.postPageRaw("http://premium.to/login.php", "{\"u\":\"" + user + "\", \"p\":\"" + pw + "\", \"r\":true}");
+        if (br.getCookie("http://premium.to", "auth") == null) {
+            resetAvailablePremium(acc);
+            acc.setValid(false);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        br.setFollowRedirects(true);
+    }
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+
         boolean dofollow = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
@@ -188,13 +217,7 @@ public class PremiumTo extends PluginForHost {
 
             url = Encoding.urlEncode(url);
             showMessage(link, "Phase 1/3: Login...");
-            br.postPageRaw("http://premium.to/login.php", "{\"u\":\"" + user + "\", \"p\":\"" + pw + "\", \"r\":true}");
-            if (br.getCookie("http://premium.to", "auth") == null) {
-                resetAvailablePremium(acc);
-                acc.setValid(false);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            br.setFollowRedirects(true);
+            login(br, acc);
             showMessage(link, "Phase 2/3: Get link");
             int connections = getConnections(link.getHost());
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium.to/getfile.php?link=" + url, true, connections);
@@ -231,8 +254,74 @@ public class PremiumTo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+
+        String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
+
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        long fileSize = -1;
+
+        ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
+        if (accs.size() == 0) {
+            // try without login
+            try {
+                con = br.openGetConnection(dlink);
+                if (!con.getContentType().contains("html")) {
+                    fileSize = con.getLongContentLength();
+                    if (fileSize == -1) {
+                        link.getLinkStatus().setStatusText("Only downlodable via account!");
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    String name = con.getHeaderField("Content-Disposition");
+                    if (name != null) {
+                        /* workaround for old core */
+                        name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
+                        name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
+                        if (name != null) link.setFinalFileName(name);
+                    }
+                    link.setDownloadSize(fileSize);
+                    return AvailableStatus.TRUE;
+                } else {
+                    return AvailableStatus.UNCHECKABLE;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+
+        } else {
+            for (Account acc : accs) {
+                login(br, acc);
+
+                try {
+                    con = br.openGetConnection(dlink);
+                    if (!con.getContentType().contains("html")) {
+                        fileSize = con.getLongContentLength();
+
+                        if (fileSize > -1) {
+                            link.setDownloadSize(fileSize);
+                            String name = con.getHeaderField("Content-Disposition");
+
+                            if (name != null) {
+                                name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
+                                name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
+                                if (name != null) link.setFinalFileName(name);
+                            }
+                            return AvailableStatus.TRUE;
+                        }
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
+            return AvailableStatus.UNCHECKABLE;
+        }
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
@@ -251,6 +340,7 @@ public class PremiumTo extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
+
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
