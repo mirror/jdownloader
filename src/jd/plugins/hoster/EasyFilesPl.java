@@ -87,6 +87,27 @@ public class EasyFilesPl extends PluginForHost {
         // check if account is valid
         // TODO: Add support for 2 stupid login captcha captcha types
         safeAPIRequest("http://" + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&cmd=get_acc_details", account, null);
+        // Check for reCaptcha - login should be okay but we still need to log in
+        // final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=(.+)").getMatch(0);
+        // if (rcID != null) {
+        // final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, "http://" + NICE_HOST, true);
+        // final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        // final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        // rc.setId(rcID);
+        // rc.load();
+        // for (int i = 1; i <= 5; i++) {
+        // final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        // final String c = getCaptchaCode(cf, dummyLink);
+        // apiRequest("http://" + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&recaptcha_challenge= " +
+        // Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response=" + Encoding.urlEncode(c) + "&cmd=get_acc_details", account, null);
+        // if (STATUSCODE == 3) {
+        // rc.reload();
+        // continue;
+        // }
+        // break;
+        // }
+        // handleAPIErrors(this.br, account, dummyLink);
+        // }
         final String[] information = br.toString().split(":");
         ac.setTrafficLeft(SizeFormatter.getSize(Long.parseLong(information[0]) + "MB"));
         try {
@@ -295,6 +316,8 @@ public class EasyFilesPl extends PluginForHost {
         } else {
             if (br.containsHTML("premium_no_transfer 1")) {
                 STATUSCODE = 600;
+            } else if (br.containsHTML(">Your IP address")) {
+                STATUSCODE = 666;
             } else {
                 STATUSCODE = 0;
             }
@@ -408,10 +431,15 @@ public class EasyFilesPl extends PluginForHost {
                 /* No command given -> disable account */
                 statusMessage = "No command given";
                 logger.info("STATUSCODE: " + STATUSCODE + ": " + "No command given -> Everything is allright");
+                break;
             case 600:
                 /* No accounts available for host -> disable host */
                 statusMessage = "No accounts available for current host";
                 tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+            case 666:
+                /* IP banned -> disable account */
+                statusMessage = "Your IP has been banned";
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             default:
                 /* Unknown errorcode -> disable account */
                 statusMessage = "Unknown errorcode";
