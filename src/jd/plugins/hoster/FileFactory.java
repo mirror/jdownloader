@@ -696,7 +696,7 @@ public class FileFactory extends PluginForHost {
                     fileName = br.getRegex("<section class=\"file\" style=\"margin\\-top:20px;\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
                     fileSize = br.getRegex("<p class=\"size\">[\r\n\t ]+([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
                 } else {
-                    String regex = "<h2>([^\r\n]+)</h2>[\r\n\t ]+<div id=\"file_info\">([\\d\\.]+ (KB|MB|GB|TB))";
+                    String regex = "<h2>([^\r\n]+)</h2>[\r\n\t ]+<div id=\"file_info\">\\s*([\\d\\.]+ (KB|MB|GB|TB))";
                     fileName = br.getRegex(regex).getMatch(0);
                     if (fileName == null) fileName = br.getRegex("<title>([^<>\"]*?) - FileFactory</title>").getMatch(0);
                     fileSize = br.getRegex(regex).getMatch(1);
