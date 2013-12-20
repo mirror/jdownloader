@@ -51,23 +51,29 @@ public class SourceForgeNet extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+            final String altDlink = br.getRegex("<b>Download</b>[\t\n\r ]+<small title=\"(/[^<>\"]*?)\"").getMatch(0);
             String link = null;
             if (parameter.contains("/files/extras/") || parameter.contains("prdownloads.sourceforge.net") || parameter.contains("/download")) {
                 link = br.getRegex("Please use this([\n\t\r ]+)?<a href=\"(.*?)\"").getMatch(1);
                 if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
             } else {
                 final String project = new Regex(parameter, "sourceforge\\.net/projects/(.*?)/").getMatch(0);
-                final String continuelink = br.getRegex("\"(/projects/" + project + "/files/latest/download[^<>\"/]*?)\"").getMatch(0);
-                if (continuelink == null) {
-                    logger.info("Found no downloadable link for: " + parameter);
-                    return decryptedLinks;
+                if (altDlink != null) {
+                    // Avoid ad-installers, see here: http://userscripts.org/scripts/show/174951
+                    link = "http://master.dl.sourceforge.net/project/" + project + altDlink;
+                } else {
+                    final String continuelink = br.getRegex("\"(/projects/" + project + "/files/latest/download[^<>\"/]*?)\"").getMatch(0);
+                    if (continuelink == null) {
+                        logger.info("Found no downloadable link for: " + parameter);
+                        return decryptedLinks;
+                    }
+                    br.getPage(continuelink);
+                    if (br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
+                        logger.info("Servererror for link: " + parameter);
+                        throw new DecrypterException(JDL.L("plugins.decrypt.sourceforgenet.errormsg.servererror", "A server error happened, please try again or check in browser!"));
+                    }
+                    link = new Regex(Encoding.htmlDecode(br.toString()), "Please use this([\t\n\r ]+)?<a href=\"(http://.*?)\"").getMatch(1);
                 }
-                br.getPage(continuelink);
-                if (br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
-                    logger.info("Servererror for link: " + parameter);
-                    throw new DecrypterException(JDL.L("plugins.decrypt.sourceforgenet.errormsg.servererror", "A server error happened, please try again or check in browser!"));
-                }
-                link = new Regex(Encoding.htmlDecode(br.toString()), "Please use this([\t\n\r ]+)?<a href=\"(http://.*?)\"").getMatch(1);
             }
             if (link == null) {
                 logger.warning("Decrypter broken, link: " + parameter);

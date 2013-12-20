@@ -55,18 +55,25 @@ public class VeeHdCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String ts = br.getRegex("var ts = \"([^<>\"]*?)\"").getMatch(0);
-        final String sign = br.getRegex("var sgn = \"([^<>\"]*?)\"").getMatch(0);
-        final String frame = br.getRegex("\"(/vpi\\?h=[^<>\"]*?)\"").getMatch(0);
-        if (frame == null || ts == null || sign == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Pretend to use their stupid toolbar
-        br.postPage("http://veehd.com/xhrp", "v=c2&p=1&ts=" + Encoding.urlEncode(ts) + "&sgn=" + Encoding.urlEncode(sign));
-        br.getPage("http://veehd.com" + frame);
-        String dllink = br.getRegex("\"(http://v\\d+\\.veehd\\.com/dl/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
-            // Only available when plugin needed
-            if (dllink == null) dllink = br.getRegex("<embed type=\"video/divx\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = null;
+        final String way_download = br.getRegex("\"(/vpi\\?[^<>\"/]*?\\&do=d[^<>\"]*?)\"").getMatch(0);
+        if (way_download != null) {
+            br.getPage("http://veehd.com" + way_download);
+            dllink = getDirectlink();
+        } else {
+            final String ts = br.getRegex("var ts = \"([^<>\"]*?)\"").getMatch(0);
+            final String sign = br.getRegex("var sgn = \"([^<>\"]*?)\"").getMatch(0);
+            final String frame = br.getRegex("\"(/vpi\\?h=[^<>\"]*?)\"").getMatch(0);
+            if (frame == null || ts == null || sign == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // Pretend to use their stupid toolbar
+            br.postPage("http://veehd.com/xhrp", "v=c2&p=1&ts=" + Encoding.urlEncode(ts) + "&sgn=" + Encoding.urlEncode(sign));
+            br.getPage("http://veehd.com" + frame);
+            dllink = getDirectlink();
+            if (dllink == null) {
+                dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+                // Only available when plugin needed
+                if (dllink == null) dllink = br.getRegex("<embed type=\"video/divx\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
         }
         if (dllink == null) {
             if (br.containsHTML("Plugin to watch this video")) logger.warning("Maybe toolbar fail!");
@@ -85,6 +92,10 @@ public class VeeHdCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDirectlink() {
+        return br.getRegex("\"(http://v\\d+\\.veehd\\.com/dl/[^<>\"]*?)\"").getMatch(0);
     }
 
     @Override
