@@ -37,8 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//http://torrent.premium.to/t/6FC871997F59B65E2FFEF2E2A8E91396A7D957C9/2146 
-//http://torrent.premium.to/z/6FC871997F59B65E2FFEF2E2A8E91396A7D957C9 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*" }, flags = { 2 })
 public class PremiumTo extends PluginForHost {
 
@@ -81,7 +79,6 @@ public class PremiumTo extends PluginForHost {
         br.setDebug(true);
         String username = Encoding.urlEncode(account.getUser());
         String pass = Encoding.urlEncode(account.getPass());
-        // String page = null;
         String hosts = null;
         String traffic = null;
         br.setFollowRedirects(true);
@@ -89,7 +86,6 @@ public class PremiumTo extends PluginForHost {
         try {
             br.postPageRaw("http://premium.to/login.php", "{\"u\":\"" + username + "\", \"p\":\"" + pass + "\", \"r\":true}");
             if (br.getCookie("http://premium.to", "auth") != null) {
-                // page = br.getPage("http://premium.to/account.php");
                 traffic = br.getPage("http://premium.to/traffic.php").trim() + " MB";
                 hosts = br.getPage("http://premium.to/hosts.php");
             }
@@ -264,7 +260,7 @@ public class PremiumTo extends PluginForHost {
 
         ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
         if (accs.size() == 0) {
-            // try without login
+            // try without login (only possible for links with token)
             try {
                 con = br.openGetConnection(dlink);
                 if (!con.getContentType().contains("html")) {
@@ -275,7 +271,7 @@ public class PremiumTo extends PluginForHost {
                     }
                     String name = con.getHeaderField("Content-Disposition");
                     if (name != null) {
-                        /* workaround for old core */
+                        // filter the filename from content disposition and decode it...
                         name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
                         name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
                         if (name != null) link.setFinalFileName(name);
@@ -293,6 +289,8 @@ public class PremiumTo extends PluginForHost {
             }
 
         } else {
+            // if accounts available try all whether the link belongs to it
+            // links with token should work anyway
             for (Account acc : accs) {
                 login(br, acc);
 
@@ -306,6 +304,7 @@ public class PremiumTo extends PluginForHost {
                             String name = con.getHeaderField("Content-Disposition");
 
                             if (name != null) {
+                                // filter the filename from content disposition and decode it...
                                 name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
                                 name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
                                 if (name != null) link.setFinalFileName(name);
