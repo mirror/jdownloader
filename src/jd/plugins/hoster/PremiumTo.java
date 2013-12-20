@@ -157,7 +157,8 @@ public class PremiumTo extends PluginForHost {
         login(br, account);
 
         String url = link.getDownloadURL();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
+        // allow resume and up to 10 chunks
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -10);
         dl.startDownload();
     }
 
