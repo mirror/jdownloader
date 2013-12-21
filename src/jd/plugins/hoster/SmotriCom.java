@@ -47,14 +47,20 @@ public class SmotriCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        downloadLink.setName(fid + ".mp4");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"top\\-info\\-404\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"top\\-info\\-404\">|Видео не прошло модерацию<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Confirm that we're over 18 years old if necessary
+        final String ageconfirm = br.getRegex("\"(/video/view/\\?id=v[a-z0-9]+\\&confirm=[A-Za-z0-9]+)\"").getMatch(0);
+        if (ageconfirm != null) br.getPage("http://smotri.com" + ageconfirm);
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         final String context = br.getRegex("addVariable\\(\\'context\\', \"(.*?)\"").getMatch(0);
         if (filename == null || context == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://smotri.com/video/view/url/bot/", "video_url=1&ticket=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        br.postPage("http://smotri.com/video/view/url/bot/", "video_url=1&ticket=" + fid);
         DLLINK = br.getRegex("\"_vidURL_mp4\":\"(http[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"_vidURL\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = DLLINK.replace("\\", "");
         DLLINK = Encoding.htmlDecode(DLLINK);

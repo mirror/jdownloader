@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -85,29 +87,28 @@ public class EasyFilesPl extends PluginForHost {
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        // TODO: Add support for 2 stupid login captcha captcha types
+        // TODO: Add support for 1 stupid login captcha type
         safeAPIRequest("http://" + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&cmd=get_acc_details", account, null);
-        // Check for reCaptcha - login should be okay but we still need to log in
-        // final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=(.+)").getMatch(0);
-        // if (rcID != null) {
-        // final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, "http://" + NICE_HOST, true);
-        // final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        // final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        // rc.setId(rcID);
-        // rc.load();
-        // for (int i = 1; i <= 5; i++) {
-        // final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        // final String c = getCaptchaCode(cf, dummyLink);
-        // apiRequest("http://" + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&recaptcha_challenge= " +
-        // Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response=" + Encoding.urlEncode(c) + "&cmd=get_acc_details", account, null);
-        // if (STATUSCODE == 3) {
-        // rc.reload();
-        // continue;
-        // }
-        // break;
-        // }
-        // handleAPIErrors(this.br, account, dummyLink);
-        // }
+        // Check for reCaptcha
+        final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=(.+)").getMatch(0);
+        if (rcID != null) {
+            final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, "http://" + NICE_HOST, true);
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 1; i <= 5; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, dummyLink);
+                apiRequest("http://" + NICE_HOST + "/api2.php?login=" + username + "&pass=" + pass + "&recaptcha_challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response=" + Encoding.urlEncode(c) + "&cmd=get_acc_details", account, null);
+                if (STATUSCODE == 3) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            handleAPIErrors(this.br, account, dummyLink);
+        }
         final String[] information = br.toString().split(":");
         ac.setTrafficLeft(SizeFormatter.getSize(Long.parseLong(information[0]) + "MB"));
         try {

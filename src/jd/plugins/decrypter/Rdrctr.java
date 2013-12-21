@@ -111,7 +111,7 @@ public class Rdrctr extends PluginForDecrypt {
                 offline = true;
             } else if (parameter.contains("yep.it") && br.containsHTML(">Put your URL here<")) {
                 offline = true;
-            } else if (parameter.contains("hex.io/") && declink == null) {
+            } else if (parameter.toLowerCase().contains("hex.io/") && declink == null) {
                 declink = br.getRegex("<div class=\"third grid\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
                 if (declink != null) {
                     decryptedLinks.add(createDownloadlink(declink));

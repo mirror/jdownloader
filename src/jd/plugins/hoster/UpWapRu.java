@@ -60,7 +60,7 @@ public class UpWapRu extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML(">Запрошенная страница или файл не найден|>Ошибка 404<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Запрошенная страница или файл не найден|>Ошибка 404<|>Файл был удален\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Файл \\&laquo;([^<>\"]*?)\\&raquo;</title>").getMatch(0);
         String filesize = br.getRegex(">Скачать</a>]</b> \\(([^<>\"]*?)\\)<br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
