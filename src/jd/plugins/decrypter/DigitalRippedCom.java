@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -54,14 +53,18 @@ public class DigitalRippedCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String contenttype = br.getRequest().getHttpConnection().getContentType();
-        if (contenttype.contains("text/plain")) {
-            final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+        if (contenttype.contains("text/html")) {
+            String regexfinder = "\"url\":\"(.+?)\"";
+            String[][] links = br.getRegex(regexfinder).getMatches();
+
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (final String singleLink : links)
+            for (int i = 0; i < links.length; i++) {
+                String singleLink = links[i][0].replace("\\/", "/");
                 if (!singleLink.contains("digitalripped.com/")) decryptedLinks.add(createDownloadlink(singleLink));
+            }
         } else if (contenttype.matches("(application/javascript|text/javascript|text/css)")) {
             logger.info("Cannot decrypt link (unsupported link): " + parameter);
             return decryptedLinks;
