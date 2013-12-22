@@ -143,6 +143,7 @@ DeleteGroupAction_DeleteGroupAction=Odstrániť skupinu
 DeleteMenuContainer_DeleteMenuContainer_delete_2=Vyčistiť...
 DeleteQuickAction_DeleteQuickAction_object_=Odstrániť
 DeleteSelectedFinishedLinksAction_actionPerformed=Chcete odstrániť všetky vybrané a úspešne stiahnuté odkazy na stiahnutie?
+DeleteSelectionAction_actionPerformed_affected2=\n%s1 súborov k odstráneniu\n%s4 súborov (%s2) na disku\nOdkazov ponechaných v zozname sťahovania: %s3
 DownloadController_deleteLinksRequest_nolinks=K dispozícii nie sú žiadne odkazy na odstránenie!
 DownloadController_deleteLinksRequest_object_help=Ahh... ďalšie zbytočné dialógové okno?
 DownloadController_deleteLinksRequest_object_msg=oh - zdá sa, že ste práve videli dialógové okno: "Ste si istý..."! Možno si teraz myslíte: "Ó môj bože, čo je to zbytočné okno".\nAk je to tak a nechcete, aby sa tento dialóg zobrazoval znovu, máte dve možnosti:\n     1. Stlačte klávesu CTRL počas odstraňovania odkazov - tým sa vyhnete tomuto dialógu.\n     2. Prejdite na rozšírené nastavenia a navždy zakážte toto dialógové okno
