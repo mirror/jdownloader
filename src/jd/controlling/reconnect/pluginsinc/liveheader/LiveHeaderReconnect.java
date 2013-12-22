@@ -146,7 +146,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             if (newScript != null) {
 
                 // changed script.reset router sender state
-                if (settings.getScript() == null || newScript.equals(settings.getScript())) settings.setAlreadySendToCollectServer(false);
+                if (settings.getScript() == null || newScript.equals(settings.getScript())) settings.setAlreadySendToCollectServer2(false);
                 settings.setScript(newScript);
             }
         } catch (DialogClosedException e1) {
@@ -275,7 +275,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
                                     }
                                     // changed script.reset router sender state
-                                    if ((jd.methode != null && jd.methode.equals(settings.getScript()))) settings.setAlreadySendToCollectServer(false);
+                                    if ((jd.methode != null && jd.methode.equals(settings.getScript()))) settings.setAlreadySendToCollectServer2(false);
                                     settings.setScript(jd.methode);
                                     setName("Router Recorder Custom Script");
 
@@ -358,17 +358,17 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
             updateGUI();
             if (!keyHandler.getKey().equalsIgnoreCase("AlreadySendToCollectServer")) {
-                settings.setAlreadySendToCollectServer(false);
+                settings.setAlreadySendToCollectServer2(false);
             }
         } else {
             LogController.CL().info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
-            if (!settings.isAlreadySendToCollectServer() && ReconnectPluginController.getInstance().getActivePlugin() == this) {
+            if (!settings.isAlreadySendToCollectServer2() && ReconnectPluginController.getInstance().getActivePlugin() == this) {
                 if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
 
                     UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null);
                     new RouterSendAction(this).actionPerformed(null);
 
-                    settings.setAlreadySendToCollectServer(true);
+                    settings.setAlreadySendToCollectServer2(true);
 
                 }
             }
@@ -387,7 +387,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             settings.setUserName(i.getUser());
             settings.setRouterIP(i.getIp());
             // changed script.reset router sender state
-            if (i.getScript() != null && i.getScript().equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer(false);
+            if (i.getScript() != null && i.getScript().equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer2(false);
 
             settings.setScript(i.getScript());
 

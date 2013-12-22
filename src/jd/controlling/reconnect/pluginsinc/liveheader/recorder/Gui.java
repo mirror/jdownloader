@@ -282,7 +282,7 @@ public class Gui extends AbstractDialog<Object> {
 
             JsonConfig.create(LiveHeaderReconnectSettings.class).setRouterIP(this.routerip.getText().trim());
             // changed script.reset router sender state
-            if (methode != null && methode.equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer(false);
+            if (methode != null && methode.equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer2(false);
             JsonConfig.create(LiveHeaderReconnectSettings.class).setScript(this.methode);
 
             DataCompareDialog dcd = new DataCompareDialog(routerip.getText().trim(), null, null, null, null, null);

@@ -3,6 +3,7 @@ package jd.controlling.reconnect.pluginsinc.liveheader.remotecall;
 import java.util.HashMap;
 
 import org.appwork.storage.Storable;
+import org.appwork.utils.Hash;
 
 public class RouterData implements Storable {
 
@@ -54,7 +55,57 @@ public class RouterData implements Storable {
     private long avgOfDDev;
 
     public String getScriptID() {
-        return scriptID;
+        if (scriptID != null && scriptID.length() == 32) return scriptID;
+
+        final StringBuilder sb = new StringBuilder();
+
+        sb.append(this.getIsp());
+        sb.append("\r\n");
+        sb.append(this.getTitle());
+        sb.append("\r\n");
+        sb.append(this.getRouterName());
+        sb.append("\r\n");
+        sb.append(this.getScript());
+        sb.append("\r\n");
+        sb.append(this.getResponseCode());
+        sb.append("\r\n");
+        sb.append(this.getTagFootprint());
+        sb.append("\r\n");
+        sb.append(this.getMac());
+        sb.append("\r\n");
+        sb.append(this.getFavIconHash());
+        sb.append("\r\n");
+        sb.append(this.getTitle());
+
+        sb.append("\r\n");
+        sb.append(this.getSslResponseCode());
+
+        sb.append("\r\n");
+        sb.append(this.getSslTagFootprint());
+
+        sb.append("\r\n");
+        sb.append(this.getSslFavIconHash());
+        sb.append("\r\n");
+        addHeader(sb, "content-length");
+        addHeader(sb, "content-encoding");
+        addHeader(sb, "content-type");
+        addHeader(sb, "server");
+        addHeader(sb, "mime-version");
+
+        return Hash.getMD5(sb.toString());
+    }
+
+    private void addHeader(final StringBuilder sb, final String string) {
+        sb.append(string);
+        sb.append("=");
+        sb.append(getResponseHeaders() != null ? this.getResponseHeaders().get(string) : null);
+        sb.append("\r\n");
+
+        sb.append(string);
+        sb.append("=");
+        sb.append(this.getSslResponseHeaders() != null ? this.getSslResponseHeaders().get(string) : null);
+        sb.append("\r\n");
+
     }
 
     public void setScriptID(String scriptID) {
