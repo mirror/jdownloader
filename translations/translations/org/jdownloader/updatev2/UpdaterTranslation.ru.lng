@@ -40,5 +40,6 @@ rlyexit_title=Действительно уходите?
 update_dialog_cancel=Отмена
 update_dialog_later=Спросить позже
 update_dialog_news_button=Открыть список изменений
+update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Доступны обновления
 update_in_next_session=Отмена и не спрашивать до следующей перезагрузки
