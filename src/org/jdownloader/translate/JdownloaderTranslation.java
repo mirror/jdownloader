@@ -520,4 +520,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Traffic left" })
     String AccountController_updateAccountInfo_status_traffic_reached();
 
+    @Default(lngs = { "en" }, values = { "Don't delete any files" })
+    String DeleteOption_no_delete();
+
+    @Default(lngs = { "en" }, values = { "Move files to Recycle if possible" })
+    String DeleteOption_recycle();
+
+    @Default(lngs = { "en" }, values = { "Delete files from Harddisk" })
+    String DeleteOption_final_delete();
+
 }

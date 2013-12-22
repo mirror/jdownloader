@@ -8,21 +8,38 @@ import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
-import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
 
 public class FileCreationManager {
-    public static enum DeleteOption {
-        @EnumLabel("Don't delete any files")
-        NO_DELETE,
-        @EnumLabel("Move files to Recycle if possible")
-        RECYCLE,
-        @EnumLabel("Delete files from Harddisk")
-        NULL;
+    public static enum DeleteOption implements LabelInterface {
+
+        NO_DELETE {
+
+            @Override
+            public String getLabel() {
+                return _JDT._.DeleteOption_no_delete();
+            }
+        },
+
+        RECYCLE {
+            @Override
+            public String getLabel() {
+                return _JDT._.DeleteOption_recycle();
+            }
+        },
+
+        NULL {
+            @Override
+            public String getLabel() {
+                return _JDT._.DeleteOption_final_delete();
+            }
+        };
     }
 
     private static final FileCreationManager INSTANCE = new FileCreationManager();
