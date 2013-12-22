@@ -1,5 +1,6 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -31,11 +32,14 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -364,11 +368,22 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             LogController.CL().info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
             if (!settings.isAlreadySendToCollectServer2() && ReconnectPluginController.getInstance().getActivePlugin() == this) {
                 if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
+                    if (CloseReason.OK == UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null) {
 
-                    UIOManager.I().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null);
-                    new RouterSendAction(this).actionPerformed(null);
+                        {
+                            setTimeout(5 * 60 * 1000);
+                        }
 
-                    settings.setAlreadySendToCollectServer2(true);
+                        @Override
+                        public ModalityType getModalityType() {
+                            return ModalityType.MODELESS;
+                        }
+                    }).getCloseReason()) {
+
+                        new RouterSendAction(this).actionPerformed(null);
+
+                        settings.setAlreadySendToCollectServer2(true);
+                    }
 
                 }
             }
