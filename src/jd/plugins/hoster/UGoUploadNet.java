@@ -66,6 +66,8 @@ public class UGoUploadNet extends PluginForHost {
     private static final String DLSLIMIT                 = "?e=You+must+wait+";
     private static final String DLSLIMITUSERTEXT         = "Max. downloads limit reached, wait or reconnect to start more downloads from this host";
     private static final String ERRORFILE                = "?e=Error%3A+Could+not+open+file+for+reading";
+    private static final String OVERLOADED               = "?e=The+site+currently+overloaded+";
+    private static final String OVERLOADEDUSERTEXT       = "The site is currently overloaded";
 
     /** Uses same script as filegig.com */
     @Override
@@ -109,6 +111,7 @@ public class UGoUploadNet extends PluginForHost {
         if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
         if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         if (br.getURL().contains(DLSLIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        if (br.getURL().contains(OVERLOADED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, OVERLOADEDUSERTEXT, 3 * 60 * 1000l);
         boolean captcha = false;
         int wait = 420;
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
