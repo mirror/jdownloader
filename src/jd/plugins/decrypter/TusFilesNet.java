@@ -43,7 +43,7 @@ public class TusFilesNet extends PluginForDecrypt {
         }
         final String folderid = new Regex(parameter, "([a-z0-9]{12})/$").getMatch(0);
         int maxPage = 1;
-        final String[] pages = br.getRegex("\\&amp;page=\\d+\\'>(\\d+)</a>").getColumn(0);
+        final String[] pages = br.getRegex("href=\"/go/" + folderid + "/(\\d+)/\">\\d+</a>").getColumn(0);
         if (pages != null && pages.length != 0) {
             for (final String pagenum : pages) {
                 if (Integer.parseInt(pagenum) > maxPage) maxPage = Integer.parseInt(pagenum);
@@ -59,7 +59,7 @@ public class TusFilesNet extends PluginForDecrypt {
                 // Not available in old 0.9.581 Stable
             }
             if (i > 1) {
-                br.getPage("http://www.tusfiles.net/go/" + folderid + "/?fld_rand=" + folderid + "&page=" + i);
+                br.getPage("http://www.tusfiles.net/go/" + folderid + "/" + i + "/");
                 // Site bug
                 if (br.containsHTML(">No such folder<")) {
                     logger.info("Got all links, stopping...");

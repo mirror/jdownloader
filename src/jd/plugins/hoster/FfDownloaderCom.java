@@ -191,10 +191,7 @@ public class FfDownloaderCom extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         final String status = br.getRegex("account_type\":\"([^<>\"]*?)\"").getMatch(0);
-        if (!"premium".equals(status)) {
-            account.setValid(false);
-            return ai;
-        }
+        if (!"premium".equals(status)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "This is no premium account, only premium accounts are supported for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
         String expire = br.getRegex("\"time_left\":(\\d+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire)) * 1000);
