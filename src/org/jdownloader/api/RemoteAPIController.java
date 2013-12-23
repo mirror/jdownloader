@@ -97,24 +97,25 @@ public class RemoteAPIController {
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
             @Override
             public String toString(RemoteAPIRequest request, RemoteAPIResponse response, Object responseData) {
-                // Convert EventData Objects
-                if (responseData instanceof List && ((List) responseData).size() > 0 && ((List) responseData).get(0) instanceof EventObjectStorable) {
-
-                    ArrayList<MyJDownloaderEvent> newResponse = new ArrayList<MyJDownloaderEvent>();
-                    for (Object o : ((List) responseData)) {
-                        MyJDownloaderEvent ret = new MyJDownloaderEvent();
-                        ret.setEventData(((EventObjectStorable) o).getEventdata());
-                        ret.setEventid(((EventObjectStorable) o).getEventid());
-                        ret.setPublisher(((EventObjectStorable) o).getPublisher());
-                        newResponse.add(ret);
-                    }
-                    responseData = newResponse;
-                }
                 if (((SessionRemoteAPIRequest) request).getApiRequest() instanceof DeprecatedRemoteAPIRequest) { return JSonStorage.serializeToJson(responseData);
                 // ((DeprecatedRemoteAPIRequest)((SessionRemoteAPIRequest) request).getApiRequest()).getRequest()
 
                 }
                 MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
+                if (ri.getApiVersion() > 0) {
+                    // Convert EventData Objects
+                    if (responseData instanceof List && ((List) responseData).size() > 0 && ((List) responseData).get(0) instanceof EventObjectStorable) {
+                        ArrayList<MyJDownloaderEvent> newResponse = new ArrayList<MyJDownloaderEvent>();
+                        for (Object o : ((List) responseData)) {
+                            MyJDownloaderEvent ret = new MyJDownloaderEvent();
+                            ret.setEventData(((EventObjectStorable) o).getEventdata());
+                            ret.setEventid(((EventObjectStorable) o).getEventid());
+                            ret.setPublisher(((EventObjectStorable) o).getPublisher());
+                            newResponse.add(ret);
+                        }
+                        responseData = newResponse;
+                    }
+                }
                 if (ri.getApiVersion() > 0) {
                     return JSonStorage.serializeToJson(responseData);
                 } else {
