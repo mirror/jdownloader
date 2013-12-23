@@ -32,7 +32,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 17642 $", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/folder/\\d+/[\\w\\%]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 17642 $", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?(rapidgator\\.net|rg\\.to)/folder/\\d+/[\\w\\%]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class RapidGatorNetFolder extends PluginForDecrypt {
 
@@ -54,10 +54,13 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         jd.plugins.hoster.RapidGatorNet.prepareBrowser(br);
         // normal stuff
         try {
+            br.setFollowRedirects(true);
             br.getPage(parameter);
         } catch (final BrowserException e) {
             logger.info("Link offline (server error): " + parameter);
             return decryptedLinks;
+        } finally {
+            br.setFollowRedirects(false);
         }
         if (br.containsHTML("E_FOLDERNOTFOUND")) {
             logger.info("Link offline: " + parameter);

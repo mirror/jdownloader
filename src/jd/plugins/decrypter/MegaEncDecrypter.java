@@ -20,7 +20,7 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-@DecrypterPlugin(revision = "$Revision: 20929 $", interfaceVersion = 3, names = { "mega.enc" }, urls = { "mega://enc\\?[a-zA-Z0-9-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20929 $", interfaceVersion = 3, names = { "mega.enc" }, urls = { "mega://f?enc\\?[a-zA-Z0-9-_]+" }, flags = { 0 })
 public class MegaEncDecrypter extends PluginForDecrypt {
 
     public MegaEncDecrypter(PluginWrapper wrapper) {
@@ -41,12 +41,24 @@ public class MegaEncDecrypter extends PluginForDecrypt {
             LogSource.exception(logger, e);
             return decryptedLinks;
         }
+        boolean isFolder = parameter.toString().contains("/fenc");
         String enc = new Regex(parameter.toString(), "enc\\?(.+)").getMatch(0);
         if (enc == null) return null;
         enc = enc.replaceAll("_", "/").replaceAll("-", "+");
-        enc = enc + "==";
+        if (enc.length() % 4 != 0) {
+            int max = 4 - enc.length() % 4;
+            for (int i = 0; i < max; i++) {
+                enc += "=";
+            }
+        }
         byte[] decrypted = decrypt(Base64.decode(enc), HexFormatter.hexToByteArray(MEGAENC_KEY), HexFormatter.hexToByteArray(MEGAENC_IV));
-        DownloadLink link = this.createDownloadlink("http://mega.co.nz/#" + new String(decrypted, "UTF-8"));
+
+        DownloadLink link = null;
+        if (isFolder) {
+            link = this.createDownloadlink("http://mega.co.nz/#F" + new String(decrypted, "UTF-8"));
+        } else {
+            link = this.createDownloadlink("http://mega.co.nz/#" + new String(decrypted, "UTF-8"));
+        }
         decryptedLinks.add(link);
         return decryptedLinks;
     }

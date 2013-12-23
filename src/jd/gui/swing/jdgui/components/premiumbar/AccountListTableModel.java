@@ -195,7 +195,10 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
             @Override
             protected Icon getIcon(AccountEntry value) {
-                return DomainInfo.getInstance(value.getAccount().getHoster()).getFavIcon();
+                if (value.getAccount().getPlugin() != null) {
+                    return value.getAccount().getPlugin().getDomainInfo(null).getFavIcon();
+                } else
+                    return DomainInfo.getInstance(value.getAccount().getHoster()).getFavIcon();
             }
 
             @Override
@@ -641,7 +644,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
     @Override
     public void onAccountControllerEvent(AccountControllerEvent event) {
-
         switch (event.getType()) {
         case ACCOUNT_CHECKED:
         case ACCOUNT_PROPERTY_UPDATE:
@@ -652,6 +654,5 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             /* structure changed */
             delayedFill.run();
         }
-
     }
 }

@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import jd.config.Property;
@@ -36,6 +37,8 @@ import jd.controlling.packagecontroller.PackageControllerComparator;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -57,7 +60,118 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     static {
         FP = new FilePackage() {
 
-            private static final long serialVersionUID = 1L;
+            final private FilePackageView view             = new FilePackageView(this) {
+                                                               List<DownloadLink> empty = Collections.unmodifiableList(new ArrayList<DownloadLink>(0));
+
+                                                               @Override
+                                                               public boolean isEnabled() {
+                                                                   return false;
+                                                               }
+
+                                                               @Override
+                                                               public PluginStateCollection getPluginStates() {
+                                                                   return super.getPluginStates();
+                                                               }
+
+                                                               @Override
+                                                               public DomainInfo[] getDomainInfos() {
+                                                                   return new DomainInfo[0];
+                                                               }
+
+                                                               @Override
+                                                               public long getSize() {
+                                                                   return -1l;
+                                                               }
+
+                                                               @Override
+                                                               public long getDone() {
+                                                                   return -1;
+                                                               }
+
+                                                               @Override
+                                                               public long getETA() {
+                                                                   return -1;
+                                                               }
+
+                                                               @Override
+                                                               public boolean isFinished() {
+                                                                   return false;
+                                                               }
+
+                                                               @Override
+                                                               public int getDisabledCount() {
+                                                                   return 0;
+                                                               }
+
+                                                               @Override
+                                                               public long getFinishedDate() {
+                                                                   return -1l;
+                                                               }
+
+                                                               @Override
+                                                               public void aggregate() {
+                                                               }
+
+                                                               @Override
+                                                               public Priority getLowestPriority() {
+                                                                   return Priority.DEFAULT;
+                                                               }
+
+                                                               @Override
+                                                               public Priority getHighestPriority() {
+                                                                   return Priority.DEFAULT;
+                                                               }
+
+                                                               @Override
+                                                               public void setItems(List<DownloadLink> updatedItems) {
+                                                               }
+
+                                                               @Override
+                                                               public String getCommonSourceUrl() {
+                                                                   return null;
+                                                               }
+
+                                                               @Override
+                                                               public void clear() {
+                                                               }
+
+                                                               @Override
+                                                               public List<DownloadLink> getItems() {
+                                                                   return empty;
+                                                               }
+
+                                                               @Override
+                                                               public int getOfflineCount() {
+                                                                   return 0;
+                                                               }
+
+                                                               @Override
+                                                               public int getOnlineCount() {
+                                                                   return 0;
+                                                               }
+
+                                                               @Override
+                                                               public void requestUpdate() {
+                                                               }
+
+                                                               @Override
+                                                               public boolean updateRequired() {
+                                                                   return false;
+                                                               }
+
+                                                               @Override
+                                                               public ChildrenAvailablility getAvailability() {
+                                                                   return ChildrenAvailablility.UNKNOWN;
+                                                               }
+
+                                                               @Override
+                                                               public String getMessage(Object requestor) {
+                                                                   return null;
+                                                               }
+
+                                                           };
+
+            private static final long     serialVersionUID = 1L;
 
             @Override
             public void _add(DownloadLink... links) {
@@ -65,7 +179,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
             @Override
             public FilePackageView getView() {
-                return null;
+                return view;
             }
 
             @Override

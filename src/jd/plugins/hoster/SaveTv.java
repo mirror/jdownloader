@@ -130,8 +130,8 @@ public class SaveTv extends PluginForHost {
     }
 
     /**
-     * TODO: Known Bugs in API mode: API cannot differ between H.264 Mobile and normal videos -> Cannot show any error in case user chose
-     * H.264 but it's not available. --> NO FATAL bugs ---> Plugin will work fine with them!
+     * TODO: Known Bugs in API mode: API cannot differ between H.264 Mobile and normal videos -> Cannot show any error in case user chose H.264 but it's not
+     * available. --> NO FATAL bugs ---> Plugin will work fine with them!
      */
     // TODO: Remove info-dialogs Feb, 2014 and add a single dialog which only shows up one time, first usage of the plugin
 
@@ -412,15 +412,15 @@ public class SaveTv extends PluginForHost {
         link.setProperty("type", ".mp4");
         link.setProperty("originaldate", datemilliseconds);
         // No custom filename if not all required tags are given
-        final boolean force_original_general = (datemilliseconds == 0 || getPluginConfig().getBooleanProperty(USEORIGINALFILENAME) || SESSIONID != null || link.getLongProperty("category", 0) == 0);
+        final boolean force_original_general = (datemilliseconds == 0 || getPluginConfig().getBooleanProperty(USEORIGINALFILENAME) || SESSIONID != null || getLongProperty(link, "category", 0l) == 0);
         boolean force_original_series = false;
         try {
-            if (link.getLongProperty("category", 0) == 2 && seriestitle.matches(getPluginConfig().getStringProperty(FORCE_ORIGINALFILENAME_SERIES, ""))) force_original_series = true;
+            if (getLongProperty(link, "category", 0l) == 2 && seriestitle.matches(getPluginConfig().getStringProperty(FORCE_ORIGINALFILENAME_SERIES, ""))) force_original_series = true;
         } catch (final Throwable e) {
         }
         boolean force_original_movies = false;
         try {
-            if (link.getLongProperty("category", 0) == 1 && site_title.matches(getPluginConfig().getStringProperty(FORCE_ORIGINALFILENAME_MOVIES, ""))) force_original_movies = true;
+            if (getLongProperty(link, "category", 0l) == 1 && site_title.matches(getPluginConfig().getStringProperty(FORCE_ORIGINALFILENAME_MOVIES, ""))) force_original_movies = true;
         } catch (final Throwable e) {
         }
         FORCE_ORIGINAL_FILENAME = (force_original_general || force_original_series || force_original_movies);
@@ -444,7 +444,7 @@ public class SaveTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         // Improvised workaround for http://svn.jdownloader.org/issues/10306
-        final int premiumError = (int) downloadLink.getLongProperty(LASTFAILEDSTRING, -1);
+        final int premiumError = (int) getLongProperty(downloadLink, LASTFAILEDSTRING, -1l);
         if (premiumError > 0) {
             switch (premiumError) {
             case 1:
@@ -636,7 +636,7 @@ public class SaveTv extends PluginForHost {
         final boolean useAPI = getPluginConfig().getBooleanProperty(USEAPI);
         if (useAPI) {
             SESSIONID = account.getStringProperty("sessionid", null);
-            final long lastUse = account.getLongProperty("lastuse", -1);
+            final long lastUse = getLongProperty(account, "lastuse", -1l);
             // Only generate new sessionID if we have none or it's older than 6 hours
             if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
                 br.getHeaders().put("User-Agent", "kSOAP/2.0");
@@ -795,7 +795,7 @@ public class SaveTv extends PluginForHost {
         final String randomnumber = getRandomNumber();
         final String telecastid = getTelecastId(downloadLink);
 
-        final long date = downloadLink.getLongProperty("originaldate", 0);
+        final long date = getLongProperty(downloadLink, "originaldate", 0l);
         String formattedDate = null;
         final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, "dd.MM.yyyy");
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
@@ -877,12 +877,31 @@ public class SaveTv extends PluginForHost {
         return formattedFilename;
     }
 
+    public long getLongProperty(Property link, final String key, final long def) {
+        try {
+            return link.getLongProperty(key, def);
+        } catch (final Throwable e) {
+            try {
+                Object r = link.getProperty(key, def);
+                if (r instanceof String) {
+                    r = Long.parseLong((String) r);
+                } else if (r instanceof Integer) {
+                    r = ((Integer) r).longValue();
+                }
+                final Long ret = (Long) r;
+                return ret;
+            } catch (final Throwable e2) {
+                return def;
+            }
+        }
+    }
+
     @SuppressWarnings("deprecation")
     private String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
         String ext = downloadLink.getStringProperty("type", null);
         if (ext == null) ext = ".mp4";
 
-        final long date = downloadLink.getLongProperty("originaldate", 0);
+        final long date = getLongProperty(downloadLink, "originaldate", 0l);
         String formattedDate = null;
         final String userDefinedDateFormat = "yyyy-MM-dd";
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
@@ -904,7 +923,7 @@ public class SaveTv extends PluginForHost {
         String formattedFilename = downloadLink.getStringProperty("apiplainfilename", null);
         if (formattedFilename != null) {
         } else {
-            if (belongsToCategoryMovie(downloadLink) || downloadLink.getLongProperty("category", 0) == 0) {
+            if (belongsToCategoryMovie(downloadLink) || getLongProperty(downloadLink, "category", 0l) == 0l) {
                 final String title = downloadLink.getStringProperty("plainfilename", null);
                 formattedFilename = title.replace(" ", "_") + "_";
                 formattedFilename += formattedDate + "_";
@@ -927,7 +946,7 @@ public class SaveTv extends PluginForHost {
     }
 
     private String getEpisodeNumber(final DownloadLink dl) {
-        final long episodenumber = dl.getLongProperty("episodenumber", 0);
+        final long episodenumber = getLongProperty(dl, "episodenumber", 0l);
         if (episodenumber == 0) {
             return "-";
         } else {
@@ -936,7 +955,8 @@ public class SaveTv extends PluginForHost {
     }
 
     private boolean belongsToCategoryMovie(final DownloadLink dl) {
-        final boolean belongsToCategoryMovie = (dl.getLongProperty("category", 0) == 1 || dl.getLongProperty("category", 0) == 3 || dl.getLongProperty("category", 0) == 7);
+        long cat = getLongProperty(dl, "category", 0l);
+        final boolean belongsToCategoryMovie = (cat == 1 || cat == 3 || cat == 7);
         return belongsToCategoryMovie;
     }
 

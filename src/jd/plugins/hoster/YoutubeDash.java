@@ -47,6 +47,10 @@ import org.jdownloader.gui.views.SelectionInfo.PluginView;
 public class YoutubeDash extends Youtube {
 
     public static enum YoutubeVariant implements LinkVariant {
+        AAC_48(null, "48kbit/s AAC-Audio"),
+        AAC_128(null, "128kbit/s AAC-Audio"),
+        AAC_256(null, "256kbit/s AAC-Audio"),
+
         WEBM_1080(null, "1080p WebM-Video"),
         WEBM_720(null, "720p WebM-Video"),
         WEBM_480(null, "480p WebM-Video"),
@@ -117,6 +121,8 @@ public class YoutubeDash extends Youtube {
 
     private final String ENABLE_VARIANTS     = "ENABLE_VARIANTS";
 
+    private final String ALLOW_AAC           = "ALLOW_AAC";
+
     protected String     dashAudioURL        = null;
     protected String     dashVideoURL        = null;
 
@@ -132,13 +138,15 @@ public class YoutubeDash extends Youtube {
         final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
         if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink"); }
         final HashMap<Integer, String[]> linksFound = ((jd.plugins.decrypter.TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), this.prem, this.br, 0);
+        Integer videoItag = downloadLink.getIntegerProperty(DASH_VIDEO, -1);
+        Integer audioItag = downloadLink.getIntegerProperty(DASH_AUDIO, -1);
         if (linksFound != null) {
-            String[] linkFound = linksFound.get(downloadLink.getProperty(DASH_VIDEO));
-            if (linkFound != null && linkFound.length > 0) dashVideoURL = linkFound[0];
-            linkFound = linksFound.get(downloadLink.getProperty(DASH_AUDIO));
-            if (linkFound != null && linkFound.length > 0) dashAudioURL = linkFound[0];
+            String[] linkFound = linksFound.get(videoItag);
+            if (videoItag >= 0 && linkFound != null && linkFound.length > 0) dashVideoURL = linkFound[0];
+            linkFound = linksFound.get(audioItag);
+            if (audioItag >= 0 && linkFound != null && linkFound.length > 0) dashAudioURL = linkFound[0];
         }
-        if (dashAudioURL == null || dashVideoURL == null) {
+        if (dashAudioURL == null || dashVideoURL == null && videoItag >= 0) {
             if (this.br.containsHTML("<div\\s+id=\"verify-age-actions\">")) { throw new PluginException(PluginException.VALUE_ID_PREMIUM_ONLY); }
             if (this.br.containsHTML("This video may be inappropriate for some users")) { throw new PluginException(PluginException.VALUE_ID_PREMIUM_ONLY); }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -551,7 +559,8 @@ public class YoutubeDash extends Youtube {
     }
 
     protected void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_VARIANTS, JDL.L("plugins.hoster.youtube.variants", "Enable Variants Support?")).setDefaultValue(false));
         super.setConfigElements();
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AAC, JDL.L("plugins.hoster.youtube.checkaac", "Grab AAC?")).setDefaultValue(false), getConfig().indexOf(mp3ConfigEntry));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_VARIANTS, JDL.L("plugins.hoster.youtube.variants", "Enable Variants Support?")).setDefaultValue(false), getConfig().indexOf(bestEntryConfig));
     }
 }

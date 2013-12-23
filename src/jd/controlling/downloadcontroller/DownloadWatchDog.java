@@ -446,7 +446,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         FileCreationManager.getInstance().getEventSender().addListener(this);
     }
 
-    private boolean isWatchDogThread() {
+    public boolean isWatchDogThread() {
         Thread current = Thread.currentThread();
         return current == currentWatchDogThread.get() || current == tempWatchDogJobThread.get();
     }
@@ -506,6 +506,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @return
      */
     private DISKSPACECHECK diskSpaceCheck(File file2Root, SingleDownloadController controller, long diskspace) {
+        final File originalFile2Root = file2Root;
         if (!config.isFreeSpaceCheckEnabled()) return DISKSPACECHECK.UNKNOWN;
         if (Application.getJavaVersion() < Application.JAVA16) {
             /*
@@ -526,7 +527,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         while (file2Root != null) {
             if (file2Root.exists() && freeSpace == null) {
                 freeSpace = file2Root;
-                if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) { return DISKSPACECHECK.FAILED; }
+                if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) {
+                    long needed = spaceneeded + diskspace;
+                    logger.severe("Not enough diskspace available! File:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
+                    return DISKSPACECHECK.FAILED;
+                }
             }
             file2Root = file2Root.getParentFile();
             if (file2Root != null) pathes.add(file2Root.getAbsolutePath().toLowerCase(Locale.ENGLISH));
@@ -551,7 +556,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
         /* enough space for needed diskspace */
-        if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) { return DISKSPACECHECK.FAILED; }
+        if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) {
+            long needed = spaceneeded + diskspace;
+            logger.severe("Not enough diskspace available! File:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
+            return DISKSPACECHECK.FAILED;
+        }
         return DISKSPACECHECK.OK;
     }
 
@@ -604,8 +613,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -1114,7 +1122,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             break;
         case ACCOUNT_INVALID:
             if (onDetach) {
-                candidate.getCachedAccount().getAccount().setError(AccountError.PLUGIN_ERROR);
+                /* account has been recognized as valid and/or premium but now throws invalid messages */
+                candidate.getCachedAccount().getAccount().setError(AccountError.PLUGIN_ERROR, null);
                 return;
             }
             break;
@@ -1947,7 +1956,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(currentSession);
                     /* after each download, the order/position of next downloadCandidate could have changed */
                     currentSession.refreshCandidates();
-                    singleDownloadController.getDownloadLink().getFilePackage().getView().requestUpdate();
+                    try {
+                        singleDownloadController.getDownloadLink().getFilePackage().getView().requestUpdate();
+                    } catch (final Throwable e) {
+                        /* link can already be removed->nullpointer exception */
+                    }
                     eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController));
                     handleFinalLinkStates(finalLinkStateLinks, currentSession, logger, singleDownloadController);
                 } catch (final Throwable e) {
@@ -2746,8 +2759,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without
-                                         * waiting for new links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
+                                         * links/user interaction
                                          */
                                         break;
                                     }

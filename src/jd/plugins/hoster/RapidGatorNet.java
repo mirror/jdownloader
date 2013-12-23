@@ -68,7 +68,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/file/([a-z0-9]{32}|\\d+(/[^/<>]+\\.html)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?(rapidgator\\.net|rg\\.to)/file/([a-z0-9]{32}|\\d+(/[^/<>]+\\.html)?)" }, flags = { 2 })
 public class RapidGatorNet extends PluginForHost {
 
     public RapidGatorNet(PluginWrapper wrapper) {
@@ -100,6 +100,15 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://rapidgator.net/article/terms";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        if (link.getDownloadURL().contains("rg.to/")) {
+            String url = link.getDownloadURL();
+            url = url.replaceFirst("rg.to/", "rapidgator.to/");
+            link.setUrlDownload(url);
+        }
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -175,7 +184,8 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         prepareBrowser(br);
         br.setFollowRedirects(true);
@@ -704,6 +714,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        correctDownloadLink(link);
         if (useAPI.get()) {
             handlePremium_api(link, account);
         } else {

@@ -185,7 +185,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
     private void refreshAccountStats() {
         for (Account acc : AccountController.getInstance().list()) {
-            if (acc.isEnabled() && acc.refreshTimeoutReached()) {
+            if (acc.isEnabled() && acc.isValid() && acc.refreshTimeoutReached()) {
                 /*
                  * we do not force update here, the internal timeout will make sure accounts get fresh checked from time to time
                  */

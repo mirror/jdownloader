@@ -23,8 +23,7 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 /**
- * Diese Klasse speichert die GUI-Dialog Informationen. Jede GUI kann diese
- * Infos Abfragen und Entsprechend verarbeiten
+ * Diese Klasse speichert die GUI-Dialog Informationen. Jede GUI kann diese Infos Abfragen und Entsprechend verarbeiten
  * 
  * @author JD-Team
  * 
@@ -33,99 +32,94 @@ public class ConfigContainer implements Serializable {
     /**
      * serialVersionUID
      */
-    private static final long            serialVersionUID    = 6583843494325603616L;
+    private static final long                 serialVersionUID    = 6583843494325603616L;
     /**
      * ConfigElement ist ein Textfeld
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int              TYPE_TEXTFIELD      = 0;
+    public static final int                   TYPE_TEXTFIELD      = 0;
     /**
      * ConfigElement ist ein Combobox
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
-    public static final int              TYPE_COMBOBOX       = 1;
+    public static final int                   TYPE_COMBOBOX       = 1;
     /**
-     * ConfigElement ist ein Button ConfigEntry(int type, ActionListener
-     * listener, String label)
+     * ConfigElement ist ein Button ConfigEntry(int type, ActionListener listener, String label)
      * 
-     * @see ConfigEntry#ConfigEntry(int, ActionListener, String, String,
-     *      ImageIcon)
+     * @see ConfigEntry#ConfigEntry(int, ActionListener, String, String, ImageIcon)
      */
-    public static final int              TYPE_BUTTON         = 2;
+    public static final int                   TYPE_BUTTON         = 2;
     /**
      * ConfigElement ist eine Checkbox
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int              TYPE_CHECKBOX       = 3;
+    public static final int                   TYPE_CHECKBOX       = 3;
     /**
      * ConfigElement ist ein Label
      * 
      * @see ConfigEntry#ConfigEntry(int, String)
      */
-    public static final int              TYPE_LABEL          = 4;
+    public static final int                   TYPE_LABEL          = 4;
     /**
      * ConfigElement ist ein Radiobutton <br>
      * <b>TODO:</b> Unused for now!
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
-    public static final int              TYPE_RADIOFIELD     = 5;
+    public static final int                   TYPE_RADIOFIELD     = 5;
     /**
      * ConfigElement ist eine Trennlinie
      * 
      * @see ConfigEntry#ConfigEntry(int)
      */
-    public static final int              TYPE_SEPARATOR      = 6;
+    public static final int                   TYPE_SEPARATOR      = 6;
 
     /**
      * ConfigElement ist eine Zahlenkomponente (Spinner)
      * 
-     * @see ConfigEntry#ConfigEntry(int, Property, String, String, int, int,
-     *      int)
+     * @see ConfigEntry#ConfigEntry(int, Property, String, String, int, int, int)
      */
-    public static final int              TYPE_SPINNER        = 8;
+    public static final int                   TYPE_SPINNER        = 8;
 
     /**
      * ConfigElement ist ein Textbereich
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int              TYPE_TEXTAREA       = 10;
+    public static final int                   TYPE_TEXTAREA       = 10;
     /**
      * ConfigElement ist ein Textbereich
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, String)
      */
-    public static final int              TYPE_PASSWORDFIELD  = 11;
+    public static final int                   TYPE_PASSWORDFIELD  = 11;
 
     /**
      * ConfigElement ist eine Swing-Komponente
      * 
      * @see ConfigEntry#ConfigEntry(int, javax.swing.JComponent, String)
      */
-    public static final int              TYPE_COMPONENT      = 12;
+    public static final int                   TYPE_COMPONENT      = 12;
     /**
-     * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller
-     * verwaltet wird (siehe PasswordListController und HTAccessController)
+     * ConfigElement ist ein Textbereich, welcher von einem eigenen Controller verwaltet wird (siehe PasswordListController und HTAccessController)
      * 
      * @see ConfigEntry#ConfigEntry(int, ListController, String)
      */
 
     /**
-     * ConfigElement ist ein Combobox dessen Index (und nicht Text) gespeichert
-     * und geladen wird
+     * ConfigElement ist ein Combobox dessen Index (und nicht Text) gespeichert und geladen wird
      * 
      * @see ConfigEntry#ConfigEntry(int, Property, String, Object[], String)
      */
-    public static final int              TYPE_COMBOBOX_INDEX = 15;
+    public static final int                   TYPE_COMBOBOX_INDEX = 15;
 
     private final java.util.List<ConfigEntry> content;
-    private String                       title;
-    private ConfigGroup                  group;
-    private ImageIcon                    icon;
+    private String                            title;
+    private ConfigGroup                       group;
+    private ImageIcon                         icon;
 
     public ConfigContainer() {
         this.content = new ArrayList<ConfigEntry>();
@@ -134,6 +128,10 @@ public class ConfigContainer implements Serializable {
     public ConfigContainer(final String title) {
         this();
         this.title = title;
+    }
+
+    public int indexOf(ConfigEntry entry) {
+        return content.indexOf(entry);
     }
 
     /**
@@ -147,6 +145,17 @@ public class ConfigContainer implements Serializable {
             entry.setGroup(group);
         }
         content.add(entry);
+    }
+
+    public void addEntry(final ConfigEntry entry, int index) {
+        if (entry.getGroup() == null) {
+            entry.setGroup(group);
+        }
+        if (index < 0 || index > content.size()) {
+            content.add(entry);
+        } else {
+            content.add(index, entry);
+        }
     }
 
     /**
@@ -163,8 +172,7 @@ public class ConfigContainer implements Serializable {
     }
 
     /**
-     * Sets a configgroup for this container. the containers add method will add
-     * this configgroup to every new entry
+     * Sets a configgroup for this container. the containers add method will add this configgroup to every new entry
      * 
      * @param configGroup
      */
@@ -177,8 +185,7 @@ public class ConfigContainer implements Serializable {
     }
 
     /**
-     * Sets the icon for the ConfigContainer. It can be used for the tab-header
-     * or the config-info-panel.
+     * Sets the icon for the ConfigContainer. It can be used for the tab-header or the config-info-panel.
      * 
      * @param icon
      */

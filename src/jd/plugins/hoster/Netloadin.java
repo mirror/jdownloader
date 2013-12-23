@@ -465,7 +465,6 @@ public class Netloadin extends PluginForHost {
                 } else if ("login_failed".equalsIgnoreCase(res)) {
                     ai.setStatus("Login failed");
                     if (showDialog) UserIO.getInstance().requestMessageDialog(0, "Netload.in Premium Error", "Login failed!\r\nPlease check your Username and Password!");
-
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if ("-1".equalsIgnoreCase(res)) {
                     /* lifetime */

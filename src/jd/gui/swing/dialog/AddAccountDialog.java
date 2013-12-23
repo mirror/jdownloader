@@ -38,6 +38,8 @@ import jd.controlling.accountchecker.AccountChecker;
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.gui.UserIO;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
@@ -49,7 +51,7 @@ import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
@@ -65,6 +67,7 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.translate._JDT;
 
 public class AddAccountDialog extends AbstractDialog<Integer> {
 
@@ -93,35 +96,45 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         return null;
     }
 
-    public static boolean addAccount(final Account ac) throws DialogClosedException, DialogCanceledException {
+    public static boolean addAccount(final Account ac) throws DialogNoAnswerException {
         try {
             checkAccount(ac);
-        } catch (DialogClosedException e) {
+        } catch (DialogNoAnswerException e) {
             throw e;
-        } catch (DialogCanceledException e) {
-            throw e;
-
         } catch (Throwable e) {
             Dialog.getInstance().showExceptionDialog(_GUI._.accountdialog_check_failed(), _GUI._.accountdialog_check_failed_msg(), e);
         }
-
-        if (ac.getAccountInfo() != null) {
-            if (ac.getAccountInfo().isExpired()) {
-                Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(ac.getAccountInfo().getStatus()), null, _GUI._.accountdialog_check_expired_renew(), null);
-                AccountController.getInstance().addAccount(ac, false);
-                return true;
-
-            } else if (!ac.isValid()) {
-                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(ac.getAccountInfo().getStatus()));
+        AccountError error = ac.getError();
+        String errorMessage = ac.getErrorString();
+        if (error != null) {
+            switch (error) {
+            case PLUGIN_ERROR:
+                if (StringUtils.isEmpty(errorMessage)) errorMessage = _JDT._.AccountController_updateAccountInfo_status_plugin_defect();
+                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(errorMessage));
                 return false;
-            } else {
-                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(ac.getAccountInfo().getStatus()));
+            case EXPIRED:
+                AccountController.getInstance().addAccount(ac, false);
+                Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(null), null, _GUI._.accountdialog_check_expired_renew(), null);
+                return true;
+            case TEMP_DISABLED:
+                if (StringUtils.isEmpty(errorMessage)) errorMessage = _GUI._.accountdialog_check_failed();
+                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(errorMessage));
                 AccountController.getInstance().addAccount(ac, false);
                 return true;
-
+            default:
+            case INVALID:
+                if (StringUtils.isEmpty(errorMessage)) errorMessage = _GUI._.accountdialog_check_failed_msg();
+                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(errorMessage));
+                return false;
             }
         } else {
-            return false;
+            String message = null;
+            AccountInfo ai = ac.getAccountInfo();
+            if (ai != null) message = ai.getStatus();
+            if (StringUtils.isEmpty(message)) message = _GUI._.lit_yes();
+            Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(message));
+            AccountController.getInstance().addAccount(ac, false);
+            return true;
         }
     }
 

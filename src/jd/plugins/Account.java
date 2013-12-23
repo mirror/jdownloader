@@ -52,28 +52,28 @@ public class Account extends Property {
         this.concurrentUsePossible = concurrentUsePossible;
     }
 
-    private transient long tmpDisabledTimeout = -1;
+    private transient volatile long tmpDisabledTimeout = -1;
 
     public long getTmpDisabledTimeout() {
         return Math.max(-1, tmpDisabledTimeout);
     }
 
-    private transient UniqueAlltimeID   id           = new UniqueAlltimeID();
+    private transient UniqueAlltimeID       id           = new UniqueAlltimeID();
 
     /* keep for comp. reasons */
-    private String                      hoster       = null;
-    private AccountInfo                 accinfo      = null;
+    private String                          hoster       = null;
+    private AccountInfo                     accinfo      = null;
 
-    private long                        updatetime   = 0;
-    private int                         maxDownloads = 0;
+    private long                            updatetime   = 0;
+    private int                             maxDownloads = 0;
 
-    private transient AccountController ac           = null;
-    private transient PluginForHost     plugin       = null;
-    private transient boolean           isMulti      = false;
+    private transient AccountController     ac           = null;
+    private transient PluginForHost         plugin       = null;
+    private transient boolean               isMulti      = false;
 
-    private AccountError                error;
+    private transient volatile AccountError error;
 
-    private String                      errorString;
+    private transient volatile String       errorString;
 
     public PluginForHost getPlugin() {
         return plugin;
@@ -132,7 +132,8 @@ public class Account extends Property {
     }
 
     public boolean isValid() {
-        return getError() == null;
+        AccountError lerror = getError();
+        return lerror == null || AccountError.TEMP_DISABLED.equals(lerror);
     }
 
     public long getLastValidTimestamp() {
@@ -147,10 +148,10 @@ public class Account extends Property {
     public void setValid(final boolean b) {
         if (b) {
             if (getError() == AccountError.INVALID) {
-                setError(null);
+                setError(null, null);
             }
         } else {
-            setError(AccountError.INVALID);
+            setError(AccountError.INVALID, null);
         }
     }
 
@@ -217,37 +218,40 @@ public class Account extends Property {
     }
 
     public boolean isTempDisabled() {
-        synchronized (this) {
-            if (getTmpDisabledTimeout() < 0) { return false; }
-            if (System.currentTimeMillis() >= getTmpDisabledTimeout()) {
-                tmpDisabledTimeout = -1;
-                return false;
+        if (AccountError.TEMP_DISABLED.equals(getError())) {
+            synchronized (this) {
+                if (getTmpDisabledTimeout() < 0 || System.currentTimeMillis() >= getTmpDisabledTimeout()) {
+                    tmpDisabledTimeout = -1;
+                    setTempDisabled(false);
+                    return false;
+                }
+                return true;
             }
-            return true;
         }
-    }
-
-    public static enum AccountProperty {
-        ENABLED,
-        ERROR,
-        PASSWORD,
-        TEMP_DISABLED,
-        USERNAME,
-        ERROR_STRING;
+        return false;
     }
 
     public static enum AccountError {
+        TEMP_DISABLED,
         EXPIRED,
         INVALID,
         PLUGIN_ERROR;
     }
 
-    public void setError(final AccountError error) {
-        if (this.error != error) {
+    public void setError(final AccountError error, String errorString) {
+        if (error == null) errorString = null;
+        if (this.error != error || !StringUtils.equals(this.errorString, errorString)) {
+            if (AccountError.TEMP_DISABLED.equals(error)) {
+                long defaultTmpDisabledTimeOut = 60 * 60 * 1000l;
+                Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, defaultTmpDisabledTimeOut);
+                if (timeout == null || timeout <= 0) timeout = defaultTmpDisabledTimeOut;
+                this.tmpDisabledTimeout = System.currentTimeMillis() + timeout;
+            } else {
+                this.tmpDisabledTimeout = -1;
+            }
             this.error = error;
-
-            notifyUpdate(AccountProperty.ERROR);
-
+            this.errorString = errorString;
+            notifyUpdate(AccountProperty.Property.ERROR, error);
         }
     }
 
@@ -255,15 +259,7 @@ public class Account extends Property {
         return error;
     }
 
-    public void setErrorString(final String error) {
-        if (this.errorString != error) {
-            this.errorString = error;
-            notifyUpdate(AccountProperty.ERROR_STRING);
-        }
-    }
-
     public String getErrorString() {
-
         return errorString;
     }
 
@@ -274,7 +270,7 @@ public class Account extends Property {
             if (enabled && (!isValid() || ai != null && ai.isExpired())) {
                 setUpdateTime(0);
             }
-            notifyUpdate(AccountProperty.ENABLED);
+            notifyUpdate(AccountProperty.Property.ENABLED, enabled);
         }
     }
 
@@ -291,30 +287,29 @@ public class Account extends Property {
         return System.currentTimeMillis() - updatetime >= getRefreshTimeout();
     }
 
-    public static interface AccountChangeHandler {
-
-        void fireAccountPropertyChange(Account account, AccountProperty property);
-
+    public static interface AccountPropertyChangeHandler {
+        boolean fireAccountPropertyChange(AccountProperty property);
     }
 
-    private AccountChangeHandler notifyHandler = null;
+    private transient volatile AccountPropertyChangeHandler notifyHandler = null;
 
-    public AccountChangeHandler getNotifyHandler() {
-        AccountChangeHandler ret = notifyHandler;
-        if (ret == null) { return AccountController.getInstance(); }
-        return ret;
-    }
-
-    public void setNotifyHandler(AccountChangeHandler notifyHandler) {
+    public void setNotifyHandler(AccountPropertyChangeHandler notifyHandler) {
         this.notifyHandler = notifyHandler;
     }
 
-    private void notifyUpdate(AccountProperty property) {
-        AccountChangeHandler noti = getNotifyHandler();
-        if (noti != null) {
-            noti.fireAccountPropertyChange(this, property);
+    private void notifyUpdate(AccountProperty.Property property, Object value) {
+        AccountPropertyChangeHandler notify = notifyHandler;
+        boolean notifyController = true;
+        AccountProperty event = null;
+        if (notify != null) {
+            event = new AccountProperty(this, property, value);
+            notifyController = notify.fireAccountPropertyChange(event);
         }
-
+        notify = getAccountController();
+        if (notify != null && notifyController) {
+            if (event == null) event = new AccountProperty(this, property, value);
+            notifyController = notify.fireAccountPropertyChange(event);
+        }
     }
 
     public void setPass(String newPass) {
@@ -323,26 +318,18 @@ public class Account extends Property {
             this.pass = newPass;
             accinfo = null;
             setUpdateTime(0);
-            notifyUpdate(AccountProperty.PASSWORD);
+            notifyUpdate(AccountProperty.Property.PASSWORD, newPass);
         }
     }
 
     public void setTempDisabled(final boolean tempDisabled) {
-        boolean notify = false;
-        synchronized (this) {
-            if ((this.getTmpDisabledTimeout() > 0 && tempDisabled == false) || tempDisabled == true) {
-                if (tempDisabled == false) {
-                    this.tmpDisabledTimeout = -1;
-                } else {
-                    long defaultTmpDisabledTimeOut = 60 * 60 * 1000l;
-                    Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, defaultTmpDisabledTimeOut);
-                    if (timeout == null || timeout <= 0) timeout = defaultTmpDisabledTimeOut;
-                    this.tmpDisabledTimeout = System.currentTimeMillis() + timeout;
-                }
-                notify = true;
+        if (tempDisabled) {
+            setError(AccountError.TEMP_DISABLED, null);
+        } else {
+            if (AccountError.TEMP_DISABLED.equals(getError())) {
+                setError(null, null);
             }
         }
-        if (notify) notifyUpdate(AccountProperty.TEMP_DISABLED);
     }
 
     public void setUser(String newUser) {
@@ -351,11 +338,10 @@ public class Account extends Property {
             this.user = newUser;
             accinfo = null;
             setUpdateTime(0);
-            notifyUpdate(AccountProperty.USERNAME);
+            notifyUpdate(AccountProperty.Property.USERNAME, newUser);
         }
     }
 
-    // @Override
     public String toString() {
         AccountInfo ai = this.accinfo;
         if (ai != null) {

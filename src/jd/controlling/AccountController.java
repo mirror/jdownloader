@@ -39,10 +39,10 @@ import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountChangeHandler;
 import jd.plugins.Account.AccountError;
-import jd.plugins.Account.AccountProperty;
+import jd.plugins.Account.AccountPropertyChangeHandler;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountProperty;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -63,7 +63,7 @@ import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.translate._JDT;
 
-public class AccountController implements AccountControllerListener, AccountChangeHandler {
+public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
 
     private static final long                                                    serialVersionUID = -7560087582989096645L;
 
@@ -104,17 +104,8 @@ public class AccountController implements AccountControllerListener, AccountChan
                 return "ShutdownEvent: Save AccountController";
             }
         });
-        ACCOUNTS = loadAccounts(config);
+        ACCOUNTS = loadAccounts(config, true);
         MULTIHOSTER_ACCOUNTS = new HashMap<String, List<Account>>();
-        final Collection<List<Account>> accsc = ACCOUNTS.values();
-        for (final java.util.List<Account> accs : accsc) {
-            for (final Account acc : accs) {
-                acc.setAccountController(this);
-                if (acc.getPlugin() != null) {
-                    updateInternalMultiHosterMap(acc, acc.getAccountInfo());
-                }
-            }
-        }
         delayedSaver = new DelayedRunnable(5000, 30000) {
 
             @Override
@@ -127,6 +118,15 @@ public class AccountController implements AccountControllerListener, AccountChan
                 save();
             }
         };
+        final Collection<List<Account>> accsc = ACCOUNTS.values();
+        for (final java.util.List<Account> accs : accsc) {
+            for (final Account acc : accs) {
+                acc.setAccountController(this);
+                if (acc.getPlugin() != null) {
+                    updateInternalMultiHosterMap(acc, acc.getAccountInfo());
+                }
+            }
+        }
         broadcaster.addListener(this);
     }
 
@@ -181,27 +181,33 @@ public class AccountController implements AccountControllerListener, AccountChan
 
     public AccountInfo updateAccountInfo(final Account account, final boolean forceupdate) {
         AccountInfo ai = account.getAccountInfo();
-
-        boolean enabledBefore = account.isEnabled();
-        AccountError errorBefore = account.getError();
-        String errorStringBefore = account.getErrorString();
-        String passwordBefore = account.getPass();
-        boolean tempDisabledBefore = account.isTempDisabled();
-        String userBefore = account.getUser();
-        account.setChecking(true);
+        final AccountError errorBefore = account.getError();
+        final String errorMessageBefore = account.getErrorString();
+        final HashMap<AccountProperty.Property, AccountProperty> propertyChanges = new HashMap<AccountProperty.Property, AccountProperty>();
         try {
+            final AccountPropertyChangeHandler handler = new AccountPropertyChangeHandler() {
+
+                @Override
+                public boolean fireAccountPropertyChange(AccountProperty property) {
+                    if (property != null) {
+                        synchronized (propertyChanges) {
+                            propertyChanges.put(property.getProperty(), property);
+                        }
+                    }
+                    return false;
+                }
+            };
+            account.setNotifyHandler(handler);
+            account.setChecking(true);
             if (!forceupdate) {
                 if (account.lastUpdateTime() != 0) {
                     if (ai != null && ai.isExpired()) {
-
-                        account.setError(AccountError.EXPIRED);
-
+                        account.setError(AccountError.EXPIRED, null);
                         /* account is expired, no need to update */
                         return ai;
                     }
                     if (!account.isValid()) {
-
-                        account.setError(AccountError.INVALID);
+                        account.setError(AccountError.INVALID, null);
                         /* account is invalid, no need to update */
                         return ai;
                     }
@@ -220,13 +226,12 @@ public class AccountController implements AccountControllerListener, AccountChan
                 plugin = account.getPlugin().getLazyP().newInstance(cl);
                 if (plugin == null) {
                     LogController.CL().severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
-
-                    account.setError(AccountError.INVALID);
+                    account.setError(AccountError.PLUGIN_ERROR, null);
                     return null;
                 }
             } catch (final Throwable e) {
                 LogController.CL().log(e);
-                account.setError(AccountError.PLUGIN_ERROR);
+                account.setError(AccountError.PLUGIN_ERROR, null);
                 return null;
             }
             String whoAmI = account.getUser() + "->" + account.getHoster();
@@ -251,8 +256,7 @@ public class AccountController implements AccountControllerListener, AccountChan
                 br.setLogger(logger);
                 plugin.setBrowser(br);
                 /* not every plugin sets this info correct */
-                account.setError(null);
-                account.setErrorString(null);
+                account.setError(null, null);
                 /* get previous account info and resets info for new update */
                 ai = account.getAccountInfo();
                 if (ai != null) {
@@ -274,19 +278,16 @@ public class AccountController implements AccountControllerListener, AccountChan
                 }
                 if (account.isValid() == false) {
                     /* account is invalid */
-
                     LogController.CL().info("Account " + whoAmI + " is invalid!");
-
                     return ai;
                 } else {
                     account.setLastValidTimestamp(System.currentTimeMillis());
                 }
                 if (ai != null && ai.isExpired()) {
                     /* expired account */
-
                     logger.clear();
                     LogController.CL().info("Account " + whoAmI + " is expired!");
-                    account.setError(AccountError.EXPIRED);
+                    account.setError(AccountError.EXPIRED, null);
                     return ai;
                 }
                 if (tempDisabledCounterBefore > 0 && account.getTmpDisabledTimeout() == tempDisabledCounterBefore) {
@@ -309,52 +310,27 @@ public class AccountController implements AccountControllerListener, AccountChan
                         if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                             logger.clear();
                             LogController.CL().info("Account " + whoAmI + " traffic limit reached!");
-                            if (!StringUtils.isEmpty(pe.getErrorMessage())) {
-                                ai.setStatus(pe.getErrorMessage());
-                                account.setErrorString(pe.getErrorMessage());
-                            } else {
-                                ai.setStatus(_JDT._.AccountController_updateAccountInfo_status_traffic_reached());
-                                account.setErrorString(_JDT._.AccountController_updateAccountInfo_status_traffic_reached());
-                            }
+                            String errorMsg = pe.getErrorMessage();
+                            if (StringUtils.isEmpty(errorMsg)) errorMsg = _JDT._.AccountController_updateAccountInfo_status_traffic_reached();
                             /* needed because some plugins set invalid on pluginException */
-                            account.setError(null);
-                            account.setTempDisabled(true);
-                            ai.setTrafficLeft(0);
-
+                            account.setError(AccountError.TEMP_DISABLED, errorMsg);
                             return ai;
                         } else if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
-
-                            account.setError(AccountError.INVALID);
-
-                            if (!StringUtils.isEmpty(pe.getErrorMessage())) {
-                                ai.setStatus(pe.getErrorMessage());
-                                account.setErrorString(pe.getErrorMessage());
-                            } else {
-                                ai.setStatus(_JDT._.AccountController_updateAccountInfo_status_logins_wrong());
-                                account.setErrorString(_JDT._.AccountController_updateAccountInfo_status_logins_wrong());
-                            }
+                            String errorMsg = pe.getErrorMessage();
+                            if (StringUtils.isEmpty(errorMsg)) errorMsg = _JDT._.AccountController_updateAccountInfo_status_logins_wrong();
+                            account.setError(AccountError.INVALID, errorMsg);
                             logger.clear();
                             LogController.CL().info("Account " + whoAmI + " is invalid!");
-
                             return ai;
                         }
                     } else if (pe.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
                         logger.severe("AccountCheck: Failed because of PluginDefect, temp disable it!");
                         logger.log(e);
-                        if (!StringUtils.isEmpty(pe.getErrorMessage())) {
-                            ai.setStatus(pe.getErrorMessage());
-                            account.setErrorString(pe.getErrorMessage());
-                        } else {
-                            account.setErrorString(_JDT._.AccountController_updateAccountInfo_status_plugin_defect());
-                            ai.setStatus("Could not check account status. Will try again later.");
-                        }
+                        String errorMsg = pe.getErrorMessage();
+                        if (StringUtils.isEmpty(errorMsg)) errorMsg = _JDT._.AccountController_updateAccountInfo_status_plugin_defect();
                         if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
                         /* needed because some plugins set invalid on pluginException */
-                        account.setError(null);
-
-                        account.setTempDisabled(true);
-                        ai.setTrafficLeft(0);
-
+                        account.setError(AccountError.TEMP_DISABLED, errorMsg);
                         return ai;
                     }
                 } else if (e instanceof IOException) {
@@ -374,25 +350,19 @@ public class AccountController implements AccountControllerListener, AccountChan
                 }
                 logger.severe("AccountCheck: Failed because of exception, temp disable it!");
                 logger.log(e);
+                String errorMsg = null;
                 if (e instanceof PluginException && !StringUtils.isEmpty(((PluginException) e).getErrorMessage())) {
-                    ai.setStatus(((PluginException) e).getErrorMessage());
-                    account.setErrorString(((PluginException) e).getErrorMessage());
+                    errorMsg = ((PluginException) e).getErrorMessage();
                 } else if (!StringUtils.isEmpty(e.getMessage())) {
-                    ai.setStatus(e.getMessage());
-                    account.setErrorString(e.getMessage());
+                    errorMsg = e.getMessage();
                 } else {
-                    ai.setStatus(_JDT._.AccountController_updateAccountInfo_status_uncheckable());
-                    account.setErrorString(_JDT._.AccountController_updateAccountInfo_status_uncheckable());
+                    errorMsg = _JDT._.AccountController_updateAccountInfo_status_uncheckable();
                 }
-
                 if (account.getProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT) == null) account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
                 /* needed because some plugins set invalid on pluginException */
-                account.setError(null);
-
-                account.setTempDisabled(true);
-
+                account.setError(AccountError.TEMP_DISABLED, errorMsg);
+                return ai;
             } finally {
-
                 logger.close();
                 if (bThread != null) {
                     /* remove logger from browserSettingsThread */
@@ -401,28 +371,17 @@ public class AccountController implements AccountControllerListener, AccountChan
             }
             return ai;
         } finally {
+            account.setNotifyHandler(null);
             account.setChecking(false);
-            if (enabledBefore != account.isEnabled()) {
-
-                getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, AccountProperty.ENABLED, false));
-            }
-            if (errorBefore != account.getError()) {
-                getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, AccountProperty.ERROR, false));
-            }
-            if (!StringUtils.equals(errorStringBefore, account.getErrorString())) {
-                getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, AccountProperty.ERROR_STRING, false));
-            }
-            if (!StringUtils.equals(passwordBefore, account.getPass())) {
-                getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, AccountProperty.PASSWORD, false));
-            }
-            if (!StringUtils.equals(userBefore, account.getUser())) {
-                getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, AccountProperty.USERNAME, false));
-            }
-
-            if (tempDisabledBefore != account.isTempDisabled()) {
-                getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, AccountProperty.TEMP_DISABLED, false));
-            }
             getBroadcaster().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));
+            final AccountError errorNow = account.getError();
+            if (errorBefore != errorNow) {
+                AccountProperty latestChangeEvent = null;
+                synchronized (propertyChanges) {
+                    latestChangeEvent = propertyChanges.get(AccountProperty.Property.ERROR);
+                }
+                if (latestChangeEvent != null) getBroadcaster().fireEvent(new AccountPropertyChangedEvent(latestChangeEvent.getAccount(), latestChangeEvent));
+            }
         }
     }
 
@@ -430,11 +389,11 @@ public class AccountController implements AccountControllerListener, AccountChan
         return INSTANCE;
     }
 
-    private synchronized HashMap<String, java.util.List<Account>> loadAccounts(AccountSettings config) {
+    private synchronized HashMap<String, java.util.List<Account>> loadAccounts(AccountSettings config, boolean allowRestore) {
         HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
         if (dat == null) {
             try {
-                dat = restore();
+                if (allowRestore) dat = restore();
             } catch (final Throwable e) {
                 LogController.CL().log(e);
             }
@@ -496,7 +455,6 @@ public class AccountController implements AccountControllerListener, AccountChan
                                 list.add(ac = new AccountData());
                                 ac.setUser(a.getUser());
                                 ac.setPassword(a.getPass());
-
                                 ac.setEnabled(a.isEnabled());
                             }
                         } else if (accList.get(0) instanceof Map) {
@@ -599,12 +557,10 @@ public class AccountController implements AccountControllerListener, AccountChan
             for (final Account acc : accs) {
                 if (acc.equals(account)) return;
             }
-            accs.add(account);
             account.setAccountController(this);
+            accs.add(account);
         }
-        AccountControllerEvent event = new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account);
-        event.setForceCheck(forceCheck);
-        this.broadcaster.fireEvent(event);
+        this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
     }
 
     public boolean removeAccount(final Account account) {
@@ -625,21 +581,40 @@ public class AccountController implements AccountControllerListener, AccountChan
     public void onAccountControllerEvent(final AccountControllerEvent event) {
         Account acc = event.getAccount();
         delayedSaver.resetAndStart();
+        boolean forceRecheck = false;
         switch (event.getType()) {
         case ADDED:
-            updateInternalMultiHosterMap(acc, acc.getAccountInfo());
             org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
+            updateInternalMultiHosterMap(acc, acc.getAccountInfo());
             break;
         case ACCOUNT_PROPERTY_UPDATE:
-            updateInternalMultiHosterMap(acc, acc.getAccountInfo());
+            AccountProperty propertyChange = ((AccountPropertyChangedEvent) event).getProperty();
+            switch (propertyChange.getProperty()) {
+            case ENABLED:
+                if (Boolean.FALSE.equals(propertyChange.getValue())) return;
+                forceRecheck = true;
+                break;
+            case ERROR:
+                if (propertyChange.getValue() != null) return;
+                forceRecheck = true;
+                break;
+            case PASSWORD:
+            case USERNAME:
+                forceRecheck = true;
+                break;
+            }
             break;
+        case ACCOUNT_CHECKED:
+            updateInternalMultiHosterMap(acc, acc.getAccountInfo());
+            return;
         case REMOVED:
             updateInternalMultiHosterMap(acc, null);
             return;
         }
-        if (acc != null && !(Thread.currentThread() instanceof AccountCheckerThread)) {
-            AccountChecker.getInstance().check(acc, event.isForceCheck());
-        }
+
+        if (acc == null || acc != null && acc.isEnabled() == false) return;
+        if ((Thread.currentThread() instanceof AccountCheckerThread)) return;
+        AccountChecker.getInstance().check(acc, forceRecheck);
     }
 
     @Deprecated
@@ -698,35 +673,22 @@ public class AccountController implements AccountControllerListener, AccountChan
     }
 
     @Override
-    public void fireAccountPropertyChange(Account account, AccountProperty property) {
-        if (Thread.currentThread() instanceof AccountCheckerThread) {
-            System.out.println("Blocked Property Change: " + property);
-            return;
-        }
-        switch (property) {
-        case ERROR:
-        case ERROR_STRING:
-        case TEMP_DISABLED:
-
-            getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, property, false));
-            return;
-        default:
-            getBroadcaster().fireEvent(new AccountPropertyChangedEvent(account, property, true));
-        }
-
+    public boolean fireAccountPropertyChange(jd.plugins.AccountProperty propertyChange) {
+        if (propertyChange.getAccount().isChecking()) return false;
+        getBroadcaster().fireEvent(new AccountPropertyChangedEvent(propertyChange.getAccount(), propertyChange));
+        return true;
     }
 
     public List<Account> importAccounts(File f) {
+        /* TODO: add cleanup to avoid memleak */
         AccountSettings cfg = JsonConfig.create(new File(f.getParent(), "org.jdownloader.settings.AccountSettings"), AccountSettings.class);
-        HashMap<String, List<Account>> accounts = loadAccounts(cfg);
+        HashMap<String, List<Account>> accounts = loadAccounts(cfg, false);
         ArrayList<Account> added = new ArrayList<Account>();
         for (Entry<String, List<Account>> es : accounts.entrySet()) {
             for (Account ad : es.getValue()) {
                 addAccount(ad);
                 added.add(ad);
-
             }
-
         }
         return added;
     }

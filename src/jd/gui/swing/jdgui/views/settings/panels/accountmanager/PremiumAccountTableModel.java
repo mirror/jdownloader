@@ -109,9 +109,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                             case ACCOUNT_CHECKED:
                             case ACCOUNT_PROPERTY_UPDATE:
                                 /* just repaint */
-                                System.out.println("refresh");
                                 delayedUpdate.run();
-
                                 break;
                             default:
                                 /* structure changed */

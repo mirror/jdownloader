@@ -129,10 +129,10 @@ public class TbCm extends PluginForDecrypt {
         DASH_VIDEO_240P_H264(133, "MP4_DASH_240"),
         DASH_VIDEO_144P_H264(160, "MP4_DASH_144"),
 
-        DASH_AUDIO_48K_AAC(139, null),
-        DASH_AUDIO_128K_AAC(140, null),
+        DASH_AUDIO_48K_AAC(139, "AAC_48"),
+        DASH_AUDIO_128K_AAC(140, "AAC_128"),
         DASH_AUDIO_128K_WEBM(171, null),
-        DASH_AUDIO_256K_AAC(141, null),
+        DASH_AUDIO_256K_AAC(141, "AAC_256"),
         DASH_AUDIO_192K_WEBM(172, null),
 
         MP4_VIDEO_AUDIO_ORIGINAL(38, "MP4_ORIGINAL"),
@@ -970,8 +970,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 HashMap<ITAG, String[]> useTags = new HashMap<ITAG, String[]>(availableItags);
                 if (best) {
@@ -987,37 +987,7 @@ public class TbCm extends PluginForDecrypt {
                     bestQualityTags.add(new ITAG[] { ITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, ITAG.DASH_VIDEO_144P_H264 });
                     for (ITAG[] tags : bestQualityTags) {
                         for (ITAG tag : tags) {
-                            if (availableItags.containsKey(tag) && allowedItags.containsKey(tag) && bestFound.isEmpty()) bestFound.put(tag, availableItags.get(tag)); // Quick'n'dirty
-                                                                                                                                                                      // fix.
-                                                                                                                                                                      // JD
-                                                                                                                                                                      // actually
-                                                                                                                                                                      // shows
-                                                                                                                                                                      // the
-                                                                                                                                                                      // "best"
-                                                                                                                                                                      // version
-                                                                                                                                                                      // of
-                                                                                                                                                                      // each
-                                                                                                                                                                      // resolution
-                                                                                                                                                                      // but
-                                                                                                                                                                      // should
-                                                                                                                                                                      // show
-                                                                                                                                                                      // the
-                                                                                                                                                                      // over
-                                                                                                                                                                      // all
-                                                                                                                                                                      // best
-                                                                                                                                                                      // resolution(
-                                                                                                                                                                      // if
-                                                                                                                                                                      // "1080p"
-                                                                                                                                                                      // available
-                                                                                                                                                                      // and
-                                                                                                                                                                      // no
-                                                                                                                                                                      // "original"
-                                                                                                                                                                      // is
-                                                                                                                                                                      // present,
-                                                                                                                                                                      // drop
-                                                                                                                                                                      // all
-                                                                                                                                                                      // other
-                                                                                                                                                                      // resolutions)
+                            if (availableItags.containsKey(tag) && allowedItags.containsKey(tag) && bestFound.isEmpty()) bestFound.put(tag, availableItags.get(tag));
                         }
                     }
                     if (bestFound.isEmpty()) {
@@ -1056,7 +1026,6 @@ public class TbCm extends PluginForDecrypt {
                 if (useTags.containsKey(ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC)) useTags.remove(ITAG.DASH_VIDEO_360P_H264);
                 final boolean allowVariants = isJDownloader2() && cfg.getBooleanProperty("ENABLE_VARIANTS", false);
                 String TTSURL = br.getRegex("\"ttsurl\": \"(http.*?)\"").getMatch(0);
-
                 for (final Entry<ITAG, String[]> entry : useTags.entrySet()) {
                     DestinationFormat cMode = (DestinationFormat) allowedItags.get(entry.getKey())[0];
                     String vQuality = "(" + entry.getValue()[1] + "_" + allowedItags.get(entry.getKey())[1] + "-" + allowedItags.get(entry.getKey())[2] + ")";
@@ -1116,9 +1085,10 @@ public class TbCm extends PluginForDecrypt {
                     }
                 }
                 boolean formatInName = cfg.getBooleanProperty("FORMATINNAME", true);
+                boolean allowAAC = cfg.getBooleanProperty("ALLOW_AAC", false);
                 for (final Entry<DestinationFormat, InfoList> next : this.possibleconverts.entrySet()) {
                     final DestinationFormat convertTo = next.getKey();
-                    if (DestinationFormat.AUDIO_DASH_AAC.equals(convertTo)) {
+                    if (DestinationFormat.AUDIO_DASH_AAC.equals(convertTo) && allowAAC == false) {
                         /* at the moment we do not handle audio only */
                         continue;
                     }
@@ -1140,40 +1110,44 @@ public class TbCm extends PluginForDecrypt {
                     }
                     if (allowVariants) {
                         List<String> variants = new ArrayList<String>();
-                        Info bestVideo = null;
+                        Info bestHit = null;
                         ITAG[] itags = null;
                         /* first find bestInfo for convertTo Format */
                         switch (convertTo) {
                         case VIDEO_WEBM:
                             itags = new ITAG[] { ITAG.WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS, ITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, ITAG.WEBM_VIDEO_480P_VP8_AUDIO_VORBIS, ITAG.WEBM_VIDEO_360P_VP8_AUDIO_VORBIS };
-                            bestVideo = next.getValue().getInfoForFirstITAGMatch(itags);
+                            bestHit = next.getValue().getInfoForFirstITAGMatch(itags);
                             break;
                         case VIDEO_MP4:
                             itags = new ITAG[] { ITAG.MP4_VIDEO_AUDIO_ORIGINAL, ITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC };
-                            bestVideo = next.getValue().getInfoForFirstITAGMatch(itags);
+                            bestHit = next.getValue().getInfoForFirstITAGMatch(itags);
                             break;
                         case VIDEO_DASH_MP4:
                             itags = new ITAG[] { ITAG.DASH_VIDEO_ORIGINAL_H264, ITAG.DASH_VIDEO_1080P_H264, ITAG.DASH_VIDEO_720P_H264, ITAG.DASH_VIDEO_480P_H264, ITAG.DASH_VIDEO_360P_H264, ITAG.DASH_VIDEO_240P_H264, ITAG.DASH_VIDEO_144P_H264 };
-                            bestVideo = next.getValue().getInfoForFirstITAGMatch(itags);
+                            bestHit = next.getValue().getInfoForFirstITAGMatch(itags);
                             break;
                         case VIDEO_3GP:
                             itags = new ITAG[] { ITAG.THREEGP_VIDEO_240P_H264_AUDIO_AAC, ITAG.THREEGP_VIDEO_240P_H263_AUDIO_AAC, ITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC };
-                            bestVideo = next.getValue().getInfoForFirstITAGMatch(itags);
+                            bestHit = next.getValue().getInfoForFirstITAGMatch(itags);
                             break;
                         case VIDEO_FLV:
                             itags = new ITAG[] { ITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, ITAG.FLV_VIDEO_360P_H264_AUDIO_AAC, ITAG.FLV_VIDEO_HIGH_240P_H263_AUDIO_MP3, ITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3 };
-                            bestVideo = next.getValue().getInfoForFirstITAGMatch(itags);
+                            bestHit = next.getValue().getInfoForFirstITAGMatch(itags);
                             break;
                         case VIDEO_3D_MP4:
                             itags = new ITAG[] { ITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, ITAG.MP4_VIDEO_520P_H264_AUDIO_AAC_3D, ITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, ITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D };
-                            bestVideo = next.getValue().getInfoForFirstITAGMatch(itags);
+                            bestHit = next.getValue().getInfoForFirstITAGMatch(itags);
                             break;
                         case VIDEO_3D_WEBM:
                             itags = new ITAG[] { ITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, ITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D, ITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D };
-                            bestVideo = next.getValue().getInfoForFirstITAGMatch(itags);
+                            bestHit = next.getValue().getInfoForFirstITAGMatch(itags);
+                            break;
+                        case AUDIO_DASH_AAC:
+                            itags = new ITAG[] { ITAG.DASH_AUDIO_256K_AAC, ITAG.DASH_AUDIO_128K_AAC, ITAG.DASH_AUDIO_48K_AAC };
+                            bestHit = next.getValue().getInfoForFirstITAGMatch(itags);
                             break;
                         }
-                        if (bestVideo != null) {
+                        if (bestHit != null) {
                             /* find all available variants */
                             switch (convertTo) {
                             case VIDEO_WEBM:
@@ -1183,7 +1157,8 @@ public class TbCm extends PluginForDecrypt {
                             case VIDEO_FLV:
                             case VIDEO_3D_MP4:
                             case VIDEO_3D_WEBM:
-                                if (bestVideo != null) {
+                            case AUDIO_DASH_AAC:
+                                if (bestHit != null) {
                                     for (ITAG itag : itags) {
                                         if (availableItags.containsKey(itag) && itag.getVariantID() != null) variants.add(itag.getVariantID());
                                     }
@@ -1191,7 +1166,7 @@ public class TbCm extends PluginForDecrypt {
                                 break;
                             }
                         }
-                        if (bestVideo != null) {
+                        if (bestHit != null) {
                             DownloadLink infoLink = null;
                             switch (convertTo) {
                             case VIDEO_WEBM:
@@ -1200,16 +1175,19 @@ public class TbCm extends PluginForDecrypt {
                             case VIDEO_FLV:
                             case VIDEO_3D_MP4:
                             case VIDEO_3D_WEBM:
-                                infoLink = this.createDownloadlink(formattedFilename, currentVideoUrl, ytID, YT_FILENAME, convertTo, formatInName, bestVideo, null);
+                                infoLink = this.createDownloadlink(formattedFilename, currentVideoUrl, ytID, YT_FILENAME, convertTo, formatInName, bestHit, null);
                                 break;
                             case VIDEO_DASH_MP4:
-                                infoLink = this.createDownloadlink(formattedFilename, currentVideoUrl, ytID, YT_FILENAME, convertTo, formatInName, bestVideo, bestDashAudio);
+                                infoLink = this.createDownloadlink(formattedFilename, currentVideoUrl, ytID, YT_FILENAME, convertTo, formatInName, bestHit, bestDashAudio);
+                                break;
+                            case AUDIO_DASH_AAC:
+                                infoLink = this.createDownloadlink(formattedFilename, currentVideoUrl, ytID, YT_FILENAME, convertTo, formatInName, null, bestHit);
                                 break;
                             }
                             if (infoLink != null) {
                                 if (variants.size() > 1) {
-                                    if (bestVideo != null) {
-                                        infoLink.setProperty("VARIANT", bestVideo.itag.getVariantID());
+                                    if (bestHit != null) {
+                                        infoLink.setProperty("VARIANT", bestHit.itag.getVariantID());
                                         infoLink.setProperty("VARIANTS", variants);
                                         setVariantsSupport(infoLink, true);
                                     }
@@ -1410,6 +1388,7 @@ public class TbCm extends PluginForDecrypt {
             thislink.setProperty("DASH_VIDEO_SIZE", videoInfo.size);
         } else {
             /* normal handling */
+            thislink.setProperty("fmtNew", videoInfo.itag.getITAG());
             thislink.setFinalFileName(currentFilename);
             if (convertTo != DestinationFormat.AUDIO_MP3) {
                 thislink.setProperty("name", currentFilename);
@@ -1435,7 +1414,6 @@ public class TbCm extends PluginForDecrypt {
         /** FILENAME PART2 END */
         thislink.setProperty("videolink", currentVideoURL);
         thislink.setProperty("valid", true);
-        thislink.setProperty("fmtNew", videoInfo.itag.getITAG());
         thislink.setProperty("ytID", ytID);
         return thislink;
     }
@@ -1495,6 +1473,12 @@ public class TbCm extends PluginForDecrypt {
                                 break;
                             case 133:
                                 hitQ = "240p";
+                                break;
+                            case 139:
+                            case 140:
+                            case 141:
+                                /* aac audio */
+                                hitQ = "";
                                 break;
                             }
                         }

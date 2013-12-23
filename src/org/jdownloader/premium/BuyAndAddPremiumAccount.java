@@ -61,7 +61,6 @@ public class BuyAndAddPremiumAccount extends AbstractDialog<Boolean> implements 
             ac.setHoster(info.getTld());
             try {
                 if (!AddAccountDialog.addAccount(ac)) {
-
                     return;
                 } else {
                     this.dispose();

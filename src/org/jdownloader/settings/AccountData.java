@@ -4,9 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.plugins.Account;
-import jd.plugins.Account.AccountChangeHandler;
 import jd.plugins.Account.AccountError;
-import jd.plugins.Account.AccountProperty;
 import jd.plugins.AccountInfo;
 
 import org.appwork.storage.Storable;
@@ -58,7 +56,6 @@ public class AccountData implements Storable {
     private long                validUntil;
     private boolean             active;
     private boolean             enabled;
-    private boolean             tempDisabled;
     private boolean             valid                 = true;
 
     private boolean             trafficUnlimited;
@@ -118,12 +115,10 @@ public class AccountData implements Storable {
         }
         ret.concurrentUsePossible = a.isConcurrentUsePossible();
         ret.enabled = a.isEnabled();
-        ret.tempDisabled = a.isTempDisabled();
         ret.hoster = a.getHoster();
         ret.maxSimultanDownloads = a.getMaxSimultanDownloads();
         ret.password = a.getPass();
         ret.user = a.getUser();
-
         return ret;
     }
 
@@ -144,7 +139,7 @@ public class AccountData implements Storable {
     }
 
     private static String enumToString(AccountError error) {
-        return error == null ? null : error.toString();
+        return error == null ? null : error.name();
     }
 
     public Map<String, Object> getInfoProperties() {
@@ -203,14 +198,6 @@ public class AccountData implements Storable {
         this.enabled = enabled;
     }
 
-    public boolean isTempDisabled() {
-        return tempDisabled;
-    }
-
-    public void setTempDisabled(boolean tempDisabled) {
-        this.tempDisabled = tempDisabled;
-    }
-
     @Deprecated
     private boolean isValid() {
         return valid;
@@ -247,13 +234,7 @@ public class AccountData implements Storable {
 
     public Account toAccount() {
         Account ret = new Account(user, password);
-        ret.setNotifyHandler(new AccountChangeHandler() {
-
-            @Override
-            public void fireAccountPropertyChange(Account account, AccountProperty property) {
-                // no events
-            }
-        });
+        ret.setProperties(properties);
         if (infoProperties != null) {
             AccountInfo ai = new AccountInfo();
             ret.setAccountInfo(ai);
@@ -271,22 +252,16 @@ public class AccountData implements Storable {
         ret.setHoster(hoster);
         ret.setMaxSimultanDownloads(maxSimultanDownloads);
         ret.setPass(password);
-        ret.setProperties(properties);
-        ret.setTempDisabled(tempDisabled);
         ret.setUser(user);
-        ret.setErrorString(errorString);
         if (StringUtils.isNotEmpty(errorType)) {
             try {
-                ret.setError(AccountError.valueOf(errorType));
-            } catch (Exception e) {
-
+                ret.setError(AccountError.valueOf(errorType), errorString);
+            } catch (Throwable e) {
             }
         }
         if (!valid && ret.getError() == null) {
-            ret.setError(AccountError.INVALID);
+            ret.setError(AccountError.INVALID, null);
         }
-        // enable events
-        ret.setNotifyHandler(null);
         return ret;
     }
 }

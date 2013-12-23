@@ -37,7 +37,6 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
         layoutComponents();
         fill();
         org.jdownloader.settings.staticreferences.CFG_RECONNECT.ACTIVE_PLUGIN_ID.getEventSender().addListener(this);
-
     }
 
     public void actionPerformed(final ActionEvent e) {
@@ -113,9 +112,7 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
     }
 
     public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-
         fill();
-
     }
 
 }

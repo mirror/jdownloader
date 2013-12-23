@@ -22,8 +22,7 @@ import org.appwork.utils.event.SimpleEvent;
 
 public class AccountControllerEvent extends SimpleEvent<AccountController, Object, AccountControllerEvent.Types> {
 
-    protected boolean forceCheck = true;
-    private Account   account;
+    private Account account;
 
     public Account getAccount() {
         return account;
@@ -31,14 +30,6 @@ public class AccountControllerEvent extends SimpleEvent<AccountController, Objec
 
     public void setAccount(Account account) {
         this.account = account;
-    }
-
-    public boolean isForceCheck() {
-        return forceCheck;
-    }
-
-    public void setForceCheck(boolean forceCheck) {
-        this.forceCheck = forceCheck;
     }
 
     public AccountControllerEvent(AccountController caller, Types type, Account account, Object... parameters) {
@@ -51,7 +42,6 @@ public class AccountControllerEvent extends SimpleEvent<AccountController, Objec
         REMOVED,
         ACCOUNT_PROPERTY_UPDATE,
         ACCOUNT_CHECKED
-
     }
 
 }
