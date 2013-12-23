@@ -3962,4 +3962,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Imported %s1 account(s)" })
     String AccountLoader_onNewFile_accounts_imported(int size);
 
+    @Default(lngs = { "en" }, values = { "Convert CLR Script to LiveHeader" })
+    String ConvertCLRAction_actionPerformed_title();
+
+    @Default(lngs = { "en" }, values = { "Please enter the Cryptload CLR Reconnect Script..." })
+    String ConvertCLRAction_actionPerformed_msg();
+
+    @Default(lngs = { "en" }, values = { "Done - %s1!" })
+    String ConvertCLRAction_actionPerformed_finished_title(String lh);
+
+    @Default(lngs = { "en" }, values = { "Please copy & paste your script to the JDownloader Liveheader reconnect Section." })
+    String ConvertCLRAction_actionPerformed_finished_msg();
+
 }

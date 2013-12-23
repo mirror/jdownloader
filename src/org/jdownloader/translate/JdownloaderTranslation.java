@@ -529,4 +529,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Delete files from Harddisk" })
     String DeleteOption_final_delete();
 
+    @Default(lngs = { "en" }, values = { "Convert Cryptload *.clr Reconnect Script to JDownloader LiveHeader" })
+    String convert_CLR_Reconnect_to_jdownloader();
+
 }
