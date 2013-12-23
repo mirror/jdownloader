@@ -106,7 +106,7 @@ public class RapidGatorNet extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws Exception {
         if (link.getDownloadURL().contains("rg.to/")) {
             String url = link.getDownloadURL();
-            url = url.replaceFirst("rg.to/", "rapidgator.to/");
+            url = url.replaceFirst("rg.to/", "rapidgator.net/");
             link.setUrlDownload(url);
         }
     }
@@ -518,7 +518,8 @@ public class RapidGatorNet extends PluginForHost {
                     String reset_in = getJSonValueByKey("reset_in");
                     if (expire_date != null && traffic_left != null) {
                         /*
-                         * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from expiring too early
+                         * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from
+                         * expiring too early
                          */
                         ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
                         ai.setTrafficLeft(Long.parseLong(traffic_left));

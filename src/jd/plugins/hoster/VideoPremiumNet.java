@@ -26,9 +26,11 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -50,18 +52,20 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv", "videopremium.net" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv)/[a-z0-9]{12}", "r489e0zu0564hjzrt50p9jhgtpiohkDELETE_MEdsngiurhz958hchswinefihighr" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv", "videopremium.net" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/[a-z0-9]{12}", "r489e0zu0564hjzrt50p9jhgtpiohkDELETE_MEdsngiurhz958hchswinefihighr" }, flags = { 2, 0 })
 public class VideoPremiumNet extends PluginForHost {
 
     private String               passCode                     = null;
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://videopremium.tv";
+    private final String         COOKIE_HOST                  = "http://videopremium.me";
+    private static final String  CURRENT_DOMAIN               = "videopremium.me";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                  = true;
     // note: can not be negative -x or 0 .:. [1-*]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
@@ -86,7 +90,7 @@ public class VideoPremiumNet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("videopremium.net/", "videopremium.tv/"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replaceAll("videopremium\\.(net|tv)/", "videopremium.me/"));
     }
 
     @Override
@@ -200,23 +204,64 @@ public class VideoPremiumNet extends PluginForHost {
         doFree(downloadLink, true, 0, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
-        if (oldStyle()) throw new PluginException(LinkStatus.ERROR_FATAL, "This host only works in the JDownloader 2 BETA version.");
+    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
-        String dllink = getDllink();
-        // Third, continue like normal.
-        if (dllink == null) {
-            checkErrors(downloadLink, false, passCode);
-            Form download1 = getFormByKey("op", "download1");
-            if (download1 != null) {
-                download1.remove("method_premium");
-                sendForm(download1);
-                checkErrors(downloadLink, false, passCode);
-                dllink = getDllink();
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        if (VIDEOHOSTER) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(false);
+                br2.getPage("http://" + CURRENT_DOMAIN + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+                dllink = br2.getRedirectLocation();
+            } catch (final Throwable e) {
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        rtmpDownload(downloadLink, dllink);
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setProperty(directlinkproperty, dllink);
+            dl.startDownload();
+        } else {
+            if (oldStyle()) throw new PluginException(LinkStatus.ERROR_FATAL, "This host only works in the JDownloader 2 BETA version.");
+            dllink = getDllink();
+            // Third, continue like normal.
+            if (dllink == null) {
+                checkErrors(downloadLink, false, passCode);
+                Form download1 = getFormByKey("op", "download1");
+                if (download1 != null) {
+                    download1.remove("method_premium");
+                    sendForm(download1);
+                    checkErrors(downloadLink, false, passCode);
+                    dllink = getDllink();
+                }
+            }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            rtmpDownload(downloadLink, dllink);
+        }
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     private boolean oldStyle() {
@@ -504,7 +549,7 @@ public class VideoPremiumNet extends PluginForHost {
                 loginform.remove(null);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("redirect", "http://videopremium.tv/");
+                loginform.put("redirect", "http://" + CURRENT_DOMAIN + "/");
                 loginform.put("adcopy_response", code);
                 loginform.put("adcopy_challenge", sm.getChallenge(code));
                 sendForm(loginform);
