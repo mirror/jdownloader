@@ -17,6 +17,12 @@
 package jd.controlling;
 
 import jd.controlling.authentication.AuthenticationController;
+import jd.controlling.authentication.AuthenticationInfo;
+import jd.controlling.authentication.AuthenticationInfo.Type;
+import jd.http.Browser;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
 
 /**
  * @Deprecated Only here for stable plugin compatibility
@@ -32,6 +38,26 @@ public class HTACCESSController {
         String[] ret = AuthenticationController.getInstance().getLogins(url);
         if (ret == null) return null;
         return ret[0] + ":" + ret[1];
+    }
+
+    public void addValidatedAuthentication(String url, String username, String password) {
+        if (StringUtils.isEmpty(url)) return;
+        AuthenticationInfo.Type type = null;
+        if (url.startsWith("ftp")) {
+            type = Type.FTP;
+        } else if (url.startsWith("http")) {
+            type = Type.HTTP;
+        } else {
+            Log.L.info("Unknown Protocoll: " + url);
+            return;
+        }
+        AuthenticationInfo info = new AuthenticationInfo();
+        info.setType(type);
+        info.setEnabled(true);
+        info.setUsername(username);
+        info.setPassword(password);
+        info.setHostmask(Browser.getHost(url, true));
+        AuthenticationController.getInstance().add(info);
     }
 
     @Deprecated

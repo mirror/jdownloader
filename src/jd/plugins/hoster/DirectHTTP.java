@@ -417,7 +417,7 @@ public class DirectHTTP extends PluginForHost {
         return "";
     }
 
-    private String getBasicAuth(final DownloadLink link) {
+    private String[] getBasicAuth(final DownloadLink link) {
         String url;
         if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
             url = link.getHost();
@@ -432,7 +432,7 @@ public class DirectHTTP extends PluginForHost {
         } catch (final Exception e) {
             return null;
         }
-        return "Basic " + Encoding.Base64Encode(username + ":" + password);
+        return new String[] { ("Basic " + Encoding.Base64Encode(username + ":" + password)), username, password };
     }
 
     public String getCustomFavIconURL(DownloadLink link) {
@@ -590,11 +590,13 @@ public class DirectHTTP extends PluginForHost {
             }
 
             if (urlConnection.getResponseCode() == 401) {
-                basicauth = this.getBasicAuth(downloadLink);
-                if (basicauth == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed")); }
+                String[] basicauthInfo = this.getBasicAuth(downloadLink);
+                if (basicauthInfo == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed")); }
+                basicauth = basicauthInfo[0];
                 this.br.getHeaders().put("Authorization", basicauth);
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 if (urlConnection.getResponseCode() == 401) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed")); }
+                HTACCESSController.getInstance().addValidatedAuthentication(downloadLink.getDownloadURL(), basicauthInfo[1], basicauthInfo[2]);
             }
             if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             downloadLink.setProperty("auth", basicauth);
