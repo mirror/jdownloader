@@ -217,6 +217,7 @@ public class PremiumTo extends PluginForHost {
             login(br, acc);
             showMessage(link, "Phase 2/3: Get link");
             int connections = getConnections(link.getHost());
+            if (link.getChunks() == 1) connections = 1;
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium.to/getfile.php?link=" + url, true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
@@ -241,7 +242,14 @@ public class PremiumTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
             }
             showMessage(link, "Phase 3/3: Download...");
-            dl.startDownload();
+            try {
+                dl.startDownload();
+            } catch (PluginException ex) {
+                if (link.getChunks() == 1) throw ex;
+                // Limit chunks to 1
+                link.setChunks(1);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
         } finally {
             br.setFollowRedirects(dofollow);
             if (link.getHost().equals("share-online.biz")) {
