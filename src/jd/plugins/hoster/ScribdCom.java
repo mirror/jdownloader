@@ -185,9 +185,9 @@ public class ScribdCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setFollowRedirects(true);
-        br.getPage("https://www.scribd.com");
+        br.getPage("http://de.scribd.com/csrf_token?href=http%3A%2F%2Fde.scribd.com%2F");
 
-        final String thisToken = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([a-z0-9]+)\"").getMatch(0);
+        final String thisToken = br.getRegex("\"csrf_token\":\"([^<>\"]*?)\"").getMatch(0);
         if (thisToken == null) {
             logger.warning("Login broken!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

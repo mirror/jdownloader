@@ -52,8 +52,9 @@ public class AnySendCom extends PluginForHost {
         return "http://www.anysend.com/terms.html";
     }
 
-    private static StringContainer agent   = new StringContainer();
-    private final String           NOSLOTS = ">No slow download slots available";
+    private static StringContainer agent    = new StringContainer();
+    private final String           NOSLOTS  = ">No slow download slots available";
+    private static final String    MAINPAGE = "<div class=\"download\\-description\">";
 
     public static class StringContainer {
         public String string = null;
@@ -95,7 +96,9 @@ public class AnySendCom extends PluginForHost {
             br.setCookie("http://www.anysend.com/", "PAPVisitorId", visitorid);
             continuelink += visitorid;
             br.getPage(continuelink);
-            if (br.containsHTML(">Your download is no longer available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML(">Your download is no longer available|>Your file is not ready for download yet")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // Check if we're on the mainpage
+            if (br.containsHTML(MAINPAGE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("class=\"filename\">([^<>\"]+)</h1>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex(">File Name: (.*?)<").getMatch(0);
@@ -117,6 +120,8 @@ public class AnySendCom extends PluginForHost {
                 }
             }
         } else {
+            // Check if we're on the mainpage
+            if (br.containsHTML(MAINPAGE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<title>([^<>\"]*?)download \\| AnySend</title>").getMatch(0);
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

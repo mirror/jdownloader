@@ -53,6 +53,13 @@ public class Antena3ComSalon extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null && !redirect.contains("antena3.com/")) {
+            decryptedLinks.add(createDownloadlink(redirect));
+            return decryptedLinks;
+        } else if (redirect != null) {
+            br.getPage(redirect);
+        }
         if (br.containsHTML("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>") || br.containsHTML(">El contenido al que estás intentando acceder no existe<")) {
             final DownloadLink dl = createDownloadlink(link.toString().replace("antena3.com/", "antena3decrypted.com/"));
             dl.setAvailable(false);
