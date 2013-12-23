@@ -1,6 +1,5 @@
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
-import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -374,10 +373,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
                             setTimeout(5 * 60 * 1000);
                         }
 
-                        @Override
-                        public ModalityType getModalityType() {
-                            return ModalityType.MODELESS;
-                        }
                     }).getCloseReason()) {
 
                         new RouterSendAction(this).actionPerformed(null);
