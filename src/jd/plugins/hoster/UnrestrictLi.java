@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -46,7 +45,8 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
-    private static Object LOCK = new Object();
+    private static Object                                  LOCK               = new Object();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public UnrestrictLi(PluginWrapper wrapper) {
         super(wrapper);
@@ -92,16 +92,11 @@ public class UnrestrictLi extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
-        return true;
-    }
-
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         showMessage(downloadLink, "Task 1: Check URL validity!");
         requestFileInformation(downloadLink);
         showMessage(downloadLink, "Task 2: Download begins!");
-        handleDL(downloadLink, downloadLink.getDownloadURL());
+        handleDL(null, downloadLink, downloadLink.getDownloadURL());
     }
 
     @Override
@@ -115,14 +110,14 @@ public class UnrestrictLi extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         showMessage(link, "Task 1: Check URL validity!");
         requestFileInformation(link);
         showMessage(link, "Task 2: Download begins!");
-        handleDL(link, link.getDownloadURL());
+        handleDL(account, link, link.getDownloadURL());
     }
 
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         setBrowser();
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
@@ -146,27 +141,27 @@ public class UnrestrictLi extends PluginForHost {
         } else if (br.containsHTML("invalid\":\"Host is not supported or unknown link format")) {
             logger.info("Unknown link format");
             MessageDialog("Error", "Unknown link format", false);
-            removeHostFromMultiHost(link, acc);
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"You are not allowed to download from this host")) {
             logger.info("You are not allowed to download from this host");
             MessageDialog("Error", "You are not allowed to download from this host", false);
-            removeHostFromMultiHost(link, acc);
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"Host is down")) {
             logger.info("Host is down");
             MessageDialog("Error", "Host is down", false);
-            removeHostFromMultiHost(link, acc);
+            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"You have reached your total daily limit\\. \\(Fair Use\\)")) {
             logger.info("You have reached your total daily limit. (Fair Use)");
             MessageDialog("Error", "You have reached your total daily limit. (Fair Use)", false);
-            removeHostFromMultiHost(link, acc);
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else if (br.containsHTML("invalid\":\"You have reached your daily limit for this host")) {
             logger.info("You have reached your daily limit for this host");
             MessageDialog("Error", "You have reached your daily limit for this host", false);
-            removeHostFromMultiHost(link, acc);
+            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } else if (br.containsHTML("invalid\":\"This link has been reported and blocked")) {
             logger.info("This link has been reported and blocked");
@@ -175,7 +170,7 @@ public class UnrestrictLi extends PluginForHost {
         } else if (br.containsHTML("invalid\":\"Error receiving page") || br.containsHTML("\"errormessage\":\"Error receiving page")) {
             logger.info("Error receiving page");
             if (link.getLinkStatus().getRetryCount() <= 3) { throw new PluginException(LinkStatus.ERROR_RETRY, "Server error"); }
-            removeHostFromMultiHost(link, acc);
+            tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
         } else if (br.containsHTML("Expired session\\. Please sign in")) {
             if (link.getLinkStatus().getRetryCount() >= 3) {
                 link.getLinkStatus().setRetryCount(0);
@@ -191,7 +186,7 @@ public class UnrestrictLi extends PluginForHost {
         showMessage(link, "Task 2: Download begins!");
         generated = generated.replaceAll("\\\\/", "/");
         try {
-            handleDL(link, generated);
+            handleDL(acc, link, generated);
             return;
         } catch (PluginException e1) {
             try {
@@ -203,29 +198,21 @@ public class UnrestrictLi extends PluginForHost {
             /* START Possible Error Messages */
             if (br.containsHTML("Invalid API response\\.")) {
                 logger.info("Invalid API response.");
-                MessageDialog("Error", "Invalid API response", false);
-                removeHostFromMultiHost(link, acc);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             } else if (br.containsHTML("Host not supported\\.")) {
                 logger.info("Host not supported.");
-                MessageDialog("Error", "Host not supported", false);
-                removeHostFromMultiHost(link, acc);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             } else if (br.containsHTML("Error downloading file\\.")) {
                 logger.info("Error downloading file.");
                 MessageDialog("Error", "Error downloading file", false);
-                removeHostFromMultiHost(link, acc);
+                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("Invalid URL returned\\.")) {
                 logger.info("Invalid URL returned.");
-                MessageDialog("Error", "Invalid URL returned", false);
-                removeHostFromMultiHost(link, acc);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             } else if (br.containsHTML("Wrong server\\.")) {
                 logger.info("Wrong server.");
-                MessageDialog("Error", "Wrong server", false);
-                removeHostFromMultiHost(link, acc);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
             } else if (br.containsHTML("Request denied")) {
                 logger.info("Request denied. Please wait at least 5 seconds before refreshing. (Flooding)");
                 MessageDialog("Error", "Request denied. Please wait at least 5 seconds before refreshing. (Flooding)", false);
@@ -244,7 +231,7 @@ public class UnrestrictLi extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private void handleDL(DownloadLink link, String generated) throws Exception {
+    private void handleDL(final Account acc, final DownloadLink link, String generated) throws Exception {
         if (generated.startsWith("https")) {
             generated = generated.replace("https://", "http://");
         }
@@ -284,10 +271,26 @@ public class UnrestrictLi extends PluginForHost {
             }
             return;
         } else {
+            if (dl.getConnection().getResponseCode() == 503) {
+                logger.info("unrestrict.li: 503 server error");
+                if (acc == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 server error", 10 * 60 * 1000l);
+                int timesFailed = link.getIntegerProperty("timesfailedunrestrictli_servererror503", 0);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 10) {
+                    timesFailed++;
+                    link.setProperty("timesfailedunrestrictli_servererror503", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "503 server error");
+                } else {
+                    link.setProperty("timesfailedunrestrictli_servererror503", Property.NULL);
+                    logger.info("unrestrict.li: 503 server error -> Disabling current host");
+                    tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
+                }
+            }
             br.followConnection();
         }
         logger.info("unrestrict.li: Unknown error");
         int timesFailed = link.getIntegerProperty("timesfailedunrestrictli_unknown", 0);
+        link.getLinkStatus().setRetryCount(0);
         if (timesFailed <= 2) {
             timesFailed++;
             link.setProperty("timesfailedunrestrictli_unknown", timesFailed);
@@ -299,14 +302,44 @@ public class UnrestrictLi extends PluginForHost {
         }
     }
 
-    private void removeHostFromMultiHost(DownloadLink link, Account acc) throws PluginException {
-        Object supportedHosts = acc.getAccountInfo().getProperty("multiHostSupport", null);
-        if (supportedHosts != null && supportedHosts instanceof List) {
-            ArrayList<String> newList = new ArrayList<String>((List<String>) supportedHosts);
-            newList.remove(link.getHost());
-            acc.getAccountInfo().setProperty("multiHostSupport", newList);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
+        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, Long>();
+                hostUnavailableMap.put(account, unavailableMap);
+            }
+            /* wait to retry this host */
+            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            account.setProperty("unavailablemap", unavailableMap);
         }
+        throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    private ArrayList<String> getDisabledHosts(Account account) {
+        final Object disabledHostsObject = account.getAccountInfo().getProperty("disabledHosts", Property.NULL);
+        ArrayList<String> disabledHosts;
+        if (disabledHostsObject.equals(Property.NULL)) return new ArrayList<String>();
+        return (ArrayList<String>) disabledHostsObject;
+    }
+
+    @Override
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        if (getDisabledHosts(account).contains(downloadLink.getHost())) return false;
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    return false;
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(downloadLink.getHost());
+                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                }
+            }
+        }
+        return true;
     }
 
     private void showMessage(DownloadLink link, String message) {

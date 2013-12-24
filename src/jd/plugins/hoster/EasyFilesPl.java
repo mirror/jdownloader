@@ -184,6 +184,7 @@ public class EasyFilesPl extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
         if (dllink == null) {
             String dlid = link.getStringProperty(NICE_HOSTproperty + "dlid", null);
+            dlid = null;
             if (dlid == null) {
                 final String url = Encoding.urlEncode(link.getDownloadURL());
                 showMessage(link, "Phase 1/3: Starting internal download on " + NICE_HOST);
@@ -212,7 +213,6 @@ public class EasyFilesPl extends PluginForHost {
             }
             safeAPIRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_link&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
 
-            dllink = br.toString();
             if (br.toString().trim().equals("error")) {
                 logger.info(NICE_HOST + ": Final link is null_1");
                 int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull_1", 0);
@@ -227,6 +227,7 @@ public class EasyFilesPl extends PluginForHost {
                     tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
                 }
             }
+            dllink = br.toString();
             if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
                 logger.info(NICE_HOST + ": Final link is null_2");
                 int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull_2", 0);
@@ -319,6 +320,8 @@ public class EasyFilesPl extends PluginForHost {
         } else {
             if (br.containsHTML("premium_no_transfer 1")) {
                 STATUSCODE = 600;
+            } else if (br.containsHTML("> \\(Pobieranie zablokowane z powodu dubla")) {
+                STATUSCODE = 601;
             } else if (br.containsHTML(">Your IP address")) {
                 STATUSCODE = 666;
             } else {
@@ -439,6 +442,10 @@ public class EasyFilesPl extends PluginForHost {
                 /* No accounts available for host -> disable host */
                 statusMessage = "No accounts available for current host";
                 tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+            case 601:
+                /* No accounts available for host -> disable host */
+                statusMessage = "Too many API requests for the same link";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many API requests for the same link", 5 * 60 * 1000l);
             case 666:
                 /* IP banned -> disable account */
                 statusMessage = "Your IP has been banned";
