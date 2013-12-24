@@ -39,21 +39,22 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class EasyFilesPl extends PluginForHost {
+//IMPOORTANT: Sync with the EasyFilesPl code
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapids24.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
+public class Rapids24Pl extends PluginForHost {
 
     // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
-    private static final String                            NICE_HOST          = "easyfiles.pl";
-    private static final String                            API_HTTP           = "http://";
+    private static final String                            NICE_HOST          = "rapids24.pl";
+    private static final String                            API_HTTP           = "http://www.";
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     private int                                            STATUSCODE         = 0;
 
-    public EasyFilesPl(PluginWrapper wrapper) {
+    public Rapids24Pl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://" + NICE_HOST + "/cennik.html");
     }
@@ -245,7 +246,7 @@ public class EasyFilesPl extends PluginForHost {
         }
         showMessage(link, "Phase 3/3: Download begins!");
         int maxChunks = 0;
-        if (link.getBooleanProperty(EasyFilesPl.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(Rapids24Pl.NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
@@ -273,16 +274,16 @@ public class EasyFilesPl extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(EasyFilesPl.NOCHUNKS, false) == false) {
-                    link.setProperty(EasyFilesPl.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(Rapids24Pl.NOCHUNKS, false) == false) {
+                    link.setProperty(Rapids24Pl.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(EasyFilesPl.NOCHUNKS, false) == false) {
-                link.setProperty(EasyFilesPl.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(Rapids24Pl.NOCHUNKS, false) == false) {
+                link.setProperty(Rapids24Pl.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
