@@ -1,6 +1,13 @@
+AccountController_updateAccountInfo_status_logins_wrong=Λανθασμένοι κωδικοί
+AccountController_updateAccountInfo_status_plugin_defect=Το πρόσθετο έληξε
+AccountController_updateAccountInfo_status_traffic_reached=Δεν απέμεινε Κίνηση
+AccountController_updateAccountInfo_status_uncheckable=Δεν είναι δυνατός ο έλεγχος του λογαριασμού
 AddContainerAction_delete_container_msg=Θέλετε να διαγράψετε το %s1 αφού γίνει προσθήκη των συνδέσμων στον JDownloader;
 AddContainerAction_delete_container_title=Διαγραφή των Container;
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Πρόσβαση στις Ρυθμίσεις των Captchas
+DeleteOption_final_delete=Διαγραφή αρχείων από το δίσκο
+DeleteOption_no_delete=Να μην γίνει διαγραφή αρχείων
+DeleteOption_recycle=Μετακίνηση αρχείων στον Κάδο εάν γίνεται
 DisableRevFilesPackageRulee_rule_name=Απενεργοποίηση των αρχείων *.rev
 DownloadLink_setSkipped_statusmessage=Έγινε παράλειψη
 DownloadLink_setSkipped_statusmessage_account=Παραλείφθηκε - Ο λογαριασμός λείπει
