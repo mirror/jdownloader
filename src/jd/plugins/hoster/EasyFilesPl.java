@@ -184,7 +184,6 @@ public class EasyFilesPl extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
         if (dllink == null) {
             String dlid = link.getStringProperty(NICE_HOSTproperty + "dlid", null);
-            dlid = null;
             if (dlid == null) {
                 final String url = Encoding.urlEncode(link.getDownloadURL());
                 showMessage(link, "Phase 1/3: Starting internal download on " + NICE_HOST);
