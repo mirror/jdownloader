@@ -82,7 +82,7 @@ public class FourSaveFileCom extends PluginForHost {
     private final String               DOMAINS                      = "(4savefile\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi|freedl)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi|freedl|predl)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              supportsHTTPS                = true;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
@@ -708,7 +708,7 @@ public class FourSaveFileCom extends PluginForHost {
             getPage(myAccount);
         }
         // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
+        if (!cbr.containsHTML("(>Pro account expire:<)")) {
             account.setProperty("free", true);
         } else {
             account.setProperty("free", false);
@@ -1462,7 +1462,7 @@ public class FourSaveFileCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
