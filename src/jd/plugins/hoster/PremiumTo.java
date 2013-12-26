@@ -52,6 +52,9 @@ public class PremiumTo extends PluginForHost {
         this.enablePremium("http://premium.to/");
         /* limit connections for share-online to one */
         connectionLimits.put("share-online.biz", 1);
+        /* limit connections for keep2share to one */
+        connectionLimits.put("keep2share.cc", 1);
+        connectionLimits.put("k2s.cc", 1);
     }
 
     @Override
@@ -217,7 +220,7 @@ public class PremiumTo extends PluginForHost {
             login(br, acc);
             showMessage(link, "Phase 2/3: Get link");
             int connections = getConnections(link.getHost());
-            if (link.getChunks() == 1) connections = 1;
+            if (link.getChunks() != -1) connections = link.getChunks();
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium.to/getfile.php?link=" + url, true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
@@ -245,7 +248,7 @@ public class PremiumTo extends PluginForHost {
             try {
                 dl.startDownload();
             } catch (PluginException ex) {
-                if (link.getChunks() == 1) throw ex;
+                if (connections == 1) throw ex;
                 // Limit chunks to 1
                 link.setChunks(1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
