@@ -63,7 +63,7 @@ public class UploaderJp extends PluginForHost {
         br.postPage(br.getURL(), "token=" + token);
         final String md5 = br.getRegex("MD5 \\| ([a-z0-9]+)").getMatch(0);
         if (md5 != null) downloadLink.setMD5Hash(md5);
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(http://download\\d+\\.getuploader\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

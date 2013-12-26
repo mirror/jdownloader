@@ -111,6 +111,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Cache-Control", null);
         prepBr.getHeaders().put("Pragma", null);
+        prepBr.setFollowRedirects(true);
         return prepBr;
     }
 }
