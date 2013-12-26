@@ -9,3 +9,4 @@ literally_router=UPnP router
 literally_service_type=Typ služby
 malformedservicetype=Typ služby je neplatný, skúste automatické nastavenie UPnP.
 malformedurl=Kontrolné URL je neplatné. Skúste UPnP autonastavenie.
+servicetype_help=Zadejte typ služby (např. urn:schemas-upnp-org:service:ConnectionManager:1)
