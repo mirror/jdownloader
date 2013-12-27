@@ -302,7 +302,7 @@ public class UnrestrictLi extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -312,21 +312,12 @@ public class UnrestrictLi extends PluginForHost {
             }
             /* wait to retry this host */
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-            account.setProperty("unavailablemap", unavailableMap);
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private ArrayList<String> getDisabledHosts(Account account) {
-        final Object disabledHostsObject = account.getAccountInfo().getProperty("disabledHosts", Property.NULL);
-        ArrayList<String> disabledHosts;
-        if (disabledHostsObject.equals(Property.NULL)) return new ArrayList<String>();
-        return (ArrayList<String>) disabledHostsObject;
-    }
-
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
-        if (getDisabledHosts(account).contains(downloadLink.getHost())) return false;
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
