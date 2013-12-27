@@ -52,22 +52,28 @@ public class SmotriCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("class=\"top\\-info\\-404\">|Видео не прошло модерацию<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.getURL().contains("/video/view/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Confirm that we're over 18 years old if necessary
         final String ageconfirm = br.getRegex("\"(/video/view/\\?id=v[a-z0-9]+\\&confirm=[A-Za-z0-9]+)\"").getMatch(0);
         if (ageconfirm != null) br.getPage("http://smotri.com" + ageconfirm);
         String filename = br.getRegex("itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         final String context = br.getRegex("addVariable\\(\\'context\\', \"(.*?)\"").getMatch(0);
         if (filename == null || context == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
         br.postPage("http://smotri.com/video/view/url/bot/", "video_url=1&ticket=" + fid);
+        if (br.containsHTML("\"_pass_protected\":1")) {
+            downloadLink.getLinkStatus().setStatusText("Password protected links are not supported yet");
+            downloadLink.setName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        }
         DLLINK = br.getRegex("\"_vidURL_mp4\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"_vidURL\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = DLLINK.replace("\\", "");
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -90,6 +96,7 @@ public class SmotriCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("\"_pass_protected\":1")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not supported yet"); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

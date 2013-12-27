@@ -61,12 +61,6 @@ public class YunFileCom extends PluginForHost {
         // this.setStartIntervall(15 * 1000l);
     }
 
-    // public void correctDownloadLink(DownloadLink link) {
-    // link.setUrlDownload(link.getDownloadURL().replaceAll("(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?|fs/)",
-    // "yunfile.com/file/").replaceFirst("\\.html$", "/"));
-    // if (!link.getDownloadURL().endsWith("/")) link.setUrlDownload(link.getDownloadURL() + "/");
-    // }
-
     private Browser prepBrowser(final Browser prepBr) {
         // define custom browser headers and language settings.
         if (agent.string == null) {
