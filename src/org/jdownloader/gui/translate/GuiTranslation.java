@@ -3974,4 +3974,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please copy & paste your script to the JDownloader Liveheader reconnect Section." })
     String ConvertCLRAction_actionPerformed_finished_msg();
 
+    @Default(lngs = { "en" }, values = { "Adopt Checksums" })
+    String ConfirmHashValuesAction();
+
 }

@@ -27,6 +27,7 @@ import org.jdownloader.gui.views.components.packagetable.context.SetCommentActio
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
 import org.jdownloader.gui.views.downloads.action.CollapseExpandContextAction;
+import org.jdownloader.gui.views.downloads.action.ConfirmHashValuesAction;
 import org.jdownloader.gui.views.downloads.action.CopyGenericContextAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
@@ -116,6 +117,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(opt = new OptionalContainer(false));
         opt.add(CollapseExpandContextAction.class);
         opt.add(CopyGenericContextAction.class);
+        opt.add(ConfirmHashValuesAction.class);
         return mr;
     }
 
