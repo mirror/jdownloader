@@ -78,7 +78,6 @@ public class Uploadedto extends PluginForHost {
     private char[]                 FILENAMEREPLACES             = new char[] { '_' };
     private final String           ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
     private final String           EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
-    private final String           PREFER_PREMIUM_DOWNLOAD_API  = "PREFER_PREMIUM_DOWNLOAD_API_V2";
     private Pattern                IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static AtomicBoolean   hasDled                      = new AtomicBoolean(false);
     private static AtomicLong      timeBefore                   = new AtomicLong(0);
@@ -90,6 +89,8 @@ public class Uploadedto extends PluginForHost {
     private static final String    NOCHUNKS                     = "NOCHUNKS";
     private static final String    NORESUME                     = "NORESUME";
     private static final String    SSL_CONNECTION               = "SSL_CONNECTION";
+    private static final String    PREFER_PREMIUM_DOWNLOAD_API  = "PREFER_PREMIUM_DOWNLOAD_API_V2";
+    private static final String    DOWNLOAD_ABUSED              = "DOWNLOAD_ABUSED";
     private boolean                PREFERSSL                    = false;
 
     private String getProtocol() {
@@ -117,7 +118,13 @@ public class Uploadedto extends PluginForHost {
             br.getPage(getProtocol() + "uploaded.net/file/" + id + "/status");
             String ret = br.getRedirectLocation();
             if (ret != null && ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (ret != null && ret.contains("/410")) throw new PluginException(LinkStatus.ERROR_FATAL, "The requested file isn't available anymore!");
+            if (ret != null && ret.contains("/410")) {
+                if (dmcaDlEnabled()) {
+                    return AvailableStatus.UNCHECKABLE;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "The requested file isn't available anymore (410)!");
+                }
+            }
             String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
             String size = br.getRegex("[\r\n]([0-9\\, TGBMK]+)").getMatch(0);
             if (name == null || size == null) return AvailableStatus.UNCHECKABLE;
@@ -319,7 +326,7 @@ public class Uploadedto extends PluginForHost {
                             dl.setSha1Hash(sha1);
                             dl.setMD5Hash(null);
                         } else {
-                            dl.setAvailable(false);
+                            if (!dmcaDlEnabled()) dl.setAvailable(false);
                         }
                     }
                 }
@@ -1222,16 +1229,42 @@ public class Uploadedto extends PluginForHost {
         return !currentIP.equals(lastIP);
     }
 
-    private final boolean default_ppda = true;
-    private final boolean default_aaeh = false;
-    private final boolean default_eh   = false;
+    private boolean dmcaDlEnabled() {
+        final SubConfiguration thiscfg = this.getPluginConfig();
+        return (!thiscfg.getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, false) && thiscfg.getBooleanProperty(DOWNLOAD_ABUSED, false));
+    }
+
+    private final boolean default_ppda   = true;
+    private final boolean default_aaeh   = false;
+    private final boolean default_eh     = false;
+    private final boolean default_abused = false;
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter captchas in between downloads.")).setDefaultValue(default_aaeh));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(default_eh));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, JDL.L("plugins.hoster.uploadedto.preferAPIdownload", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.")).setDefaultValue(default_ppda));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.uploadedto.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(PREFERSSL));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, JDL.L("plugins.hoster.uploadedto.preferAPIdownload", "By enabling this feature, JDownloader downloads via custom download API. On failure it will auto revert to web method!\r\nBy disabling this feature, JDownloader downloads via Web download method. Web method is generally less reliable than API method.")).setDefaultValue(default_ppda);
+        getConfig().addEntry(cfe);
+        final String lang = System.getProperty("user.language");
+        String dmcmenutext = null;
+        if ("de".equalsIgnoreCase(lang)) {
+            dmcmenutext = "Aktiviere Download DMCA gesperrter Links?\r\n";
+            dmcmenutext += "Bedenke folgendes:\r\n";
+            dmcmenutext += "-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n";
+            dmcmenutext += "--> Falls diese wirklich offline sind, wird der korrekte Status erst beim Downloadstart angezeigt\r\n";
+            dmcmenutext += "--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt\r\n";
+            dmcmenutext += "-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können";
+        } else {
+            dmcmenutext = "Activate download of DMCA blocked links?";
+            dmcmenutext += "Note the following:\r\n";
+            dmcmenutext += "-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n";
+            dmcmenutext += "--> If they're really offline, the correct status will be shown on downloadstart\r\n";
+            dmcmenutext += "--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n";
+            dmcmenutext += "-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them";
+        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, JDL.L("plugins.hoster.uploadedto.downloadAbused", dmcmenutext)).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
 
     }
 

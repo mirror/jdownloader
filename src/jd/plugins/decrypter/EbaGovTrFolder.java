@@ -44,20 +44,48 @@ public class EbaGovTrFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h1>Video <small>([^<>\"]*?)</small></h1>").getMatch(0);
-        if (fpName == null) fpName = new Regex(parameter, "([a-z0-9\\-_]+)").getMatch(0);
-        final String[][] linkInfo = br.getRegex("\"(/video/izle/[a-z0-9]+)\" title=\"[^<>\"]+\">[\t\n\r ]+<h5>([^<>\"]*?)</h5>").getMatches();
-        if (linkInfo == null || linkInfo.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String singleLinkInfo[] : linkInfo) {
-            final DownloadLink dl = createDownloadlink("http://www.eba.gov.tr" + singleLinkInfo[0]);
-            dl.setName(Encoding.htmlDecode(singleLinkInfo[1].trim()) + ".mp4");
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+        if (fpName == null || fpName.equals("")) fpName = new Regex(parameter, "([a-z0-9\\-_]+)").getMatch(0);
+        int maxPage = 1;
+        final String[] pages = br.getRegex("\"/video/[A-Za-z0-9\\-_]+/\\d+\">(\\d+)</a>").getColumn(0);
+        if (pages != null && pages.length != 0) {
+            for (final String apage : pages) {
+                final int currentint = Integer.parseInt(apage);
+                if (currentint > maxPage) maxPage = currentint;
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
+        for (int i = 1; i <= maxPage; i++) {
+            logger.info("Decrypting page " + i + " of " + maxPage);
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption process aborted at page " + i + " of " + maxPage);
+                    return decryptedLinks;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
+            if (i > 1) {
+                br.getPage(parameter + "/" + i);
+            }
+            final String[][] linkInfo = br.getRegex("\"(/video/izle/[a-z0-9]+)\" title=\"[^<>\"]+\">[\t\n\r ]+<h5>([^<>\"]*?)</h5>").getMatches();
+            if (linkInfo == null || linkInfo.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String singleLinkInfo[] : linkInfo) {
+                final DownloadLink dl = createDownloadlink("http://www.eba.gov.tr" + singleLinkInfo[0]);
+                dl.setName(Encoding.htmlDecode(singleLinkInfo[1].trim()) + ".mp4");
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
+                decryptedLinks.add(dl);
+            }
+        }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

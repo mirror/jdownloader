@@ -75,12 +75,12 @@ public class TwitterCom extends PluginForDecrypt {
                 for (final String singleLink : piclinks) {
                     final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
                     dl._setFilePackage(fp);
+                    dl.setAvailable(true);
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {
                         // Not available in 0.9.581
                     }
-                    dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
             }

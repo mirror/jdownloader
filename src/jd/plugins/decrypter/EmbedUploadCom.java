@@ -25,30 +25,32 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "embedupload.com" }, urls = { "http://(www\\.)?embedupload\\.com/\\?([A-Z0-9]{2}|d)=[A-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "embedupload.com" }, urls = { "http://(www\\.)?embedupload\\.(com|to)/\\?([A-Z0-9]{2}|d)=[A-Z0-9]+" }, flags = { 0 })
 public class EmbedUploadCom extends PluginForDecrypt {
 
     public EmbedUploadCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String CURRENT_DOMAIN = "embedupload.to";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("embedupload.com/", "embedupload.to/");
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("Copyright Abuse <br>") || br.containsHTML("Invalid file name <")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (parameter.contains("embedupload.com/?d=")) {
+        if (parameter.contains(CURRENT_DOMAIN + "/?d=")) {
             String embedUploadDirectlink = br.getRegex("div id=\"embedupload\" style=\"padding\\-left:43px;padding\\-right:20px;padding\\-bottom:20px;font\\-size:17px;font\\-style:italic\" >[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-            if (embedUploadDirectlink == null) embedUploadDirectlink = br.getRegex("\"(http://(www\\.)?embedupload\\.com/\\?EU=[A-Z0-9]+\\&urlkey=[A-Za-z0-9]+)\"").getMatch(0);
+            if (embedUploadDirectlink == null) embedUploadDirectlink = br.getRegex("(\"|\\')(http://(www\\.)?embedupload\\.(com|to)/\\?EU=[A-Z0-9]+\\&urlkey=[A-Za-z0-9]+)(\"|\\')").getMatch(1);
             if (embedUploadDirectlink != null) {
                 decryptedLinks.add(createDownloadlink("directhttp://" + embedUploadDirectlink));
             }
             String[] redirectLinks = br.getRegex("style=\"padding\\-left:43px;padding\\-right:20px;padding\\-bottom:20px;font-size:17px;font\\-style:italic\" >[\t\r\n ]+<a href=\"(http://.*?)\"").getColumn(0);
-            if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("\"(http://(www\\.)?embedupload\\.com/\\?[A-Z0-9]{2}=[A-Z0-9]+)\"").getColumn(0);
+            if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("(\"|\\')(http://(www\\.)?embedupload\\.(com|to)/\\?[A-Z0-9]{2}=[A-Z0-9]+)(\"|\\')").getColumn(1);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 if (br.containsHTML("You can download from these site : ")) {
                     logger.info("Link might be offline: " + parameter);
@@ -94,6 +96,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
     private String getSingleLink() {
         String link = br.getRegex("link on a new browser window : ([^<>\"]*?)</b>").getMatch(0);
         if (link == null) link = br.getRegex("You should click on the download link : <a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (link == null) link = br.getRegex("File hosting link:[\t\n\r ]+<b>[\t\n\r ]+<a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
         return link;
     }
 

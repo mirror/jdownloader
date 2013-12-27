@@ -119,14 +119,16 @@ public class YunFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followConnection();
-        if (br.containsHTML("<title> \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>|Access denied<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title> \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Access denied
+        if (br.containsHTML("Access denied<|资源已被禁止访问</span>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Not found
+        if (br.containsHTML("<span>资源未找到</span>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null, filesize = null;
-        if (br.getURL().matches("http://page\\d+\\.yunfile.com/fs/[a-z0-9]+/")) {
-            filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
-        } else {
-            filename = br.getRegex("class=\"title\">Downloading:\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
-        }
+        // if (br.getURL().matches("http://page\\d+\\.yunfile.com/fs/[a-z0-9]+/")) ;
+        filename = br.getRegex("class=\"title\">Downloading:\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
         filesize = br.getRegex("文件大小: <b>([^<>\"]*?)</b>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("File Size: <b>([^<>\"]*?)</b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -156,20 +158,17 @@ public class YunFileCom extends PluginForHost {
             freeContinueLink = domain + "/file/down/" + userid + "/" + fileid + ".html";
         }
         if (!br.getURL().contains(domain)) br.getPage(domain + "/file/" + fileid + "/");
-        // Waittime is still skippable
+        // Check if captcha needed
+        if (br.containsHTML("verifyimg/getPcv\\.html")) {
+            // final String code = getCaptchaCode("http://yunfile.com/verifyimg/getPcv.html", downloadLink);
+            // freeContinueLink = freeContinueLink.replace(".html", "/" + Encoding.urlEncode(code) + ".html");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Captcha handling is broken at the moment");
+        }
         int wait = 30;
         String shortWaittime = br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
         if (shortWaittime != null) wait = Integer.parseInt(shortWaittime);
         sleep(wait * 1001l, downloadLink);
-        // Check if captcha needed
-        if (br.containsHTML("verifyimg/getPcv\\.html")) {
-            // final String code = getCaptchaCode("http://yunfile.com/verifyimg/getPcv.html", downloadLink);
-            // br.getPage(freeContinueLink);
-            // if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Captcha handling broken");
-        } else {
-            br.getPage(freeContinueLink);
-        }
+        br.getPage(freeContinueLink);
 
         /** Check here if the plugin is broken */
         final String vid1 = br.getRegex("name=\"vid1\" value=\"([a-z0-9]+)\"").getMatch(0);
@@ -177,7 +176,10 @@ public class YunFileCom extends PluginForHost {
         final String action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
 
-        if (vid == null || action == null || md5 == null || vid1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (vid == null || action == null || md5 == null || vid1 == null) {
+            // if (br.containsHTML("verifyimg/getPcv\\.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         String postData = "module=fileService&action=downfile&userId=" + userid + "&fileId=" + fileid + "&vid=" + vid + "&vid1=" + vid1 + "&md5=" + md5;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action, postData, false, 1);

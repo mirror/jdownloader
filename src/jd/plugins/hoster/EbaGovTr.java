@@ -58,7 +58,10 @@ public class EbaGovTr extends PluginForHost {
         String filename = null;
         if (addedlink.matches(FILELINK)) {
             if (br.containsHTML(">Aradığınız Sayfa Bulunamadı<|>Bu sayfa kaldırılmış olabilir\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String titlefirst = br.getRegex("class=\"active\">([^<>\"]*?)</li>").getMatch(0);
             filename = br.getRegex("<h3>[^<>\"]+<small>([^<>\"]*?)</small></h3>").getMatch(0);
+            if (titlefirst == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = Encoding.htmlDecode(titlefirst.trim() + " - " + Encoding.htmlDecode(filename.trim()));
             DLLINK = br.getRegex("\"(/download\\.php\\?type=[^<>\"]*?)\"").getMatch(0);
             // Maybe pdf link
             if (DLLINK == null) DLLINK = br.getRegex("<a class=\"btn success\".*?\"(/out\\.php\\?u=http://[^<>\"]*?)\"").getMatch(0);

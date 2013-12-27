@@ -936,6 +936,8 @@ public class RyuShareCom extends PluginForHost {
                     if (dlform == null)
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
+                    // This should never happen here
+                    if (br.containsHTML("class=\"err\">Skipped countdown</")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 1 * 60 * 1000l); }
                     sendForm(dlform);
                     checkErrors(downloadLink, account, true);
                     getDllink();
