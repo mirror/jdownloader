@@ -22,6 +22,7 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -33,6 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-debrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
@@ -52,11 +54,18 @@ public class SimplyDebridCom extends PluginForHost {
         return "http://simply-debrid.com/privacy.php";
     }
 
+    private void prepareBrowser(Browser br) {
+        if (br != null) {
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:26.0) Gecko/20100101 Firefox/26.0");
+        }
+    }
+
     private boolean createSession(Account account) {
         String user = Encoding.urlEncode(account.getUser());
         String pw = Encoding.urlEncode(account.getPass());
         String page = "";
         try {
+            prepareBrowser(br);
             page = br.getPage("http://simply-debrid.com/api.php?login=1&u=" + user + "&p=" + pw);
         } catch (Exception e) {
             return false;
@@ -72,6 +81,7 @@ public class SimplyDebridCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
+        prepareBrowser(br);
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         String user = Encoding.urlEncode(account.getUser());
@@ -127,6 +137,7 @@ public class SimplyDebridCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account account) throws Exception {
+        prepareBrowser(br);
         String url = link.getDownloadURL();
         if (url.contains("clz.to/")) {
             url = "http://cloudzer.net/file/" + new Regex(url, "([A-Za-z0-9]+)/?$").getMatch(0);
@@ -236,7 +247,7 @@ public class SimplyDebridCom extends PluginForHost {
             }
             if (br.containsHTML("php_network_getaddresses: getaddrinfo failed: No address associated with hostname")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         }
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && !StringUtils.contains(dl.getConnection().getContentType(), "application/")) {
             br.followConnection();
             logger.severe("Simply-debrid(Error): " + dllink);
             /*

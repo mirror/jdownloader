@@ -264,21 +264,24 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             }
 
                             // workaround for gnome 3 transparency bug
-                            if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux() && new DesktopSupportLinux().isGnomeDesktop()) {
-                                java.awt.Robot robo = new java.awt.Robot();
-                                Color tmp, newColor;
-                                int cr, cb, cg;
-                                float alpha;
-                                for (int y = 0; y < img.getHeight(); y++) {
-                                    newColor = robo.getPixelColor(1, y);
-                                    for (int x = 0; x < img.getWidth(); x++) {
-                                        tmp = new Color(img.getRGB(x, y));
-                                        alpha = ((img.getRGB(x, y) >> 24) & 0xFF) / 255F;
-                                        cr = (int) (alpha * tmp.getRed() + (1 - alpha) * newColor.getRed());
-                                        cg = (int) (alpha * tmp.getGreen() + (1 - alpha) * newColor.getGreen());
-                                        cb = (int) (alpha * tmp.getBlue() + (1 - alpha) * newColor.getBlue());
-                                        tmp = new Color(cr, cg, cb);
-                                        img.setRGB(x, y, tmp.getRGB());
+                            if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux()) {
+                                DesktopSupportLinux desktop = new DesktopSupportLinux();
+                                if (desktop.isGnomeDesktop() || desktop.isXFCEDesktop()) {
+                                    java.awt.Robot robo = new java.awt.Robot();
+                                    Color tmp, newColor;
+                                    int cr, cb, cg;
+                                    float alpha;
+                                    for (int y = 0; y < img.getHeight(); y++) {
+                                        newColor = robo.getPixelColor(1, y);
+                                        for (int x = 0; x < img.getWidth(); x++) {
+                                            tmp = new Color(img.getRGB(x, y));
+                                            alpha = ((img.getRGB(x, y) >> 24) & 0xFF) / 255F;
+                                            cr = (int) (alpha * tmp.getRed() + (1 - alpha) * newColor.getRed());
+                                            cg = (int) (alpha * tmp.getGreen() + (1 - alpha) * newColor.getGreen());
+                                            cb = (int) (alpha * tmp.getBlue() + (1 - alpha) * newColor.getBlue());
+                                            tmp = new Color(cr, cg, cb);
+                                            img.setRGB(x, y, tmp.getRGB());
+                                        }
                                     }
                                 }
                             }
@@ -361,8 +364,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                         } catch (Throwable e) {
                             /*
-                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
-                             * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
+                             * on Gnome3, Unity, this can happen because icon might be blacklisted, see here http://www.webupd8.org/2011/04/how-to-re-enable
+                             * -notification-area.html
                              * 
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
                              * 
