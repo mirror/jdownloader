@@ -205,6 +205,7 @@ ConfirmAllContextmenuAction_context_add_and_start=Iniciar todas las Descargas
 ConfirmDeleteLinksDialog_layoutDialogContent_Recycle_2=Mover los Archivos Descargados a la Papelera de Reciclaje y eliminar los Enlaces
 ConfirmDeleteLinksDialog_layoutDialogContent_delete_2=Borrar los Archivos Descargados permanentemente del Disco Duro y remover los Enlaces
 ConfirmDeleteLinksDialog_layoutDialogContent_no_filedelete2=Mantener todos los Archivos Descargados - Y solo eliminar los Enlaces
+ConfirmHashValuesAction=Adoptar Checksums
 ConfirmLinksContextAction_getDontShowAgainLabelText_object_=Misma opción para todos los archivos afectados
 ConfirmOptionsAction_actionPerformed_all=Descargar Todo
 ConfirmOptionsAction_actionPerformed_deep=Iniciar análisis Profundo
