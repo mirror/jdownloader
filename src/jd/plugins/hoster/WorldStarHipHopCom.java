@@ -64,7 +64,7 @@ public class WorldStarHipHopCom extends PluginForHost {
         if (br.getURL().contains("worldstaruncut.com/")) {
             if (br.getURL().equals("http://www.worldstarhiphop.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             getURLUniversal();
-            filename = br.getRegex("<title>([^<>\"]*?) \\- World Star Uncut</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>]*?) \\- World Star Uncut</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<td width=\"607\" class=\"style4\">([^<>\"]*?) \\(\\*Warning\\*").getMatch(0);
         } else if (br.getURL().contains("worldstarcandy.com/")) {
             filename = br.getRegex("color:#023a70; font\\-size:28px;\">([^<>\"]*?)</span>").getMatch(0);
@@ -102,6 +102,7 @@ public class WorldStarHipHopCom extends PluginForHost {
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
+        filename = encodeUnicode(filename);
         String ext = ".mp4";
         if (!dllink.endsWith(".mp4")) ext = ".flv";
         downloadLink.setFinalFileName(filename + ext);
@@ -147,6 +148,21 @@ public class WorldStarHipHopCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(http://hw\\-videos\\.worldstarhiphop\\.com/u/vid/.*?)\"").getMatch(0);
         }
+    }
+
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

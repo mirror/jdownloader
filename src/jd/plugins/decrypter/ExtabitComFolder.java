@@ -27,7 +27,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
@@ -46,11 +45,15 @@ public class ExtabitComFolder extends PluginForDecrypt {
             if (correctedLink != null)
                 param.setCryptedUrl("http://extabit.com/folder/" + correctedLink);
             else
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                return null;
         }
         String parameter = param.toString();
         br.setCookie("http://extabit.com", "language", "en");
         br.getPage(parameter);
+        if (br.containsHTML("id=\"page_404\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String id = new Regex(parameter, "extabit\\.com/folder/(\\d+)").getMatch(0);
         if (br.containsHTML("(>Folder doesn&#039;t exist\\.<|p>Unfortunatelly we didn&#039;t find requested folder\\.<|>Maybe folder was deleted by copyright owner\\.<)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the folder no longer exists."));
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);

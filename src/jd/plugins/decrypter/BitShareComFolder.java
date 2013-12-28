@@ -21,12 +21,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/\\?d=[a-z0-9]+" }, flags = { 0 })
 public class BitShareComFolder extends PluginForDecrypt {
@@ -40,7 +38,10 @@ public class BitShareComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("Folder does not contain any files")) return decryptedLinks;
-        if (br.containsHTML("Folder can not be found\\!")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Folder can not be found")) {
+            logger.info("Link offline (folder empty): " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<h1>View public folder \"(.*?)\"</h1>").getMatch(0);
         String[] links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/.*?)\"").getColumn(0);

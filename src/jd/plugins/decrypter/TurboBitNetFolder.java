@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -44,7 +45,12 @@ public class TurboBitNetFolder extends PluginForDecrypt {
             return null;
         }
         // rows = 100 000 makes sure that we only get one page with all links
-        br.getPage("http://turbobit.net/downloadfolder/gridFile?id_folder=" + id + "&_search=false&nd=&rows=100000&page=1");
+        try {
+            br.getPage("http://turbobit.net/downloadfolder/gridFile?id_folder=" + id + "&_search=false&nd=&rows=100000&page=1");
+        } catch (final BrowserException e) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("\"records\":0,\"total\":0,\"")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

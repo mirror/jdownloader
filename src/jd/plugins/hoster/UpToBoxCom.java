@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -49,6 +50,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(www\\.)?uptobox\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class UpToBoxCom extends PluginForHost {
@@ -551,26 +553,9 @@ public class UpToBoxCom extends PluginForHost {
         } else {
             // alternative xfileshare expire time, usually shown on 'extend
             // premium account' page
-            getPage("/?op=payments");
-            String expire = new Regex(correctedBR, "Premium(\\-| )Account expires?:([^\n\r]+)</center>").getMatch(1);
+            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
             if (expire != null) {
-                String tmpdays = new Regex(expire, "(\\d+)\\s+days?").getMatch(0);
-                String tmphrs = new Regex(expire, "(\\d+)\\s+hours?").getMatch(0);
-                String tmpmin = new Regex(expire, "(\\d+)\\s+minutes?").getMatch(0);
-                String tmpsec = new Regex(expire, "(\\d+)\\s+seconds?").getMatch(0);
-                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                long waittime = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
-                ai.setValidUntil(System.currentTimeMillis() + waittime);
-                try {
-                    maxPrem.set(3);
-                    account.setMaxSimultanDownloads(-1);
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                }
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
                 ai.setStatus("Premium User");
             } else {
                 ai.setExpired(true);
@@ -610,8 +595,7 @@ public class UpToBoxCom extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
+                if (!new Regex(correctedBR, "class=\"premium_time\"").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);

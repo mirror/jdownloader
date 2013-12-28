@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eba.gov.tr" }, urls = { "http://(www\\.)?eba\\.gov\\.tr/(dergi/goster/\\d+|video/izle/[a-z0-9]+|ses/dinle/[a-z0-9]+|gorsel/bak/[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eba.gov.tr" }, urls = { "http://(www\\.)?(eba\\.gov\\.tr/(video/izle/[a-z0-9]+|ses/dinle/[a-z0-9]+|gorsel/bak/[a-z0-9]+)|ebadecrypted\\.gov\\.tr/dergi/goster/\\d+)" }, flags = { 0 })
 public class EbaGovTr extends PluginForHost {
 
     public EbaGovTr(PluginWrapper wrapper) {
@@ -46,6 +46,10 @@ public class EbaGovTr extends PluginForHost {
     private static final String AUDIOLINK   = "http://(www\\.)?eba\\.gov\\.tr/ses/dinle/[a-z0-9]+";
     private static final String PICTURELINK = "http://(www\\.)?eba\\.gov\\.tr/gorsel/bak/[a-z0-9]+";
     private String              DLLINK      = null;
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("ebadecrypted.gov.tr/", "eba.gov.tr/"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {

@@ -130,8 +130,8 @@ public class SaveTv extends PluginForHost {
     }
 
     /**
-     * TODO: Known Bugs in API mode: API cannot differ between H.264 Mobile and normal videos -> Cannot show any error in case user chose H.264 but it's not
-     * available. --> NO FATAL bugs ---> Plugin will work fine with them!
+     * TODO: Known Bugs in API mode: API cannot differ between H.264 Mobile and normal videos -> Cannot show any error in case user chose
+     * H.264 but it's not available. --> NO FATAL bugs ---> Plugin will work fine with them!
      */
     // TODO: Remove info-dialogs Feb, 2014 and add a single dialog which only shows up one time, first usage of the plugin
 
@@ -523,6 +523,7 @@ public class SaveTv extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("Save.tv: Received HTML code instead of the file!");
             br.followConnection();
+            if (br.containsHTML(">Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment");
             downloadLink.setProperty(LASTFAILEDSTRING, LASTFAILED_PLUGIN_DEFECT);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil|artist|grup)[A-Za-z0-9_\\-]+/(?!fisiere|profil)[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class TriLuLiLuRo extends PluginForHost {
 
     private String              DLLINK                     = null;
@@ -58,6 +58,10 @@ public class TriLuLiLuRo extends PluginForHost {
     private static final String ONLYFORREGISTEREDUSERSTEXT = JDL.L("plugins.hoster.triluliluro.user", "This file is only downloadable for registered users!");
     private String              NONSTANDARDMD5             = null;
 
+    private static final String INVALIDLINKS               = "http://(www\\.)?trilulilu\\.ro/((video|canal|profil|artist|grup).+|[^<>\"/]/(fisiere|profil).+)";
+    private static final String TYPE_IMAGE                 = "http://(www\\.)?trilulilu\\.ro/imagini\\-.+";
+    private static final String TYPE_MUSIC                 = "http://(www\\.)?trilulilu\\.ro/muzica\\-.+";
+
     public TriLuLiLuRo(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.trilulilu.ro");
@@ -67,7 +71,8 @@ public class TriLuLiLuRo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // Link offline
@@ -85,23 +90,38 @@ public class TriLuLiLuRo extends PluginForHost {
         // Invalid link
         if (br.containsHTML(">Trilulilu 404<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
-        String filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"title\" content=\"Trilulilu \\- (.*?) - Muzică Diverse\" />").getMatch(0);
+        String filename = null;
+        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE)) {
+            filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Imagini  \\- Trilulilu\"").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = br.getRegex("<div class=\"img_player\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?\\.jpg)\"").getMatch(0);
+            if (DLLINK != null) DLLINK += "?size=original";
+            filename = Encoding.htmlDecode(filename.trim()) + ".jpg";
+            downloadLink.setFinalFileName(filename);
+        } else if (downloadLink.getDownloadURL().matches(TYPE_MUSIC)) {
+            filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Muzică.*? \\- Trilulilu\"").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        } else {
+            filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>Trilulilu \\- (.*?) - Muzică Diverse</title>").getMatch(0);
+                filename = br.getRegex("<meta name=\"title\" content=\"Trilulilu \\- (.*?) - Muzică Diverse\" />").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<div class=\"music_demo\">[\n\t\r ]+<h3>(.*?)\\.mp3 \\(demo 30 de secunde\\)</h3").getMatch(0);
-                    if (filename == null) filename = br.getRegex("<div class=\"hentry\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+                    filename = br.getRegex("<title>Trilulilu \\- (.*?) - Muzică Diverse</title>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<div class=\"music_demo\">[\n\t\r ]+<h3>(.*?)\\.mp3 \\(demo 30 de secunde\\)</h3").getMatch(0);
+                        if (filename == null) filename = br.getRegex("<div class=\"hentry\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+                    }
                 }
             }
+            if (filename == null) filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Video  \\- Trilulilu\"").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = Encoding.htmlDecode(filename.trim());
+            if (br.containsHTML(VIDEOPLAYER))
+                downloadLink.setFinalFileName(filename + ".mp4");
+            else
+                downloadLink.setFinalFileName(filename + ".mp3");
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename.trim());
-        if (br.containsHTML(VIDEOPLAYER))
-            downloadLink.setFinalFileName(filename + ".mp4");
-        else
-            downloadLink.setFinalFileName(filename + ".mp3");
         return AvailableStatus.TRUE;
     }
 
@@ -347,7 +367,10 @@ public class TriLuLiLuRo extends PluginForHost {
         if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (br.containsHTML(COUNTRYBLOCK)) throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
         if (br.containsHTML(ONLYFORREGISTEREDUSERS)) throw new PluginException(LinkStatus.ERROR_FATAL, ONLYFORREGISTEREDUSERSTEXT);
-        getDownloadUrl(downloadLink);
+        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE)) {
+        } else {
+            getDownloadUrl(downloadLink);
+        }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int maxchunks = -2;
         // Videos have chunk-limits!

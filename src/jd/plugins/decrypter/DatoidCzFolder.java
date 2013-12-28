@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -34,39 +35,44 @@ public class DatoidCzFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final boolean USE_API = true;
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("1");
         final String parameter = param.toString().replace("datoid.sk/", "datoid.cz/");
-        br.getPage(parameter);
-
-        final String[] pages = br.getRegex("class=\"ajax\">(\\d+)</a>").getColumn(0);
-        if (pages != null) {
-            for (final String aPage : pages) {
-                if (!allPages.contains(aPage)) allPages.add(aPage);
-            }
-        }
-        logger.info("Found " + allPages.size() + " pages, starting to decrypt...");
-        for (final String currentPage : allPages) {
-            logger.info("Decrypting page " + currentPage + " / " + allPages.size());
-            if (!currentPage.equals("1")) br.getPage(parameter + "?current-page=" + currentPage);
-
-            // br.getPage("http://api.datoid.cz/v1/getfilesoffolder?url=" + Encoding.urlEncode(parameter));
-            //
-            // final String[] links = br.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
-            // if (links == null || links.length == 0) {
-            // logger.warning("Decrypter broken for link: " + parameter);
-            // return null;
-            // }
-
-            final String[] links = br.getRegex("\"(/[^<>\"]*?)\">[\t\n\r ]+<div class=\"thumb").getColumn(0);
+        if (USE_API) {
+            br.getPage("http://api.datoid.cz/v1/getfilesoffolder?url=" + Encoding.urlEncode(parameter));
+            final String[] links = br.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (final String singleLink : links)
-                decryptedLinks.add(createDownloadlink("http://datoid.cz" + singleLink));
+            for (final String alink : links) {
+                decryptedLinks.add(createDownloadlink(alink.replace("\\", "")));
+            }
+        } else {
+            br.getPage(parameter);
+            final String[] pages = br.getRegex("class=\"ajax\">(\\d+)</a>").getColumn(0);
+            if (pages != null) {
+                for (final String aPage : pages) {
+                    if (!allPages.contains(aPage)) allPages.add(aPage);
+                }
+            }
+            logger.info("Found " + allPages.size() + " pages, starting to decrypt...");
+            for (final String currentPage : allPages) {
+                logger.info("Decrypting page " + currentPage + " / " + allPages.size());
+                if (!currentPage.equals("1")) br.getPage(parameter + "?current-page=" + currentPage);
+
+                final String[] links = br.getRegex("\"(/[^<>\"]*?)\">[\t\n\r ]+<div class=\"thumb").getColumn(0);
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                for (final String singleLink : links)
+                    decryptedLinks.add(createDownloadlink("http://datoid.cz" + singleLink));
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "/slozka/[A-Za-z0-9]+/(.+)").getMatch(0));

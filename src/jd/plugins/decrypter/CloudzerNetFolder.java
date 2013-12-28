@@ -53,16 +53,24 @@ public class CloudzerNetFolder extends PluginForDecrypt {
         }
         final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String[][] links = br.getRegex("\"(file/[a-z0-9]+)/from/[a-z0-9]+\" class=\"file\" onclick=\"visit\\(\\$\\(this\\)\\)\">([^<>\"]*?)</a></h2>[\t\n\r ]+<small class=\"cL\" style=\"font\\-size:13px\">([^<>\"]*?)</small>").getMatches();
-        if (links == null || links.length == 0) {
+        final String[] folders = br.getRegex("\"(/folder/[a-z0-9]+)\" onclick=\"visit\\(\\$\\(this\\)\\)\">").getColumn(0);
+        if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink[] : links) {
-            final DownloadLink dl = createDownloadlink("http://cloudzer.net/" + singleLink[0]);
-            dl.setName(singleLink[1]);
-            dl.setDownloadSize(SizeFormatter.getSize(singleLink[1].replace(",", ".")));
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+        if (links != null && links.length != 0) {
+            for (final String singleLink[] : links) {
+                final DownloadLink dl = createDownloadlink("http://cloudzer.net/" + singleLink[0]);
+                dl.setName(singleLink[1]);
+                dl.setDownloadSize(SizeFormatter.getSize(singleLink[1].replace(",", ".")));
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+        }
+        if (folders != null && folders.length != 0) {
+            for (final String folder : folders) {
+                decryptedLinks.add(createDownloadlink("http://cloudzer.net" + folder));
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
