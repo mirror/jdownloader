@@ -77,10 +77,11 @@ public class SaveTv extends PluginForHost {
     private static final String USEORIGINALFILENAME                                         = "USEORIGINALFILENAME";
     private static final String PREFERADSFREE                                               = "PREFERADSFREE";
     private static final String DOWNLOADONLYADSFREE                                         = "DOWNLOADONLYADSFREE";
+    private static final String DOWNLOADONLYADSFREE_RETRY_HOURS                             = "DOWNLOADONLYADSFREE_RETRY_HOURS";
     private final String        ADSFREEAVAILABLETEXT                                        = JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", "Video ist werbefrei verfügbar");
     private final String        ADSFREEANOTVAILABLE                                         = JDL.L("plugins.hoster.SaveTv.AdsFreeNotAvailable", "Video ist nicht werbefrei verfügbar");
     private static final String PREFERREDFORMATNOTAVAILABLETEXT                             = JDL.L("plugins.hoster.SaveTv.H264NotAvailable", "Das bevorzugte Format (H.264 Mobile) ist (noch) nicht verfügbar. Warte oder ändere die Einstellung!");
-    private final String        NOCUTAVAILABLETEXT                                          = JDL.L("plugins.hoster.SaveTv.noCutAvailable", "Für diese Sendung steht keine Schnittliste zur Verfügung");
+    private final String        NOCUTAVAILABLETEXT                                          = JDL.L("plugins.hoster.SaveTv.noCutAvailable", "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung");
     private static final String PREFERH264MOBILE                                            = "PREFERH264MOBILE";
     private final String        PREFERH264MOBILETEXT                                        = "H.264 Mobile Videos bevorzugen (diese sind kleiner)?";
     private static final String USEAPI                                                      = "USEAPI";
@@ -444,13 +445,15 @@ public class SaveTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         // Improvised workaround for http://svn.jdownloader.org/issues/10306
+        // TODO: Remove stupid workaround errorhandling once the ticket is closed
         final int premiumError = (int) getLongProperty(downloadLink, LASTFAILEDSTRING, -1l);
         if (premiumError > 0) {
             switch (premiumError) {
             case 1:
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 2:
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l);
+                final long userDefinedWaitHours = getLongProperty(this.getPluginConfig(), DOWNLOADONLYADSFREE_RETRY_HOURS, SaveTv.defaultNoAdsFreeAvailableRetryWaitHours);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
             case 3:
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l);
             default:
@@ -476,7 +479,8 @@ public class SaveTv extends PluginForHost {
         // User wants ads-free but it's not available -> Wait 12 hours, status can still change but probably won't
         if (this.getPluginConfig().getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
             downloadLink.setProperty(LASTFAILEDSTRING, LASTFAILED_PLUGIN_TEMPORARILY_UNAVAILABLE_NOCUTAVAILABLE);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l);
+            final long userDefinedWaitHours = getLongProperty(cfg, DOWNLOADONLYADSFREE_RETRY_HOURS, SaveTv.defaultNoAdsFreeAvailableRetryWaitHours);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
         }
         final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
         final boolean preferMobileVids = cfg.getBooleanProperty(PREFERH264MOBILE);
@@ -523,7 +527,7 @@ public class SaveTv extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("Save.tv: Received HTML code instead of the file!");
             br.followConnection();
-            if (br.containsHTML(">Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment");
+            if (br.containsHTML(">Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Die Aufnahme kann zum aktuellen Zeitpunkt nicht vollständig heruntergeladen werden");
             downloadLink.setProperty(LASTFAILEDSTRING, LASTFAILED_PLUGIN_DEFECT);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -878,7 +882,7 @@ public class SaveTv extends PluginForHost {
         return formattedFilename;
     }
 
-    public long getLongProperty(Property link, final String key, final long def) {
+    public long getLongProperty(final Property link, final String key, final long def) {
         try {
             return link.getLongProperty(key, def);
         } catch (final Throwable e) {
@@ -989,10 +993,11 @@ public class SaveTv extends PluginForHost {
         return "JDownloader's Save.tv Plugin helps downloading videoclips from Save.tv. Save.tv provides different settings for its downloads.";
     }
 
-    private final static String defaultCustomFilename           = "*videotitel**telecastid**endung*";
-    private final static String defaultCustomSeriesFilename     = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
-    private final static String defaultCustomSeperationMark     = "+";
-    private final static String defaultCustomStringForEmptyTags = "-";
+    private final static String defaultCustomFilename                   = "*videotitel**telecastid**endung*";
+    private final static String defaultCustomSeriesFilename             = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
+    private final static String defaultCustomSeperationMark             = "+";
+    private final static String defaultCustomStringForEmptyTags         = "-";
+    private final static int    defaultNoAdsFreeAvailableRetryWaitHours = 12;
 
     private void setConfigElements() {
         final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nWICHTIG: Aktiviert man die API, werden folgende Einstellungen ignoriert:\r\n-Benutzerdefinierte Dateinamen\r\n-Archiv-Crawler\r\n-Nur Aufnahmen mit angewandter Schnittliste laden\r\nAus technischen Gründen ist es (noch) nicht möglich, alle genannten Einstellungen beim aktivierter API auszugrauen um dem Benutzer visuelles Feedback zu geben, sorry!")).setDefaultValue(false);
@@ -1003,11 +1008,13 @@ public class SaveTv extends PluginForHost {
         final ConfigEntry grabArchives = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.grabArchive", "Archiv-Crawler aktivieren:\r\nKomplettes Archiv beim Hinzufügen folgender Adresse im Linkgrabber zeigen:\r\n'save.tv/STV/M/obj/user/usShowVideoArchive.cfm'?")).setDefaultValue(false).setEnabledCondidtion(useMobileAPI, false);
         getConfig().addEntry(grabArchives);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen schneller im Linkgrabber\r\nNachteil: Korrekte Dateinamen werden erst beim Downloadstart angezeigt")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (Nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry preferAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Aufnahmen mit angewandter Schnittliste bevorzugen?")).setDefaultValue(true);
         getConfig().addEntry(preferAdsFree);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DOWNLOADONLYADSFREE, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFree", "Nur Aufnahmen mit angewandter Schnittliste laden (zur Nutzung muss die Option\r\n'Aufnahmen mit angewandter Schnittliste bevorzugen' aktiviert sein)?")).setDefaultValue(false).setEnabledCondidtion(preferAdsFree, true));
+        final ConfigEntry downloadOnlyAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DOWNLOADONLYADSFREE, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFree", "Nur Aufnahmen mit angewandter Schnittliste laden?\r\nINFO: Zur Nutzung muss die Option\r\n'Aufnahmen mit angewandter Schnittliste bevorzugen' aktiviert sein.")).setDefaultValue(false).setEnabledCondidtion(preferAdsFree, true);
+        getConfig().addEntry(downloadOnlyAdsFree);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.DOWNLOADONLYADSFREE_RETRY_HOURS, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFreeRetryHours", "Zeit [in stunden] bis zum Neuversuch für Aufnahmen, die (noch) keine Schnittliste haben.\r\nINFO: Der standardwert beträgt 12 Stunden, um die Server nicht unnötig zu belasten."), 1, 24, 1).setDefaultValue(defaultNoAdsFreeAvailableRetryWaitHours).setEnabledCondidtion(downloadOnlyAdsFree, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Dateiname Einstellungen:"));
@@ -1028,7 +1035,7 @@ public class SaveTv extends PluginForHost {
         sbinfo.append("WICHTIG: Tags, zu denen die Daten fehlen , werden standardmäßig durch '-' (Bindestrich) ersetzt!\r\n");
         sbinfo.append("Fehlen z.B. die Daten zu *genre*, steht statt statt dem Genre dann ein Bindestrich ('-') an dieser Stelle im Dateinamen.");
         sbinfo.append("Gut zu wissen: Statt dem Bindestrich lässt sich hierfür unten auch ein anderes Zeichen bzw. Zeichenfolge definieren.\r\n");
-        sbinfo.append("Gut zu wissen: Bedenke, dass es für Filme und Serien unterschiedliche Tags gibt.\r\n");
+        sbinfo.append("Gut zu wissen: Für Filme und Serien gibt es unterschiedliche Tags.\r\n");
         sbinfo.append("Kaputtmachen kannst du mit den Einstellungen prinzipiell nichts also probiere es aus ;)\r\n");
         sbinfo.append("Tipp: Die Einstellungen lassen sich rechts oben wieder auf ihre Standardwerte zurücksetzen!\r\n");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()).setEnabledCondidtion(origName, false));
@@ -1376,4 +1383,36 @@ public class SaveTv extends PluginForHost {
         } catch (Throwable e) {
         }
     }
+
+    // private static void showFeatureDialogAll() {
+    // try {
+    // SwingUtilities.invokeAndWait(new Runnable() {
+    //
+    // @Override
+    // public void run() {
+    // try {
+    // String message = "";
+    // String title = null;
+    // title = "Save.tv Plugin - Features";
+    // message += "Hallo lieber save.tv Nutzer/liebe save.tv Nutzerin\r\n";
+    // message += "Das save.tv Plugin bietet folgende Features:\r\n";
+    // message += "- Automatisierter Download von save.tv Links (telecast-IDs)\r\n";
+    // message += "- Laden des kompletten save.tv Archivs über wenige Klicks\r\n";
+    // message += "- Benutzerdefinierte Dateinamen über ein Tag-System mit vielen Möglichkeiten\r\n";
+    // message += "- Und viele mehr...\r\n";
+    // message += "\r\n";
+    // message += "In JDownloader 0.9.581 findest du die Plugin Einstellungen unter:\r\n";
+    // message += "Einstellungen -> Anbieter -> save.tv -> Doppelklick oder anklicken und links unten auf 'Einstellungen'\r\n";
+    // message += "\r\n";
+    // message += "In der JDownloader 2 BETA findest du sie unter Einstellungen -> Plugin Einstellungen -> save.tv";
+    // message += getMessageEnd();
+    // JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE,
+    // JOptionPane.INFORMATION_MESSAGE, null);
+    // } catch (Throwable e) {
+    // }
+    // }
+    // });
+    // } catch (Throwable e) {
+    // }
+    // }
 }

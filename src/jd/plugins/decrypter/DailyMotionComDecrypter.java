@@ -132,6 +132,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             String username = new Regex(PARAMETER, "dailymotion\\.com/user/([A-Za-z0-9]+)").getMatch(0);
             if (username == null) username = new Regex(PARAMETER, "dailymotion\\.com/([A-Za-z0-9]+)").getMatch(0);
             br.getPage("http://www.dailymotion.com/" + username);
+            if (br.containsHTML("class=\"dmco_text nothing_to_see\"")) {
+                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
+                dl.setFinalFileName(username);
+                dl.setProperty("offline", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("class=\"dmco_text user_fullname\">([^<>\"]*?)</div>").getMatch(0);
             if (fpName == null) fpName = username;
             fpName = Encoding.htmlDecode(fpName.trim());

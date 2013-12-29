@@ -63,25 +63,16 @@ public class TwoSharedCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("var msg = \\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null;
         Form pwform = br.getForm(0);
         if (pwform != null && pwform.containsHTML("password") && !pwform.getAction().contains("paypal")) {
-            String passCode = downloadLink.getStringProperty("pass", null);
-            for (int i = 0; i <= 3; i++) {
-                passCode = passCode == null ? Plugin.getUserInput(null, downloadLink) : passCode;
-                pwform.put("userPass2", passCode);
-                br.submitForm(pwform);
-                pwform = br.getForm(0);
-                if (br.containsHTML("The password you have entered is not valid")) {
-                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                    passCode = null;
-                } else {
-                    downloadLink.setProperty("pass", passCode);
-                    break;
-                }
-            }
-            if (br.containsHTML("The password you have entered is not valid")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Wrong password entered"); }
+            downloadLink.getLinkStatus().setStatusText("This link is password protected");
+            filename = br.getRegex("align=\"center\">Download ([^<>\"]*?)</td>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+            return AvailableStatus.TRUE;
         }
-        String filename = br.getRegex("<h1>(.*?)</h1>\\s?download").getMatch(0);
+        filename = br.getRegex("<h1>(.*?)</h1>\\s?download").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h2>(.*?)\\sdownload</h2>").getMatch(0);
             if (filename == null) {
@@ -102,6 +93,24 @@ public class TwoSharedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        Form pwform = br.getForm(0);
+        if (pwform != null && pwform.containsHTML("password") && !pwform.getAction().contains("paypal")) {
+            String passCode = downloadLink.getStringProperty("pass", null);
+            for (int i = 0; i <= 3; i++) {
+                passCode = passCode == null ? Plugin.getUserInput(null, downloadLink) : passCode;
+                pwform.put("userPass2", passCode);
+                br.submitForm(pwform);
+                pwform = br.getForm(0);
+                if (br.containsHTML("The password you have entered is not valid")) {
+                    logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
+                    passCode = null;
+                } else {
+                    downloadLink.setProperty("pass", passCode);
+                    break;
+                }
+            }
+            if (br.containsHTML("The password you have entered is not valid")) { throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered"); }
+        }
         if (br.containsHTML("Your free download limit is over")) {
             final String minutes = br.getRegex("wait <span>(\\d+) minutes</span>\\.").getMatch(0);
             if (minutes != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001l);
