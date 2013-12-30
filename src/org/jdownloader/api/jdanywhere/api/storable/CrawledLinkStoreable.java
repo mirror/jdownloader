@@ -76,26 +76,22 @@ public class CrawledLinkStoreable implements Storable {
 		return link.getURL();
 	}
 
-	public String getPassword() {
+	 public String getPassword() {
 
-		if (link == null)
-			return null;
-		String returnValue = "";
-		ExtractionExtension extractor = (ExtractionExtension) ExtensionController
-				.getInstance().getExtension(ExtractionExtension.class)
-				._getExtension();
-		CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) link));
-		Archive archive = extractor.getArchiveByFactory(clf);
-		if (archive != null) {
-			for (String pwd : archive.getSettings().getPasswords()) {
-				if (returnValue != "")
-					returnValue += "/";
-				returnValue += pwd;
-			}
-		}
-		return returnValue;// getParentNode().getDownloadPassword(); //
-							// getDownloadLink().getDownloadPassword();
-	}
+        if (link == null) return null;
+        String returnValue = "";
+        ExtractionExtension extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
+        CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) link));
+        Archive archive = extractor.getArchiveByFactory(clf);
+        if (archive != null && archive.getSettings() != null && archive.getSettings().getPasswords() != null) {
+            for (String pwd : archive.getSettings().getPasswords()) {
+                if (returnValue != "") returnValue += "/";
+                returnValue += pwd;
+            }
+        }
+        return returnValue;// getParentNode().getDownloadPassword(); //
+                           // getDownloadLink().getDownloadPassword();
+    }
 
 	public String getDirectory() {
 		if (link == null)
