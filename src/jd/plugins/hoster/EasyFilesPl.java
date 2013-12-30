@@ -35,9 +35,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class EasyFilesPl extends PluginForHost {
@@ -194,17 +196,60 @@ public class EasyFilesPl extends PluginForHost {
             }
             showMessage(link, "Phase 2/3: Checking status of internal download on " + NICE_HOST);
             boolean success = false;
-            for (int i = 1; i <= 120; i++) {
-                apiRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
-                if (br.containsHTML("downloaded")) {
-                    success = true;
-                    break;
-                } else if (!br.toString().trim().matches("\\d{1,3}(\\.\\d{1,2})?")) {
-                    logger.info(NICE_HOST + ": Fails to download link to server");
-                    break;
+            PluginProgress waitProgress = new PluginProgress(0, 1000, null) {
+                protected long lastCurrent    = -1;
+                protected long lastTotal      = -1;
+                protected long startTimeStamp = -1;
+
+                @Override
+                public String getMessage(Object requestor) {
+                    return "Preparing download";
                 }
-                logger.info(NICE_HOST + ": Progress of internal download of current link: " + this.br.toString().trim());
-                this.sleep(5000l, link);
+
+                @Override
+                public void updateValues(long current, long total) {
+                    super.updateValues(current, total);
+                    if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+                        lastTotal = total;
+                        lastCurrent = current;
+                        startTimeStamp = System.currentTimeMillis();
+                        // this.setETA(-1);
+                        return;
+                    }
+                    long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+                    if (currentTimeDifference <= 0) return;
+                    long speed = (current * 10000) / currentTimeDifference;
+                    if (speed == 0) return;
+                    long eta = ((total - current) * 10000) / speed;
+                    this.setETA(eta);
+                }
+            };
+            waitProgress.setIcon(NewTheme.I().getIcon("wait", 16));
+            waitProgress.setProgressSource(this);
+            try {
+                link.setPluginProgress(waitProgress);
+                for (int i = 1; i <= 120; i++) {
+                    apiRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
+                    String progress = br.toString().trim();
+                    if (br.containsHTML("downloaded")) {
+                        success = true;
+                        break;
+                    } else if (!progress.matches("\\d{1,3}(\\.\\d{1,2})?")) {
+                        logger.info(NICE_HOST + ": Fails to download link to server");
+                        break;
+                    }
+                    logger.info(NICE_HOST + ": Progress of internal download of current link: " + progress);
+                    long prog = (long) (Double.parseDouble(progress) * 1000) / 100;
+                    waitProgress.updateValues(prog, 1000);
+                    synchronized (this) {
+                        wait(5000);
+                    }
+                }
+                if (link.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
+            } catch (InterruptedException e) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } finally {
+                link.setPluginProgress(null);
             }
             if (!success) {
                 handleAPIErrors(this.br, acc, link);

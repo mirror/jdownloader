@@ -790,7 +790,6 @@ public abstract class PluginForHost extends Plugin {
 
             @Override
             public String getMessage(Object requestor) {
-
                 return pluginMessage;
             }
 
