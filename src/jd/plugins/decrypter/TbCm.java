@@ -18,9 +18,11 @@ package jd.plugins.decrypter;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -285,57 +287,85 @@ public class TbCm extends PluginForDecrypt {
     public static boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
 
-        BufferedWriter dest;
+        BufferedWriter dest = null;
+        FileOutputStream fos = null;
         try {
-            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
-        } catch (IOException e1) {
-            return false;
-        }
-
-        final StringBuilder xml = new StringBuilder();
-        int counter = 1;
-        final String lineseparator = System.getProperty("line.separator");
-
-        Scanner in = null;
-        try {
-            in = new Scanner(new FileReader(source));
-            while (in.hasNext()) {
-                xml.append(in.nextLine() + lineseparator);
+            try {
+                File srtFile = new File(source.getAbsolutePath().replace(".xml", ".srt"));
+                dest = new BufferedWriter(new OutputStreamWriter(fos = new FileOutputStream(srtFile), "UTF-8"));
+            } catch (IOException e1) {
+                return false;
             }
-        } catch (Exception e) {
-            return false;
-        } finally {
-            in.close();
-        }
 
-        String[][] matches = new Regex(xml.toString(), "<text start=\"(.*?)\" dur=\"(.*?)\">(.*?)</text>").getMatches();
+            final StringBuilder xml = new StringBuilder();
+            int counter = 1;
+            final String lineseparator = System.getProperty("line.separator");
 
-        try {
-            for (String[] match : matches) {
-                dest.write(counter++ + lineseparator);
-
-                Double start = Double.valueOf(match[0]);
-                Double end = start + Double.valueOf(match[1]);
-                dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-
-                String text = match[2].trim();
-                text = text.replaceAll(lineseparator, " ");
-                text = text.replaceAll("&amp;", "&");
-                text = text.replaceAll("&quot;", "\"");
-                text = text.replaceAll("&#39;", "'");
-                dest.write(text + lineseparator + lineseparator);
+            FileInputStream fis = null;
+            try {
+                Scanner in = new Scanner(new InputStreamReader(fis = new FileInputStream(source), "UTF-8"));
+                while (in.hasNext()) {
+                    xml.append(in.nextLine() + lineseparator);
+                }
+            } catch (Exception e) {
+                return false;
+            } finally {
+                try {
+                    fis.close();
+                } catch (final Throwable e) {
+                }
             }
-        } catch (Exception e) {
-            return false;
+
+            String[][] matches = new Regex(xml.toString(), "<text start=\"(.*?)\".*?(dur=\"(.*?)\")?>(.*?)</text>").getMatches();
+
+            try {
+                String[] prevMatch = null;
+                for (String[] match : matches) {
+                    if (prevMatch != null) {
+                        String[] lastMatch = prevMatch;
+                        prevMatch = null;
+                        dest.write(counter++ + lineseparator);
+                        Double start = Double.valueOf(lastMatch[0]);
+                        Double end = Double.valueOf(match[0]);
+                        dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
+                        String text = lastMatch[3].trim();
+                        text = text.replaceAll(lineseparator, " ");
+                        text = text.replaceAll("&amp;", "&");
+                        text = text.replaceAll("&quot;", "\"");
+                        text = text.replaceAll("&#39;", "'");
+                        dest.write(text + lineseparator + lineseparator);
+                    }
+                    if (match[1] == null) {
+                        /* no end timestamp */
+                        prevMatch = match;
+                        continue;
+                    }
+                    /* we have start/end timestamps */
+                    dest.write(counter++ + lineseparator);
+                    Double start = Double.valueOf(match[0]);
+                    Double end = start + Double.valueOf(match[2]);
+                    dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
+                    String text = match[3].trim();
+                    text = text.replaceAll(lineseparator, " ");
+                    text = text.replaceAll("&amp;", "&");
+                    text = text.replaceAll("&quot;", "\"");
+                    text = text.replaceAll("&#39;", "'");
+                    dest.write(text + lineseparator + lineseparator);
+                }
+            } catch (Exception e) {
+                return false;
+            }
         } finally {
             try {
                 dest.close();
-            } catch (IOException e) {
+            } catch (Throwable e) {
+            }
+            try {
+                fos.close();
+            } catch (Throwable e) {
             }
         }
-
         source.delete();
-
         return true;
     }
 
@@ -1240,15 +1270,22 @@ public class TbCm extends PluginForDecrypt {
                         /* old tts */
                         br.getPage(preferHTTPS("http://www.youtube.com/api/timedtext?type=list&v=" + VIDEOID));
                     }
-                    String[][] matches = br.getRegex("<track id=\"(.*?)\" name=\"(.*?)\" lang_code=\"(.*?)\" lang_original=\"(.*?)\".*?/>").getMatches();
+                    // br.getRegex("<track id=\"(.*?)\" name=\"(.*?)\" lang_code=\"(.*?)\" lang_original=\"(.*?)\".*?/>")
+                    String[] matches = br.getRegex("<track id=\"(.*?)\".*?/>").getColumn(0);
                     HashSet<String> duplicate = new HashSet<String>();
-                    for (String[] track : matches) {
-                        if (duplicate.add(track[2]) == false) continue;
+                    for (String trackID : matches) {
+                        String lang = br.getRegex("<track id=\"" + trackID + "\".*?lang_code=\"(.*?)\".*?/>").getMatch(0);
+                        String name = br.getRegex("<track id=\"" + trackID + "\".*?name=\"(.*?)\".*?/>").getMatch(0);
+                        String kind = br.getRegex("<track id=\"" + trackID + "\".*?kind=\"(.*?)\".*?/>").getMatch(0);
+                        String langOrg = br.getRegex("<track id=\"" + trackID + "\".*?lang_original=\"(.*?)\".*?/>").getMatch(0);
+                        if (name == null) name = "";
+                        if (kind == null) kind = "";
+                        if (duplicate.add(lang) == false) continue;
                         String link = null;
                         if (TTSURL == null) {
-                            link = preferHTTPS("http://www.youtube.com/api/timedtext?type=track&name=" + URLEncoder.encode(track[1], "UTF-8") + "&lang=" + URLEncoder.encode(track[2], "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
+                            link = preferHTTPS("http://www.youtube.com/api/timedtext?type=track&name=" + URLEncoder.encode(name, "UTF-8") + "&lang=" + URLEncoder.encode(lang, "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
                         } else {
-                            link = preferHTTPS(TTSURL + "&kind=asr&format=1&ts=" + System.currentTimeMillis() + "&type=track&lang=" + URLEncoder.encode(track[2], "UTF-8") + "&name=" + URLEncoder.encode(track[1], "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
+                            link = preferHTTPS(TTSURL + "&kind=" + URLEncoder.encode(kind, "UTF-8") + "&format=1&ts=" + System.currentTimeMillis() + "&type=track&lang=" + URLEncoder.encode(lang, "UTF-8") + "&name=" + URLEncoder.encode(name, "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
                         }
                         DownloadLink dlink = this.createDownloadlink("youtubeJD" + link);
                         dlink.setProperty("ALLOW_DUPE", true);
@@ -1256,7 +1293,9 @@ public class TbCm extends PluginForDecrypt {
 
                         /** FILENAME PART3 START */
                         String subtitleName = formattedFilename;
-                        subtitleName = subtitleName.replace("*ext*", " (" + track[3] + ").xml");
+                        if (langOrg != null) {
+                            subtitleName = subtitleName.replace("*ext*", " (" + langOrg + ").xml");
+                        }
                         subtitleName = subtitleName.replace("*quality*", " " + NAME_SUBTITLES);
                         subtitleName = subtitleName.replace("*videoname*", YT_FILENAME);
                         dlink.setFinalFileName(subtitleName);
