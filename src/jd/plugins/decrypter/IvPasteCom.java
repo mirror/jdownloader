@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -48,6 +49,19 @@ public class IvPasteCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        // Avoid unsupported captchatype by reloading the page
+        for (int i = 1; i <= 3; i++) {
+            if (br.containsHTML("pluscaptcha\\.com/")) {
+                logger.info(i + "/3:Unsupported captchatype: " + parameter);
+                sleep(3000l, param);
+                continue;
+            }
+            break;
+        }
+        if (br.containsHTML("pluscaptcha\\.com/")) {
+            logger.info("Unsupported captchatype: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
             boolean failed = true;
             for (int i = 0; i <= 5; i++) {
@@ -66,9 +80,24 @@ public class IvPasteCom extends PluginForDecrypt {
                 break;
             }
             if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
+        } else if (br.containsHTML("KeyCAPTCHA code")) {
+            String result = null;
+            final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+            try {
+                final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                result = kc.showDialog(parameter);
+            } catch (final Throwable e) {
+                result = null;
+            }
+            if (result == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+            if ("CANCEL".equals(result)) throw new DecrypterException(DecrypterException.CAPTCHA);
+            br.postPage(br.getURL(), "capcode=" + Encoding.urlEncode(result) + "&save=&save=");
         }
         String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links) {
             if (!dl.matches("http://(www\\.)?ivpaste\\.com/(v/|view\\.php\\?id=)[A-Za-z0-9]+")) decryptedLinks.add(createDownloadlink(dl));
         }

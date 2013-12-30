@@ -309,17 +309,16 @@ public class TusFilesNet extends PluginForHost {
                 fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
                     fileInfo[1] = cbr.getRegex("<li>[^\r\n]+</li>[\r\n\t ]+<li><b>Size:</b> <small>(.*?)</small>").getMatch(0);
-                    if (inValidate(fileInfo[1])) {
-                        fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                        if (inValidate(fileInfo[1])) {
-                            try {
-                                // only needed in rare circumstances
-                                // altAvailStat(downloadLink, fileInfo);
-                            } catch (Exception e) {
-                            }
-                        }
-                    }
                 }
+            }
+        }
+        if (inValidate(fileInfo[1])) fileInfo[1] = cbr.getRegex("class=\"tsSize\">([^<>\"]*?)</span>").getMatch(0);
+        if (inValidate(fileInfo[1])) fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        if (inValidate(fileInfo[1])) {
+            try {
+                // only needed in rare circumstances
+                // altAvailStat(downloadLink, fileInfo);
+            } catch (Exception e) {
             }
         }
         if (inValidate(fileInfo[2])) fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);

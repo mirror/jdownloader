@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -66,36 +67,42 @@ public class TwitterCom extends PluginForDecrypt {
                 return null;
             }
             final String[] youtubeVideos = br.getRegex("data\\-expanded\\-url=\"(https?://youtu\\.be/[A-Za-z0-9\\-_]+)\"").getColumn(0);
-            final String[] piclinks = br.getRegex("data\\-url=\\&quot;(https?://[a-z0-9]+\\.twimg\\.com/media/[A-Za-z0-9\\-_]+\\.jpg:large)\\&quot;").getColumn(0);
-            if ((piclinks == null || piclinks.length == 0) && (youtubeVideos == null || youtubeVideos.length == 0)) {
+
+            int addedpicsall = 0;
+            final String[] regexes = new String[] { "data\\-url=\\&quot;(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)\\&", "data\\-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
+            for (final String regex : regexes) {
+                final String[] piclinks = br.getRegex(regex).getColumn(0);
+                if (piclinks != null && piclinks.length != 0) {
+                    for (final String singleLink : piclinks) {
+                        final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(singleLink.trim()));
+                        dl._setFilePackage(fp);
+                        dl.setAvailable(true);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            // Not available in 0.9.581
+                        }
+                        decryptedLinks.add(dl);
+                        addedpicsall++;
+                    }
+                }
+            }
+            if (addedpicsall == 0 && (youtubeVideos == null || youtubeVideos.length == 0)) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            if (piclinks != null && piclinks.length != 0) {
-                for (final String singleLink : piclinks) {
-                    final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
-                    dl._setFilePackage(fp);
-                    dl.setAvailable(true);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not available in 0.9.581
-                    }
-                    decryptedLinks.add(dl);
-                }
-            }
-            if (youtubeVideos != null && youtubeVideos.length != 0) {
-                for (final String ytvideo : youtubeVideos) {
-                    final DownloadLink dl = createDownloadlink(ytvideo);
-                    dl._setFilePackage(fp);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not available in 0.9.581
-                    }
-                    decryptedLinks.add(dl);
-                }
-            }
+            // if (youtubeVideos != null && youtubeVideos.length != 0) {
+            // for (final String ytvideo : youtubeVideos) {
+            // final DownloadLink dl = createDownloadlink(ytvideo);
+            // dl._setFilePackage(fp);
+            // try {
+            // distribute(dl);
+            // } catch (final Throwable e) {
+            // // Not available in 0.9.581
+            // }
+            // decryptedLinks.add(dl);
+            // }
+            // }
             br.getPage("https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_id=" + maxid);
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             reloadNumber++;
