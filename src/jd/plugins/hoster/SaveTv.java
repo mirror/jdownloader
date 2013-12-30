@@ -76,6 +76,8 @@ public class SaveTv extends PluginForHost {
     /** Settings stuff */
     private static final String USEORIGINALFILENAME                                         = "USEORIGINALFILENAME";
     private static final String PREFERADSFREE                                               = "PREFERADSFREE";
+    private static final String PREFERADSFREE_OVERRIDE                                      = "PREFERADSFREE_OVERRIDE";
+    private static final String PREFERADSFREE_OVERRIDE_MAXRETRIES                           = "PREFERADSFREE_OVERRIDE_MAXRETRIES";
     private static final String DOWNLOADONLYADSFREE                                         = "DOWNLOADONLYADSFREE";
     private static final String DOWNLOADONLYADSFREE_RETRY_HOURS                             = "DOWNLOADONLYADSFREE_RETRY_HOURS";
     private final String        ADSFREEAVAILABLETEXT                                        = JDL.L("plugins.hoster.SaveTv.AdsFreeAvailable", "Video ist werbefrei verfügbar");
@@ -476,11 +478,24 @@ public class SaveTv extends PluginForHost {
         requestFileInformation(downloadLink);
         login(this.br, account, false);
         String dllink = null;
-        // User wants ads-free but it's not available -> Wait 12 hours, status can still change but probably won't
+        // User wants ads-free but it's not available -> Wait 12 hours, status can still change but probably won't -> If defined by user,
+        // force version with ads after a user defined amount of retries
         if (this.getPluginConfig().getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
-            downloadLink.setProperty(LASTFAILEDSTRING, LASTFAILED_PLUGIN_TEMPORARILY_UNAVAILABLE_NOCUTAVAILABLE);
-            final long userDefinedWaitHours = getLongProperty(cfg, DOWNLOADONLYADSFREE_RETRY_HOURS, SaveTv.defaultNoAdsFreeAvailableRetryWaitHours);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
+            final boolean preferadsfreeOverride = cfg.getBooleanProperty(PREFERADSFREE_OVERRIDE, false);
+            final long maxRetries = getLongProperty(cfg, PREFERADSFREE_OVERRIDE_MAXRETRIES, ignoreOnlyAdsFreeAfterRetries_maxRetries);
+            long currentTryCount = getLongProperty(downloadLink, "curren_no_ads_free_available_retries", 0);
+            final boolean load_with_ads = (preferadsfreeOverride && currentTryCount >= maxRetries);
+
+            if (!load_with_ads) {
+                // Only increase the counter when the option is activated
+                if (preferadsfreeOverride) {
+                    currentTryCount++;
+                    downloadLink.setProperty("curren_no_ads_free_available_retries", currentTryCount);
+                }
+                downloadLink.setProperty(LASTFAILEDSTRING, LASTFAILED_PLUGIN_TEMPORARILY_UNAVAILABLE_NOCUTAVAILABLE);
+                final long userDefinedWaitHours = getLongProperty(cfg, DOWNLOADONLYADSFREE_RETRY_HOURS, SaveTv.defaultNoAdsFreeAvailableRetryWaitHours);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
+            }
         }
         final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
         final boolean preferMobileVids = cfg.getBooleanProperty(PREFERH264MOBILE);
@@ -993,11 +1008,12 @@ public class SaveTv extends PluginForHost {
         return "JDownloader's Save.tv Plugin helps downloading videoclips from Save.tv. Save.tv provides different settings for its downloads.";
     }
 
-    private final static String defaultCustomFilename                   = "*videotitel**telecastid**endung*";
-    private final static String defaultCustomSeriesFilename             = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
-    private final static String defaultCustomSeperationMark             = "+";
-    private final static String defaultCustomStringForEmptyTags         = "-";
-    private final static int    defaultNoAdsFreeAvailableRetryWaitHours = 12;
+    private final static String defaultCustomFilename                    = "*videotitel**telecastid**endung*";
+    private final static String defaultCustomSeriesFilename              = "*serientitel* ¦ *episodennummer* ¦ *episodenname**endung*";
+    private final static String defaultCustomSeperationMark              = "+";
+    private final static String defaultCustomStringForEmptyTags          = "-";
+    private final static int    defaultNoAdsFreeAvailableRetryWaitHours  = 12;
+    private final static int    ignoreOnlyAdsFreeAfterRetries_maxRetries = 2;
 
     private void setConfigElements() {
         final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nWICHTIG: Aktiviert man die API, werden folgende Einstellungen ignoriert:\r\n-Benutzerdefinierte Dateinamen\r\n-Archiv-Crawler\r\n-Nur Aufnahmen mit angewandter Schnittliste laden\r\nAus technischen Gründen ist es (noch) nicht möglich, alle genannten Einstellungen beim aktivierter API auszugrauen um dem Benutzer visuelles Feedback zu geben, sorry!")).setDefaultValue(false);
@@ -1010,12 +1026,18 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen schneller im Linkgrabber\r\nNachteil: Korrekte Dateinamen werden erst beim Downloadstart angezeigt")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Format & Qualitäts-Einstellungen:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false));
         final ConfigEntry preferAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE, JDL.L("plugins.hoster.SaveTv.PreferAdFreeVideos", "Aufnahmen mit angewandter Schnittliste bevorzugen?")).setDefaultValue(true);
         getConfig().addEntry(preferAdsFree);
         final ConfigEntry downloadOnlyAdsFree = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DOWNLOADONLYADSFREE, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFree", "Nur Aufnahmen mit angewandter Schnittliste laden?\r\nINFO: Zur Nutzung muss die Option\r\n'Aufnahmen mit angewandter Schnittliste bevorzugen' aktiviert sein.")).setDefaultValue(false).setEnabledCondidtion(preferAdsFree, true);
         getConfig().addEntry(downloadOnlyAdsFree);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.DOWNLOADONLYADSFREE_RETRY_HOURS, JDL.L("plugins.hoster.SaveTv.downloadOnlyAdsFreeRetryHours", "Zeit [in stunden] bis zum Neuversuch für Aufnahmen, die (noch) keine Schnittliste haben.\r\nINFO: Der standardwert beträgt 12 Stunden, um die Server nicht unnötig zu belasten."), 1, 24, 1).setDefaultValue(defaultNoAdsFreeAvailableRetryWaitHours).setEnabledCondidtion(downloadOnlyAdsFree, true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERH264MOBILE, JDL.L("plugins.hoster.SaveTv.PreferH264MobileVideos", PREFERH264MOBILETEXT)).setDefaultValue(false));
+        final ConfigEntry ignoreOnlyAdsFreeAfterRetries = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.PREFERADSFREE_OVERRIDE, JDL.L("plugins.hoster.SaveTv.forceDownloadWithzAdsAfterXretries", "Download OHNE Schnittliste erzwingen, falls nach X versuchen noch immer nicht verfügbar?\r\nINFO: Ein Versuch = Keine Schnittliste verfügbar & die oben angegebene Wartezeit wird einmal abgewartet")).setDefaultValue(false).setEnabledCondidtion(preferAdsFree, true);
+        getConfig().addEntry(ignoreOnlyAdsFreeAfterRetries);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.PREFERADSFREE_OVERRIDE_MAXRETRIES, JDL.L("plugins.hoster.SaveTv.ignoreOnlyAdsFreeAfterRetries_maxRetries", "Max Anzahl Neuversuche bis der Download ohne Schnittliste erzwungen wird:\r\nINFO: Diese Einstellungen hat nur Auswirkungen, solange die Einstellung darüber aktiviert ist!"), 1, 100, 1).setDefaultValue(ignoreOnlyAdsFreeAfterRetries_maxRetries).setEnabledCondidtion(ignoreOnlyAdsFreeAfterRetries, true));
+
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Dateiname Einstellungen:"));
         final ConfigEntry origName = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEORIGINALFILENAME, JDL.L("plugins.hoster.SaveTv.UseOriginalFilename", "Original (Server) Dateinamen verwenden? [erst beim Downloadstart sichtbar]")).setDefaultValue(false).setEnabledCondidtion(useMobileAPI, false);

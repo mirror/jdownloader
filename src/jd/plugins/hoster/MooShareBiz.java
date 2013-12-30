@@ -60,7 +60,7 @@ public class MooShareBiz extends PluginForHost {
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = true;
+    private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
@@ -527,7 +527,7 @@ public class MooShareBiz extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds<").getMatch(2);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
@@ -681,7 +681,7 @@ public class MooShareBiz extends PluginForHost {
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches() || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
 
     @Override

@@ -63,12 +63,12 @@ public class CopyCom extends PluginForHost {
         }
         if (br.containsHTML(">You\\&rsquo;ve found a page that doesn\\&rsquo;t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String fInfo = br.getRegex("\"children\":\\[\\{(.*?)\\}").getMatch(0);
-        if (fInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fInfo == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = getJson("name", fInfo);
         final String filesize = getJson("size", fInfo);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -79,6 +79,7 @@ public class CopyCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Cannot find requested object id")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

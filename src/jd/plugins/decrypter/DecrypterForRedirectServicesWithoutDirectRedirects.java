@@ -763,6 +763,10 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.contains("mblink.info/")) {
             finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+; URL=(http[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("potlocker.net/") || parameter.contains("potlocker.re/")) {
+            if (parameter.matches("http://(www\\.)?potlocker\\.(re|net)/(newvideos|browse\\-.*?|login|index|contact_us|register)\\.html")) {
+                logger.info("Link invalid (unsupported): " + parameter);
+                return decryptedLinks;
+            }
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             finallink = br.getRegex("<IFRAME SRC=\"(http[^<>\"]*?)\" FRAMEBORDER=0").getMatch(0);
         } else if (parameter.contains("umhq.net/")) {

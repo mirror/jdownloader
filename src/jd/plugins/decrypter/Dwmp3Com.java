@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -62,8 +63,14 @@ public class Dwmp3Com extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (externID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return decryptedLinks;
+            final String[] alllinks = HTMLParser.getHttpLinks(br.toString(), "");
+            if (alllinks == null || alllinks.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return decryptedLinks;
+            }
+            for (final String alink : alllinks) {
+                if (!alink.contains("dwmp3.com/")) decryptedLinks.add(createDownloadlink(alink));
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

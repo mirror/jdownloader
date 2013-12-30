@@ -159,6 +159,7 @@ public class ChoMikujPl extends PluginForHost {
             theLink.setFinalFileName(theLink.getName());
         } else {
             br.getPage("http://chomikuj.pl/action/fileDetails/Index/" + fid);
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(theLink.getStringProperty("requestverificationtoken")));
             if (br.containsHTML(PREMIUMONLY)) return false;
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);

@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muchshare.net" }, urls = { "https?://(www\\.)?(muchshare\\.net|royalvids\\.eu(/tt)?)/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muchshare.net" }, urls = { "https?://(www\\.)?(muchshare\\.net|royalvids\\.eu(/tt)?)/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class MuchShareNet extends PluginForHost {
 
@@ -104,7 +104,7 @@ public class MuchShareNet extends PluginForHost {
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
-    // other: no redirects
+    // other: no redirects, account limits all untested because of serverside timeouts
     // mods:
 
     private void setConstants(final Account account) {
@@ -116,7 +116,7 @@ public class MuchShareNet extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0;
+            chunks = -2;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -166,7 +166,7 @@ public class MuchShareNet extends PluginForHost {
     public MuchShareNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     /**
@@ -298,22 +298,6 @@ public class MuchShareNet extends PluginForHost {
                                     fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                                 }
                             }
-                        }
-                    }
-                }
-            }
-        }
-        if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
-                if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                    if (inValidate(fileInfo[1])) {
-                        try {
-                            // only needed in rare circumstances
-                            // altAvailStat(downloadLink, fileInfo);
-                        } catch (Exception e) {
                         }
                     }
                 }
@@ -1461,7 +1445,7 @@ public class MuchShareNet extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();
@@ -1620,15 +1604,21 @@ public class MuchShareNet extends PluginForHost {
      *            Account that's been used, can be null
      * @param x
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
+     * @throws PluginException
      * */
-    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
+    private synchronized void setHashedHashKeyValue(final Account account, final Integer x) throws PluginException {
         if (usedHost == null || x == null) return;
         HashMap<String, Integer> holder = new HashMap<String, Integer>();
         if (!hostMap.isEmpty()) {
             // load hostMap within holder if not empty
             holder = hostMap.get(account);
             // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
-            if (holder.containsKey(account)) hostMap.remove(account);
+            try {
+                if (holder.containsKey(account)) hostMap.remove(account);
+            } catch (final Throwable e) {
+                // Cheap workaroiund for unknown bug
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many concurrent connectons. We will try again when next possible.", 10 * 1000);
+            }
         }
         String currentKey = getHashedHashedKey(account);
         Integer currentValue = getHashedHashedValue(account);

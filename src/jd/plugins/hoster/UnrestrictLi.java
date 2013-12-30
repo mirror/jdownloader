@@ -388,7 +388,7 @@ public class UnrestrictLi extends PluginForHost {
             // MessageDialog("Error", "Please upgrade to VIP to use this plugin", false);
             ai.setStatus("only VIP members can use this plugin");
             ai.setProperty("multiHostSupport", Property.NULL);
-            return ai;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThis service only accepts VIP accounts\r\nDieser Anbieter akzeptiert nur VIP accounts", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         try {
             String apihosts = br.cloneBrowser().getPage("http://unrestrict.li/api/jdownloader/hosts.php");

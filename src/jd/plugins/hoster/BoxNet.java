@@ -98,6 +98,10 @@ public class BoxNet extends PluginForHost {
                     parameter.getLinkStatus().setStatusText("Only downloadable for registered users");
                     parameter.setAvailable(true);
                     return AvailableStatus.TRUE;
+                } else if (br.containsHTML("id=\"shared_password\"")) {
+                    parameter.getLinkStatus().setStatusText("This link is password protected");
+                    parameter.setAvailable(true);
+                    return AvailableStatus.TRUE;
                 }
                 if (br.containsHTML("(this shared file or folder link has been removed|<title>Box \\- Free Online File Storage, Internet File Sharing, RSS Sharing, Access Documents \\&amp; Files Anywhere, Backup Data, Share Files</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 if (br.getURL().equals("https://www.box.com/freeshare")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -116,6 +120,9 @@ public class BoxNet extends PluginForHost {
             DLLINK = "https://app.box.com/index.php?rm=box_download_shared_file&shared_name=" + sharedName + "&file_id=f_" + fileID;
             br.setFollowRedirects(false);
             return AvailableStatus.TRUE;
+        } else {
+            // Unsupported link, maybe direct link
+            DLLINK = parameter.getDownloadURL();
         }
         URLConnectionAdapter urlConnection = null;
         try {
@@ -167,7 +174,7 @@ public class BoxNet extends PluginForHost {
                     if (e instanceof PluginException) throw (PluginException) e;
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users");
-            }
+            } else if (br.containsHTML("id=\"shared_password\"")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not supported yet"); }
             if (DLLINK == null) {
                 final String fid = findFID();
                 if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

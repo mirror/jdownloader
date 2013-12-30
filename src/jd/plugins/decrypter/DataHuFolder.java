@@ -28,7 +28,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data\\.hu/dir/[0-9a-z]+" }, flags = { 0 })
 public class DataHuFolder extends PluginForDecrypt {
@@ -44,7 +43,10 @@ public class DataHuFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookie("http://data.hu", "lang", "en");
         br.getPage(parameter);
-        if (br.containsHTML(">Sajnos ez a megosztás már megszűnt\\. Valószínűleg tulajdonosa már törölte rendszerünkből\\.<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Wrong URL or the folder no longer exists."));
+        if (br.containsHTML("class=\"error\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         /** Password protected folders */
         if (br.containsHTML("Kérlek add meg a jelszót\\!<")) {
             for (int i = 0; i <= 3; i++) {

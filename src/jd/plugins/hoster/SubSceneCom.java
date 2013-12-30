@@ -44,7 +44,7 @@ public class SubSceneCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>An error occurred while processing your request|>Server Error)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>An error occurred while processing your request|>Server Error|>Page Not Found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if ((br.containsHTML("<li class=\"deleted\">")) && (!br.containsHTML("mac"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<strong>Release info[^<>\"]+</strong>([^\"]*?)</li>").getMatch(0);
         if (filename == null) filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
