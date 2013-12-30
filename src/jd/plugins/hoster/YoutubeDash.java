@@ -64,7 +64,7 @@ public class YoutubeDash extends Youtube {
         MP4_480(null, "480p MP4-Video"),
         MP4_720(null, "720p MP4-Video"),
         MP4_1080(null, "1080p MP4-Video"),
-        MP4_ORIGINAL(null, "Original MP4-Video"),
+        MP4_ORIGINAL(null, "2160p MP4-Video"),
 
         MP4_3D_240(null, "240p MP4-3D-Video"),
         MP4_3D_360(null, "360p MP4-3D-Video"),
@@ -86,7 +86,7 @@ public class YoutubeDash extends Youtube {
         MP4_DASH_480(null, "480p MP4-Video(dash)"),
         MP4_DASH_720(null, "720p MP4-Video(dash)"),
         MP4_DASH_1080(null, "1080p MP4-Video(dash)"),
-        MP4_DASH_ORIGINAL(null, "Original MP4-Video(dash)");
+        MP4_DASH_ORIGINAL(null, "2160p MP4-Video(dash)");
 
         private final Icon   icon;
         private final String name;

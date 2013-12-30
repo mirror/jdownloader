@@ -1454,7 +1454,7 @@ public class TbCm extends PluginForDecrypt {
                             switch (Integer.parseInt(hitFmt)) {
                             case 38:
                             case 138:
-                                hitQ = "Original";
+                                hitQ = "2160p";
                                 break;
                             case 160:
                                 hitQ = "144p";
@@ -1598,7 +1598,7 @@ public class TbCm extends PluginForDecrypt {
                 } else if (fmt == 40) {
                     Videoq = "240p Light";
                 } else if (q > 1080) {
-                    Videoq = "Original";
+                    Videoq = "2160p";
                 } else if (q > 720) {
                     Videoq = "1080p";
                 } else if (q > 576) {
