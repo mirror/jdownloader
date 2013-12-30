@@ -1234,7 +1234,7 @@ public class TbCm extends PluginForDecrypt {
                     if (TTSURL != null) {
                         TTSURL = unescape(TTSURL.replaceAll("\\\\/", "/"));
                         br.getPage(preferHTTPS(TTSURL + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"));
-                        TTSURL = TTSURL.replaceFirst("&v=[a-zA-Z0-9]+", "");
+                        TTSURL = TTSURL.replaceFirst("v=[a-zA-Z0-9\\-]+", "");
                     } else {
                         /* old tts */
                         br.getPage(preferHTTPS("http://www.youtube.com/api/timedtext?type=list&v=" + VIDEOID));
@@ -1262,7 +1262,7 @@ public class TbCm extends PluginForDecrypt {
                         /** FILENAME PART3 END */
 
                         dlink.setProperty("subtitle", true);
-
+                        dlink.setProperty("videolink", currentVideoUrl);
                         filePackage.add(dlink);
                         decryptedLinks.add(dlink);
                     }

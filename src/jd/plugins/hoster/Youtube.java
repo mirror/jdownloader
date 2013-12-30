@@ -454,6 +454,8 @@ public class Youtube extends PluginForHost {
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
             URLConnectionAdapter urlConnection = null;
             try {
+                String videoLink = downloadLink.getStringProperty("videolink", null);
+                if (videoLink != null) br.getPage(videoLink);
                 urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
 
                 if (urlConnection.getResponseCode() == 404) return AvailableStatus.FALSE;
