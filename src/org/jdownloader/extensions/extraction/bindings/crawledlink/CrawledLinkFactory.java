@@ -221,12 +221,11 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             archive.getSettings();
         }
         if (pws.size() > 0) {
-            HashSet<String> storedPws = archive.getSettings().getPasswords();
+            List<String> storedPws = archive.getSettings().getPasswords();
             if (storedPws != null) {
                 pws.addAll(storedPws);
-
             }
-            archive.getSettings().setPasswords(pws);
+            archive.getSettings().setPasswords(new ArrayList<String>(pws));
         }
     }
 

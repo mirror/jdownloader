@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.linkgrabber.properties;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.Icon;
@@ -303,7 +302,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
     }
 
     @Override
-    protected void saveArchivePasswords(HashSet<String> hashSet) {
+    protected void saveArchivePasswords(List<String> hashSet) {
         currentArchive.getSettings().setPasswords(hashSet);
     }
 

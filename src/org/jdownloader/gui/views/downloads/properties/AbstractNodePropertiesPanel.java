@@ -757,7 +757,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
     }
 
-    abstract protected void saveArchivePasswords(HashSet<String> hashSet);
+    abstract protected void saveArchivePasswords(List<String> hashSet);
 
     abstract protected void saveAutoExtract(BooleanStatus selectedItem);
 
@@ -815,10 +815,10 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
                     }, null);
                 }
                 if (passwords != null && passwords.size() > 0) {
-                    saveArchivePasswords(new HashSet<String>(passwords));
+                    saveArchivePasswords(new ArrayList<String>(new HashSet<String>(passwords)));
 
                 } else {
-                    HashSet<String> hs = new HashSet<String>();
+                    List<String> hs = new ArrayList<String>();
                     if (StringUtils.isNotEmpty(password.getText())) hs.add(password.getText().trim());
 
                     saveArchivePasswords(hs);

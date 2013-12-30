@@ -1,7 +1,7 @@
 package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
-import java.util.HashSet;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -10,6 +10,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.AbstractExtractionContextAction;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.images.NewTheme;
 
 public class SetExtractPasswordAction extends AbstractExtractionContextAction {
@@ -31,10 +32,10 @@ public class SetExtractPasswordAction extends AbstractExtractionContextAction {
         if (!isEnabled()) return;
         try {
             StringBuilder sb = new StringBuilder();
-            HashSet<String> list = new HashSet<String>();
+            ArraySet<String> list = new ArraySet<String>();
 
             for (Archive archive : archives) {
-                HashSet<String> pws = archive.getSettings().getPasswords();
+                List<String> pws = archive.getSettings().getPasswords();
                 if (pws != null) list.addAll(pws);
             }
 

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
@@ -48,6 +49,7 @@ import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.T;
+import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.logging.LogController;
 
 public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
@@ -355,8 +357,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
     protected String askPassword() throws PasswordNotFoundException {
         if (isSilent()) { throw new PasswordNotFoundException("Silent"); }
-        HashSet<String> passwords = new HashSet<String>();
-        HashSet<String> settings = archive.getSettings().getPasswords();
+        ArraySet<String> passwords = new ArraySet<String>();
+        List<String> settings = archive.getSettings().getPasswords();
         if (settings != null) {
             passwords.addAll(settings);
         }
@@ -399,8 +401,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         throwException(exception);
         if (archive.isProtected()) {
 
-            HashSet<String> spwList = archive.getSettings().getPasswords();
-            HashSet<String> passwordList = new HashSet<String>();
+            List<String> spwList = archive.getSettings().getPasswords();
+            ArraySet<String> passwordList = new ArraySet<String>();
             if (spwList != null) {
                 passwordList.addAll(spwList);
             }

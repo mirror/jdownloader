@@ -1,7 +1,8 @@
 package org.jdownloader.extensions.extraction;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
@@ -9,19 +10,19 @@ import org.appwork.storage.TypeRef;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class ArchiveSettings implements Storable {
-    private ArchiveController      archiveController;
-    private ArrayList<ArchiveItem> archiveItems;
-    private BooleanStatus          autoExtract                        = BooleanStatus.UNSET;
-    private ExtractionInfo         extractionInfo;
-    private String                 extractPath;
-    private String                 finalPassword;
-    private IfFileExistsAction     ifFileExistsAction                 = null;
-    private HashSet<String>        passwords;
-    private BooleanStatus          removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
-    private BooleanStatus          removeFilesAfterExtraction         = BooleanStatus.UNSET;
-    private boolean                needsSaving                        = false;
-    public static final String     PASSWORD                           = "PASSWORD";
-    public static final String     AUTO_EXTRACT                       = "AUTO_EXTRACT";
+    private ArchiveController            archiveController;
+    private ArrayList<ArchiveItem>       archiveItems;
+    private BooleanStatus                autoExtract                        = BooleanStatus.UNSET;
+    private ExtractionInfo               extractionInfo;
+    private String                       extractPath;
+    private String                       finalPassword;
+    private IfFileExistsAction           ifFileExistsAction                 = null;
+    private CopyOnWriteArrayList<String> passwords;
+    private BooleanStatus                removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
+    private BooleanStatus                removeFilesAfterExtraction         = BooleanStatus.UNSET;
+    private boolean                      needsSaving                        = false;
+    public static final String           PASSWORD                           = "PASSWORD";
+    public static final String           AUTO_EXTRACT                       = "AUTO_EXTRACT";
 
     public ArchiveSettings(/* Storable */) {
 
@@ -61,12 +62,11 @@ public class ArchiveSettings implements Storable {
         return ifFileExistsAction;
     }
 
-    public HashSet<String> getPasswords() {
+    public List<String> getPasswords() {
         return passwords;
     }
 
     public BooleanStatus getRemoveDownloadLinksAfterExtraction() {
-
         return removeDownloadLinksAfterExtraction;
     }
 
@@ -121,8 +121,12 @@ public class ArchiveSettings implements Storable {
         fireUpdate();
     }
 
-    public void setPasswords(HashSet<String> passwords) {
-        this.passwords = passwords;
+    public void setPasswords(List<String> passwords) {
+        if (passwords == null) {
+            this.passwords = new CopyOnWriteArrayList<String>();
+        } else {
+            this.passwords = new CopyOnWriteArrayList<String>(passwords);
+        }
         fireUpdate();
     }
 

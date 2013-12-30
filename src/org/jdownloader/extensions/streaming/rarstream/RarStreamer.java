@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
@@ -43,6 +44,7 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.StreamingProvider;
 import org.jdownloader.extensions.streaming.T;
+import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.logging.LogController;
 
 public class RarStreamer implements Runnable {
@@ -112,8 +114,8 @@ public class RarStreamer implements Runnable {
         open();
         if (archive.isProtected()) {
 
-            HashSet<String> spwList = archive.getSettings().getPasswords();
-            HashSet<String> passwordList = new HashSet<String>();
+            List<String> spwList = archive.getSettings().getPasswords();
+            ArraySet<String> passwordList = new ArraySet<String>();
             if (spwList != null) {
                 passwordList.addAll(spwList);
             }
@@ -443,8 +445,8 @@ public class RarStreamer implements Runnable {
     }
 
     protected String askPassword() throws DialogClosedException, DialogCanceledException {
-        HashSet<String> passwords = new HashSet<String>();
-        HashSet<String> settings = archive.getSettings().getPasswords();
+        ArraySet<String> passwords = new ArraySet<String>();
+        List<String> settings = archive.getSettings().getPasswords();
         if (settings != null) {
             passwords.addAll(settings);
         }

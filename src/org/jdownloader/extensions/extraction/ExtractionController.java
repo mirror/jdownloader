@@ -19,7 +19,8 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +46,7 @@ import org.jdownloader.settings.IfFileExistsAction;
  * 
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
-    private java.util.List<String>           passwordList;
-    private int                              passwordListSize      = 0;
+    private List<String>                     passwordList;
     private Exception                        exception;
     private FileCreationManager.DeleteOption removeAfterExtractionAction;
     private Archive                          archive;
@@ -88,7 +88,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         extractor.setExtractionController(this);
         extension = extractionExtension;
         extractor.setLogger(logger);
-        passwordList = new ArrayList<String>();
+        passwordList = new CopyOnWriteArrayList<String>();
         archive.onControllerAssigned(this);
     }
 
@@ -177,7 +177,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     if (StringUtils.isEmpty(archive.getFinalPassword())) {
                         crashLog.write("Try to find password");
                         /* pw unknown yet */
-                        HashSet<String> spwList = archive.getSettings().getPasswords();
+                        List<String> spwList = archive.getSettings().getPasswords();
                         if (spwList != null) {
                             passwordList.addAll(spwList);
                         }
@@ -186,7 +186,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         java.util.List<String> pwList = extractor.config.getPasswordList();
                         if (pwList == null) pwList = new ArrayList<String>();
                         passwordList.addAll(pwList);
-                        passwordListSize = passwordList.size() + 2;
                         fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
                         logger.info("Start password finding for " + archive);
                         String correctPW = null;
@@ -418,7 +417,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * @return
      */
     public int getPasswordListSize() {
-        return passwordListSize;
+        return passwordList.size();
     }
 
     /**
