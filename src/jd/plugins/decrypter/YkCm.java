@@ -189,7 +189,11 @@ public class YkCm extends PluginForDecrypt {
                     progress.increase(1);
                 }
             } else {
-                logger.warning("Sorry, this video can only be streamed within Mainland China! : " + parameter);
+                if (br.containsHTML("Sorry, this video can only be streamed within Mainland China\\.")) {
+                    logger.info("Stopping decrypt process here, video only available in mainland china: " + parameter);
+                    return decryptedLinks;
+                }
+                logger.warning("Sorry, can't decrypt this video: " + parameter);
                 return null;
             }
         }
@@ -256,7 +260,7 @@ public class YkCm extends PluginForDecrypt {
 
             videoParts = new HashMap<String, String[][]>();
             for (final String[] element : seqs) {
-                final String[][] V1 = new Regex(element[1], "\"no\":\"?(.*?)\"?,\"size\":\"(.*?)\",\"seconds\":\"(.*?)\",\"k\":\"(.*?)\"").getMatches();
+                final String[][] V1 = new Regex(element[1], "\"no\":\"?(.*?)\"?,\"size\":\"(.*?)\",\"seconds\":\"?(.*?)\"?,\"k\":\"(.*?)\"").getMatches();
                 // valid?
                 if (V1 == null || V1.length == 0) {
                     continue;
