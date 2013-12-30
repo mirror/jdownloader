@@ -91,18 +91,18 @@ public class TwitterCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            // if (youtubeVideos != null && youtubeVideos.length != 0) {
-            // for (final String ytvideo : youtubeVideos) {
-            // final DownloadLink dl = createDownloadlink(ytvideo);
-            // dl._setFilePackage(fp);
-            // try {
-            // distribute(dl);
-            // } catch (final Throwable e) {
-            // // Not available in 0.9.581
-            // }
-            // decryptedLinks.add(dl);
-            // }
-            // }
+            if (youtubeVideos != null && youtubeVideos.length != 0) {
+                for (final String ytvideo : youtubeVideos) {
+                    final DownloadLink dl = createDownloadlink(ytvideo);
+                    dl._setFilePackage(fp);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        // Not available in 0.9.581
+                    }
+                    decryptedLinks.add(dl);
+                }
+            }
             br.getPage("https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_id=" + maxid);
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             reloadNumber++;
