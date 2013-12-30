@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx)/(dl(\\d+)?/|down\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 2 })
 public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
@@ -183,6 +183,7 @@ public class NowDownloadEu extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
+            if (br.containsHTML(">You have reached your daily download limit")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily download limit", 60 * 60 * 1000l); }
             dllink = getDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String filename = new Regex(dllink, ".+/[^_]+_(.+)").getMatch(0);
@@ -254,7 +255,10 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     private String getDllink() {
-        final String dllink = br.getRegex("\"(http://(?!www\\.)[a-z0-9]+\\.nowdownload\\.(eu|co|ch)/nowdownload/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://(?!www\\.)[^/]+/nowdownload/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("href=\"([^<>]+)\">Download your file").getMatch(0);
+        }
         return dllink;
     }
 
