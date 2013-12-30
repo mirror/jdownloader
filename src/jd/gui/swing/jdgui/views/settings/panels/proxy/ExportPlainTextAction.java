@@ -17,7 +17,6 @@ public class ExportPlainTextAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         ProxyTable.export(table.getModel().getElements());
     }
 

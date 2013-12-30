@@ -265,6 +265,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                             // workaround for gnome 3 transparency bug
                             if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux()) {
+                                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6453521
                                 DesktopSupportLinux desktop = new DesktopSupportLinux();
                                 if (desktop.isGnomeDesktop() || desktop.isXFCEDesktop()) {
                                     java.awt.Robot robo = new java.awt.Robot();

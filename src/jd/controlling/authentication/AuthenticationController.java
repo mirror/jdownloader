@@ -1,6 +1,7 @@
 package jd.controlling.authentication;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.controlling.authentication.AuthenticationInfo.Type;
 import jd.http.Browser;
@@ -26,9 +27,9 @@ public class AuthenticationController {
         return AuthenticationController.INSTANCE;
     }
 
-    private AuthenticationControllerSettings config;
-    private ArrayList<AuthenticationInfo>    list;
-    private ChangeEventSender                eventSender = new ChangeEventSender();
+    private AuthenticationControllerSettings         config;
+    private CopyOnWriteArrayList<AuthenticationInfo> list;
+    private ChangeEventSender                        eventSender = new ChangeEventSender();
 
     /**
      * Create a new i nstance of AuthenticationController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
@@ -36,7 +37,7 @@ public class AuthenticationController {
     private AuthenticationController() {
         config = JsonConfig.create(AuthenticationControllerSettings.class);
         list = cleanup(config.getList());
-        if (list == null) list = new ArrayList<AuthenticationInfo>();
+        if (list == null) list = new CopyOnWriteArrayList<AuthenticationInfo>();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
@@ -54,14 +55,14 @@ public class AuthenticationController {
         return eventSender;
     }
 
-    public synchronized java.util.List<AuthenticationInfo> list() {
-        return new ArrayList<AuthenticationInfo>(list);
+    public java.util.List<AuthenticationInfo> list() {
+        return list;
     }
 
     /* remove invalid entries...without hostmask or without logins */
-    private ArrayList<AuthenticationInfo> cleanup(ArrayList<AuthenticationInfo> input) {
-        if (input == null) return null;
-        ArrayList<AuthenticationInfo> ret = new ArrayList<AuthenticationInfo>(input.size());
+    private CopyOnWriteArrayList<AuthenticationInfo> cleanup(List<AuthenticationInfo> input) {
+        if (input == null || input.size() == 0) return null;
+        CopyOnWriteArrayList<AuthenticationInfo> ret = new CopyOnWriteArrayList<AuthenticationInfo>();
         for (AuthenticationInfo item : input) {
             if (StringUtils.isEmpty(item.getHostmask())) continue;
             if (StringUtils.isEmpty(item.getPassword()) && StringUtils.isEmpty(item.getPassword())) continue;
@@ -72,35 +73,23 @@ public class AuthenticationController {
 
     public void add(AuthenticationInfo a) {
         if (a == null) return;
-        synchronized (this) {
-            ArrayList<AuthenticationInfo> newList = new ArrayList<AuthenticationInfo>(list);
-            newList.add(a);
-            list = newList;
-            config.setList(list);
-        }
-        eventSender.fireEvent(new ChangeEvent(this));
+        boolean changed = list.add(a);
+        config.setList(list);
+        if (changed) eventSender.fireEvent(new ChangeEvent(this));
     }
 
     public void remove(AuthenticationInfo a) {
         if (a == null) return;
-        synchronized (this) {
-            ArrayList<AuthenticationInfo> newList = new ArrayList<AuthenticationInfo>(list);
-            newList.remove(a);
-            list = newList;
-            config.setList(list);
-        }
-        eventSender.fireEvent(new ChangeEvent(this));
+        boolean changed = list.remove(a);
+        config.setList(list);
+        if (changed) eventSender.fireEvent(new ChangeEvent(this));
     }
 
     public void remove(java.util.List<AuthenticationInfo> selectedObjects) {
-        if (selectedObjects == null) return;
-        synchronized (this) {
-            ArrayList<AuthenticationInfo> newList = new ArrayList<AuthenticationInfo>(list);
-            if (!newList.removeAll(selectedObjects)) return;
-            list = newList;
-            config.setList(list);
-        }
-        eventSender.fireEvent(new ChangeEvent(this));
+        if (selectedObjects == null || selectedObjects.size() == 0) return;
+        boolean changed = list.removeAll(selectedObjects);
+        config.setList(list);
+        if (changed) eventSender.fireEvent(new ChangeEvent(this));
     }
 
     public String[] getLogins(String url) {
@@ -114,10 +103,9 @@ public class AuthenticationController {
             Log.L.info("Unknown Protocoll: " + url);
             return null;
         }
-        java.util.List<AuthenticationInfo> llist = list;
         AuthenticationInfo bestMatch = null;
         String urlHost = Browser.getHost(url, true);
-        for (AuthenticationInfo info : llist) {
+        for (AuthenticationInfo info : list) {
             if (!info.isEnabled()) continue;
             String authHost = info.getHostmask();
             if (info.getType().equals(type) && !StringUtils.isEmpty(authHost)) {

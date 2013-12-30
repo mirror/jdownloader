@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -537,7 +539,7 @@ public class DirectHTTP extends PluginForHost {
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
         this.br.getHeaders().put("Accept-Encoding", "");
-        String authinURL = new Regex(downloadLink.getDownloadURL(), "http.*?/([^/]{1}.*?)@").getMatch(0);
+        String authinURL = new Regex(downloadLink.getDownloadURL(), "https?://(.+)@.*?($|/)").getMatch(0);
         String authSaved = null;
         String authProperty = null;
         ArrayList<String> pwTries = new ArrayList<String>();
@@ -638,19 +640,28 @@ public class DirectHTTP extends PluginForHost {
             /* if final filename already set, do not change */
             if (downloadLink.getFinalFileName() == null) {
                 /* restore filename from property */
-                if (downloadLink.getStringProperty("fixName", null) != null) {
-                    downloadLink.setFinalFileName(downloadLink.getStringProperty("fixName", null));
-                } else if (downloadLink.getBooleanProperty("MOVIE2K", false)) {
+                String fileName = downloadLink.getStringProperty("fixName", null);
+                if (fileName == null && downloadLink.getBooleanProperty("MOVIE2K", false)) {
                     String ext = new Regex(this.contentType, "(audio|video)/(x\\-)?(.*?)$").getMatch(2);
-                    downloadLink.setFinalFileName(downloadLink.getName() + "." + ext);
-                } else if (downloadLink.getBooleanProperty("urlDecodeFinalFileName", false)) {
-                    downloadLink.setFinalFileName(Encoding.urlDecode(Plugin.getFileNameFromHeader(urlConnection), false));
-                } else {
-                    downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
+                    fileName = downloadLink.getName() + "." + ext;
+                }
+                if (fileName == null) {
+                    String urlConnectionName = Plugin.getFileNameFromHeader(urlConnection);
+                    if (urlConnectionName != null && downloadLink.getBooleanProperty("urlDecodeFinalFileName", false)) {
+                        urlConnectionName = Encoding.urlDecode(urlConnectionName, false);
+                    }
+                }
+                if (fileName == null) fileName = downloadLink.getName();
+                if (fileName != null) {
+                    if (fileName.indexOf(".") < 0) {
+                        String ext = getExtensionFromMimeType(this.contentType);
+                        if (ext != null) fileName = fileName + "." + ext;
+                    }
+                    downloadLink.setFinalFileName(fileName);
+                    /* save filename in property so we can restore in reset case */
+                    downloadLink.setProperty("fixName", fileName);
                 }
             }
-            /* save filename in property so we can restore in reset case */
-            downloadLink.setProperty("fixName", downloadLink.getFinalFileName());
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
             if (urlConnection.getHeaderField("X-Mod-H264-Streaming") == null) {
                 downloadLink.setProperty("VERIFIEDFILESIZE", urlConnection.getLongContentLength());
@@ -675,6 +686,24 @@ public class DirectHTTP extends PluginForHost {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    /**
+     * update this map to your needs
+     * 
+     * @param mimeType
+     * @return
+     */
+    public String getExtensionFromMimeType(String mimeType) {
+        if (mimeType == null) return null;
+        HashMap<String, String> map = new HashMap<String, String>();
+        map.put("image/gif", "gif");
+        map.put("image/jpeg", "jpeg");
+        map.put("image/png", "png");
+        map.put("image/tiff", "tiff");
+        map.put("application/gzip", "gz");
+        map.put("application/pdf", "pdf");
+        return map.get(mimeType.toLowerCase(Locale.ENGLISH));
     }
 
     @Override

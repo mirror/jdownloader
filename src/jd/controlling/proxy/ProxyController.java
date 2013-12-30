@@ -93,18 +93,6 @@ public class ProxyController {
             }
         });
 
-        // ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-        //
-        // @Override
-        // public void run() {
-        // exportUpdaterConfig();
-        // }
-        //
-        // @Override
-        // public String toString() {
-        // return "ProxyController: export important settings to updaterConfig";
-        // }
-        // });
         eventSender.addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
             DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
                                             @Override
@@ -124,22 +112,6 @@ public class ProxyController {
             }
         });
     }
-
-    // private void exportUpdaterConfig() {
-    // updaterConfig.setConnectTimeout(generalConfig.getHttpConnectTimeout());
-    // updaterConfig.setReadTimeout(generalConfig.getHttpReadTimeout());
-    // exportUpdaterProxy();
-    // }
-    //
-    // private void exportUpdaterProxy() {
-    // ProxyInfo ldefaultproxy = defaultproxy;
-    // if (ldefaultproxy != null && !ldefaultproxy.isNone()) {
-    // HTTPProxyStorable storable = HTTPProxy.getStorable(ldefaultproxy);
-    // updaterConfig.setProxy(storable);
-    // } else {
-    // updaterConfig.setProxy(null);
-    // }
-    // }
 
     public static List<HTTPProxy> autoConfig() {
         java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
@@ -603,7 +575,6 @@ public class ProxyController {
         config.setNoneDefault(restore.isNoneDefault());
         config.setNoneRotationEnabled(restore.isNoneRotationEnabled());
         loadProxySettings();
-
     }
 
 }

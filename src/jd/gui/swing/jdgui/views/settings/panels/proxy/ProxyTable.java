@@ -66,25 +66,20 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
             switch (pi.getType()) {
             case HTTP:
                 sb.append("http://");
-
                 break;
             case SOCKS4:
                 sb.append("socks4://");
                 break;
-
             case SOCKS5:
                 sb.append("socks5://");
                 break;
             default:
                 continue;
-
             }
-
             if (!StringUtils.isEmpty(pi.getUser())) {
                 sb.append(pi.getUser());
                 hasUSerInfo = true;
             }
-
             if (!StringUtils.isEmpty(pi.getPass())) {
                 if (hasUSerInfo) sb.append(":");
                 hasUSerInfo = true;
@@ -92,18 +87,15 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
             }
             if (hasUSerInfo) {
                 sb.append("@");
-
             }
             sb.append(pi.getHost());
             if (pi.getPort() > 0) {
                 sb.append(":");
                 sb.append(pi.getPort());
             }
-
         }
         ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
         try {
-
             Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.ProxyTable_copy_export_title_(), null, sb.toString(), NewTheme.getInstance().getIcon("proxy", 32), null, null);
         } catch (DialogClosedException e) {
             e.printStackTrace();

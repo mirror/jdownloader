@@ -216,6 +216,10 @@ public class FavIcons {
                         /* this loop adds every subdomain and the tld to tryHosts and we try to fetch a favIcon in same order */
                         while (true) {
                             tryHosts.add(tryHost);
+                            if (tryHost.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
+                                /* direct ip */
+                                break;
+                            }
                             if ((index = tryHost.indexOf(".")) >= 0 && tryHost.length() >= index + 1) {
                                 tryHost = tryHost.substring(index + 1);
                                 if (tryHost.indexOf(".") >= 0) {
