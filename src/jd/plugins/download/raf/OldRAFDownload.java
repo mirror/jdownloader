@@ -436,6 +436,7 @@ public class OldRAFDownload extends DownloadInterface {
             if (connected.get() == false) connect();
             if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
                 /* GZIP Encoding kann weder chunk noch resume */
+                /* hier dann auch den final filesize check prüfen */
                 setResume(false);
                 setChunkNum(1);
             }

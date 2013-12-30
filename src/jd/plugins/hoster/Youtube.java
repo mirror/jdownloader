@@ -453,19 +453,22 @@ public class Youtube extends PluginForHost {
 
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
             URLConnectionAdapter urlConnection = null;
+            String ae = br.getHeaders().get("Accept-Encoding");
             try {
                 String videoLink = downloadLink.getStringProperty("videolink", null);
                 if (videoLink != null) br.getPage(videoLink);
+                br.getHeaders().put("Accept-Encoding", "");
                 urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-
-                if (urlConnection.getResponseCode() == 404) return AvailableStatus.FALSE;
-
+                if (urlConnection.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 String size = urlConnection.getHeaderField("Content-Length");
-                long contentSize = Long.parseLong(size);
-                downloadLink.setDownloadSize(contentSize);
-                downloadLink.setProperty("PROPERTY_VERIFIEDFILESIZE", contentSize);
+                if (size != null) {
+                    long contentSize = Long.parseLong(size);
+                    downloadLink.setDownloadSize(contentSize);
+                    downloadLink.setProperty("PROPERTY_VERIFIEDFILESIZE", contentSize);
+                }
                 return AvailableStatus.TRUE;
             } finally {
+                br.getHeaders().put("Accept-Encoding", ae);
                 try {
                     urlConnection.disconnect();
                 } catch (final Throwable e) {
