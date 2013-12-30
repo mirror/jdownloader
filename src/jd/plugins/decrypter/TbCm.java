@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -1234,14 +1235,15 @@ public class TbCm extends PluginForDecrypt {
                     if (TTSURL != null) {
                         TTSURL = unescape(TTSURL.replaceAll("\\\\/", "/"));
                         br.getPage(preferHTTPS(TTSURL + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"));
-                        TTSURL = TTSURL.replaceFirst("v=[a-zA-Z0-9\\-]+", "");
+                        TTSURL = TTSURL.replaceFirst("v=[a-zA-Z0-9\\-_]+", "");
                     } else {
                         /* old tts */
                         br.getPage(preferHTTPS("http://www.youtube.com/api/timedtext?type=list&v=" + VIDEOID));
                     }
                     String[][] matches = br.getRegex("<track id=\"(.*?)\" name=\"(.*?)\" lang_code=\"(.*?)\" lang_original=\"(.*?)\".*?/>").getMatches();
-
+                    HashSet<String> duplicate = new HashSet<String>();
                     for (String[] track : matches) {
+                        if (duplicate.add(track[2]) == false) continue;
                         String link = null;
                         if (TTSURL == null) {
                             link = preferHTTPS("http://www.youtube.com/api/timedtext?type=track&name=" + URLEncoder.encode(track[1], "UTF-8") + "&lang=" + URLEncoder.encode(track[2], "UTF-8") + "&v=" + URLEncoder.encode(VIDEOID, "UTF-8"));
