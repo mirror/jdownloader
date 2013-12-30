@@ -1181,11 +1181,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 selector.addExcluded(mirror.getLink());
                 AccountCache accountCache = currentSession.getAccountCache(mirror.getLink());
                 Iterator<CachedAccount> it = accountCache.iterator();
-                boolean cachedAccountFound = false;
-                boolean cachedAccountUsed = false;
                 CachedAccount tempDisabledCachedAccount = null;
+                CachedAccount forbiddenCachedAccount = null;
+                final int mirrorsSize = mirrors.size();
                 while (it.hasNext()) {
                     CachedAccount cachedAccount = it.next();
+                    if (!cachedAccount.canHandle(mirror.getLink())) {
+                        /* account cannot handle the link */
+                        continue;
+                    }
                     /* this cachedAccount can handle our candidate */
                     switch (selector.getCachedAccountPermission(cachedAccount)) {
                     case TEMP_DISABLED:
@@ -1194,26 +1198,24 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         } else if (tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
                             tempDisabledCachedAccount = cachedAccount;
                         }
-                        cachedAccountFound = true;
                         break;
                     case FORBIDDEN:
+                        forbiddenCachedAccount = cachedAccount;
                         break;
                     case DISABLED:
                         break;
                     case OK:
-                        cachedAccountFound = true;
-                        if (cachedAccount.canHandle(mirror.getLink())) {
-                            cachedAccountUsed = true;
-                            mirrors.add(new DownloadLinkCandidate(mirror, cachedAccount));
-                        }
+                        mirrors.add(new DownloadLinkCandidate(mirror, cachedAccount));
                         break;
                     }
                 }
-                if (cachedAccountFound == false) {
+                if (mirrorsSize == mirrors.size()) {
                     /* even NONE cannot handle our candidate, so let's skip it */
-                    selector.addExcluded(mirror, new DownloadLinkCandidateResult(SkipReason.NO_ACCOUNT));
-                } else if (cachedAccountUsed == false) {
-                    if (tempDisabledCachedAccount != null) selector.addExcluded(mirror, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount())));
+                    if (tempDisabledCachedAccount != null) {
+                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount())));
+                    } else if (forbiddenCachedAccount == null) {
+                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(SkipReason.NO_ACCOUNT));
+                    }
                 }
             }
             if (mirrors.size() > 0) { return mirrors; }
