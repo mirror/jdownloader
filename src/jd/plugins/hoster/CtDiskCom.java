@@ -77,12 +77,12 @@ public class CtDiskCom extends PluginForHost {
             filename = br.getRegex("<div class=\"file_title\">([^<>\"]*?)</div>").getMatch(0);
         } else {
             filename = br.getRegex("<div class=\"top_title\"[^>]+>(.*?)<").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>(.*?) \\- 免费高速下载 \\- 城通网盘").getMatch(0);
         }
-        String filesize = br.getRegex("\">\\(([\\d\\,\\.]+ (KB|MB|GB))\\)</span><").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("([\\d\\,\\.]+ (KB|MB|GB))").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) \\- 免费高速下载").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
+        String filesize = br.getRegex("\">\\(([\\d\\,\\.]+ (KB|MB|GB))\\)</span><").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("([\\d\\,\\.]+ (KB|MB|GB))").getMatch(0);
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
