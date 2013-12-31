@@ -99,12 +99,16 @@ public class DlPrtcCom extends PluginForDecrypt {
         if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(CAPTCHATEXT)) {
             for (int i = 0; i <= 5; i++) {
                 Form importantForm = getForm();
-                if (importantForm == null) {
+                final String idkey = cbr.getRegex("name=\"id_key\" value=\"([A-Za-z0-9]+)\"").getMatch(0);
+                if (importantForm == null || idkey == null) {
                     logger.warning("Decrypter broken 1 for link: " + parameter);
                     return null;
                 }
+                String postData = "id_key=" + idkey + "&i=_" + Encoding.urlEncode(Encoding.Base64Encode(String.valueOf(System.currentTimeMillis()))) + "&submitform=&submitform=Decrypt+link";
                 if (cbr.containsHTML(PASSWORDTEXT)) {
-                    importantForm.put("pwd", getUserInput(null, param));
+                    final String pwd = getUserInput(null, param);
+                    importantForm.put("pwd", pwd);
+                    postData += "&pwd=" + Encoding.urlEncode(pwd);
                 }
                 if (cbr.containsHTML(CAPTCHATEXT)) {
                     String captchaLink = getCaptchaLink(importantForm.getHtmlCode());
@@ -117,15 +121,20 @@ public class DlPrtcCom extends PluginForDecrypt {
                     String formName = "secure";
                     importantForm.put(formName, code);
                     importantForm.remove("secures");
+                    postData += "&secure=" + code;
                 }
                 importantForm.put("i", Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())));
-                sendForm(importantForm);
+                // sendForm(importantForm);
+                postPage(br.getURL(), postData);
                 if (getCaptchaLink(cbr.toString()) != null || cbr.containsHTML(CAPTCHAFAILED) || cbr.containsHTML(PASSWORDFAILED) || cbr.containsHTML(PASSWORDTEXT)) continue;
                 break;
             }
             if (cbr.containsHTML(CAPTCHAFAILED) && cbr.containsHTML(CAPTCHAFAILED)) throw new DecrypterException("Wrong captcha and password entered!");
             if (getCaptchaLink(cbr.toString()) != null || cbr.containsHTML(CAPTCHAFAILED) || cbr.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
             if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(PASSWORDFAILED)) throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+        if (cbr.containsHTML("No htmlCode read")) {
+            getPage(parameter);
         }
 
         if (cbr.containsHTML(">Please click on continue to see the content")) {
