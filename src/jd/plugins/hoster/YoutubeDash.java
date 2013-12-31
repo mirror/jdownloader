@@ -423,6 +423,10 @@ public class YoutubeDash extends Youtube {
             }
             boolean loadVideo = !downloadLink.getBooleanProperty(DASH_VIDEO_FINISHED, false);
             loadVideo |= !new File(getVideoStreamPath(downloadLink)).exists();
+            if (dashVideoURL == null && dashAudioURL != null) {
+                /* Skip video if just audio should be downloaded */
+                loadVideo = false;
+            }
             if (loadVideo) {
                 /* videoStream not finished yet, resume/download it */
                 if (!downloadDashStream(downloadLink, true)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -439,22 +443,40 @@ public class YoutubeDash extends Youtube {
 
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             }
-
-            if (new File(getAudioStreamPath(downloadLink)).exists() && new File(getVideoStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
+            if (new File(getAudioStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
                 /* audioStream also finished */
-                FFMpegProgress progress = new FFMpegProgress();
-                downloadLink.setPluginProgress(progress);
-                try {
-                    if (ffmpeg.merge(progress, downloadLink.getFileOutput(), getVideoStreamPath(downloadLink), getAudioStreamPath(downloadLink))) {
-                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                        new File(getVideoStreamPath(downloadLink)).delete();
-                        new File(getAudioStreamPath(downloadLink)).delete();
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
+                if (new File(getVideoStreamPath(downloadLink)).exists()) {
+                    FFMpegProgress progress = new FFMpegProgress();
+                    downloadLink.setPluginProgress(progress);
+                    try {
+                        if (ffmpeg.merge(progress, downloadLink.getFileOutput(), getVideoStreamPath(downloadLink), getAudioStreamPath(downloadLink))) {
+                            downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                            new File(getVideoStreamPath(downloadLink)).delete();
+                            new File(getAudioStreamPath(downloadLink)).delete();
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
 
+                        }
+                    } finally {
+                        downloadLink.setPluginProgress(null);
                     }
-                } finally {
-                    downloadLink.setPluginProgress(null);
+                } else {
+                    /* Just renaming the temp-file didn't work */
+                    FFMpegProgress progress = new FFMpegProgress();
+                    downloadLink.setPluginProgress(progress);
+                    try {
+                        if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
+                            downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                            new File(getAudioStreamPath(downloadLink)).delete();
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+
+                        }
+                    } finally {
+                        downloadLink.setPluginProgress(null);
+                    }
+
                 }
             }
         } catch (final FileIsLockedException e) {
