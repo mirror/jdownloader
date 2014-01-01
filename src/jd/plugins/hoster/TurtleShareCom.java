@@ -82,7 +82,7 @@ public class TurtleShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
         }
         String dllink = br.getRegex("<div class=\"download_btn\\-wrap\"><a href=\"(http://[^<>\"]*?)\" class=\"download_button slow\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(https?://dl\\d+\\.turtleshare\\.com/download/[a-z0-9]+/[A-Za-z0-9]+/?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(https?://dl\\d+\\.turtleshare\\.com/download/[a-z0-9]+/[^\"]+/?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
