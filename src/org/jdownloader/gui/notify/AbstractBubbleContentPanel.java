@@ -8,12 +8,14 @@ import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.images.NewTheme;
 
 public abstract class AbstractBubbleContentPanel extends MigPanel {
 
     protected IconedProcessIndicator progressCircle;
     protected long                   startTime;
+    private AbstractNotifyWindow<?>  window;
 
     private String clean(String label) {
         label = label.trim();
@@ -21,6 +23,14 @@ public abstract class AbstractBubbleContentPanel extends MigPanel {
             label = label.substring(0, label.length() - 1);
         }
         return label + ":";
+    }
+
+    public void setWindow(AbstractNotifyWindow<?> window) {
+        this.window = window;
+    }
+
+    public AbstractNotifyWindow<?> getWindow() {
+        return window;
     }
 
     abstract public void updateLayout();

@@ -90,6 +90,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
     private boolean               closed;
     private JLabel                headerLbl;
     private AbstractBubbleSupport bubbleSupport;
+    private Color                 highlightColor;
 
     public AbstractNotifyWindow(String caption, T comp) {
         this(null, caption, comp);
@@ -118,7 +119,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
             }
 
         };
-
+        comp.setWindow(this);
         setContentPane(content);
         content.add(createHeader(caption));
         contentComponent = comp;
@@ -146,6 +147,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
                 }
             }
         }
+
     }
 
     public AbstractBubbleSupport getBubbleSupport() {
@@ -597,6 +599,11 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
     }
 
+    public void setHighlightColor(Color highlightColor) {
+        this.highlightColor = highlightColor;
+        repaint();
+    }
+
     protected BufferedImage getSoftClipWorkaroundImage(Graphics2D g2d, int width, int height) {
         GraphicsConfiguration gc = g2d.getDeviceConfiguration();
         BufferedImage img = gc.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
@@ -612,8 +619,14 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         g2.fillRoundRect(0, 0, getWidth(), getHeight(), round, round);
         g2.setComposite(AlphaComposite.SrcAtop);
         // rendering the actuall contents
-        Paint p = new GradientPaint(0, 0, LAFOptions.getInstance().getColorForPanelHeaderBackground(), 0, TOP_MARGIN, LAFOptions.getInstance().getColorForScrollbarsMouseOverState());
-        g2.setPaint(p);
+        Paint p = null;
+        if (highlightColor == null) {
+            p = new GradientPaint(0, 0, LAFOptions.getInstance().getColorForPanelHeaderBackground(), 0, TOP_MARGIN, LAFOptions.getInstance().getColorForScrollbarsMouseOverState());
+            g2.setPaint(p);
+        } else {
+            p = new GradientPaint(0, 0, highlightColor, 0, TOP_MARGIN, highlightColor.brighter());
+            g2.setPaint(p);
+        }
 
         g2.fillRoundRect(0, 0, width, height, round, round);
 
@@ -664,6 +677,9 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
 
     public float getFinalTransparency() {
         return CFG_BUBBLE.CFG.getTransparency() / 100f;
+    }
+
+    public void setHighlightColor(Object object) {
     }
 
 }

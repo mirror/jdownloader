@@ -19,6 +19,7 @@ import org.jdownloader.gui.notify.AbstractBubbleContentPanel;
 import org.jdownloader.gui.notify.Element;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
 
@@ -133,13 +134,26 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
 
             if (offline != null) offline.setText(offlineCnt + "");
             if (online != null) online.setText(onlineCnt + "");
+            this.linksCount = jlc.getCrawledLinksFoundCounter();
+            getWindow().setHighlightColor(null);
             if (offlineCnt > 0) {
                 if (offline != null) offline.setVisible(true);
+
+                if (offlineCnt >= linksCount) {
+
+                    getWindow().setHighlightColor(LAFOptions.getInstance().getColorForErrorForeground());
+
+                } else {
+
+                    getWindow().setHighlightColor(LAFOptions.getInstance().getColorForTableSortedColumnView());
+
+                }
             }
+
             this.offlineCount = offlineCnt;
             this.onlineCount = offlineCnt;
             this.joblessCount = jobless;
-            this.linksCount = jlc.getCrawledLinksFoundCounter();
+
             if (links != null) links.setText(jlc.getCrawledLinksFoundCounter() + "");
             if (packages != null) packages.setText(dupe.size() + "");
         } else {
