@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/files|mir\\.cr)/[0-9A-Z]{8}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "https?://(www\\.)?(mirrorcreator\\.com/(files/|download\\.php\\?uid=)|mir\\.cr/)[0-9A-Z]{8}" }, flags = { 0 })
 public class MirrorCreatorCom extends PluginForDecrypt {
 
     private String userAgent = null;
@@ -38,6 +38,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final String uid = new Regex(param.toString(), "([A-Z0-9]{8})$").getMatch(0);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (userAgent == null) {
             /* we first have to load the plugin, before we can reference it */
@@ -46,15 +47,14 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         }
         br.getHeaders().put("User-Agent", userAgent);
         br.setFollowRedirects(false);
-        String parameter = param.toString().replace("mir.cr/", "mirrorcreator.com/files/").replaceAll("(http://|www\\.)", "").replace("https://", "http://");
-        // Those links need a "/" at the end to be valid
-        if (!parameter.endsWith("/")) parameter += "/";
-        parameter = "http://www." + parameter;
+        final String parameter = "http://www.mirrorcreator.com/download.php?uid=" + uid;
         param.setCryptedUrl(parameter);
 
-        String uid = new Regex(parameter, "/([A-Z0-9]{8})/").getMatch(0);
-
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        br.setFollowRedirects(false);
+        final String continuelink = br.getRegex("\"(/mstat\\.php\\?uid=[A-Z0-9]+\\&tempID=[a-z0-9]+)\"").getMatch(0);
+        if (continuelink != null) br.getPage("https://www.mirrorcreator.com" + continuelink);
         /* Error handling */
         if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error \\- Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <)")) {
             logger.info("The following link should be offline: " + param.toString());
@@ -64,13 +64,21 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         // they comment in fakes, so we will just try them all!
         String[] links = br.getRegex("(/[^<>\"/]*?=[a-z0-9]{25,32})\"").getColumn(0);
         if (links == null || links.length == 0) {
-            links = br.getRegex("\"(/[^\"]+uid=" + uid + "[^\"]+)\"").getColumn(0);
+            links = br.getRegex("\"(/hosts/" + uid + "[^\"]+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("A critical error happened! Please inform the support. : " + param.toString());
                 return null;
             }
         }
         for (String link : links) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted...");
+                    return decryptedLinks;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
             Browser br2 = br.cloneBrowser();
             br2.getPage(link);
             String[] redirectLinks = br2.getRegex("(/[^/]+/" + uid + "/[^\"]+)").getColumn(0);
@@ -107,6 +115,12 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                     logger.warning("Possible plugin error: " + param.toString());
                     logger.warning("Continuing...");
                     continue;
+                }
+                final DownloadLink fina = createDownloadlink(dllink);
+                try {
+                    distribute(fina);
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
                 }
                 decryptedLinks.add(createDownloadlink(dllink));
             }

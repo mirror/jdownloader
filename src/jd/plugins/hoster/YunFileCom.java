@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,13 +43,13 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://((www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/(down/)?[a-z0-9]+/[a-z0-9]+|filemarkets\\.com/fs/[a-z0-9]+/)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/)" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
 
     private static final String    MAINPAGE = "http://yunfile.com/";
     private static Object          LOCK     = new Object();
-
     private static StringContainer agent    = new StringContainer();
+    private static AtomicInteger   maxPrem  = new AtomicInteger(1);
 
     public static class StringContainer {
         public String string = null;
@@ -98,7 +99,8 @@ public class YunFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     // Works like MountFileCom and HowFileCom
@@ -133,6 +135,12 @@ public class YunFileCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML("您需要下载等待 <")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("您需要下载等待 <")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
         checkErrors();
@@ -189,33 +197,37 @@ public class YunFileCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false, link.getDownloadURL());
         br.getPage(link.getDownloadURL());
-        final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
-        String dllink = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        String[] counter = br.getRegex("document.getElementById\\(\\'.*?\\'\\)\\.src = \"([^\"]+)").getColumn(0);
-        if (counter != null || counter.length < 0) {
-            String referer = br.getURL();
-            for (String count : counter) {
-                // need the cookies to update after each response!
-                br.getHeaders().put("Referer", referer);
-                try {
-                    br.getPage(count);
-                } catch (Throwable e) {
+        if (account.getBooleanProperty("freeacc", false)) {
+            doFree(link);
+        } else {
+            final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
+            String dllink = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            String[] counter = br.getRegex("document.getElementById\\(\\'.*?\\'\\)\\.src = \"([^\"]+)").getColumn(0);
+            if (counter != null || counter.length < 0) {
+                String referer = br.getURL();
+                for (String count : counter) {
+                    // need the cookies to update after each response!
+                    br.getHeaders().put("Referer", referer);
+                    try {
+                        br.getPage(count);
+                    } catch (Throwable e) {
+                    }
                 }
             }
+            if (dllink == null || vid1 == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setCookie(MAINPAGE, "vid1", vid1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        if (dllink == null || vid1 == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.setCookie(MAINPAGE, "vid1", vid1);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     private String getDomainFromLink(final String inputurl) {
@@ -223,31 +235,54 @@ public class YunFileCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
+        final AccountInfo ai = new AccountInfo();
         try {
             login(account, true, "http://www.yunfile.com/explorer/list.html");
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         if (!br.getURL().contains("/user/edit.html")) {
             br.getPage("/user/edit.html");
         }
-        String expire = br.getRegex("Expire:(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
-        }
-        String space = br.getRegex("Used Space:.+?>(\\d+ (b|kb|mb|gb|tb)), Files").getMatch(0);
+        final String space = br.getRegex("Used Space:.+?>(\\d+ (b|kb|mb|gb|tb)), Files").getMatch(0);
         if (space != null) {
             ai.setUsedSpace(space);
         }
-        account.setValid(true);
-        ai.setStatus("Premium User");
+        if (br.getCookie(MAINPAGE, "membership").equals("1")) {
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            ai.setStatus("Registered (free) user");
+            account.setProperty("freeacc", true);
+        } else {
+            final String expire = br.getRegex("Expire:(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+            }
+            account.setValid(true);
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            ai.setStatus("Premium User");
+            account.setProperty("freeacc", false);
+        }
         return ai;
     }
 
-    private void login(Account account, final boolean force, final String returnPath) throws Exception {
+    private void login(final Account account, final boolean force, final String returnPath) throws Exception {
         synchronized (LOCK) {
             // Load/Save cookies, if we do NOT do this parallel downloads fail
             prepBrowser(br);
@@ -269,15 +304,26 @@ public class YunFileCom extends PluginForHost {
             }
             br.getPage(MAINPAGE);
             Form login = br.getFormbyProperty("id", "login_form");
+            final String lang = System.getProperty("user.language");
             if (login == null) {
                 logger.warning("Could not find login form");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             login.put("username", Encoding.urlEncode(account.getUser()));
             login.put("password", Encoding.urlEncode(account.getPass()));
             login.put("remember", "on");
             br.submitForm(login);
-            if (br.getCookie(MAINPAGE, "jforumUserHash") == null || br.getCookie(MAINPAGE, "membership") == null || !"2".equals(br.getCookie(MAINPAGE, "membership"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "jforumUserHash") == null || br.getCookie(MAINPAGE, "membership") == null) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);

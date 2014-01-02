@@ -341,7 +341,7 @@ public class SaveTv extends PluginForHost {
                     musicdata = musicdata.replace("<p>", "").replace("</p>", "");
                     genre = new Regex(musicdata, "([A-Za-z]+ / [A-Za-z, ]+)").getMatch(0);
                 }
-            } else if (br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat1\\.jpg\"") || br.containsHTML(GENERAL_REGEX)) {
+            } else if (br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat1\\.jpg\"") || br.containsHTML("<label>Kategorie:</label>[\t\n\r ]+Film") || br.containsHTML(GENERAL_REGEX)) {
                 // For movies
                 final Regex movieInfo = br.getRegex(INFOREGEX);
                 String moviesdata = movieInfo.getMatch(1);

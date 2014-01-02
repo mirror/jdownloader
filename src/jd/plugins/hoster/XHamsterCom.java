@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "http://(www\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 0 })
 public class XHamsterCom extends PluginForHost {
@@ -184,7 +186,7 @@ public class XHamsterCom extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -208,6 +210,30 @@ public class XHamsterCom extends PluginForHost {
                 br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("http://xhamster.com/ajax/login.php?act=login&ref=http%3A%2F%2Fxhamster.com%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_=" + System.currentTimeMillis());
+                // Account is fine but we need a stupid login captcha
+                if (br.containsHTML("'#loginCaptchaRow'")) {
+                    for (int i = 1; i <= 5; i++) {
+                        final String rcID = "6Ld7YsISAAAAAN-PZ6ABWPR9y5IhwiWbGZgeoqRa";
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setId(rcID);
+                        rc.load();
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "xhamster.com", "http://xhamster.com", true);
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String c = getCaptchaCode(cf, dummyLink);
+                        final String loginlink = "http://xhamster.com/ajax/login.php?act=login&ref=http%3A%2F%2Fxhamster.com%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_=" + System.currentTimeMillis() + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                        br.getPage(loginlink);
+                        if (br.containsHTML("\\'Recaptcha does not match")) continue;
+                        break;
+                    }
+                    if (br.containsHTML("\\'Recaptcha does not match")) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Login Captcha!\r\nVersuche es erneut und löse das Login Captcha richtig.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nWrong login captcha!\r\nTry again and enter the login captcha correctly.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                }
                 if (br.getCookie(MAINPAGE, "PWD") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
