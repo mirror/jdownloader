@@ -455,7 +455,12 @@ public class FourSharedCom extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.foursharedcom.passwordprotected", "This link is password protected"));
                 filename = br.getRegex("id=\"fileNameText\">([^<>\"]*?)</h1>").getMatch(0);
             } else {
-                filename = br.getRegex("filename:\\'([^<>\"]*?)\\'").getMatch(0);
+                filename = downloadLink.getStringProperty("decrypterfilename", null);
+                if (br.containsHTML("MPEG Audio Stream") && filename == null) {
+                    filename = br.getRegex("<title>([^<>\"]*?) - MP3 Download,").getMatch(0);
+                    if (filename != null) filename = Encoding.htmlDecode(filename.trim()) + ".mp3";
+                }
+                if (filename == null) filename = br.getRegex("filename:\\'([^<>\"]*?)\\'\\}\\);").getMatch(0);
                 if (filename == null) filename = br.getRegex("title\" content=\"(.*?)\"").getMatch(0);
                 if (filename == null) {
                     filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);

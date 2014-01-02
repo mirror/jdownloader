@@ -152,6 +152,7 @@ public class FrShrdFldr extends PluginForDecrypt {
                     }
                     final DownloadLink fina = createDownloadlink(dlink);
                     fina.setName(Encoding.htmlDecode(filename.trim()));
+                    fina.setProperty("decrypterfilename", filename);
                     fina.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()).replace(",", "")));
                     fina.setAvailable(true);
                     decryptedLinks.add(fina);
