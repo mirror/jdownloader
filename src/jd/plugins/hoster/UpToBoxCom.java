@@ -554,13 +554,20 @@ public class UpToBoxCom extends PluginForHost {
             // alternative xfileshare expire time, usually shown on 'extend
             // premium account' page
             final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (expire != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-                ai.setStatus("Premium User");
-            } else {
+            if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+                try {
+                    maxPrem.set(20);
+                    account.setMaxSimultanDownloads(maxPrem.get());
+                    account.setConcurrentUsePossible(true);
+                } catch (final Throwable e) {
+                }
             }
+            ai.setStatus("Premium User");
         }
         return ai;
     }
