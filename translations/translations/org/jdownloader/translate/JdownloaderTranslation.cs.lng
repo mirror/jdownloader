@@ -4,6 +4,7 @@ AccountController_updateAccountInfo_status_uncheckable=Nelze zkontrolovat účet
 AddContainerAction_delete_container_msg=Chcete odstranit %s1 po přidání odkazů do JDownloaderu?
 AddContainerAction_delete_container_title=Odstranit soubory kontejnerů?
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Přístup do nastavení captcha
+DeleteOption_final_delete=Odstranit soubory z pevného disku
 DeleteOption_no_delete=Neodstraňovat žádné soubory
 DeleteOption_recycle=Přesunout soubory do koše, pokud je to možné
 DisableRevFilesPackageRulee_rule_name=Zakázat soubory archivů *.rev
