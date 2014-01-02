@@ -581,11 +581,12 @@ public class UploadCCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL().replaceAll("/embed\\-", "/"));
+        br.setFollowRedirects(false);
         doSomething();
-        if (new Regex(BRBEFORE, "(No such file|File not found|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|<center>[\r\n\t ]+This file has been removed due to[\r\n\t ]+Copyright infringement)").matches()) {
+        if (new Regex(BRBEFORE, "(No such file|File not found|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|<center>[\r\n\t ]+This file has been removed due to[\r\n\t ]+Copyright infringement|File Not Found)").matches()) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

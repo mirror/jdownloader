@@ -100,12 +100,17 @@ public class MirStkCm extends PluginForDecrypt {
             if (singleLinks == null || singleLinks.length == 0) {
                 singleLinks = br.getRegex(regexSingleLink).getColumn(0);
             }
-            if ((singleLinks == null || singleLinks.length == 0) && parameter.contains("mirrorstack.com/") && br.containsHTML("class=\"mirror_hosts\"")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
-            }
+        }
+        if ((singleLinks == null || singleLinks.length == 0) && parameter.contains("mirrorstack.com/") && br.containsHTML("class=\"mirror_hosts\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if ((singleLinks == null || singleLinks.length == 0) && parameter.contains("pdownload.net/") && br.containsHTML("</b> \\| \\(")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
         if (singleLinks == null || singleLinks.length == 0) {
+
             logger.warning("Couldn't find singleLinks... :" + parameter);
             return null;
         }

@@ -47,7 +47,9 @@ public class FilePupNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         if (br.containsHTML(">The file you have requested does not exist|>This file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // style=\"text\\-align:(center|left|right);\">([^\"<>]+) \\(([0-9\\.]+
         // [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>

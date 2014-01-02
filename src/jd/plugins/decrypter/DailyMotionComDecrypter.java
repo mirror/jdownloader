@@ -221,7 +221,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
             if (VIDEOSOURCE == null || FILENAME == null) {
                 logger.warning("Dailymotion.com decrypter failed: " + PARAMETER);
-                return null;
+                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
+                dl.setFinalFileName(new Regex(PARAMETER, "dailymotion\\.com/(.+)").getMatch(0));
+                dl.setProperty("offline", true);
+                dl.setProperty("pluginmaybebroken", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
             }
             FILENAME = Encoding.htmlDecode(FILENAME.trim()).replace(":", " - ").replaceAll("/|<|>", "");
             if (new Regex(VIDEOSOURCE, "(Dein Land nicht abrufbar|this content is not available for your country|This video has not been made available in your country by the owner)").matches()) {

@@ -66,7 +66,10 @@ public class UloziskoSk extends PluginForHost {
             Form dlform = br.getFormbyProperty("name", "formular");
             String captchaUrl = br.getRegex("</div> <br /><img src=\"(/.*?)\"").getMatch(0);
             if (captchaUrl == null) captchaUrl = br.getRegex("\"(/obrazky/obrazky\\.php\\?fid=.*?id=.*?)\"").getMatch(0);
-            if (dlform == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlform == null || captchaUrl == null) {
+                if (br.containsHTML("\\.mp3ky\\.info\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             captchaUrl = "http://www.ulozisko.sk" + captchaUrl;
             String code = getCaptchaCode(captchaUrl, downloadLink);
             dlform.put("antispam", code);
@@ -99,7 +102,9 @@ public class UloziskoSk extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("windows-1250");
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         if (br.containsHTML("Prepáčte, Vaša krajina nie je podporovaná z dôvodu drahého medzinárodnému prenosu dát. Môžete skúsiť")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("(or was removed|is not existed|The requested file does not exists|>Zadaný súbor neexistuje z jedného z nasledujúcich dôvodov:<|Bol zmazaný používateľom\\.|Zle ste opísali adresu odkazu. Pozorne opíšte alebo skopírujte adresu odkazu)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"down1\">(.*?)<").getMatch(0);
@@ -116,7 +121,10 @@ public class UloziskoSk extends PluginForHost {
             }
         }
         String filesize = br.getRegex("Veľkosť súboru: <strong>(.*?)</strong").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            if (br.containsHTML("\\.mp3ky\\.info\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

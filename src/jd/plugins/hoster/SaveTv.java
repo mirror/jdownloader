@@ -109,6 +109,7 @@ public class SaveTv extends PluginForHost {
     // If this != null, API is in use
     private String              SESSIONID                                                   = null;
     private static final String NOCHUNKS                                                    = "NOCHUNKS";
+    private DownloadLink        DLINK                                                       = null;
 
     @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
@@ -118,7 +119,7 @@ public class SaveTv extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://").replace("free.save.tv/", "save.tv/"));
     }
 
@@ -141,6 +142,7 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        DLINK = link;
         prepBrowser(br);
         br.setFollowRedirects(true);
         // Show id in case it is offline or plugin is broken
@@ -372,7 +374,7 @@ public class SaveTv extends PluginForHost {
 
             final Browser adsCheck = br.cloneBrowser();
             final DecimalFormat df = new DecimalFormat("0000");
-            adsCheck.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(link) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
+            postPageSafe(adsCheck, "https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(link) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
             if (adsCheck.containsHTML("= \\'3\\';")) {
                 link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", NOCUTAVAILABLETEXT));
             } else if (adsCheck.containsHTML("= \\'1\\';")) {
@@ -793,6 +795,23 @@ public class SaveTv extends PluginForHost {
         String result = new Regex(regexFixedInput, regex).getMatch(match);
         if (result != null) result = result.replace("65788jdclipopenjd4684", "(").replace("65788jdclipclosejd4684", ")");
         return result;
+    }
+
+    private void postPageSafe(final Browser br, final String url, final String postData) throws IOException, PluginException {
+        for (int i = 1; i <= 3; i++) {
+            try {
+                br.postPage(url, postData);
+            } catch (final BrowserException e) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
+                    logger.info("503 BrowserException occured, retry " + i + " of 3");
+                    sleep(3000l, DLINK);
+                    continue;
+                }
+                logger.info("Unhandled BrowserException occured...");
+                throw e;
+            }
+            break;
+        }
     }
 
     private String getTelecastId(final DownloadLink link) {

@@ -47,6 +47,7 @@ public class UnrestrictLi extends PluginForHost {
 
     private static Object                                  LOCK               = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final long                              MAXRETRY_503_ERROR = 50;
 
     public UnrestrictLi(PluginWrapper wrapper) {
         super(wrapper);
@@ -276,7 +277,7 @@ public class UnrestrictLi extends PluginForHost {
                 if (acc == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 server error", 10 * 60 * 1000l);
                 int timesFailed = link.getIntegerProperty("timesfailedunrestrictli_servererror503", 0);
                 link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 10) {
+                if (timesFailed <= MAXRETRY_503_ERROR) {
                     timesFailed++;
                     link.setProperty("timesfailedunrestrictli_servererror503", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "503 server error");
