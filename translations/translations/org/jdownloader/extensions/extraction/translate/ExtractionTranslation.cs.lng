@@ -52,6 +52,7 @@ extractprogress_label=Rozbaleno %s1: %s2 souborů
 failed=Rozbalení selhalo: %s1
 failed_no_details=Rozbalení selhalo
 file_exists=Soubor existuje
+file_exists_message=Došlo k problému s rozbalováním archivu.\nSoubor k rozbalení již na vašem disku existuje. Vyberte, co se má udělat:
 file_exists_not=Soubor neexistuje
 filename=Jméno souboru
 files2=souborů

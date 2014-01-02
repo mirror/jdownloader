@@ -35,3 +35,4 @@ popup_reconnect=Znovu připojit nyní
 popup_reconnecttoggle=Automatické znovupřipojení povoleno
 popup_update=Zkontrolovat aktualizace
 popup_update_install=Nainstalovat nejnovější aktualizaci
+popup_update_install_tt=Aktualizace čekají na instalaci. Klikněte pro jejich instalaci!
