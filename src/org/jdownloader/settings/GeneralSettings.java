@@ -485,4 +485,11 @@ public interface GeneralSettings extends ConfigInterface {
     OnSkipDueToAlreadyExistsAction getOnSkipDueToAlreadyExistsAction();
 
     void setOnSkipDueToAlreadyExistsAction(OnSkipDueToAlreadyExistsAction e);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("If you experience tiny(betweeen 0 and 2 seconds) 'lags' when while working with JDownloader, try to disable this feature.")
+    @DefaultBooleanValue(true)
+    boolean isWindowsJNAIdleDetectorEnabled();
+
+    void setWindowsJNAIdleDetectorEnabled(boolean b);
 }

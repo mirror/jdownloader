@@ -10,6 +10,7 @@ public class ModernWindowsJnaIdleGetter extends IdleGetter {
     @Override
     public long getIdleTimeSinceLastUserInput() {
         try {
+            // I noticed that this call can take up to a Second. this happens randomly on my system.
             if (fallback != null) { return fallback.getIdleTimeSinceLastUserInput(); }
             User32.LASTINPUTINFO lastInputInfo = new User32.LASTINPUTINFO();
             User32.INSTANCE.GetLastInputInfo(lastInputInfo);

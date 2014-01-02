@@ -792,6 +792,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                     // if this is the edt, we should not block it.. NEVER
                     if (!SwingUtilities.isEventDispatchThread()) {
+
                         // block dialog calls... the shall appear as soon as isSilentModeActive is false.
                         long countdown = -1;
 
@@ -840,6 +841,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     logger.log(e);
                 }
                 dialog.resetDummyInit();
+
                 return Dialog.getInstance().getDefaultHandler().showDialog(dialog);
                 // }
 
@@ -1124,7 +1126,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     public boolean isSilentModeActive() {
-        if (IdleGetter.getInstance().getIdleTimeSinceLastUserInput() > CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState() && CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState() > 0) {
+
+        long idleTime = IdleGetter.getInstance().getIdleTimeSinceLastUserInput();
+
+        if (idleTime > CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState() && CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState() > 0) {
             //
             System.out.println("Silent mode :" + IdleGetter.getInstance().getIdleTimeSinceLastUserInput());
             return true;
@@ -1136,21 +1141,25 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         Boolean ret = new EDTHelper<Boolean>() {
             @Override
             public Boolean edtRun() {
+
                 // don't block anthing if the frame is active anyway
                 if ((getMainFrame().hasFocus() || getMainFrame().isActive()) && getMainFrame().isVisible()) {
                     logger.info("SilentMode: Mainframe has Focus: ");
                     return false;
                 }
+
                 if (UpdateController.getInstance().getHandler() != null && GuiUtils.isActiveWindow(UpdateController.getInstance().getHandler().getGuiFrame())) {
                     logger.info("SilentMode: Updater Frame is Active");
                     return false;
                 }
+
                 for (Window w : Window.getWindows()) {
                     if ((w.hasFocus() || w.isActive()) && w.isVisible()) {
                         logger.info("SilentMode: No SilentMode. Active Window: " + w);
                         return false;
                     }
                 }
+
                 // don't block anything if the tray is active
                 if (tray.isEnabled() && tray.isActive()) {
                     logger.info("SilentMode: Tray");
@@ -1162,6 +1171,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     logger.info("SilentMode: MANUEL true");
                     return true;
                 }
+
                 switch (CFG_SILENTMODE.CFG.getAutoTrigger()) {
                 case JD_IN_TASKBAR:
                     if (getMainFrame().getState() == JFrame.ICONIFIED && getMainFrame().isVisible()) {
@@ -1179,6 +1189,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     logger.info("SilentMode: auto false");
                     return false;
                 }
+
                 logger.info("SilentMode: else false");
                 return false;
             }

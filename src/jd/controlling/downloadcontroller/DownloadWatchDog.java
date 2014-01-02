@@ -1702,7 +1702,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (DeleteOption.NO_DELETE == deleteTo) return;
         ArrayList<File> deleteFiles = new ArrayList<File>();
         try {
-            for (File deleteFile : link.getDefaultPlugin().deleteDownloadLink(link)) {
+            for (File deleteFile : link.getDefaultPlugin().listProcessFiles(link)) {
                 if (deleteFile.exists() && deleteFile.isFile()) {
                     try {
                         getSession().getFileAccessManager().lock(deleteFile, this);

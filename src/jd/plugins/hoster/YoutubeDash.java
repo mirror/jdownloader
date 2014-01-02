@@ -33,6 +33,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
@@ -121,7 +122,7 @@ public class YoutubeDash extends Youtube {
 
     private final String ENABLE_VARIANTS     = "ENABLE_VARIANTS";
 
-    private final String ALLOW_AAC           = "ALLOW_AAC";
+    private final String ALLOW_AAC           = "ALLOW_AAC2";
 
     protected String     dashAudioURL        = null;
     protected String     dashVideoURL        = null;
@@ -409,23 +410,31 @@ public class YoutubeDash extends Youtube {
         } else {
             prem = false;
         }
+        // debug
+        Object ytID = downloadLink.getProperty("ytID");
+        Object audio = downloadLink.getProperty(DASH_AUDIO);
+        Object video = downloadLink.getProperty(DASH_VIDEO);
         requestFileInformation(downloadLink);
 
         final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
         List<File> locks = new ArrayList<File>();
-        locks.addAll(deleteDownloadLink(downloadLink));
+        locks.addAll(listProcessFiles(downloadLink));
         try {
             for (File lock : locks) {
+                logger.info("Lock " + lock);
                 dlc.lockFile(lock);
             }
-            if (new File(getVideoStreamPath(downloadLink)).exists()) {
+            String videoStreamPath = getVideoStreamPath(downloadLink);
+            if (videoStreamPath != null && new File(videoStreamPath).exists()) {
                 downloadLink.setProperty(DASH_VIDEO_FINISHED, true);
             }
             boolean loadVideo = !downloadLink.getBooleanProperty(DASH_VIDEO_FINISHED, false);
-            loadVideo |= !new File(getVideoStreamPath(downloadLink)).exists();
-            if (dashVideoURL == null && dashAudioURL != null) {
+
+            if (videoStreamPath == null) {
                 /* Skip video if just audio should be downloaded */
                 loadVideo = false;
+            } else {
+                loadVideo |= !new File(videoStreamPath).exists();
             }
             if (loadVideo) {
                 /* videoStream not finished yet, resume/download it */
@@ -446,13 +455,13 @@ public class YoutubeDash extends Youtube {
             if (new File(getAudioStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
                 /* audioStream also finished */
                 /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
-                if (new File(getVideoStreamPath(downloadLink)).exists()) {
+                if (videoStreamPath != null && new File(videoStreamPath).exists()) {
                     FFMpegProgress progress = new FFMpegProgress();
                     downloadLink.setPluginProgress(progress);
                     try {
-                        if (ffmpeg.merge(progress, downloadLink.getFileOutput(), getVideoStreamPath(downloadLink), getAudioStreamPath(downloadLink))) {
+                        if (ffmpeg.merge(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
                             downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                            new File(getVideoStreamPath(downloadLink)).delete();
+                            new File(videoStreamPath).delete();
                             new File(getAudioStreamPath(downloadLink)).delete();
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
@@ -509,29 +518,43 @@ public class YoutubeDash extends Youtube {
     }
 
     @Override
-    public List<File> deleteDownloadLink(DownloadLink link) {
-        List<File> ret = super.deleteDownloadLink(link);
-        ret.add(new File(getVideoStreamPath(link)));
-        ret.add(new File(getAudioStreamPath(link)));
-        ret.add(new File(getVideoStreamPath(link) + ".part"));
-        ret.add(new File(getAudioStreamPath(link) + ".part"));
+    public List<File> listProcessFiles(DownloadLink link) {
+        List<File> ret = super.listProcessFiles(link);
+        String vs = getVideoStreamPath(link);
+        String as = getAudioStreamPath(link);
+        if (StringUtils.isNotEmpty(vs)) {
+            // aac only does not have video streams
+            ret.add(new File(vs));
+            ret.add(new File(vs + ".part"));
+        }
+        ret.add(new File(as));
+        ret.add(new File(as + ".part"));
+
         return ret;
     }
 
     public String getAudioStreamPath(DownloadLink link) {
-        return new File(link.getDownloadDirectory(), getDashAudioFileName(link)).getAbsolutePath();
+        String audioFilenName = getDashAudioFileName(link);
+        if (StringUtils.isEmpty(audioFilenName)) return null;
+        return new File(link.getDownloadDirectory(), audioFilenName).getAbsolutePath();
     }
 
     public String getDashAudioFileName(DownloadLink link) {
-        return link.getStringProperty("ytID", null) + link.getProperty(DASH_AUDIO) + ".dashAudio";
+        if (StringUtils.isEmpty(link.getStringProperty(DASH_AUDIO))) return null;
+        // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
+        return link.getStringProperty("ytID", null) + "_" + link.getProperty(DASH_VIDEO) + "_" + link.getProperty(DASH_AUDIO) + ".dashAudio";
     }
 
     public String getVideoStreamPath(DownloadLink link) {
-        return new File(link.getDownloadDirectory(), getDashVideoFileName(link)).getAbsolutePath();
+        String videoFileName = getDashVideoFileName(link);
+        if (StringUtils.isEmpty(videoFileName)) return null;
+        return new File(link.getDownloadDirectory(), videoFileName).getAbsolutePath();
     }
 
     public String getDashVideoFileName(DownloadLink link) {
-        return link.getStringProperty("ytID", null) + link.getProperty(DASH_VIDEO) + ".dashVideo";
+        if (StringUtils.isEmpty(link.getStringProperty(DASH_VIDEO))) return null;
+        // add both - audio and videoid to the path. else we might get conflicts if we download 2 qualities with the same audiostream
+        return link.getStringProperty("ytID", null) + "_" + link.getProperty(DASH_VIDEO) + "_" + link.getProperty(DASH_AUDIO) + ".dashVideo";
     }
 
     @Override
@@ -582,7 +605,7 @@ public class YoutubeDash extends Youtube {
 
     protected void setConfigElements() {
         super.setConfigElements();
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AAC, JDL.L("plugins.hoster.youtube.checkaac", "Grab AAC?")).setDefaultValue(false), getConfig().indexOf(mp3ConfigEntry));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_AAC, JDL.L("plugins.hoster.youtube.checkaac", "Grab AAC?")).setDefaultValue(true), getConfig().indexOf(mp3ConfigEntry));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_VARIANTS, JDL.L("plugins.hoster.youtube.variants", "Enable Variants Support?")).setDefaultValue(false), getConfig().indexOf(bestEntryConfig));
     }
 }

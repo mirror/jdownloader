@@ -680,7 +680,7 @@ public abstract class PluginForHost extends Plugin {
 
     public abstract void resetDownloadlink(DownloadLink link);
 
-    public List<File> deleteDownloadLink(DownloadLink link) {
+    public List<File> listProcessFiles(DownloadLink link) {
         List<File> ret = new ArrayList<File>();
         ret.add(new File(link.getFileOutput() + ".part"));
         ret.add(new File(link.getFileOutput()));
