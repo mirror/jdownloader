@@ -41,6 +41,7 @@ public class EHentaiOrg extends PluginForDecrypt {
         ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("0");
         final String parameter = param.toString();
+        br.setCookie("http://e-hentai.org", "nw", "1");
         br.getPage(parameter);
         if (br.containsHTML("Key missing, or incorrect key provided")) {
             logger.info("Link offline: " + parameter);
