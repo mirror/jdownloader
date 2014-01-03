@@ -354,7 +354,7 @@ public class ClipboardMonitoring {
 
     static {
         try {
-            urlFlavor = new DataFlavor("application/x-java-url; class=java.net.URL");
+            if (CrossSystem.isMac() == false) urlFlavor = new DataFlavor("application/x-java-url; class=java.net.URL");
         } catch (final Throwable e) {
             LogController.CL().info("urlFlavor not supported");
         }
