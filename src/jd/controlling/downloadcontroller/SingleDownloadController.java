@@ -288,7 +288,7 @@ public class SingleDownloadController extends BrowserSettingsThread {
         } finally {
             queueItem.queueLinks.remove(downloadLink);
             downloadLink.setLivePlugin(null);
-            finalizeChallengeResponse(downloadLogger, originalPlugin, livePlugin, validateChallenge);
+            finalizePlugins(downloadLogger, originalPlugin, livePlugin, validateChallenge);
             if (downloadLink.getFilePackage() != null) {
                 // if we remove link without stopping them.. the filepackage may be the default package already here.
 
@@ -301,7 +301,7 @@ public class SingleDownloadController extends BrowserSettingsThread {
         }
     }
 
-    private void finalizeChallengeResponse(LogSource logger, PluginForHost originalPlugin, PluginForHost livePlugin, boolean valid) {
+    private void finalizePlugins(LogSource logger, PluginForHost originalPlugin, PluginForHost livePlugin, boolean valid) {
         switch (candidate.getCachedAccount().getType()) {
         case MULTI:
             if (originalPlugin != null) {

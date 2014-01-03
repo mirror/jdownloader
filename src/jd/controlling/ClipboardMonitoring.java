@@ -505,6 +505,7 @@ public class ClipboardMonitoring {
     public static String getListTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException, URISyntaxException {
         final StringBuilder sb = new StringBuilder("");
         if (CrossSystem.isMac() == false && transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+            /* TODO: temporarily disabled on mac because of reports of syslog flushing for clipboard url stuff */
             Object ret = transferable.getTransferData(DataFlavor.javaFileListFlavor);
             if (ret != null) {
                 final List<File> list = (List<File>) ret;

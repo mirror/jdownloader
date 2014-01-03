@@ -82,6 +82,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.downloadcore.v15.Downloadable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -1024,6 +1025,11 @@ public class Oceanus extends PluginForHost {
 
         @Override
         public void close() {
+        }
+
+        @Override
+        public Downloadable getDownloadable() {
+            return null;
         }
 
     }

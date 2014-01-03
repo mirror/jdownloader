@@ -116,6 +116,7 @@ import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
+import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -529,7 +530,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 freeSpace = file2Root;
                 if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) {
                     long needed = spaceneeded + diskspace;
-                    logger.severe("Not enough diskspace available! File:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
+                    if (controller != null) {
+                        logger.severe("Not enough diskspace available(1)! Candidate:" + controller.getDownloadLinkCandidate() + "|Folder:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
+                    } else {
+                        logger.severe("Not enough diskspace available(1)! Folder:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
+                    }
                     return DISKSPACECHECK.FAILED;
                 }
             }
@@ -550,7 +555,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                  */
                 if (folder.startsWith(checkPath)) {
                     /* yes, same folder/partition/drive */
-                    spaceneeded += Math.max(0, dlink.getDownloadSize() - dlink.getDownloadCurrent());
+                    DownloadInterface downloadInterface = con.getDownloadInstance();
+                    if (downloadInterface != null) {
+                        Downloadable downloadable = downloadInterface.getDownloadable();
+                        if (downloadable != null) {
+                            File partFile = new File(downloadable.getFileOutputPart());
+                            spaceneeded += Math.max(0, (dlink.getKnownDownloadSize() - (partFile.exists() ? partFile.length() : 0)));
+                        }
+                    }
                     break;
                 }
             }
@@ -558,7 +570,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         /* enough space for needed diskspace */
         if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) {
             long needed = spaceneeded + diskspace;
-            logger.severe("Not enough diskspace available! File:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
+            if (controller != null) {
+                logger.severe("Not enough diskspace available(2)! Candidate:" + controller.getDownloadLinkCandidate() + "|Folder:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
+            } else {
+                logger.severe("Not enough diskspace available(2)! Folder:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
+            }
             return DISKSPACECHECK.FAILED;
         }
         return DISKSPACECHECK.OK;
@@ -770,22 +786,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION));
                 }
                 continue candidateLoop;
-            } else {
-                DownloadLink dlLink = allCandidates.get(0).getLink();
-                String dlFolder = dlLink.getFilePackage().getDownloadDirectory();
-                DISKSPACECHECK result = diskSpaceCheck(new File(dlFolder), null, (dlLink.getDownloadSize() - dlLink.getDownloadCurrent()));
-                switch (result) {
-                case INVALIDFOLDER:
-                    for (DownloadLinkCandidate candidate : allCandidates) {
-                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION));
-                    }
-                    continue candidateLoop;
-                case FAILED:
-                    for (DownloadLinkCandidate candidate : allCandidates) {
-                        selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.DISK_FULL));
-                    }
-                    continue candidateLoop;
-                }
             }
             for (DownloadLinkCandidate candidate : allCandidates) {
                 if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate.getLink()))) {
@@ -3105,18 +3105,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                     }
                 }
-                File partFile = new File(fileOutput.getAbsolutePath() + ".part");
-                // we should not use downloadLink.getDownloadCurrent() here. downloadLink.getDownloadCurrent() returns the amout of loaded
-                // bytes, but NOT the size of the partfile.
-
-                DISKSPACECHECK check = checkFreeDiskSpace(fileOutput.getParentFile(), controller, (downloadLink.getDownloadSize() - (partFile.exists() ? partFile.length() : 0)));
-                switch (check) {
-                case FAILED:
-                    throw new SkipReasonException(SkipReason.DISK_FULL);
-                case INVALIDFOLDER:
-                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                DownloadInterface downloadInterface = controller.getDownloadInstance();
+                if (downloadInterface != null) {
+                    Downloadable downloadable = downloadInterface.getDownloadable();
+                    if (downloadable != null) {
+                        File partFile = new File(downloadable.getFileOutputPart());
+                        long diskSpaceNeeded = downloadLink.getKnownDownloadSize() - (partFile.exists() ? partFile.length() : 0);
+                        DISKSPACECHECK check = checkFreeDiskSpace(fileOutput.getParentFile(), controller, diskSpaceNeeded);
+                        switch (check) {
+                        case FAILED:
+                            throw new SkipReasonException(SkipReason.DISK_FULL);
+                        case INVALIDFOLDER:
+                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                        }
+                    }
                 }
-
                 return;
             }
 

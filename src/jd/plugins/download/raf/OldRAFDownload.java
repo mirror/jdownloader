@@ -945,4 +945,9 @@ public class OldRAFDownload extends DownloadInterface {
     public void close() {
     }
 
+    @Override
+    public Downloadable getDownloadable() {
+        return downloadable;
+    }
+
 }

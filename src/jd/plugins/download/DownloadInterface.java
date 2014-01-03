@@ -20,6 +20,8 @@ import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 
+import org.jdownloader.downloadcore.v15.Downloadable;
+
 abstract public class DownloadInterface {
 
     @Deprecated
@@ -70,5 +72,7 @@ abstract public class DownloadInterface {
     public abstract long getStartTimeStamp();
 
     public abstract void close();
+
+    public abstract Downloadable getDownloadable();
 
 }

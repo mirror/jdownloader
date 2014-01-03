@@ -11,6 +11,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
+import org.jdownloader.downloadcore.v15.Downloadable;
+
 public class StreamingDownloadInterface extends DownloadInterface {
 
     private ManagedThrottledConnectionHandler connectionHandler;
@@ -88,6 +90,11 @@ public class StreamingDownloadInterface extends DownloadInterface {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public Downloadable getDownloadable() {
+        return null;
     }
 
 }

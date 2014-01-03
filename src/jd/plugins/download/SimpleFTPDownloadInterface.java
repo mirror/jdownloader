@@ -383,4 +383,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     public void close() {
     }
 
+    @Override
+    public Downloadable getDownloadable() {
+        return downloadable;
+    }
+
 }

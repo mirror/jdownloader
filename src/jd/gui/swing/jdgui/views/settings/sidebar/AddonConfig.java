@@ -36,10 +36,8 @@ public class AddonConfig extends ConfigPanel {
 
     private AddonConfig(ConfigContainer container, boolean showGroups) {
         super();
-
         this.container = container;
         this.showGroups = showGroups;
-
         init(true);
     }
 
@@ -84,12 +82,9 @@ public class AddonConfig extends ConfigPanel {
         return p;
     }
 
-    public static void resetInstance(ConfigContainer container, String ext, boolean showGroups) {
-
+    public synchronized static void resetInstance(ConfigContainer container, String ext, boolean showGroups) {
         if (MAP == null) MAP = new HashMap<String, AddonConfig>();
-
         MAP.remove(container + "_" + ext);
-
     }
 
 }
