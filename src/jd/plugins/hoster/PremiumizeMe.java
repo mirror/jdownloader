@@ -169,7 +169,7 @@ public class PremiumizeMe extends PluginForHost {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
         } catch (final SocketTimeoutException e) {
-            logger.info("premiumize.me: SocketTimeoutException on downloadstart");
+            logger.info(this.getHost() + ": SocketTimeoutException on downloadstart");
             int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_sockettimeout", 1);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 20) {
@@ -261,9 +261,10 @@ public class PremiumizeMe extends PluginForHost {
         handleAPIErrors(br, account, link);
         String dllink = br.getRegex("location\":\"(http[^\"]+)").getMatch(0);
         if (dllink == null) {
-            logger.info("premiumize.me: Unknown error");
+            logger.info(this.getHost() + ": Unknown error");
             sendErrorLog(link, account);
             int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown", 0);
+            link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
                 link.setProperty("timesfailedpremiumizeme_unknown", timesFailed);

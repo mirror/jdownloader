@@ -528,6 +528,8 @@ public class OneFichierCom extends PluginForHost {
     private void prepareBrowser(final Browser br) {
         try {
             if (br == null) { return; }
+            br.setConnectTimeout(3 * 60 * 1000);
+            br.setReadTimeout(3 * 60 * 1000);
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");

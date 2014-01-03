@@ -765,8 +765,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 logger.info("Link invalid (unsupported): " + parameter);
                 return decryptedLinks;
             }
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            finallink = br.getRegex("<IFRAME SRC=\"(http[^<>\"]*?)\" FRAMEBORDER=0").getMatch(0);
+            final String potlockerdirect = br.getRegex("file: \\'(http://potlocker\\.re/videos\\.php\\?vid=[a-z0-9]+)\\'").getMatch(0);
+            if (potlockerdirect != null) {
+                br.getPage(potlockerdirect);
+                finallink = br.getRedirectLocation();
+            } else {
+                if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+                finallink = br.getRegex("<IFRAME SRC=\"(http[^<>\"]*?)\" FRAMEBORDER=0").getMatch(0);
+            }
         } else if (parameter.contains("umhq.net/")) {
             finallink = br.getRegex("class=\"dl\" href=\"(http[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("djurl.com/")) {

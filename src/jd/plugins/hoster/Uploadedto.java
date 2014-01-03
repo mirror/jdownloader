@@ -1074,7 +1074,7 @@ public class Uploadedto extends PluginForHost {
                 // shown in html of the download server, 'You used too many different IPs, Downloads have been blocked for today.'
                 logger.warning("Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            } else if (br.containsHTML("We\\'re sorry but your download ticket couldn\\'t have been found")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l); }
             // unknown error/defect, lets try next time with web method!
             usePremiumAPI.set(false);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

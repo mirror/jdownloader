@@ -147,45 +147,65 @@ public class IFileIt extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, boolean viaAccount) throws Exception, PluginException {
-        final String ab1 = br.getRegex("if\\( __ab1 == \\'([^<>\"]*?)\\'").getMatch(0);
-        if (ab1 == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.setFollowRedirects(true);
-        // Br2 is our xml browser now!
-        final Browser br2 = br.cloneBrowser();
-        br2.setReadTimeout(40 * 1000);
-        final String ukey = new Regex(downloadLink.getDownloadURL(), "filecloud\\.io/(.+)").getMatch(0);
-        xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + Encoding.urlEncode(ab1));
-        if (br.containsHTML("message\":\"invalid request\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
-        if (br2.containsHTML("\"message\":\"gopremium\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
-        if (br2.containsHTML("\"captcha\":1")) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
-            // Semi-automatic reCaptcha handling
-            final String k = br.getRegex("recaptcha_public.*?=.*?\\'([^<>\"]*?)\\';").getMatch(0);
-            if (k == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            rc.setId(k);
-            rc.load();
-            for (int i = 0; i <= 5; i++) {
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1 + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
-                if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
-                    rc.reload();
-                    continue;
-                }
-                break;
+        String dllink = null;
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                logger.info("Link is a direct link");
+                dllink = downloadLink.getDownloadURL();
+            } else {
+                logger.info("Link is no direct link");
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
             }
         }
-        if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (br2.containsHTML("\"message\":\"signup\"")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
-        br.getPage("http://filecloud.io/download.html");
-        String dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
         if (dllink == null) {
-            logger.info("last try getting dllink failed, plugin must be defect!");
-            System.out.println(br.toString() + "n");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String ab1 = br.getRegex("if\\( __ab1 == \\'([^<>\"]*?)\\'").getMatch(0);
+            if (ab1 == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            br.setFollowRedirects(true);
+            // Br2 is our xml browser now!
+            final Browser br2 = br.cloneBrowser();
+            br2.setReadTimeout(40 * 1000);
+            final String ukey = new Regex(downloadLink.getDownloadURL(), "filecloud\\.io/(.+)").getMatch(0);
+            xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + Encoding.urlEncode(ab1));
+            if (br.containsHTML("message\":\"invalid request\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
+            if (br2.containsHTML("\"message\":\"gopremium\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+            if (br2.containsHTML("\"captcha\":1")) {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
+                // Semi-automatic reCaptcha handling
+                final String k = br.getRegex("recaptcha_public.*?=.*?\\'([^<>\"]*?)\\';").getMatch(0);
+                if (k == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                rc.setId(k);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1 + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
+                    if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
+                        rc.reload();
+                        continue;
+                    }
+                    break;
+                }
+            }
+            if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br2.containsHTML("\"message\":\"signup\"")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
+            br.getPage("http://filecloud.io/download.html");
+            dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
+            if (dllink == null) {
+                logger.info("last try getting dllink failed, plugin must be defect!");
+                System.out.println(br.toString() + "n");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         br.setFollowRedirects(false);
         int chunks = MAXFREECHUNKS;
@@ -244,8 +264,6 @@ public class IFileIt extends PluginForHost {
         prepBrowser(br);
         br.setRequestIntervalLimit(getHost(), 250);
         simulateBrowser();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
         doFree(downloadLink, false);
     }
 
@@ -418,7 +436,6 @@ public class IFileIt extends PluginForHost {
         } else {
             br.setFollowRedirects(true);
             loginOldWay(account, false);
-            br.getPage(link.getDownloadURL());
             doFree(link, true);
         }
     }

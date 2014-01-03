@@ -65,6 +65,15 @@ public class WuShareCom extends PluginForHost {
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.postPage(br.getURL(), "action=free_download");
+            if (br.containsHTML("\"status\": \"oversize\"")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            }
             final String code = getCaptchaCode("http://wushare.com/captcha?id=" + System.currentTimeMillis(), downloadLink);
             br.postPage(br.getURL(), "action=get_download_link&captcha_response_field=" + code);
             if (br.containsHTML("\"error_captcha\"")) {
@@ -80,7 +89,7 @@ public class WuShareCom extends PluginForHost {
             }
             final String waitSeconds = br.getRegex("\"status\": \"waiting\", \"time\": (\\d+)").getMatch(0);
             if (waitSeconds != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitSeconds) * 1001l);
-            dllink = br.getRegex("\"link\": \"(http://[^<>\"]*?)\"}").getMatch(0);
+            dllink = br.getRegex("\"link\": \"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);

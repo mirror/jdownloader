@@ -52,12 +52,15 @@ public class HundredTwentySexDiskCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().equals("http://www.126disk.com/error.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<h1><img src=\\'[^<>\"]*?\\'>([^<>\"]*?)</h1>").getMatch(0);
-        final String filesize = br.getRegex("<b>文件大小 ：</b>([^<>\"]*?)</li>").getMatch(0);
+        String filename = br.getRegex("<h1><img src=\\'[^<>\"]*?\\'>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=\"nowrap file\\-name( [a-z0-9\\-]+)?\">([^<>\"]*?)</h1>").getMatch(1);
+        String filesize = br.getRegex("<b>文件大小 ：</b>([^<>\"]*?)</li>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<table id=\"info_table\">[\t\n\r ]+<tr>[\t\n\r ]+<td width=\"160px;\">文件大小：([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
-        final String md5 = br.getRegex(">M D 5值 ：</b>([a-z0-9]{32})</li>").getMatch(0);
+        String md5 = br.getRegex(">M D 5值 ：</b>([a-z0-9]{32})</li>").getMatch(0);
+        if (md5 == null) md5 = br.getRegex("<td>文件MD5：([a-f0-9]{32})</td>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
