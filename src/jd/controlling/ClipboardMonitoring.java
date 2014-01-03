@@ -354,7 +354,7 @@ public class ClipboardMonitoring {
 
     static {
         try {
-            if (CrossSystem.isMac() == false) urlFlavor = new DataFlavor("application/x-java-url; class=java.net.URL");
+            urlFlavor = new DataFlavor("application/x-java-url; class=java.net.URL");
         } catch (final Throwable e) {
             LogController.CL().info("urlFlavor not supported");
         }
@@ -504,7 +504,7 @@ public class ClipboardMonitoring {
     @SuppressWarnings("unchecked")
     public static String getListTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException, URISyntaxException {
         final StringBuilder sb = new StringBuilder("");
-        if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+        if (CrossSystem.isMac() == false && transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             Object ret = transferable.getTransferData(DataFlavor.javaFileListFlavor);
             if (ret != null) {
                 final List<File> list = (List<File>) ret;
