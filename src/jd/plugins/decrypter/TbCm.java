@@ -1003,8 +1003,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
-                 * return multiple results if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
+                 * if they are in the same quality rating
                  */
                 HashMap<ITAG, String[]> useTags = new HashMap<ITAG, String[]>(availableItags);
                 if (best) {
@@ -1764,15 +1764,16 @@ public class TbCm extends PluginForDecrypt {
      */
     private String descrambleSignature(String sig) throws IOException, PluginException {
         if (sig == null) return null;
-
         String jsUrl = br.getMatch("\"js\"\\: \"(.+?)\"");
         jsUrl = jsUrl.replace("\\/", "/");
         jsUrl = "http:" + jsUrl;
-
-        String js = JS_CACHE.get(jsUrl);
-        if (js == null) {
-            js = br.cloneBrowser().getPage(jsUrl);
-            JS_CACHE.put(jsUrl, js);
+        String js = null;
+        synchronized (JS_CACHE) {
+            js = JS_CACHE.get(jsUrl);
+            if (js == null) {
+                js = br.cloneBrowser().getPage(jsUrl);
+                JS_CACHE.put(jsUrl, js);
+            }
         }
         String descrambler = new Regex(js, "\\w+\\.signature\\=([\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
 
@@ -1802,7 +1803,6 @@ public class TbCm extends PluginForDecrypt {
         // }
         // }
         for (String line : new Regex(des, "[^;]+").getColumn(-1)) {
-
             s = handleRule(s, line);
         }
         logger.info(s);
