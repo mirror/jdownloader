@@ -25,14 +25,10 @@ public abstract class IdleGetter {
         case WINDOWS_8:
         case WINDOWS_SERVER_2008:
         case WINDOWS_VISTA:
-
             if (CFG_GENERAL.CFG.isWindowsJNAIdleDetectorEnabled()) { return new ModernWindowsJnaIdleGetter(); }
-
         default:
             return new BasicMousePointerIdleGetter();
-
         }
-
     }
 
     public abstract long getIdleTimeSinceLastUserInput();

@@ -212,8 +212,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     private JPanel                  waitingPane;
 
-    protected long                  lastUserInput;
-
     private Timer                   speedInTitleUpdater;
 
     private boolean                 busy;
@@ -906,8 +904,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
-     * and only put the mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
+     * mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -1126,18 +1124,15 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     public boolean isSilentModeActive() {
-
-        long idleTime = IdleGetter.getInstance().getIdleTimeSinceLastUserInput();
-
-        if (idleTime > CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState() && CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState() > 0) {
-            //
-            System.out.println("Silent mode :" + IdleGetter.getInstance().getIdleTimeSinceLastUserInput());
-            return true;
-
-        } else {
-            System.out.println("No idle: " + IdleGetter.getInstance().getIdleTimeSinceLastUserInput());
+        final long idleTime = IdleGetter.getInstance().getIdleTimeSinceLastUserInput();
+        final long maxIdleTime = CFG_SILENTMODE.CFG.getAutoSilentModeInIdleState();
+        if (maxIdleTime > 0) {
+            if (idleTime >= maxIdleTime) {
+                System.out.println("Silent mode:Idle:" + idleTime + "|Max:" + maxIdleTime);
+                return true;
+            }
+            System.out.println("No idle:" + idleTime + "|Max:" + maxIdleTime);
         }
-
         Boolean ret = new EDTHelper<Boolean>() {
             @Override
             public Boolean edtRun() {
@@ -1580,8 +1575,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
-     * avoid sideeffects when changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
+     * changing anything
      * 
      * @param minimize
      */

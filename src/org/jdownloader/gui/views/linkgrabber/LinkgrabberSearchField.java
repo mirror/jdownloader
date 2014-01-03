@@ -197,11 +197,11 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
 
                 @Override
                 public synchronized boolean isFiltered(CrawledLink v) {
-                    String host = v.getHost();
+                    String host = v.getDomainInfo().getTld();
                     Boolean ret = fastCheck.get(host);
                     if (ret != null) return ret.booleanValue();
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(v.getHost()).find()) {
+                        if (filterPattern.matcher(host).find()) {
                             fastCheck.put(host, Boolean.FALSE);
                             return false;
                         }

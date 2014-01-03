@@ -691,6 +691,15 @@ public class SecondLevelLaunch {
 
                         }
                     });
+                    if (CFG_GENERAL.CFG.isWindowsJNAIdleDetectorEnabled() && CrossSystem.isWindows()) {
+                        try {
+                            /* speed up the init of the following libs */
+                            com.sun.jna.platform.win32.User32 u = com.sun.jna.platform.win32.User32.INSTANCE;
+                            com.sun.jna.platform.win32.Kernel32 k = com.sun.jna.platform.win32.Kernel32.INSTANCE;
+                        } catch (final Throwable e) {
+                            SecondLevelLaunch.LOG.log(e);
+                        }
+                    }
                 } catch (Throwable e) {
                     SecondLevelLaunch.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);

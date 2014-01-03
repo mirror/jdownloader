@@ -768,11 +768,9 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     abstract protected void saveFilename(String text);
 
     protected void saveInEDT() {
-
         if (priority.isShowing()) {
             Priority priop = priority.getSelectedItem();
             savePriority(priop);
-
         }
         if (comment.isShowing()) {
             saveComment(comment.getText());
@@ -798,13 +796,11 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             }
         }
         if (packagename.isShowing()) {
-
             if (!loadPackageName().equals(packagename.getText())) {
                 savePackageName(packagename.getText());
                 PackageHistoryManager.getInstance().add(packagename.getText());
             }
         }
-
         if (password.isShowing()) {
             if (currentArchive != null) {
                 System.out.println("SAVE");

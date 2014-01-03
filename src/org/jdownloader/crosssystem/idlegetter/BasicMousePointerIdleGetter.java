@@ -11,8 +11,8 @@ import java.awt.event.ActionListener;
 import javax.swing.Timer;
 
 public class BasicMousePointerIdleGetter extends IdleGetter implements AWTEventListener, ActionListener {
-    private Point lastLocation = null;
-    private long  lastChange   = System.currentTimeMillis();
+    private volatile Point lastLocation = null;
+    private volatile long  lastChange   = System.currentTimeMillis();
 
     public BasicMousePointerIdleGetter() {
         Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.KEY_EVENT_MASK);
@@ -35,13 +35,10 @@ public class BasicMousePointerIdleGetter extends IdleGetter implements AWTEventL
     @Override
     public void actionPerformed(ActionEvent e) {
         Point location = MouseInfo.getPointerInfo().getLocation();
-
         if (lastLocation == null || !lastLocation.equals(location)) {
-
             lastChange = System.currentTimeMillis();
             lastLocation = location;
         }
-
     }
 
 }

@@ -4,6 +4,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,12 +14,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.packagecontroller.ModifyLock;
 import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.Application;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
@@ -28,9 +32,22 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         protected Object[]       constructorParameters;
     }
 
-    private static class SharedPluginObjects {
-        protected HashMap<String, Object> sharedObjects = null;
-        protected long                    version       = -1;
+    private static class SharedPluginObjects extends HashMap<String, Object> {
+        protected final long version;
+
+        private SharedPluginObjects(final long version) {
+            this.version = version;
+        }
+
+        protected final ModifyLock modifyLock = new ModifyLock();
+
+        protected final ModifyLock getModifyLock() {
+            return modifyLock;
+        }
+
+        protected final long getVersion() {
+            return version;
+        }
     }
 
     private static final HashMap<String, SharedPluginObjects> sharedPluginObjectsPool = new HashMap<String, SharedPluginObjects>();
@@ -58,6 +75,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     protected String                                          mainClassFilename       = null;
     private final Object[]                                    CONSTRUCTOR;
     private final PluginWrapper                               pluginWrapper;
+    private static final LogSource                            LOGGER                  = LogController.getInstance().getCurrentClassLogger();
 
     public String getMainClassFilename() {
         return mainClassFilename;
@@ -169,86 +187,122 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             handleUpdateRequiredClassNotFoundException(e, true);
         }
         try {
+            final String cacheID = className;
+            SharedPluginObjects savedSharedObjects = null;
             synchronized (sharedPluginObjectsPool) {
+                /* fetch SharedPluginObjects from cache */
+                savedSharedObjects = sharedPluginObjectsPool.get(cacheID);
+                if (savedSharedObjects != null && savedSharedObjects.getVersion() < getVersion()) {
+                    /* TODO: do not trash old cache, instead update it to newer version! */
+                    LOGGER.info("Remove outdated objectPool version " + savedSharedObjects.getVersion() + " for class " + getClassname() + " because version is now " + getVersion());
+                    sharedPluginObjectsPool.remove(cacheID);
+                    savedSharedObjects = null;
+                }
+            }
+            if (savedSharedObjects == null) {
+                /* no cache available */
                 HashMap<String, Object> currentSharedObjects = new HashMap<String, Object>();
                 Field[] fields = ret.getClass().getDeclaredFields();
                 for (Field field : fields) {
-                    if ((field.getModifiers() & Modifier.STATIC) != 0) {
-                        if ((field.getModifiers() & Modifier.FINAL) != 0) {
+                    if (field.isSynthetic()) {
+                        /* we ignore synthetic fields */
+                        continue;
+                    }
+                    final int modifiers = field.getModifiers();
+                    final boolean isStatic = (modifiers & Modifier.STATIC) != 0;
+                    if (isStatic) {
+                        if ((modifiers & Modifier.FINAL) != 0) {
                             /* we ignore final objects */
                             continue;
                         }
+                        if (field.getType().isEnum() || field.isEnumConstant()) {
+                            LOGGER.info("Class " + getClassname() + " has static enum: " + field.getName());
+                            continue;
+                        }
                         if (field.getType().isPrimitive()) {
-                            System.out.println("Class " + getClassname() + " has static primitive field: " + field.getName());
+                            LOGGER.info("Class " + getClassname() + " has static primitive field: " + field.getName());
                             continue;
                         }
                         if (immutableClasses.contains(field.getType().getName())) {
-                            System.out.println("Class " + getClassname() + " has static immutable field: " + field.getName());
+                            LOGGER.info("Class " + getClassname() + " has static immutable field: " + field.getName());
                             continue;
                         }
                         /* we only share static objects */
                         field.setAccessible(true);
-                        currentSharedObjects.put(field.getName(), field.get(null));
-                    }
-                }
-                if (currentSharedObjects.size() > 0) {
-                    /* this plugin has shared Objects */
-                    SharedPluginObjects savedSharedObjects = sharedPluginObjectsPool.get(className);
-                    if (savedSharedObjects == null) {
-                        /* we dont have shared Objects from this plugin in pool yet */
-                        savedSharedObjects = new SharedPluginObjects();
-                        savedSharedObjects.version = getVersion();
-                        savedSharedObjects.sharedObjects = currentSharedObjects;
-                        sharedPluginObjectsPool.put(className, savedSharedObjects);
-                    } else {
-                        /* reuse/update objects from pool */
-                        Iterator<Entry<String, Object>> it = currentSharedObjects.entrySet().iterator();
-                        while (it.hasNext()) {
-                            Entry<String, Object> next = it.next();
-                            Object savedObject = savedSharedObjects.sharedObjects.get(next.getKey());
-                            if (savedObject != null) {
-                                Field setField = null;
-                                try {
-                                    /* restore shared Object */
-                                    setField = ret.getClass().getDeclaredField(next.getKey());
-                                    setField.setAccessible(true);
-                                    if ((setField.getModifiers() & Modifier.FINAL) != 0) {
-                                        /* field seems to be final now, dont change it */
-                                        if (getVersion() > savedSharedObjects.version) {
-                                            /* remove from pool */
-                                            System.out.println("Class " + getClassname() + " has final Field " + next.getKey() + " now->remove from pool");
-                                            savedSharedObjects.sharedObjects.remove(next.getKey());
-                                        }
-                                        continue;
-                                    }
-                                    setField.set(null, savedObject);
-                                } catch (final NoSuchFieldException e) {
-                                    if (getVersion() > savedSharedObjects.version) {
-                                        /* field is gone, remove it from pool */
-                                        System.out.println("Class " + getClassname() + " no longer has Field " + next.getKey() + "->remove from pool");
-                                        savedSharedObjects.sharedObjects.remove(next.getKey());
-                                    }
-                                } catch (final Throwable e) {
-                                    System.out.println("Cant modify Field " + setField.getName() + " for " + getClassname());
-                                    e.printStackTrace();
-                                }
-                            } else {
-                                /* save object to pool */
-                                savedSharedObjects.sharedObjects.put(next.getKey(), savedObject);
-                            }
+                        Object fieldObject = field.get(null);
+                        if (fieldObject != null) {
+                            currentSharedObjects.put(field.getName(), fieldObject);
+                        } else {
+                            LOGGER.info("Class " + getClassname() + " has static field: " + field.getName() + " with null content!");
                         }
                     }
-                } else {
-                    /* this plugin no longer has shared Objects, update pool */
-                    SharedPluginObjects savedSharedObjects = sharedPluginObjectsPool.get(className);
-                    if (savedSharedObjects != null && savedSharedObjects.version < this.getVersion()) {
-                        /* saved objects are from older plugin version, lets remove it from pool */
-                        sharedPluginObjectsPool.remove(className);
+                }
+                final SharedPluginObjects newSavedSharedObjects = new SharedPluginObjects(getVersion());
+                newSavedSharedObjects.putAll(currentSharedObjects);
+                synchronized (sharedPluginObjectsPool) {
+                    /* put SharedPluginObjects into cache if not set yet */
+                    savedSharedObjects = sharedPluginObjectsPool.get(cacheID);
+                    if (savedSharedObjects == null) {
+                        savedSharedObjects = newSavedSharedObjects;
+                        sharedPluginObjectsPool.put(cacheID, savedSharedObjects);
+                        return ret;
                     }
                 }
             }
+            ArrayList<String> removeList = null;
+            boolean readL = savedSharedObjects.modifyLock.readLock();
+            try {
+                Iterator<Entry<String, Object>> it = savedSharedObjects.entrySet().iterator();
+                Class<?> c = ret.getClass();
+                while (it.hasNext()) {
+                    Entry<String, Object> next = it.next();
+                    String fieldID = next.getKey();
+                    Object fieldObject = next.getValue();
+                    Field setField = null;
+                    try {
+                        /* restore shared Object */
+                        setField = c.getDeclaredField(fieldID);
+                        setField.setAccessible(true);
+                        if ((setField.getModifiers() & Modifier.FINAL) != 0) {
+                            /* field seems to be final now, dont change it */
+                            if (getVersion() > savedSharedObjects.version) {
+                                /* remove from pool */
+                                LOGGER.severe("Class " + getClassname() + " has final Field " + next.getKey() + " now->remove from pool");
+                                if (removeList == null) removeList = new ArrayList<String>();
+                                removeList.add(fieldID);
+                            }
+                            continue;
+                        }
+                        setField.set(null, fieldObject);
+                    } catch (final NoSuchFieldException e) {
+                        LOGGER.log(e);
+                        if (getVersion() > savedSharedObjects.version) {
+                            /* field is gone, remove it from pool */
+                            LOGGER.severe("Class " + getClassname() + " no longer has Field " + next.getKey() + "->remove from pool");
+                            if (removeList == null) removeList = new ArrayList<String>();
+                            removeList.add(fieldID);
+                        }
+                    } catch (final Throwable e) {
+                        LOGGER.log(e);
+                        LOGGER.severe("Cant modify Field " + setField.getName() + " for " + getClassname());
+                        e.printStackTrace();
+                    }
+                }
+            } finally {
+                savedSharedObjects.modifyLock.readUnlock(readL);
+            }
+            if (removeList != null) {
+                try {
+                    savedSharedObjects.modifyLock.writeLock();
+                    for (String fieldID : removeList) {
+                        savedSharedObjects.remove(fieldID);
+                    }
+                } finally {
+                    savedSharedObjects.modifyLock.writeUnlock();
+                }
+            }
         } catch (final Throwable e) {
-            e.printStackTrace();
+            LOGGER.log(e);
         }
         return ret;
     }

@@ -48,10 +48,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }, flags = { 2 })
 public class MegasharesCom extends PluginForHost {
 
-    private final String                   UserAgent   = "JD_" + "$Revision$";
-    private static HashMap<String, String> premCookies = null;
-    private static Object                  LOCK        = new Object();
-    private static final String            NOCHUNKS    = "NOCHUNKS";
+    private final String            UserAgent   = "JD_" + "$Revision$";
+    private HashMap<String, String> premCookies = null;
+    private static Object           LOCK        = new Object();
+    private static final String     NOCHUNKS    = "NOCHUNKS";
 
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);

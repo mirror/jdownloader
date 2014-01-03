@@ -182,11 +182,11 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
                 @Override
                 public synchronized boolean isFiltered(DownloadLink v) {
-                    String host = v.getHost();
+                    String host = v.getDomainInfo().getTld();
                     Boolean ret = fastCheck.get(host);
                     if (ret != null) return ret.booleanValue();
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(v.getHost()).find()) {
+                        if (filterPattern.matcher(host).find()) {
                             fastCheck.put(host, Boolean.FALSE);
                             return false;
                         }
