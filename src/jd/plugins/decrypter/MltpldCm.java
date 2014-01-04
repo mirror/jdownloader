@@ -56,6 +56,7 @@ public class MltpldCm extends PluginForDecrypt {
             final String[] redirectLinks = br.getRegex(Pattern.compile("id=\"url_\\d+\"><a href=\"(http://(www\\.)?multiupload\\.nl.*?)\"")).getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 logger.warning("redirectLinks list is null, only returning direct link...");
+                decryptedLinks.add(createDownloadlink(parameter.replace("multiupload.nl", "multiuploaddecrypted.nl")));
                 return decryptedLinks;
             }
             decryptedLinks.add(createDownloadlink(parameter.replace("multiupload.nl", "multiuploaddecrypted.nl")));
