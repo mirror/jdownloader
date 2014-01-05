@@ -1,7 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=In die Taskleiste minimieren
-JDGui_windowClosing_try_answer_tray=In den Infobereich schließen
+JDGui_windowClosing_try_answer_tray=In den Infobereich minimieren
 JDGui_windowClosing_try_asnwer_close=JDownloader beenden
-JDGui_windowClosing_try_msg_2=Bitte wähle zwischen:\n- JDownloader beenden (bricht alle laufenden Prozesse ab)\n- in Taskleiste minimieren (Downloads werden fortgeführt)\n- in Infobereich minimieren (Downloads werden im Hintergrund fortgeführt)
+JDGui_windowClosing_try_msg_2=Bitte wähle zwischen:\n- in Taskleiste minimieren (Downloads werden fortgeführt)\n- in Infobereich minimieren (Downloads werden "im Hintergrund" fortgeführt)\n- JDownloader beenden (bricht alle laufenden Prozesse ab)
 JDGui_windowClosing_try_title=JDownloader schließen...
 OnCloseAction_exit=JDownloader beenden
 OnCloseAction_totaskbar=In die Taskleiste minimieren
