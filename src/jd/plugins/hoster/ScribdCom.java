@@ -17,11 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -44,6 +49,8 @@ public class ScribdCom extends PluginForHost {
 
     private final String   NODOWNLOAD  = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
     private final String   PREMIUMONLY = JDL.L("plugins.hoster.ScribdCom.premonly", "Download requires a scribd.com account!");
+    private String         XTOKEN      = null;
+    private String         ORIGURL     = null;
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,6 +82,7 @@ public class ScribdCom extends PluginForHost {
                 break;
             }
         }
+        ORIGURL = br.getURL();
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta property=\"media:title\" content=\"(.*?)\"").getMatch(0);
@@ -182,37 +190,57 @@ public class ScribdCom extends PluginForHost {
 
     public void login(Account account) throws Exception {
         setBrowserExclusive();
+        prepBr();
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.setFollowRedirects(true);
         br.getPage("http://de.scribd.com/csrf_token?href=http%3A%2F%2Fde.scribd.com%2F");
 
-        final String thisToken = br.getRegex("\"csrf_token\":\"([^<>\"]*?)\"").getMatch(0);
-        if (thisToken == null) {
+        XTOKEN = br.getRegex("\"csrf_token\":\"([^<>\"]*?)\"").getMatch(0);
+        if (XTOKEN == null) {
             logger.warning("Login broken!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        br.postPage("https://www.scribd.com/login", "authenticity_token=" + thisToken + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+        br.postPage("https://www.scribd.com/login", "authenticity_token=" + XTOKEN + "&login_params%5Bnext_url%5D=&login_params%5Bcontext%5D=join2&form_name=login_lb_form_login_lb&login_or_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("Invalid username or password") || !br.containsHTML("\"login\":true")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     private String[] getDllink(final DownloadLink parameter) throws PluginException, IOException {
+        br.getPage(ORIGURL);
         String[] dlinfo = new String[2];
-        br.setFollowRedirects(false);
         dlinfo[1] = getConfiguredServer();
         final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)").getMatch(0);
         if (fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Browser xmlbrowser = br.cloneBrowser();
+        final Browser xmlbrowser = br.cloneBrowser();
+        xmlbrowser.setFollowRedirects(false);
         xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         xmlbrowser.getHeaders().put("Accept", "*/*");
-        xmlbrowser.postPage("http://www.scribd.com/document_downloads/request_document_for_download", "id=" + fileId);
-        // xmlbrowser.postPage("http://www.scribd.com/document_downloads/register_download_attempt",
-        // "next_screen=download_lightbox&source=read&doc_id=" + fileId);
+        // This will make it fail...
+        // xmlbrowser.postPage("http://www.scribd.com/document_downloads/request_document_for_download", "id=" + fileId);
         final String correctedXML = xmlbrowser.toString().replace("\\", "");
         // Check if the selected format is available
-        if (correctedXML.contains("premium: true")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.errors.nofreedownloadlink", "Download is only available for premium users!"));
-        dlinfo[0] = "http://www.scribd.com/document_downloads/" + fileId + "?secret_password=&extension=" + dlinfo[1];
-        br.getPage(dlinfo[0]);
+        if (correctedXML.contains("premium: true")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download is only available for premium users!");
+        }
+        xmlbrowser.getHeaders().put("X-Tried-CSRF", "1");
+        xmlbrowser.getHeaders().put("X-CSRF-Token", XTOKEN);
+        xmlbrowser.postPage("http://de.scribd.com/document_downloads/register_download_attempt", "doc_id=" + fileId + "&next_screen=download_lightbox&source=read");
+        dlinfo[0] = "http://de.scribd.com/document_downloads/" + fileId + "?extension=" + dlinfo[1];
+        xmlbrowser.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        xmlbrowser.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
+        xmlbrowser.getHeaders().remove("Accept-Charset");
+        xmlbrowser.getHeaders().put("Accept-Charset", null);
+        xmlbrowser.getHeaders().put("Referer", ORIGURL);
+        xmlbrowser.getHeaders().put("X-Tried-CSRF", null);
+        xmlbrowser.getHeaders().put("X-CSRF-Token", null);
+        final String check = getSessionCookie(xmlbrowser);
+        xmlbrowser.clearCookies("http://scribd.com/");
+        xmlbrowser.setCookie("http://scribd.com/", "_scribd_session", check);
+        xmlbrowser.getPage(dlinfo[0]);
         if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
         if (br.containsHTML("You do not have access to download this document") || br.containsHTML("Invalid document format")) {
             try {
@@ -222,9 +250,32 @@ public class ScribdCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
-        dlinfo[0] = br.getRedirectLocation();
+        dlinfo[0] = xmlbrowser.getRedirectLocation();
         if (dlinfo[0] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return dlinfo;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String getSessionCookie(final Browser brc) {
+        ArrayList<String> sessionids = new ArrayList<String>();
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies add = this.br.getCookies("http://scribd.com/");
+        for (final Cookie c : add.getCookies()) {
+            cookies.put(c.getKey(), c.getValue());
+        }
+        if (cookies != null) {
+            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                final String key = cookieEntry.getKey();
+                final String value = cookieEntry.getValue();
+                if (key.equals("_scribd_session")) sessionids.add(value);
+            }
+        }
+        final String finalID = sessionids.get(sessionids.size() - 1);
+        return finalID;
+    }
+
+    private void prepBr() {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0");
     }
 
     @Override

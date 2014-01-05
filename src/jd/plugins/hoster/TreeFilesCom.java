@@ -71,15 +71,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "treefiles.com" }, urls = { "https?://(www\\.)?treefiles\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "treefiles.com" }, urls = { "https?://(www\\.)?((treefiles|treesfile)\\.com|treefile\\.org)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class TreeFilesCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://treefiles.com";
+    private final String               COOKIE_HOST                  = "http://treesfile.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(treefiles\\.com)";
+    private final String               DOMAINS                      = "(treefiles\\.com|treesfile\\.com|treefile\\.org)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
@@ -582,7 +582,7 @@ public class TreeFilesCom extends PluginForHost {
                 passCode = null;
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
-            }	
+            }
         }
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {
@@ -1460,7 +1460,7 @@ public class TreeFilesCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

@@ -33,12 +33,16 @@ public class DigitalRippedCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?digitaldripped\\.com/(ads\\d+.+|disclai?mer|terms|contact|advertise|ajax.+|js.+|\\?p=.+|archives|lilb\\.htm|ad/.+|submit|rss|song/archive|topsongs|mixtapes|dmca|disclaimer|tos|song/list\\?artist=.+)";
+    private static final String INVALIDLINKS = "http://(www\\.)?digitaldripped\\.com/(ads\\d+.+|disclai?mer|terms|contact|advertise|ajax.+|js.+|\\?p=.+|archives|lilb\\.htm|ad/.+|submit|rss|song/archive|topsongs|mixtapes|dmca|tos|song/list\\?artist=.+|media/.+)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         final String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
@@ -58,8 +62,8 @@ public class DigitalRippedCom extends PluginForDecrypt {
             String[][] links = br.getRegex(regexfinder).getMatches();
 
             if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Link offline or decrypter broken: " + parameter);
+                return decryptedLinks;
             }
             for (int i = 0; i < links.length; i++) {
                 String singleLink = links[i][0].replace("\\/", "/");
@@ -70,7 +74,7 @@ public class DigitalRippedCom extends PluginForDecrypt {
             return decryptedLinks;
         } else {
             String finallink = null;
-            if (br.containsHTML("http\\-equiv=\"refresh\">") || br.containsHTML(">404 Not Found<") || parameter.matches(INVALIDLINKS)) {
+            if (br.containsHTML("http\\-equiv=\"refresh\">") || br.containsHTML(">404 Not Found<")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             } else {

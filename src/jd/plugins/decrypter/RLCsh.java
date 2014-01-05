@@ -127,7 +127,7 @@ public class RLCsh extends PluginForDecrypt {
 
         if (link == null) {
             link = br.getRedirectLocation();
-            if (link == null && br.containsHTML("<title>URLCash\\.net \\- An URL forwarding service where you make money from")) {
+            if (link == null && br.containsHTML("<title>URLCash\\.net \\- An URL forwarding service where you make money from|register_new\\.php\"")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             } else {

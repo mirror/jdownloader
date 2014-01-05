@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -56,8 +57,9 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         PARAMETER = param.toString();
         br.setFollowRedirects(true);
         br.getPage(PARAMETER);
-        if (br.containsHTML("Video not found<")) {
-            final DownloadLink dl = createDownloadlink(PARAMETER.replace("playvid.com/", "playviddecrypted.com/"));
+        if (br.containsHTML("Video not found<|class=\"play\\-error\"")) {
+            final DownloadLink dl = createDownloadlink("http://playviddecrypted.com/" + System.currentTimeMillis());
+            dl.setFinalFileName(new Regex(PARAMETER, "\\?v=([A-Za-z0-9\\-]+)").getMatch(0));
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;

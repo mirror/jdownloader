@@ -797,10 +797,14 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (finallink != null && finallink.contains("hulkshare.biz/")) offline = true;
         } else if (parameter.contains("re-direcciona.me/")) {
             finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+; URL=(http[^<>\"]*?)\"").getMatch(0);
-        } else if (parameter.contains("cli.gs/") || parameter.contains("cl.gs/")) {
+        } else if (parameter.toLowerCase().contains("cli.gs/") || parameter.toLowerCase().contains("cl.gs/")) {
+            if (parameter.toLowerCase().matches("http://(www\\.)?(cli|cl)\\.gs/(javascript)") || br.containsHTML("id=\"SiteError\"")) {
+                offline = true;
+            } else if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?cli?\\.gs/.*?")) {
+                offline = true;
+            }
             finallink = br.getRegex("<title>Preview Page \\- ([^<>\"]*?)/</title>").getMatch(0);
             if (finallink == null) finallink = br.getRegex("URL redirects to: <a href=\"(http[^<>\"]*?)\"").getMatch(0);
-            if ("http://cli.gs/".equals(br.getRedirectLocation())) offline = true;
         }
         if ("http://adfoc.us/".equals(br.getRedirectLocation())) offline = true;
         if (offline) {

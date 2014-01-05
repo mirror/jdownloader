@@ -77,9 +77,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)\"").getMatch(0);
+        externID = br.getRegex("\"(http://(www\\.)?tube8\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("(http://(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
