@@ -106,6 +106,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         private String        captchaAddress;
         private String        captchaId;
         private String        result;
+        private int           count = -1;
 
         public AdsCaptcha(final Browser br) {
             this.br = br;
@@ -149,15 +150,17 @@ public class LnkCrptWs extends PluginForDecrypt {
             acBr.getPage(captchaAddress);
             getChallenge();
             getPublicKey();
+            getImageCount();
             if (challenge == null || publicKey == null) throw new Exception("AdsCaptcha: challenge and/or publickey equal null!");
 
             if (!isStableEnviroment()) {
                 final URL[] images = imageUrls();
+                if (count <= 0 && images.length == 1) throw new Exception("AdsCaptcha modul broken!");
                 SwingUtilities.invokeAndWait(new Runnable() {
 
                     @Override
                     public void run() {
-                        SliderCaptchaDialog sc = new SliderCaptchaDialog(0, "AdsCaptcha - " + br.getHost(), images);
+                        SliderCaptchaDialog sc = new SliderCaptchaDialog(0, "AdsCaptcha - " + br.getHost(), images, count);
                         sc.displayDialog();
                         result = sc.getReturnValue();
                     }
@@ -169,12 +172,17 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         private void getChallenge() {
-            challenge = acBr.getRegex("Challenge:\\s*(\'|\")?([0-9a-f\\-]+)(\'|\")?").getMatch(1);
+            challenge = acBr.getRegex("\"challenge\":\"([0-9a-f\\-]+)\"").getMatch(0);
         }
 
         private void getPublicKey() {
-            publicKey = acBr.getRegex("Key:\\s*(\'|\")?([0-9a-f\\-]+)(\'|\")?").getMatch(1);
+            publicKey = acBr.getRegex("\"publicKey\":\"([0-9a-f\\-]+)\"").getMatch(0);
             if (publicKey == null) publicKey = new Regex(captchaAddress, "PublicKey=([0-9a-f\\-]+)\\&").getMatch(0);
+        }
+
+        private void getImageCount() {
+            String c = acBr.getRegex("\"count\":\"?(\\d+)\"?").getMatch(0);
+            if (c != null) count = Integer.parseInt(c);
         }
 
         private boolean checkIfSupported() throws Exception {
@@ -187,11 +195,14 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private URL[] imageUrls() throws Exception {
             acBr.getPage("http://api.minteye.com/Slider/SliderData.ashx?cid=" + challenge + "&CaptchaId=" + captchaId + "&PublicKey=" + publicKey + "&w=180&h=150");
-            String urls[] = acBr.getRegex("\\{\'src\':\\s\\'(https?://[^\']+)\'\\}").getColumn(0);
+            String urls[] = acBr.getRegex("\\{\'src\':\\s\'(https?://[^\']+)\'\\}").getColumn(0);
+            if (urls == null || urls.length == 0) urls = acBr.getRegex("\\{\'src\':\\s\'(//[^\']+)\'\\}").getColumn(0);
+            if (urls == null || urls.length == 0) urls = acBr.getRegex("(\'|\")spriteUrl(\'|\"):\\s*(\'|\")(.*?)(\'|\")").getColumn(3);
             if (urls == null || urls.length == 0) throw new Exception("AdsCaptcha: Image urls not found!");
             URL out[] = new URL[urls.length];
             int i = 0;
             for (String u : urls) {
+                if (u.startsWith("//")) u = "http:" + u;
                 out[i++] = new URL(u);
             }
             return out;
@@ -214,7 +225,7 @@ public class LnkCrptWs extends PluginForDecrypt {
     private static class SliderCaptchaDialog extends AbstractDialog<String> {
         private JSlider       slider;
         private JPanel        p;
-        private int           images          = 0;
+        private int           images          = -1;
         private URL           imageUrls[];
         private int           pos             = 0;
         private JPanel        picture;
@@ -226,11 +237,12 @@ public class LnkCrptWs extends PluginForDecrypt {
         private JProgressBar  bar;
         private final JButton dynamicOkButton = new JButton(_AWU.T.ABSTRACTDIALOG_BUTTON_OK());
 
-        public SliderCaptchaDialog(int flag, String title, URL[] imageUrls) {
+        public SliderCaptchaDialog(int flag, String title, URL[] imageUrls, int count) {
             super(flag | Dialog.STYLE_HIDE_ICON | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, title, null, null, null);
             setCountdownTime(120);
             this.images = imageUrls.length - 1;
             this.imageUrls = imageUrls;
+            if (images == 0) images = count--;
         }
 
         @Override
@@ -243,17 +255,36 @@ public class LnkCrptWs extends PluginForDecrypt {
                 public void run() {
                     InputStream stream = null;
                     try {
-                        image = new BufferedImage[imageUrls.length];
-                        for (int i = 0; i < image.length; i++) {
-                            sleep(50);
+                        if (images < 0) {
+                            image = new BufferedImage[imageUrls.length];
+                            for (int i = 0; i < image.length; i++) {
+                                sleep(50);
+                                try {
+                                    image[i] = ImageIO.read(stream = imageUrls[i].openStream());
+                                    bar.setValue(i + 1);
+                                } finally {
+                                    try {
+                                        stream.close();
+                                    } catch (final Throwable e) {
+                                    }
+                                }
+                            }
+                        } else {
+                            image = new BufferedImage[images];
+                            BufferedImage tmpImage = null;
                             try {
-                                image[i] = ImageIO.read(stream = imageUrls[i].openStream());
-                                bar.setValue(i + 1);
+                                tmpImage = ImageIO.read(stream = imageUrls[0].openStream());
                             } finally {
                                 try {
                                     stream.close();
                                 } catch (final Throwable e) {
                                 }
+                            }
+                            int w = tmpImage.getWidth();
+                            int h = tmpImage.getHeight() / images;
+                            for (int i = 0; i < image.length; i++) {
+                                image[i] = tmpImage.getSubimage(0, i * h, w, h);
+                                bar.setValue(i + 1);
                             }
                         }
                     } catch (IOException e) {
