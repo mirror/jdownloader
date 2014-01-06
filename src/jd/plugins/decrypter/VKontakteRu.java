@@ -384,10 +384,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private void decryptSingleVideo(String parameter) throws Exception {
         // Offline1
         if (br.containsHTML("(class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>|<div class=\"body\">[\t\n\r ]+Access denied)")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-        // Offline2
-        if (br.containsHTML("class=\"title\">Error</div>")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-        // Offline3
-        if (br.containsHTML("was removed from public access by request of the copyright holder")) {
+        // Offline 2 & 3
+        if (br.containsHTML("was removed from public access by request of the copyright holder") || br.containsHTML("class=\"title\">Error</div>")) {
             // Check if it's really offline
             final String[] ids = findVideoIDs(parameter);
             final String oid = ids[0];
