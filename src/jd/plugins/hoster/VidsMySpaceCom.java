@@ -77,6 +77,11 @@ public class VidsMySpaceCom extends PluginForHost {
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".m4a");
         } else {
+            if (br.containsHTML("class=\"lock_16\"")) {
+                link.getLinkStatus().setStatusText("+18 Videos are only downloadable for registered users");
+                link.setName(new Regex(link.getDownloadURL(), "myspace\\.com/(.+)").getMatch(0));
+                return AvailableStatus.TRUE;
+            }
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+) Video by[^\"]+\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
@@ -87,12 +92,18 @@ public class VidsMySpaceCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        /* Only rtmpe streams available */
-        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPE Streams are not longer supported due to legal reasons");
         String dlurl = null;
         if (link.getDownloadURL().matches(SONGURL)) {
             dlurl = br.getRegex("data\\-stream\\-url=\"(rtmp[^<>\"]*?)\"").getMatch(0);
         } else {
+            if (br.containsHTML("class=\"lock_16\"")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "+18 Videos are only downloadable for registered users");
+            }
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("https://myspace.com/ajax/streamurl", "mediaType=video&mediaId=" + new Regex(link.getDownloadURL(), "(\\d+)").getMatch(0));

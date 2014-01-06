@@ -50,7 +50,7 @@ public class SuperLoadCz extends PluginForHost {
 
     private static final String                            mName              = "superload.cz/";
     private static final String                            mProt              = "http://";
-    private static final String                            mAPI               = "http://superload.cz/a-p-i";
+    private static final String                            mAPI               = "http://api.superload.cz/a-p-i";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public SuperLoadCz(PluginWrapper wrapper) {

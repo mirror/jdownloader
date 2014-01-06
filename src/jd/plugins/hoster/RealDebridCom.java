@@ -341,16 +341,16 @@ public class RealDebridCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error " + num + " : Retry " + msg, 120 * 1000l);
             } else {
                 // unknown error2
-                logger.info(this.getHost() + "Unknown Error2");
-                int timesFailed = link.getIntegerProperty("timesfailedrealdebridcom_unknown2", 0);
+                logger.info(this.getHost() + "Unknown Error1");
+                int timesFailed = link.getIntegerProperty("timesfailedrealdebridcom_unknown1", 0);
                 link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= UNKNOWN_ERROR_RETRY_2) {
+                if (timesFailed <= UNKNOWN_ERROR_RETRY_1) {
                     timesFailed++;
-                    link.setProperty("timesfailedrealdebridcom_unknown2", timesFailed);
+                    link.setProperty("timesfailedrealdebridcom_unknown1", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error1");
                 } else {
-                    link.setProperty("timesfailedrealdebridcom_unknown2", Property.NULL);
-                    logger.info(this.getHost() + ": Unknown error2 - disabling current host!");
+                    link.setProperty("timesfailedrealdebridcom_unknown1", Property.NULL);
+                    logger.info(this.getHost() + ": Unknown error1 - disabling current host!");
                     tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
                 }
             }
@@ -378,16 +378,16 @@ public class RealDebridCom extends PluginForHost {
                 }
             }
         }
-        logger.info(this.getHost() + "Unknown Error1");
-        int timesFailed = link.getIntegerProperty("timesfailedrealdebridcom_unknown1", 0);
+        logger.info(this.getHost() + "Unknown Error2");
+        int timesFailed = link.getIntegerProperty("timesfailedrealdebridcom_unknown2", 0);
         link.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= UNKNOWN_ERROR_RETRY_1) {
+        if (timesFailed <= UNKNOWN_ERROR_RETRY_2) {
             timesFailed++;
-            link.setProperty("timesfailedrealdebridcom_unknown1", timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error1");
+            link.setProperty("timesfailedrealdebridcom_unknown2", timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error2");
         } else {
-            link.setProperty("timesfailedrealdebridcom_unknown1", Property.NULL);
-            logger.info(this.getHost() + ": Unknown error1 - disabling current host!");
+            link.setProperty("timesfailedrealdebridcom_unknown2", Property.NULL);
+            logger.info(this.getHost() + ": Unknown error2 - disabling current host!");
             tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
         }
     }

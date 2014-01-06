@@ -40,9 +40,10 @@ public class VeeHdCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://veehd.com/", "nsfw", "1");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This is a private video") || br.getURL().contains("/?removed=") || br.containsHTML("This video has been removed due")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2 style=\"\">([^<>]*?) \\| <font").getMatch(0);
@@ -55,18 +56,22 @@ public class VeeHdCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final String ts = br.getRegex("var ts = \"([^<>\"]*?)\"").getMatch(0);
+        final String sign = br.getRegex("var sgn = \"([^<>\"]*?)\"").getMatch(0);
+        if (ts != null && sign != null) {
+            // Pretend to use their stupid toolbar
+            br.cloneBrowser().postPage("http://veehd.com/xhrp", "v=c2&p=1&ts=" + Encoding.urlEncode(ts) + "&sgn=" + Encoding.urlEncode(sign));
+        }
         String dllink = null;
-        final String way_download = br.getRegex("\"(/vpi\\?[^<>\"/]*?\\&do=d[^<>\"]*?)\"").getMatch(0);
+        String way_download = br.getRegex("\"(/vpi\\?[^<>\"/]*?\\&do=d[^<>\"]*?)\"").getMatch(0);
+        // Does not work (at the moment)
+        way_download = null;
         if (way_download != null) {
             br.getPage("http://veehd.com" + way_download);
             dllink = getDirectlink();
         } else {
-            final String ts = br.getRegex("var ts = \"([^<>\"]*?)\"").getMatch(0);
-            final String sign = br.getRegex("var sgn = \"([^<>\"]*?)\"").getMatch(0);
             final String frame = br.getRegex("\"(/vpi\\?h=[^<>\"]*?)\"").getMatch(0);
-            if (frame == null || ts == null || sign == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // Pretend to use their stupid toolbar
-            br.postPage("http://veehd.com/xhrp", "v=c2&p=1&ts=" + Encoding.urlEncode(ts) + "&sgn=" + Encoding.urlEncode(sign));
+            if (frame == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage("http://veehd.com" + frame);
             dllink = getDirectlink();
             if (dllink == null) {
