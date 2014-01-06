@@ -217,7 +217,8 @@ public class LetitBitNet extends PluginForHost {
     }
 
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
+     * minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -499,6 +500,7 @@ public class LetitBitNet extends PluginForHost {
             // id=\"phone_submit_form\" is in the 2nd free form when you have a russian IP
             if (singleform.getAction() != null) {
                 if (!"".equals(singleform.getAction())) {
+                    singleform.setAction(singleform.getAction().trim());
                     if (singleform.containsHTML("class=\"Instead_parsing_Use_API_Luke\"")) decryptingForm(singleform);
                     if (singleform.getInputField("md5crypt") != null || "/download3.php".equals(singleform.getAction())) {
                         if (!singleform.containsHTML("/sms/check") && !singleform.containsHTML("id=\"phone_submit_form\"")) {
