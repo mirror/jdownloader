@@ -145,7 +145,9 @@ public class YkCm extends PluginForDecrypt {
         if (!jsonParser(jsonString)) { return null; }
 
         progress.setRange(PARTS);
+        ArrayList<DownloadLink> parts = null;
         for (String sType : streamTypes) {
+            parts = new ArrayList<DownloadLink>();
             if (streamTypes.length == 1 && sType.equals("flvhd")) {
                 sType = "flv";
             }
@@ -161,8 +163,7 @@ public class YkCm extends PluginForDecrypt {
             if (fileName == null || fileSize == null) {
                 continue;
             }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fileName + "_" + sType.toUpperCase());
+
             SEED = Double.parseDouble(fileDesc.get("seed"));
             final String streamFileIds = streamFileId.get(sType);
             if (SEED == 0 || streamFileIds == null) {
@@ -184,9 +185,21 @@ public class YkCm extends PluginForDecrypt {
                         dlLink.setFinalFileName(fileName + "." + ext);
                     }
                     dlLink.setDownloadSize(SizeFormatter.getSize(element[1]));
-                    fp.add(dlLink);
                     decryptedLinks.add(dlLink);
+                    parts.add(dlLink);
                     progress.increase(1);
+                }
+                if (parts.size() > 0) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fileName + "@" + sType.toUpperCase());
+                    fp.addLinks(parts);
+                }
+                for (DownloadLink dl : parts) {
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
                 }
             } else {
                 if (br.containsHTML("Sorry, this video can only be streamed within Mainland China\\.")) {
