@@ -260,6 +260,7 @@ public class MovDivxCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
+            if (correctedBR.contains("Wrong IPP")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -69,7 +69,6 @@ public class YouSavedIt extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getURL().contains(SIMULTANDLSLIMIT)) {
             link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
             link.getLinkStatus().setStatusText(SIMULTANDLSLIMITUSERTEXT);
@@ -79,6 +78,7 @@ public class YouSavedIt extends PluginForHost {
             link.getLinkStatus().setStatusText(SERVERERRORUSERTEXT);
             return AvailableStatus.TRUE;
         }
+        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<th class=\"descr\"([^<>]*?)?>[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<br/>");
         final String filename = fInfo.getMatch(1);
         final String filesize = fInfo.getMatch(2);

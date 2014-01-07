@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=viewupload\\&uploadid=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "320k.in" }, urls = { "http://(www\\.)?320k\\.in/index\\.php\\?surf=viewupload(\\&groupid=\\d+)?\\&uploadid=\\d+" }, flags = { 0 })
 public class ThreehundredTwenteekIn extends PluginForDecrypt {
 
     public ThreehundredTwenteekIn(PluginWrapper wrapper) {
@@ -55,6 +55,7 @@ public class ThreehundredTwenteekIn extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            if (finallink.contains("320k.in/") && !finallink.contains("320k.in/referer")) continue;
             decryptedLinks.add(createDownloadlink(finallink));
         }
 

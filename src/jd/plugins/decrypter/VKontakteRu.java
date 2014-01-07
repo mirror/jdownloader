@@ -99,7 +99,6 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private SubConfiguration        cfg                                = null;
     private String                  MAINPAGE                           = null;
-    private boolean                 VKVIDEOSPECIAL                     = false;
 
     private String                  CRYPTEDLINK_FUNCTIONAL             = null;
     private String                  CRYPTEDLINK_ORIGINAL               = null;
@@ -381,7 +380,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
-    private void decryptSingleVideo(String parameter) throws Exception {
+    private void decryptSingleVideo(final String parameter) throws Exception {
         // Offline1
         if (br.containsHTML("(class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>|<div class=\"body\">[\t\n\r ]+Access denied)")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
         // Offline 2 & 3
@@ -391,19 +390,20 @@ public class VKontakteRu extends PluginForDecrypt {
             final String oid = ids[0];
             final String id = ids[1];
             br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
-            if (br.containsHTML("NO_ACCESS")) throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-            VKVIDEOSPECIAL = true;
+            if (br.containsHTML("NO_ACCESS") || br.containsHTML("No htmlCode read")) throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            findVideolinks(parameter, true);
+        } else {
+            // Offline4
+            if (br.containsHTML("This video has been removed from public access")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+            // Offline5
+            if (br.containsHTML("No videos found")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+            // Offline6
+            if (br.containsHTML("This video is protected by privacy settings")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+            findVideolinks(parameter, false);
         }
-        // Offline4
-        if (br.containsHTML("This video has been removed from public access")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-        // Offline5
-        if (br.containsHTML("No videos found")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-        // Offline6
-        if (br.containsHTML("This video is protected by privacy settings")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-        findVideolinks(parameter);
     }
 
-    private void findVideolinks(final String parameter) throws Exception {
+    private void findVideolinks(final String parameter, final boolean vkspecial) throws Exception {
         br.setFollowRedirects(false);
         String correctedBR = br.toString().replace("\\", "");
         String embedHash = null;
@@ -412,7 +412,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String id = ids[1];
         String embeddedVideo = null;
         String filename = null;
-        if (VKVIDEOSPECIAL) {
+        if (vkspecial) {
             if (br.containsHTML("\"extra_data\":\"http")) {
                 /** Find embed links 1 START */
                 embeddedVideo = br.getRegex("\"extra_data\":\"(http[^<>\"]*?)\"").getMatch(0);
@@ -420,12 +420,12 @@ public class VKontakteRu extends PluginForDecrypt {
                 return;
                 /** Find embed links 1 END */
             } else {
-                embedHash = br.getRegex("\"hash\":\"([a-z0-9]+)\"").getMatch(0);
+                embedHash = new Regex(correctedBR, "\"hash\":\"([a-z0-9]+)\"").getMatch(0);
                 if (embedHash == null) {
                     decryptedLinks2 = null;
                     return;
                 }
-                filename = br.getRegex("\"md_title\":\"([^<>\"]*?)\"").getMatch(0);
+                filename = new Regex(correctedBR, "\"md_title\":\"([^<>\"]*?)\"").getMatch(0);
             }
         } else {
             if (parameter.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH)) {
@@ -581,7 +581,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 dl.setProperty("embedhash", embedHash);
                 dl.setProperty("selectedquality", selectedQualityValue);
                 dl.setProperty("nologin", true);
-                if (VKVIDEOSPECIAL) dl.setProperty("videospecial", true);
+                if (vkspecial) dl.setProperty("videospecial", true);
                 if (fastLinkcheck) dl.setAvailable(true);
                 fp.add(dl);
                 decryptedLinks2.add(dl);
