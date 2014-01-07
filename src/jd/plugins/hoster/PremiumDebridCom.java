@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -48,11 +49,12 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumdebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumDebridCom extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static Object                                  LOCK               = new Object();
-    private static final String                            COOKIE_HOST        = "http://premiumdebrid.com";
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap        = new HashMap<Account, HashMap<String, Long>>();
+    private static AtomicInteger                           maxPrem                   = new AtomicInteger(20);
+    private static final String                            NOCHUNKS                  = "NOCHUNKS";
+    private static Object                                  LOCK                      = new Object();
+    private static final String                            COOKIE_HOST               = "http://premiumdebrid.com";
+    private static final long                              RETRIES_FAILED_DLLINKNULL = 10;
 
     public PremiumDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -109,11 +111,11 @@ public class PremiumDebridCom extends PluginForHost {
             }
         }
         // now let's get a list of all supported hosts:
-        hosts = br.getRegex("\"templates/plugmod/icons/([^<>\"]*?)\\.png\"").getColumn(0);
+        hosts = br.getRegex("templates/plugmod/image/[a-z0-9\\-\\.]+\" alt=\"[a-z0-9\\-\\.]+\" title=\"[a-z0-9\\-\\.]+\">([^<>\"]*?)</p></td>").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
             if (!host.isEmpty()) {
-                supportedHosts.add(host.trim());
+                supportedHosts.add(Encoding.htmlDecode(host.trim()).toLowerCase());
             }
         }
         if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
@@ -128,6 +130,7 @@ public class PremiumDebridCom extends PluginForHost {
             }
         }
         supportedHosts.remove("youtube.com");
+        supportedHosts.remove("vimeo.com");
 
         if (supportedHosts.size() == 0) {
             ac.setStatus("Account valid: 0 Hosts via premiumdebrid.com available");
@@ -188,27 +191,15 @@ public class PremiumDebridCom extends PluginForHost {
                         }
                     }
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
+                saveCookies(account);
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
                 return true;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
         }
-    }
-
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        return result;
     }
 
     @Override
@@ -255,7 +246,7 @@ public class PremiumDebridCom extends PluginForHost {
             logger.info("premiumdebrid.com: Unknown download error");
             int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_unknowndlerror", 1);
             link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 10) {
+            if (timesFailed <= RETRIES_FAILED_DLLINKNULL) {
                 timesFailed++;
                 link.setProperty("timesfailedpremiumdebridcom_unknowndlerror", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
@@ -290,24 +281,28 @@ public class PremiumDebridCom extends PluginForHost {
         }
     }
 
+    private static final String PASSNEEDED = "<b>Security ID</b>";
+
     private String generateDllinkNew(final DownloadLink dl, final Account acc) throws IOException, PluginException {
         final String url = Encoding.urlEncode(dl.getDownloadURL());
-        br.getPage("http://premiumdebrid.com/pd.php");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String server = br.getRegex("\"(http://(www\\.)?premiumdebrid\\.com/s\\d+)\"").getMatch(0);
-        if (server == null) server = br.getRegex("<iframe src=\"(http://(www\\.)?premiumdebrid\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (server == null) server = "http://www.premiumdebrid.com/s1";
-        br.getPage(server);
-        if (br.containsHTML(">Please enter password to login")) {
+        br.getPage("http://premiumdebrid.com/generator.php");
+        br.getPage("http://www.premiumdebrid.com/link_generator/");
+        if (br.containsHTML(PASSNEEDED)) {
             synchronized (LOCK) {
+                br.setFollowRedirects(false);
                 boolean failed = true;
                 String premiumpass = null;
                 for (int i = 0; i <= 3; i++) {
                     premiumpass = acc.getStringProperty("premiumdebridpremiumpassword", null);
-                    if (premiumpass == null) premiumpass = Plugin.getUserInput("Please enter the premium password for premiumdebrid.com/pd.php", dl);
-                    br.postPage(server + "/login.php", "submit=Submit&secure=" + Encoding.urlEncode(premiumpass));
-                    br.getPage(server);
-                    if (br.containsHTML(">Please enter password to login")) {
+                    if (premiumpass == null) premiumpass = Plugin.getUserInput("Please enter the premium password for premiumdebrid.com/link_generator/login.php", dl);
+                    try {
+                        br.postPage("http://www.premiumdebrid.com/link_generator/login.php", "submit=Login+Now&secure=" + Encoding.urlEncode(premiumpass));
+                    } catch (final BrowserException omgwtf) {
+                        // Probably redirectloop
+                        acc.setProperty("premiumdebridpremiumpassword", Property.NULL);
+                        continue;
+                    }
+                    if (br.containsHTML(PASSNEEDED) || br.getCookie("http://premiumdebrid.com/", "secureid") == null) {
                         acc.setProperty("premiumdebridpremiumpassword", Property.NULL);
                         continue;
                     }
@@ -318,26 +313,28 @@ public class PremiumDebridCom extends PluginForHost {
                 }
                 if (failed) {
                     int timesFailed_premiumpass = acc.getIntegerProperty("timesfailedpremiumdebridcom_premiumpassword", 1);
-                    if (br.containsHTML("<script>alert\\(\"Wrong password") || timesFailed_premiumpass >= 3) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium password missing or invalid!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (br.getCookie("http://premiumdebrid.com/", "secureid") == null || timesFailed_premiumpass >= 3) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium password missing or invalid!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     timesFailed_premiumpass++;
                     acc.setProperty("timesfailedpremiumdebridcom_premiumpassword", timesFailed_premiumpass);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Premium pass retry");
                 }
+                br.setFollowRedirects(true);
+                // Save cookies so we don't have o enter the password next time
+                saveCookies(acc);
             }
         }
-        br.postPage(server + "/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url + "&captcha=none&");
-        if (br.containsHTML("Scusa\\. Non supportiamo il tuo link")) {
-            logger.info("premiumdebrid.com: Disabling current host");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "*/*");
+        br.postPage("http://www.premiumdebrid.com/link_generator/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url);
+        if (br.containsHTML("Hoster could not be parsed from link, the link was invalid or the hoster is not supported")) {
+            logger.info("premiumdebrid.com: Disabling current host because server says 'Hoster could not be parsed from link, the link was invalid or the hoster is not supported'");
             tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
-        } else if (br.containsHTML("account in database\\. Contact admin")) {
-            logger.info("premiumdebrid.com: Disabling current host because multi-host has no account for it");
-            tempUnavailableHoster(acc, dl, 2 * 60 * 60 * 1000l);
-        } else if (br.containsHTML("stato bloccato </font>")) {
-            logger.info("premiumdebrid.com: Disabling current host because the multi-hosters' host account is blocked");
+        } else if (br.containsHTML("Error: Download link not found\\.<")) {
+            logger.info("premiumdebrid.com: Disabling current host because server says 'Error: Download link not found\\.<'");
             tempUnavailableHoster(acc, dl, 2 * 60 * 60 * 1000l);
         }
-        String dllink = br.getRegex("click here to download\\' href=\\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\\'|\")(http://(www\\.)?premiumdebrid\\.com/[^<>\"]*?)(\\'|\")").getMatch(1);
+        String dllink = br.getRegex("here to download\\' href=\\'(https?[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(\\'|\")(https?://(www\\.)?premiumdebrid\\.com/link_generator/\\?file=[A-Za-z0-9]+)(\\'|\")").getMatch(1);
         return dllink;
     }
 
@@ -358,6 +355,16 @@ public class PremiumDebridCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private void saveCookies(final Account acc) {
+        /** Save cookies */
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies add = this.br.getCookies(COOKIE_HOST);
+        for (final Cookie c : add.getCookies()) {
+            cookies.put(c.getKey(), c.getValue());
+        }
+        acc.setProperty("cookies", cookies);
     }
 
     private void showMessage(DownloadLink link, String message) {
