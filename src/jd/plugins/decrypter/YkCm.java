@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -191,7 +192,7 @@ public class YkCm extends PluginForDecrypt {
                 }
                 if (parts.size() > 0) {
                     final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(fileName + "@" + sType.toUpperCase());
+                    fp.setName(fileName + "@" + sType.toUpperCase(Locale.ENGLISH));
                     fp.addLinks(parts);
                 }
                 for (DownloadLink dl : parts) {
