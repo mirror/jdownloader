@@ -19,18 +19,15 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -43,7 +40,6 @@ import org.appwork.storage.simplejson.JSonArray;
 import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonNode;
 import org.appwork.storage.simplejson.JSonObject;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" }, flags = { 0 })
 public class RPNetBiz extends PluginForHost {
@@ -51,7 +47,6 @@ public class RPNetBiz extends PluginForHost {
     private static final String mName    = "rpnet.biz";
     private static final String mProt    = "http://";
     private static final String mPremium = "https://premium.rpnet.biz/";
-    private static Object       LOCK     = new Object();
 
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -130,19 +125,17 @@ public class RPNetBiz extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setValid(false);
-
+            account.setError(AccountError.INVALID, null);
             ai.setProperty("multiHostSupport", Property.NULL);
 
             return ai;
         }
-        br.getPage(mPremium + "usercp.php");
-        String expirationDate = br.getRegex("Your premium account will expire in: <u>.*</u> \\(([^\\)]*)\\)").getMatch(0);
-        account.setValid(true);
-        account.setConcurrentUsePossible(true);
-        account.setMaxSimultanDownloads(-1);
-        expirationDate = expirationDate.replaceFirst("1st", "1").replaceAll("nd", "").replaceAll("rd", "").replaceAll("th", "");
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expirationDate, "dd MMM, yyyy", null));
+
+        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=showAccountInformation");
+        JSonObject node = (JSonObject) new JSonFactory(br.toString()).parse();
+        JSonObject accountInfo = (JSonObject) node.get("accountInfo");
+        long expiryDate = Long.parseLong(accountInfo.get("premiumExpiry").toString().replaceAll("\"", ""));
+        ai.setValidUntil(expiryDate * 1000);
 
         // get the supported hosts
         String hosts = br.getPage(mPremium + "hostlist.php");
@@ -276,46 +269,11 @@ public class RPNetBiz extends PluginForHost {
     }
 
     private void login(Account account, boolean force) throws Exception {
-        synchronized (LOCK) {
-            URLConnectionAdapter postback = null;
-            try {
-                /** Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser();
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(mPremium, key, value);
-                        }
-                        return;
-                    }
-                }
-                postback = br.openPostConnection(mPremium + "login.php", "username=" + account.getUser() + "&password=" + account.getPass() + "&login=");
-                if (postback.getResponseCode() != 302) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(mPremium);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            } finally {
-                try {
-                    postback.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
+        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=showAccountInformation");
+
+        if (br.toString().contains("Invalid authentication.")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+
+        JSonObject node = (JSonObject) new JSonFactory(br.toString()).parse();
+        JSonObject accountInfo = (JSonObject) node.get("accountInfo"); // Just make sure this doesn't throw an exception
     }
 }
