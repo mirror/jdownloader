@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,7 +28,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,7 +41,7 @@ import org.appwork.storage.simplejson.JSonFactory;
 import org.appwork.storage.simplejson.JSonNode;
 import org.appwork.storage.simplejson.JSonObject;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" }, flags = { 0 })
 public class RPNetBiz extends PluginForHost {
 
     private static final String mName    = "rpnet.biz";
@@ -56,6 +56,24 @@ public class RPNetBiz extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replace("http://www.", "http://"));
+    }
+
+    @Override
+    public Boolean rewriteHost(DownloadLink link) {
+        if ("rpnet.biz".equals(link.getHost())) {
+            link.setHost("premium.rpnet.biz");
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean rewriteHost(Account acc) {
+        if ("rpnet.biz".equals(acc.getHoster())) {
+            acc.setHoster("premium.rpnet.biz");
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -125,12 +143,9 @@ public class RPNetBiz extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            account.setError(AccountError.INVALID, null);
             ai.setProperty("multiHostSupport", Property.NULL);
-
-            return ai;
+            throw e;
         }
-
         br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=showAccountInformation");
         JSonObject node = (JSonObject) new JSonFactory(br.toString()).parse();
         JSonObject accountInfo = (JSonObject) node.get("accountInfo");
@@ -269,10 +284,8 @@ public class RPNetBiz extends PluginForHost {
     }
 
     private void login(Account account, boolean force) throws Exception {
-        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=showAccountInformation");
-
+        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + URLEncoder.encode(account.getPass(), "UTF-8") + "&action=showAccountInformation");
         if (br.toString().contains("Invalid authentication.")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-
         JSonObject node = (JSonObject) new JSonFactory(br.toString()).parse();
         JSonObject accountInfo = (JSonObject) node.get("accountInfo"); // Just make sure this doesn't throw an exception
     }

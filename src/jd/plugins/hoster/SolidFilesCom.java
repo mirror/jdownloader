@@ -55,7 +55,8 @@ public class SolidFilesCom extends PluginForHost {
         if (br.containsHTML("(>Not found<|>We couldn\\'t find the file you requested|Access to this file was disabled)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) \\- Solidfiles</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<div id=\"download\\-title\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
-        final String filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        String filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("dt>File size<.*?dd>(.*?)</").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
