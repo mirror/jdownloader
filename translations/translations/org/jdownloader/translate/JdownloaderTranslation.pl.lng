@@ -1,6 +1,13 @@
+AccountController_updateAccountInfo_status_logins_wrong=Nieprawidłowe dane
+AccountController_updateAccountInfo_status_plugin_defect=Przestarzała wtyczka
+AccountController_updateAccountInfo_status_traffic_reached=Brak dostępnego transferu
+AccountController_updateAccountInfo_status_uncheckable=Nie można zweryfikować Konta
 AddContainerAction_delete_container_msg=Czy na pewno chcesz usunąć %s1 po dodaniu linków do JDownloadera?
 AddContainerAction_delete_container_title=Usunąć kontener plików?
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Dostęp do Ustawień Captcha
+DeleteOption_final_delete=Usuń pliki z dysku
+DeleteOption_no_delete=Nie kasuj żadnych plików
+DeleteOption_recycle=Przenieś pliki do Kosza jeśli to możliwe
 DisableRevFilesPackageRulee_rule_name=Wyłącz obsługę plików *.rev dla archiwów
 DownloadLink_setSkipped_statusmessage=Pominięte
 DownloadLink_setSkipped_statusmessage_account=Pominięto - brak Konta
