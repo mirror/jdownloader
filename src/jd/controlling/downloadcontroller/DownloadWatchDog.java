@@ -22,6 +22,8 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -835,71 +837,111 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private DownloadLinkCandidate findFinalCandidate(DownloadLinkCandidateSelector selector, final List<DownloadLinkCandidate> candidates) {
         if (candidates == null || candidates.size() == 0) return null;
-        Iterator<DownloadLinkCandidate> it = getCandidateIterator(selector, candidates);
-        DownloadLinkCandidate ret = null;
-        while (it.hasNext()) {
-            DownloadLinkCandidate next = it.next();
-            switch (next.getCachedAccount().getType()) {
-            case MULTI:
-            case ORIGINAL:
-                return next;
-            case NONE:
-                if (ret == null) {
-                    ret = next;
-                } else if (ret.getCachedAccount().hasCaptcha(ret.getLink()) && !next.getCachedAccount().hasCaptcha(next.getLink())) {
-                    ret = next;
-                }
-                break;
+        LinkedHashMap<DownloadLink, DownloadLinkCandidate> bestCandidates = new LinkedHashMap<DownloadLink, DownloadLinkCandidate>();
+        for (DownloadLinkCandidate nextCandidate : candidates) {
+            DownloadLink candidateLink = nextCandidate.getLink();
+            DownloadLinkCandidate bestCandidate = bestCandidates.get(candidateLink);
+            if (bestCandidate != null && bestCandidate.isCustomizedAccount()) {
+                /* we keep bestCandidate for candidateLink because it has a customizedAccount */
+                continue;
             }
-        }
-        return ret;
-    }
-
-    private Iterator<DownloadLinkCandidate> getCandidateIterator(DownloadLinkCandidateSelector selector, final List<DownloadLinkCandidate> candidates) {
-        LinkedHashMap<String, LinkedHashMap<DownloadLink, List<DownloadLinkCandidate>>> bestCandidatesMap = new LinkedHashMap<String, LinkedHashMap<DownloadLink, List<DownloadLinkCandidate>>>();
-        for (DownloadLinkCandidate possibleCandidate : candidates) {
-            String host = possibleCandidate.getLink().getHost();
-            LinkedHashMap<DownloadLink, List<DownloadLinkCandidate>> map = bestCandidatesMap.get(host);
-            if (map == null) {
-                map = new LinkedHashMap<DownloadLink, List<DownloadLinkCandidate>>();
-                bestCandidatesMap.put(host, map);
-            }
-            List<DownloadLinkCandidate> list = map.get(possibleCandidate.getLink());
-            if (list == null) {
-                list = new ArrayList<DownloadLinkCandidate>();
-                map.put(possibleCandidate.getLink(), list);
-            }
-            list.add(possibleCandidate);
-        }
-        List<DownloadLinkCandidate> ret = new ArrayList<DownloadLinkCandidate>();
-        while (!bestCandidatesMap.isEmpty()) {
-            Iterator<Entry<String, LinkedHashMap<DownloadLink, List<DownloadLinkCandidate>>>> it = bestCandidatesMap.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, LinkedHashMap<DownloadLink, List<DownloadLinkCandidate>>> next = it.next();
-                LinkedHashMap<DownloadLink, List<DownloadLinkCandidate>> value = next.getValue();
-                if (value.isEmpty()) {
-                    it.remove();
-                } else {
-                    Iterator<Entry<DownloadLink, List<DownloadLinkCandidate>>> it2 = value.entrySet().iterator();
-                    linkLoop: while (it2.hasNext()) {
-                        Entry<DownloadLink, List<DownloadLinkCandidate>> next2 = it2.next();
-                        List<DownloadLinkCandidate> value2 = next2.getValue();
-                        if (value2.isEmpty()) {
-                            it2.remove();
-                        } else {
-                            Iterator<DownloadLinkCandidate> it3 = value2.iterator();
-                            while (it3.hasNext()) {
-                                DownloadLinkCandidate next3 = it3.next();
-                                ret.add(next3);
-                                it3.remove();
-                                continue linkLoop;
-                            }
+            if (bestCandidate == null) {
+                /* no bestCandidate yet */
+                bestCandidates.put(candidateLink, nextCandidate);
+            } else {
+                /* we have a bestCandidate, check if nextCandidate would be better */
+                final boolean bestHasCaptcha = bestCandidate.getCachedAccount().hasCaptcha(candidateLink);
+                final boolean nextHasCaptcha = nextCandidate.getCachedAccount().hasCaptcha(candidateLink);
+                switch (bestCandidate.getCachedAccount().getType()) {
+                case MULTI:
+                    /* our bestCandidate is a multihost one */
+                    switch (nextCandidate.getCachedAccount().getType()) {
+                    case ORIGINAL:
+                        if (nextHasCaptcha == false) {
+                            /* we always prefer originalAccount if it does not have a captcha */
+                            bestCandidates.put(candidateLink, nextCandidate);
                         }
+                        break;
+                    case MULTI:
+                        if (bestHasCaptcha && nextHasCaptcha == false) {
+                            /* we replace our bestCandidate because nextCandidate does not have a captcha */
+                            bestCandidates.put(candidateLink, nextCandidate);
+                        }
+                        break;
+                    case NONE:
+                        if (false && bestHasCaptcha && nextHasCaptcha == false) {
+                            /* TODO */
+                            /* disabled because needs to be discussed if we prefer captchaless none over captcha original/multihost */
+                            /* we replace our bestCandidate with NONE because nextCandidate does not have a captcha */
+                            bestCandidates.put(candidateLink, nextCandidate);
+                        }
+                        break;
                     }
+                    break;
+                case ORIGINAL:
+                    /* our bestCandidate is an original one */
+                    switch (nextCandidate.getCachedAccount().getType()) {
+                    case MULTI:
+                    case ORIGINAL:
+                        if (bestHasCaptcha && nextHasCaptcha == false) {
+                            /* we only replace originalAccount in case bestCandidate does have a captcha and nextCandidate does not */
+                            bestCandidates.put(candidateLink, nextCandidate);
+                        }
+                        break;
+                    case NONE:
+                        if (false && bestHasCaptcha && nextHasCaptcha == false) {
+                            /* TODO */
+                            /* disabled because needs to be discussed if we prefer captchaless none over captcha original/multihost */
+                            /* we replace our bestCandidate with NONE because nextCandidate does not have a captcha */
+                            bestCandidates.put(candidateLink, nextCandidate);
+                        }
+                        break;
+                    }
+                    break;
+                case NONE:
+                    /* our bestCandidate is without an account */
+                    switch (nextCandidate.getCachedAccount().getType()) {
+                    case NONE:
+                        if (bestHasCaptcha && nextHasCaptcha == false) {
+                            /* we replace our bestCandidate because nextCandidate does not have a captcha */
+                            bestCandidates.put(candidateLink, nextCandidate);
+                        }
+                        break;
+                    case MULTI:
+                    case ORIGINAL:
+                        if (nextHasCaptcha == false) {
+                            /* we replace our bestCandidate because nextCandidate does not have a captcha */
+                            bestCandidates.put(candidateLink, nextCandidate);
+                        } else {
+                            /* we replace our bestCandidate because nextCandidate is original/multihost */
+                            bestCandidates.put(candidateLink, nextCandidate);
+                        }
+                        break;
+                    }
+                    break;
                 }
             }
         }
-        return ret.iterator();
+        ArrayList<DownloadLinkCandidate> finalCandidates = new ArrayList<DownloadLinkCandidate>(bestCandidates.values());
+        Collections.sort(finalCandidates, new Comparator<DownloadLinkCandidate>() {
+
+            public int compareDown(boolean x, boolean y) {
+                return (x == y) ? 0 : (x ? 1 : -1);
+            }
+
+            @Override
+            public int compare(DownloadLinkCandidate x, DownloadLinkCandidate y) {
+                int ret = x.getCachedAccount().getType().compareTo(y.getCachedAccount().getType());
+                if (ret == 0) {
+                    boolean xCaptcha = x.getCachedAccount().hasCaptcha(x.getLink());
+                    boolean yCaptcha = y.getCachedAccount().hasCaptcha(y.getLink());
+                    ret = compareDown(xCaptcha, yCaptcha);
+                }
+                return ret;
+            }
+
+        });
+        return finalCandidates.get(1);
     }
 
     private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate) {
@@ -1179,7 +1221,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (mirrors.size() > 0) mirrors.clear();
             for (DownloadLinkCandidate mirror : possible) {
                 selector.addExcluded(mirror.getLink());
-                AccountCache accountCache = currentSession.getAccountCache(mirror.getLink());
+                final AccountCache accountCache = currentSession.getAccountCache(mirror.getLink());
                 Iterator<CachedAccount> it = accountCache.iterator();
                 CachedAccount tempDisabledCachedAccount = null;
                 CachedAccount forbiddenCachedAccount = null;
@@ -1205,7 +1247,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     case DISABLED:
                         break;
                     case OK:
-                        mirrors.add(new DownloadLinkCandidate(mirror, cachedAccount));
+                        mirrors.add(new DownloadLinkCandidate(mirror, cachedAccount, accountCache.isCustomizedCache()));
                         break;
                     }
                 }
@@ -1888,13 +1930,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     private SingleDownloadController attach(final DownloadLinkCandidate candidate) {
         logger.info("Start new Download: Host:" + candidate);
-        String downloadTo = candidate.getLink().getFileOutput(true, false);
-        String customDownloadTo = candidate.getLink().getFileOutput(true, true);
-        logger.info("Download To: " + downloadTo);
+        boolean ignoreUnsafe = true;
+        String downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, false);
+        if (StringUtils.isEmpty(downloadTo)) {
+            ignoreUnsafe = false;
+            downloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, false);
+        }
+        String customDownloadTo = candidate.getLink().getFileOutput(ignoreUnsafe, true);
+        if (ignoreUnsafe) {
+            logger.info("Download To: " + downloadTo);
+        } else {
+            logger.info("Download To(Unsafe): " + downloadTo);
+        }
         if (!StringUtils.equalsIgnoreCase(downloadTo, customDownloadTo)) {
             logger.info("Download To(custom): " + customDownloadTo);
         }
-
         DownloadLinkCandidateHistory history = getSession().buildHistory(candidate.getLink());
         if (history == null || !history.attach(candidate)) {
             logger.severe("Could not attach to History: " + candidate);

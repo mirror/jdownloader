@@ -22,7 +22,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -71,7 +70,6 @@ public class AccountTooltip extends PanelToolTip {
 
         this.owner = owner;
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
-        List<Account> accs = AccountController.getInstance().list();
 
         final LinkedList<AccountEntry> domains = new LinkedList<AccountEntry>();
         for (Account acc : accountCollection) {

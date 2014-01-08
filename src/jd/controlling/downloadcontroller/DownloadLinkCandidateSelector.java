@@ -87,7 +87,6 @@ public class DownloadLinkCandidateSelector {
 
     public DownloadLinkCandidateSelector(DownloadSession session) {
         this.session = session;
-
     }
 
     public int getMaxNumberOfDownloadLinkCandidatesResults(DownloadLinkCandidate candidate) {
@@ -98,7 +97,6 @@ public class DownloadLinkCandidateSelector {
         if (candidate.isForced()) return true;
         String host = candidate.getLink().getHost();
         return session.getActiveDownloadsFromHost(host) < session.getMaxConcurrentDownloadsPerHost();
-
     }
 
     public AccountPermission getCachedAccountPermission(CachedAccount cachedAccount) {

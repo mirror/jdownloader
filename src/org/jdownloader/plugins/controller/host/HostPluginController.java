@@ -51,14 +51,19 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     private volatile LinkedHashMap<String, LazyHostPlugin> list;
+    private volatile LazyHostPlugin                        fallBackPlugin = null;
+
+    public LazyHostPlugin getFallBackPlugin() {
+        ensureLoaded();
+        return fallBackPlugin;
+    }
 
     private String getCache() {
         return "hosts.json";
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
         this.list = null;
@@ -231,6 +236,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
             /* set fallBackPlugin to all plugins */
             lhp.setFallBackPlugin(fallBackPlugin);
         }
+        this.fallBackPlugin = fallBackPlugin;
         return ret;
     }
 
@@ -290,8 +296,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             try {
                                 String displayName = new String(names[i]);
                                 /*
-                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin
-                                 * for each downloadLink
+                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
                                  */
                                 AbstractHostPlugin existingPlugin = ret.get(displayName);
                                 if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
@@ -396,6 +401,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
             /* set fallBackPlugin to all plugins */
             lhp.setFallBackPlugin(fallBackPlugin);
         }
+        this.fallBackPlugin = fallBackPlugin;
         validateCache();
         return ret3;
     }
@@ -434,7 +440,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     public LazyHostPlugin get(String displayName) {
-        return ensureLoaded().get(displayName.toLowerCase(Locale.ENGLISH));
+        LazyHostPlugin ret = ensureLoaded().get(displayName.toLowerCase(Locale.ENGLISH));
+        if (ret != null) return ret;
+        if ("UpdateRequired".equalsIgnoreCase(displayName)) return fallBackPlugin;
+        return null;
     }
 
     public void invalidateCacheIfRequired() {

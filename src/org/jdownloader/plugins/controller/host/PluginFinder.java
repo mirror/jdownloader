@@ -12,13 +12,13 @@ import org.jdownloader.logging.LogController;
 
 public class PluginFinder {
 
-    HashMap<String, PluginForHost> pluginCache           = new HashMap<String, PluginForHost>();
+    volatile HashMap<String, PluginForHost> pluginCache           = new HashMap<String, PluginForHost>();
 
-    HashMap<String, PluginForHost> rewriteLinkCache      = new HashMap<String, PluginForHost>();
-    ArrayList<PluginForHost>       rewriteLinkPlugins    = null;
+    volatile HashMap<String, PluginForHost> rewriteLinkCache      = new HashMap<String, PluginForHost>();
+    volatile ArrayList<PluginForHost>       rewriteLinkPlugins    = null;
 
-    HashMap<String, PluginForHost> rewriteAccountCache   = new HashMap<String, PluginForHost>();
-    ArrayList<PluginForHost>       rewriteAccountPlugins = null;
+    volatile HashMap<String, PluginForHost> rewriteAccountCache   = new HashMap<String, PluginForHost>();
+    volatile ArrayList<PluginForHost>       rewriteAccountPlugins = null;
 
     public PluginForHost assignPlugin(DownloadLink link, boolean allowRewrite, LogSource logger) {
         PluginForHost pluginForHost = null;
@@ -105,6 +105,24 @@ public class PluginFinder {
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
+            }
+        }
+        try {
+            /* assign UpdateRequiredPlugin */
+            LazyHostPlugin fallBackPlugin = HostPluginController.getInstance().getFallBackPlugin();
+            if (fallBackPlugin != null) {
+                pluginForHost = fallBackPlugin.getPrototype(null);
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        if (pluginForHost != null) {
+            logger.severe("Use fallBackPlugin for: " + link.getHost() + "|" + link.getName());
+            pluginCache.put(link.getHost(), pluginForHost);
+            if (pluginForHost != null) {
+                /* plugin found, let's put it into cache */
+                link.setDefaultPlugin(pluginForHost);
+                return pluginForHost;
             }
         }
         logger.severe("Could not find plugin: " + link.getHost() + " for " + link.getName());

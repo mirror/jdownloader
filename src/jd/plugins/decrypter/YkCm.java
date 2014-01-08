@@ -176,7 +176,7 @@ public class YkCm extends PluginForDecrypt {
                 final String[][] key = videoParts.get(sType);
                 for (final String[] element : key) {
                     final String part = String.format("%02x", Integer.parseInt(String.valueOf(element[0])));
-                    fileId = fileId.substring(0, 8) + part.toUpperCase() + fileId.substring(10);
+                    fileId = fileId.substring(0, 8) + part.toUpperCase(Locale.ENGLISH) + fileId.substring(10);
                     final String vPart = "http://f.youku.com/player/getFlvPath/sid/" + sid + "_" + part + "/st/" + st + "/fileid/" + fileId + "?K=" + element[3] + "&hd=" + hd + "&myp=0&ts=" + element[2];
                     final DownloadLink dlLink = createDownloadlink(vPart);
                     final String ext = sType.equals("hd2") ? "flv" : sType;

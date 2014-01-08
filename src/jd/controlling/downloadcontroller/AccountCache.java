@@ -140,28 +140,46 @@ public class AccountCache implements Iterable<CachedAccount> {
 
     protected final ArrayList<CachedAccount> cache;
     protected final ArrayList<Rules>         rules;
+    protected final boolean                  customized;
 
     public AccountCache(ArrayList<CachedAccount> cache) {
         this(cache, null);
     }
 
+    public boolean isCustomizedCache() {
+        return customized;
+    }
+
     public AccountCache(ArrayList<CachedAccount> cache, ArrayList<AccountGroup.Rules> rules) {
         this.cache = cache;
         if (rules != null) {
+            if (rules != null && rules.size() < cache.size()) throw new IllegalArgumentException("rules must have at least <= length of cache!");
+            customized = true;
             boolean nonOrder = false;
+            AccountGroup.Rules lastRule = null;
             for (AccountGroup.Rules rule : rules) {
-                if (!AccountGroup.Rules.ORDER.equals(rule)) {
-                    nonOrder = true;
-                    break;
+                /* validate rules */
+                if (rule == null) {
+                    lastRule = null;
+                    continue;
+                } else {
+                    if (lastRule == null) {
+                        lastRule = rule;
+                    } else {
+                        if (!lastRule.equals(rule)) { throw new IllegalArgumentException("different rules within same rulegroup?!"); }
+                        nonOrder = true;
+                        break;
+                    }
                 }
             }
             if (nonOrder == false) rules = null;
+        } else {
+            customized = false;
         }
         this.rules = rules;
-        if (rules != null && rules.size() < cache.size()) throw new IllegalArgumentException("rules must have at least <= length of cache!");
     }
 
-    protected Iterator<CachedAccount> getCacheIterator() {
+    protected Iterator<CachedAccount> getRuleAwareIterator() {
         if (rules == null) return cache.iterator();
         ArrayList<CachedAccount> orderedCache = new ArrayList<AccountCache.CachedAccount>(cache);
         int startRandom = -1;
@@ -196,7 +214,7 @@ public class AccountCache implements Iterable<CachedAccount> {
     public Iterator<CachedAccount> iterator() {
         return new Iterator<AccountCache.CachedAccount>() {
 
-            Iterator<CachedAccount>                it   = getCacheIterator();
+            Iterator<CachedAccount>                it   = getRuleAwareIterator();
             NullsafeAtomicReference<CachedAccount> next = new NullsafeAtomicReference<AccountCache.CachedAccount>(null);
 
             @Override
@@ -223,7 +241,6 @@ public class AccountCache implements Iterable<CachedAccount> {
                         if (iNext.getAccount().getAccountController() == null) continue;
                         if (!iNext.getAccount().isEnabled()) continue;
                         if (!iNext.getAccount().isValid()) continue;
-                        // if (iNext.getAccount().isTempDisabled()) continue;
                     }
                     next.set(iNext);
                     break;

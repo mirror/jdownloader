@@ -9,9 +9,9 @@ public class DownloadLinkCandidate {
     private final DownloadLink  link;
     private final CachedAccount cachedAccount;
     private final ProxyInfo     proxy;
+    private final boolean       customizedAccount;
 
     public ProxyInfo getProxy() {
-        //
         return proxy;
     }
 
@@ -33,23 +33,30 @@ public class DownloadLinkCandidate {
     }
 
     public DownloadLinkCandidate(DownloadLink link, boolean forced) {
-        this.link = link;
-        this.forced = forced;
-        this.cachedAccount = null;
-        this.proxy = null;
+        this(link, forced, null, null, false);
     }
 
     public DownloadLinkCandidate(DownloadLinkCandidate candidate, CachedAccount cachedAccount) {
-        this.link = candidate.link;
-        this.forced = candidate.forced;
+        this(candidate.getLink(), candidate.isForced(), cachedAccount, null, false);
+    }
+
+    public DownloadLinkCandidate(DownloadLinkCandidate candidate, CachedAccount cachedAccount, boolean customizedAccount) {
+        this(candidate.getLink(), candidate.isForced(), cachedAccount, null, customizedAccount);
+    }
+
+    public DownloadLinkCandidate(DownloadLink link, boolean forced, CachedAccount cachedAccount, ProxyInfo proxy, boolean customizedAccount) {
+        this.link = link;
+        this.forced = forced;
         this.cachedAccount = cachedAccount;
-        this.proxy = null;
+        this.proxy = proxy;
+        this.customizedAccount = customizedAccount;
     }
 
     public DownloadLinkCandidate(DownloadLinkCandidate candidate, ProxyInfo proxy) {
-        this.link = candidate.link;
-        this.forced = candidate.forced;
-        this.cachedAccount = candidate.cachedAccount;
-        this.proxy = proxy;
+        this(candidate.getLink(), candidate.isForced(), candidate.getCachedAccount(), proxy, candidate.isCustomizedAccount());
+    }
+
+    public boolean isCustomizedAccount() {
+        return customizedAccount;
     }
 }

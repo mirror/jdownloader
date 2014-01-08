@@ -86,7 +86,6 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
     }
 
     private void initGUI() {
-
         if (LAFOptions.getInstance().isPaintStatusbarTopBorder()) {
             setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, getBackground().darker()));
         } else {

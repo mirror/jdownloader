@@ -127,7 +127,10 @@ public class Uploadedto extends PluginForHost {
             }
             String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
             String size = br.getRegex("[\r\n]([0-9\\, TGBMK]+)").getMatch(0);
-            if (name == null || size == null) return AvailableStatus.UNCHECKABLE;
+            if (name == null || size == null) {
+                if (br.containsHTML("<title>uploaded.net - Maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l); }
+                return AvailableStatus.UNCHECKABLE;
+            }
             downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
             downloadLink.setDownloadSize(SizeFormatter.getSize(size));
         } finally {
@@ -711,6 +714,8 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
+        if (br.containsHTML("<title>uploaded.net - Maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l); }
+
     }
 
     /** API error handling **/
@@ -800,9 +805,7 @@ public class Uploadedto extends PluginForHost {
     // Attention!! Do not use Override here for stable compatibility reasons
     // @Override
     public void showAccountDetailsDialog(Account account) {
-
         jd.gui.UserIO.getInstance().requestMessageDialog("Uploaded.to Account", "Account type: Premium");
-
     }
 
     private String api_getAccessToken(Account account, boolean liveToken) throws Exception {
@@ -1110,26 +1113,29 @@ public class Uploadedto extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         prepBrowser();
-        try {
-            br.getHeaders().put("X-Prototype-Version", "1.6.1");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            /* login method always returns empty body */
-            br.postPage(getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-            if (br.containsHTML("User and password do not match")) {
-                final AccountInfo ai = account.getAccountInfo();
-                if (ai != null) ai.setStatus("User and password do not match");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        synchronized (account) {
+            try {
+                br.getHeaders().put("X-Prototype-Version", "1.6.1");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                /* login method always returns empty body */
+                br.postPage(getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML("User and password do not match")) {
+                    final AccountInfo ai = account.getAccountInfo();
+                    if (ai != null) ai.setStatus("User and password do not match");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.containsHTML("<title>uploaded.net - Maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l); }
+                if (br.getCookie("http://uploaded.net", "auth") == null && br.getCookie("https://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } catch (PluginException e) {
+                account.setProperty("token", null);
+                account.setProperty("tokenType", null);
+                throw e;
+            } finally {
+                br.getHeaders().put("Content-Type", null);
+                br.getHeaders().put("X-Prototype-Version", null);
+                br.getHeaders().put("X-Requested-With", null);
             }
-            if (br.getCookie("http://uploaded.net", "auth") == null && br.getCookie("https://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        } catch (PluginException e) {
-            account.setProperty("token", null);
-            account.setProperty("tokenType", null);
-            throw e;
-        } finally {
-            br.getHeaders().put("Content-Type", null);
-            br.getHeaders().put("X-Prototype-Version", null);
-            br.getHeaders().put("X-Requested-With", null);
         }
     }
 

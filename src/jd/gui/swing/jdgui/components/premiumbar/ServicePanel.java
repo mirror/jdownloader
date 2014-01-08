@@ -38,7 +38,6 @@ import jd.controlling.accountchecker.AccountChecker;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -169,20 +168,6 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
         });
     }
 
-    // private void updateGUI(final boolean enabled) {
-    //
-    // new EDTRunner() {
-    //
-    // @Override
-    // protected void runInEDT() {
-    // if (bars == null) return;
-    // for (int i = 0; i < bars.length; i++) {
-    // bars[i].setEnabled(enabled);
-    // }
-    // }
-    // };
-    // }
-
     private void refreshAccountStats() {
         for (Account acc : AccountController.getInstance().list()) {
             if (acc.isEnabled() && acc.isValid() && acc.refreshTimeoutReached()) {
@@ -195,38 +180,40 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
     }
 
     public void redraw() {
-        final LinkedList<ServiceCollection<?>> services = groupServices(CFG_GUI.CFG.getPremiumStatusBarDisplay(), true, null);
+        if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached()) {
+            final LinkedList<ServiceCollection<?>> services = groupServices(CFG_GUI.CFG.getPremiumStatusBarDisplay(), true, null);
 
-        new EDTHelper<Object>() {
-            @Override
-            public Object edtRun() {
-                try {
-                    removeAll();
+            new EDTHelper<Object>() {
+                @Override
+                public Object edtRun() {
+                    try {
+                        removeAll();
 
-                    int max = services.size();
-                    // Math.min(, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("2");
-                    for (int i = 0; i < max; i++) {
-                        sb.append("[22!]0");
-                    }
-                    setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
-                    for (int i = 0; i < max; i++) {
-                        JComponent c = services.removeFirst().createIconComponent(ServicePanel.this);
-                        if (c != null) {
-                            add(c, "gapleft 0,gapright 0");
+                        int max = services.size();
+                        // Math.min(, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("2");
+                        for (int i = 0; i < max; i++) {
+                            sb.append("[22!]0");
                         }
+                        setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
+                        for (int i = 0; i < max; i++) {
+                            JComponent c = services.removeFirst().createIconComponent(ServicePanel.this);
+                            if (c != null) {
+                                add(c, "gapleft 0,gapright 0");
+                            }
 
+                        }
+                        revalidate();
+                        repaint();
+                    } catch (final Throwable e) {
+                        Log.exception(e);
                     }
-                    revalidate();
-                    repaint();
-                } catch (final Throwable e) {
-                    Log.exception(e);
+                    invalidate();
+                    return null;
                 }
-                invalidate();
-                return null;
-            }
-        }.start();
+            }.start();
+        }
     }
 
     public LinkedList<ServiceCollection<?>> groupServices(PremiumStatusBarDisplay premiumStatusBarDisplay, boolean extend, String filter) {
@@ -241,8 +228,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
             if (acc.getLastValidTimestamp() < 0 && acc.getError() != null) continue;
             if ((System.currentTimeMillis() - acc.getLastValidTimestamp()) < 14 * 7 * 24 * 60 * 60 * 1000 && acc.getError() != null) continue;
-
-            PluginForHost plugin = JDUtilities.getPluginForHost(acc.getHoster());
+            PluginForHost plugin = acc.getPlugin();
             DomainInfo domainInfo;
             if (plugin != null) {
                 domainInfo = plugin.getDomainInfo(null);
