@@ -67,6 +67,8 @@ public class UltraMegaBitCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("ultramegabit.com/folder/add/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">File not found<|>File restricted<|>File not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Deleted because of inactivity
+        if (br.containsHTML(">File has been deleted|>We\\'re sorry\\. This file has been deleted due to inactivity\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>ULTRAMEGABIT\\.COM \\- ([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h4>(<img[^>]+>)?(.*?) \\(([^\\)]+)\\)</h4>").getMatch(1);

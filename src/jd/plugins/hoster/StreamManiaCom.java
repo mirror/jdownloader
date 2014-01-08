@@ -33,13 +33,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 // based on raztoki's plugin for jdownloader 1
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streammania.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "streammania.com", "brapid.sk", "megafastlink.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32323" }, flags = { 2, 2, 2 })
 public class StreamManiaCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     /*
-     * 2 Hoster use streammania domain as private api, but there are different public domains
+     * 3 Hoster use streammania domain as private api, but there are different public domains
      */
     private String                                         hostPublicDomain   = "streammania.com";
 
@@ -59,8 +59,8 @@ public class StreamManiaCom extends PluginForHost {
         String page = null;
         String hosts = null;
         try {
-            page = br.getPage("http://www.streammania.com/api/get_pa_info.php?login=" + username + "&password=" + pass);
-            hosts = br.getPage("http://www.streammania.com/api/get_filehosters.php");
+            page = br.getPage("http://www." + hostPublicDomain + "/api/get_pa_info.php?login=" + username + "&password=" + pass);
+            hosts = br.getPage("http://www." + hostPublicDomain + "/api/get_filehosters.php");
         } catch (Exception e) {
             account.setTempDisabled(true);
             account.setValid(true);
@@ -147,7 +147,7 @@ public class StreamManiaCom extends PluginForHost {
         br.setDebug(true);
         dl = null;
         showMessage(link, "Phase 1/2: Get download link");
-        String genlink = br.getPage("http://www.streammania.com/api/get_ddl.php?login=" + user + "&password=" + pw + "&url=" + url);
+        String genlink = br.getPage("http://www." + hostPublicDomain + "/api/get_ddl.php?login=" + user + "&password=" + pw + "&url=" + url);
         String maxChunksString = br.getRequest().getResponseHeader("X-MaxChunks");
         int maxChunks = 1;
         if (maxChunksString != null) {
@@ -158,7 +158,7 @@ public class StreamManiaCom extends PluginForHost {
             }
         }
         if (!genlink.startsWith("http://")) {
-            logger.severe("Streammania(Error): " + genlink);
+            logger.severe(hostPublicDomain + "(Error): " + genlink);
             /*
              * after x retries we disable this host and retry with normal plugin
              */
@@ -182,7 +182,7 @@ public class StreamManiaCom extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             /* unknown error */
             br.followConnection();
-            logger.severe("Streammania(Error): " + br.toString());
+            logger.severe(hostPublicDomain + "(Error): " + br.toString());
             /* disable for 20 min */
             tempUnavailableHoster(acc, link, 20 * 60 * 1000);
         }

@@ -84,7 +84,7 @@ public class VideoWeedCom extends PluginForHost {
         }
         if (key == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.videoweed.es/api/player.api.php?user=undefined&codes=1&file=" + new Regex(downloadLink.getDownloadURL(), "videoweed\\.es/file/(.+)").getMatch(0) + "&pass=undefined&key=" + Encoding.urlEncode(key));
-        filename = filename.trim();
+        filename = Encoding.htmlDecode(filename.trim());
         final String ext = ".flv";
         if (filename.contains(".")) {
             String oldExt = filename.substring(filename.length() - 4, filename.length());
@@ -99,6 +99,11 @@ public class VideoWeedCom extends PluginForHost {
         }
         if (br.containsHTML("error_msg=The video has failed to convert")) {
             downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");
+            return AvailableStatus.TRUE;
+        }
+        if (br.containsHTML("error_msg=The video is converting")) {
+            downloadLink.setName(filename + ext);
+            downloadLink.getLinkStatus().setStatusText("Server says: This video is converting");
             return AvailableStatus.TRUE;
         }
         dllink = br.getRegex("url=(http://.*?)\\&title").getMatch(0);
@@ -127,6 +132,7 @@ public class VideoWeedCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML("error_msg=The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
         if (br.containsHTML("error_msg=The video has failed to convert")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
+        if (br.containsHTML("error_msg=The video is converting")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says: This video is converting", 60 * 60 * 1000l);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
