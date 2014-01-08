@@ -55,6 +55,7 @@ public class BinBoxIo extends PluginForDecrypt {
 
         if (salt != null && paste != null) {
             paste = paste.replace("&quot;", "\"");
+            paste = Encoding.Base64Decode(paste);
             if (isEmpty(sjcl)) sjcl = br.getPage("/public/js/sjcl.js");
             final String[] links = decryptLinks(salt, paste);
             if (links == null || links.length == 0) {
