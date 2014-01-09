@@ -103,7 +103,7 @@ public class BlueFishTvCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         DLLINK = convertRtmpUrlToHttpUrl(downloadLink.getDownloadURL());
-        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible"); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -127,7 +127,10 @@ public class BlueFishTvCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (getPluginConfig().getBooleanProperty("COMPLETE_SEASON")) { return AvailableStatus.TRUE; }
         DLLINK = convertRtmpUrlToHttpUrl(downloadLink.getDownloadURL());
-        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null) {
+            downloadLink.getLinkStatus().setStatusText("Download not possible");
+            return AvailableStatus.TRUE;
+        }
         prepareBrowser(br);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;

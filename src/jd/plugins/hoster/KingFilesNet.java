@@ -116,7 +116,7 @@ public class KingFilesNet extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0;
+            chunks = -1;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -716,7 +716,7 @@ public class KingFilesNet extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 10);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }

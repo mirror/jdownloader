@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchfreeinhd.com" }, urls = { "http://(www\\.)?watchfreeinhd\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchfreeinhd.com" }, urls = { "http://(www\\.)?watchfreeinhd\\.(com|org)/[A-Za-z0-9]+" }, flags = { 0 })
 public class WatchFreeInHdCom extends PluginForHost {
 
     public WatchFreeInHdCom(PluginWrapper wrapper) {
@@ -39,6 +39,10 @@ public class WatchFreeInHdCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.watchfreeinhd.com/tos.html";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("watchfreeinhd.org/", "watchfreeinhd.com/"));
     }
 
     private boolean POSTAGAIN = false;
@@ -54,7 +58,7 @@ public class WatchFreeInHdCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         else
             POSTAGAIN = true;
-        link.setFinalFileName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + ".flv");
+        link.setFinalFileName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + ".mp4");
         return AvailableStatus.TRUE;
     }
 

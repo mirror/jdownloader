@@ -80,12 +80,13 @@ public class ImgChiliCom extends PluginForDecrypt {
         } else {
             parameter = "http://imgchili.com/show" + new Regex(parameter, "(com|net)(/show)?(/.+)").getMatch(2);
             param.setCryptedUrl(parameter);
+            br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.containsHTML("does not exist\\. <")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String finallink = br.getRegex("id=\"show_image\" onload=\"scale\\(this\\);\" onclick=\"scale\\(this\\);\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            String finallink = br.getRegex("onclick=\"scale\\(this\\);\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://i\\d+\\.imgchili\\.(com|net)/\\d+/[a-z0-9_]+\\.[a-z]{1,5})\"").getMatch(0);
             }

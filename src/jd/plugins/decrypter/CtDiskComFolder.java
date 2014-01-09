@@ -122,12 +122,18 @@ public class CtDiskComFolder extends PluginForDecrypt {
         prepAjax(ajax);
         getPage(ajax, ajaxSource);
         ajax.getHttpConnection().getRequest().setHtmlCode(ajax.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
-        if (!"0".equals(fuid)) {
-            String[][] results = ajax.getRegex("(href=\"([^\"]+/file/\\d+)\">(.*?)</a>(\\\\t){1,}\",\"([\\d\\.]+ [KMGT]?B)\")").getMatches();
-            if (results == null || results.length == 0) {
-                logger.warning("Can not find 'results' : " + parameter);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String[][] results = ajax.getRegex("(href=\"([^\"]+/file/\\d+)\">(.*?)</a>(\\\\t){1,}\",\"([\\d\\.]+ [KMGT]?B)\")").getMatches();
+        // export folders back into decrypter again.
+        final String[] folders = ajax.getRegex("<a href=\"(/u/" + uuid + "/\\d+)\">").getColumn(0);
+        if ((folders == null || folders.length == 0) && (results == null || results.length == 0)) {
+            if (ajax.containsHTML("\"iTotalRecords\":\"0\"")) {
+                logger.info("Link offline (empty): " + parameter);
+                return;
             }
+            ret = null;
+            return;
+        }
+        if (results != null && results.length != 0) {
             for (String[] args : results) {
                 DownloadLink dl = createDownloadlink(args[1]);
                 if (args[1] != null) {
@@ -137,20 +143,18 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 }
                 ret.add(dl);
             }
-        } else {
-            // export folders back into decrypter again.
-            String[] folders = ajax.getRegex("<a href=\"(/u/" + uuid + "/\\d+)\">").getColumn(0);
-            if (folders != null && folders.length != 0) {
-                final String host = new Regex(br.getURL(), "(https?://(www\\.)?" + domains + ")").getMatch(0);
-                if (host == null) {
-                    logger.info("Could not determine Host :: " + parameter);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                for (String folder : folders) {
-                    ret.add(createDownloadlink(host + folder));
-                }
+        }
+        if (folders != null && folders.length != 0) {
+            final String host = new Regex(br.getURL(), "(https?://(www\\.)?" + domains + ")").getMatch(0);
+            if (host == null) {
+                logger.info("Could not determine Host :: " + parameter);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (String folder : folders) {
+                ret.add(createDownloadlink(host + folder));
             }
         }
+
     }
 
     /**

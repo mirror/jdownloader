@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download_[^<>/\"]+(/\\d+/)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehippo.com" }, urls = { "http://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download_[^<>/\"]+((/tech)?/\\d+/)?" }, flags = { 0 })
 public class FileHippoCom extends PluginForHost {
 
     private static final String FILENOTFOUND = "(<h1>404 Error</h1>|<b>Sorry the page you requested could not be found)";
@@ -40,10 +41,16 @@ public class FileHippoCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("/(es|en|pl|jp|de)", ""));
-        if (!link.getDownloadURL().endsWith("/"))
-            link.setUrlDownload(link.getDownloadURL() + "/tech/");
-        else
-            link.setUrlDownload(link.getDownloadURL() + "tech/");
+        if (link.getDownloadURL().matches("http://(www\\.)?filehippo\\.com(/(es|en|pl|jp|de))?/download_[^<>/\"]+/tech/\\d+/")) {
+            final String numbers = new Regex(link.getDownloadURL(), "/(\\d+)/$").getMatch(0);
+            final String linkpart = new Regex(link.getDownloadURL(), "/download_([^<>/\"]+)").getMatch(0);
+            link.setUrlDownload("http://www.filehippo.com/download_" + linkpart + "/tech/" + numbers + "/");
+        } else {
+            if (!link.getDownloadURL().endsWith("/"))
+                link.setUrlDownload(link.getDownloadURL() + "/tech/");
+            else
+                link.setUrlDownload(link.getDownloadURL() + "tech/");
+        }
     }
 
     @Override
@@ -95,7 +102,8 @@ public class FileHippoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        final String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
+        String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
+        if (normalPage == null) normalPage = br.getRegex("download\\-link button\\-link active long\" href=\"(/download_[^<>\"]*?)\"").getMatch(0);
         final String mirrorPage = br.getRegex("table id=\"dlboxinner\"[^\n\r\t]*?<a href=\"(/.*?)\"").getMatch(0);
         final String pages[] = new String[] { mirrorPage, normalPage };
         for (String page : pages) {

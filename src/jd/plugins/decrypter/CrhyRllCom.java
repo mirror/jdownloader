@@ -137,6 +137,10 @@ public class CrhyRllCom extends PluginForDecrypt {
             if (!configUrlSearch.matches()) { throw new DecrypterException("Failed to get config url"); }
 
             final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
+            if (configUrlDecode.contains("Only+All-Access+Members+and+Anime+Members+can+pop+out+this+video")) {
+                logger.info("Link can only be decrypted if you own and add a crunchyroll.com account: " + cryptedLink.getCryptedUrl());
+                return decryptedLinks;
+            }
             final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
             if (!configUrl.matches()) { throw new DecrypterException("Invalid config url"); }
 

@@ -57,6 +57,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.getURL().contains("anime.thehylia.com/downloads/series/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = br.getRedirectLocation();
         if (DLLINK == null) {
             if (br.containsHTML("issues|network capacity|problems"))

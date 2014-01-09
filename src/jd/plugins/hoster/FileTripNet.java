@@ -66,7 +66,8 @@ public class FileTripNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Form dlform = br.getFormbyProperty("target", "hidframe");
+        final Form[] allforms = br.getForms();
+        final Form dlform = allforms[allforms.length - 1];
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
