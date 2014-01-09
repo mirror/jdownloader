@@ -39,7 +39,7 @@ public class VoaYeursCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String filename = br.getRegex("<title>Porno XXX \\- ([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?)\\- Porno HD \\- VOAYEURS\\.COM</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         String externID = br.getRedirectLocation();
         if (externID != null && externID.length() < 40) {
@@ -152,6 +152,11 @@ public class VoaYeursCom extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?fux\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         // For all following ids, a filename is needed

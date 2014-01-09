@@ -39,14 +39,14 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (parameter.matches("http://(www\\.)?timekiller\\-erotic\\.com/PornHub/\\d+/[a-z0-9\\-_]+\\.html")) {
-            final String continueLink = br.getRegex("\"(http://(www\\.)?lesbians666\\.com/player/pornhubplayer\\.php\\?video=\\d+)\"").getMatch(0);
+            final String continueLink = br.getRegex("\"(http://(www\\.)?lesbians666\\.com/player/pornhubplayer\\.php\\?video=[a-z0-9]+)\"").getMatch(0);
             if (continueLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             br.getPage(continueLink);
-            String pornHubLink = br.getRegex("(http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+)").getMatch(0);
-            if (pornHubLink == null) pornHubLink = br.getRegex("\"(http://(www\\.)?pornhub\\.com/embed/\\d+)\"").getMatch(0);
+            String pornHubLink = br.getRegex("(http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=[a-z0-9]+)").getMatch(0);
+            if (pornHubLink == null) pornHubLink = br.getRegex("\"(http://(www\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
             if (pornHubLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

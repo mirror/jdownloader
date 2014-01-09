@@ -173,11 +173,24 @@ public class UltraMegaBitCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.ultramegabit.com/login");
+                br.getPage("http://ultramegabit.com/login");
                 final String token = br.getRegex("name=\"csrf_token\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (token == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.postPage("http://ultramegabit.com/login", "submit=Login&csrf_token=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML(">Form validation errors found<|>Invalid username or password<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String lang = System.getProperty("user.language");
+                if (token == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                br.postPage("http://ultramegabit.com/login", "csrf_token=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.containsHTML(">Form validation errors found<|>Invalid username or password<") || br.getURL().contains("ultramegabit.com/login")) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -201,7 +214,7 @@ public class UltraMegaBitCom extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         br.getPage("/user/details");
         String space = br.getRegex("<span class=\"glyphicon glyphicon-hdd\"></span> ([\\d\\.]+ [A-Za-z]+)").getMatch(0);
@@ -212,10 +225,12 @@ public class UltraMegaBitCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         br.getPage("/user/billing");
 
-        String acctype = br.getRegex("<h4>[^\"]+\"([^\"]+)\"").getMatch(0);
+        String acctype = "Premium";
+        final boolean ispremium = (br.containsHTML("\"Premium Member\"") || br.containsHTML("premium subscription</h5>"));
         // some premiums have no expiration date, page shows only: Account status: Premium
-        final String expire = br.getRegex("<h5>Account expires at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
-        if (expire == null && !acctype.equalsIgnoreCase("Premium Member")) {
+        String expire = br.getRegex("<h5>Account expires at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
+        if (expire == null) expire = br.getRegex("<h5>Next rebill at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
+        if (expire == null && !ispremium) {
             // "Member"
             acctype = "Registered (free) User";
             account.setProperty("free", true);

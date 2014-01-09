@@ -51,7 +51,9 @@ public class Dump1Com extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        // Offline links should also have nice names
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
@@ -59,7 +61,7 @@ public class Dump1Com extends PluginForHost {
         } catch (final UnknownHostException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("(<title></title>|<bookmark title=\"\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title></title>|<bookmark title=\"\"|No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<bookmark title=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
