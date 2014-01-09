@@ -242,6 +242,8 @@ public class CatShareNet extends PluginForHost {
 
         link.setName(fileName.trim());
         link.setDownloadSize(SizeFormatter.getSize(fileSize));
+        // setting this prevents from setting incorrect (shortened) filename from the request header
+        link.setFinalFileName(link.getName());
         return AvailableStatus.TRUE;
     }
 
