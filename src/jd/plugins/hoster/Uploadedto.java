@@ -879,9 +879,13 @@ public class Uploadedto extends PluginForHost {
                 logger.info("Premium Account, WEB download method in use!");
                 br.setFollowRedirects(false);
                 String id = getID(downloadLink);
-                br.getPage(baseURL + "file/" + id + "/ddl");
-                if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
-                String passCode = null;
+                String passCode = downloadLink.getStringProperty("pass", null);
+                if (downloadLink.getBooleanProperty("preDlPass", false) && passCode != null) {
+                    br.getPage(baseURL + "file/" + id + "/ddl?pw=" + Encoding.urlEncode(passCode));
+                } else {
+                    br.getPage(baseURL + "file/" + id + "/ddl");
+                }
+                if (br.containsHTML("<title>uploaded.net - Maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l); }
                 if (br.containsHTML("<h2>Authentification</h2>")) {
                     logger.info("Password protected link");
                     passCode = getPassword(downloadLink);
@@ -1107,6 +1111,16 @@ public class Uploadedto extends PluginForHost {
         return false;
     }
 
+    private void changeToEnglish(Browser br) throws IOException {
+        boolean red = br.isFollowingRedirects();
+        try {
+            br.setFollowRedirects(false);
+            br.getPage(getProtocol() + "uploaded.net/language/en");
+        } finally {
+            br.setFollowRedirects(red);
+        }
+    }
+
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         workAroundTimeOut(br);
@@ -1127,6 +1141,7 @@ public class Uploadedto extends PluginForHost {
                 }
                 if (br.containsHTML("<title>uploaded.net - Maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l); }
                 if (br.getCookie("http://uploaded.net", "auth") == null && br.getCookie("https://uploaded.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                changeToEnglish(br);
             } catch (PluginException e) {
                 account.setProperty("token", null);
                 account.setProperty("tokenType", null);
@@ -1237,7 +1252,7 @@ public class Uploadedto extends PluginForHost {
 
     private boolean dmcaDlEnabled() {
         final SubConfiguration thiscfg = this.getPluginConfig();
-        return (!thiscfg.getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, false) && thiscfg.getBooleanProperty(DOWNLOAD_ABUSED, false));
+        return (!thiscfg.getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda) && thiscfg.getBooleanProperty(DOWNLOAD_ABUSED, false));
     }
 
     private final boolean default_ppda   = true;

@@ -7,7 +7,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -170,33 +172,33 @@ public class DownloadSession {
         return activationPluginCache;
     }
 
-    private final CopyOnWriteArrayList<SingleDownloadController> controllers = new CopyOnWriteArrayList<SingleDownloadController>() {
-                                                                                 /**
+    private final CopyOnWriteArraySet<SingleDownloadController> controllers = new CopyOnWriteArraySet<SingleDownloadController>() {
+                                                                                /**
          * 
          */
-                                                                                 private static final long serialVersionUID = -3897088297641777499L;
+                                                                                private static final long serialVersionUID = -3897088297641777499L;
 
-                                                                                 public boolean add(SingleDownloadController e) {
-                                                                                     downloadsStarted.incrementAndGet();
-                                                                                     e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
-                                                                                     return super.add(e);
-                                                                                 };
+                                                                                public boolean add(SingleDownloadController e) {
+                                                                                    downloadsStarted.incrementAndGet();
+                                                                                    e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
+                                                                                    return super.add(e);
+                                                                                };
 
-                                                                                 @Override
-                                                                                 public boolean remove(Object e) {
-                                                                                     boolean ret = super.remove(e);
-                                                                                     if (ret) {
-                                                                                         try {
-                                                                                             getFileAccessManager().unlockAllHeldby(e);
-                                                                                         } finally {
-                                                                                             if (e instanceof SingleDownloadController) {
-                                                                                                 ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
-                                                                                             }
-                                                                                         }
-                                                                                     }
-                                                                                     return ret;
-                                                                                 };
-                                                                             };
+                                                                                @Override
+                                                                                public boolean remove(Object e) {
+                                                                                    boolean ret = super.remove(e);
+                                                                                    if (ret) {
+                                                                                        try {
+                                                                                            getFileAccessManager().unlockAllHeldby(e);
+                                                                                        } finally {
+                                                                                            if (e instanceof SingleDownloadController) {
+                                                                                                ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                    return ret;
+                                                                                };
+                                                                            };
 
     public int getActiveDownloadsFromHost(String host) {
         if (host == null) return 0;
@@ -438,7 +440,7 @@ public class DownloadSession {
     /**
      * @return the controllers
      */
-    public List<SingleDownloadController> getControllers() {
+    public Set<SingleDownloadController> getControllers() {
         return controllers;
     }
 

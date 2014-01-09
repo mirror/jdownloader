@@ -941,7 +941,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
 
         });
-        return finalCandidates.get(1);
+        return finalCandidates.get(0);
     }
 
     private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate) {
@@ -1524,16 +1524,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return ret;
     }
 
-    public List<SingleDownloadController> getRunningDownloadLinks() {
+    public Set<SingleDownloadController> getRunningDownloadLinks() {
         return getSession().getControllers();
     }
 
-    public List<FilePackage> getRunningFilePackages() {
+    public Set<FilePackage> getRunningFilePackages() {
         HashSet<FilePackage> ret = new HashSet<FilePackage>();
         for (SingleDownloadController con : getSession().getControllers()) {
             ret.add(con.getDownloadLink().getParentNode());
         }
-        return new ArrayList<FilePackage>(ret);
+        return ret;
     }
 
     public boolean hasRunningDownloads(FilePackage pkg) {
