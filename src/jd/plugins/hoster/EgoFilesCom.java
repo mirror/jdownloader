@@ -83,6 +83,8 @@ public class EgoFilesCom extends PluginForHost {
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "filename or filesize not recognized"); }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
+        // setting this prevents from setting incorrect (shortened) filename from the request header
+        link.setFinalFileName(link.getName());
         return AvailableStatus.TRUE;
     }
 
