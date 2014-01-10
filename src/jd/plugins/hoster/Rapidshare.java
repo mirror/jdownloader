@@ -585,14 +585,18 @@ public class Rapidshare extends PluginForHost {
             if (error.startsWith("Download permission denied by")) {
                 boolean nowdownloadable = true;
                 try {
-                    logger.info("Trying workaround for the rapidshare.com serverside permissions bug");
+                    logger.info(" Trying workaround for the rapidshare.com serverside permissions bug");
                     br.getPage("https://api.rapidshare.com/cgi-bin/rsapi.cgi?rsource=web&sub=checkfiles&files=" + getID(link.getDownloadURL()) + "&filenames=" + Encoding.urlEncode(link.getName()) + "&cbid=4&cbf=rsapi.system.jsonp.callback&callt=" + System.currentTimeMillis());
                     br.getRequest().setHtmlCode(br.toString().replace("\\n", ""));
-                    final String shareid = link.getStringProperty("shareid", null);
-                    if (!br.containsHTML("Download permission denied by") && br.containsHTML(link.getName()) && shareid != null) {
+                    if (!br.containsHTML("Download permission denied by") && br.containsHTML(link.getName())) {
                         final String apitext = br.getRegex("rsapi\\.system\\.jsonp\\.callback\\(4,\"(.*?)\"\\)").getMatch(0);
                         final String[] data = apitext.split(",");
-                        dllink = "https://rs" + data[3] + data[5] + ".rapidshare.com/cgi-bin/rsapi.cgi?sub=download&share=" + shareid + "&fileid=" + getID(link.getDownloadURL()) + "&filename=" + Encoding.urlEncode(link.getName()) + "&bin=1";
+                        final String shareid = link.getStringProperty("shareid", null);
+                        if (shareid != null) {
+                            dllink = "https://rs" + data[3] + data[5] + ".rapidshare.com/cgi-bin/rsapi.cgi?sub=download&share=" + shareid + "&fileid=" + getID(link.getDownloadURL()) + "&filename=" + Encoding.urlEncode(link.getName()) + "&bin=1";
+                        } else {
+                            dllink = "https://rs" + data[3] + data[5] + ".rapidshare.com/cgi-bin/rsapi.cgi?sub=download&fileid=" + getID(link.getDownloadURL()) + "&filename=" + Encoding.urlEncode(link.getName()) + "&bin=1";
+                        }
                         nowdownloadable = false;
                     }
                 } catch (final Throwable e) {
@@ -714,6 +718,7 @@ public class Rapidshare extends PluginForHost {
                     this.br.followConnection();
                 } catch (final Throwable e) {
                 }
+                if (br.containsHTML("Download permission denied by uploader")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader"); }
                 logger.severe(this.br.toString());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
@@ -801,6 +806,9 @@ public class Rapidshare extends PluginForHost {
                     }
                 }
                 String directurl = "https://" + host + "/cgi-bin/rsapi.cgi?sub=download&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + cookie;
+                if (dllink != null) {
+                    directurl = dllink + "&cookie=" + cookie;
+                } else if (host == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 /* needed for secured links */
                 if (link.getSecMD5() != null) {
                     directurl += "&seclinkmd5=" + link.getSecMD5();
@@ -813,12 +821,13 @@ public class Rapidshare extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
                 final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
-                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control Header
+                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei oder eine Fehlerseite.
+                 * BIldfiles haben keinen Cache-Control Header
                  */
                 if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                     // Lädt die zuletzt aufgebaute vernindung
                     this.br.followConnection();
+                    if (br.containsHTML("Download permission denied by uploader")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader"); }
                     if (retry) {
                         /* in case we get anther DL hoster */
                         host = this.br.getRegex("DL:(.*?),").getMatch(0);
