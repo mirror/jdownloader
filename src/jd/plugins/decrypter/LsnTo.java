@@ -95,7 +95,7 @@ public class LsnTo extends PluginForDecrypt {
         if (form != null) {
             br.submitForm(form);
         }
-        String[] links = br.getRegex("class=\"container\"><a href=\"(http://.*?)\"").getColumn(0);
+        String[] links = br.getRegex("class=\"container\"><a href=\"(https?://.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             links = br.getRegex("\"(http://(www\\.)?lesen\\.to/protection/.*?)\"").getColumn(0);
         }
@@ -113,7 +113,7 @@ public class LsnTo extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             } else {
-                decryptedLinks.add(createDownloadlink(singleLink));
+                if (!singleLink.contains("lesen.to/")) decryptedLinks.add(createDownloadlink(singleLink));
             }
         }
         return decryptedLinks;

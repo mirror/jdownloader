@@ -91,6 +91,10 @@ public class DlPrtcCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/");
         prepBrowser(br);
+        if (parameter.endsWith("dl-protect.com/en")) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         getPage(parameter);
         if (cbr.containsHTML(">Unfortunately, the link you are looking for is not found")) {
             logger.info("Link offline: " + parameter);
@@ -154,6 +158,10 @@ public class DlPrtcCom extends PluginForDecrypt {
         }
         String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)\">").getMatch(0);
         if (linktext == null) {
+            if (br.containsHTML(">Your link :</div>")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken 4 for link: " + parameter);
             return null;
         }

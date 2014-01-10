@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiupload\\.(com|nl)(:\\d+)?/(?!extreme)([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiupload\\.(com|nl)(:\\d+)?/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
 public class MltpldCm extends PluginForDecrypt {
 
     public MltpldCm(PluginWrapper wrapper) {
@@ -36,10 +36,16 @@ public class MltpldCm extends PluginForDecrypt {
     // DEV NOTES:
     // - port support for blocked Indians.
 
+    private static final String INVALIDLINKS = "http://(www\\.)?multiupload\\.com/(privacy|contact)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString().replaceFirst("multiupload.com", "multiupload.nl");
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             String redirect = br.getRedirectLocation();
@@ -70,7 +76,7 @@ public class MltpldCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         } else {
-            if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) {
+            if (br.containsHTML(">Unfortunately, the link you have clicked is not available") || br.containsHTML("No htmlCode read")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }

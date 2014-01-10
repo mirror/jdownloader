@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firsturl.de" }, urls = { "http://[\\w\\.]*?firsturl\\.de/[0-9a-zA-Z]{7}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firsturl.de" }, urls = { "http://[\\w\\.]*?firsturl\\.de/(?!kontakt)[0-9a-zA-Z]{7}" }, flags = { 0 })
 public class FrstrlD extends PluginForDecrypt {
 
     public FrstrlD(PluginWrapper wrapper) {

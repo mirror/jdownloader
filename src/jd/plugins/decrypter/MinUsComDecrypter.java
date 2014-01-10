@@ -90,7 +90,7 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         if (items == null || items.length == 0) items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
         if (items != null && items.length != 0) {
             for (String singleitems : items) {
-                String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"/]*?)\"").getMatch(0);
+                String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"]*?)\"").getMatch(0);
                 final String filesize = new Regex(singleitems, "\"filesize_bytes\": ?(\\d+)").getMatch(0);
                 final String secureprefix = new Regex(singleitems, "\"secure_prefix\": ?\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
                 final String linkid = new Regex(singleitems, "\"id\": ?\"([A-Za-z0-9\\-_]+)\"").getMatch(0);

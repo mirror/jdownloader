@@ -36,7 +36,9 @@ public class FourSexFourCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        br.setFollowRedirects(false);
         if (br.containsHTML("megaporn\\.com/e/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

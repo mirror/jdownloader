@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "normanfaitdesvideos.com" }, urls = { "http://(www\\.)?normanfaitdesvideos\\.com/(?!feed).*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "normanfaitdesvideos.com" }, urls = { "http://(www\\.)?normanfaitdesvideos\\.com/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+/" }, flags = { 0 })
 public class NormanVideosCom extends PluginForDecrypt {
 
     public NormanVideosCom(PluginWrapper wrapper) {
