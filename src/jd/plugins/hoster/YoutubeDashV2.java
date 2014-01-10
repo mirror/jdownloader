@@ -42,7 +42,6 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.DownloadPluginProgress;
 import jd.plugins.download.raf.HashResult;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.exceptions.WTFException;
@@ -88,6 +87,7 @@ public class YoutubeDashV2 extends PluginForHostV2 {
 
     @Override
     public String getAGBLink() {
+        //
         return "http://youtube.com/t/terms";
     }
 
@@ -112,26 +112,6 @@ public class YoutubeDashV2 extends PluginForHostV2 {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
-    }
-
-    private void postprocess(final DownloadLink downloadLink) {
-        if (downloadLink.getProperty("convertto") != null) {
-            JDUtilities.getPluginForDecrypt("youtube.com");
-            final jd.plugins.decrypter.TbCm.DestinationFormat convertto = jd.plugins.decrypter.TbCm.DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());
-            jd.plugins.decrypter.TbCm.DestinationFormat InType = jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_FLV;
-            if (convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_WEBM) || convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_MP4) || convertto.equals(jd.plugins.decrypter.TbCm.DestinationFormat.VIDEO_3GP)) {
-                InType = convertto;
-            }
-            if (!jd.plugins.decrypter.TbCm.ConvertFile(downloadLink, InType, convertto)) {
-                logger.severe("Video-Convert failed!");
-            }
-        }
-
-        if (downloadLink.getBooleanProperty("subtitle", false)) {
-            if (!jd.plugins.decrypter.TbCm.convertSubtitle(downloadLink)) {
-                logger.severe("Subtitle conversion failed!");
-            }
-        }
     }
 
     public static interface YoutubeConfig extends ConfigInterface {
