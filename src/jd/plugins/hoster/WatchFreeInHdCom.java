@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -58,7 +59,10 @@ public class WatchFreeInHdCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         else
             POSTAGAIN = true;
-        link.setFinalFileName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + ".mp4");
+        String filename = br.getRegex("title=\"Watch ([^<>\"]*?) online free\" id=\"PlayHdLogo\"").getMatch(0);
+        if (filename == null || filename.equals("")) filename = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        filename = Encoding.htmlDecode(filename.trim());
+        link.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
