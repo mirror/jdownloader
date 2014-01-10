@@ -20,23 +20,25 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "normanfaitdesvideos.com" }, urls = { "http://(www\\.)?normanfaitdesvideos\\.com/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "normanfaitdesvideos.com" }, urls = { "http://(www\\.)?normanfaitdesvideos\\.com/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+/" }, flags = { 0 })
 public class NormanVideosCom extends PluginForDecrypt {
 
     public NormanVideosCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        // Logger logDebug = JDLogger.getLogger();
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String strParameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String strParameter = param.toString();
 
         br.setFollowRedirects(true);
         br.getPage(strParameter);
@@ -45,7 +47,13 @@ public class NormanVideosCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String[] links = br.getRegex("http://(www\\.)?youtube.com/embed/(.*?)\\?").getColumn(1);
+        String fpName = br.getRegex("<title>([^<>\"]*?)\\- Norman fait des vidéos</title>").getMatch(0);
+        if (fpName == null) fpName = new Regex(strParameter, "normanfaitdesvideos\\.com/(.+)").getMatch(0);
+        fpName = Encoding.htmlDecode(fpName.trim());
+
+        String[] links = br.getRegex("(http://(www\\.)?youtube.com/embed/[A-Za-z0-9\\-_]+)\\?").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("file: \"(http://player\\.vimeo\\.com/external/[^<>\"]*?)\"").getColumn(0);
+        if (links == null || links.length == 0) links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + strParameter);
             return null;
@@ -53,14 +61,16 @@ public class NormanVideosCom extends PluginForDecrypt {
 
         // Added links
         for (String redirectlink : links) {
-            redirectlink = "http://www.youtube.com/embed/" + redirectlink;
-            final DownloadLink DLLink = createDownloadlink(redirectlink);
-            // if (strDate != null && strDate != "") DLLink.setFinalFileName(strDate + " " + DLLink.getFinalFileName());
-            decryptedLinks.add(DLLink);
+            if (!redirectlink.matches("http://(www\\.)?normanfaitdesvideos\\.com/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+/")) {
+                if (redirectlink.contains("vimeo.com/")) redirectlink = "directhttp://" + redirectlink;
+                final DownloadLink finallink = createDownloadlink(redirectlink);
+                decryptedLinks.add(finallink);
+            }
         }
 
         // Add all link in a package
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

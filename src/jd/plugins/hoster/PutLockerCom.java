@@ -75,8 +75,8 @@ public class PutLockerCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This file doesn\\'t exist, or has been removed \\.<") || br.getURL().contains("?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("hd_marker\".*?span>(.*?)<strong").getMatch(0);
-        if (filename == null) filename = br.getRegex("site\\-content.*?<h1>(.*?)<strong").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\|").getMatch(0);
+        if (filename == null) filename = br.getRegex("site\\-content.*?<h1>(.*?)<strong").getMatch(0);
         String filesize = br.getRegex("site-content.*?<h1>.*?<strong>\\((.*?)\\)").getMatch(0);
         if (filename == null || filesize == null) {
             //
