@@ -287,7 +287,7 @@ public class YoutubeDashV2 extends PluginForHostV2 {
 
         YoutubeHelper helper = new YoutubeHelper(br, cfg, getLogger());
         helper.setupProxy();
-
+        helper.login(false, false);
         YoutubeVariant variant = getVariant(downloadLink);
         URLConnectionAdapter con;
         long totalSize = -1;
@@ -441,6 +441,7 @@ public class YoutubeDashV2 extends PluginForHostV2 {
         ClipData vid = new ClipData(videoID);
 
         Map<YoutubeITAG, StreamData> info = helper.loadVideo(vid);
+        if (info == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
         if (variant.getGroup() == VariantGroup.SUBTITLES) {
 
             String code = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, null);

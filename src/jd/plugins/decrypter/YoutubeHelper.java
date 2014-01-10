@@ -922,7 +922,7 @@ public class YoutubeHelper {
     }
 
     protected void handleContentWarning(final Browser br) throws Exception {
-
+        // nsfw testlink https://www.youtube.com/watch?v=p7S_u5TzI-I
         // youtube shows an extra screen the first time a user wants to see a age-protected video.
         // <div class="content">
         // <h1 id="unavailable-message" class="message">
@@ -997,7 +997,7 @@ public class YoutubeHelper {
         String dashFmt;
         if (getVideoInfoWorkaroundUsed) {
             // age check bypass active
-            // testurl age-check: http://www.youtube.com/watch?v=nNYEG9kmnQk
+
             html5_fmt_map = this.br.getRegex("url_encoded_fmt_stream_map=(.*?)(&|$)").getMatch(0);
             html5_fmt_map = Encoding.htmlDecode(html5_fmt_map);
 
@@ -1202,7 +1202,30 @@ public class YoutubeHelper {
 
     public void login(final boolean refresh, final boolean showDialog) {
 
-        final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
+        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
+        if (accounts != null && accounts.size() != 0) {
+            final Iterator<Account> it = accounts.iterator();
+            while (it.hasNext()) {
+                final Account n = it.next();
+                if (n.isEnabled() && n.isValid()) {
+
+                    try {
+
+                        this.login(n, refresh, showDialog);
+                        if (n.isValid()) { return; }
+                    } catch (final Exception e) {
+
+                        n.setValid(false);
+                        return;
+                    }
+
+                }
+            }
+        }
+
+        // dbueg
+
+        accounts = AccountController.getInstance().getAllAccounts("youtube.jd");
         if (accounts != null && accounts.size() != 0) {
             final Iterator<Account> it = accounts.iterator();
             while (it.hasNext()) {
