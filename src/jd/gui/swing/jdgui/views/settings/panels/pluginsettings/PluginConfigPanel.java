@@ -19,7 +19,7 @@ public class PluginConfigPanel extends SwitchPanel {
      */
     private static final long serialVersionUID = 1L;
 
-    private PluginConfigPanel() {
+    protected PluginConfigPanel() {
         super(new MigLayout("ins 0, wrap 2", "[][grow,fill]", "[]"));
 
         setOpaque(false);
@@ -42,6 +42,8 @@ public class PluginConfigPanel extends SwitchPanel {
         }
 
         AddonConfig cp2 = null;
+
+        // old pluginsettings
         if (proto != null) cp2 = AddonConfig.getInstance(proto.getConfig(), "", false);
         final AddonConfig cp = cp2;
         // ImageIcon icon = null;

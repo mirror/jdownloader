@@ -117,9 +117,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Internet connection?" })
     String plugins_errors_nointernetconn();
 
-    @Default(lngs = { "en" }, values = { "Processing error" })
-    String downloadlink_status_error_post_process();
-
     @Default(lngs = { "en" }, values = { "Download from this host is currently not possible" })
     String downloadlink_status_error_hoster_temp_unavailable();
 
@@ -131,12 +128,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "File exists" })
     String jd_controlling_SingleDownloadController_askexists_title();
-
-    @Default(lngs = { "en" }, values = { "[download currently not possible]" })
-    String gui_downloadlink_hostertempunavail();
-
-    @Default(lngs = { "en" }, values = { "Invalid Outputfile" })
-    String system_download_errors_invalidoutputfile();
 
     @Default(lngs = { "en" }, values = { "Could not clone the connection" })
     String download_error_message_connectioncopyerror();
@@ -156,9 +147,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Although JDownloader runs on your javaversion, we advise to install the latest java updates. \r\nJDownloader will run more stable, faster, and will look better. \r\n\r\nVisit http://jdownloader.org/download." })
     String gui_javacheck_newerjavaavailable_msg();
 
-    @Default(lngs = { "en" }, values = { "No Connection" })
-    String downloadlink_status_error_no_connection();
-
     @Default(lngs = { "en" }, values = { "Download Limit reached" })
     String downloadlink_status_error_download_limit();
 
@@ -171,17 +159,11 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "There is a problem downloading a file!\r\nThe file already exists on harddisk. What do you want to do?" })
     String jd_controlling_SingleDownloadController_askexists3();
 
-    @Default(lngs = { "en" }, values = { "Captcha wrong" })
-    String downloadlink_status_error_captcha_wrong();
-
     @Default(lngs = { "en" }, values = { "Not tested yet" })
     String gui_config_reconnect_showcase_message_none();
 
     @Default(lngs = { "en" }, values = { "Unknown error" })
     String decrypter_unknownerror();
-
-    @Default(lngs = { "en" }, values = { "Temporarily unavailable" })
-    String controller_status_tempunavailable();
 
     @Default(lngs = { "en" }, values = { "Download" })
     String download_connection_normal();
@@ -195,32 +177,17 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Start Test" })
     String gui_config_reconnect_showcase_reconnect2();
 
-    @Default(lngs = { "en" }, values = { "Connecting..." })
-    String gui_download_create_connection();
-
-    @Default(lngs = { "en" }, values = { "Container Error" })
-    String controller_status_containererror();
-
-    @Default(lngs = { "en" }, values = { "Connection lost." })
-    String controller_status_connectionproblems();
-
     @Default(lngs = { "en" }, values = { "The downloadsystem is out of memory" })
     String download_error_message_outofmemory();
 
     @Default(lngs = { "en" }, values = { "Plugin outdated" })
     String downloadlink_status_error_defect();
 
-    @Default(lngs = { "en" }, values = { "Failed to overwrite" })
-    String controller_status_fileexists_overwritefailed();
-
     @Default(lngs = { "en" }, values = { "Service temp. unavailable" })
     String download_error_message_unavailable();
 
     @Default(lngs = { "en" }, values = { "Could not write to file: %s1" })
     String download_error_message_localio(Object s1);
-
-    @Default(lngs = { "en" }, values = { "Not enough harddiskspace" })
-    String downloadlink_status_error();
 
     @Default(lngs = { "en" }, values = { "Temp. unavailable" })
     String downloadlink_status_error_temp_unavailable();
@@ -234,9 +201,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "(Filesize unknown)" })
     String gui_download_filesize_unknown();
 
-    @Default(lngs = { "en" }, values = { "Waiting for user input" })
-    String downloadlink_status_waitinguserio();
-
     @Default(lngs = { "en" }, values = { "Password wrong" })
     String plugins_errors_wrongpassword();
 
@@ -249,14 +213,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Reconnect" })
     String jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();
 
-    @Default(lngs = { "en" }, values = { "Download failed" })
-    String plugins_error_downloadfailed();
-
     @Default(lngs = { "en" }, values = { "Fatal Error" })
     String downloadlink_status_error_fatal();
-
-    @Default(lngs = { "en" }, values = { "Incomplete" })
-    String downloadlink_status_incomplete();
 
     @Default(lngs = { "en" }, values = { "Download Managment" })
     String gui_settings_downloadcontroll_title();
@@ -269,9 +227,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "The linkfilter is used to filter or group links. Use it to ignore or group links, adresses, urls or files based on their properties. Set up 'Views' for the Linkgrabber's sidebar, or 'Filters' to avoid grabbing special links completely..." })
     String gui_settings_linkgrabber_filter_description2();
-
-    @Default(lngs = { "en" }, values = { "All options here help to make JDownloader usable by people of all abilities and disabilities." })
-    String gui_settings_barrierfree_description();
 
     @Default(lngs = { "en" }, values = { "Account Manager" })
     String gui_settings_premium_title();
@@ -302,9 +257,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enabled" })
     String configheader_enabled();
-
-    @Default(lngs = { "en" }, values = { "Plugin Settings" })
-    String gui_settings_plugins_title();
 
     @Default(lngs = { "en" }, values = { "JDownloader uses 'Plugins' for %s1 websites to automate downloads which would take a lot of time without JDownloader. Some of these Plugins have settings to customize their behaviour." })
     String gui_settings_plugins_description(int num);
@@ -531,5 +483,26 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Convert Cryptload *.clr Reconnect Script to JDownloader LiveHeader" })
     String convert_CLR_Reconnect_to_jdownloader();
+
+    @Default(lngs = { "en" }, values = { "Ask me" })
+    String YoutubeDash_IfUrlisAVideoAndPlaylistAction_ASK();
+
+    @Default(lngs = { "en" }, values = { "Load Video only" })
+    String YoutubeDash_IfUrlisAVideoAndPlaylistAction_VIDEO_ONLY();
+
+    @Default(lngs = { "en" }, values = { "Load full playlist" })
+    String YoutubeDash_IfUrlisAVideoAndPlaylistAction_PLAYLIST_ONLY();
+
+    @Default(lngs = { "en" }, values = { "Load nothing" })
+    String YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING();
+
+    @Default(lngs = { "en" }, values = { "Media Type (Video, Audio, Image, Subtitles, ..." })
+    String YoutubeDash_GroupLogic_BY_MEDIA_TYPE();
+
+    @Default(lngs = { "en" }, values = { "File Extension (MP4, AAC, MP3, ..." })
+    String YoutubeDash_GroupLogic_BY_FILE_TYPE();
+
+    @Default(lngs = { "en" }, values = { "Disabled -  Don't Group" })
+    String YoutubeDash_GroupLogic_NO_GROUP();
 
 }

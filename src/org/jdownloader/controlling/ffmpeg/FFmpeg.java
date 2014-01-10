@@ -154,18 +154,22 @@ public class FFmpeg {
             logger.info("Binary is ok: " + false);
             return false;
         }
-        try {
+        for (int i = 0; i < 5; i++) {
+            try {
 
-            String[] result = execute(-1, null, null, fp, "-version");
-            logger.info(result[0]);
-            logger.info(result[1]);
-            boolean ret = result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
-            logger.info("Binary is ok: " + ret);
-            return ret;
-        } catch (InterruptedException e) {
-            logger.log(e);
-        } catch (IOException e) {
-            logger.log(e);
+                String[] result = execute(-1, null, null, fp, "-version");
+                logger.info(result[0]);
+                logger.info(result[1]);
+                boolean ret = result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
+                logger.info("Binary is ok: " + ret);
+                return ret;
+            } catch (InterruptedException e) {
+                logger.log(e);
+                logger.info("Binary is ok(i): " + false);
+                return false;
+            } catch (IOException e) {
+                logger.log(e);
+            }
         }
         logger.info("Binary is ok: " + false);
         return false;

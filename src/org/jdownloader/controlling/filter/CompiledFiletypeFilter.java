@@ -29,7 +29,7 @@ public class CompiledFiletypeFilter {
     public static enum AudioExtensions implements ExtensionsFilterInterface {
         MP3,
         WMA,
-        ACC,
+        AAC,
         WAV,
         FLAC,
         MID,
@@ -109,6 +109,7 @@ public class CompiledFiletypeFilter {
         OGV,
         VOB,
         WMV,
+        GP3,
         WEBM;
 
         private Pattern pattern;

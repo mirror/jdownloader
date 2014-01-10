@@ -54,9 +54,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extraction running" })
     String plugins_optional_extraction_status_openingarchive2();
 
-    @Default(lngs = { "en" }, values = { "Extract: failed (CRC in %s1)" })
-    String plugins_optional_extraction_crcerrorin(Object s1);
-
     @Default(lngs = { "en" }, values = { "Subfolder pattern" })
     String settings_subpath();
 
@@ -65,9 +62,6 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Create Subfolder" })
     String settings_use_subpath();
-
-    @Default(lngs = { "en" }, values = { "... only if there are no root folders" })
-    String settings_subpath_no_folder2();
 
     @Default(lngs = { "en" }, values = { "Extract: failed (File not found)" })
     String plugins_optional_extraction_filenotfound();
@@ -95,9 +89,6 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extract to" })
     String settings_extract_to_path();
-
-    @Default(lngs = { "en" }, values = { "Do not use a subfolder if all files in the archive already are  packed in folders." })
-    String settings_subpath_no_folder_tt();
 
     @Default(lngs = { "en" }, values = { "Miscellaneous" })
     String settings_various();
@@ -284,9 +275,6 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extraction failed" })
     String failed_no_details();
-
-    @Default(lngs = { "en" }, values = { "Extracting... thus disabled" })
-    String extracting();
 
     @Default(lngs = { "en" }, values = { "Extracting Archive: %s1" })
     String extracting_archive(String name);

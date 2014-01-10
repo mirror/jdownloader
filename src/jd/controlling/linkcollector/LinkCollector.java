@@ -24,6 +24,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
@@ -1260,6 +1261,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 while (it.hasNext()) {
                     localLink = it.next();
                     dlLink = localLink.getDownloadLink();
+
                     if (dlLink == null) {
                         /* remove crawledLinks without DownloadLink */
                         it.remove();
@@ -1267,6 +1269,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                     /* assign defaultPlugin matching the hostname */
                     pluginFinder.assignPlugin(dlLink, true, logger);
+
                 }
             }
             if (fp.getChildren() == null || fp.getChildren().size() == 0) {
@@ -1794,6 +1797,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     /* link does not support variants */
                     return null;
                 }
+                crawledLink.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(crawledLink.getDownloadLink(), linkVariant);
+
+                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                checkableLinks.add(crawledLink);
+                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                linkChecker.check(checkableLinks);
                 return null;
             }
 

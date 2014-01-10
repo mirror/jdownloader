@@ -18,6 +18,10 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 public class AdvancedTable extends BasicJDTable<AdvancedConfigEntry> {
     private static final long serialVersionUID = 1L;
 
+    public AdvancedTable(AdvancedConfigTableModel model) {
+        super(model);
+    }
+
     public AdvancedTable() {
         super(new AdvancedConfigTableModel("AdvancedTable"));
     }

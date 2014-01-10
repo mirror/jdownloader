@@ -34,14 +34,18 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     private java.util.List<Pair<?>> pairs;
 
     public AbstractConfigPanel() {
-        super(new MigLayout("ins 15, wrap 2", "[][grow,fill]", "[]"));
+        this(15);
+    }
+
+    public AbstractConfigPanel(int insets) {
+        super(new MigLayout("ins " + insets + ", wrap 2", "[][grow,fill]", "[]"));
         pairs = new ArrayList<Pair<?>>();
         setOpaque(false);
     }
 
     public JTextArea addDescription(String description) {
         JTextArea txt = addDescriptionPlain(description);
-        add(new JSeparator(), "gapleft 37,spanx,growx,pushx,gapbottom 5");
+        add(new JSeparator(), "gapleft " + getLeftGap() + ",spanx,growx,pushx,gapbottom 5");
         return txt;
     }
 
@@ -54,7 +58,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         txt.setFocusable(false);
         // txt.setEnabled(false);
         txt.setText(description);
-        add(txt, "gaptop 0,spanx,growx,pushx,gapleft 37,gapbottom 5,wmin 10");
+        add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
 
         return txt;
     }
@@ -83,7 +87,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     public abstract String getTitle();
 
     public <T extends SettingsComponent> Pair<T> addPair(String name, BooleanKeyHandler enabled, T comp) {
-        String lblConstraints = (enabled == null ? "" : "split 3,") + "gapleft 37,aligny " + (comp.isMultiline() ? "top" : "center");
+        String lblConstraints = (enabled == null ? "" : "split 3,") + "gapleft" + getLeftGap() + ",aligny " + (comp.isMultiline() ? "top" : "center");
 
         return addPair(name, lblConstraints, enabled, comp);
 
@@ -133,7 +137,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     public Component add(Component comp) {
         if (comp instanceof SettingsComponent) {
-            String con = "gapleft 37,spanx,growx,pushx";
+            String con = "gapleft" + getLeftGap() + ",spanx,growx,pushx";
             if (((SettingsComponent) comp).getConstraints() != null) {
                 con += "," + ((SettingsComponent) comp).getConstraints();
             }
@@ -141,12 +145,16 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
             return comp;
 
         } else if (comp instanceof JScrollPane) {
-            super.add(comp, "gapleft 37,spanx,growx,pushx,height 60:n:n,pushy,growy");
+            super.add(comp, "gapleft" + getLeftGap() + ",spanx,growx,pushx,height 60:n:n,pushy,growy");
             return comp;
         } else {
             super.add(comp, "growx, pushx,spanx");
             return comp;
         }
+    }
+
+    protected String getLeftGap() {
+        return "32";
     }
 
     protected void addHeader(String name, ImageIcon icon) {

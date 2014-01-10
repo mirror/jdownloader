@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import jd.config.Property;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
@@ -1371,10 +1370,7 @@ public class LinkCrawler {
     protected void handleCrawledLink(CrawledLink link) {
         if (link == null) return;
         link.setCreated(getCreated());
-        if (link.getDownloadLink() != null && link.getDownloadLink().getBooleanProperty("ALLOW_DUPE", false)) {
-            /* forward dupeAllow info from DownloadLink to CrawledLinkInfo */
-            link.getDownloadLink().setProperty("ALLOW_DUPE", Property.NULL);
-        }
+
         /*
          * build history of this crawledlink so we can call each existing LinkModifier in correct order
          */

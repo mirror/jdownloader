@@ -14,10 +14,12 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.Plugin;
+import jd.plugins.PluginConfigPanelNG;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -27,6 +29,7 @@ import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -38,6 +41,7 @@ import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
@@ -54,13 +58,15 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
     private ImageIcon                     decryterIcon;
     private MigPanel                      card;
-    protected PluginConfigPanel           configPanel;
+    protected SwitchPanel                 configPanel;
     protected List<Pattern>               filter;
     private Header                        header;
 
     private SearchComboBox<LazyPlugin<?>> searchCombobox;
 
     private ExtButton                     resetButton;
+
+    private LogSource                     logger;
 
     public void addStateUpdateListener(StateUpdateListener listener) {
         throw new IllegalStateException("Not implemented");
@@ -74,6 +80,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     public PluginSettingsPanel() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
         decryterIcon = NewTheme.I().getIcon("linkgrabber", 16);
+        logger = LogController.getInstance().getLogger(PluginSettingsPanel.class.getName());
         searchCombobox = new SearchComboBox<LazyPlugin<?>>(null) {
 
             @Override
@@ -116,9 +123,16 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                         if (currentItem != null) {
                             Dialog.getInstance().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.PluginSettingsPanel_are_you_sure(currentItem.getDisplayName()));
                             proto = currentItem.getPrototype(null);
-                            proto.getPluginConfig().reset();
+                            PluginConfigPanelNG ccp = proto.createConfigPanel();
+                            if (ccp != null) {
+                                ccp.reset();
 
-                            AddonConfig.resetInstance(proto.getConfig(), "", false);
+                            } else {
+                                proto.getPluginConfig().reset();
+
+                                AddonConfig.resetInstance(proto.getConfig(), "", false);
+
+                            }
                             // avoid that the panel saves it's data on hide;
                             configPanel = null;
 
@@ -267,24 +281,36 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     configPanel.setHidden();
                 }
                 currentItem = selectedItem;
-                configPanel = PluginConfigPanel.create(selectedItem);
-                if (configPanel != null) {
-                    configPanel.setShown();
-                    card.add(configPanel);
 
-                    if (selectedItem != null) {
+                PluginConfigPanelNG newCP;
+                try {
+                    newCP = selectedItem.getPrototype(null).createConfigPanel();
 
-                        if (selectedItem instanceof LazyHostPlugin) {
-                            header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
-                            header.setIcon(DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon());
-                        } else {
-                            header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
-                            header.setIcon(decryterIcon);
-                        }
-                        header.setVisible(true);
+                    if (newCP != null) {
+                        configPanel = newCP;
                     } else {
-                        header.setVisible(false);
+                        configPanel = PluginConfigPanel.create(selectedItem);
                     }
+                    if (configPanel != null) {
+                        configPanel.setShown();
+                        card.add(configPanel);
+
+                        if (selectedItem != null) {
+
+                            if (selectedItem instanceof LazyHostPlugin) {
+                                header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_host(selectedItem.getDisplayName()));
+                                header.setIcon(DomainInfo.getInstance(((LazyHostPlugin) selectedItem).getHost()).getFavIcon());
+                            } else {
+                                header.setText(_GUI._.PluginSettingsPanel_runInEDT_plugin_header_text_decrypt(selectedItem.getDisplayName()));
+                                header.setIcon(decryterIcon);
+                            }
+                            header.setVisible(true);
+                        } else {
+                            header.setVisible(false);
+                        }
+                    }
+                } catch (UpdateRequiredClassNotFoundException e) {
+                    logger.log(e);
                 }
                 revalidate();
             }

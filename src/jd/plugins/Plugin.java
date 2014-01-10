@@ -51,18 +51,18 @@ import org.jdownloader.translate._JDT;
  */
 public abstract class Plugin implements ActionListener {
 
-    public static final String           HTTP_LINKS_HOST  = "http links";
-    public static final String           DIRECT_HTTP_HOST = "DirectHTTP";
-    public static final String           FTP_HOST         = "ftp";
+    public static final String           HTTP_LINKS_HOST     = "http links";
+    public static final String           DIRECT_HTTP_HOST    = "DirectHTTP";
+    public static final String           FTP_HOST            = "ftp";
 
     /* to keep 0.95xx comp */
     /* switch this on every stable update */
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /* afer 0.95xx */
-    protected Logger                     logger           = LogController.TRASH;
+    protected Logger                     logger              = LogController.TRASH;
 
-    protected CopyOnWriteArrayList<File> cleanUpCaptchaFiles          = new CopyOnWriteArrayList<File>();
+    protected CopyOnWriteArrayList<File> cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
 
     public void setLogger(Logger logger) {
         if (logger == null) logger = LogController.TRASH;
@@ -301,6 +301,10 @@ public abstract class Plugin implements ActionListener {
 
     public boolean pluginAPI(String function, Object input, Object output) throws Exception {
         return false;
+    }
+
+    public PluginConfigPanelNG createConfigPanel() {
+        return null;
     }
 
 }
