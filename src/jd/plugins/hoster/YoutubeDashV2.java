@@ -1007,12 +1007,10 @@ public class YoutubeDashV2 extends PluginForHostV2 {
             return code.hashCode();
         }
 
-        @Override
         public String getName() {
             return _GUI._.YoutubeDash_getName_subtitles_(locale.getDisplayName());
         }
 
-        @Override
         public Icon getIcon() {
             return null;
         }
