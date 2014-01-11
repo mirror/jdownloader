@@ -70,7 +70,16 @@ public class AnimeTheHyliaCom extends PluginForHost {
         if (ext == null || ext.length() > 5) ext = ".avi";
         String oldName = downloadLink.getFinalFileName();
         if (oldName == null) oldName = downloadLink.getName();
-        downloadLink.setFinalFileName(oldName.replace(".avi", ext));
+        String newname = null;
+        if (oldName.contains(".avi")) {
+            newname = oldName.replace(".avi", ext);
+        } else {
+            if (!oldName.contains(ext))
+                newname = oldName + ext;
+            else
+                newname = oldName;
+        }
+        downloadLink.setFinalFileName(newname);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

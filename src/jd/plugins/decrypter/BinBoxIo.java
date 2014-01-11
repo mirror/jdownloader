@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -58,9 +59,12 @@ public class BinBoxIo extends PluginForDecrypt {
             paste = Encoding.Base64Decode(paste);
             if (isEmpty(sjcl)) sjcl = br.getPage("/public/js/sjcl.js");
             final String[] links = decryptLinks(salt, paste);
-            if (links == null || links.length == 0) {
+            if (links == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
+            } else if (links.length == 0) {
+                logger.info("Link offline (empty): " + parameter);
+                return decryptedLinks;
             }
             for (final String singleLink : links) {
                 if (!singleLink.startsWith("http")) continue;
@@ -86,6 +90,8 @@ public class BinBoxIo extends PluginForDecrypt {
             engine.eval(sjcl);
             engine.eval("function sjclDecrypt(salt, paste){return sjcl.decrypt(salt, paste)}");
             result = (String) inv.invokeFunction("sjclDecrypt", salt, paste);
+        } catch (final ScriptException e) {
+            return new String[0];
         } catch (final Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return null;

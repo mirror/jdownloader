@@ -71,8 +71,16 @@ public class FrShrdFldr extends PluginForDecrypt {
         // check the folder/ page for password stuff and validity of url
         br.getPage(parameter);
 
-        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("This folder was deleted")) {
+        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("This folder was deleted") || br.containsHTML("This folder is no longer available because of a claim")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">You need owner\\'s permission to access this folder")) {
+            logger.info("Link offline (no permissions): " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("class=\"emptyFolderPlaceholder\"")) {
+            logger.info("Link offline (empty): " + parameter);
             return decryptedLinks;
         }
 

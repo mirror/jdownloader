@@ -43,7 +43,7 @@ public class EHentaiOrg extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setCookie("http://e-hentai.org", "nw", "1");
         br.getPage(parameter);
-        if (br.containsHTML("Key missing, or incorrect key provided")) {
+        if (br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -65,6 +65,14 @@ public class EHentaiOrg extends PluginForDecrypt {
                 return null;
             }
             for (final String singleLink : links) {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
+                    }
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
                 br.getPage(singleLink);
                 String finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) finallink = br.getRegex("src=\"(http://[^<>\"]*?image\\.php\\?[^<>\"]*?)\"").getMatch(0);

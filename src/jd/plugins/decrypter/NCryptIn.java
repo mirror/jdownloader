@@ -62,6 +62,11 @@ public class NCryptIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("open-", "folder-").replace("urlcrypt.com/", "ncrypt.in/");
+        try {
+            br.setLoadLimit(16777216);
+        } catch (final Throwable e) {
+            // Not available in old 0.9.581 Stable
+        }
         if (parameter.contains("ncrypt.in/link")) {
             final String finallink = decryptSingle(parameter);
             if (finallink == null) { return null; }
@@ -251,6 +256,14 @@ public class NCryptIn extends PluginForDecrypt {
                     return null;
                 }
                 for (final String singleLink : links) {
+                    try {
+                        if (this.isAbort()) {
+                            logger.info("Decryption aborted by user: " + parameter);
+                            return decryptedLinks;
+                        }
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
                     final String finallink = decryptSingle(singleLink);
                     if (finallink == null) {
                         logger.info("Found a broken link for link: " + parameter);

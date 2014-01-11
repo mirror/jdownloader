@@ -52,32 +52,18 @@ public class ImgDinoCom extends PluginForHost {
         if (br.containsHTML("<h1>Error</h1><br>|does not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(downloadLink.getDownloadURL(), "file=(.+)").getMatch(0);
         // Downloadlink
-        DLLINK = br.getRegex("\"(http://(www\\.)imgdino\\.com/download\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+        DLLINK = br.getRegex("\"(http://(www\\.)?imgdino\\.com/download\\.php\\?file=[^<>\"]*?)\"").getMatch(0);
+        DLLINK = checkDirectLink(downloadLink, DLLINK);
         // Or directlink -> The same
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(www\\.)?img\\d+\\.imgdino\\.com/images/[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://(www\\.)?(img\\d+\\.)?imgdino\\.com/images/[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".jpg";
+        DLLINK = checkDirectLink(downloadLink, DLLINK);
+        filename = filename.trim();
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -89,6 +75,25 @@ public class ImgDinoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink dl, String directlink) {
+        if (directlink != null) {
+            try {
+                directlink = Encoding.htmlDecode(directlink.trim());
+                final Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(directlink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    directlink = null;
+                } else {
+                    dl.setDownloadSize(con.getLongContentLength());
+                }
+                con.disconnect();
+            } catch (final Exception e) {
+                directlink = null;
+            }
+        }
+        return directlink;
     }
 
     @Override
