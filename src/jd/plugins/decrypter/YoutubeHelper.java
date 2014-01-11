@@ -274,7 +274,7 @@ public class YoutubeHelper {
     public static final SubtitleNamer SUBTITLE_RENAMER     = new SubtitleNamer();
     public static final SRTConverter  XML_TO_SRT_CONVERTER = new SRTConverter();
 
-    public enum YoutubeVariant implements LinkVariant {
+    public static enum YoutubeVariant implements LinkVariant {
         SUBTITLES(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "SubRip Subtitle File", "Subtitles", "srt", null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
         // SUBTITLES_AF(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Afrikaans) SubRip Subtitle File", "Afrikaans Subtitles", "srt",
         // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
@@ -571,7 +571,6 @@ public class YoutubeHelper {
             return this.group;
         }
 
-        @Override
         public Icon getIcon() {
             return null;
         }
@@ -589,7 +588,6 @@ public class YoutubeHelper {
             return this.iTagVideo;
         }
 
-        @Override
         public String getName() {
             return this.name;
         }
