@@ -30,14 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
+import jd.plugins.decrypter.YoutubeClipData;
 import jd.plugins.decrypter.YoutubeHelper;
-import jd.plugins.decrypter.YoutubeHelper.ClipData;
-import jd.plugins.decrypter.YoutubeHelper.StreamData;
-import jd.plugins.decrypter.YoutubeHelper.SubtitleInfo;
-import jd.plugins.decrypter.YoutubeHelper.YoutubeITAG;
-import jd.plugins.decrypter.YoutubeHelper.YoutubeVariant;
-import jd.plugins.decrypter.YoutubeHelper.YoutubeVariant.Type;
-import jd.plugins.decrypter.YoutubeHelper.YoutubeVariant.VariantGroup;
+import jd.plugins.decrypter.YoutubeITAG;
+import jd.plugins.decrypter.YoutubeStreamData;
+import jd.plugins.decrypter.YoutubeSubtitleInfo;
+import jd.plugins.decrypter.YoutubeVariant;
+import jd.plugins.decrypter.YoutubeVariant.Type;
+import jd.plugins.decrypter.YoutubeVariant.VariantGroup;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.DownloadPluginProgress;
@@ -438,15 +438,15 @@ public class YoutubeDashV2 extends PluginForHostV2 {
     private void updateUrls(DownloadLink downloadLink, YoutubeHelper helper) throws Exception {
         YoutubeVariant variant = getVariant(downloadLink);
         String videoID = downloadLink.getStringProperty(YoutubeHelper.YT_ID);
-        ClipData vid = new ClipData(videoID);
+        YoutubeClipData vid = new YoutubeClipData(videoID);
 
-        Map<YoutubeITAG, StreamData> info = helper.loadVideo(vid);
+        Map<YoutubeITAG, YoutubeStreamData> info = helper.loadVideo(vid);
         if (info == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
         if (variant.getGroup() == VariantGroup.SUBTITLES) {
 
             String code = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, null);
 
-            for (SubtitleInfo si : helper.loadSubtitles(vid)) {
+            for (YoutubeSubtitleInfo si : helper.loadSubtitles(vid)) {
 
                 if (si.getLang().equals(code)) {
 
@@ -458,18 +458,18 @@ public class YoutubeDashV2 extends PluginForHostV2 {
         }
 
         if (variant.getiTagData() != null) {
-            StreamData data = info.get(variant.getiTagData());
+            YoutubeStreamData data = info.get(variant.getiTagData());
             if (data == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagData() + ")");
             downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_DATA, data.getUrl());
         }
         if (variant.getiTagAudio() != null) {
-            StreamData audioStream = info.get(variant.getiTagAudio());
+            YoutubeStreamData audioStream = info.get(variant.getiTagAudio());
             if (audioStream == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagAudio() + ")");
             downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO, audioStream.getUrl());
         }
 
         if (variant.getiTagVideo() != null) {
-            StreamData videoStream = info.get(variant.getiTagVideo());
+            YoutubeStreamData videoStream = info.get(variant.getiTagVideo());
             if (videoStream == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Variant not found: " + variant + "(Itag missing: " + variant.getiTagVideo() + ")");
             downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO, videoStream.getUrl());
         }

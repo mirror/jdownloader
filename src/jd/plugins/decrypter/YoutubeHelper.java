@@ -2,9 +2,7 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URLEncoder;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -44,628 +42,15 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.utils.SubtitleConverter;
 
 import de.savemytube.flv.FLV;
 
 public class YoutubeHelper {
-
-    public static enum YoutubeITAG {
-        // fake id
-        SUBTITLE(10002, 0.1),
-        // fake id
-        IMAGE_MAX(10001, 0.4),
-        // fake id
-        IMAGE_HQ(10002, 0.3),
-        // fake id
-        IMAGE_MQ(10003, 0.2),
-        // fake id
-        IMAGE_LQ(10004, 0.1),
-        DASH_AUDIO_128K_AAC(140, YoutubeHelper.AAC_128),
-        DASH_AUDIO_128K_WEBM(171, YoutubeHelper.VORBIS_128),
-        DASH_AUDIO_192K_WEBM(172, YoutubeHelper.VORBIS_192),
-        DASH_AUDIO_256K_AAC(141, YoutubeHelper.AAC_256),
-        DASH_AUDIO_48K_AAC(139, YoutubeHelper.AAC_48),
-        DASH_VIDEO_1080P_H264(137, 1080.4),
-        // http://www.youtube.com/watch?v=gBabKoHSErI
-        DASH_VIDEO_1440P_H264(264, 1440.4),
-        DASH_VIDEO_144P_H264(160, 144.4),
-
-        DASH_VIDEO_240P_H264(133, 240.4),
-        DASH_VIDEO_360P_H264(134, 360.4),
-        DASH_VIDEO_480P_H264(135, 480.4),
-        DASH_VIDEO_720P_H264(136, 720.4),
-        DASH_VIDEO_ORIGINAL_H264(138, 2160.4),
-        DASH_WEBM_VIDEO_1080P_VP9(248, 1080.3),
-        DASH_WEBM_VIDEO_720P_VP9(247, 720.3),
-        DASH_WEBM_VIDEO_480P_VP9(244, 480.3),
-        DASH_WEBM_VIDEO_360P_VP9(243, 360.3),
-        DASH_WEBM_VIDEO_240P_VP9(242, 240.3),
-
-        FLV_VIDEO_360P_H264_AUDIO_AAC(34, 360.1d),
-        FLV_VIDEO_480P_H264_AUDIO_AAC(35, 480.1d),
-        FLV_VIDEO_HIGH_240P_H263_AUDIO_MP3(6, 240.11d + YoutubeHelper.MP3_64),
-
-        FLV_VIDEO_LOW_240P_H263_AUDIO_MP3(5, 240.10d + YoutubeHelper.MP3_64),
-
-        // 192 kbits aac
-        MP4_VIDEO_1080P_H264_AUDIO_AAC(37, 1080.4 + YoutubeHelper.AAC_192),
-        // not sure
-        MP4_VIDEO_240P_H264_AUDIO_AAC_3D(83, 240.4 + YoutubeHelper.AAC_64),
-        MP4_VIDEO_360P_H264_AUDIO_AAC(18, 360.4 + YoutubeHelper.AAC_128),
-        MP4_VIDEO_360P_H264_AUDIO_AAC_3D(82, 360.4 + YoutubeHelper.AAC_128),
-
-        MP4_VIDEO_520P_H264_AUDIO_AAC_3D(856, 520.4 + YoutubeHelper.AAC_128),
-        // 192 kbits aac
-        MP4_VIDEO_720P_H264_AUDIO_AAC(22, 720.4 + YoutubeHelper.AAC_192),
-        MP4_VIDEO_720P_H264_AUDIO_AAC_3D(84, 720.4 + YoutubeHelper.AAC_192),
-
-        // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
-        MP4_VIDEO_AUDIO_ORIGINAL(38, 2160.4 + YoutubeHelper.AAC_192),
-        // very different audio bitrates!!!
-        THREEGP_VIDEO_144P_H264_AUDIO_AAC(17, 144.0 + YoutubeHelper.AAC32_ESTIMATE),
-        THREEGP_VIDEO_240P_H263_AUDIO_AAC(132, 240.0 + YoutubeHelper.AAC_48_ESTIMATE),
-        THREEGP_VIDEO_240P_H264_AUDIO_AAC(36, 240.01 + YoutubeHelper.AAC_48_ESTIMATE),
-
-        // not sure - did not find testvideos
-        WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS(46, 1080.3 + YoutubeHelper.VORBIS_192),
-
-        WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D(100, 360.3 + YoutubeHelper.VORBIS_128),
-        WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D(101, 360.3 + YoutubeHelper.VORBIS_192),
-
-        WEBM_VIDEO_360P_VP8_AUDIO_VORBIS(43, 360.3 + YoutubeHelper.VORBIS_128),
-        // not sure - did not find testvideos
-        WEBM_VIDEO_480P_VP8_AUDIO_VORBIS(44, 480.3 + YoutubeHelper.VORBIS_128),
-        WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D(102, 360.3 + YoutubeHelper.VORBIS_192),
-        // not sure - did not find testvideos
-        WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, 720.3 + YoutubeHelper.VORBIS_192);
-
-        public static YoutubeITAG get(final int itag) {
-            for (final YoutubeITAG tag : YoutubeITAG.values()) {
-                if (tag.getITAG() == itag) { return tag; }
-            }
-            return null;
-        }
-
-        private final int itag;
-
-        double            qualityRating;
-
-        private YoutubeITAG(final int itag, final double quality) {
-            this.itag = itag;
-            this.qualityRating = quality;
-
-        }
-
-        public int getITAG() {
-            return this.itag;
-        }
-
-    }
-
-    public static class StreamData {
-
-        private ClipData clip;
-
-        public void setClip(ClipData clip) {
-            this.clip = clip;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        public void setItag(YoutubeITAG itag) {
-            this.itag = itag;
-        }
-
-        private String url;
-
-        public ClipData getClip() {
-            return clip;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public YoutubeITAG getItag() {
-            return itag;
-        }
-
-        private YoutubeITAG itag;
-
-        public StreamData(final ClipData vid, String url, YoutubeITAG itag) {
-            this.clip = vid;
-            this.itag = itag;
-            this.url = url;
-
-        }
-    }
-
-    public interface FilenameModifier {
-
-        String run(String formattedFilename, DownloadLink link);
-
-    }
-
-    public interface Converter {
-
-        void run(DownloadLink downloadLink);
-
-    }
-
-    public static class SubtitleNamer implements FilenameModifier {
-
-        @Override
-        public String run(String formattedFilename, DownloadLink link) {
-            String code = link.getStringProperty(YT_SUBTITLE_CODE, "");
-            Locale locale = Locale.forLanguageTag(code);
-            formattedFilename = formattedFilename.replaceAll("\\*quality\\*", _GUI._.YoutubeDash_getName_subtitles_filename(locale.getDisplayName()));
-            return formattedFilename;
-        }
-    }
-
-    public static class SRTConverter implements Converter {
-
-        @Override
-        public void run(DownloadLink downloadLink) {
-
-            try {
-                downloadLink.setPluginProgress(new PluginProgress(0, 100, null) {
-                    {
-                        setIcon(new AbstractIcon(IconKey.ICON_TEXT, 18));
-
-                    }
-
-                    @Override
-                    public long getCurrent() {
-                        return 95;
-                    }
-
-                    @Override
-                    public Icon getIcon(Object requestor) {
-                        if (requestor instanceof ETAColumn) return null;
-                        return super.getIcon(requestor);
-                    }
-
-                    @Override
-                    public String getMessage(Object requestor) {
-                        if (requestor instanceof ETAColumn) return "";
-                        return "Convert";
-                    }
-                });
-                File file = new File(downloadLink.getFileOutput());
-
-                SubtitleConverter.convertGoogleCC2SRTSubtitles(file, new File(file.getAbsolutePath().replaceFirst("\\.srt\\.tmp$", ".srt")));
-
-                try {
-                    // downloadLink.setFinalFileOutput(finalFile.getAbsolutePath());
-                    downloadLink.setCustomFileOutputFilenameAppend(null);
-                    downloadLink.setCustomFileOutputFilename(null);
-                } catch (final Throwable e) {
-                }
-            } finally {
-                downloadLink.setPluginProgress(null);
-            }
-
-        }
-
-    }
-
-    public static class FlvToMp3Converter implements Converter {
-
-        @Override
-        public void run(DownloadLink downloadLink) {
-
-            YoutubeHelper.convertToMp3(downloadLink);
-
-        }
-
-    }
-
-    public static final SubtitleNamer SUBTITLE_RENAMER     = new SubtitleNamer();
-    public static final SRTConverter  XML_TO_SRT_CONVERTER = new SRTConverter();
-
-    public static enum YoutubeVariant implements LinkVariant {
-        SUBTITLES(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "SubRip Subtitle File", "Subtitles", "srt", null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_AF(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Afrikaans) SubRip Subtitle File", "Afrikaans Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_AR(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Arabic) SubRip Subtitle File", "Arabic Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_AZ(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Azerbaijani) SubRip Subtitle File", "Azerbaijani Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_BE(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Belarusian) SubRip Subtitle File", "Belarusian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_BG(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Bulgarian) SubRip Subtitle File", "Bulgarian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_BN(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Bengali) SubRip Subtitle File", "Bengali Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_BS(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Bosnian) SubRip Subtitle File", "Bosnian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_CA(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Catalan) SubRip Subtitle File", "Catalan Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_CEB(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Cebuano) SubRip Subtitle File", "Cebuano Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_CS(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Czech) SubRip Subtitle File", "Czech Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_CY(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Welsh) SubRip Subtitle File", "Welsh Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_DA(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Danish) SubRip Subtitle File", "Danish Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_DE(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(German) SubRip Subtitle File", "German Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_EL(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Greek) SubRip Subtitle File", "Greek Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_EN(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(English) SubRip Subtitle File", "English Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_EO(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Esperanto) SubRip Subtitle File", "Esperanto Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_ES(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Spanish) SubRip Subtitle File", "Spanish Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_ES_MX(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Spanish - Mexico) SubRip Subtitle File",
-        // "Spanish-Mexico Subtitles", "srt", null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        //
-        // SUBTITLES_ET(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Estonian) SubRip Subtitle File", "Estonian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_EU(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Basque) SubRip Subtitle File", "Basque Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_FA(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Persian) SubRip Subtitle File", "Persian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_FI(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Finnish) SubRip Subtitle File", "Finnish Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_FIL(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Filipino) SubRip Subtitle File", "Filipino Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_FR(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(French) SubRip Subtitle File", "French Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_GA(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Irish) SubRip Subtitle File", "Irish Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_GL(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Galician) SubRip Subtitle File", "Galician Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_GU(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Gujarati) SubRip Subtitle File", "Gujarati Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_HI(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Hindi) SubRip Subtitle File", "Hindi Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_HMN(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Hmong) SubRip Subtitle File", "Hmong Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_HR(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Croatian) SubRip Subtitle File", "Croatian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_HT(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Haitian) SubRip Subtitle File", "Haitian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_HU(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Hungarian) SubRip Subtitle File", "Hungarian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_ID(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Indonesian) SubRip Subtitle File", "Indonesian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_IS(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Icelandic) SubRip Subtitle File", "Icelandic Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_IT(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Italian) SubRip Subtitle File", "Italian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_IW(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Hebrew) SubRip Subtitle File", "Hebrew Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_JA(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Japanese) SubRip Subtitle File", "Japanese Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_JV(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Javanese) SubRip Subtitle File", "Javanese Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_KA(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Georgian) SubRip Subtitle File", "Georgian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_KM(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Khmer) SubRip Subtitle File", "Khmer Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_KN(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Kannada) SubRip Subtitle File", "Kannada Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_KO(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Korean) SubRip Subtitle File", "Korean Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_LA(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Latin) SubRip Subtitle File", "Latin Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_LO(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Lao) SubRip Subtitle File", "Lao Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_LT(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Lithuanian) SubRip Subtitle File", "Lithuanian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_LV(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Latvian) SubRip Subtitle File", "Latvian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_MK(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Macedonian) SubRip Subtitle File", "Macedonian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_MR(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Marathi) SubRip Subtitle File", "Marathi Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_MS(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Malay) SubRip Subtitle File", "Malay Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_MT(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Maltese) SubRip Subtitle File", "Maltese Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_NL(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Dutch) SubRip Subtitle File", "Dutch Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_NO(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Norwegian) SubRip Subtitle File", "Norwegian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_PL(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Polish) SubRip Subtitle File", "Polish Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_PT(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Portuguese) SubRip Subtitle File", "Portuguese Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_PT_BR(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Portuguese - Brazil) SubRip Subtitle File",
-        // "Portuguese-Brazil Subtitles", "srt", null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        //
-        // SUBTITLES_RO(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Romanian) SubRip Subtitle File", "Romanian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_RU(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Russian) SubRip Subtitle File", "Russian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_SK(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Slovak) SubRip Subtitle File", "Slovak Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_SL(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Slovenian) SubRip Subtitle File", "Slovenian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_SQ(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Albanian) SubRip Subtitle File", "Albanian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_SR(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Serbian) SubRip Subtitle File", "Serbian Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_SV(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Swedish) SubRip Subtitle File", "Swedish Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_SW(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Swahili) SubRip Subtitle File", "Swahili Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_TA(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Tamil) SubRip Subtitle File", "Tamil Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_TE(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Telugu) SubRip Subtitle File", "Telugu Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_TH(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Thai) SubRip Subtitle File", "Thai Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_TR(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Turkish) SubRip Subtitle File", "Turkish Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_UK(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Ukrainian) SubRip Subtitle File", "Ukrainian Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_UR(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Urdu) SubRip Subtitle File", "Urdu Subtitles", "srt", null, null,
-        // YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_VI(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Vietnamese) SubRip Subtitle File", "Vietnamese Subtitles", "srt",
-        // null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_YI(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Yiddish) SubRip Subtitle File", "Yiddish Subtitles", "srt", null,
-        // null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_ZH_HANS(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Simplified Chinese) SubRip Subtitle File",
-        // "Simplified Chinese Subtitles", "srt", null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-        // SUBTITLES_ZH_HANT(null, VariantGroup.SUBTITLES, Type.SUBTITLES, "(Traditional Chinese) SubRip Subtitle File",
-        // "Traditional Chinese Subtitles", "srt", null, null, YoutubeITAG.SUBTITLE, SUBTITLE_RENAMER, XML_TO_SRT_CONVERTER),
-
-        IMAGE_MAX(null, VariantGroup.IMAGE, Type.IMAGE, "Best Quality Image", "BQ", "jpg", null, null, YoutubeITAG.IMAGE_MAX, null, null),
-        IMAGE_HQ(null, VariantGroup.IMAGE, Type.IMAGE, "High Quality Image", "HQ", "jpg", null, null, YoutubeITAG.IMAGE_HQ, null, null),
-        IMAGE_MQ(null, VariantGroup.IMAGE, Type.IMAGE, "Medium Quality Image", "MQ", "jpg", null, null, YoutubeITAG.IMAGE_MQ, null, null),
-        IMAGE_LQ(null, VariantGroup.IMAGE, Type.IMAGE, "Low Quality Image", "LQ", "jpg", null, null, YoutubeITAG.IMAGE_LQ, null, null),
-        AAC_128(null, VariantGroup.AUDIO, Type.DASH_AUDIO, "128kbit/s AAC-Audio", "128kbit", "aac", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-        AAC_256(null, VariantGroup.AUDIO, Type.DASH_AUDIO, "256kbit/s AAC-Audio", "256kbit", "aac", null, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-        AAC_48(null, VariantGroup.AUDIO, Type.DASH_AUDIO, "48kbit/s AAC-Audio", "48kbit", "aac", null, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-
-        FLV_240_HIGH(null, VariantGroup.VIDEO, Type.VIDEO, "240p FLV-Video(high)", "240p[HQ]", "flv", YoutubeITAG.FLV_VIDEO_HIGH_240P_H263_AUDIO_MP3, null, null, null, null),
-        FLV_240_LOW(null, VariantGroup.VIDEO, Type.VIDEO, "240p FLV-Video(low)", "240p[LQ]", "flv", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, null),
-        FLV_360(null, VariantGroup.VIDEO, Type.VIDEO, "360p FLV-Video", "360p", "flv", YoutubeITAG.FLV_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null),
-        FLV_480(null, VariantGroup.VIDEO, Type.VIDEO, "480p FLV-Video", "480p", "flv", YoutubeITAG.FLV_VIDEO_480P_H264_AUDIO_AAC, null, null, null, null),
-
-        MP3_1("MP3", VariantGroup.AUDIO, Type.FLV_TO_MP3, "64kbit/s Mp3-Audio", "64kbit", "mp3", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, new FlvToMp3Converter()) {
-            @Override
-            public double getQualityRating() {
-                // slightly higher rating as MP3_2. audio quality is the same, but total size is less
-                return YoutubeHelper.MP3_64 + 0.001;
-            }
-        },
-        MP3_2("MP3", VariantGroup.AUDIO, Type.FLV_TO_MP3, "64kbit/s Mp3-Audio", "64kbit", "mp3", YoutubeITAG.FLV_VIDEO_HIGH_240P_H263_AUDIO_MP3, null, null, null, new FlvToMp3Converter()) {
-            @Override
-            public double getQualityRating() {
-                return YoutubeHelper.MP3_64;
-            }
-
-        },
-        MP4_1080("MP4_1080", VariantGroup.VIDEO, Type.VIDEO, "1080p MP4-Video", "1080p", "mp4", YoutubeITAG.MP4_VIDEO_1080P_H264_AUDIO_AAC, null, null, null, null),
-
-        MP4_360("MP4_360", VariantGroup.VIDEO, Type.VIDEO, "360p MP4-Video", "360p", "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, null),
-        MP4_3D_240(null, VariantGroup.VIDEO_3D, Type.VIDEO, "240p MP4-3D-Video", "240p 3D", "mp4", YoutubeITAG.MP4_VIDEO_240P_H264_AUDIO_AAC_3D, null, null, null, null),
-        MP4_3D_360(null, VariantGroup.VIDEO_3D, Type.VIDEO, "360p MP4-3D-Video", "360p 3D", "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null, null),
-        MP4_3D_520(null, VariantGroup.VIDEO_3D, Type.VIDEO, "520p MP4-3D-Video", "520p 3D", "mp4", YoutubeITAG.MP4_VIDEO_520P_H264_AUDIO_AAC_3D, null, null, null, null),
-
-        MP4_3D_720(null, VariantGroup.VIDEO_3D, Type.VIDEO, "720p MP4-3D-Video", "720p 3D", "mp4", YoutubeITAG.MP4_VIDEO_520P_H264_AUDIO_AAC_3D, null, null, null, null),
-        MP4_720("MP4_720", VariantGroup.VIDEO, Type.VIDEO, "720p MP4-Video", "720p", "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, null),
-        MP4_DASH_1080_AAC128("MP4_1080", VariantGroup.VIDEO, Type.DASH_VIDEO, "1080p MP4-Video(dash)", "1080p", "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-        MP4_DASH_1080_AAC256("MP4_1080", VariantGroup.VIDEO, Type.DASH_VIDEO, "1080p MP4-Video(dash)", "1080p", "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-
-        MP4_DASH_1080_AAC48("MP4_1080", VariantGroup.VIDEO, Type.DASH_VIDEO, "1080p MP4-Video(dash)", "1080p", "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-        MP4_DASH_144_AAC128("MP4_144", VariantGroup.VIDEO, Type.DASH_VIDEO, "144p MP4-Video(dash)", "144p", "mp4", YoutubeITAG.DASH_VIDEO_144P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-        MP4_DASH_144_AAC256("MP4_144", VariantGroup.VIDEO, Type.DASH_VIDEO, "144p MP4-Video(dash)", "144p", "mp4", YoutubeITAG.DASH_VIDEO_144P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-
-        MP4_DASH_144_AAC48("MP4_144", VariantGroup.VIDEO, Type.DASH_VIDEO, "144p MP4-Video(dash)", "144p", "mp4", YoutubeITAG.DASH_VIDEO_144P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-        MP4_DASH_1440_AAC128("MP4_1440", VariantGroup.VIDEO, Type.DASH_VIDEO, "1440p MP4-Video(dash)", "1440p", "mp4", YoutubeITAG.DASH_VIDEO_1440P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-        MP4_DASH_1440_AAC256("MP4_1440", VariantGroup.VIDEO, Type.DASH_VIDEO, "1440p MP4-Video(dash)", "1440p", "mp4", YoutubeITAG.DASH_VIDEO_1440P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-        MP4_DASH_1440_AAC48("MP4_1440", VariantGroup.VIDEO, Type.DASH_VIDEO, "1440p MP4-Video(dash)", "1440p", "mp4", YoutubeITAG.DASH_VIDEO_1440P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-
-        MP4_DASH_240_AAC128("MP4_240", VariantGroup.VIDEO, Type.DASH_VIDEO, "240p MP4-Video(dash)", "240p", "mp4", YoutubeITAG.DASH_VIDEO_240P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-        MP4_DASH_240_AAC256("MP4_240", VariantGroup.VIDEO, Type.DASH_VIDEO, "240p MP4-Video(dash)", "240p", "mp4", YoutubeITAG.DASH_VIDEO_240P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-
-        MP4_DASH_240_AAC48("MP4_240", VariantGroup.VIDEO, Type.DASH_VIDEO, "240p MP4-Video(dash)", "240p", "mp4", YoutubeITAG.DASH_VIDEO_240P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-        MP4_DASH_360_AAC128("MP4_360", VariantGroup.VIDEO, Type.DASH_VIDEO, "360p MP4-Video(dash)", "360p", "mp4", YoutubeITAG.DASH_VIDEO_360P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-        MP4_DASH_360_AAC256("MP4_360", VariantGroup.VIDEO, Type.DASH_VIDEO, "360p MP4-Video(dash)", "360p", "mp4", YoutubeITAG.DASH_VIDEO_360P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-        MP4_DASH_360_AAC48("MP4_360", VariantGroup.VIDEO, Type.DASH_VIDEO, "360p MP4-Video(dash)", "360p", "mp4", YoutubeITAG.DASH_VIDEO_360P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-        MP4_DASH_480_AAC128("MP4_480", VariantGroup.VIDEO, Type.DASH_VIDEO, "480p MP4-Video(dash)", "480p", "mp4", YoutubeITAG.DASH_VIDEO_480P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-        MP4_DASH_480_AAC256("MP4_480", VariantGroup.VIDEO, Type.DASH_VIDEO, "480p MP4-Video(dash)", "480p", "mp4", YoutubeITAG.DASH_VIDEO_480P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-        MP4_DASH_480_AAC48("MP4_480", VariantGroup.VIDEO, Type.DASH_VIDEO, "480p MP4-Video(dash)", "480p", "mp4", YoutubeITAG.DASH_VIDEO_480P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-        MP4_DASH_720_AAC128("MP4_720", VariantGroup.VIDEO, Type.DASH_VIDEO, "720p MP4-Video(dash)", "720p", "mp4", YoutubeITAG.DASH_VIDEO_720P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-
-        MP4_DASH_720_AAC256("MP4_720", VariantGroup.VIDEO, Type.DASH_VIDEO, "720p MP4-Video(dash)", "720p", "mp4", YoutubeITAG.DASH_VIDEO_720P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-        MP4_DASH_720_AAC48("MP4_720", VariantGroup.VIDEO, Type.DASH_VIDEO, "720p MP4-Video(dash)", "720p", "mp4", YoutubeITAG.DASH_VIDEO_720P_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-        MP4_DASH_ORIGINAL_AAC128("MP4_ORIGINAL", VariantGroup.VIDEO, Type.DASH_VIDEO, "2160p MP4-Video(dash)", "2160p", "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
-        MP4_DASH_ORIGINAL_AAC256("MP4_ORIGINAL", VariantGroup.VIDEO, Type.DASH_VIDEO, "2160p MP4-Video(dash)", "2160p", "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
-        MP4_DASH_ORIGINAL_AAC48("MP4_ORIGINAL", VariantGroup.VIDEO, Type.DASH_VIDEO, "2160p MP4-Video(dash)", "2160p", "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
-        MP4_ORIGINAL("MP4_ORIGINAL", VariantGroup.VIDEO, Type.VIDEO, "2160p MP4-Video", "2160p", "mp4", YoutubeITAG.MP4_VIDEO_AUDIO_ORIGINAL, null, null, null, null),
-        THREEGP_144(null, VariantGroup.VIDEO, Type.VIDEO, "144p 3GP Video", "144p", "gp3", YoutubeITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, null, null, null, null),
-        THREEGP_240_HIGH(null, VariantGroup.VIDEO, Type.VIDEO, "240p 3GP Video(high)", "240p[HQ]", "gp3", YoutubeITAG.THREEGP_VIDEO_240P_H264_AUDIO_AAC, null, null, null, null),
-
-        THREEGP_240_LOW(null, VariantGroup.VIDEO, Type.VIDEO, "240p 3GP Video(low)", "240p[LQ]", "gp3", YoutubeITAG.THREEGP_VIDEO_240P_H263_AUDIO_AAC, null, null, null, null),
-        WEBM_1080(null, VariantGroup.VIDEO, Type.VIDEO, "1080p WebM-Video", "1080p", "webm", YoutubeITAG.WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS, null, null, null, null),
-        WEBM_360(null, VariantGroup.VIDEO, Type.VIDEO, "360p WebM-Video", "360p", "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_VORBIS, null, null, null, null),
-        WEBM_3D_360_128(null, VariantGroup.VIDEO_3D, Type.VIDEO, "360p WebM-3D-Video(128Kbit/s Audio)", "360p 3D [128kbit Audio]", "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_128K_VORBIS_3D, null, null, null, null),
-        WEBM_3D_360_192(null, VariantGroup.VIDEO_3D, Type.VIDEO, "360p WebM-3D-Video(192Kbit/s Audio)", "360p 3D [192kbit Audio]", "webm", YoutubeITAG.WEBM_VIDEO_360P_VP8_AUDIO_192K_VORBIS_3D, null, null, null, null),
-        WEBM_3D_720(null, VariantGroup.VIDEO_3D, Type.VIDEO, "720p WebM-3D-Video", "720p 3D", "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D, null, null, null, null),
-        WEBM_480(null, VariantGroup.VIDEO, Type.VIDEO, "480p WebM-Video", "480p", "webm", YoutubeITAG.WEBM_VIDEO_480P_VP8_AUDIO_VORBIS, null, null, null, null),
-        WEBM_720(null, VariantGroup.VIDEO, Type.VIDEO, "720p WebM-Video", "720p", "webm", YoutubeITAG.WEBM_VIDEO_720P_VP8_AUDIO_VORBIS, null, null, null, null);
-
-        public static enum Type {
-            DASH_AUDIO,
-            DASH_VIDEO,
-            FLV_TO_MP3,
-            VIDEO,
-            /**
-             * Static videos have a static url in YT_STATIC_URL
-             */
-            IMAGE,
-            SUBTITLES
-
-        }
-
-        public static enum VariantGroup {
-            AUDIO,
-            VIDEO,
-            VIDEO_3D,
-            IMAGE,
-            SUBTITLES
-        }
-
-        final String              fileExtension;
-        final VariantGroup        group;
-        final private String      id;
-        final private YoutubeITAG iTagAudio;
-        final private YoutubeITAG iTagVideo;
-        final private String      name;
-        final String              qualityExtension;
-
-        private double            qualityRating;
-
-        public void setQualityRating(double qualityRating) {
-            this.qualityRating = qualityRating;
-        }
-
-        final private Type        type;
-        final private YoutubeITAG iTagData;
-        private Converter         converter;
-        private FilenameModifier  filenameModifier;
-
-        private YoutubeVariant(final String id, final VariantGroup group, final Type type, final String name, final String qualityExtension, final String fileExtension, final YoutubeITAG video, final YoutubeITAG audio, YoutubeITAG data, FilenameModifier filenameModifier, Converter converter) {
-            this.group = group;
-            this.id = id;
-            this.name = name;
-            this.qualityExtension = qualityExtension;
-            this.fileExtension = fileExtension;
-            if (type == null) throw new NullPointerException();
-            this.type = type;
-            this.iTagVideo = video;
-            this.iTagAudio = audio;
-            this.qualityRating = 0d + (video != null ? video.qualityRating : 0) + (audio != null ? audio.qualityRating : 0);
-            this.iTagData = data;
-            this.converter = converter;
-            this.filenameModifier = filenameModifier;
-        }
-
-        public YoutubeITAG getiTagData() {
-            return iTagData;
-        }
-
-        public String getFileExtension() {
-            return this.fileExtension;
-        }
-
-        public VariantGroup getGroup() {
-            return this.group;
-        }
-
-        public Icon getIcon() {
-            return null;
-        }
-
-        public String getId() {
-            if (this.id == null) { return this.name(); }
-            return this.id;
-        }
-
-        public YoutubeITAG getiTagAudio() {
-            return this.iTagAudio;
-        }
-
-        public YoutubeITAG getiTagVideo() {
-            return this.iTagVideo;
-        }
-
-        public String getName() {
-            return this.name;
-        }
-
-        public String getQualityExtension() {
-            return this.qualityExtension;
-        }
-
-        public double getQualityRating() {
-            return this.qualityRating;
-        }
-
-        public Type getType() {
-            return this.type;
-        }
-
-        public void convert(DownloadLink downloadLink) {
-            if (converter != null) converter.run(downloadLink);
-        }
-
-        public String modifyFileName(String formattedFilename, DownloadLink link) {
-            if (filenameModifier != null) return filenameModifier.run(formattedFilename, link);
-            return formattedFilename;
-        }
-
-    }
-
-    public static class ClipData {
-
-        /**
-         * 
-         */
-
-        public String  user;
-        public String  channel;
-        public long    date;
-        public String  error;
-        public boolean ageCheck;
-        public String  title;
-        public String  videoID;
-        int            playlistEntryNumber;
-        public int     length;
-
-        public ClipData(final String videoID) {
-            this(videoID, -1);
-        }
-
-        @Override
-        public String toString() {
-            return videoID + "/" + title;
-        }
-
-        public ClipData(final String videoID, final int playlistEntryNumber) {
-
-            this.videoID = videoID;
-            this.playlistEntryNumber = playlistEntryNumber;
-        }
-
-    }
-
-    public static final double                 AAC_128            = 0.1284;
-    public static final double                 AAC_192            = 0.1924;
-    public static final double                 AAC_256            = 0.2564;
-    public static final double                 AAC_48             = 0.0484;
-    public static final double                 AAC_48_ESTIMATE    = 0.0474;
-
-    public static final double                 AAC_64             = 0.0644;
-
-    public static final double                 AAC32_ESTIMATE     = 0.0324;
-
-    // mp3 64 bit is lower than aac48bit
-    public static final double                 MP3_64             = 0.0442;
-
-    public static final double                 VORBIS_128         = 0.1283;
-
-    public static final double                 VORBIS_192         = 0.1923;
-
-    public static final double                 VORBIS_96          = 0.0963;
 
     private final Browser                      br;
     private final YoutubeConfig                cfg;
@@ -849,7 +234,7 @@ public class YoutubeHelper {
 
     }
 
-    protected void extractData(final ClipData vid) {
+    protected void extractData(final YoutubeClipData vid) {
         if (StringUtils.isEmpty(vid.title) && this.br.containsHTML("&title=")) {
             final String match = this.br.getRegex("&title=([^&$]+)").getMatch(0);
             if (match != null) {
@@ -957,8 +342,8 @@ public class YoutubeHelper {
 
     }
 
-    public Map<YoutubeITAG, StreamData> loadVideo(final ClipData vid) throws Exception {
-        final Map<YoutubeITAG, StreamData> ret = new HashMap<YoutubeITAG, StreamData>();
+    public Map<YoutubeITAG, YoutubeStreamData> loadVideo(final YoutubeClipData vid) throws Exception {
+        final Map<YoutubeITAG, YoutubeStreamData> ret = new HashMap<YoutubeITAG, YoutubeStreamData>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
         this.br.setFollowRedirects(true);
@@ -1016,38 +401,38 @@ public class YoutubeHelper {
         }
 
         for (final String line : html5_fmt_map.split("\\,")) {
-            final StreamData match = this.parseLine(vid, line);
+            final YoutubeStreamData match = this.parseLine(vid, line);
             if (match != null) {
                 ret.put(match.itag, match);
             }
         }
         if (dashFmt != null) {
             for (final String line : dashFmt.split("\\,")) {
-                final StreamData match = this.parseLine(vid, line);
+                final YoutubeStreamData match = this.parseLine(vid, line);
                 if (match != null) {
                     ret.put(match.itag, match);
                 }
             }
         }
 
-        for (StreamData sd : loadThumbnails(vid)) {
+        for (YoutubeStreamData sd : loadThumbnails(vid)) {
             ret.put(sd.itag, sd);
         }
 
         return ret;
     }
 
-    private List<StreamData> loadThumbnails(ClipData vid) {
-        ArrayList<StreamData> ret = new ArrayList<StreamData>();
+    private List<YoutubeStreamData> loadThumbnails(YoutubeClipData vid) {
+        ArrayList<YoutubeStreamData> ret = new ArrayList<YoutubeStreamData>();
         String best = br.getRegex("<meta property=\"og\\:image\" content=\".*?/(\\w+\\.jpg)\">").getMatch(0);
-        ret.add(new StreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ));
+        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/default.jpg", YoutubeITAG.IMAGE_LQ));
         if (best != null && best.equals("default.jpg")) return ret;
-        ret.add(new StreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ));
+        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/mqdefault.jpg", YoutubeITAG.IMAGE_MQ));
         if (best != null && best.equals("mqdefault.jpg")) return ret;
-        ret.add(new StreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ));
+        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/hqdefault.jpg", YoutubeITAG.IMAGE_HQ));
         if (best != null && best.equals("hqdefault.jpg")) return ret;
 
-        ret.add(new StreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX));
+        ret.add(new YoutubeStreamData(vid, "http://img.youtube.com/vi/" + vid.videoID + "/maxresdefault.jpg", YoutubeITAG.IMAGE_MAX));
 
         return ret;
     }
@@ -1314,7 +699,7 @@ public class YoutubeHelper {
         return formattedFilename;
     }
 
-    protected StreamData parseLine(final ClipData vid, final String line) throws MalformedURLException, IOException, PluginException {
+    protected YoutubeStreamData parseLine(final YoutubeClipData vid, final String line) throws MalformedURLException, IOException, PluginException {
 
         final LinkedHashMap<String, String> query = Request.parseQuery(line);
         if (line.contains("conn=rtmp")) {
@@ -1354,7 +739,7 @@ public class YoutubeHelper {
         System.out.println(query);
         if (url != null && itag != null) {
 
-            return new StreamData(vid, url, itag);
+            return new YoutubeStreamData(vid, url, itag);
         } else {
 
             this.logger.info("Unkown Line: " + line);
@@ -1393,68 +778,8 @@ public class YoutubeHelper {
         this.br.setProxy(this.br.getThreadProxy());
     }
 
-    public static class SubtitleInfo {
-
-        private String _base;
-
-        public String getLang() {
-            return lang;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getKind() {
-            return kind;
-        }
-
-        public String getLangOrg() {
-            return langOrg;
-        }
-
-        private String lang;
-
-        public void setLang(String lang) {
-            this.lang = lang;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public void setKind(String kind) {
-            this.kind = kind;
-        }
-
-        public void setLangOrg(String langOrg) {
-            this.langOrg = langOrg;
-        }
-
-        private String name;
-        private String kind;
-        private String langOrg;
-
-        public SubtitleInfo(/* Storable */) {
-
-        }
-
-        public SubtitleInfo(String ttsUrl, String lang, String name, String kind, String langOrg) {
-            this._base = ttsUrl;
-            this.lang = lang;
-            this.name = name;
-            this.kind = kind;
-            this.langOrg = langOrg;
-        }
-
-        public String _getUrl(String videoId) throws UnsupportedEncodingException {
-            return _base + "&kind=" + URLEncoder.encode(kind, "UTF-8") + "&format=1&ts=" + System.currentTimeMillis() + "&type=track&lang=" + URLEncoder.encode(lang, "UTF-8") + "&name=" + URLEncoder.encode(name, "UTF-8") + "&v=" + URLEncoder.encode(videoId, "UTF-8");
-        }
-
-    }
-
-    public ArrayList<SubtitleInfo> loadSubtitles(ClipData vid) throws IOException {
-        ArrayList<SubtitleInfo> urls = new ArrayList<SubtitleInfo>();
+    public ArrayList<YoutubeSubtitleInfo> loadSubtitles(YoutubeClipData vid) throws IOException {
+        ArrayList<YoutubeSubtitleInfo> urls = new ArrayList<YoutubeSubtitleInfo>();
         String ttsUrl = br.getRegex("\"ttsurl\": (\"http.*?\")").getMatch(0);
         if (ttsUrl != null) {
             ttsUrl = JSonStorage.restoreFromString(ttsUrl, new TypeRef<String>() {
@@ -1486,7 +811,7 @@ public class YoutubeHelper {
             if (StringUtils.isEmpty("langOrg")) {
                 langOrg = new Locale("lang").getDisplayLanguage(Locale.ENGLISH);
             }
-            urls.add(new SubtitleInfo(ttsUrl, lang, name, kind, langOrg));
+            urls.add(new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
 
         }
         return urls;

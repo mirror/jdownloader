@@ -37,12 +37,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.decrypter.YoutubeHelper.ClipData;
-import jd.plugins.decrypter.YoutubeHelper.StreamData;
-import jd.plugins.decrypter.YoutubeHelper.SubtitleInfo;
-import jd.plugins.decrypter.YoutubeHelper.YoutubeITAG;
-import jd.plugins.decrypter.YoutubeHelper.YoutubeVariant;
-import jd.plugins.decrypter.YoutubeHelper.YoutubeVariant.VariantGroup;
+import jd.plugins.decrypter.YoutubeVariant.VariantGroup;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import jd.utils.locale.JDL;
@@ -117,13 +112,13 @@ public class TbCmV2 extends PluginForDecryptV2 {
 
     public class VariantInfo implements Comparable<VariantInfo> {
 
-        protected final YoutubeVariant variant;
-        private final StreamData       audioStream;
-        private final StreamData       videoStream;
-        public String                  special = "";
-        private final StreamData       data;
+        protected final YoutubeVariant  variant;
+        private final YoutubeStreamData audioStream;
+        private final YoutubeStreamData videoStream;
+        public String                   special = "";
+        private final YoutubeStreamData data;
 
-        public StreamData getData() {
+        public YoutubeStreamData getData() {
             return data;
         }
 
@@ -136,7 +131,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
             return variant.name();
         }
 
-        public VariantInfo(YoutubeVariant v, StreamData audio, StreamData video, StreamData data) {
+        public VariantInfo(YoutubeVariant v, YoutubeStreamData audio, YoutubeStreamData video, YoutubeStreamData data) {
             this.variant = v;
             this.audioStream = audio;
             this.videoStream = video;
@@ -218,7 +213,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
             }
 
         }
-        ArrayList<ClipData> videoIdsToAdd = new ArrayList<ClipData>();
+        ArrayList<YoutubeClipData> videoIdsToAdd = new ArrayList<YoutubeClipData>();
         try {
 
             videoIdsToAdd.addAll(parsePlaylist(playlistID));
@@ -228,7 +223,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
             }
             videoIdsToAdd.addAll(parseUsergrid(userID));
             if (StringUtils.isNotEmpty(videoID) && dupeCheckSet.add(videoID)) {
-                videoIdsToAdd.add(new jd.plugins.decrypter.YoutubeHelper.ClipData(videoID));
+                videoIdsToAdd.add(new jd.plugins.decrypter.YoutubeClipData(videoID));
             }
             if (videoIdsToAdd.size() == 0) {
                 videoIdsToAdd.addAll(parseGeneric(cleanedurl));
@@ -252,12 +247,12 @@ public class TbCmV2 extends PluginForDecryptV2 {
             }
         }
 
-        for (ClipData vid : videoIdsToAdd) {
+        for (YoutubeClipData vid : videoIdsToAdd) {
             HashMap<String, List<VariantInfo>> groups = new HashMap<String, List<VariantInfo>>();
             HashMap<String, List<VariantInfo>> groupsExcluded = new HashMap<String, List<VariantInfo>>();
             HashMap<YoutubeVariant, VariantInfo> allVariants = new HashMap<YoutubeVariant, VariantInfo>();
             HashMap<String, VariantInfo> idMap = new HashMap<String, VariantInfo>();
-            Map<YoutubeITAG, StreamData> vc = helper.loadVideo(vid);
+            Map<YoutubeITAG, YoutubeStreamData> vc = helper.loadVideo(vid);
             if (vc == null || StringUtils.isNotEmpty(vid.error)) {
                 getLogger().info("Error on " + vid.videoID + " (" + vid.title + "): " + vid.error);
             }
@@ -267,9 +262,9 @@ public class TbCmV2 extends PluginForDecryptV2 {
 
                 String groupID = getGroupID(v);
 
-                StreamData audio = null;
-                StreamData video = null;
-                StreamData data = null;
+                YoutubeStreamData audio = null;
+                YoutubeStreamData video = null;
+                YoutubeStreamData data = null;
                 boolean valid = v.getiTagVideo() != null || v.getiTagAudio() != null || v.getiTagData() != null;
 
                 if (v.getiTagVideo() != null) {
@@ -336,11 +331,11 @@ public class TbCmV2 extends PluginForDecryptV2 {
             }
             List<VariantInfo> allSubtitles = new ArrayList<VariantInfo>();
             if (cfg.isSubtitlesEnabled()) {
-                ArrayList<SubtitleInfo> subtitles = helper.loadSubtitles(vid);
+                ArrayList<YoutubeSubtitleInfo> subtitles = helper.loadSubtitles(vid);
 
                 ArrayList<String> whitelist = cfg.getSubtitleWhiteList();
 
-                for (final SubtitleInfo si : subtitles) {
+                for (final YoutubeSubtitleInfo si : subtitles) {
 
                     try {
 
@@ -358,7 +353,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
                         default:
                             throw new WTFException("Unknown Grouping");
                         }
-                        VariantInfo vi = new VariantInfo(YoutubeVariant.SUBTITLES, null, null, new StreamData(vid, si._getUrl(vid.videoID), YoutubeITAG.SUBTITLE)) {
+                        VariantInfo vi = new VariantInfo(YoutubeVariant.SUBTITLES, null, null, new YoutubeStreamData(vid, si._getUrl(vid.videoID), YoutubeITAG.SUBTITLE)) {
 
                             @Override
                             public void fillExtraProperties(DownloadLink thislink, List<VariantInfo> alternatives) {
@@ -530,8 +525,8 @@ public class TbCmV2 extends PluginForDecryptV2 {
         return decryptedLinks;
     }
 
-    private Collection<? extends ClipData> parseGeneric(String cryptedUrl) throws InterruptedException, IOException {
-        ArrayList<ClipData> ret = new ArrayList<ClipData>();
+    private Collection<? extends YoutubeClipData> parseGeneric(String cryptedUrl) throws InterruptedException, IOException {
+        ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         if (StringUtils.isNotEmpty(cryptedUrl)) {
             int page = 1;
             int counter = 1;
@@ -545,7 +540,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
                     for (String relativeUrl : videos) {
                         String id = getVideoIDByUrl(relativeUrl);
                         if (dupeCheckSet.add(id)) {
-                            ret.add(new ClipData(id, counter++));
+                            ret.add(new YoutubeClipData(id, counter++));
                         }
                     }
                 }
@@ -586,7 +581,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
 
     private DownloadLink createLink(VariantInfo variantInfo, List<VariantInfo> alternatives) {
         try {
-            ClipData clip = null;
+            YoutubeClipData clip = null;
             if (clip == null && variantInfo.videoStream != null) {
                 clip = variantInfo.videoStream.getClip();
 
@@ -679,8 +674,8 @@ public class TbCmV2 extends PluginForDecryptV2 {
      * @throws IOException
      * @throws InterruptedException
      */
-    public ArrayList<ClipData> parsePlaylist(String playlistID) throws IOException, InterruptedException {
-        ArrayList<ClipData> ret = new ArrayList<ClipData>();
+    public ArrayList<YoutubeClipData> parsePlaylist(String playlistID) throws IOException, InterruptedException {
+        ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         if (StringUtils.isNotEmpty(playlistID)) {
             int page = 1;
             int counter = 1;
@@ -694,7 +689,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
                     for (String relativeUrl : videos) {
                         String id = getVideoIDByUrl(relativeUrl);
                         if (dupeCheckSet.add(id)) {
-                            ret.add(new ClipData(id, counter++));
+                            ret.add(new YoutubeClipData(id, counter++));
                         }
                     }
                 }
@@ -713,9 +708,9 @@ public class TbCmV2 extends PluginForDecryptV2 {
         return ret;
     }
 
-    public ArrayList<ClipData> parseUsergrid(String userID) throws IOException, InterruptedException {
+    public ArrayList<YoutubeClipData> parseUsergrid(String userID) throws IOException, InterruptedException {
         // http://www.youtube.com/user/Gronkh/videos
-        ArrayList<ClipData> ret = new ArrayList<ClipData>();
+        ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         int counter = 1;
         if (StringUtils.isNotEmpty(userID)) {
             String pageUrl = null;
@@ -738,7 +733,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
                     for (String relativeUrl : videos) {
                         String id = getVideoIDByUrl(relativeUrl);
                         if (dupeCheckSet.add(id)) {
-                            ret.add(new ClipData(id, counter++));
+                            ret.add(new YoutubeClipData(id, counter++));
 
                         }
                     }
