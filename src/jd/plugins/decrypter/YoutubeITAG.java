@@ -26,8 +26,11 @@ public enum YoutubeITAG {
     DASH_VIDEO_480P_H264(135, 480.4),
     DASH_VIDEO_720P_H264(136, 720.4),
     DASH_VIDEO_ORIGINAL_H264(138, 2160.4),
+
     DASH_WEBM_VIDEO_1080P_VP9(248, 1080.3),
     DASH_WEBM_VIDEO_720P_VP9(247, 720.3),
+    DASH_WEBM_VIDEO_480P_VP9_3(246, 482.3),
+    DASH_WEBM_VIDEO_480P_VP9_2(245, 481.3),
     DASH_WEBM_VIDEO_480P_VP9(244, 480.3),
     DASH_WEBM_VIDEO_360P_VP9(243, 360.3),
     DASH_WEBM_VIDEO_240P_VP9(242, 240.3),
@@ -77,37 +80,45 @@ public enum YoutubeITAG {
         return null;
     }
 
-    private final int itag;
+    private final int          itag;
 
-    double            qualityRating;
+    double                     qualityRating;
 
-    public static final double                 VORBIS_96          = 0.0963;
+    public static final double VORBIS_96       = 0.0963;
 
-    public static final double                 VORBIS_192         = 0.1923;
+    public static final double VORBIS_192      = 0.1923;
 
-    public static final double                 VORBIS_128         = 0.1283;
+    public static final double VORBIS_128      = 0.1283;
 
     // mp3 64 bit is lower than aac48bit
-    public static final double                 MP3_64             = 0.0442;
+    public static final double MP3_64          = 0.0442;
 
-    public static final double                 AAC32_ESTIMATE     = 0.0324;
+    public static final double AAC32_ESTIMATE  = 0.0324;
 
-    public static final double                 AAC_64             = 0.0644;
+    public static final double AAC_64          = 0.0644;
 
-    public static final double                 AAC_48_ESTIMATE    = 0.0474;
+    public static final double AAC_48_ESTIMATE = 0.0474;
 
-    public static final double                 AAC_48             = 0.0484;
+    public static final double AAC_48          = 0.0484;
 
-    public static final double                 AAC_256            = 0.2564;
+    public static final double AAC_256         = 0.2564;
 
-    public static final double                 AAC_192            = 0.1924;
+    public static final double AAC_192         = 0.1924;
 
-    public static final double                 AAC_128            = 0.1284;
+    public static final double AAC_128         = 0.1284;
 
     private YoutubeITAG(final int itag, final double quality) {
         this.itag = itag;
         this.qualityRating = quality;
 
+    }
+
+    public int getItag() {
+        return itag;
+    }
+
+    public double getQualityRating() {
+        return qualityRating;
     }
 
     public int getITAG() {

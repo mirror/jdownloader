@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -9,10 +10,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.Scrollable;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
@@ -287,7 +291,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     newCP = selectedItem.getPrototype(null).createConfigPanel();
 
                     if (newCP != null) {
-                        configPanel = newCP;
+                        configPanel = scrollerWrapper(newCP);
                     } else {
                         configPanel = PluginConfigPanel.create(selectedItem);
                     }
@@ -315,6 +319,54 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 revalidate();
             }
         };
+    }
+
+    public class Scroll extends SwitchPanel implements Scrollable {
+        public Scroll() {
+            setOpaque(false);
+        }
+
+        @Override
+        protected void onShow() {
+        }
+
+        @Override
+        protected void onHide() {
+        }
+
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        public int getScrollableBlockIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
+            return Math.max(visibleRect.height * 9 / 10, 1);
+        }
+
+        public int getScrollableUnitIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
+            return Math.max(visibleRect.height / 10, 1);
+        }
+
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
+    }
+
+    protected SwitchPanel scrollerWrapper(PluginConfigPanelNG createConfigPanel) {
+        Scroll ret = new Scroll();
+        ret.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
+        JScrollPane sp;
+        ret.add(sp = new JScrollPane(createConfigPanel));
+        // sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.setBorder(null);
+        sp.setOpaque(false);
+        sp.getViewport().setOpaque(false);
+        sp.setViewportBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
+
+        return ret;
     }
 
     public void setHidden() {

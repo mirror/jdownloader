@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,11 +53,31 @@ import de.savemytube.flv.FLV;
 
 public class YoutubeHelper {
 
-    private final Browser                      br;
-    private final YoutubeConfig                cfg;
+    private Browser br;
 
-    private final LogSource                    logger;
-    private String                             base;
+    public Browser getBr() {
+        return br;
+    }
+
+    public void setBr(Browser br) {
+        this.br = br;
+    }
+
+    private final YoutubeConfig           cfg;
+
+    private final LogSource               logger;
+    private String                        base;
+    private List<YoutubeVariantInterface> variants;
+
+    public List<YoutubeVariantInterface> getVariants() {
+        return variants;
+    }
+
+    private Map<String, YoutubeVariantInterface> variantsMap;
+
+    public Map<String, YoutubeVariantInterface> getVariantsMap() {
+        return variantsMap;
+    }
 
     public static final String                 YT_EXT             = "YT_EXT";
     public static final String                 YT_TITLE           = "YT_TITLE";
@@ -174,6 +195,29 @@ public class YoutubeHelper {
         } else {
             this.base = "http://www.youtube.com";
         }
+        ArrayList<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
+        HashMap<String, YoutubeVariantInterface> variantsMap = new HashMap<String, YoutubeVariantInterface>();
+        for (YoutubeVariant v : YoutubeVariant.values()) {
+            variants.add(v);
+
+        }
+        ArrayList<YoutubeCustomVariantStorable> list = cfg.getCustomVariants();
+        if (list != null) {
+            for (YoutubeCustomVariantStorable v : list) {
+                try {
+                    variants.add(v.toVariant());
+                } catch (Exception e) {
+                    e.printStackTrace();
+
+                }
+            }
+        }
+        // create map
+        for (YoutubeVariantInterface v : variants) {
+            variantsMap.put(v.getUniqueId(), v);
+        }
+        this.variants = Collections.unmodifiableList(variants);
+        this.variantsMap = Collections.unmodifiableMap(variantsMap);
     }
 
     /**
@@ -193,15 +237,15 @@ public class YoutubeHelper {
         jsUrl = jsUrl.replace("\\/", "/");
         jsUrl = "http:" + jsUrl;
 
-        String js = YoutubeHelper.JS_CACHE.get(jsUrl);
-        if (js == null) {
-            js = this.br.cloneBrowser().getPage(jsUrl);
-            YoutubeHelper.JS_CACHE.put(jsUrl, js);
+        String des = YoutubeHelper.JS_CACHE.get(jsUrl);
+        if (des == null) {
+            String jsContent = this.br.cloneBrowser().getPage(jsUrl);
+            final String descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
+            final String func = "function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
+            des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
+            YoutubeHelper.JS_CACHE.put(jsUrl, des);
         }
-        final String descrambler = new Regex(js, "\\w+\\.signature\\=([\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
 
-        final String func = "function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
-        final String des = new Regex(js, Pattern.compile(func)).getMatch(1);
         String s = sig;
         // Debug code.
         // Context cx = null;
@@ -638,7 +682,9 @@ public class YoutubeHelper {
     public static final String  YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";
     public static final String  YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
-    public static String createFilename(DownloadLink link) {
+    public String createFilename(DownloadLink link) {
+        String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+        YoutubeVariantInterface variant = getVariantById(var);
         YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         LogSource logger = LogController.getInstance().getLogger(TbCmV2.class.getName());
         String formattedFilename = cfg.getFilenamePattern();
@@ -646,7 +692,7 @@ public class YoutubeHelper {
         if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = jd.plugins.hoster.Youtube.defaultCustomFilename;
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*videoname**quality**ext*";
         try {
-            formattedFilename = YoutubeVariant.valueOf(link.getStringProperty(YoutubeHelper.YT_VARIANT, "")).modifyFileName(formattedFilename, link);
+            formattedFilename = variant.modifyFileName(formattedFilename, link);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -681,10 +727,10 @@ public class YoutubeHelper {
         formattedFilename = formattedFilename.replace("*agegate*", link.getBooleanProperty(YoutubeHelper.YT_AGE_GATE, false) + "");
         formattedFilename = formattedFilename.replace("*ext*", link.getStringProperty(YoutubeHelper.YT_EXT, "unknown"));
         formattedFilename = formattedFilename.replace("*videoid*", link.getStringProperty(YoutubeHelper.YT_ID, ""));
-        try {
-            String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
 
-            formattedFilename = formattedFilename.replace("*quality*", YoutubeVariant.valueOf(var).getQualityExtension());
+        try {
+
+            formattedFilename = formattedFilename.replace("*quality*", variant.getQualityExtension());
         } catch (Exception e) {
             // old variant
             formattedFilename = formattedFilename.replace("*quality*", "[INVALID LINK!]");
@@ -692,7 +738,7 @@ public class YoutubeHelper {
         formattedFilename = formattedFilename.replace("*videoname*", link.getStringProperty(YoutubeHelper.YT_TITLE, "")).replace("*title*", link.getStringProperty(YoutubeHelper.YT_TITLE, ""));
         formattedFilename = formattedFilename.replace("*variant*", link.getStringProperty(YoutubeHelper.YT_VARIANT, ""));
         try {
-            formattedFilename = YoutubeVariant.valueOf(link.getStringProperty(YoutubeHelper.YT_VARIANT, "")).modifyFileName(formattedFilename, link);
+            formattedFilename = variant.modifyFileName(formattedFilename, link);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -760,7 +806,7 @@ public class YoutubeHelper {
     }
 
     public void setupProxy() {
-
+        if (br == null) return;
         if (this.cfg.isProxyEnabled()) {
             final HTTPProxyStorable proxy = this.cfg.getProxy();
 
@@ -771,7 +817,13 @@ public class YoutubeHelper {
             // org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(PROXY_ADDRESS + ":" + PROXY_PORT);
 
             if (proxy != null) {
-                this.br.setProxy(HTTPProxy.getHTTPProxy(proxy));
+                HTTPProxy prxy = HTTPProxy.getHTTPProxy(proxy);
+                if (prxy != null) {
+                    this.br.setProxy(prxy);
+                } else {
+
+                }
+                return;
             }
 
         }
@@ -815,6 +867,23 @@ public class YoutubeHelper {
 
         }
         return urls;
+    }
+
+    public YoutubeVariantInterface getVariantById(String ytv) {
+        return variantsMap.get(ytv);
+    }
+
+    public List<YoutubeVariantInterface> getVariantByIds(String... extra) {
+        ArrayList<YoutubeVariantInterface> ret = new ArrayList<YoutubeVariantInterface>();
+        if (extra != null) {
+            for (String s : extra) {
+                YoutubeVariantInterface v = getVariantById(s);
+                if (v != null) {
+                    ret.add(v);
+                }
+            }
+        }
+        return ret;
     }
 
 }

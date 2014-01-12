@@ -3,8 +3,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.swing.JScrollPane;
-
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.ProxyInput;
@@ -53,12 +51,12 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         checkbox.getComponent().setDependencies(proxy.getComponent());
 
         addHeader("DEBUG ONLY... This Plugin is not finished yet", NewTheme.I().getIcon(IconKey.ICON_WARNING, 18));
-        add(new JScrollPane(new AdvancedTable(model = new AdvancedConfigTableModel("YoutubeConfig") {
+        add(new AdvancedTable(model = new AdvancedConfigTableModel("YoutubeConfig") {
             @Override
             public void refresh(String filterText) {
                 _fireTableStructureChanged(register(), true);
             }
-        })));
+        }));
         model.refresh("Youtube");
     }
 

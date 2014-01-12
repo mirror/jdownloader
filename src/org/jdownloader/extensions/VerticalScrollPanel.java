@@ -33,6 +33,10 @@ public class VerticalScrollPanel extends MigPanel implements Scrollable {
         return Math.max(visibleRect.height * 9 / 10, 1);
     }
 
+    public int getScrollableUnitIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
+        return Math.max(visibleRect.height / 10, 1);
+    }
+
     public boolean getScrollableTracksViewportHeight() {
 
         return false;
@@ -40,10 +44,6 @@ public class VerticalScrollPanel extends MigPanel implements Scrollable {
 
     public boolean getScrollableTracksViewportWidth() {
         return true;
-    }
-
-    public int getScrollableUnitIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
-        return Math.max(visibleRect.height / 10, 1);
     }
 
 }

@@ -295,7 +295,7 @@ public class FFmpeg {
         /* Sorry for not respecting DRY. I didn't want to change such a method without coalados permisson. TheCrap */
         logger.info("Generating " + audioIn + " = " + out);
         ArrayList<String> commandLine = new ArrayList<String>();
-        commandLine.addAll(Arrays.asList(getFullPath(), "-i", audioIn, "-c:a", "copy", out, "-y"));
+        commandLine.addAll(Arrays.asList(getFullPath(), "-i", audioIn, "-f", "adts", "-c:a", "copy", out, "-y"));
         logger.info("FFmpeg command: " + commandLine);
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
 

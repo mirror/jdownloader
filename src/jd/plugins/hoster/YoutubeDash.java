@@ -106,6 +106,10 @@ public class YoutubeDash extends Youtube {
         public Icon getIcon() {
             return icon;
         }
+
+        public String getFileExtension() {
+            return null;
+        }
     }
 
     private final String DASH_AUDIO          = "DASH_AUDIO";
