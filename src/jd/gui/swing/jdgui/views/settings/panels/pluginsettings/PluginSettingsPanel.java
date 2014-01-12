@@ -324,6 +324,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     public class Scroll extends SwitchPanel implements Scrollable {
         public Scroll() {
             setOpaque(false);
+
         }
 
         @Override
@@ -343,6 +344,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }
 
         public int getScrollableUnitIncrement(final Rectangle visibleRect, final int orientation, final int direction) {
+
             return Math.max(visibleRect.height / 10, 1);
         }
 
@@ -361,6 +363,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         JScrollPane sp;
         ret.add(sp = new JScrollPane(createConfigPanel));
         // sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.getVerticalScrollBar().setUnitIncrement(24);
         sp.setBorder(null);
         sp.setOpaque(false);
         sp.getViewport().setOpaque(false);

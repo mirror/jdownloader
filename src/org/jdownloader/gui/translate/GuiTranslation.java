@@ -3759,4 +3759,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Prefer HTTPS Connections" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_https();
 
+    @Default(lngs = { "en" }, values = { "Quality: %s1" })
+    String YoutubeDashConfigPanel_MultiVariantBox_getLabel_(String qualityExtension);
+
 }

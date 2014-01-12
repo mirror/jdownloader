@@ -6,7 +6,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -66,6 +65,10 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         updateLabel();
     }
 
+    public List<Type> getValues() {
+        return Collections.unmodifiableList(values);
+    }
+
     protected Icon getPopIcon(boolean closed) {
         if (closed) {
             if (isPopDown()) {
@@ -94,10 +97,6 @@ public class PseudoMultiCombo<Type> extends ExtButton {
 
     protected Icon getIcon(Type[] value) {
         return null;
-    }
-
-    protected String getLabel(Type[] value) {
-        return Arrays.toString(value);
     }
 
     private long    lastHide = 0;
@@ -297,7 +296,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         return null;
     }
 
-    private String getLabel(List<Type> list) {
+    protected String getLabel(List<Type> list) {
         if (list.size() == 0) { return _GUI._.PseudoMultiCombo_nothing(); }
         StringBuilder sb = new StringBuilder();
         for (Type t : list) {
