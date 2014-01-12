@@ -908,6 +908,7 @@ VariantColumn_VariantColumn_name_=Farklı/Değişik
 ViewTestResultTableModel_initColumns_matches_=Eşleşmeler
 WatchAsYouDownloadColumn_WatchAsYouDownloadColumn=İndirdiğin Gibi İzle
 WatchAsYouDownload_WatchAsYouDownloadAction_=İndirdiğin Gibi İzle
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_desc=<html>Kullanılabilir etiketlerin açıklaması:<br>*channelname* = göndericilerin/kanalların metin adı (güzel adı, uzun adlara ve boşluklara izin verir)<br>*username* = göndericilerin/kanalların kullanıcı adı (youtube.com/users/example = örnek)<br>*date* = görüntünün gönderildiği tarih - yukarıda kullanıcı tanımlı biçimde görünür<br>*videoname* = uzantısız görüntü adı<br>*videoid* = görüntü kimliği: 'youtube.com/watch?v=YOUTUBE_VIDEO_ID'<br>*videonumber* = görüntü sayısı (oynatma listesinde konumu ya da 'kullanıcı' bağlantısı)<br>*quality* = görüntü kalitesi örn. '(1080p_H.264-AAC)'<br>*ext* = görüntü uzantısı örn. '.mp4'</html>
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern=Özelleştirilmiş Dosya Adı
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_header=Dosya Adları
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_https=Tercih Edilen HTTPS Bağlantıları
