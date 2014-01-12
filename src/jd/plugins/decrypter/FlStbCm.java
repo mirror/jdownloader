@@ -24,6 +24,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -49,7 +50,10 @@ public class FlStbCm extends PluginForDecrypt {
         String parameter = param.toString();
         if (!parameter.matches(VIDEOLINK)) parameter = parameter.replace("filestube.com/", "filestube.to/");
         if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Link invalid: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         // Allows us to get age restricted videos
@@ -58,25 +62,40 @@ public class FlStbCm extends PluginForDecrypt {
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
-            logger.info("Link offline or unsupported: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
         if (br.getURL().contains("filestube.com/query.html")) {
-            logger.info("The added link links to a search links and those links are unsupported: " + br.getURL());
+            final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML(">403 Forbidden<") || br.containsHTML("class=\"err404\"")) {
-            logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (br.containsHTML("Results <span>1")) {
-            logger.info("Search links are not supported: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         if (parameter.contains("/go.html")) {
             if (br.containsHTML("\\- File no longer available<")) {
-                logger.info("Link offline: " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                offline.setAvailable(false);
+                offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
@@ -258,15 +277,24 @@ public class FlStbCm extends PluginForDecrypt {
 
             }
             if (br.containsHTML("api\\.kewego\\.com") || br.containsHTML("kewego\\.es/p/")) {
-                logger.info("Cannot decrypt link (not a bug): " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                offline.setAvailable(false);
+                offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             if (br.containsHTML("dailymotion\\.com/swf/")) {
-                logger.info("Link offline or invalid: " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                offline.setAvailable(false);
+                offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             if (br.containsHTML("megaporn\\.com/")) {
-                logger.info("Link offline: " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                offline.setAvailable(false);
+                offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             if (externID == null) {
@@ -279,19 +307,20 @@ public class FlStbCm extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            // Invalid link
-            if (br.containsHTML("(>File no longer available<|>Error 404 \\- Requested)")) {
-                logger.info("Link invalid (error 404): " + parameter);
-                return decryptedLinks;
-            }
-            // Offline link
-            if (br.containsHTML("> File no longer available")) {
-                logger.info("Link offline: " + parameter);
+            // Invalid/offline link
+            if (br.containsHTML("(> ?File no longer available ?<|>Error 404 \\- Requested)")) {
+                final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                offline.setAvailable(false);
+                offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             // Offline link
             if (br.containsHTML("No results containing all your search terms were found|Searches related to <span")) {
-                logger.info("Link offline: " + parameter);
+                final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                offline.setAvailable(false);
+                offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<title>(.*?)\\- Free Download").getMatch(0);

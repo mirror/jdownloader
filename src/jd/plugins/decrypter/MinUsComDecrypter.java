@@ -39,7 +39,7 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String INVALIDLINKS  = "https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads|mobile)";
+    private final String INVALIDLINKS  = "https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads|mobile|app)";
     private final String INVALIDLINKS2 = "https?://(www\\.)?blog\\.(minus\\.com|min\\.us)/.+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -49,7 +49,11 @@ public class MinUsComDecrypter extends PluginForDecrypt {
 
         // ignore trash here... uses less memory allocations
         if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2)) {
-            // /uploads is not supported
+            final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            dl.setName(new Regex(parameter, "minus\\.com/(.+)").getMatch(0));
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         // some link types end up been caught, like directlinks or alternative links, lets correct these to be all the same.
@@ -60,20 +64,31 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         }
 
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final Throwable e) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
+            dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            dl.setName(new Regex(parameter, "minus\\.com/(.+)").getMatch(0));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)") || br.containsHTML("\"items\": \\[\\]") || br.containsHTML("class=\"guesthomepage_cisi_h1\">Upload and share your files instantly") || br.containsHTML(">The folder you requested has been deleted or has expired") || br.containsHTML(">You\\'re invited to join Minus") || br.containsHTML("<title>Error \\- Minus</title>")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
+            dl.setName(new Regex(parameter, "minus\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (br.getRedirectLocation() != null) {
             final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
             dl.setAvailable(false);
+            dl.setProperty("offline", true);
+            dl.setName(new Regex(parameter, "minus\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dl);
             return decryptedLinks;
-
         }
         // Get album name for package name
         String fpName = br.getRegex("<title>(.*?) \\- Minus</title>").getMatch(0);

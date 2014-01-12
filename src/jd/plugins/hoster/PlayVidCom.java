@@ -67,6 +67,7 @@ public class PlayVidCom extends PluginForHost {
         if (filename == null) filename = downloadLink.getStringProperty("directname", null);
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
+            if (downloadLink.getStringProperty("mainlink", null) == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.getPage(downloadLink.getStringProperty("mainlink", null));
             final String videosource = getVideosource(this.br);
             if (videosource == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

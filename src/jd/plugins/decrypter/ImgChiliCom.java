@@ -44,7 +44,9 @@ public class ImgChiliCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         if (parameter.matches(ALBUMLINK)) {
+            br.setFollowRedirects(true);
             br.getPage(parameter);
+            br.setFollowRedirects(false);
 
             if (br.containsHTML("The album does not exist")) {
                 logger.info("Link offline: " + parameter);
