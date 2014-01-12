@@ -118,6 +118,7 @@ public class MovShareNet extends PluginForHost {
                         final String key = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
                         if (key != null) {
                             br.getPage("http://www.movshare.net/api/player.api.php?key=" + Encoding.urlEncode(key) + "&user=undefined&codes=undefined&pass=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)").getMatch(0));
+                            if (br.containsHTML("error_msg=invalid token")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid token'", 30 * 60 * 1000l);
                             dllink = br.getRegex("url=(http://.*?)\\&title=").getMatch(0);
                         }
                         if (dllink == null) {

@@ -156,7 +156,7 @@ public class DlPrtcCom extends PluginForDecrypt {
         if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
             rmCookie(parameter);
         }
-        String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)\">").getMatch(0);
+        String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)</table>").getMatch(0);
         if (linktext == null) {
             if (br.containsHTML(">Your link :</div>")) {
                 logger.info("Link offline: " + parameter);

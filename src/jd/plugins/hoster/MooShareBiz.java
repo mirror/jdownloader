@@ -60,7 +60,7 @@ public class MooShareBiz extends PluginForHost {
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean VIDEOHOSTER                  = true;
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
@@ -220,7 +220,7 @@ public class MooShareBiz extends PluginForHost {
         // Second, check for streaming links on the first page
         if (dllink == null) dllink = getDllink();
         // Third, do they provide video hosting?
-        if (dllink == null && VIDEOHOSTER) {
+        if (dllink == null && VIDEOHOSTER && !downloadLink.getBooleanProperty("httpfailed", false)) {
             final Browser brv = br.cloneBrowser();
             brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             dllink = brv.getRedirectLocation();
@@ -371,17 +371,22 @@ public class MooShareBiz extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            correctBR();
-            checkServerErrors();
+        if (dllink.startsWith("rtmp://")) {
+            // Handling missing
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors(downloadLink);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setProperty(directlinkproperty, dllink);
+            fixFilename(downloadLink);
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        fixFilename(downloadLink);
         try {
             // add a download slot
             controlFree(+1);
@@ -450,6 +455,9 @@ public class MooShareBiz extends PluginForHost {
                         dllink = decodeDownloadLink(crypted);
                         if (dllink != null) break;
                     }
+                }
+                if (dllink == null) {
+                    dllink = new Regex(correctedBR, "streamer: \"(rtmp://[^<>\"]*?)\"").getMatch(0);
                 }
             }
         }
@@ -679,9 +687,16 @@ public class MooShareBiz extends PluginForHost {
         if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
-    public void checkServerErrors() throws NumberFormatException, PluginException {
+    public void checkServerErrors(final DownloadLink dl) throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches() || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches() || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            if (dl.getBooleanProperty("httpfailed")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            } else {
+                dl.setProperty("httpfailed", true);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error (404)", 30 * 60 * 1000l);
+            }
+        }
     }
 
     @Override
