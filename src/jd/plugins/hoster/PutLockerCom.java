@@ -133,7 +133,7 @@ public class PutLockerCom extends PluginForHost {
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         freeform.put("confirm", "Continue+as+Free+User");
         if (freeform.containsHTML("/include/captcha")) {
-            String captchaIMG = br.getRegex("<img src=\"(/include/captcha.php\\?[^\"]+)\" />").getMatch(0);
+            final String captchaIMG = br.getRegex("<img src=\"(/include/captcha.php\\?[^<>\"]+)\"/>").getMatch(0);
             if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), downloadLink);
             if (captcha != null) freeform.put("captcha_code", Encoding.urlEncode(captcha));
