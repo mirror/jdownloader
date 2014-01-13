@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 22600 $", interfaceVersion = 2, names = { "fryhost.com" }, urls = { "http://(www\\.)?fryhost\\.com/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 22600 $", interfaceVersion = 2, names = { "fryhost.com" }, urls = { "http://(www\\.)?fryhost\\.com/[a-z0-9]+/?[a-z0-9\\-\\.]+" }, flags = { 0 })
 public class FryhostCom extends PluginForHost {
 
     private static AtomicInteger MAXPREMDLS         = new AtomicInteger(-1);
@@ -85,7 +85,8 @@ public class FryhostCom extends PluginForHost {
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove("btn");
-        sleep(30 * 1001l, downloadLink);
+        String countdown = br.getRegex("countdown\">(.*?)</").getMatch(0);
+        sleep(Integer.parseInt(countdown) * 1001l, downloadLink);
         handleFreeErrors();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
         if (!dl.getConnection().isContentDisposition()) {
