@@ -121,29 +121,42 @@ public class FileBitPl extends PluginForHost {
         link.setProperty("filebitpldirectlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
-                int timesFailed = link.getIntegerProperty("timesfailedffdownloadercom_knowndlerror", 0);
+            if (dl.getConnection().getResponseCode() == 403) {
+                int timesFailed = link.getIntegerProperty("timesfailedfilebitpl_403dlerror", 0);
                 link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 2) {
                     timesFailed++;
-                    link.setProperty("timesfailedffdownloadercom_knowndlerror", timesFailed);
+                    link.setProperty("timesfailedfilebitpl_403dlerror", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started (403)");
+                } else {
+                    link.setProperty("timesfailedfilebitpl_403dlerror", Property.NULL);
+                    logger.info(NICE_HOST + ": 403 download error - disabling current host!");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                }
+            }
+            br.followConnection();
+            if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
+                int timesFailed = link.getIntegerProperty("timesfailedfilebitpl_knowndlerror", 0);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty("timesfailedfilebitpl_knowndlerror", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started");
                 } else {
-                    link.setProperty("timesfailedffdownloadercom_knowndlerror", Property.NULL);
+                    link.setProperty("timesfailedfilebitpl_knowndlerror", Property.NULL);
                     logger.info(NICE_HOST + ": Known error - disabling current host!");
                     tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 }
             }
             logger.info(NICE_HOST + ": Unknown download error");
-            int timesFailed = link.getIntegerProperty("timesfailedffdownloadercom_unknowndlerror", 0);
+            int timesFailed = link.getIntegerProperty("timesfailedfilebitpl_unknowndlerror", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty("timesfailedffdownloadercom_unknowndlerror", timesFailed);
+                link.setProperty("timesfailedfilebitpl_unknowndlerror", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
-                link.setProperty("timesfailedffdownloadercom_unknowndlerror", Property.NULL);
+                link.setProperty("timesfailedfilebitpl_unknowndlerror", Property.NULL);
                 logger.info(NICE_HOST + ": Unknown error - disabling current host!");
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
@@ -231,10 +244,13 @@ public class FileBitPl extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         final String accounttype = getJson("premium");
-        if (!"1".equals(accounttype)) {
-            ai.setStatus("This is no premium account!");
-            account.setValid(false);
-            return ai;
+        if (accounttype != null && !accounttype.matches("0|1")) {
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         String expire = getJson("expires");
         if (expire != null) {
@@ -342,11 +358,11 @@ public class FileBitPl extends PluginForHost {
                 break;
             case 2:
                 /* Login or password missing -> disable account */
-                statusMessage = "Invalid account";
+                statusMessage = "\r\nInvalid account / Ungültiger Account";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 3:
                 /* Account invalid -> disable account. */
-                statusMessage = "Invalid account";
+                statusMessage = "\r\nInvalid account / Ungültiger Account";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 10:
                 /* Link offline */
