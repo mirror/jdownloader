@@ -54,6 +54,10 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
+        if (br.containsHTML("<title> \\- urlgalleries\\.net</title>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String host = new Regex(parameter, "(https?://[^/]+\\.urlgalleries\\.net)").getMatch(0);
         final String fpName = br.getRegex("border=\\'0\\' /></a></div>(.*?)</td></tr><tr>").getMatch(0);
         final String[] links = br.getRegex("\\'(/image\\.php\\?cn=\\d+\\&uid=[A-Za-z0-9]+\\&where=.*?)\\'").getColumn(0);

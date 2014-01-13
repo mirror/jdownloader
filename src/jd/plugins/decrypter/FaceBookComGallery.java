@@ -255,10 +255,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
 
             } else if (parameter.matches(PHOTOS_ALL_LINK)) {
-                decryptPicsGeneral();
+                decryptPicsGeneral("AllPhotosAppCollectionPagelet");
             } else if (parameter.matches(PHOTOS_LINK)) {
                 // Old handling removed 05.12.13 in rev 23262
-                decryptPicsGeneral();
+                decryptPicsGeneral(null);
 
             } else if (parameter.matches(SET_LINK_PHOTO)) {
                 final boolean loggedIN = login();
@@ -381,7 +381,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     // TODO: Use this everywhere as it should work universal
-    private void decryptPicsGeneral() throws Exception {
+    private void decryptPicsGeneral(String controller) throws Exception {
         final boolean loggedIN = login();
         if (!loggedIN) {
             logger.info("Cannot decrypt link without valid account: " + PARAMETER);
@@ -396,10 +396,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
         String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
         final String user = getUser();
         final String token = br.getRegex("\"tab_count\":\\d+,\"token\":\"([^<>\"]*?)\"").getMatch(0);
-        final String appcollection = br.getRegex("\"pagelet_timeline_app_collection_(\\d+:\\d+:\\d+)\"").getMatch(0);
+        final String appcollection = br.getRegex("\"pagelet_timeline_app_collection_(\\d+:\\d+)(:\\d+)?\"").getMatch(0);
         final String profileowner = br.getRegex("data\\-gt=\"\\&#123;\\&quot;profile_owner\\&quot;:\\&quot;(\\d+)\\&quot;").getMatch(0);
         final String totalPicCount = br.getRegex("data-medley-id=\"pagelet_timeline_medley_photos\">Photos<span class=\"_gs6\">(\\d+((,|\\.)\\d+)?)</span>").getMatch(0);
-        final String controller = br.getRegex("\"photos\",\\[\\{\"controller\":\"([^<>\"]*?)\"").getMatch(0);
+        if (controller == null) controller = br.getRegex("\"photos\",\\[\\{\"controller\":\"([^<>\"]*?)\"").getMatch(0);
         if (token == null || user == null || profileID == null || appcollection == null || profileowner == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             return;
@@ -437,7 +437,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Returning already decrypted links anyways...");
                     break;
                 }
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22" + appcollection + "%22%2C%22cursor%22%3A%22" + cursor + "%3D%22%2C%22tab_key%22%3A%22photos%22%2C%22profile_id%22%3A" + profileowner + "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8ahyj2qmp5xl2u5Fa9jzy0zCUb8yGg&__rev=1033590" + "&__req=jsonp_" + i + "&__adt=" + i;
+                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22" + appcollection + "%3A5%22%2C%22cursor%22%3A%22MDpub3Rfc3RydWN0dXJlZDozNjI0NTQ4NjM4MjU3MDE%3D%22%2C%22tab_key%22%3A%22photos_all%22%2C%22profile_id%22%3A100001835729237%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8apij2qmp5xl2u5Fa9jzy0zCwKyaF298y&__req=r&__rev=1076786" + "&__req=jsonp_" + i + "&__adt=" + i;
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                 currentMaxPicCount = 40;

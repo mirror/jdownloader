@@ -103,11 +103,30 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.pornerbros.com/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
+        // empflix.com 1
         externID = br.getRegex("player\\.empflix\\.com/video/(\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.empflix.com/videos/" + System.currentTimeMillis() + "-" + externID + ".html"));
             return decryptedLinks;
         }
+        // empflix.com 2
+        externID = br.getRegex("empflix\\.com/embedding_player/player[^<>\"/]*?\\.swf\".*?value=\"config=embedding_feed\\.php\\?viewkey=([^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            // Find original empflix link and add it to the list
+            br.getPage("http://www.empflix.com/embedding_player/embedding_feed.php?viewkey=" + externID);
+            if (br.containsHTML(">Sorry, this video is no longer available")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            final String finallink = br.getRegex("<link>(http://.*?)</link>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
+            return decryptedLinks;
+        }
+
         externID = br.getRegex("hardsextube\\.com/embed/(\\d+)/\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
@@ -159,6 +178,21 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://(www\\.)?vporn\\.com/embed/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("moviefap\\.com/embedding_player/player.*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.moviefap.com/embedding_player/" + externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("%26link%3D(videos[^<>\"]*?)%26splash%3D").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.madthumbs.com/" + Encoding.htmlDecode(externID)));
+            return decryptedLinks;
+        }
         // For all following ids, a filename is needed
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -194,12 +228,12 @@ public class VoaYeursCom extends PluginForDecrypt {
         externID = br.getRegex("flashvars=\"enablejs=true\\&autostart=(false|true)\\&mediaid=(\\d+)\\&").getMatch(1);
         if (externID != null) {
             br.getPage("http://www.deviantclip.com/playlists/" + externID + "/playlist.xml");
-            String finallink = br.getRegex("<location>(http[^<>\"]*?)</location>").getMatch(0);
-            if (finallink == null) {
+            String finallinkempflix = br.getRegex("<location>(http[^<>\"]*?)</location>").getMatch(0);
+            if (finallinkempflix == null) {
                 logger.warning("Couldn't decrypt link: " + parameter);
                 return null;
             }
-            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallinkempflix));
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -270,12 +304,12 @@ public class VoaYeursCom extends PluginForDecrypt {
                 return null;
             }
             br.getPage(externID);
-            final String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
-            if (finallink == null) {
+            final String finallinkyouporn = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
+            if (finallinkyouporn == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallinkyouporn));
             String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
             if (type == null) type = "flv";
             dl.setFinalFileName(filename + "." + type);

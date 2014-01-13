@@ -80,6 +80,10 @@ public class ZomgUploadCom extends PluginForDecrypt {
             logger.info("Link offline (server error): " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("class=\"err\">You have to wait")) {
+            logger.info("Limit reached: Get a new IP to reconnect this and further links: " + parameter);
+            return decryptedLinks;
+        }
         String dl = br.getRegex("<a href=\"(http[^\"]+)\"><img[^>]+/images/free_dl\\.png").getMatch(0);
         if (dl != null)
             decryptedLinks.add(createDownloadlink(dl));

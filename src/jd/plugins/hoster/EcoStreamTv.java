@@ -64,10 +64,14 @@ public class EcoStreamTv extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final String tmp = br.getRegex("var anlytcs=\\'([^<>\"]*?)\\';").getMatch(0);
-        final String noSenseForThat = br.getRegex("var adslotid=\\'([^<>\"]*?)\\';").getMatch(0);
+        String noSenseForThat = br.getRegex("var superslots=\\'([^<>\"]*?)\\';").getMatch(0);
+        if (noSenseForThat == null) {
+            noSenseForThat = br.getRegex("var [A-Za-z0-9]+=\\'([^<>\"]*?)\\';[\t\n\r ]+</script>[\t\n\r ]+<script src=\"/js/app\\.js\"").getMatch(0);
+        }
         if (tmp == null || noSenseForThat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.ecostream.tv/xhr/video/vidurl", "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.postPage("http://www.ecostream.tv/xhr/video/vidurls", "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
         String finallink = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         finallink = "http://www.ecostream.tv" + finallink;

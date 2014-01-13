@@ -44,6 +44,8 @@ public class ShorteSt extends PluginForDecrypt {
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+            // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            // br.postPage("http://sh.st/adSession/callback", "sessionId=&browserToken=");
         }
         decryptedLinks.add(createDownloadlink(finallink));
 

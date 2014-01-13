@@ -206,8 +206,7 @@ public class UpstoRe extends PluginForHost {
                     ai.setValidUntil(-1);
                     ai.setStatus("Unlimited Premium User");
                 } else {
-                    account.setValid(false);
-                    return ai;
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree Accounts are not supported for this host!\r\nKostenlose Accounts dieses Hosters werden nicht unterstützt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));

@@ -104,6 +104,7 @@ public class MinUs extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             /* linkrefresh is needed here */
             br.followConnection();
+            if (br.getURL().equals("http://minus.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));

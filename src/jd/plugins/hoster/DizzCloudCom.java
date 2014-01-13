@@ -226,6 +226,10 @@ public class DizzCloudCom extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("class=\"daydllimit\"")) {
+                logger.info("daily limit reached, temp disabling premium");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             String dllink = br.getRedirectLocation();
             if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"orange\\-btn\">DOWNLOAD</a>").getMatch(0);

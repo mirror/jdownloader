@@ -800,7 +800,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } else if (parameter.toLowerCase().contains("cli.gs/") || parameter.toLowerCase().contains("cl.gs/")) {
             if (parameter.toLowerCase().matches("http://(www\\.)?(cli|cl)\\.gs/(javascript)") || br.containsHTML("id=\"SiteError\"")) {
                 offline = true;
-            } else if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?cli?\\.gs/.*?")) {
+            } else if (br.getRedirectLocation() != null && br.getRedirectLocation().toLowerCase().matches("http://(www\\.)?cli?\\.gs/.*?")) {
                 offline = true;
             } else if (br.getRequest().getHttpConnection().getContentType().matches("application/javascript|text/css")) {
                 offline = true;

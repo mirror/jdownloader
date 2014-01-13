@@ -20,13 +20,15 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "revivelink.com" }, urls = { "http://(www\\.)?revivelink.com/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "revivelink.com" }, urls = { "http://(www\\.)?revivelink.com/\\?[A-Z0-9]+" }, flags = { 0 })
 public class ReviveLinkCom extends PluginForDecrypt {
 
     public ReviveLinkCom(PluginWrapper wrapper) {
@@ -39,24 +41,7 @@ public class ReviveLinkCom extends PluginForDecrypt {
         String strParameter = param.toString();
 
         // Get the package name
-        int iPosition = strParameter.lastIndexOf("###");
         String strName = "";
-        if (iPosition != -1) {
-            strName = strParameter.substring(iPosition + 3);
-            strParameter = strParameter.substring(0, iPosition);
-        }
-        // Reset the ? character that is remove from the link
-        iPosition = strParameter.lastIndexOf('/');
-        String strFirstPart = "";
-        String strSecondPart = "";
-        if (iPosition != -1) {
-            strFirstPart = strParameter.substring(0, iPosition + 1);
-            strSecondPart = strParameter.substring(iPosition + 1);
-            if (strSecondPart.startsWith("?")) {
-                strSecondPart = strSecondPart.substring(1);
-            }
-        }
-        strParameter = strFirstPart + "liens.php?R=" + strSecondPart;
 
         br.setFollowRedirects(false);
         br.getPage(strParameter);
@@ -66,27 +51,47 @@ public class ReviveLinkCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        jd.parser.Regex rTemp = br.getRegex("<a href=\"(.*?)\"");
-        String[][] str = rTemp.getMatches();
-        String[] links = new String[3];
-        for (int iIndex = 0; iIndex < str.length; iIndex++) {
-            links[iIndex] = str[iIndex][0];
+        if (br.containsHTML("class=\"QapTcha\"")) {
+            final String fid = new Regex(strParameter, "([A-Z0-9]+)$").getMatch(0);
+            final String pass = generatePass();
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("http://revivelink.com/qcap/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + pass);
+            if (!br.containsHTML("\"error\":false")) {
+                logger.warning("Decrypter broken for link: " + strParameter);
+                return null;
+            }
+            br.getPage("http://revivelink.com/liens.php?R=" + fid + "&" + Encoding.urlEncode(pass) + "=");
         }
+
+        final String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + strParameter);
             return null;
         }
 
         // Added links
-        for (String redirectlink : links) {
-            decryptedLinks.add(createDownloadlink(redirectlink));
+        for (String alink : links) {
+            if (!alink.contains("revievelink.com/")) decryptedLinks.add(createDownloadlink(alink));
         }
 
         // Add all link in a package
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         if (strName != "") fp.setName(strName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private String generatePass() {
+        int nb = 32;
+        final String chars = "azertyupqsdfghjkmwxcvbn23456789AZERTYUPQSDFGHJKMWXCVBN_-#@";
+        String pass = "";
+
+        for (int i = 0; i < nb; i++) {
+            long wpos = Math.round(Math.random() * (chars.length() - 1));
+            int lool = (int) wpos;
+            pass += chars.substring(lool, lool + 1);
+        }
+        return pass;
     }
 
     /* NO OVERRIDE!! */

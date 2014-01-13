@@ -98,10 +98,22 @@ public class GldSlTo extends PluginForDecrypt {
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (final String decryptID : decryptIDs) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
             br.postPage(postInfo[0], postInfo[1] + "=" + decryptID);
             String finallink = br.toString();
             if (finallink.contains("No input file specified")) {
                 continue;
+            }
+            if (finallink.equals("http://goldesel.to/dl/error.html")) {
+                logger.info("Failed to decrypt normal links");
+                break;
             }
             if (!finallink.startsWith("http") || finallink.length() > 500) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -111,14 +123,30 @@ public class GldSlTo extends PluginForDecrypt {
         }
         if (streamIDs != null && streamIDs.length != 0) {
             for (final String streamID : streamIDs) {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
+                    }
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
                 br.postPage("http://goldesel.to/ajax/streams.php", "Stream=" + streamID);
                 String finallink = br.getRegex("<a href=\"(http[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null || finallink.length() > 500) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                if (finallink.equals("http://goldesel.to/dl/error.html")) {
+                    logger.info("Failed to decrypt stream links");
+                    break;
+                }
                 decryptedLinks.add(createDownloadlink(finallink));
             }
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

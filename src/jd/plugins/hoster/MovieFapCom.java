@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviefap.com" }, urls = { "http://(www\\.)?moviefap\\.com/videos/[a-z0-9]+/[a-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviefap.com" }, urls = { "http://(www\\.)?moviefap\\.com/(videos/[a-z0-9]+/[a-z0-9\\-_]+\\.html|embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+)" }, flags = { 0 })
 public class MovieFapCom extends PluginForHost {
 
     public MovieFapCom(PluginWrapper wrapper) {
@@ -43,19 +44,28 @@ public class MovieFapCom extends PluginForHost {
         return "http://www.moviefap.com/dmca.php";
     }
 
+    private static final String EMBEDLINK = "http://(www\\.)?moviefap\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"view_title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("id=\"title\" name=\"title\" value=\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(http://[^<>\"]*?)\"\\);").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(DLLINK);
-        DLLINK = br.getRegex("<videoLink>(http://[^<>\"]*?)</videoLink>").getMatch(0);
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        String filename = null;
+        if (downloadLink.getDownloadURL().matches(EMBEDLINK)) {
+            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            DLLINK = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            if (br.containsHTML("video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("<div id=\"view_title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+            if (filename == null) filename = br.getRegex("id=\"title\" name=\"title\" value=\"([^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(http://[^<>\"]*?)\"\\);").getMatch(0);
+            if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(DLLINK);
+            DLLINK = br.getRegex("<videoLink>(http://[^<>\"]*?)</videoLink>").getMatch(0);
+            DLLINK = Encoding.htmlDecode(DLLINK);
+        }
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".flv";
