@@ -243,8 +243,8 @@ public class FileBitPl extends PluginForHost {
         handleAPIErrors(br, account, null);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        final String accounttype = getJson("premium");
-        if (accounttype != null && !accounttype.matches("0|1")) {
+        final String premium = getJson("premium");
+        if (premium != null && !premium.matches("0|1")) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -252,7 +252,7 @@ public class FileBitPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        String expire = getJson("expires");
+        final String expire = getJson("expires");
         if (expire != null) {
             final Long expirelng = Long.parseLong(expire);
             if (expirelng == -1) {
@@ -298,13 +298,15 @@ public class FileBitPl extends PluginForHost {
                 supportedHosts.add("uploaded.to");
             }
         }
+        String acctype = "Premium";
+        if (!"1".equals(premium)) acctype = "Free";
         ai.setProperty("multiHostSupport", supportedHosts);
         if (supportedHosts.size() == 0) {
-            ai.setStatus("Account valid: 0 Hosts via " + NICE_HOST + " available");
+            ai.setStatus(acctype + " account valid: 0 Hosts via " + NICE_HOST + " available");
         } else {
             supportedHosts.remove("youtube.com");
             supportedHosts.remove("chomikuj.pl");
-            ai.setStatus("Account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
+            ai.setStatus(acctype + " account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
             ai.setProperty("multiHostSupport", supportedHosts);
         }
         return ai;
