@@ -3762,4 +3762,54 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Quality: %s1" })
     String YoutubeDashConfigPanel_MultiVariantBox_getLabel_(String qualityExtension);
 
+    @Default(lngs = { "en" }, values = { "Best" })
+    String YoutubeDashConfigPanel_getLabel_best();
+
+    @Default(lngs = { "en" }, values = { "Worst" })
+    String YoutubeDashConfigPanel_getLabel_worst();
+
+    @Default(lngs = { "en" }, values = { "Allowed Media Types" })
+    String YoutubeDashConfigPanel_allowedtypoes();
+
+    @Default(lngs = { "en" }, values = { "Mp4 Videos" })
+    String YoutubeDashConfigPanel_allowedtypoes_mp4();
+
+    @Default(lngs = { "en" }, values = { "Webm Videos" })
+    String YoutubeDashConfigPanel_allowedtypoes_webm();
+
+    @Default(lngs = { "en" }, values = { "Gp3 Videos" })
+    String YoutubeDashConfigPanel_allowedtypoes_gp3();
+
+    @Default(lngs = { "en" }, values = { "Flv Videos" })
+    String YoutubeDashConfigPanel_allowedtypoes_flv();
+
+    @Default(lngs = { "en" }, values = { "Stereoscopic 3D-Videos" })
+    String YoutubeDashConfigPanel_allowedtypoes_3D();
+
+    @Default(lngs = { "en" }, values = { "Audio" })
+    String YoutubeDashConfigPanel_allowedtypoes_audio();
+
+    @Default(lngs = { "en" }, values = { "Image" })
+    String YoutubeDashConfigPanel_allowedtypoes_image();
+
+    @Default(lngs = { "en" }, values = { "Subtitles" })
+    String YoutubeDashConfigPanel_allowedtypoes_subtitles();
+
+    @Default(lngs = { "en" }, values = { "Default Variants" })
+    String YoutubeDashConfigPanel_links();
+
+    @Default(lngs = { "en" }, values = { "Create a Link for the best Video Quality" })
+    String YoutubeDashConfigPanel_allowedtypoes_best_video();
+
+    @Default(lngs = { "en" }, values = { "Create a Link for the best Audio Quality" })
+    String YoutubeDashConfigPanel_allowedtypoes_best_audio();
+
+    @Default(lngs = { "en" }, values = { "Create a Link for the best 3D-Video Quality" })
+    String YoutubeDashConfigPanel_allowedtypoes_best_3d();
+
+    @Default(lngs = { "en" }, values = { "Create a Link for the best Subtitles" })
+    String YoutubeDashConfigPanel_allowedtypoes_best_subtitle();
+
+    @Default(lngs = { "en" }, values = { "<html>If you want JDownloader to create more links besides the 'Best Quality Links', you can set this up below.</html>" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc();
 }

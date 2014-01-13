@@ -116,6 +116,29 @@ public class YoutubeDashV2 extends PluginForHostV2 {
     }
 
     public static interface YoutubeConfig extends ConfigInterface {
+        @DefaultBooleanValue(true)
+        @AboutConfig
+        boolean isCreateBestVideoVariantLinkEnabled();
+
+        void setCreateBestVideoVariantLinkEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @AboutConfig
+        boolean isCreateBestAudioVariantLinkEnabled();
+
+        void setCreateBestAudioVariantLinkEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @AboutConfig
+        boolean isCreateBest3DVariantLinkEnabled();
+
+        void setCreateBest3DVariantLinkEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @AboutConfig
+        boolean isCreateBestSubtitleVariantLinkEnabled();
+
+        void setCreateBestSubtitleVariantLinkEnabled(boolean b);
 
         @DefaultBooleanValue(false)
         @AboutConfig
@@ -207,11 +230,11 @@ public class YoutubeDashV2 extends PluginForHostV2 {
 
         void setGroupLogic(GroupLogic group);
 
-        @DefaultBooleanValue(true)
-        @AboutConfig
-        boolean isBestGroupVariantEnabled();
-
-        void setBestGroupVariantEnabled(boolean b);
+        // @DefaultBooleanValue(true)
+        // @AboutConfig
+        // boolean isBestGroupVariantEnabled();
+        //
+        // void setBestGroupVariantEnabled(boolean b);
 
         @AboutConfig
         @DefaultStringValue("*videoname* (*quality*).*ext*")

@@ -233,22 +233,29 @@ public class TbCmV2 extends PluginForDecryptV2 {
             return decryptedLinks;
         }
 
-        HashSet<YoutubeVariantInterface> blacklistedVariants = new HashSet<YoutubeVariantInterface>();
+        // HashSet<YoutubeVariantInterface> blacklistedVariants = new HashSet<YoutubeVariantInterface>();
         HashSet<String> blacklistedStrings = new HashSet<String>();
+        HashSet<String> extraStrings = new HashSet<String>();
+
         String[] blacklist = cfg.getBlacklistedVariants();
         if (blacklist != null) {
 
             for (String ytv : blacklist) {
 
                 YoutubeVariantInterface v = helper.getVariantById(ytv);
-                if (v != null) {
-                    blacklistedVariants.add(v);
-                }
+                // if (v != null) {
+                // blacklistedVariants.add(v);
+                // }
 
                 blacklistedStrings.add(ytv);
             }
         }
-
+        String[] extra = cfg.getExtraVariants();
+        if (extra != null) {
+            for (String s : extra) {
+                extraStrings.add(s);
+            }
+        }
         for (YoutubeClipData vid : videoIdsToAdd) {
             HashMap<String, List<VariantInfo>> groups = new HashMap<String, List<VariantInfo>>();
             HashMap<String, List<VariantInfo>> groupsExcluded = new HashMap<String, List<VariantInfo>>();
@@ -284,7 +291,7 @@ public class TbCmV2 extends PluginForDecryptV2 {
 
                 if (valid) {
                     VariantInfo vi = new VariantInfo(v, audio, video, data);
-                    if (blacklistedVariants.contains(v)) {
+                    if ((blacklistedStrings.contains(v.getTypeId()) || blacklistedStrings.contains(v.getUniqueId())) && !extraStrings.contains(v.getTypeId()) && !extraStrings.contains(v.getUniqueId())) {
                         logger.info("Variant blacklisted:" + v);
                         List<VariantInfo> list = groupsExcluded.get(groupID);
                         if (list == null) {
@@ -468,17 +475,20 @@ public class TbCmV2 extends PluginForDecryptV2 {
 
             }
 
-            String[] extra = cfg.getExtraVariants();
+            if (extra != null && extra.length > 0) {
+                main: for (VariantInfo v : allVariants.values()) {
+                    for (String s : extra) {
+                        if (v.variant.getTypeId().equals(s)) {
 
-            for (YoutubeVariantInterface v : helper.getVariantByIds(extra)) {
+                            String groupID = getGroupID(v.variant);
 
-                VariantInfo vInfo = allVariants.get(v);
-                if (vInfo != null) {
-                    String groupID = getGroupID(v);
+                            List<VariantInfo> fromGroup = groups.get(groupID);
 
-                    List<VariantInfo> fromGroup = groups.get(groupID);
+                            decryptedLinks.add(createLink(v, fromGroup));
+                            continue main;
 
-                    decryptedLinks.add(createLink(vInfo, fromGroup));
+                        }
+                    }
                 }
 
             }

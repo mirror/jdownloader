@@ -69,7 +69,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     MP4_3D_360(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "360p MP4-3D-Video", "360p 3D", "mp4", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D, null, null, null, null),
     MP4_3D_520(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "520p MP4-3D-Video", "520p 3D", "mp4", YoutubeITAG.MP4_VIDEO_520P_H264_AUDIO_AAC_3D, null, null, null, null),
 
-    MP4_3D_720(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "720p MP4-3D-Video", "720p 3D", "mp4", YoutubeITAG.MP4_VIDEO_520P_H264_AUDIO_AAC_3D, null, null, null, null),
+    MP4_3D_720(null, YoutubeVariantInterface.VariantGroup.VIDEO_3D, YoutubeVariantInterface.DownloadType.VIDEO, "720p MP4-3D-Video", "720p 3D", "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, null),
     MP4_720("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "720p MP4-Video", "720p", "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, null),
     MP4_DASH_1080_AAC128("MP4_1080", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "1080p MP4-Video", "1080p", "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
     MP4_DASH_1080_AAC256("MP4_1080", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "1080p MP4-Video", "1080p", "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
@@ -138,7 +138,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         this.type = type;
         this.iTagVideo = video;
         this.iTagAudio = audio;
-        this.qualityRating = 0d + (video != null ? video.qualityRating : 0) + (audio != null ? audio.qualityRating : 0);
+        this.qualityRating = 0d + (video != null ? video.qualityRating : 0) + (audio != null ? audio.qualityRating : 0) + (data != null ? data.qualityRating : 0);
         this.iTagData = data;
         this.converter = converter;
         this.filenameModifier = filenameModifier;

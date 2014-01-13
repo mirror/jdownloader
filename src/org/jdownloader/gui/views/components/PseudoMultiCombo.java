@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
 import javax.swing.JPopupMenu;
@@ -124,7 +125,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
             }
 
         };
-
+        final AtomicInteger integer = new AtomicInteger(0);
         for (final Type sc : values) {
             ExtRealCheckBoxMenuItem mi;
             popup.add(mi = new ExtRealCheckBoxMenuItem(new AppAction() {
@@ -132,9 +133,11 @@ public class PseudoMultiCombo<Type> extends ExtButton {
                 {
 
                     value = sc;
-                    setName(getLabel(sc));
-                    setSmallIcon(getIcon(sc));
+
+                    setName(getLabel(integer.get(), sc));
+                    setSmallIcon(getIcon(integer.get(), sc));
                     setSelected(isItemSelected(sc));
+                    integer.incrementAndGet();
                 }
 
                 public void setSelected(final boolean selected) {
@@ -204,8 +207,16 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         }
     }
 
+    protected Icon getIcon(int i, Type sc) {
+        return getIcon(sc);
+    }
+
     protected Icon getIcon(Type sc) {
         return null;
+    }
+
+    protected String getLabel(int i, Type sc) {
+        return getLabel(sc);
     }
 
     protected String getLabel(Type sc) {

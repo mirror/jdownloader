@@ -69,7 +69,7 @@ public enum YoutubeITAG {
     WEBM_VIDEO_360P_VP8_AUDIO_VORBIS(43, 360.3 + YoutubeITAG.VORBIS_128),
     // not sure - did not find testvideos
     WEBM_VIDEO_480P_VP8_AUDIO_VORBIS(44, 480.3 + YoutubeITAG.VORBIS_128),
-    WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D(102, 360.3 + YoutubeITAG.VORBIS_192),
+    WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D(102, 720.3 + YoutubeITAG.VORBIS_192),
     // not sure - did not find testvideos
     WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, 720.3 + YoutubeITAG.VORBIS_192);
 
