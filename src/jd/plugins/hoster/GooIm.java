@@ -40,7 +40,8 @@ public class GooIm extends PluginForHost {
         return "http://goo.im/about";
     }
 
-    private String DLLINK = null;
+    private String              DLLINK   = null;
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -86,12 +87,35 @@ public class GooIm extends PluginForHost {
             if (waittime != null) wait = Integer.parseInt(waittime);
             sleep(wait * 1001l, downloadLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(GooIm.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(GooIm.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(GooIm.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(GooIm.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(GooIm.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override
