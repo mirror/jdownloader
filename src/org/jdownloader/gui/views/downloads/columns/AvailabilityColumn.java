@@ -171,7 +171,7 @@ public class AvailabilityColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public int getMinWidth() {
-        return getDefaultWidth();
+        return -1;
     }
 
     @Override
