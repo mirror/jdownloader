@@ -326,6 +326,14 @@ public class DirectHTTP extends PluginForHost {
         return ret;
     }
 
+    public boolean isValidURL(String URL) {
+        URL = URL.toLowerCase(Locale.ENGLISH);
+        if (URL.contains("facebook.com/l.php")) return false;
+        if (URL.contains("facebook.com/ajax/sharer/")) return false;
+        if (URL.contains("youtube.com/videoplayback") && URL.startsWith("http")) return false;
+        return true;
+    }
+
     /**
      * TODO: Remove with next major-update!
      */

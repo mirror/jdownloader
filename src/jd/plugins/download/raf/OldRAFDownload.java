@@ -377,7 +377,6 @@ public class OldRAFDownload extends DownloadInterface {
         }
         if (caughtPluginException == null) {
             downloadable.setLinkStatus(LinkStatus.FINISHED);
-            downloadable.setVerifiedFileSize(outputCompleteFile.length());
             return true;
         } else {
             throw caughtPluginException;
@@ -718,12 +717,10 @@ public class OldRAFDownload extends DownloadInterface {
                 downloadable.setHashResult(result);
             }
         }
+        downloadable.setVerifiedFileSize(outputPartFile.length());
         boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
-
         if (renameOkay) {
-
             downloadable.logStats(outputCompleteFile, chunks.size(), System.currentTimeMillis() - getStartTimeStamp());
-
             /* save absolutepath as final location property */
             downloadable.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
             try {

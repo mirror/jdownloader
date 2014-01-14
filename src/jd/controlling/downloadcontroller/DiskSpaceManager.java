@@ -6,7 +6,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.jdownloader.settings.GeneralSettings;
 
 public class DiskSpaceManager {
 
@@ -18,9 +20,11 @@ public class DiskSpaceManager {
     }
 
     private HashMap<DiskSpaceReservation, Object> reservations;
+    private final GeneralSettings                 config;
 
     public DiskSpaceManager() {
         reservations = new HashMap<DiskSpaceReservation, Object>();
+        config = JsonConfig.create(GeneralSettings.class);
     }
 
     public synchronized DISKSPACERESERVATIONRESULT check(DiskSpaceReservation reservation) {
@@ -35,8 +39,9 @@ public class DiskSpaceManager {
              */
             return DISKSPACERESERVATIONRESULT.UNSUPPORTED;
         }
+        if (!config.isFreeSpaceCheckEnabled()) return DISKSPACERESERVATIONRESULT.OK;
         HashSet<File> reservationPaths = new HashSet<File>();
-        long requestedDiskSpace = Math.max(0, reservation.getSize());
+        long requestedDiskSpace = Math.max(0, reservation.getSize()) + Math.max(0, config.getForcedFreeSpaceOnDisk() * 1024 * 1024);
         File destinationPath = reservation.getDestination();
         File checkPath = null;
         long freeSpace = -1;

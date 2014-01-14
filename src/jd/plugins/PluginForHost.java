@@ -463,27 +463,29 @@ public abstract class PluginForHost extends Plugin {
             links = new ArrayList<DownloadLink>(hits.length);
             try {
                 PluginForHost plugin = getLazyP().getPrototype(null);
-                for (String file : hits) {
+                for (String url : hits) {
                     /* remove newlines... */
-                    file = file.trim();
+                    url = url.trim();
                     /*
                      * this removes the " from HTMLParser.ArrayToString
                      */
                     /* only 1 " at start */
-                    while (file.charAt(0) == '"') {
-                        file = file.substring(1);
+                    while (url.charAt(0) == '"') {
+                        url = url.substring(1);
                     }
                     /* can have several " at the end */
-                    while (file.charAt(file.length() - 1) == '"') {
-                        file = file.substring(0, file.length() - 1);
+                    while (url.charAt(url.length() - 1) == '"') {
+                        url = url.substring(0, url.length() - 1);
                     }
 
                     /*
                      * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
                      */
                     /* we use null as ClassLoader to make sure all share the same ProtoTypeClassLoader */
-                    final DownloadLink link = new DownloadLink(plugin, null, getHost(), file, true);
-                    links.add(link);
+                    if (isValidURL(url)) {
+                        final DownloadLink link = new DownloadLink(plugin, null, getHost(), url, true);
+                        links.add(link);
+                    }
                 }
             } catch (Throwable e) {
                 LogSource.exception(logger, e);
@@ -493,6 +495,10 @@ public abstract class PluginForHost extends Plugin {
             fp.addLinks(links);
         }
         return links;
+    }
+
+    public boolean isValidURL(String URL) {
+        return true;
     }
 
     /*

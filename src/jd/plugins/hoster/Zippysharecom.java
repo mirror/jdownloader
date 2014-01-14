@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(v/\\d+/[^<>\"/]*?\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(d/\\d+/\\d+/.|v/\\d+/[^<>\"/]*?\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
 
     private String DLLINK = null;
@@ -51,6 +51,11 @@ public class Zippysharecom extends PluginForHost {
             link.setUrlDownload(addedLink.replace("downloadMusic?key=", "view.jsp?key="));
         } else if (addedLink.matches("http://www\\d{0,}\\.zippyshare\\.com/swf/player_local\\.swf\\?file=\\d+")) {
             final Regex linkInfo = new Regex(addedLink, "http://(www\\d{0,})\\.zippyshare\\.com/swf/player_local\\.swf\\?file=(\\d+)");
+            final String server = linkInfo.getMatch(0);
+            final String fid = linkInfo.getMatch(1);
+            link.setUrlDownload("http://" + server + ".zippyshare.com/v/" + fid + "/file.html");
+        } else if (addedLink.matches("http://www\\d{0,}\\.zippyshare\\.com/d/\\d+/\\d+/.*?")) {
+            final Regex linkInfo = new Regex(addedLink, "http://(www\\d{0,})\\.zippyshare\\.com/d/(\\d+)");
             final String server = linkInfo.getMatch(0);
             final String fid = linkInfo.getMatch(1);
             link.setUrlDownload("http://" + server + ".zippyshare.com/v/" + fid + "/file.html");
@@ -251,6 +256,7 @@ public class Zippysharecom extends PluginForHost {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.zippyshare.com", "ziplocale", "en");
         br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
     }
 
     private String getDlCode(final String dlink) {
