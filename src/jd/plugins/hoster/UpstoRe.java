@@ -55,6 +55,22 @@ public class UpstoRe extends PluginForHost {
         return "http://upstore.net/terms/";
     }
 
+    public boolean isPremiumEnabled() {
+        return "upstore.net".equals(getHost());
+    }
+
+    @Override
+    public Boolean rewriteHost(Account acc) {
+        if ("upstore.net".equals(getHost())) {
+            if (acc != null && "upsto.re".equals(acc.getHoster())) {
+                acc.setHoster("upstore.net");
+                return true;
+            }
+            return false;
+        }
+        return null;
+    }
+
     private static Object LOCK         = new Object();
     private final String  MAINPAGE     = "http://upstore.net";
     private final String  INVALIDLINKS = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
