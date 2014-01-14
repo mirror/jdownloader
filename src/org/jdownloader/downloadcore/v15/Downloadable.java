@@ -92,7 +92,9 @@ public interface Downloadable {
 
     long getKnownDownloadSize();
 
-    void setPluginProgress(PluginProgress downloadPluginProgress);
+    PluginProgress setPluginProgress(PluginProgress downloadPluginProgress);
+
+    boolean compareAndSetPluginProgress(PluginProgress expect, PluginProgress set);
 
     HashInfo getHashInfo();
 

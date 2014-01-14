@@ -857,36 +857,44 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /**
      * changes the enabled status of this DownloadLink, aborts download if its currently running
      */
-    public void setSkipReason(SkipReason skipReason) {
+    public SkipReason setSkipReason(SkipReason skipReason) {
         SkipReason old = this.skipReason.getAndSet(skipReason);
-        if (old == skipReason) { return; }
-        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SKIPPED, skipReason));
+        if (old != skipReason) {
+            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SKIPPED, skipReason));
+        }
+        return old;
     }
 
-    public void setFinalLinkState(FinalLinkState finalLinkState) {
-        if (this.finalLinkState.getAndSet(finalLinkState) == finalLinkState) { return; }
-        if (FinalLinkState.CheckFinished(finalLinkState)) {
-            setResumeable(false);
+    public FinalLinkState setFinalLinkState(FinalLinkState finalLinkState) {
+        FinalLinkState old = this.finalLinkState.getAndSet(finalLinkState);
+        if (old != finalLinkState) {
+            if (FinalLinkState.CheckFinished(finalLinkState)) {
+                setResumeable(false);
+            }
+            if (finalLinkState == null || !FinalLinkState.CheckFinished(finalLinkState)) {
+                setFinishedDate(-1);
+            }
+            if (finalLinkState == FinalLinkState.OFFLINE) {
+                setAvailable(false);
+            }
+            if (finalLinkState != FinalLinkState.FAILED_FATAL) {
+                setProperty(PROPERTY_CUSTOM_MESSAGE, Property.NULL);
+            }
+            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.FINAL_STATE, finalLinkState));
         }
-        if (finalLinkState == null || !FinalLinkState.CheckFinished(finalLinkState)) {
-            setFinishedDate(-1);
-        }
-        if (finalLinkState == FinalLinkState.OFFLINE) {
-            setAvailable(false);
-        }
-        if (finalLinkState != FinalLinkState.FAILED_FATAL) {
-            setProperty(PROPERTY_CUSTOM_MESSAGE, Property.NULL);
-        }
-        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.FINAL_STATE, finalLinkState));
+        return old;
     }
 
     public FinalLinkState getFinalLinkState() {
         return finalLinkState.get();
     }
 
-    public void setConditionalSkipReason(ConditionalSkipReason conditionalSkipReason) {
-        if (this.conditionalSkipReason.getAndSet(conditionalSkipReason) == conditionalSkipReason) return;
-        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CONDITIONAL_SKIPPED, conditionalSkipReason));
+    public ConditionalSkipReason setConditionalSkipReason(ConditionalSkipReason conditionalSkipReason) {
+        ConditionalSkipReason old = this.conditionalSkipReason.getAndSet(conditionalSkipReason);
+        if (old != conditionalSkipReason) {
+            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CONDITIONAL_SKIPPED, conditionalSkipReason));
+        }
+        return old;
     }
 
     public ConditionalSkipReason getConditionalSkipReason() {
@@ -1107,10 +1115,21 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getStringProperty(PROPERTY_MD5, (String) null);
     }
 
-    public void setPluginProgress(PluginProgress progress) {
-        if (pluginProgress.getAndSet(progress) == progress) return;
-        System.out.println("Progress " + progress);
-        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, progress));
+    public PluginProgress setPluginProgress(PluginProgress progress) {
+        PluginProgress ret = pluginProgress.getAndSet(progress);
+        if (ret != progress) {
+            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, progress));
+        }
+        return ret;
+    }
+
+    public boolean compareAndSetPluginProgress(PluginProgress expect, PluginProgress set) {
+        if (pluginProgress.compareAndSet(expect, set)) {
+            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, set));
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public PluginProgress getPluginProgress() {

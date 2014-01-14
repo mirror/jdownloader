@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -34,7 +35,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     private Archive            archive;
 
     public DownloadLinkArchiveFile(DownloadLink link) {
-        downloadLinks = new ArrayList<DownloadLink>();
+        downloadLinks = new CopyOnWriteArrayList<DownloadLink>();
         downloadLinks.add(link);
         name = new File(link.getFileOutput()).getName();
         filePath = link.getFileOutput();
@@ -87,7 +88,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         return name;
     }
 
-    public void setStatus(ExtractionStatus status) {
+    public void setStatus(ExtractionController controller, ExtractionStatus status) {
         for (DownloadLink downloadLink : downloadLinks) {
             downloadLink.setExtractionStatus(status);
             PluginProgress progress = downloadLink.getPluginProgress();
@@ -95,36 +96,29 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         }
     }
 
-    public void setMessage(String text) {
+    public void setMessage(ExtractionController controller, String text) {
         for (DownloadLink downloadLink : downloadLinks) {
             PluginProgress progress = downloadLink.getPluginProgress();
             if (progress != null && progress instanceof ExtractionProgress) ((ExtractionProgress) progress).setMessage(text);
         }
     }
 
-    public void setProgress(long value, long max, Color color) {
-
+    public void setProgress(ExtractionController controller, long value, long max, Color color) {
+        PluginProgress progress = controller.getExtractionProgress();
+        progress.updateValues(value, max);
+        progress.setColor(color);
         for (DownloadLink downloadLink : downloadLinks) {
             if (value <= 0 && max <= 0) {
-                downloadLink.setPluginProgress(null);
+                downloadLink.compareAndSetPluginProgress(progress, null);
             } else {
-                PluginProgress progress = downloadLink.getPluginProgress();
-                if (progress != null) {
-                    progress.updateValues(value, max);
-                    progress.setCurrent(value);
+                if (downloadLink.getPluginProgress() == progress || downloadLink.compareAndSetPluginProgress(null, progress)) {
                     FilePackageView view = downloadLink.getParentNode().getView();
                     if (view != null) {
                         view.requestUpdate();
                     }
-                } else {
-                    progress = new ExtractionProgress(value, max, color);
-                    progress.setProgressSource(this);
-                    downloadLink.setPluginProgress(progress);
                 }
-
             }
         }
-
     }
 
     @Override
@@ -140,8 +134,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public void addMirror(DownloadLink link) {
         downloadLinks.add(link);
-        size = Math.max(link.getDownloadSize(), size);
-
+        size = Math.max(link.getKnownDownloadSize(), size);
     }
 
     public void setProperty(String key, Object value) {
@@ -179,9 +172,8 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void onCleanedUp(final ExtractionController controller) {
-
         for (final DownloadLink downloadLink : downloadLinks) {
-            downloadLink.setPluginProgress(null);
+            downloadLink.compareAndSetPluginProgress(controller.getExtractionProgress(), null);
             switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
             case CLEANUP_IMMEDIATELY:
                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {

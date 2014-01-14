@@ -20,10 +20,15 @@ public class ExtractionProgress extends PluginProgress {
     protected long   startTimeStamp = -1;
     protected String message        = null;
 
-    public ExtractionProgress(long current, long total, Color color) {
+    public ExtractionProgress(ExtractionController controller, long current, long total, Color color) {
         super(current, total, color);
         setIcon(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16));
         message = T._.plugins_optional_extraction_status_extracting2();
+        super.setProgressSource(controller);
+    }
+
+    @Override
+    public void setProgressSource(Object progressSource) {
     }
 
     @Override

@@ -286,10 +286,10 @@ public class Archive {
     public void onCleanUp() {
     }
 
-    public void setStatus(ExtractionStatus status) {
+    public void setStatus(ExtractionController controller, ExtractionStatus status) {
         for (ArchiveFile link : getArchiveFiles()) {
             if (link == null) continue;
-            link.setStatus(status);
+            link.setStatus(controller, status);
         }
     }
 

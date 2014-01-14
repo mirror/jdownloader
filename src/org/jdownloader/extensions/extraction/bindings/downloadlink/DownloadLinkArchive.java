@@ -1,7 +1,7 @@
 package org.jdownloader.extensions.extraction.bindings.downloadlink;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.plugins.DownloadLink;
 
@@ -20,7 +20,7 @@ public class DownloadLinkArchive extends Archive {
 
     /* TODO: change this to use conditionalSkipReason(avoid DownloadWatchDog to catchUp the link) while the archive is extracting */
     public void onControllerAssigned(ExtractionController extractionController) {
-        disabledLinks = new ArrayList<DownloadLink>();
+        disabledLinks = new CopyOnWriteArrayList<DownloadLink>();
         for (ArchiveFile af : getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) {
                 List<DownloadLink> dlinks = ((DownloadLinkArchiveFile) af).getDownloadLinks();

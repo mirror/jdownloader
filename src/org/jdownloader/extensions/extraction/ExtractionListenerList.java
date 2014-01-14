@@ -63,6 +63,9 @@ import org.jdownloader.images.NewTheme;
 public class ExtractionListenerList implements ExtractionListener {
     private ExtractionExtension ex;
 
+    final private Color         green  = Color.GREEN.darker();
+    final private Color         yellow = Color.YELLOW.darker();
+
     ExtractionListenerList() {
         this.ex = ExtractionExtension.getInstance();
     }
@@ -73,13 +76,13 @@ public class ExtractionListenerList implements ExtractionListener {
 
         switch (event.getType()) {
         case QUEUED:
-            controller.getArchiv().setStatus(ExtractionStatus.IDLE);
-            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_queued());
+            controller.getArchiv().setStatus(controller, ExtractionStatus.IDLE);
+            controller.getArchiv().getFirstArchiveFile().setMessage(controller, T._.plugins_optional_extraction_status_queued());
             break;
         case EXTRACTION_FAILED:
             try {
                 logger.warning("Extraction failed");
-                controller.getArchiv().setStatus(ExtractionStatus.ERROR);
+                controller.getArchiv().setStatus(controller, ExtractionStatus.ERROR);
                 ArchiveFile af = null;
                 String errorMsg = T._.failed_no_details();
                 if (controller.getException() != null) {
@@ -91,10 +94,10 @@ public class ExtractionListenerList implements ExtractionListener {
                 for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                     if (link == null) continue;
                     if (af != null && af == link) {
-                        link.setStatus(ExtractionStatus.ERROR_CRC);
+                        link.setStatus(controller, ExtractionStatus.ERROR_CRC);
                     } else {
-                        link.setStatus(ExtractionStatus.ERROR);
-                        link.setMessage(errorMsg);
+                        link.setStatus(controller, ExtractionStatus.ERROR);
+                        link.setMessage(controller, errorMsg);
                     }
                 }
                 cleanUpIncomplete(controller);
@@ -177,7 +180,6 @@ public class ExtractionListenerList implements ExtractionListener {
                                 downloadLink = ((DownloadLinkArchiveFile) faf).getDownloadLinks().get(0);
                             }
                             if (downloadLink != null) {
-                                String path = downloadLink.getFileOutput();
                                 String packagename = downloadLink.getParentNode().getName();
                                 p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_archivename())), "split 2,sizegroup left,alignx left");
                                 p.add(leftLabel(controller.getArchiv().getName()));
@@ -227,7 +229,7 @@ public class ExtractionListenerList implements ExtractionListener {
 
                 String pass = UIOManager.I().show(InputDialogInterface.class, id).getText();
                 if (pass == null || pass.length() == 0) {
-                    controller.getArchiv().getFirstArchiveFile().setStatus(ExtractionStatus.ERROR_PW);
+                    controller.getArchiv().getFirstArchiveFile().setStatus(controller, ExtractionStatus.ERROR_PW);
                     ex.onFinished(controller);
                     break;
                 }
@@ -236,47 +238,45 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case START_CRACK_PASSWORD:
             try {
-                controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / controller.getPasswordListSize()) / 100.00));
+                controller.getArchiv().getFirstArchiveFile().setMessage(controller, T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / controller.getPasswordListSize()) / 100.00));
             } catch (Throwable e) {
-                controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
+                controller.getArchiv().getFirstArchiveFile().setMessage(controller, T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
             }
             break;
         case START:
-            controller.getArchiv().setStatus(ExtractionStatus.RUNNING);
+            controller.getArchiv().setStatus(controller, ExtractionStatus.RUNNING);
             break;
         case OPEN_ARCHIVE_SUCCESS:
             break;
         case PASSWORD_FOUND:
-            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_passfound());
-            controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
+            controller.getArchiv().getFirstArchiveFile().setMessage(controller, T._.plugins_optional_extraction_status_passfound());
+            controller.getArchiv().getFirstArchiveFile().setProgress(controller, 0, 0, green);
             break;
         case PASSWORT_CRACKING:
             try {
-                controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / controller.getPasswordListSize()) / 100.00));
+                controller.getArchiv().getFirstArchiveFile().setMessage(controller, T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * controller.getCrackProgress()) / controller.getPasswordListSize()) / 100.00));
             } catch (Throwable e) {
-                controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
-
+                controller.getArchiv().getFirstArchiveFile().setMessage(controller, T._.plugins_optional_extraction_status_crackingpass_progress(0.00d));
             }
-            controller.getArchiv().getFirstArchiveFile().setProgress(controller.getCrackProgress(), controller.getPasswordListSize(), Color.GREEN.darker());
+            controller.getArchiv().getFirstArchiveFile().setProgress(controller, controller.getCrackProgress(), controller.getPasswordListSize(), yellow);
             break;
         case EXTRACTING:
-
-            controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_extracting2());
-            controller.getArchiv().getFirstArchiveFile().setProgress((long) (controller.getProgress() * 100), 100, Color.YELLOW.darker());
+            controller.getArchiv().getFirstArchiveFile().setMessage(controller, T._.plugins_optional_extraction_status_extracting2());
+            controller.getArchiv().getFirstArchiveFile().setProgress(controller, controller.getProcessedBytes(), controller.getCompleteBytes(), green);
             break;
         case EXTRACTION_FAILED_CRC:
             try {
-                controller.getArchiv().setStatus(ExtractionStatus.ERROR);
+                controller.getArchiv().setStatus(controller, ExtractionStatus.ERROR);
                 logger.warning("Extraction failed(CRC)");
                 if (controller.getArchiv().getCrcError().size() != 0) {
                     for (ArchiveFile link : controller.getArchiv().getCrcError()) {
                         if (link == null) continue;
-                        link.setStatus(ExtractionStatus.ERROR_CRC);
+                        link.setStatus(controller, ExtractionStatus.ERROR_CRC);
                     }
                 } else {
                     for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                         if (link == null) continue;
-                        link.setMessage(T._.plugins_optional_extraction_error_extrfailedcrc());
+                        link.setMessage(controller, T._.plugins_optional_extraction_error_extrfailedcrc());
                     }
                 }
                 cleanUpIncomplete(controller);
@@ -287,7 +287,7 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case FINISHED:
             try {
-                controller.getArchiv().setStatus(ExtractionStatus.SUCCESSFUL);
+                controller.getArchiv().setStatus(controller, ExtractionStatus.SUCCESSFUL);
                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
@@ -309,7 +309,7 @@ public class ExtractionListenerList implements ExtractionListener {
             }
             break;
         case NOT_ENOUGH_SPACE:
-            controller.getArchiv().setStatus(ExtractionStatus.ERROR_NOT_ENOUGH_SPACE);
+            controller.getArchiv().setStatus(controller, ExtractionStatus.ERROR_NOT_ENOUGH_SPACE);
             ex.onFinished(controller);
             break;
         case CLEANUP:
@@ -323,7 +323,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     }
                 }
                 if (controller.gotKilled()) {
-                    controller.getArchiv().getFirstArchiveFile().setMessage(null);
+                    controller.getArchiv().getFirstArchiveFile().setMessage(controller, null);
                     for (File f : controller.getArchiv().getExtractedFiles()) {
                         if (f.exists()) {
                             if (!FileCreationManager.getInstance().delete(f, null)) {
@@ -336,7 +336,7 @@ public class ExtractionListenerList implements ExtractionListener {
                 }
             } finally {
                 controller.getArchiv().setActive(false);
-                controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
+                controller.getArchiv().getFirstArchiveFile().setProgress(controller, 0, 0, null);
                 ex.removeArchive(controller.getArchiv());
                 if (controller.isSuccessful() && !controller.getArchiv().getGotInterrupted()) {
 
@@ -352,9 +352,9 @@ public class ExtractionListenerList implements ExtractionListener {
             try {
                 logger.warning("FileNotFound");
                 if (controller.getArchiv().getCrcError().size() != 0) {
-                    controller.getArchiv().setStatus(ExtractionStatus.ERROR_CRC);
+                    controller.getArchiv().setStatus(controller, ExtractionStatus.ERROR_CRC);
                 } else {
-                    controller.getArchiv().setStatus(ExtractionStatus.ERRROR_FILE_NOT_FOUND);
+                    controller.getArchiv().setStatus(controller, ExtractionStatus.ERRROR_FILE_NOT_FOUND);
                 }
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {

@@ -246,6 +246,7 @@ public abstract class PluginForHost extends Plugin {
         CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         this.hasCaptchas = true;
+        PluginProgress old = null;
         try {
             // try {
             // final BufferedImage img = ImageProvider.read(file);
@@ -253,7 +254,7 @@ public abstract class PluginForHost extends Plugin {
             // } catch (Throwable e) {
             // e.printStackTrace();
             // }
-            link.setPluginProgress(progress);
+            old = link.setPluginProgress(progress);
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
                 file = new File(orgCaptchaImage);
@@ -339,7 +340,7 @@ public abstract class PluginForHost extends Plugin {
             }
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } finally {
-            link.setPluginProgress(null);
+            link.compareAndSetPluginProgress(progress, old);
         }
     }
 
@@ -755,6 +756,7 @@ public abstract class PluginForHost extends Plugin {
         };
         progress.setIcon(NewTheme.I().getIcon("wait", 16));
         progress.setProgressSource(this);
+        PluginProgress old = null;
         try {
             long lastQueuePosition = -1;
             long waitQueuePosition = -1;
@@ -769,7 +771,7 @@ public abstract class PluginForHost extends Plugin {
                 if (waitCur <= 0) {
                     break;
                 }
-                downloadLink.setPluginProgress(progress);
+                old = downloadLink.setPluginProgress(progress);
                 progress.updateValues(waitCur, waitMax);
                 long wTimeout = Math.min(1000, Math.max(0, waitCur));
                 synchronized (this) {
@@ -783,7 +785,7 @@ public abstract class PluginForHost extends Plugin {
             if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
             throw e;
         } finally {
-            downloadLink.setPluginProgress(null);
+            downloadLink.compareAndSetPluginProgress(progress, old);
         }
     }
 
@@ -837,8 +839,9 @@ public abstract class PluginForHost extends Plugin {
         };
         progress.setIcon(NewTheme.I().getIcon("wait", 16));
         progress.setProgressSource(this);
+        PluginProgress old = null;
         try {
-            downloadLink.setPluginProgress(progress);
+            old = downloadLink.setPluginProgress(progress);
             while (i > 0) {
                 progress.setCurrent(i);
                 synchronized (this) {
@@ -849,7 +852,7 @@ public abstract class PluginForHost extends Plugin {
         } catch (InterruptedException e) {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         } finally {
-            downloadLink.setPluginProgress(null);
+            downloadLink.compareAndSetPluginProgress(progress, old);
         }
         if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
     }

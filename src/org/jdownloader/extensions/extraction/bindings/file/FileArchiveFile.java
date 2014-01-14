@@ -59,13 +59,13 @@ public class FileArchiveFile implements ArchiveFile {
         return name;
     }
 
-    public void setStatus(ExtractionStatus error) {
+    public void setStatus(ExtractionController controller, ExtractionStatus error) {
     }
 
-    public void setMessage(String plugins_optional_extraction_status_notenoughspace) {
+    public void setMessage(ExtractionController controller, String plugins_optional_extraction_status_notenoughspace) {
     }
 
-    public void setProgress(long value, long max, Color color) {
+    public void setProgress(ExtractionController controller, long value, long max, Color color) {
     }
 
     @Override

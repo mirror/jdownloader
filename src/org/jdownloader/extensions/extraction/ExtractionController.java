@@ -79,16 +79,17 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return this.processedBytes.addAndGet(Math.max(0, processedBytes));
     }
 
-    private boolean              removeDownloadLinksAfterExtraction;
-    private ExtractionExtension  extension;
-    private final LogSource      logger;
-    private FileSignatures       fileSignatures        = null;
-    private IfFileExistsAction   ifFileExistsAction;
-    private File                 extractToFolder;
-    private boolean              successful            = false;
-    private ExtractLogFileWriter crashLog;
-    private boolean              askForUnknownPassword = false;
-    private Item                 currentActiveItem;
+    private boolean                  removeDownloadLinksAfterExtraction;
+    private ExtractionExtension      extension;
+    private final LogSource          logger;
+    private FileSignatures           fileSignatures        = null;
+    private IfFileExistsAction       ifFileExistsAction;
+    private File                     extractToFolder;
+    private boolean                  successful            = false;
+    private ExtractLogFileWriter     crashLog;
+    private boolean                  askForUnknownPassword = false;
+    private Item                     currentActiveItem;
+    private final ExtractionProgress extractionProgress;
 
     public boolean isSuccessful() {
         return successful;
@@ -103,12 +104,17 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return fileSignatures;
     }
 
+    public ExtractionProgress getExtractionProgress() {
+        return extractionProgress;
+    }
+
     ExtractionController(ExtractionExtension extractionExtension, Archive archiv, IExtraction extractor) {
         this.archive = archiv;
         logger = LogController.CL(false);
         logger.setAllowTimeoutFlush(false);
         logger.info("Extraction of" + archive);
         this.extractor = extractor;
+        extractionProgress = new ExtractionProgress(this, 0, 0, null);
         extractor.setArchiv(archiv);
         extractor.setExtractionController(this);
         extension = extractionExtension;
@@ -431,9 +437,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      */
     void removeArchiveFiles() {
         for (ArchiveFile link : archive.getArchiveFiles()) {
-
             link.deleteFile(removeAfterExtractionAction);
-
             if (isRemoveDownloadLinksAfterExtraction()) {
                 link.deleteLink();
             }

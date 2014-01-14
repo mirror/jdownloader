@@ -700,7 +700,7 @@ public class YoutubeDashV2 extends PluginForHost {
             }
 
             @Override
-            public void setPluginProgress(final PluginProgress progress) {
+            public PluginProgress setPluginProgress(final PluginProgress progress) {
                 if (progress != null && progress instanceof DownloadPluginProgress) {
                     DownloadPluginProgress dashVideoProgress = new DownloadPluginProgress(this, (DownloadInterface) progress.getProgressSource(), progress.getColor()) {
                         @Override
@@ -721,10 +721,9 @@ public class YoutubeDashV2 extends PluginForHost {
                             return ((DownloadInterface) progress.getProgressSource()).getManagedConnetionHandler().getSpeed();
                         }
                     };
-                    downloadLink.setPluginProgress(dashVideoProgress);
-                    return;
+                    return downloadLink.setPluginProgress(dashVideoProgress);
                 }
-                downloadLink.setPluginProgress(progress);
+                return downloadLink.setPluginProgress(progress);
             }
         };
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream());
