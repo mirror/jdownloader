@@ -4,7 +4,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public abstract class CustomizableTableContextAppAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableSelectionAppAction<PackageType, ChildrenType> {
-    private TableContext tableContext;
+    protected TableContext tableContext;
 
     public CustomizableTableContextAppAction(boolean empty, boolean selection) {
         super();

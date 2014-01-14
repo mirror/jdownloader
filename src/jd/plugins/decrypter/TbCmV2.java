@@ -520,14 +520,27 @@ public class TbCmV2 extends PluginForDecrypt {
             while (true) {
                 if (this.isAbort()) { throw new InterruptedException(); }
 
+                // br.getHeaders().put("Cookie", "");
                 br.getPage(cryptedUrl);
                 checkErrors(br);
-                String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
+
+                String[] videos = br.getRegex("data\\-video\\-id=\"([^\"]+)").getColumn(0);
                 if (videos != null) {
-                    for (String relativeUrl : videos) {
-                        String id = getVideoIDByUrl(relativeUrl);
+                    for (String id : videos) {
+
                         if (dupeCheckSet.add(id)) {
                             ret.add(new YoutubeClipData(id, counter++));
+                        }
+                    }
+                }
+                if (ret.size() == 0) {
+                    videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
+                    if (videos != null) {
+                        for (String relativeUrl : videos) {
+                            String id = getVideoIDByUrl(relativeUrl);
+                            if (dupeCheckSet.add(id)) {
+                                ret.add(new YoutubeClipData(id, counter++));
+                            }
                         }
                     }
                 }
@@ -672,6 +685,7 @@ public class TbCmV2 extends PluginForDecrypt {
      * @throws InterruptedException
      */
     public ArrayList<YoutubeClipData> parsePlaylist(String playlistID) throws IOException, InterruptedException {
+        // this returns the html5 player
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         if (StringUtils.isNotEmpty(playlistID)) {
             int page = 1;
@@ -715,6 +729,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 if (this.isAbort()) { throw new InterruptedException(); }
                 String content = null;
                 if (pageUrl == null) {
+                    // this returns the html5 player
                     br.getPage(getBase() + "/user/" + userID + "/videos?view=0");
 
                     checkErrors(br);

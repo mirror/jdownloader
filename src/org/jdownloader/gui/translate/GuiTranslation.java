@@ -3812,4 +3812,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "<html>If you want JDownloader to create more links besides the 'Best Quality Links', you can set this up below.</html>" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc();
+
+    @Default(lngs = { "en" }, values = { "Paste Links (Deep Crawler)" })
+    String PasteContextLinksAction_deep();
+
+    @Default(lngs = { "en" }, values = { "Paste Links" })
+    String PasteContextLinksAction();
 }

@@ -82,6 +82,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         MenuContainerRoot mr = new MenuContainerRoot();
 
         mr.add(AddLinksContextMenuAction.class);
+        mr.add(PasteContextLinksAction.class);
         mr.add(AddContainerContextMenuAction.class);
 
         mr.add(new SeperatorData());

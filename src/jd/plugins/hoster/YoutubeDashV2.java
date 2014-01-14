@@ -73,18 +73,19 @@ import org.jdownloader.translate._JDT;
 @HostPlugin(revision = "$Revision: 24000 $", interfaceVersion = 3, names = { "youtube.jd" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
 
-    private final String  DASH_AUDIO_SIZE     = "DASH_AUDIO_SIZE";
-    private final String  DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";
-    private final String  DASH_AUDIO_CHUNKS   = "DASH_AUDIO_CHUNKS";
-    private final String  DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
+    private final String           DASH_AUDIO_SIZE     = "DASH_AUDIO_SIZE";
+    private final String           DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";
+    private final String           DASH_AUDIO_CHUNKS   = "DASH_AUDIO_CHUNKS";
+    private final String           DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
 
-    private final String  DASH_VIDEO_SIZE     = "DASH_VIDEO_SIZE";
-    private final String  DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
-    private final String  DASH_VIDEO_CHUNKS   = "DASH_VIDEO_CHUNKS";
-    private final String  DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
+    private final String           DASH_VIDEO_SIZE     = "DASH_VIDEO_SIZE";
+    private final String           DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
+    private final String           DASH_VIDEO_CHUNKS   = "DASH_VIDEO_CHUNKS";
+    private final String           DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
 
-    private YoutubeConfig cfg;
-    private YoutubeHelper cachedHelper;
+    private YoutubeConfig          cfg;
+    private YoutubeHelper          cachedHelper;
+    private YoutubeDashConfigPanel configPanel;
 
     @Override
     public String getAGBLink() {
@@ -294,7 +295,11 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public PluginConfigPanelNG createConfigPanel() {
-        return new YoutubeDashConfigPanel(getDescription());
+        YoutubeDashConfigPanel panel = this.configPanel;
+        if (panel == null) {
+            panel = this.configPanel = new YoutubeDashConfigPanel(getDescription());
+        }
+        return panel;
     }
 
     public class UrlCollection {
