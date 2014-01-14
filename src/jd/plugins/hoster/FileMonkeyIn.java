@@ -166,7 +166,7 @@ public class FileMonkeyIn extends PluginForHost {
                         continue;
                     }
                     final String name = new Regex(filter, "\"name\":\"?([^\"]+)").getMatch(0);
-                    if (name != null) dl.setName(name.trim());
+                    if (name != null) dl.setFinalFileName(name.trim());
                     final String size = new Regex(filter, "\"size\":\"?(\\d+)").getMatch(0);
                     if (size != null) {
                         dl.setDownloadSize(Long.parseLong(size));
