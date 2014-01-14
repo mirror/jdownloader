@@ -75,6 +75,7 @@ public class MovShareNet extends PluginForHost {
         if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| MovShare</title>").getMatch(0);
+        if (br.containsHTML("<strong>Title:</strong> Untitled</p>") && filename == null) filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         if (br.getURL().contains("movshare.net/")) {

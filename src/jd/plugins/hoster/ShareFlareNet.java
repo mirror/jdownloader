@@ -578,7 +578,7 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     private void handleNonApiErrors(final DownloadLink dl) throws IOException, PluginException {
-        if (br.containsHTML(TEMPDISABLED)) {
+        if (br.containsHTML(TEMPDISABLED) && !br.containsHTML(">For logging in, your E-mail will be used as your username\\. The password will be sent to your E\\-mail\\.</p>[\t\n\r ]+<script type=\"text/javascript\" src=\"http://www\\.google\\.com/recaptcha")) {
             br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/check_link\",{\"link\":\"" + dl.getDownloadURL() + "\"}]]"));
             final String availableMirrors = br.getRegex("\"data\":\\[(\\d+)\\]").getMatch(0);
             if (availableMirrors != null) {

@@ -41,7 +41,7 @@ public class DhSt extends PluginForHost {
         return "http://d-h.st/tos";
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos)";
+    private static final String INVALIDLINKS = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users|)";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -49,7 +49,7 @@ public class DhSt extends PluginForHost {
         br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File Not Found<|>The file you were looking for could not be found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>File Not Found<|>The file you were looking for could not be found)") || br.getURL().equals("http://d-h.st/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // For invalid links
         if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Filename:</span> <div title=\"([^<>\"]*?)\"").getMatch(0);

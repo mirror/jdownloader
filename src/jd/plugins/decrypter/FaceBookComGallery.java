@@ -437,7 +437,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Returning already decrypted links anyways...");
                     break;
                 }
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22" + appcollection + "%3A5%22%2C%22cursor%22%3A%22MDpub3Rfc3RydWN0dXJlZDozNjI0NTQ4NjM4MjU3MDE%3D%22%2C%22tab_key%22%3A%22photos_all%22%2C%22profile_id%22%3A100001835729237%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8apij2qmp5xl2u5Fa9jzy0zCwKyaF298y&__req=r&__rev=1076786" + "&__req=jsonp_" + i + "&__adt=" + i;
+                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22" + Encoding.urlEncode(appcollection) + "%3A5%22%2C%22cursor%22%3A%22MDpub3Rfc3RydWN0dXJlZDozNjI0NTQ4NjM4MjU3MDE%3D%22%2C%22tab_key%22%3A%22photos_all%22%2C%22profile_id%22%3A" + profileowner + "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user=" + user + "&__a=1&__dyn=7n8apij2qmp5xl2u5Fa9jzy0zCwKyaF298y&__req=r&__rev=1076786" + "&__req=jsonp_" + i + "&__adt=" + i;
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                 currentMaxPicCount = 40;

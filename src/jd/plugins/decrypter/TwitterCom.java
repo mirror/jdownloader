@@ -66,7 +66,7 @@ public class TwitterCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String[] youtubeVideos = br.getRegex("data\\-expanded\\-url=\"(https?://youtu\\.be/[A-Za-z0-9\\-_]+)\"").getColumn(0);
+            final String[] youtubeVideos = br.getRegex("\"(https?://(www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"").getColumn(0);
 
             int addedpicsall = 0;
             final String[] regexes = new String[] { "data\\-url=\\&quot;(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)\\&", "data\\-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
