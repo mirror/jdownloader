@@ -119,6 +119,6 @@ proxy_none=Directo
 proxy_socks4=%s1:%s2 (Proxy Socks4)
 proxy_socks5=%s1:%s2 (Proxy Socks5)
 proxydialog_title=Sin conexión a la Internet
-tableheader_tooltip_locked=%s1 (Cambiar el tamaño del Bloqueo)
+tableheader_tooltip_locked=%s1 (Cambiar el tamaño está bloqueado)
 tableheader_tooltip_normal=%s1
 unLockColumnWidthAction2=Ancho de columna bloqueado
