@@ -104,15 +104,15 @@ public class Zippysharecom extends PluginForHost {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
-        String[] docfn = new Regex(fun, "var \\w+ = document\\.getElementById\\(\'(.*?)\'\\)\\.getAttribute\\(\'(.*?)\'\\)").getRow(0);
-        if (!fromFlash && docfn == null) return null;
         try {
-            if (!fromFlash || docfn != null) {
-                String value = br.getRegex("id=\"" + docfn[0] + "\" " + docfn[1] + "=\"(\\d+)\" ").getMatch(0);
-                // document.getElementById('id').getAttribute('class')
-                engine.eval("var document = { getElementById : function(a) { var newObj = new Object(); function getAttribute(b) { return " + value + "; } newObj.getAttribute = getAttribute; return newObj;}};");
+            if (!fromFlash) {
+                // document.getElementById('id').href
+                engine.eval("var doc = { getElementById : function(a) { var newObj = new Object(); function href() { return a.href; } newObj.href = href(); return newObj;}};");
+                engine.eval(fun);
+                result = engine.get("result");
+            } else {
+                result = ((Double) engine.eval(fun)).intValue();
             }
-            result = ((Double) engine.eval(fun)).intValue();
         } catch (final Throwable e) {
             return null;
         }
@@ -225,21 +225,14 @@ public class Zippysharecom extends PluginForHost {
                     DLLINK = DLLINK.replace("'+" + var + "+'", data);
                 }
             } else {
-                DLLINK = br.getRegex("document\\.getElementById\\(\\'dlbutton\\'\\).href = \"/(.*?)\";").getMatch(0);
-                String math = br.getRegex("\r?\n<script type=\"text/javascript\">(.*?)if.*?</script>\r?\n").getMatch(0);
-                math = math.replaceAll("document\\.getElementById\\(\\'dlbutton\\'\\)\\.|\r?\n", "");
+                DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\).href = \"/.*?\";)").getMatch(0);
+                String math = br.getRegex("\r?\n<script type=\"text/javascript\">(.*?)</script>\r?\n").getMatch(0);
                 if (DLLINK != null && math != null) {
-                    final String var = new Regex(DLLINK, "\"\\s*\\+\\s*(.*?)\\s*\\+\\s*\"").getMatch(0);
-                    final String varZ = new Regex(math, "\"\\s*\\+\\s*(.*?)\\s*\\+\\s*\"").getMatch(0);
-                    if (varZ != null) {
-                        math += varZ;
-                    }
-                    String data = execJS(math, true);
-                    if (data == null) data = execJS(math, false);
-                    if (DLLINK.contains(var)) {
-                        DLLINK = DLLINK.replace("\"+" + var + "+\"", data);
-                    }
-                    DLLINK = mainpage + DLLINK;
+                    math = math.replace(DLLINK, "var result = " + DLLINK).replace("document", "doc");
+                    String data = execJS(math, false);
+                    if (data == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (data.startsWith("/")) data = data.substring(1);
+                    DLLINK = mainpage + data;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
