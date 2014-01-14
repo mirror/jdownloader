@@ -166,13 +166,11 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                                             }
                                                             break;
                                                         }
-
                                                     }
                                                 }
-
                                             };
                                             try {
-                                                _getExtension().getEventSender().addListener(listener);
+                                                _getExtension().getEventSender().addListener(listener, true);
                                                 while (!controller.isFinished()) {
                                                     Thread.sleep(1000);
                                                 }
@@ -183,7 +181,6 @@ public class ExtractAction extends AbstractExtractionContextAction {
 
                                         }
                                     } else {
-
                                         new ValidateArchiveAction(_getExtension(), archive).actionPerformed(null);
                                     }
                                 }

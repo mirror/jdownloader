@@ -8,26 +8,26 @@ import java.util.Map;
 
 public class PackedFile implements ContentNode {
 
-    private long size;
+    private volatile long size;
 
     public long getSize() {
         return size;
     }
 
-    public List<PackedFile> list() {
+    public synchronized List<PackedFile> list() {
         return new ArrayList<PackedFile>(children.values());
     }
 
-    private String                  path;
-    private boolean                 directory;
-    private Map<String, PackedFile> children = new HashMap<String, PackedFile>();
+    private final String                  path;
+    private final boolean                 directory;
+    private final Map<String, PackedFile> children = new HashMap<String, PackedFile>();
 
     public Map<String, PackedFile> getChildren() {
         return children;
     }
 
-    private long directorySize = 0;
-    private int  fileCount     = 0;
+    private volatile long directorySize = 0;
+    private volatile int  fileCount     = 0;
 
     public int getFileCount() {
         return fileCount;
@@ -59,7 +59,7 @@ public class PackedFile implements ContentNode {
         return new File(path).getParent();
     }
 
-    public void add(PackedFile packedFile) {
+    public synchronized void add(PackedFile packedFile) {
         children.put(packedFile.getName(), packedFile);
         if (!packedFile.isDirectory()) {
             directorySize += packedFile.getSize();

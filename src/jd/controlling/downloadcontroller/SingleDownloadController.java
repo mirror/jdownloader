@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
@@ -249,7 +250,34 @@ public class SingleDownloadController extends BrowserSettingsThread {
                 break;
             }
             downloadLink.setLivePlugin(livePlugin);
-            watchDog.localFileCheck(this, null, null);
+            watchDog.localFileCheck(this, new ExceptionRunnable() {
+
+                @Override
+                public void run() throws Exception {
+                    final File partFile = new File(getDownloadLink().getFileOutput() + ".part");
+                    long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), getDownloadLink().getDownloadCurrent());
+                    final long remainingSize = downloadLink.getKnownDownloadSize() - Math.max(0, doneSize);
+                    DISKSPACERESERVATIONRESULT result = watchDog.getSession().getDiskSpaceManager().check(new DiskSpaceReservation() {
+
+                        @Override
+                        public File getDestination() {
+                            return partFile;
+                        }
+
+                        @Override
+                        public long getSize() {
+                            return remainingSize;
+                        }
+
+                    });
+                    switch (result) {
+                    case FAILED:
+                        throw new SkipReasonException(SkipReason.DISK_FULL);
+                    case INVALIDDESTINATION:
+                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                    }
+                }
+            }, null);
             try {
                 startTimestamp = System.currentTimeMillis();
                 switch (candidate.getCachedAccount().getType()) {

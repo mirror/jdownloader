@@ -3,6 +3,7 @@ package org.jdownloader.downloadcore.v15;
 import java.io.File;
 import java.util.logging.Logger;
 
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
@@ -37,7 +38,15 @@ public interface Downloadable {
 
     boolean isDebug();
 
+    public DiskSpaceReservation createDiskSpaceReservation();
+
+    public void checkAndReserve(DiskSpaceReservation reservation) throws Exception;
+
+    public void free(DiskSpaceReservation reservation);
+
     void setDownloadTotalBytes(long l);
+
+    public long getDownloadBytesLoaded();
 
     long[] getChunksProgress();
 

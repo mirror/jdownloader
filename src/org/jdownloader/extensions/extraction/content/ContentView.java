@@ -4,7 +4,7 @@ import java.io.File;
 
 public class ContentView extends PackedFile {
 
-    private int totalFolderCount = 0;
+    private volatile int totalFolderCount = 0;
 
     public int getTotalFolderCount() {
         return totalFolderCount;
@@ -26,7 +26,7 @@ public class ContentView extends PackedFile {
     }
 
     @Override
-    public void add(PackedFile packedFile) {
+    public synchronized void add(PackedFile packedFile) {
         ContentNode p = mkParent(packedFile.getParent());
 
         if (!packedFile.isDirectory()) {

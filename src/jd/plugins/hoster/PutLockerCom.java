@@ -434,7 +434,7 @@ public class PutLockerCom extends PluginForHost {
     }
 
     private String getCaptchaIMG() {
-        return br.getRegex("<img src=\"(/include/captcha.php\\?[^<>\"]+)\"/>").getMatch(0);
+        return br.getRegex("<img src=\"(/include/captcha.php\\?[^<>\"]+)\".*?/>").getMatch(0);
     }
 
     private void fixFilename(final DownloadLink downloadLink) {

@@ -128,7 +128,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isBalloonNotificationEnabled();
 
     @AboutConfig
-    @DescriptionForConfigEntry("Enable/disable Enable/disable Clipboard monitoring")
+    @DescriptionForConfigEntry("Enable/disable Clipboard monitoring")
     @DefaultBooleanValue(true)
     boolean isClipboardMonitored();
 
@@ -137,6 +137,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSkipClipboardMonitorFirstRound();
 
     void setSkipClipboardMonitorFirstRound(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Enable/disable HTML-Flavor(Browser selection) Clipboard monitoring")
+    @RequiresRestart("A JDownloader Restart is Required")
+    boolean isClipboardMonitorProcessHTMLFlavor();
+
+    void setClipboardMonitorProcessHTMLFlavor(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(true)

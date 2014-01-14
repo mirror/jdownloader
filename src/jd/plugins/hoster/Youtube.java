@@ -450,7 +450,6 @@ public class Youtube extends PluginForHost {
         // System.out.println("Youtube: " + downloadLink);
         if (downloadLink.getBooleanProperty("DASH", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         if (downloadLink.getBooleanProperty("subtitle", false) || downloadLink.getBooleanProperty("thumbnail", false)) {
             URLConnectionAdapter urlConnection = null;
             String ae = br.getHeaders().get("Accept-Encoding");
@@ -462,7 +461,7 @@ public class Youtube extends PluginForHost {
                 if (size != null) {
                     long contentSize = Long.parseLong(size);
                     downloadLink.setDownloadSize(contentSize);
-                    downloadLink.setProperty("PROPERTY_VERIFIEDFILESIZE", contentSize);
+                    downloadLink.setProperty("VERIFIEDFILESIZE", contentSize);
                 }
                 // br.followConnection();
                 return AvailableStatus.TRUE;

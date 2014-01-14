@@ -69,15 +69,12 @@ public class HJSplit extends IExtraction {
             File f = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+$", ""));
             String extension = SplitUtil.getCutKillerExtension(archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()), archive.getArchiveFiles().size());
             boolean ret;
-
             if (extension != null) {
-
                 f = new File(f.getAbsolutePath() + "." + extension);
                 ret = SplitUtil.merge(controller, f, 8, config);
             } else {
                 ret = SplitUtil.merge(controller, f, 0, config);
             }
-
             if (ret) {
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
             }

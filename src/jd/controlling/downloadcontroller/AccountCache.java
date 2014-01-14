@@ -80,7 +80,9 @@ public class AccountCache implements Iterable<CachedAccount> {
 
         public boolean canHandle(DownloadLink link) {
             if (plugin == null) return false;
-            boolean canHandle = plugin.canHandle(link, account) && plugin.enoughTrafficFor(link, account);
+            PluginForHost linkPlugin = link.getDefaultPlugin();
+            boolean canHandle = linkPlugin == null ? true : linkPlugin.allowHandle(link, plugin);
+            if (canHandle) canHandle = plugin.canHandle(link, account) && plugin.enoughTrafficFor(link, account);
             if (canHandle && ACCOUNTTYPE.MULTI.equals(getType()) && getAccount() != null) {
                 AccountInfo ai = getAccount().getAccountInfo();
                 /* verify again because plugins can modify list on runtime */

@@ -95,16 +95,25 @@ public class ClipboardMonitoring {
     }
 
     private static ClipboardMonitoring  INSTANCE            = new ClipboardMonitoring();
-    private static DataFlavor           urlFlavor           = null;
-    private static DataFlavor           uriListFlavor       = null;
+    private static DataFlavor           URLFLAVOR           = null;
+    private static DataFlavor           URILISTFLAVOR       = null;
     private volatile Thread             monitoringThread    = null;
     private Clipboard                   clipboard           = null;
     private volatile boolean            skipChangeDetection = false;
-    private static WindowsClipboardHack clipboardHack       = null;
-    private static boolean              firstRoundDone      = true;
+    private static WindowsClipboardHack CLIPBOARDHACK       = null;
+    private static boolean              FIRSTROUNDDONE      = true;
+    private static volatile boolean     HTMLFLAVORALLOWED   = true;
 
-    public void setFirstRoundDone(boolean b) {
-        firstRoundDone = b;
+    public static boolean isHtmlFlavorAllowed() {
+        return HTMLFLAVORALLOWED;
+    }
+
+    public static void setHtmlFlavorAllowed(boolean htmlFlavor) {
+        ClipboardMonitoring.HTMLFLAVORALLOWED = htmlFlavor;
+    }
+
+    public static void setFirstRoundDone(boolean b) {
+        FIRSTROUNDDONE = b;
     }
 
     private boolean ignoreTransferable(Transferable transferable) {
@@ -159,6 +168,7 @@ public class ClipboardMonitoring {
                             /* we have Package/Children in clipboard, skip them */
                             continue;
                         }
+                        final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
                         String handleThisRound = null;
                         try {
                             /* change detection for List/URI content */
@@ -191,14 +201,18 @@ public class ClipboardMonitoring {
                                         /*
                                          * lets fetch fresh HTML Content if available
                                          */
-                                        String htmlContent = getHTMLTransferData(currentContent);
-                                        if (htmlContent != null) {
-                                            /*
-                                             * remember that we had HTML content this round
-                                             */
-                                            oldHTMLContent = htmlContent;
-                                            handleThisRound = handleThisRound + "\r\n" + htmlContent;
-                                            lastBrowserUrl = getCurrentBrowserURL(currentContent);
+                                        if (htmlFlavorAllowed) {
+                                            String htmlContent = getHTMLTransferData(currentContent);
+                                            if (htmlContent != null) {
+                                                /*
+                                                 * remember that we had HTML content this round
+                                                 */
+                                                oldHTMLContent = htmlContent;
+                                                handleThisRound = handleThisRound + "\r\n" + htmlContent;
+                                                lastBrowserUrl = getCurrentBrowserURL(currentContent);
+                                            } else {
+                                                oldHTMLContent = null;
+                                            }
                                         } else {
                                             oldHTMLContent = null;
                                         }
@@ -212,15 +226,19 @@ public class ClipboardMonitoring {
                                         /*
                                          * lets fetch fresh HTML Content if available
                                          */
-                                        String htmlContent = getHTMLTransferData(currentContent);
-                                        if (htmlContent != null) {
-                                            /*
-                                             * remember that we had HTML content this round
-                                             */
-                                            if (changeDetector(oldHTMLContent, htmlContent)) {
-                                                oldHTMLContent = htmlContent;
-                                                handleThisRound = newStringContent + "\r\n" + htmlContent;
-                                                lastBrowserUrl = getCurrentBrowserURL(currentContent);
+                                        if (htmlFlavorAllowed) {
+                                            String htmlContent = getHTMLTransferData(currentContent);
+                                            if (htmlContent != null) {
+                                                /*
+                                                 * remember that we had HTML content this round
+                                                 */
+                                                if (changeDetector(oldHTMLContent, htmlContent)) {
+                                                    oldHTMLContent = htmlContent;
+                                                    handleThisRound = newStringContent + "\r\n" + htmlContent;
+                                                    lastBrowserUrl = getCurrentBrowserURL(currentContent);
+                                                }
+                                            } else {
+                                                oldHTMLContent = null;
                                             }
                                         } else {
                                             oldHTMLContent = null;
@@ -233,7 +251,7 @@ public class ClipboardMonitoring {
                             }
                         }
                         if (!StringUtils.isEmpty(handleThisRound)) {
-                            if (firstRoundDone) {
+                            if (FIRSTROUNDDONE) {
                                 waitTimeout = minWaitTimeout;
                                 LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CLIPBOARD, handleThisRound);
                                 final HashSet<String> pws = PasswordUtils.getPasswords(handleThisRound);
@@ -249,7 +267,7 @@ public class ClipboardMonitoring {
                                 job.setCustomSourceUrl(lastBrowserUrl);
                                 LinkCollector.getInstance().addCrawlerJob(job);
                             } else {
-                                firstRoundDone = true;
+                                FIRSTROUNDDONE = true;
                             }
                         }
                     } catch (final Throwable e) {
@@ -345,7 +363,7 @@ public class ClipboardMonitoring {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         if (CrossSystem.isWindows()) {
             try {
-                clipboardHack = new WindowsClipboardHack(clipboard);
+                CLIPBOARDHACK = new WindowsClipboardHack(clipboard);
             } catch (final Throwable e) {
                 LogController.CL().log(e);
             }
@@ -354,12 +372,12 @@ public class ClipboardMonitoring {
 
     static {
         try {
-            urlFlavor = new DataFlavor("application/x-java-url; class=java.net.URL");
+            URLFLAVOR = new DataFlavor("application/x-java-url; class=java.net.URL");
         } catch (final Throwable e) {
             LogController.CL().info("urlFlavor not supported");
         }
         try {
-            uriListFlavor = new DataFlavor("text/uri-list; class=java.lang.String");
+            URILISTFLAVOR = new DataFlavor("text/uri-list; class=java.lang.String");
         } catch (final Throwable e) {
             LogController.CL().info("uriListFlavor not supported");
         }
@@ -426,11 +444,11 @@ public class ClipboardMonitoring {
              * string and html always come together, so no need to check for html
              */
             return true;
-        } else if (urlFlavor != null && transferable.isDataFlavorSupported(urlFlavor)) {
+        } else if (URLFLAVOR != null && transferable.isDataFlavorSupported(URLFLAVOR)) {
             return true;
         } else if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             return true;
-        } else if (uriListFlavor != null && transferable.isDataFlavorSupported(uriListFlavor)) {
+        } else if (URILISTFLAVOR != null && transferable.isDataFlavorSupported(URILISTFLAVOR)) {
             return true;
         } else {
             return false;
@@ -491,8 +509,8 @@ public class ClipboardMonitoring {
     }
 
     public static String getURLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        if (urlFlavor != null && transferable.isDataFlavorSupported(urlFlavor)) {
-            Object ret = transferable.getTransferData(urlFlavor);
+        if (URLFLAVOR != null && transferable.isDataFlavorSupported(URLFLAVOR)) {
+            Object ret = transferable.getTransferData(URLFLAVOR);
             if (ret == null) return null;
             URL url = (URL) ret;
             if (StringUtils.isEmpty(url.getFile())) return null;
@@ -515,9 +533,9 @@ public class ClipboardMonitoring {
                 }
             }
         }
-        if (uriListFlavor != null && transferable.isDataFlavorSupported(uriListFlavor)) {
+        if (URILISTFLAVOR != null && transferable.isDataFlavorSupported(URILISTFLAVOR)) {
             /* url-lists are defined by rfc 2483 as crlf-delimited */
-            Object ret = transferable.getTransferData(uriListFlavor);
+            Object ret = transferable.getTransferData(URILISTFLAVOR);
             if (ret != null) {
                 final StringTokenizer izer = new StringTokenizer((String) ret, "\r\n");
                 while (izer.hasMoreTokens()) {
@@ -576,8 +594,8 @@ public class ClipboardMonitoring {
 
     public static String getCurrentBrowserURL(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         String ret = null;
-        if (clipboardHack != null) {
-            ret = clipboardHack.getURLFromCF_HTML();
+        if (CLIPBOARDHACK != null) {
+            ret = CLIPBOARDHACK.getURLFromCF_HTML();
         }
         if (!StringUtils.isEmpty(ret)) return ret;
         byte[] xmozurlprivBytes = getBytes("x-moz-url-priv", null, transferable);

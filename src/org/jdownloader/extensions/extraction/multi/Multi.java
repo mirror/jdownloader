@@ -135,8 +135,6 @@ public class Multi extends IExtraction {
     /** For all single files */
     private RandomAccessFileInStream stream;
 
-    private long                     progressInBytes;
-
     public Multi() {
         crack = 0;
         inArchive = null;
@@ -662,7 +660,8 @@ public class Multi extends IExtraction {
     @Override
     public void extract(final ExtractionController ctrl) {
         try {
-            ctrl.setProgress(0.0d);
+            ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
+            ctrl.setProcessedBytes(0);
             if (ArchiveFormat.SEVEN_ZIP == format) {
                 ArrayList<Integer> allItems = new ArrayList<Integer>();
                 for (int i = 0; i < inArchive.getNumberOfItems(); i++) {
@@ -700,8 +699,6 @@ public class Multi extends IExtraction {
                     }
                 }
             } else {
-                final long size2 = archive.getContentView().getTotalSize();
-                progressInBytes = 0l;
                 for (ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                     // Skip folders
                     if (item == null || item.isFolder()) {
@@ -709,7 +706,7 @@ public class Multi extends IExtraction {
                     }
                     if (ctrl.gotKilled()) { throw new SevenZipException("Extraction has been aborted"); }
                     AtomicBoolean skipped = new AtomicBoolean(false);
-                    File extractTo = getExtractFilePath(item, ctrl, skipped, size2);
+                    File extractTo = getExtractFilePath(item, ctrl, skipped);
                     if (skipped.get()) {
                         /* file is skipped */
                         continue;
@@ -729,8 +726,7 @@ public class Multi extends IExtraction {
                                     if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
                                     return super.write(data);
                                 } finally {
-                                    progressInBytes += data.length;
-                                    ctrl.setProgress(progressInBytes / (double) size2);
+                                    ctrl.addAndGetProcessedBytes(data.length);
                                 }
                             }
                         };
@@ -801,8 +797,6 @@ public class Multi extends IExtraction {
             logger.log(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
-        } finally {
-            controller.setProgress(1.0d);
         }
         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
     }
@@ -837,7 +831,7 @@ public class Multi extends IExtraction {
     // }
     //
 
-    public File getExtractFilePath(ISimpleInArchiveItem item, ExtractionController ctrl, AtomicBoolean skipped, long size2) throws SevenZipException {
+    public File getExtractFilePath(ISimpleInArchiveItem item, ExtractionController ctrl, AtomicBoolean skipped) throws SevenZipException {
         String path = item.getPath();
         if (StringUtils.isEmpty(path)) {
             // example: test.tar.gz contains a test.tar file, that has
@@ -850,8 +844,7 @@ public class Multi extends IExtraction {
         }
         if (filter(item.getPath())) {
             logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstArchiveFile().getFilePath());
-            progressInBytes += item.getSize();
-            ctrl.setProgress(progressInBytes / (double) size2);
+            ctrl.addAndGetProcessedBytes(item.getSize());
             skipped.set(true);
             return null;
         }
@@ -907,8 +900,7 @@ public class Multi extends IExtraction {
             case SKIP_FILE:
                 /* skip file */
                 archive.addExtractedFiles(extractTo);
-                progressInBytes += item.getSize();
-                ctrl.setProgress(progressInBytes / (double) size2);
+                ctrl.addAndGetProcessedBytes(item.getSize());
                 skipped.set(true);
                 return null;
             case AUTO_RENAME:
@@ -1076,8 +1068,7 @@ public class Multi extends IExtraction {
                                 ExtractOperationResult result = item.extractSlow(signatureOutStream, password);
                                 if (ExtractOperationResult.DATAERROR.equals(result)) {
                                     /*
-                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native ->
-                                     * crash jvm)
+                                     * 100% wrong password, DO NOT CONTINUE as unrar already might have cleaned up (nullpointer in native -> crash jvm)
                                      */
                                     return false;
                                 }

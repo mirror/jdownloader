@@ -13,10 +13,6 @@ public class FileAccessManager {
         locks = new HashMap<File, Object>();
     }
 
-    public synchronized Object unlock(File file) {
-        return locks.remove(file);
-    }
-
     public synchronized boolean unlock(File file, Object lockHolder) {
         Object currentHolder = getLockHolder(file);
         if (currentHolder != null && lockHolder == currentHolder) {
@@ -28,6 +24,8 @@ public class FileAccessManager {
     }
 
     public synchronized void lock(File file, Object newLockHolder) throws FileIsLockedException {
+        if (file == null) throw new IllegalArgumentException("file must not be null!");
+        if (newLockHolder == null) throw new IllegalArgumentException("newLockHolder must not be null!");
         Object currentHolder = getLockHolder(file);
         if (currentHolder != null) {
             if (currentHolder == newLockHolder) return;
@@ -37,6 +35,7 @@ public class FileAccessManager {
     }
 
     public synchronized boolean isLockedBy(File file, Object lockHolder) {
+        if (lockHolder == null) return false;
         return locks.get(file) == lockHolder;
     }
 
@@ -59,7 +58,7 @@ public class FileAccessManager {
     }
 
     public synchronized boolean isLocked(File file) {
-        return locks.get(file) != null;
+        return locks.containsKey(file);
     }
 
 }

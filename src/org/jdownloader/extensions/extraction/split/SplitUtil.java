@@ -166,7 +166,7 @@ class SplitUtil {
      * @return
      * @throws SevenZipException
      */
-    static boolean merge(ExtractionController controller, File file, int start, ExtractionConfig config) throws SevenZipException {
+    static boolean merge(final ExtractionController controller, File file, int start, ExtractionConfig config) throws SevenZipException {
         CPUPriority priority = config.getCPUPriority();
         if (priority == null || CPUPriority.HIGH.equals(priority)) {
             priority = null;
@@ -179,10 +179,10 @@ class SplitUtil {
             size += new File(l.getFilePath()).length() - start;
         }
         controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
-        controller.setProgress(0.0d);
+        controller.setCompleteBytes(size);
+        controller.setProcessedBytes(0);
         controller.setCurrentActiveItem(new Item(file.getName(), size, file));
         Collections.sort(files);
-        long progressInBytes = 0l;
         BufferedOutputStream bos = null;
         FileOutputStream fos = null;
         try {
@@ -190,16 +190,12 @@ class SplitUtil {
              * write buffer, use same as downloadbuffer, so we have a pool of same sized buffers
              */
             int maxbuffersize = config.getBufferSize() * 1024;
-
             if (file.exists()) {
-
                 /* file already exists */
-
                 IfFileExistsAction action = controller.getIfFileExistsAction();
                 while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                     IfFileExistsDialog d = new IfFileExistsDialog(file, controller.getCurrentActiveItem(), archive);
                     d.show();
-
                     try {
                         d.throwCloseExceptions();
                     } catch (Exception e) {
@@ -216,21 +212,13 @@ class SplitUtil {
                 }
                 switch (action) {
                 case OVERWRITE_FILE:
-
-                    if (!FileCreationManager.getInstance().delete(file, null)) {
-
-                    throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR, "Could not overwrite(delete) " + file);
-
-                    }
+                    if (!FileCreationManager.getInstance().delete(file, null)) { throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR, "Could not overwrite(delete) " + file); }
                     break;
-
                 case SKIP_FILE:
                     /* skip file */
                     archive.addExtractedFiles(file);
-                    progressInBytes += size;
-                    controller.setProgress(progressInBytes / (double) size);
+                    controller.addAndGetProcessedBytes(size);
                     throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_OUTPUTFILE_EXIST, "Outputfile exists: " + file);
-
                 case AUTO_RENAME:
                     String extension = Files.getExtension(file.getName());
                     String name = StringUtils.isEmpty(extension) ? file.getName() : file.getName().substring(0, file.getName().length() - extension.length() - 1);
@@ -238,18 +226,13 @@ class SplitUtil {
                     while (file.exists()) {
                         if (StringUtils.isEmpty(extension)) {
                             file = new File(file.getParentFile(), name + "_" + i);
-
                         } else {
                             file = new File(file.getParentFile(), name + "_" + i + "." + extension);
-
                         }
                         i++;
                     }
-
                     break;
-
                 }
-
             }
 
             if ((!file.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(file.getParentFile())) || !file.createNewFile()) {
@@ -269,16 +252,15 @@ class SplitUtil {
                     if (start > 0) {
                         in.skip(start);
                     }
-                    int l = 0;
-                    while ((l = in.read(buffer)) >= 0) {
-                        if (l == 0) {
+                    int read = 0;
+                    while ((read = in.read(buffer)) >= 0) {
+                        if (read == 0) {
                             /* nothing read, we wait a moment and see again */
                             Thread.yield();
                             continue;
                         }
-                        bos.write(buffer, 0, l);
-                        progressInBytes += l;
-                        controller.setProgress(progressInBytes / (double) size);
+                        bos.write(buffer, 0, read);
+                        controller.addAndGetProcessedBytes(read);
                         if (controller.gotKilled()) throw new IOException("Extraction has been aborted!");
                         if (priority != null && !CPUPriority.HIGH.equals(priority)) {
                             try {
@@ -304,7 +286,6 @@ class SplitUtil {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
             return false;
         } finally {
-            controller.setProgress(1.0d);
             try {
                 bos.flush();
             } catch (Throwable e) {

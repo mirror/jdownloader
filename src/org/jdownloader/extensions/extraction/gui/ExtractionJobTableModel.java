@@ -239,7 +239,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             protected String getString(ExtractionController value) {
-
                 return "fdfd";
             }
 
@@ -288,12 +287,12 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             protected long getMax(ExtractionController value) {
-                return 10000;
+                return Math.max(1, value.getCompleteBytes());
             }
 
             @Override
             protected long getValue(ExtractionController value) {
-                return (long) (value.getProgress() * 10000);
+                return value.getProcessedBytes();
             }
         });
 

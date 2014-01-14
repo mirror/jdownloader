@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -60,6 +61,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
     private ArrayList<ServicePanelExtender> extender;
     private static ServicePanel             INSTANCE         = new ServicePanel();
+    private AtomicBoolean                   redrawing        = new AtomicBoolean(false);
 
     public static ServicePanel getInstance() {
         return INSTANCE;
@@ -181,38 +183,47 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
     public void redraw() {
         if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached()) {
-            final LinkedList<ServiceCollection<?>> services = groupServices(CFG_GUI.CFG.getPremiumStatusBarDisplay(), true, null);
+            if (redrawing.compareAndSet(false, true)) {
+                try {
+                    final LinkedList<ServiceCollection<?>> services = groupServices(CFG_GUI.CFG.getPremiumStatusBarDisplay(), true, null);
+                    new EDTHelper<Object>() {
+                        @Override
+                        public Object edtRun() {
+                            try {
+                                try {
+                                    removeAll();
 
-            new EDTHelper<Object>() {
-                @Override
-                public Object edtRun() {
-                    try {
-                        removeAll();
+                                    int max = services.size();
+                                    // Math.min(, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
+                                    StringBuilder sb = new StringBuilder();
+                                    sb.append("2");
+                                    for (int i = 0; i < max; i++) {
+                                        sb.append("[22!]0");
+                                    }
+                                    setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
+                                    for (int i = 0; i < max; i++) {
+                                        JComponent c = services.removeFirst().createIconComponent(ServicePanel.this);
+                                        if (c != null) {
+                                            add(c, "gapleft 0,gapright 0");
+                                        }
 
-                        int max = services.size();
-                        // Math.min(, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("2");
-                        for (int i = 0; i < max; i++) {
-                            sb.append("[22!]0");
-                        }
-                        setLayout(new MigLayout("ins 0 2 0 0", sb.toString(), "[22!]"));
-                        for (int i = 0; i < max; i++) {
-                            JComponent c = services.removeFirst().createIconComponent(ServicePanel.this);
-                            if (c != null) {
-                                add(c, "gapleft 0,gapright 0");
+                                    }
+                                    revalidate();
+                                    repaint();
+                                } catch (final Throwable e) {
+                                    Log.exception(e);
+                                }
+                                invalidate();
+                            } finally {
+                                redrawing.compareAndSet(true, false);
                             }
-
+                            return null;
                         }
-                        revalidate();
-                        repaint();
-                    } catch (final Throwable e) {
-                        Log.exception(e);
-                    }
-                    invalidate();
-                    return null;
+                    }.start();
+                } catch (final Throwable e) {
+                    redrawing.compareAndSet(true, false);
                 }
-            }.start();
+            }
         }
     }
 

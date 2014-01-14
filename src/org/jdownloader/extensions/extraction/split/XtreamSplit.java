@@ -96,19 +96,15 @@ public class XtreamSplit extends IExtraction {
     public void extract(ExtractionController ctrl) {
         byte[] buffer = new byte[BUFFER_SIZE];
         Archive archive = controller.getArchiv();
-
         BufferedOutputStream out = null;
         BufferedInputStream in = null;
-
         try {
-
             /* file already exists */
             if (file.exists()) {
                 IfFileExistsAction action = controller.getIfFileExistsAction();
                 while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                     IfFileExistsDialog d = new IfFileExistsDialog(file, controller.getCurrentActiveItem(), archive);
                     d.show();
-
                     try {
                         d.throwCloseExceptions();
                     } catch (Exception e) {
@@ -125,21 +121,12 @@ public class XtreamSplit extends IExtraction {
                 }
                 switch (action) {
                 case OVERWRITE_FILE:
-
-                    if (!FileCreationManager.getInstance().delete(file, null)) {
-
-                    throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR, "Could not overwrite(delete) " + file);
-
-                    }
+                    if (!FileCreationManager.getInstance().delete(file, null)) { throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR, "Could not overwrite(delete) " + file); }
                     break;
-
                 case SKIP_FILE:
                     /* skip file */
                     archive.addExtractedFiles(file);
-
-                    controller.setProgress(1d);
                     throw new ExtSevenZipException(ExtractionControllerConstants.EXIT_CODE_OUTPUTFILE_EXIST, "Outputfile exists: " + file);
-
                 case AUTO_RENAME:
                     String extension = Files.getExtension(file.getName());
                     String name = StringUtils.isEmpty(extension) ? file.getName() : file.getName().substring(0, file.getName().length() - extension.length() - 1);
@@ -147,46 +134,34 @@ public class XtreamSplit extends IExtraction {
                     while (file.exists()) {
                         if (StringUtils.isEmpty(extension)) {
                             file = new File(file.getParentFile(), name + "_" + i);
-
                         } else {
                             file = new File(file.getParentFile(), name + "_" + i + "." + extension);
-
                         }
                         i++;
                     }
-
                     break;
-
                 }
-
             }
-
             if ((!file.getParentFile().exists() && !FileCreationManager.getInstance().mkdir(file.getParentFile())) || !file.createNewFile()) {
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                 return;
             }
             long size = 0l;
             for (String l : files) {
-
                 size += new File(l).length() - HEADER_SIZE;
             }
-
             controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
-            long progressInBytes = 0l;
-            controller.setProgress(0.0d);
+            controller.setCompleteBytes(size);
+            controller.setProcessedBytes(0);
             archive.addExtractedFiles(file);
-
             out = new BufferedOutputStream(new FileOutputStream(file));
             controller.setCurrentActiveItem(new Item(file.getName(), size, file));
             MessageDigest md = null;
-
             for (int i = 0; i < files.size(); i++) {
                 File source = new File(files.get(i));
                 try {
                     in = new BufferedInputStream(new FileInputStream(source));
-
                     if (md5) md = MessageDigest.getInstance("md5");
-
                     // Skip header in case of the first file
                     // can't call in.skip(), because the header counts
                     // the towards md5 hash.
@@ -194,48 +169,39 @@ public class XtreamSplit extends IExtraction {
                     if (i == 0) {
                         int alreadySkipped = 0;
                         final int toBeSkipped = HEADER_SIZE;
-
                         while (alreadySkipped < toBeSkipped) {
                             // Read data
                             int l = in.read(buffer, 0, toBeSkipped - alreadySkipped);
-
                             alreadySkipped += l;
-
                             // Update MD5
                             if (md5) md.update(buffer, 0, l);
                         }
-
                         length = length - toBeSkipped;
                     }
 
                     long read = 0;
-
                     // Skip md5 hashes at the end if it's the last file
                     boolean isItTheLastFile = i == (files.size() - 1);
                     if (md5 && isItTheLastFile) {
                         length = length - 32 * files.size();
                     }
-
                     // Merge
                     while (length > read) {
                         // Calculate the read buffer for the remaining byte. Max
                         // BUFFER
                         int buf = ((length - read) < BUFFER_SIZE) ? (int) (length - read) : BUFFER_SIZE;
-
                         // Read data
-                        int l = in.read(buffer, 0, buf);
-
+                        int read2 = in.read(buffer, 0, buf);
                         // Write data
-                        out.write(buffer, 0, l);
-                        out.flush();
-                        if (controller.gotKilled()) throw new IOException("Extraction has been aborted!");
-                        // Sum up bytes for control
-                        progressInBytes += l;
-                        controller.setProgress(progressInBytes / size);
-                        read += l;
-
-                        // Update MD5
-                        if (md5) md.update(buffer, 0, l);
+                        if (read2 > 0) {
+                            out.write(buffer, 0, read2);
+                            if (controller.gotKilled()) throw new IOException("Extraction has been aborted!");
+                            // Sum up bytes for control
+                            controller.addAndGetProcessedBytes(read2);
+                            read += read2;
+                            // Update MD5
+                            if (md5) md.update(buffer, 0, read2);
+                        } else if (read2 < 0) throw new IOException("EOF during extraction");
                     }
 
                     // Check MD5 hashes
@@ -267,7 +233,6 @@ public class XtreamSplit extends IExtraction {
             logger.log(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
-
         } catch (FileNotFoundException e) {
             controller.setExeption(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
@@ -281,7 +246,6 @@ public class XtreamSplit extends IExtraction {
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         } finally {
-            controller.setProgress(1d);
             try {
                 out.flush();
             } catch (Throwable e) {

@@ -12,8 +12,9 @@ import java.util.logging.Logger;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
@@ -36,6 +37,8 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.downloadcore.v15.HashInfo;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.statistics.StatsManager;
 
 public class DownloadLinkDownloadable implements Downloadable {
@@ -360,7 +363,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
-    public boolean rename(File outputPartFile, File outputCompleteFile) throws InterruptedException {
+    public boolean rename(final File outputPartFile, final File outputCompleteFile) throws InterruptedException {
         boolean renameOkay = false;
         int retry = 5;
         /* rename part file to final filename */
@@ -378,12 +381,32 @@ public class DownloadLinkDownloadable implements Downloadable {
             /* rename failed, lets try fallback */
             getLogger().severe("Could not rename file " + outputPartFile + " to " + outputCompleteFile);
             getLogger().severe("Try copy workaround!");
+            DiskSpaceReservation reservation = new DiskSpaceReservation() {
+
+                @Override
+                public long getSize() {
+                    return outputPartFile.length() - outputCompleteFile.length();
+                }
+
+                @Override
+                public File getDestination() {
+                    return outputCompleteFile;
+                }
+            };
             try {
-                DISKSPACECHECK freeSpace = DownloadWatchDog.getInstance().checkFreeDiskSpace(outputPartFile.getParentFile(), getDownloadLinkController(), outputPartFile.length());
-                if (DISKSPACECHECK.FAILED.equals(freeSpace)) throw new Throwable("not enough diskspace free to copy part to complete file");
-                IO.copyFile(outputPartFile, outputCompleteFile);
-                renameOkay = true;
-                outputPartFile.delete();
+                try {
+                    DISKSPACERESERVATIONRESULT result = DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().checkAndReserve(reservation, this);
+                    switch (result) {
+                    case OK:
+                    case UNSUPPORTED:
+                        IO.copyFile(outputPartFile, outputCompleteFile);
+                        renameOkay = true;
+                        outputPartFile.delete();
+                        break;
+                    }
+                } finally {
+                    DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().free(reservation, this);
+                }
             } catch (Throwable e) {
                 LogSource.exception(getLogger(), e);
                 /* error happened, lets delete complete file */
@@ -393,7 +416,6 @@ public class DownloadLinkDownloadable implements Downloadable {
             }
             if (!renameOkay) {
                 getLogger().severe("Copy workaround: :(");
-
             } else {
                 getLogger().severe("Copy workaround: :)");
             }
@@ -460,5 +482,44 @@ public class DownloadLinkDownloadable implements Downloadable {
     @Override
     public boolean isResumable() {
         return downloadLink.isResumeable();
+    }
+
+    @Override
+    public DiskSpaceReservation createDiskSpaceReservation() {
+        return new DiskSpaceReservation() {
+
+            @Override
+            public long getSize() {
+                final File partFile = new File(getFileOutputPart());
+                long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), getDownloadBytesLoaded());
+                return getKnownDownloadSize() - Math.max(0, doneSize);
+            }
+
+            @Override
+            public File getDestination() {
+                return new File(getFileOutput());
+            }
+        };
+    }
+
+    @Override
+    public void checkAndReserve(DiskSpaceReservation reservation) throws Exception {
+        DISKSPACERESERVATIONRESULT result = DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().checkAndReserve(reservation, getDownloadLinkController());
+        switch (result) {
+        case FAILED:
+            throw new SkipReasonException(SkipReason.DISK_FULL);
+        case INVALIDDESTINATION:
+            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+        }
+    }
+
+    @Override
+    public void free(DiskSpaceReservation reservation) {
+        DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().free(reservation, getDownloadLinkController());
+    }
+
+    @Override
+    public long getDownloadBytesLoaded() {
+        return downloadLink.getDownloadCurrent();
     }
 }

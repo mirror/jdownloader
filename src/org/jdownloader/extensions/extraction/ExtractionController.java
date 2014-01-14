@@ -24,9 +24,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -53,17 +55,40 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private IExtraction                      extractor;
     private ScheduledFuture<?>               timer;
     private Type                             latestEvent;
-    private double                           progress;
-    private boolean                          removeDownloadLinksAfterExtraction;
-    private ExtractionExtension              extension;
-    private final LogSource                  logger;
-    private FileSignatures                   fileSignatures        = null;
-    private IfFileExistsAction               ifFileExistsAction;
-    private File                             extractToFolder;
-    private boolean                          successful            = false;
-    private ExtractLogFileWriter             crashLog;
-    private boolean                          askForUnknownPassword = false;
-    private Item                             currentActiveItem;
+
+    private AtomicLong                       completeBytes  = new AtomicLong(0);
+    private AtomicLong                       processedBytes = new AtomicLong(0);
+
+    public long getCompleteBytes() {
+        return completeBytes.get();
+    }
+
+    public void setCompleteBytes(long completeBytes) {
+        this.completeBytes.set(Math.max(0, completeBytes));
+    }
+
+    public long getProcessedBytes() {
+        return processedBytes.get();
+    }
+
+    public void setProcessedBytes(long processedBytes) {
+        this.processedBytes.set(Math.max(0, processedBytes));
+    }
+
+    public long addAndGetProcessedBytes(long processedBytes) {
+        return this.processedBytes.addAndGet(Math.max(0, processedBytes));
+    }
+
+    private boolean              removeDownloadLinksAfterExtraction;
+    private ExtractionExtension  extension;
+    private final LogSource      logger;
+    private FileSignatures       fileSignatures        = null;
+    private IfFileExistsAction   ifFileExistsAction;
+    private File                 extractToFolder;
+    private boolean              successful            = false;
+    private ExtractLogFileWriter crashLog;
+    private boolean              askForUnknownPassword = false;
+    private Item                 currentActiveItem;
 
     public boolean isSuccessful() {
         return successful;
@@ -232,47 +257,70 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         extension.addPassword(archive.getFinalPassword());
                     }
                 }
-                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(getExtractToFolder(), null, archive.getContentView().getTotalSize());
-                if (DISKSPACECHECK.FAILED.equals(check) || DISKSPACECHECK.INVALIDFOLDER.equals(check)) {
-                    fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
-                    logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
-                    crashLog.write("Diskspace Problem: " + check);
-                    crashLog.write("Failed");
-                    return null;
-                }
+                final DiskSpaceReservation extractReservation = new DiskSpaceReservation() {
 
-                fireEvent(ExtractionEvent.Type.OPEN_ARCHIVE_SUCCESS);
+                    @Override
+                    public long getSize() {
+                        final long completeSize = Math.max(getCompleteBytes(), archive.getContentView().getTotalSize());
+                        long ret = completeSize - getProcessedBytes();
+                        return ret;
+                    }
 
-                if (!getExtractToFolder().exists()) {
-                    if (!FileCreationManager.getInstance().mkdir(getExtractToFolder())) {
-                        logger.warning("Could not create subpath");
-                        crashLog.write("Could not create subpath: " + getExtractToFolder());
+                    @Override
+                    public File getDestination() {
+                        return getExtractToFolder();
+                    }
+                };
+                DISKSPACERESERVATIONRESULT reservationResult = DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().checkAndReserve(extractReservation, this);
+                try {
+                    switch (reservationResult) {
+                    case FAILED:
+                        logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
+                        crashLog.write("Diskspace Problem: " + reservationResult);
+                        crashLog.write("Failed");
+                        fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
+                        return null;
+                    case INVALIDDESTINATION:
+                        logger.warning("Could use create subpath");
+                        crashLog.write("Could use create subpath: " + getExtractToFolder());
                         crashLog.write("Failed");
                         fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                         return null;
                     }
-                }
+                    fireEvent(ExtractionEvent.Type.OPEN_ARCHIVE_SUCCESS);
+                    if (!getExtractToFolder().exists()) {
+                        if (!FileCreationManager.getInstance().mkdir(getExtractToFolder())) {
+                            logger.warning("Could not create subpath");
+                            crashLog.write("Could not create subpath: " + getExtractToFolder());
+                            crashLog.write("Failed");
+                            fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
+                            return null;
+                        }
+                    }
+                    logger.info("Execute unpacking of " + archive);
+                    logger.info("Extract to " + getExtractToFolder());
+                    crashLog.write("Use Password: " + archive.getFinalPassword());
+                    ScheduledExecutorService scheduler = null;
+                    try {
+                        crashLog.write("Start Extracting " + extractor);
+                        scheduler = DelayedRunnable.getNewScheduledExecutorService();
+                        timer = scheduler.scheduleWithFixedDelay(new Runnable() {
+                            public void run() {
+                                fireEvent(ExtractionEvent.Type.EXTRACTING);
+                            }
 
-                logger.info("Execute unpacking of " + archive);
-                logger.info("Extract to " + getExtractToFolder());
-                crashLog.write("Use Password: " + archive.getFinalPassword());
-                ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
-                timer = scheduler.scheduleWithFixedDelay(new Runnable() {
-                    public void run() {
+                        }, 1, 1, TimeUnit.SECONDS);
+                        extractor.extract(this);
+                    } finally {
+                        crashLog.write("Extractor Returned");
+                        if (timer != null) timer.cancel(false);
+                        if (scheduler != null) scheduler.shutdown();
+                        extractor.close();
+                        if (extractor.getLastAccessedArchiveFile() != null) crashLog.write("Last used File: " + extractor.getLastAccessedArchiveFile());
                         fireEvent(ExtractionEvent.Type.EXTRACTING);
                     }
-
-                }, 1, 1, TimeUnit.SECONDS);
-                crashLog.write("Start Extracting " + extractor);
-                try {
-                    extractor.extract(this);
                 } finally {
-                    timer.cancel(false);
-                    scheduler.shutdown();
-                    extractor.close();
-                    crashLog.write("Extractor Returned");
-                    if (extractor.getLastAccessedArchiveFile() != null) crashLog.write("Last used File: " + extractor.getLastAccessedArchiveFile());
-                    fireEvent(ExtractionEvent.Type.EXTRACTING);
+                    DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().free(extractReservation, this);
                 }
                 if (gotKilled()) { return null; }
                 if (extractor.getException() != null) {
@@ -454,27 +502,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         exception = e;
     }
 
-    /**
-     * Sets the extraction progress in % 0d-1d
-     * 
-     * @param d
-     */
-    public void setProgress(double d) {
-
-        this.progress = d;
-
-    }
-
-    /**
-     * Get the extraction progress in % 0d-1d
-     * 
-     * @return
-     */
-    public double getProgress() {
-        return progress;
-    }
-
-    public void setRemoveDownloadLinksAfterExtraction(boolean deleteArchiveDownloadlinksAfterExtraction) {
+    void setRemoveDownloadLinksAfterExtraction(boolean deleteArchiveDownloadlinksAfterExtraction) {
         this.removeDownloadLinksAfterExtraction = deleteArchiveDownloadlinksAfterExtraction;
     }
 
@@ -514,6 +542,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     public Item getCurrentActiveItem() {
         return currentActiveItem;
+    }
+
+    public double getProgress() {
+        double percent = (double) getProcessedBytes() * 100 / Math.max(1, getCompleteBytes());
+        return percent;
     }
 
 }

@@ -17,15 +17,14 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
-import org.jdownloader.gui.views.ArraySet;
 
 /**
  * Contains information about the archivefile.
@@ -118,9 +117,9 @@ public class Archive {
 
     public Archive(ArchiveFactory link) {
         factory = link;
-        archives = new ArrayList<ArchiveFile>();
-        crcError = new ArrayList<ArchiveFile>();
-        extractedFiles = new ArraySet<File>();
+        archives = new CopyOnWriteArrayList<ArchiveFile>();
+        crcError = new CopyOnWriteArrayList<ArchiveFile>();
+        extractedFiles = new CopyOnWriteArrayList<File>();
         contents = new ContentView();
     }
 

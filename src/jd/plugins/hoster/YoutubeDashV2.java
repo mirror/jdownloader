@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.decrypter.YoutubeClipData;
 import jd.plugins.decrypter.YoutubeCustomVariantStorable;
@@ -66,12 +67,11 @@ import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
-import org.jdownloader.plugins.PluginForHostV2;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
 
 @HostPlugin(revision = "$Revision: 24000 $", interfaceVersion = 3, names = { "youtube.jd" }, urls = { "youtubev2://.+" }, flags = { 2 })
-public class YoutubeDashV2 extends PluginForHostV2 {
+public class YoutubeDashV2 extends PluginForHost {
 
     private final String  DASH_AUDIO_SIZE     = "DASH_AUDIO_SIZE";
     private final String  DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";

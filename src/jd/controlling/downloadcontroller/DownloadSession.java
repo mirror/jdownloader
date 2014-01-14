@@ -49,7 +49,13 @@ public class DownloadSession {
     }
 
     /* non shared between DownloadSessions */
-    private static final FileAccessManager                            FILE_ACCESS_MANAGER     = new FileAccessManager();
+    private static final FileAccessManager FILE_ACCESS_MANAGER = new FileAccessManager();
+    private static final DiskSpaceManager  DISK_SPACE_MANAGER  = new DiskSpaceManager();
+
+    public DiskSpaceManager getDiskSpaceManager() {
+        return DISK_SPACE_MANAGER;
+    }
+
     private final NullsafeAtomicReference<SessionState>               sessionState            = new NullsafeAtomicReference<SessionState>(SessionState.NORMAL);
     private final HashMap<String, AccountCache>                       accountCache            = new HashMap<String, AccountCache>();
     private final HashMap<DownloadLink, DownloadLinkCandidateHistory> candidateHistory        = new HashMap<DownloadLink, DownloadLinkCandidateHistory>();
@@ -188,6 +194,10 @@ public class DownloadSession {
                                                                                 public boolean remove(Object e) {
                                                                                     boolean ret = super.remove(e);
                                                                                     if (ret) {
+                                                                                        try {
+                                                                                            getDiskSpaceManager().freeAllReservationsBy(e);
+                                                                                        } catch (final Throwable ignore) {
+                                                                                        }
                                                                                         try {
                                                                                             getFileAccessManager().unlockAllHeldby(e);
                                                                                         } finally {

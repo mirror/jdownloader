@@ -37,6 +37,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import jd.utils.locale.JDL;
@@ -51,11 +52,10 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.plugins.PluginForDecryptV2;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision: 23244 $", interfaceVersion = 3, names = { "youtube.jd" }, urls = { "https?://([a-z]+\\.)?youtube\\.jd/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?" }, flags = { 0 })
-public class TbCmV2 extends PluginForDecryptV2 {
+public class TbCmV2 extends PluginForDecrypt {
 
     public TbCmV2(PluginWrapper wrapper) {
         super(wrapper);

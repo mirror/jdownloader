@@ -792,7 +792,10 @@ public class SecondLevelLaunch {
                             EXTENSIONS_LOADED.setReached();
                             /* init clipboardMonitoring stuff */
                             if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isSkipClipboardMonitorFirstRound()) {
-                                ClipboardMonitoring.getINSTANCE().setFirstRoundDone(false);
+                                ClipboardMonitoring.setFirstRoundDone(false);
+                            }
+                            if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isClipboardMonitorProcessHTMLFlavor()) {
+                                ClipboardMonitoring.setHtmlFlavorAllowed(false);
                             }
                             if (org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled()) {
                                 ClipboardMonitoring.getINSTANCE().startMonitoring();

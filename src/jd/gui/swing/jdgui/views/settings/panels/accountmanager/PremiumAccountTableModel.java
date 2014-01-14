@@ -31,6 +31,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtMergedIcon;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCheckColumn;
@@ -448,6 +450,23 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
         this.addColumn(new ExtProgressColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_trafficleft()) {
             private static final long serialVersionUID = -8376056840172682617L;
+            {
+                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
+
+                    @Override
+                    public int compare(final AccountEntry o1, final AccountEntry o2) {
+                        final long v1 = getValue(o1);
+                        final long v2 = getValue(o2);
+                        if (v1 == v2) { return 0; }
+                        if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
+                            return v1 > v2 ? -1 : 1;
+                        } else {
+                            return v2 > v1 ? -1 : 1;
+                        }
+                    }
+
+                });
+            }
 
             @Override
             public boolean isEnabled(AccountEntry obj) {
@@ -491,12 +510,12 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             protected long getMax(AccountEntry ac) {
                 AccountInfo ai = ac.getAccount().getAccountInfo();
                 if (!ac.getAccount().isValid()) {
-                    return 100;
+                    return 0;
                 } else if (ai == null) {
-                    return 100;
+                    return 0;
                 } else {
                     if (ai.isUnlimitedTraffic()) {
-                        return 100;
+                        return Long.MAX_VALUE;
                     } else {
                         return ai.getTrafficMax();
                     }
@@ -512,7 +531,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     return 0;
                 } else {
                     if (ai.isUnlimitedTraffic()) {
-                        return 100;
+                        return Long.MAX_VALUE;
                     } else {
                         return ai.getTrafficLeft();
                     }

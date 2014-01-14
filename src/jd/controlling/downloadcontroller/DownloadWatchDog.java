@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -97,7 +96,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.UIOManager;
 import org.appwork.uio.UserIODefinition.CloseReason;
-import org.appwork.utils.Application;
 import org.appwork.utils.ConcatIterator;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
@@ -118,7 +116,6 @@ import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.controlling.hosterrule.HosterRuleControllerListener;
-import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -182,25 +179,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
-    public static final State IDLE_STATE     = new State("IDLE");
-    public static final State RUNNING_STATE  = new State("RUNNING");
+    public static final State                              IDLE_STATE            = new State("IDLE");
+    public static final State                              RUNNING_STATE         = new State("RUNNING");
 
-    public static final State PAUSE_STATE    = new State("PAUSE");
-    public static final State STOPPING_STATE = new State("STOPPING");
-    public static final State STOPPED_STATE  = new State("STOPPED_STATE");
+    public static final State                              PAUSE_STATE           = new State("PAUSE");
+    public static final State                              STOPPING_STATE        = new State("STOPPING");
+    public static final State                              STOPPED_STATE         = new State("STOPPED_STATE");
     static {
         IDLE_STATE.addChildren(RUNNING_STATE);
 
         RUNNING_STATE.addChildren(STOPPING_STATE, PAUSE_STATE);
         PAUSE_STATE.addChildren(RUNNING_STATE, STOPPING_STATE);
         STOPPING_STATE.addChildren(STOPPED_STATE);
-    }
-
-    public static enum DISKSPACECHECK {
-        UNKNOWN,
-        OK,
-        INVALIDFOLDER,
-        FAILED
     }
 
     protected final NullsafeAtomicReference<Thread>        currentWatchDogThread = new NullsafeAtomicReference<Thread>(null);
@@ -458,128 +448,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         Thread current = tempWatchDogJobThread.get();
         if (current != null) return current;
         return currentWatchDogThread.get();
-    }
-
-    public DISKSPACECHECK checkFreeDiskSpace(final File file2Root, final SingleDownloadController controller, final long diskspace) throws Exception {
-        if (isWatchDogThread()) {
-            return diskSpaceCheck(file2Root, controller, diskspace);
-        } else {
-            final NullsafeAtomicReference<Object> asyncResult = new NullsafeAtomicReference<Object>(null);
-            enqueueJob(new DownloadWatchDogJob() {
-
-                @Override
-                public void execute(DownloadSession currentSession) {
-                    try {
-                        DISKSPACECHECK result = diskSpaceCheck(file2Root, controller, diskspace);
-                        synchronized (asyncResult) {
-                            asyncResult.set(result);
-                            asyncResult.notifyAll();
-                        }
-                    } catch (final Exception e) {
-                        logger.log(e);
-                        synchronized (asyncResult) {
-                            asyncResult.set(e);
-                            asyncResult.notifyAll();
-                        }
-                    }
-                }
-
-                @Override
-                public void interrupt() {
-                }
-            });
-            Object ret = null;
-            while (true) {
-                synchronized (asyncResult) {
-                    ret = asyncResult.get();
-                    if (ret != null) break;
-                    asyncResult.wait();
-                }
-            }
-            if (ret instanceof DISKSPACECHECK) return (DISKSPACECHECK) ret;
-            if (ret instanceof Exception) throw (Exception) ret;
-            throw new WTFException("WTF? Result: " + ret);
-        }
-    }
-
-    /**
-     * checks if there is enough diskspace left to use given amount of diskspace, only works with java >=1.6
-     * 
-     * @param dlLink
-     * @return
-     */
-    private DISKSPACECHECK diskSpaceCheck(File file2Root, SingleDownloadController controller, long diskspace) {
-        final File originalFile2Root = file2Root;
-        if (!config.isFreeSpaceCheckEnabled()) return DISKSPACECHECK.UNKNOWN;
-        if (Application.getJavaVersion() < Application.JAVA16) {
-            /*
-             * File.getUsableSpace is 1.6 only
-             */
-            return DISKSPACECHECK.UNKNOWN;
-        }
-        diskspace = Math.max(0, diskspace);
-        /* Set 500MB(default) extra Buffer */
-        long spaceneeded = 1024l * 1024 * Math.max(0, config.getForcedFreeSpaceOnDisk());
-        /* this HashSet contains all Path-parts of the File we want to download */
-        File freeSpace = null;
-        java.util.List<String> pathes = new ArrayList<String>();
-        if (file2Root != null && file2Root.isFile()) {
-            file2Root = file2Root.getParentFile();
-        }
-        if (file2Root != null) pathes.add(file2Root.getAbsolutePath().toLowerCase(Locale.ENGLISH));
-        while (file2Root != null) {
-            if (file2Root.exists() && freeSpace == null) {
-                freeSpace = file2Root;
-                if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) {
-                    long needed = spaceneeded + diskspace;
-                    if (controller != null) {
-                        logger.severe("Not enough diskspace available(1)! Candidate:" + controller.getDownloadLinkCandidate() + "|Folder:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
-                    } else {
-                        logger.severe("Not enough diskspace available(1)! Folder:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
-                    }
-                    return DISKSPACECHECK.FAILED;
-                }
-            }
-            file2Root = file2Root.getParentFile();
-            if (file2Root != null) pathes.add(file2Root.getAbsolutePath().toLowerCase(Locale.ENGLISH));
-        }
-        if (freeSpace == null) { return DISKSPACECHECK.INVALIDFOLDER; }
-        /* calc the needed space for the current running downloads */
-        for (final SingleDownloadController con : getSession().getControllers()) {
-            if (con == controller) continue;
-            DownloadLink dlink = con.getDownloadLink();
-            String folder = dlink.getFilePackage().getDownloadDirectory();
-            if (folder == null) continue;
-            folder = folder.toLowerCase(Locale.ENGLISH);
-            for (String checkPath : pathes) {
-                /*
-                 * now we check if the dlink is download to same folder/partition/drive we want to check available space for
-                 */
-                if (folder.startsWith(checkPath)) {
-                    /* yes, same folder/partition/drive */
-                    DownloadInterface downloadInterface = con.getDownloadInstance();
-                    if (downloadInterface != null) {
-                        Downloadable downloadable = downloadInterface.getDownloadable();
-                        if (downloadable != null) {
-                            File partFile = new File(downloadable.getFileOutputPart());
-                            spaceneeded += Math.max(0, (dlink.getKnownDownloadSize() - (partFile.exists() ? partFile.length() : 0)));
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-        /* enough space for needed diskspace */
-        if (freeSpace.getUsableSpace() < (spaceneeded + diskspace)) {
-            long needed = spaceneeded + diskspace;
-            if (controller != null) {
-                logger.severe("Not enough diskspace available(2)! Candidate:" + controller.getDownloadLinkCandidate() + "|Folder:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
-            } else {
-                logger.severe("Not enough diskspace available(2)! Folder:" + originalFile2Root.getAbsolutePath() + "|Needed:" + needed + "|Free:" + freeSpace.getUsableSpace() + "|On:" + freeSpace.getAbsolutePath());
-            }
-            return DISKSPACECHECK.FAILED;
-        }
-        return DISKSPACECHECK.OK;
     }
 
     /**
@@ -3153,21 +3021,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         break;
                     default:
                         throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
-                    }
-                }
-                DownloadInterface downloadInterface = controller.getDownloadInstance();
-                if (downloadInterface != null) {
-                    Downloadable downloadable = downloadInterface.getDownloadable();
-                    if (downloadable != null) {
-                        File partFile = new File(downloadable.getFileOutputPart());
-                        long diskSpaceNeeded = downloadLink.getKnownDownloadSize() - (partFile.exists() ? partFile.length() : 0);
-                        DISKSPACECHECK check = checkFreeDiskSpace(fileOutput.getParentFile(), controller, diskSpaceNeeded);
-                        switch (check) {
-                        case FAILED:
-                            throw new SkipReasonException(SkipReason.DISK_FULL);
-                        case INVALIDFOLDER:
-                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                        }
                     }
                 }
                 return;

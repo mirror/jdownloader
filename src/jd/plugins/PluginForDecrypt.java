@@ -86,6 +86,11 @@ public abstract class PluginForDecrypt extends Plugin {
         return br;
     }
 
+    @Override
+    public LogSource getLogger() {
+        return (LogSource) super.getLogger();
+    }
+
     /**
      * @param distributer
      *            the distributer to set

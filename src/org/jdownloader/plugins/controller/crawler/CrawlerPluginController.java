@@ -3,7 +3,7 @@ package org.jdownloader.plugins.controller.crawler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,8 +71,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -166,8 +165,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private List<LazyCrawlerPlugin> loadFromCache() {
-        java.util.List<AbstractCrawlerPlugin> l = null;
-        l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
+        List<AbstractCrawlerPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
         }, new ArrayList<AbstractCrawlerPlugin>());
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(l.size());
         /* use this classLoader for all cached plugins to load */
@@ -181,18 +179,32 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     static public byte[] KEY = new byte[] { 0x01, 0x03, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
 
     private List<LazyCrawlerPlugin> update(LogSource logger, HashMap<String, ArrayList<LazyPlugin>> pluginCache) throws MalformedURLException {
-        HashMap<String, LinkedList<AbstractCrawlerPlugin>> ret = new HashMap<String, LinkedList<AbstractCrawlerPlugin>>();
-        HashMap<String, LazyCrawlerPlugin> ret2 = new HashMap<String, LazyCrawlerPlugin>();
+        LinkedHashMap<String, ArrayList<AbstractCrawlerPlugin>> ret = new LinkedHashMap<String, ArrayList<AbstractCrawlerPlugin>>();
+        LinkedHashMap<String, LazyCrawlerPlugin> ret2 = new LinkedHashMap<String, LazyCrawlerPlugin>();
         for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter", pluginCache)) {
             if (c.getLazyPlugin() != null) {
                 LazyCrawlerPlugin plugin = (LazyCrawlerPlugin) c.getLazyPlugin();
                 ret2.put(plugin.getDisplayName() + plugin.getPattern(), plugin);
-                LinkedList<AbstractCrawlerPlugin> existingPlugin = ret.get(plugin.getDisplayName());
+                ArrayList<AbstractCrawlerPlugin> existingPlugin = ret.get(plugin.getDisplayName());
                 if (existingPlugin == null) {
-                    existingPlugin = new LinkedList<AbstractCrawlerPlugin>();
+                    existingPlugin = new ArrayList<AbstractCrawlerPlugin>();
                     ret.put(plugin.getDisplayName(), existingPlugin);
                 }
-                existingPlugin.add(plugin.getAbstractCrawlerPlugin());
+                boolean added = false;
+                ListIterator<AbstractCrawlerPlugin> it = existingPlugin.listIterator();
+                /* plugins with higher interfaceVersion will be sorted in list */
+                while (it.hasNext()) {
+                    AbstractCrawlerPlugin next = it.next();
+                    if (plugin.getInterfaceVersion() > next.getInterfaceVersion()) {
+                        it.add(plugin.getAbstractCrawlerPlugin());
+                        added = true;
+                        break;
+                    }
+                }
+                if (added == false) {
+                    /* add plugin at the end of list */
+                    existingPlugin.add(plugin.getAbstractCrawlerPlugin());
+                }
                 logger.finer("@CrawlerPlugin ok(cached):" + plugin.getClassname() + " " + plugin.getDisplayName() + " " + plugin.getVersion());
                 continue;
             }
@@ -232,7 +244,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             LazyCrawlerPlugin l = null;
                             try {
                                 String displayName = new String(names[i]);
-                                LinkedList<AbstractCrawlerPlugin> existingPlugin = ret.get(displayName);
+                                ArrayList<AbstractCrawlerPlugin> existingPlugin = ret.get(displayName);
                                 /* we use new String() here to dereference the Annotation and it's loaded class */
                                 AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
                                 ap.setCacheVersion(AbstractCrawlerPlugin.CACHEVERSION);
@@ -246,7 +258,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                 ap.setMainClassFilename(c.getFile().getName());
                                 l = new LazyCrawlerPlugin(ap, null, classLoader);
                                 if (existingPlugin == null) {
-                                    existingPlugin = new LinkedList<AbstractCrawlerPlugin>();
+                                    existingPlugin = new ArrayList<AbstractCrawlerPlugin>();
                                     ret.put(displayName, existingPlugin);
                                 }
                                 boolean added = false;
@@ -303,9 +315,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 logger.severe("@CrawlerPlugin missing:" + simpleName);
             }
         }
-
         java.util.List<AbstractCrawlerPlugin> saveList = new ArrayList<AbstractCrawlerPlugin>();
-        for (LinkedList<AbstractCrawlerPlugin> crawler : ret.values()) {
+        for (ArrayList<AbstractCrawlerPlugin> crawler : ret.values()) {
             saveList.addAll(crawler);
         }
         save(saveList);

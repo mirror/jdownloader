@@ -29,9 +29,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
     protected final ExtractionController     ctrl;
     protected final ISevenZipInArchive       inArchive;
     protected final String                   password;
-    protected long                           progressInBytes           = 0;
     protected final Archive                  archive;
-    protected final long                     size2;
     protected final ExtractionConfig         config;
     protected int                            lastIndex                 = -1;
     protected final ExtractOperationResult[] results;
@@ -78,7 +76,6 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
         this.config = config;
         this.multi = multi;
         logger = multi.getLogger();
-        size2 = archive.getContentView().getTotalSize();
     }
 
     @Override
@@ -233,7 +230,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                     ret = getNullOutputStream();
                 } else {
                     AtomicBoolean skipped = new AtomicBoolean(false);
-                    final File extractTo = multi.getExtractFilePath(item, ctrl, skipped, size2);
+                    final File extractTo = multi.getExtractFilePath(item, ctrl, skipped);
                     ctrl.setCurrentActiveItem(new Item(path, item.getSize(), extractTo));
                     if (skipped.get()) {
                         ret = getNullOutputStream();
@@ -262,8 +259,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                                     if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
                                     return super.write(data);
                                 } finally {
-                                    progressInBytes += data.length;
-                                    ctrl.setProgress(progressInBytes / (double) size2);
+                                    ctrl.addAndGetProcessedBytes(data.length);
                                 }
                             }
 
@@ -293,6 +289,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                         }
                     }
                     if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                    ctrl.addAndGetProcessedBytes(data.length);
                     return data.length;
                 }
             };
@@ -301,6 +298,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
                 @Override
                 public int write(byte[] data) throws SevenZipException {
                     if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
+                    ctrl.addAndGetProcessedBytes(data.length);
                     return data.length;
                 }
             };

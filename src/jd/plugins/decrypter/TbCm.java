@@ -1390,7 +1390,6 @@ public class TbCm extends PluginForDecrypt {
             }
         }
         thislink.setAvailable(true);
-        thislink.setProperty("ALLOW_DUPE", true);
         thislink.setBrowserUrl(currentVideoURL);
         /** FILENAME PART2 START */
         String currentFilename = formattedFilename;

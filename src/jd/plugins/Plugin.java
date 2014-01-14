@@ -74,8 +74,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer
-     * DownloadLink.getName() verwendet werden
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet
+     * werden
      * 
      * @return Datename des Downloads.
      */
@@ -83,14 +83,19 @@ public abstract class Plugin implements ActionListener {
         if (StringUtils.isEmpty(filename)) return null;
         int index = filename.indexOf("?");
         /*
-         * erst die Get-Parameter abschneiden
+         * cut off get url parameters
          */
+        if (index > 0) {
+            filename = filename.substring(0, index);
+        }
+        index = filename.indexOf("#");
+        /* cut off anker */
         if (index > 0) {
             filename = filename.substring(0, index);
         }
         index = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
         /*
-         * danach den Filename filtern
+         * use filename
          */
         filename = filename.substring(index + 1);
         return Encoding.htmlDecode(filename);
@@ -166,8 +171,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
-     * Patterns vorhanden ist.
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
      * 
      * @param data
      *            der zu prüfende Text

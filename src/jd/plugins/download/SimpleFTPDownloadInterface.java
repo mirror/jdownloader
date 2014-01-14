@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
@@ -204,28 +205,35 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     @Override
     public boolean startDownload() throws Exception {
         try {
-            if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
-
-                @Override
-                public void run() throws Exception {
-                    createOutputChannel();
-                    try {
-                        downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
-                    } catch (FileIsLockedException e) {
-                        downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
-                        throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
-                    }
-                }
-            }, null)) { throw new SkipReasonException(SkipReason.INVALID_DESTINATION); }
             DownloadPluginProgress downloadPluginProgress = null;
             downloadable.setConnectionHandler(this.getManagedConnetionHandler());
+            final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();
             try {
+                if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
+
+                    @Override
+                    public void run() throws Exception {
+                        downloadable.checkAndReserve(reservation);
+                        createOutputChannel();
+                        try {
+                            downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+                        } catch (FileIsLockedException e) {
+                            downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                        }
+                    }
+                }, null)) { throw new SkipReasonException(SkipReason.INVALID_DESTINATION); }
                 startTimeStamp = System.currentTimeMillis();
                 downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
                 downloadable.setPluginProgress(downloadPluginProgress);
                 downloadable.setAvailable(AvailableStatus.TRUE);
                 download(filePath, outputPartFileRaf, downloadable.isResumable());
             } finally {
+                try {
+                    downloadable.free(reservation);
+                } catch (final Throwable e) {
+                    LogSource.exception(logger, e);
+                }
                 try {
                     downloadable.addDownloadTime(System.currentTimeMillis() - getStartTimeStamp());
                 } catch (final Throwable e) {
