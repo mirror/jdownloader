@@ -41,7 +41,7 @@ public class DhSt extends PluginForHost {
         return "http://d-h.st/tos";
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users|)";
+    private static final String INVALIDLINKS = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users)";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
