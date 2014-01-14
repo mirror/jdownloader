@@ -40,6 +40,7 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.controlling.SingleReachableState;
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -247,6 +248,19 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
     // public boolean isOpaque() {
     // return true;
     // }
+    public <T> T getTreeEntry(Class<T> class1) {
+        for (int i = 0; i < list.getModel().getSize(); i++) {
+            Object el = list.getModel().getElementAt(i);
+            if (el instanceof LazyExtension) {
+                if (class1.getName().equals(((LazyExtension) el).getClassname())) { throw new WTFException("Not Implemented"); }
+            } else {
+                Class<? extends Object> cl = el.getClass();
+                if (class1 == cl) { return (T) list.getModel().getElementAt(i); }
+            }
+        }
+        return null;
+
+    }
 
     public void setSelectedTreeEntry(Class<?> class1) {
         for (int i = 0; i < list.getModel().getSize(); i++) {

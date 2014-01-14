@@ -1,21 +1,41 @@
 package org.jdownloader.gui.views.linkgrabber.columns;
 
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.Icon;
 import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 
+import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.ConfigurationView;
+import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
 import jd.plugins.DownloadLink;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.action.BasicAction;
+import org.appwork.swing.exttable.ExtMenuItem;
 import org.appwork.swing.exttable.columns.ExtComboColumn;
+import org.appwork.utils.event.queue.QueueAction;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
@@ -45,6 +65,110 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
         }
         if (ret != null) return ret;
         return super.getPopupElement(object, selected);
+    }
+
+    @Override
+    protected void fillPopup(final JPopupMenu popup, AbstractNode value, LinkVariant selected, ComboBoxModel<LinkVariant> dm) {
+        super.fillPopup(popup, value, selected, dm);
+        if (value instanceof CrawledLink) {
+            final CrawledLink link = (CrawledLink) value;
+
+            final HashSet<String> dupeSet = new HashSet<String>();
+
+            LinkCollector lc = LinkCollector.getInstance();
+
+            boolean readL = link.getParentNode().getModifyLock().readLock();
+
+            try {
+
+                for (CrawledLink cl : link.getParentNode().getChildren()) {
+                    dupeSet.add(cl.getLinkID());
+
+                }
+            } finally {
+                link.getParentNode().getModifyLock().readUnlock(readL);
+            }
+            popup.add(new JSeparator());
+            JMenu m = new JMenu(_GUI._.VariantColumn_fillPopup_add());
+            m.setIcon(new AbstractIcon(IconKey.ICON_ADD, 18));
+
+            for (int i = 0; i < dm.getSize(); i++) {
+                final LinkVariant o = dm.getElementAt(i);
+
+                ExtMenuItem mi;
+                m.add(mi = new ExtMenuItem(new BasicAction() {
+                    private DownloadLink dllink;
+
+                    {
+                        dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+                        dllink.setProperties(link.getDownloadLink().getProperties());
+                        link.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(dllink, o);
+
+                        setSmallIcon(o.getIcon());
+                        setName(o.getName());
+                        System.out.println(dllink.getLinkID());
+                        setEnabled(!dupeSet.contains(dllink.getLinkID()));
+
+                    }
+
+                    @Override
+                    public void actionPerformed(final ActionEvent e) {
+                        if (!isEnabled()) {
+
+                            Toolkit.getDefaultToolkit().beep();
+                            return;
+                        }
+                        final CrawledLink cl = new CrawledLink(dllink);
+
+                        final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
+                        list.add(cl);
+                        dupeSet.add(cl.getLinkID());
+                        // if (LinkCollector.getInstance().hasLinkID(cl.getLinkID())) {
+                        //
+                        // } else {
+                        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+                            @Override
+                            protected Void run() throws RuntimeException {
+                                LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
+
+                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                                checkableLinks.add(cl);
+                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                linkChecker.check(checkableLinks);
+                                return null;
+                            }
+                        });
+
+                        // }
+                        setEnabled(false);
+
+                    }
+
+                }));
+                mi.setHideOnClick(false);
+            }
+            popup.add(m);
+
+            popup.add(new JMenuItem(new BasicAction() {
+                {
+
+                    setSmallIcon(new BadgeIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 18), DomainInfo.getInstance(link.getDownloadLink().getDefaultPlugin().getHost()).getIcon(10), 0, 0).crop(18, 18));
+                    setName(_GUI._.VariantColumn_fillPopup_settings(link.getDownloadLink().getDefaultPlugin().getHost()));
+
+                }
+
+                @Override
+                public void actionPerformed(final ActionEvent e) {
+                    popup.setVisible(false);
+                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
+                    JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+                    ConfigurationView.getInstance().setSelectedSubPanel(PluginSettings.class);
+                    ConfigurationView.getInstance().getSubPanel(PluginSettings.class).setPlugin(link.getDownloadLink().getDefaultPlugin().getClass());
+                }
+
+            }));
+        }
     }
 
     @Override

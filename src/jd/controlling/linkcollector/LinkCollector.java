@@ -1808,4 +1808,5 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         });
     }
+
 }

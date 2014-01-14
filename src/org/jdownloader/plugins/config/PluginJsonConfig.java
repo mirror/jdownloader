@@ -32,7 +32,7 @@ public class PluginJsonConfig {
     private static final WeakHashMap<String, Cache>                       STORAGE_CACHE = new WeakHashMap<String, Cache>();
 
     public static <T extends ConfigInterface> T get(Class<T> configInterface) {
-        System.out.println(CACHE);
+
         ClassLoader cl = configInterface.getClassLoader();
         synchronized (cl) {
 
@@ -114,7 +114,7 @@ public class PluginJsonConfig {
                 };
             }
             // disabled object cache
-            sh.setObjectCacheEnabled(false);
+            // sh.setObjectCacheEnabled(false);
 
             cache.storage = sh.getPrimitiveStorage();
             cache.storage.setEnumCacheEnabled(false);

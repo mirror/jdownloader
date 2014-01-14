@@ -24,6 +24,7 @@ import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.Plugin;
 import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -218,6 +219,32 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             }
         }.start();
 
+    }
+
+    public void setPlugin(final Class<? extends PluginForHost> class1) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (searchCombobox.getModel().getSize() > 0) {
+                    String active = class1.getName();
+                    int selectIndex = 0;
+                    if (active != null) {
+                        for (int i = 0; i < searchCombobox.getModel().getSize(); i++) {
+                            if (((LazyPlugin<?>) searchCombobox.getModel().getElementAt(i)).getClassname().equals(active)) {
+                                selectIndex = i;
+                                break;
+                            }
+                        }
+
+                    }
+                    searchCombobox.setSelectedIndex(selectIndex);
+                    // show((LazyPlugin<?>) selector.getModel().getElementAt(selectIndex));
+                } else {
+                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setActivePluginConfigPanel(class1.getName());
+                }
+            }
+        };
     }
 
     private void fill() {

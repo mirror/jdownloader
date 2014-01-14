@@ -79,10 +79,8 @@ public class ConfigurationView extends ClosableView {
     }
 
     /**
-     * Overwritten, because the ConfigurationView has its own mechanism for
-     * distributing the {@link SwitchPanel#setShown()} event. Otherwise
-     * <b>all</b> {@link ConfigPanel}s would be noticed when opening the
-     * {@link ConfigurationView}.
+     * Overwritten, because the ConfigurationView has its own mechanism for distributing the {@link SwitchPanel#setShown()} event. Otherwise
+     * <b>all</b> {@link ConfigPanel}s would be noticed when opening the {@link ConfigurationView}.
      */
     @Override
     protected void distributeView(JComponent switchPanel) {
@@ -91,6 +89,12 @@ public class ConfigurationView extends ClosableView {
     @Override
     public String getID() {
         return "configview";
+    }
+
+    public <T> T getSubPanel(Class<T> class1) {
+
+        return ((ConfigurationPanel) getContent()).getSubPanel(class1);
+
     }
 
     public void setSelectedSubPanel(Class<?> class1) {

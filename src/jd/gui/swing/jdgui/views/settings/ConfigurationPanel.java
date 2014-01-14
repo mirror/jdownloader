@@ -179,6 +179,10 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         super.paint(g);
     }
 
+    public <T> T getSubPanel(Class<T> class1) {
+        return (T) sidebar.getTreeEntry(class1);
+    }
+
     public void setSelectedSubPanel(Class<?> class1) {
         sidebar.setSelectedTreeEntry(class1);
     }

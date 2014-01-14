@@ -39,6 +39,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
+import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 import jd.utils.locale.JDL;
 
@@ -54,7 +55,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision: 23244 $", interfaceVersion = 3, names = { "youtube.jd" }, urls = { "https?://([a-z]+\\.)?youtube\\.jd/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 23244 $", interfaceVersion = 3, names = { "youtube.jd" }, urls = { "https?://([a-z]+\\.)?youtube\\.jd/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?" }, flags = { 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
     public TbCmV2(PluginWrapper wrapper) {
@@ -171,6 +172,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
         String playlistID = getListIDByUrls(cleanedurl);
         String userID = new Regex(cleanedurl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
+        String channelID = new Regex(cleanedurl, "/channel/([A-Za-z0-9\\-_]+)").getMatch(0);
         // Some Stable errorhandling
 
         ArrayList<String[]> linkstodecrypt = new ArrayList<String[]>();
@@ -222,6 +224,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 videoIdsToAdd.addAll(parseGeneric(cleanedurl));
             }
             videoIdsToAdd.addAll(parseUsergrid(userID));
+            videoIdsToAdd.addAll(parseChannelgrid(channelID));
             if (StringUtils.isNotEmpty(videoID) && dupeCheckSet.add(videoID)) {
                 videoIdsToAdd.add(new jd.plugins.decrypter.YoutubeClipData(videoID));
             }
@@ -358,7 +361,7 @@ public class TbCmV2 extends PluginForDecrypt {
                             groupID = "srt-" + si.getLang();
                             break;
                         case BY_MEDIA_TYPE:
-                            groupID = "Subtitles";
+                            groupID = YoutubeVariantInterface.VariantGroup.SUBTITLES.name();
                             break;
                         default:
                             throw new WTFException("Unknown Grouping");
@@ -470,7 +473,37 @@ public class TbCmV2 extends PluginForDecrypt {
                     // fallback: use the first
                     decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                 } else {
-                    decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                    if (cfg.getGroupLogic() != GroupLogic.NO_GROUP) {
+
+                        switch (e.getValue().get(0).variant.getGroup()) {
+                        case AUDIO:
+                            if (cfg.isCreateBestAudioVariantLinkEnabled()) {
+                                decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                            }
+                            break;
+
+                        case IMAGE:
+                            if (cfg.isCreateBestImageVariantLinkEnabled()) {
+                                decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                            }
+
+                            break;
+                        case VIDEO:
+                            if (cfg.isCreateBestVideoVariantLinkEnabled()) {
+                                decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                            }
+
+                            break;
+                        case VIDEO_3D:
+                            if (cfg.isCreateBest3DVariantLinkEnabled()) {
+                                decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                            }
+                            break;
+                        }
+                    } else {
+
+                        decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
+                    }
                 }
 
             }
@@ -719,8 +752,57 @@ public class TbCmV2 extends PluginForDecrypt {
         return ret;
     }
 
+    public ArrayList<YoutubeClipData> parseChannelgrid(String channelID) throws IOException, InterruptedException {
+        // http://www.youtube.com/user/Gronkh/videos
+        // channel: http://www.youtube.com/channel/UCYJ61XIK64sp6ZFFS8sctxw
+        ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
+        int counter = 1;
+        if (StringUtils.isNotEmpty(channelID)) {
+            String pageUrl = null;
+            while (true) {
+                if (this.isAbort()) { throw new InterruptedException(); }
+                String content = null;
+                if (pageUrl == null) {
+                    // this returns the html5 player
+                    br.getPage(getBase() + "/channel/" + channelID + "/videos?view=0");
+
+                    checkErrors(br);
+                    content = br.toString();
+                } else {
+                    br.getPage(pageUrl);
+                    checkErrors(br);
+                    content = jd.plugins.hoster.Youtube.unescape(br.toString());
+                }
+
+                String[] videos = new Regex(content, "href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)").getColumn(0);
+                if (videos != null) {
+                    for (String relativeUrl : videos) {
+                        String id = getVideoIDByUrl(relativeUrl);
+                        if (dupeCheckSet.add(id)) {
+                            ret.add(new YoutubeClipData(id, counter++));
+
+                        }
+                    }
+                }
+                // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
+                String nextPage = Encoding.htmlDecode(new Regex(content, "data-uix-load-more-href=\"(/[^<>\"]*?)\"").getMatch(0));
+
+                if (nextPage != null) {
+                    pageUrl = getBase() + nextPage;
+                    // anti ddos
+                    Thread.sleep(1000);
+                } else {
+                    break;
+                }
+            }
+
+        }
+        return ret;
+    }
+
     public ArrayList<YoutubeClipData> parseUsergrid(String userID) throws IOException, InterruptedException {
         // http://www.youtube.com/user/Gronkh/videos
+        // channel: http://www.youtube.com/channel/UCYJ61XIK64sp6ZFFS8sctxw
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         int counter = 1;
         if (StringUtils.isNotEmpty(userID)) {

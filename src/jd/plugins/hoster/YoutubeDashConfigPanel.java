@@ -24,6 +24,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
+import org.appwork.utils.Application;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
@@ -51,6 +52,11 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     private Pair<MultiVariantBox>    extraAudio;
     private Pair<MultiVariantBox>    extraVideo;
     private boolean                  setting = false;
+    private Pair<Checkbox>           bestVideo;
+    private Pair<Checkbox>           bestAudio;
+    private Pair<Checkbox>           best3D;
+    private Pair<Checkbox>           bestSubtitle;
+    private Pair<Checkbox>           bestImage;
 
     public class MultiVariantBox extends MultiComboBox<YoutubeVariant> {
 
@@ -113,8 +119,18 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addStartDescription(description);
 
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist(), null, null, new ComboBox<IfUrlisAVideoAndPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsVideoAndPlaylistUrlAction", KeyHandler.class), IfUrlisAVideoAndPlaylistAction.values(), null));
-        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, new ComboBox<GroupLogic>(cf._getStorageHandler().getKeyHandler("GroupLogic", KeyHandler.class), GroupLogic.values(), null));
+        ComboBox<GroupLogic> box = new ComboBox<GroupLogic>(cf._getStorageHandler().getKeyHandler("GroupLogic", KeyHandler.class), GroupLogic.values(), null) {
+            @Override
+            public void onConfigValueModified(KeyHandler<GroupLogic> keyHandler, GroupLogic newValue) {
+                super.onConfigValueModified(keyHandler, newValue);
+                updateBest();
+            }
+        };
+
+        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, box);
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_https(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("PreferHttpsEnabled", BooleanKeyHandler.class), null));
+        addHtmlDescription(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc(), false);
+        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
 
         HashSet<String> dupe = new HashSet<String>();
         ArrayList<YoutubeVariant> videoFLV = new ArrayList<YoutubeVariant>();
@@ -192,10 +208,12 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         Pair<ProxyInput> proxy = addPair("", null, null, new ProxyInput(cf._getStorageHandler().getKeyHandler("Proxy", KeyHandler.class)));
         checkbox.getComponent().setDependencies(proxy.getComponent());
         addHeader(_GUI._.YoutubeDashConfigPanel_links(), NewTheme.I().getIcon(IconKey.ICON_LIST, 18));
-        addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_video(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestVideoVariantLinkEnabled", BooleanKeyHandler.class), null));
-        addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_audio(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestAudioVariantLinkEnabled", BooleanKeyHandler.class), null));
-        addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_3d(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBest3DVariantLinkEnabled", BooleanKeyHandler.class), null));
-        addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_subtitle(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestSubtitleVariantLinkEnabled", BooleanKeyHandler.class), null));
+        bestVideo = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_video(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestVideoVariantLinkEnabled", BooleanKeyHandler.class), null));
+        bestImage = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_image(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestImageVariantLinkEnabled", BooleanKeyHandler.class), null));
+
+        bestAudio = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_audio(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestAudioVariantLinkEnabled", BooleanKeyHandler.class), null));
+        best3D = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_3d(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBest3DVariantLinkEnabled", BooleanKeyHandler.class), null));
+        bestSubtitle = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_subtitle(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestSubtitleVariantLinkEnabled", BooleanKeyHandler.class), null));
 
         addHtmlDescription(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc(), false);
         extraVideoMp4 = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBox(this, videoMP4));
@@ -205,14 +223,34 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         extraVideo3D = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_3D(), null, null, new MultiVariantBox(this, video3D));
         extraAudio = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, new MultiVariantBox(this, audio));
         extraVideo = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, new MultiVariantBox(this, image));
-        addHeader("DEBUG ONLY... This Plugin is not finished yet", NewTheme.I().getIcon(IconKey.ICON_WARNING, 18));
-        add(new AdvancedTable(model = new AdvancedConfigTableModel("YoutubeConfig") {
-            @Override
-            public void refresh(String filterText) {
-                _fireTableStructureChanged(register(), true);
-            }
-        }));
-        model.refresh("Youtube");
+
+        if (!Application.isJared(Application.class)) {
+            addHeader("DEBUG ONLY... This Plugin is not finished yet", NewTheme.I().getIcon(IconKey.ICON_WARNING, 18));
+            add(new AdvancedTable(model = new AdvancedConfigTableModel("YoutubeConfig") {
+                @Override
+                public void refresh(String filterText) {
+                    _fireTableStructureChanged(register(), true);
+                }
+            }));
+            model.refresh("Youtube");
+        }
+        updateBest();
+    }
+
+    private void updateBest() {
+        best3D.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        bestAudio.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        bestImage.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        bestSubtitle.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        bestVideo.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        extraVideoMp4.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        extraVideoWebm.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        extraVideoFlv.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        extraVideoGp3.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        extraVideo3D.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        extraAudio.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+        extraVideo.getComponent().setEnabled(cf.getGroupLogic() != GroupLogic.NO_GROUP);
+
     }
 
     public static void main(String[] args) {

@@ -9,6 +9,8 @@
  */
 package org.jdownloader.images;
 
+import javax.swing.Icon;
+
 import org.appwork.swing.components.ExtMergedIcon;
 
 /**
@@ -26,10 +28,8 @@ public class BadgeIcon extends ExtMergedIcon {
      * @param yOffset
      */
     public BadgeIcon(final String mainIconKEy, final String badge, final int size, final int badgesize, final int xOffset, final int yOffset) {
-        mainIcon = new AbstractIcon(mainIconKEy, size);
-        addMain();
-        final AbstractIcon badgeIcon = new AbstractIcon(badge, badgesize);
-        add(badgeIcon, xOffset + mainIcon.getIconWidth() - badgeIcon.getIconWidth(), yOffset + mainIcon.getIconHeight() - badgeIcon.getIconHeight());
+        this(new AbstractIcon(mainIconKEy, size), new AbstractIcon(badge, badgesize), xOffset, yOffset);
+
     }
 
     protected void addMain() {
@@ -45,7 +45,13 @@ public class BadgeIcon extends ExtMergedIcon {
         this(iconSkipped, iconKey, size, (size * 2) / 3);
     }
 
-    protected AbstractIcon mainIcon;
+    public BadgeIcon(Icon main, Icon badgeIcon, int xOffset, int yOffset) {
+        mainIcon = main;
+        addMain();
+        add(badgeIcon, xOffset + mainIcon.getIconWidth() - badgeIcon.getIconWidth(), yOffset + mainIcon.getIconHeight() - badgeIcon.getIconHeight());
+    }
+
+    protected Icon mainIcon;
 
     public ExtMergedIcon crop() {
         return crop(mainIcon.getIconWidth(), mainIcon.getIconHeight());
