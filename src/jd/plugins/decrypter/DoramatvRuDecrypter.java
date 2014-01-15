@@ -131,57 +131,69 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
 
         ArrayList<DownloadLink> finalLinks = new ArrayList<DownloadLink>();
 
+        /**
+         * 
+         */
+        boolean[] foundResolution = new boolean[] { false, false, false, false };
+
         for (String match : matchList) {
             Browser browser3 = br.cloneBrowser();
             browser3.getPage(match);
 
-            Regex regex720 = browser3.getRegex("\"url720\":\".*?\"");
-            Regex regex480 = browser3.getRegex("\"url480\":\".*?\"");
-            Regex regex360 = browser3.getRegex("\"url360\":\".*?\"");
-            Regex regex240 = browser3.getRegex("\"url240\":\".*?\"");
+            Regex regex720 = foundResolution[0] ? null : browser3.getRegex("\"url720\":\".*?\"");
+            Regex regex480 = foundResolution[1] ? null : browser3.getRegex("\"url480\":\".*?\"");
+            Regex regex360 = foundResolution[2] ? null : browser3.getRegex("\"url360\":\".*?\"");
+            Regex regex240 = foundResolution[3] ? null : browser3.getRegex("\"url240\":\".*?\"");
 
             DownloadLink result;
 
-            if (regex720.count() > 0) {
+            if (!foundResolution[0] && regex720.count() > 0) {
                 resolution = "720";
 
                 result = findDownloadLink(regex720.getMatches(), resolution);
 
                 if (result != null) {
                     finalLinks.add(result);
+
+                    foundResolution[0] = true;
                 }
 
             }
-            if (regex480.count() > 0) {
+            if (!foundResolution[1] && regex480.count() > 0) {
                 resolution = "480";
 
                 result = findDownloadLink(regex480.getMatches(), resolution);
 
                 if (result != null) {
                     finalLinks.add(result);
+
+                    foundResolution[1] = true;
                 }
             }
-            if (regex360.count() > 0) {
+            if (!foundResolution[2] && regex360.count() > 0) {
                 resolution = "360";
 
                 result = findDownloadLink(regex360.getMatches(), resolution);
 
                 if (result != null) {
                     finalLinks.add(result);
+
+                    foundResolution[2] = true;
                 }
             }
-            if (regex240.count() > 0) {
+            if (!foundResolution[3] && regex240.count() > 0) {
                 resolution = "240";
 
                 result = findDownloadLink(regex240.getMatches(), resolution);
 
                 if (result != null) {
                     finalLinks.add(result);
+
+                    foundResolution[3] = true;
                 }
             }
 
-            if (finalLinks.size() > 0) break;
-
+            if (foundResolution[0] & foundResolution[1] & foundResolution[2] & foundResolution[3]) break;
         }
 
         // create a new FilePackage for the episode
@@ -226,7 +238,16 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
         // set available true
         downloadLink.setAvailable(true);
 
-        // file size is set automatically
+        // try to get the file size
+        try {
+            Browser br2 = br.cloneBrowser();
+
+            if (!br2.openGetConnection(downloadLink.getDownloadURL()).getContentType().contains("html")) {
+                downloadLink.setDownloadSize(br2.getHttpConnection().getLongContentLength());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return downloadLink;
     }
