@@ -71,13 +71,13 @@ public class DebridItaliaCom extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
         ac.setUnlimitedTraffic();
         if (!loginAPI(account)) {
+            if (br.containsHTML("<status>expired</status>")) {
+                ac.setStatus("Account is expired!");
+                ac.setExpired(true);
+                account.setValid(false);
+                return ac;
+            }
             ac.setStatus("Account is invalid. Wrong username or password?");
-            account.setValid(false);
-            return ac;
-        }
-        if (br.containsHTML("<status>expired</status>")) {
-            ac.setStatus("Account is expired!");
-            ac.setExpired(true);
             account.setValid(false);
             return ac;
         }

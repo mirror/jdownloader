@@ -32,6 +32,9 @@ public class DoramatvRuDecrypter extends PluginForDecrypt {
      * 
      * @see jd.plugins.PluginForDecrypt#decryptIt(jd.plugins.CryptedLink, jd.controlling.ProgressController)
      */
+    // @ whoever did this plugin: You don't need to handle the vkontakte links inside here. JD has direct support for those:
+    // http://vk.com/video_ext.php?oid=-5703512&id=163133724&hash=542ece23ed62384b&
+    // You can even configure the qualities in the vk.com plugin settings
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

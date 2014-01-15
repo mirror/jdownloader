@@ -56,7 +56,18 @@ public class AnimeTheHyliaCom extends PluginForHost {
         br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        String oldName = downloadLink.getFinalFileName();
+        if (oldName == null) oldName = downloadLink.getName();
+        String newname = null;
+        if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) {
+            downloadLink.getLinkStatus().setStatusText("Can't check filesize when servers are overloaded");
+            if (!oldName.contains(".avi"))
+                newname = newname + ".avi";
+            else
+                newname = oldName;
+            downloadLink.setName(newname);
+            return AvailableStatus.TRUE;
+        }
         if (br.getURL().contains("anime.thehylia.com/downloads/series/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = br.getRedirectLocation();
         if (DLLINK == null) {
@@ -68,9 +79,6 @@ public class AnimeTheHyliaCom extends PluginForHost {
         DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".avi";
-        String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
-        String newname = null;
         if (oldName.contains(".avi")) {
             newname = oldName.replace(".avi", ext);
         } else {
@@ -80,7 +88,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
                 newname = oldName;
         }
         downloadLink.setFinalFileName(newname);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -102,6 +110,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">Unfortunately, due to large server expenses we are not able to accomodate lots of consecutive")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 10 * 60 * 1000l);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

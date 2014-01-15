@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doperoms.com" }, urls = { "http://(www\\.)?doperoms\\.com/roms/[^/]+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "doperoms.com" }, urls = { "http://(www\\.)?doperoms\\.com/files/[^<>\"]+" }, flags = { 0 })
 public class DopeRomsCom extends PluginForHost {
 
     public DopeRomsCom(PluginWrapper wrapper) {
@@ -47,22 +48,24 @@ public class DopeRomsCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", link.getDownloadURL());
         br.getPage("http://doperoms.com/set_language.php?lang=EN");
-        br.getPage(link.getDownloadURL());
-        // Offline
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }// Offline
         if (br.getURL().equals("http://www.doperoms.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Empty
         if (br.containsHTML("name=\"No Roms\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<H1>(.*?) <br/><font").getMatch(0);
-        String filesize = br.getRegex("<br/><br/>[\t\n\r ]+<center><br/>[^<>\"/:]*?: ([^<>\"]*?)<br/>").getMatch(0);
-        System.out.println(br.toString() + "\n");
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("<title>Downloading ([^<>\"]*?)</title>").getMatch(0);
+        final String filesize = br.getRegex("<br/><br/>[\t\n\r ]+<center><br/>[^<>\"/:]*?: ([^<>\"]*?)<br/>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         String md5 = br.getRegex(">MD5 Checksum: ([a-z0-9]+)<br/><br").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
@@ -71,17 +74,9 @@ public class DopeRomsCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String continueLink = br.getRegex("<br/><br/><br/><br/><br/>[\t\n\r ]+<a href=\"(/.*?)\"").getMatch(0);
-        if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.doperoms.com" + continueLink);
-        String dllink = br.getRegex("<\\!\\-\\- End BidVertiser code \\-\\-> <br /><br /><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("<b>Download</b><br/><a href=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(http://(www\\.)?doperoms\\.com/files/roms/[^/]+/GETFILE_.*?)\"").getMatch(0);
-            }
-        }
+        String dllink = br.getRegex("\"(/files/[^<>\"]+GETFILE[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://doperoms.com" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

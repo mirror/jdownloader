@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -63,9 +64,9 @@ public class DownloadHr extends PluginForHost {
         if ("http://www.download.hr/".equals(br.getRedirectLocation()) || br.containsHTML("<title>Download\\.hr \\- Free Software Downloads</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"TableRightRow pozadina_Bijela uvuci10\">([^<>\"]*?)</a>").getMatch(0);
         if (filename == null) {
-            final Regex nameStuff = br.getRegex("<b class=\"font20\">([^<>\"]*?)</b> <b class=\"font18\">([^<>\"]*?)</b>");
+            final Regex nameStuff = br.getRegex("class=\"font20 bold\">([^<>\"]*?)</span> <span id=\"version\" class=\"font18 bold\">([^<>\"]*?)</span>");
             if (nameStuff.getMatches().length != 0) {
-                filename = nameStuff.getMatch(0) + " " + nameStuff.getMatch(1);
+                filename = Encoding.htmlDecode(nameStuff.getMatch(0).trim()) + " " + Encoding.htmlDecode(nameStuff.getMatch(1).trim());
             }
         }
         String filesize = br.getRegex(">Download</a>[\t\n\r ]+<b class=\"font\\d+\">\\((.*?)\\)</b>").getMatch(0);
