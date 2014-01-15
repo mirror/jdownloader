@@ -24,10 +24,10 @@ import org.appwork.utils.Regex;
 /**
  * First version of the Doramatv.ru plugin Still has to be improved according to efficiency.
  * 
- * @author Steven Kuenzel
+ * @author stevenk
  * 
  */
-@HostPlugin(names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/(.)*" }, flags = { 0 }, interfaceVersion = 0, revision = "")
+@HostPlugin(names = { "doramatv.ru" }, urls = { "http://(www\\.)?doramatv\\.ru/(.)*" }, flags = { 0 }, interfaceVersion = 2, revision = "")
 public class DoramatvRu extends PluginForHost {
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -45,6 +45,7 @@ public class DoramatvRu extends PluginForHost {
      */
     @Override
     public String getAGBLink() {
+        // this webpage does not seem to have AGB
         return "http://doramatv.ru/about";
     }
 
@@ -61,7 +62,7 @@ public class DoramatvRu extends PluginForHost {
         String extension = ".mp4";
 
         if (urlParts.length == 3) {
-            title = getTitle(urlParts[1] + "_Folge_" + urlParts[2].replace("series", ""));
+            title = getTitle(urlParts[1] + "_episode_" + urlParts[2].replace("series", ""));
         }
 
         // load page
