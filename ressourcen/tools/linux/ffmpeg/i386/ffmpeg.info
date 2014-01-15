@@ -1,0 +1,57 @@
+http://ffmpeg.gusari.org/static/32bit/ffmpeg.static.32bit.2013-10-01.tar.gz
+
+
+
+http://ffmpeg.gusari.org/static/README.html
+
+
+Static FFmpeg builds
+
+If you don't have time/will/knowledge to compile FFmpeg yourself and you just
+want to download-and-run FFmpeg, then you've come to the right place!
+
+This directory contains latest static builds of FFmpeg for testing purposes.
+That means you can just download and run the executable.
+
+If you need to customize your FFmpeg, then you should download the source code
+and build it yourself. For more information, please go to FFmpeg Wiki.
+
+Supported OS is Linux 32bit/64bit (with kernel 3.2.x+).
+For Win32 static builds, check out: FFmpeg Windows builds.
+
+The purpose of these builds is to make it easy for users to test/try FFmpeg
+without having to know how to compile things. All you have to do is
+to download the executable and run it. That's it :)
+Instructions
+
+Download and extract the latest archive
+Run FFmpeg using: ./ffmpeg
+Sample output
+
+# ./ffmpeg
+ffmpeg version N-46708-g09a0392 Copyright (c) 2000-2012 the FFmpeg developers
+  built on ... with gcc 4.6.3
+  configuration: --prefix=/root/ffmpeg-static/64bit --extra-cflags='-I/root/ffmpeg-static/64bit/include -static'
+   --extra-ldflags='-L/root/ffmpeg-static/64bit/lib -static' --extra-libs='-lxml2 -lexpat -lfreetype'
+   --enable-static --disable-shared --disable-ffserver --disable-doc --enable-bzlib --enable-zlib
+   --enable-postproc --enable-runtime-cpudetect --enable-libx264 --enable-gpl --enable-libtheora
+   --enable-libvorbis --enable-libmp3lame --enable-gray --enable-libass --enable-libfreetype --enable-libopenjpeg
+   --enable-libspeex --enable-libvo-aacenc --enable-libvo-amrwbenc --enable-version3 --enable-libvpx
+  libavutil      52.  6.100 / 52.  6.100
+  libavcodec     54. 71.100 / 54. 71.100
+  libavformat    54. 36.100 / 54. 36.100
+  libavdevice    54.  3.100 / 54.  3.100
+  libavfilter     3. 23.100 /  3. 23.100
+  libswscale      2.  1.102 /  2.  1.102
+  libswresample   0. 16.100 /  0. 16.100
+  libpostproc    52.  1.100 / 52.  1.100
+Hyper fast Audio and Video encoder
+usage: ffmpeg [options] [[infile options] -i infile]... {[outfile options] outfile}...
+
+Use -h to get full help or, even better, run 'man ffmpeg'
+Contact
+
+You can contact me using several options:
+e-mail: burek021@gmail.com
+IRC channel: #FFmpeg on Freenode IRC network
+burek
