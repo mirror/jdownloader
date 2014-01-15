@@ -22,7 +22,7 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
         String i = kh.getStorageHandler().getConfigInterface().getName();
         setInterfaceName(i);
 
-        setKey(kh.getKey());
+        setKey(createKey(kh));
         File expectedPath = Application.getResource("cfg/" + i);
         String storage = null;
         if (!expectedPath.equals(kh.getStorageHandler().getPath())) {
@@ -51,6 +51,17 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
 
         }
 
+    }
+
+    private String createKey(KeyHandler<?> kh) {
+        String getterName = kh.getGetter().getMethod().getName();
+        if (getterName.startsWith("is")) {
+            getterName = getterName.substring(2);
+        } else if (getterName.startsWith("get")) {
+            getterName = getterName.substring(3);
+        }
+
+        return getterName;
     }
 
     @AllowNonStorableObjects
