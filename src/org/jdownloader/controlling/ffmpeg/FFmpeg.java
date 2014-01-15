@@ -161,8 +161,10 @@ public class FFmpeg {
                 logger.info(result[0]);
                 logger.info(result[1]);
                 boolean ret = result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
-                logger.info("Binary is ok: " + ret);
-                return ret;
+                if (ret) {
+                    logger.info("Binary is ok: " + ret);
+                    return ret;
+                }
             } catch (InterruptedException e) {
                 logger.log(e);
                 logger.info("Binary is ok(i): " + false);
