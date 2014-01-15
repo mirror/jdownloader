@@ -157,7 +157,6 @@ public class Archive {
     }
 
     public void setArchiveFiles(java.util.List<ArchiveFile> collection) {
-
         this.archives = collection;
         for (ArchiveFile af : archives) {
             af.setArchive(this);
@@ -174,6 +173,7 @@ public class Archive {
     }
 
     public void setFirstArchiveFile(ArchiveFile firstArchiveFile) {
+        if (this.firstArchiveFile != null) throw new IllegalStateException("firstArchiveFile is already set!");
         this.firstArchiveFile = firstArchiveFile;
     }
 
@@ -318,6 +318,10 @@ public class Archive {
 
         getSettings().setAutoExtract(booleanStatus);
         notifyChanges(ArchiveSettings.AUTO_EXTRACT);
+    }
+
+    public Archive getPreviousArchive() {
+        return null;
     }
 
 }

@@ -35,7 +35,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public DownloadLinkArchiveFactory(DownloadLink link) {
         super(link);
-
     }
 
     public String createExtractSubPath(String path, Archive archive) {

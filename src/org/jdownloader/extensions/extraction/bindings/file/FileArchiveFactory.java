@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.extraction.bindings.file;
 
+import java.awt.Color;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,13 +21,22 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.settings.GeneralSettings;
 
 public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactory {
 
+    private final Archive origin;
+
     public FileArchiveFactory(File archiveStartFile) {
+        this(archiveStartFile, null);
+    }
+
+    public FileArchiveFactory(File archiveStartFile, Archive origin) {
         super(archiveStartFile);
+        this.origin = origin;
     }
 
     public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
@@ -39,7 +49,45 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                     if (f.isDirectory()) continue;
                     String nodeFile = f.getAbsolutePath();
                     if (nodeFile.equals(file) || pat.matcher(nodeFile).matches()) {
-                        ret.add(new FileArchiveFile(f));
+                        if (origin == null) {
+                            ret.add(new FileArchiveFile(f));
+                        } else {
+                            ret.add(new FileArchiveFile(f) {
+
+                                @Override
+                                public void setStatus(ExtractionController controller, ExtractionStatus error) {
+                                    if (isFirstArchiveFile()) {
+                                        origin.getFirstArchiveFile().setStatus(controller, error);
+                                    } else {
+                                        for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
+                                            archiveFile.setStatus(controller, error);
+                                        }
+                                    }
+                                    super.setStatus(controller, error);
+                                }
+
+                                @Override
+                                public void setMessage(ExtractionController controller, String plugins_optional_extraction_status_notenoughspace) {
+                                    if (isFirstArchiveFile()) {
+                                        origin.getFirstArchiveFile().setMessage(controller, plugins_optional_extraction_status_notenoughspace);
+                                    } else {
+                                        for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
+                                            archiveFile.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
+                                        }
+                                    }
+                                    super.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
+                                }
+
+                                @Override
+                                public void setProgress(ExtractionController controller, long value, long max, Color color) {
+                                    if (isFirstArchiveFile()) {
+                                        origin.getFirstArchiveFile().setProgress(controller, value, max, color);
+                                    }
+                                    super.setProgress(controller, value, max, color);
+                                }
+
+                            });
+                        }
                     }
                 }
             }
@@ -48,14 +96,28 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     }
 
     public Archive createArchive() {
-        return new Archive(this);
+        if (origin == null) return new Archive(this);
+        return new Archive(this) {
+
+            @Override
+            public Archive getPreviousArchive() {
+                return origin;
+            }
+
+            @Override
+            public void setFirstArchiveFile(ArchiveFile firstArchiveFile) {
+                if (firstArchiveFile instanceof FileArchiveFile) {
+                    ((FileArchiveFile) firstArchiveFile).setFirstArchiveFile(true);
+                }
+                super.setFirstArchiveFile(firstArchiveFile);
+            }
+        };
     }
 
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {
         HashSet<String> ret = new HashSet<String>();
         ret.add(new File(archive.getFirstArchiveFile().getFilePath()).getName());
         return ret;
-
     }
 
     public void fireArchiveAddedToQueue(Archive archive) {

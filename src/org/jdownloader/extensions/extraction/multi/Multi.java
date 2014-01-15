@@ -188,22 +188,23 @@ public class Multi extends IExtraction {
         } else {
             throw new ArchiveException("Unsupported Archive: " + link.getFilePath());
         }
+        ArchiveFile firstArchiveFile = null;
         if (archive.getArchiveFiles().size() == 1 && canBeSingleType) {
             archive.setType(ArchiveType.SINGLE_FILE);
-            archive.setFirstArchiveFile(link);
+            firstArchiveFile = link;
         } else {
             for (ArchiveFile l : archive.getArchiveFiles()) {
                 if ((archive.getType() == null || ArchiveType.MULTI_RAR == archive.getType()) && (l.getFilePath().matches(REGEX_FIRST_PART_MULTI_RAR) || l.getFilePath().matches(REGEX_ZERO_PART_MULTI_RAR))) {
-                    if (archive.getFirstArchiveFile() == null) {
+                    if (firstArchiveFile == null) {
                         archive.setType(ArchiveType.MULTI_RAR);
-                        archive.setFirstArchiveFile(l);
+                        firstArchiveFile = l;
                     } else {
                         /* find the part with lowest number */
                         String newPartNumber = new Regex(l.getFilePath(), REGEX_FIND_PARTNUMBER_MULTIRAR).getMatch(0);
-                        String oldPartNumber = new Regex(archive.getFirstArchiveFile().getFilePath(), REGEX_FIND_PARTNUMBER_MULTIRAR).getMatch(0);
-                        if (newPartNumber == null || oldPartNumber == null) { throw new ArchiveException("Regex issue? Type:" + archive.getType() + "|File1:" + l.getFilePath() + "|File2:" + archive.getFirstArchiveFile().getFilePath()); }
+                        String oldPartNumber = new Regex(firstArchiveFile.getFilePath(), REGEX_FIND_PARTNUMBER_MULTIRAR).getMatch(0);
+                        if (newPartNumber == null || oldPartNumber == null) { throw new ArchiveException("Regex issue? Type:" + archive.getType() + "|File1:" + l.getFilePath() + "|File2:" + firstArchiveFile.getFilePath()); }
                         if (Integer.parseInt(newPartNumber) < Integer.parseInt(oldPartNumber)) {
-                            archive.setFirstArchiveFile(l);
+                            firstArchiveFile = l;
                         }
                     }
                     if (l.isComplete() == false) {
@@ -213,10 +214,10 @@ public class Multi extends IExtraction {
                 } else if (l.getFilePath().matches(REGEX_ENDS_WITH_DOT_RAR) && !l.getFilePath().matches(REGEX_ANY_MULTI_RAR_PART_FILE)) {
                     if (archive.getArchiveFiles().size() == 1) {
                         archive.setType(ArchiveType.SINGLE_FILE);
-                        archive.setFirstArchiveFile(link);
+                        firstArchiveFile = link;
                     } else {
                         archive.setType(ArchiveType.MULTI_RAR);
-                        archive.setFirstArchiveFile(l);
+                        firstArchiveFile = l;
                     }
                     if (l.isComplete() == false) {
                         /* this should help finding the link that got downloaded */
@@ -227,7 +228,7 @@ public class Multi extends IExtraction {
                     if (checkRARSignature(new File(l.getFilePath()))) {
                         /* rar archive with 001 ending */
                         archive.setType(ArchiveType.MULTI_RAR);
-                        archive.setFirstArchiveFile(l);
+                        firstArchiveFile = l;
                         if (l.isComplete() == false) {
                             /* this should help finding the link that got downloaded */
                             continue;
@@ -235,7 +236,7 @@ public class Multi extends IExtraction {
                     } else if (check7ZSignature(new File(l.getFilePath()))) {
                         /* 7z archive with 001 ending */
                         archive.setType(ArchiveType.MULTI);
-                        archive.setFirstArchiveFile(l);
+                        firstArchiveFile = l;
                         if (l.isComplete() == false) {
                             /* this should help finding the link that got downloaded */
                             continue;
@@ -244,7 +245,7 @@ public class Multi extends IExtraction {
                     break;
                 } else if ((archive.getType() == null || ArchiveType.MULTI == archive.getType()) && l.getFilePath().matches(REGEX_ZIP$)) {
                     archive.setType(ArchiveType.MULTI_RAR);
-                    archive.setFirstArchiveFile(l);
+                    firstArchiveFile = l;
                     if (l.isComplete() == false) {
                         /* this should help finding the link that got downloaded */
                         continue;
@@ -253,6 +254,7 @@ public class Multi extends IExtraction {
                 }
                 // TODO several multipart archive types are missing in this loop
             }
+            archive.setFirstArchiveFile(firstArchiveFile);
             if (archive.getType() == null) {
                 // maybe first part missing? try to get archive type without
                 // first part
@@ -300,8 +302,7 @@ public class Multi extends IExtraction {
                 }
             }
         }
-        if (archive.getType() == null) {
-            //
+        if (archive.getType() == null) { //
             throw new ArchiveException("Unsupported Archive: " + link.getFilePath());
         }
         return archive;

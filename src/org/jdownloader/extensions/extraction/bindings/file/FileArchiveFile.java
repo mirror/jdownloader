@@ -15,6 +15,15 @@ public class FileArchiveFile implements ArchiveFile {
     private Archive archive;
     private String  name;
     private String  filePath;
+    private boolean isFirstArchiveFile = false;
+
+    public boolean isFirstArchiveFile() {
+        return isFirstArchiveFile;
+    }
+
+    public void setFirstArchiveFile(boolean isFirstArchiveFile) {
+        this.isFirstArchiveFile = isFirstArchiveFile;
+    }
 
     public FileArchiveFile(File f) {
         this.file = f;

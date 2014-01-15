@@ -191,10 +191,8 @@ public class ExtractionListenerList implements ExtractionListener {
                                     bytes += af.getFileSize();
                                 }
                                 p.add(leftLabel(SizeFormatter.formatBytes(bytes)));
-
                                 p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
                                 p.add(leftLabel(packagename));
-
                             }
                         } catch (Exception e) {
                         }

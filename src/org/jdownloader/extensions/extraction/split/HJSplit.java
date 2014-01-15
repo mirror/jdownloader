@@ -170,7 +170,8 @@ public class HJSplit extends IExtraction {
         int last = 1;
         List<String> missing = new ArrayList<String>();
         List<Integer> erg = new ArrayList<Integer>();
-        String path = archive.getFirstArchiveFile() == null ? archive.getArchiveFiles().get(0).getFilePath() : archive.getFirstArchiveFile().getFilePath();
+        ArchiveFile first = archive.getFirstArchiveFile();
+        String path = first == null ? archive.getArchiveFiles().get(0).getFilePath() : first.getFilePath();
         Regex r = new Regex(path, ".*\\.([\\d]+)$");
         int length = r.getMatch(0).length();
         String archivename = archive.getName();

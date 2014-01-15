@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.SecondLevelLaunch;
 import jd.config.SubConfiguration;
@@ -61,6 +63,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.actions.ExtractAction;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.ArchivesSubMenu;
@@ -109,26 +112,23 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return eventSender;
     }
 
-    private final java.util.List<IExtraction> extractors        = new ArrayList<IExtraction>();
+    private final Set<IExtraction>     extractors        = new CopyOnWriteArraySet<IExtraction>();
 
-    private final java.util.List<Archive>     archives          = new ArrayList<Archive>();
+    private final Set<Archive>         archives          = new CopyOnWriteArraySet<Archive>();
 
-    private ExtractionConfigPanel             configPanel;
+    private ExtractionConfigPanel      configPanel;
 
-    private static ExtractionExtension        INSTANCE;
+    private static ExtractionExtension INSTANCE;
 
-    private ExtractionListenerIcon            statusbarListener = null;
-
-    private ShutdownVetoListener              listener          = null;
-
-    private boolean                           lazyInitOnStart   = false;
-    private static final Object               LOCK              = new Object();
+    private ExtractionListenerIcon     statusbarListener = null;
+    private ShutdownVetoListener       listener          = null;
+    private boolean                    lazyInitOnStart   = false;
+    private final Object               PWLOCK            = new Object();
 
     public ExtractionExtension() throws StartException {
         super();
         setTitle(_.name());
         INSTANCE = this;
-
     }
 
     @Override
@@ -233,9 +233,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
         IExtraction extractor = getExtractorByFactory(archive.getFactory());
         if (extractor == null) return null;
-        synchronized (archives) {
-            archives.add(archive);
-        }
+        archives.add(archive);
         archive.getFactory().fireArchiveAddedToQueue(archive);
         ExtractionController controller = new ExtractionController(this, archive, extractor);
         controller.setAskForUnknownPassword(forceAskForUnknownPassword);
@@ -293,22 +291,18 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @throws ArchiveException
      */
     public synchronized Archive buildArchive(ArchiveFactory link) throws ArchiveException {
-        synchronized (archives) {
-
-            for (Archive archive : archives) {
-                if (archive.contains(link)) {
-                    // logger.info("Found Archive: " + archive);
-                    return archive;
-
-                }
+        for (Archive archive : archives) {
+            if (archive.contains(link)) {
+                // logger.info("Found Archive: " + archive);
+                return archive;
             }
         }
-        IExtraction extrctor = getExtractorByFactory(link);
-        if (extrctor == null) {
+        IExtraction extractor = getExtractorByFactory(link);
+        if (extractor == null) {
             //
             return null;
         }
-        Archive archive = extrctor.buildArchive(link);
+        Archive archive = extractor.buildArchive(link);
         if (archive != null) {
             link.onArchiveFinished(archive);
             // logger.info("Created Archive: " + archive);
@@ -404,10 +398,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * 
      * @param archive
      */
-    synchronized void removeArchive(Archive archive) {
-        synchronized (archives) {
-            archives.remove(archive);
-        }
+    void removeArchive(Archive archive) {
+        archives.remove(archive);
     }
 
     // @SuppressWarnings({ "unchecked", "deprecation" })
@@ -450,7 +442,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     public void addPassword(String pw) {
         if (StringUtils.isEmpty(pw)) return;
-        synchronized (LOCK) {
+        synchronized (PWLOCK) {
             java.util.List<String> pwList = getSettings().getPasswordList();
             if (pwList == null) pwList = new ArrayList<String>();
             /* avoid duplicates */
@@ -729,8 +721,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     List<String> archiveSettingsPasswords = con.getArchiv().getSettings().getPasswords();
                     if (archiveSettingsPasswords != null) knownPasswords.addAll(archiveSettingsPasswords);
                     try {
+                        Archive previousArchive = con.getArchiv();
+                        while (previousArchive != null) {
+                            if (previousArchive instanceof DownloadLinkArchive) break;
+                            previousArchive = previousArchive.getPreviousArchive();
+                        }
+                        if (!(previousArchive instanceof DownloadLinkArchive)) previousArchive = null;
                         for (File archiveStartFile : fileList) {
-                            FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
+                            FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile, previousArchive);
                             if (isLinkSupported(fac)) {
                                 Archive archive = buildArchive(fac);
                                 if (onNewFile(archive)) {
@@ -864,7 +862,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return ret;
     }
 
-    public java.util.List<IExtraction> getExtractors() {
+    public Set<IExtraction> getExtractors() {
         return extractors;
     }
 
@@ -953,15 +951,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     public boolean onAskToRemoveChildren(List<DownloadLink> children) {
-        synchronized (archives) {
-            for (DownloadLink dlink : children) {
-                DownloadLinkArchiveFactory link = new DownloadLinkArchiveFactory(dlink);
-                for (Archive archive : archives) {
-                    if (archive.contains(link)) {
-                        logger.info("Link is in active Archive do not remove: " + archive);
-                        return false;
+        for (DownloadLink dlink : children) {
+            DownloadLinkArchiveFactory link = new DownloadLinkArchiveFactory(dlink);
+            for (Archive archive : archives) {
+                if (archive.contains(link)) {
+                    logger.info("Link is in active Archive do not remove: " + archive);
+                    return false;
 
-                    }
                 }
             }
         }
