@@ -77,6 +77,9 @@ public class DodanePl extends PluginForHost {
         final String fileid = new Regex(downloadLink.getDownloadURL(), "/file/(\\d+)").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://dodane.pl/file/download/" + fileid + "/" + JDHash.getMD5(Long.toString(System.currentTimeMillis() + new Random().nextLong())));
+        if (br.containsHTML("Strona o podanym adresie nie istnieje")) {
+            br.getPage("http://dodane.pl/transfer/create_session/" + fileid + "/" + JDHash.getMD5(Long.toString(System.currentTimeMillis() + new Random().nextLong())));
+        }
         final String id = br.getRegex("\"id\":(\\d+)").getMatch(0);
         final String token = br.getRegex("\"sessionToken\":\"([^<>\"]*?)\"").getMatch(0);
         final String server = br.getRegex("\"downloadServerAddr\":\"([^<>\"]*?)\"").getMatch(0);
