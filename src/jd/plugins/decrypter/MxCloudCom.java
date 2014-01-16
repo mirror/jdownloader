@@ -92,9 +92,8 @@ public class MxCloudCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
-        if (theName == null) {
-            theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
-        }
+        if (theName == null) theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
+        if (theName == null) theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (theName == null) { return null; }
 
         final String playResource = parameter.replace(MAINPAGE, "");

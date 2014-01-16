@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -48,7 +49,11 @@ public class ImgDinoCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final SocketTimeoutException e) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML("<h1>Error</h1><br>|does not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = new Regex(downloadLink.getDownloadURL(), "file=(.+)").getMatch(0);
         // Downloadlink

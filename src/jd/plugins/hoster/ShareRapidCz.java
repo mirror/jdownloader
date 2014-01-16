@@ -17,11 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
@@ -70,7 +75,7 @@ public class ShareRapidCz extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            login(account);
+            login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
@@ -194,7 +199,7 @@ public class ShareRapidCz extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String dllink = null;
         requestFileInformation(downloadLink);
-        login(account);
+        login(account, true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000); }
         if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
@@ -267,36 +272,77 @@ public class ShareRapidCz extends PluginForHost {
         }
     }
 
-    public void login(final Account account) throws Exception {
-        setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        br.setCookie(MAINPAGE, "lang", "cs");
-        br.getPage("http://share-rapid.com/prihlaseni/");
-        final String lang = System.getProperty("user.language");
-        final Form form = br.getForm(0);
-        if (form == null) {
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        form.put("login", Encoding.urlEncode(account.getUser()));
-        form.put("pass1", Encoding.urlEncode(account.getPass()));
-        form.remove("remember");
-        br.submitForm(form);
-        if (!br.containsHTML("<td>GB:</td>")) {
-            br.getPage("http://share-rapid.com/mujucet/");
-            if (!br.containsHTML("<td>GB:</td>")) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private static final String COOKIE_HOST = "http://share-rapid.com/";
+
+    @SuppressWarnings("unchecked")
+    public void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                setBrowserExclusive();
+                br.setCustomCharset("UTF-8");
+                br.setFollowRedirects(false);
+                br.setDebug(true);
+                prepBr(this.br);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
                 }
+                br.getPage("http://share-rapid.com/prihlaseni/");
+                final String lang = System.getProperty("user.language");
+                final Form form = br.getForm(0);
+                if (form == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                form.remove("remember");
+                form.put("login", Encoding.urlEncode(account.getUser()));
+                form.put("pass1", Encoding.urlEncode(account.getPass()));
+                form.put("remember", "1");
+                br.submitForm(form);
+                if (!br.containsHTML("<td>GB:</td>")) {
+                    br.getPage("http://share-rapid.com/mujucet/");
+                    if (!br.containsHTML("<td>GB:</td>")) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
             }
         }
+    }
+
+    private void prepBr(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0");
+        br.setCookie(MAINPAGE, "lang", "cs");
     }
 
     @Override

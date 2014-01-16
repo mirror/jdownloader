@@ -305,7 +305,9 @@ public class DepositFiles extends PluginForHost {
         if (crap == null && br.containsHTML("download_container")) {
             crap = br.getRegex("download_container.*load\\((.*?)\n").getMatch(0);
         } else {
-            return null;
+            String finallink = br.getRegex("class=\"download_url\">[\t\n\r ]+<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.dfiles\\.eu/auth[^<>\"]*?)\"").getMatch(0);
+            return finallink;
         }
         if (crap != null) {
             crap = crap.replaceAll("(\\'| |;|\\+|\\(|\\)|\t|\r|\n)", "");

@@ -250,7 +250,26 @@ public class ZeveraCom extends PluginForHost {
         }
         if (!dl.getConnection().getContentType().contains("html")) {
             /* contentdisposition, lets download it */
-            dl.startDownload();
+            try {
+                if (!this.dl.startDownload()) {
+                    try {
+                        if (dl.externalDownloadStop()) return;
+                    } catch (final Throwable e) {
+                    }
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
+                        link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            } catch (final PluginException e) {
+                // New V2 errorhandling
+                /* unknown error, we disable multiple chunks */
+                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
+                    link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
             return;
         } else {
             /*

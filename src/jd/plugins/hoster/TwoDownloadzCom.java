@@ -155,11 +155,9 @@ public class TwoDownloadzCom extends PluginForHost {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             final String id = new Regex(correctedBR, "getElementById\\(\\'mmm\\'\\)\\.hh =\"([a-z0-9]+)\"").getMatch(0);
             if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String continueLink = "http://www.2downloadz.com/download.php?h=" + fid + "&id=" + id;
-            getPage(continueLink);
-
-            continueLink = new Regex(correctedBR, "\\'(download\\.php\\?id=[a-z0-9]+\\&s=\\d+)\\'").getMatch(0);
-            if (continueLink == null) {
+            getPage("http://www.2downloadz.com/download.php?h=" + fid + "&id=" + id);
+            getPage("http://www.2downloadz.com/download.php?id=" + id + "&c=");
+            if (!br.containsHTML("onclick=\"reloadCaptcha\\(\\);\"")) {
                 if (br.containsHTML(">Open a download link<")) {
                     try {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -170,23 +168,13 @@ public class TwoDownloadzCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            continueLink = "http://www.2downloadz.com/" + continueLink + "&c=";
-            getPage(continueLink);
+            getPage("http://www.2downloadz.com/preCaptcha.php?id=" + id);
 
-            continueLink = new Regex(correctedBR, "\\'(download\\.php\\?id=[a-z0-9]+\\&s=[^<>\"]*?)\\'").getMatch(0);
-            if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            continueLink = "http://www.2downloadz.com/" + continueLink + "&c=";
-            getPage(continueLink);
-
-            continueLink = new Regex(correctedBR, "\\'(download\\.php\\?id=[a-z0-9]+\\&s=[^<>\"]*?)\\'").getMatch(0);
-            if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            continueLink = "http://www.2downloadz.com/" + continueLink + "&c=";
-            br.cloneBrowser().getPage("http://www.2downloadz.com/preCaptcha.php?id=" + id);
             final String captchaAdress = "http://www.2downloadz.com/Captcha.php?id=" + id;
             for (int i = 1; i <= 3; i++) {
                 final String code = getCaptchaCode(captchaAdress, downloadLink);
                 br.cloneBrowser().getPage("http://www.2downloadz.com/antibots.php?id=" + id);
-                getPage(continueLink + Encoding.urlEncode(code));
+                getPage("http://www.2downloadz.com/download.php?id=" + id + "&c=" + code + "&dlr");
                 if (correctedBR.contains("preCaptcha.php?id=")) {
                     continue;
                 }
@@ -200,9 +188,8 @@ public class TwoDownloadzCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
 
-            dllink = new Regex(correctedBR, "\\'(get_file1\\.php\\?id=[a-z0-9]+\\&h=[a-z0-9]+)\\'").getMatch(0);
+            dllink = new Regex(correctedBR, "\\'(http://(www\\.)?2downloadz\\.com/get_file\\.php[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dllink = "http://www.2downloadz.com/" + dllink;
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);

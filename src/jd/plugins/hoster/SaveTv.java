@@ -115,7 +115,11 @@ public class SaveTv extends PluginForHost {
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        setConfigElements();
+        if (!isJDStable()) setConfigElements();
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
@@ -158,6 +162,7 @@ public class SaveTv extends PluginForHost {
             checkFeatureDialog2();
             checkFeatureDialog3();
             checkFeatureDialog4();
+            checkFeatureDialog5();
         }
         if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
             link.getLinkStatus().setStatusText("Linkcheck deaktiviert - korrekter Dateiname erscheint erst beim Downloadstart");
@@ -1222,7 +1227,7 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    private static final short totalFeatureDialogNum = 4;
+    private static final short totalFeatureDialogNum = 5;
 
     private static void showFeatureDialog() {
         try {
@@ -1425,6 +1430,53 @@ public class SaveTv extends PluginForHost {
         }
     }
 
+    private void checkFeatureDialog5() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("featuredialog5Shown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialog5Shown2") == null) {
+                    showFeatureDialog5();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog5Shown", Boolean.TRUE);
+                config.setProperty("featuredialog5Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showFeatureDialog5() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "Save.tv - neue Features 5/" + totalFeatureDialogNum;
+                        message += "Hallo lieber save.tv Nutzer.\r\n";
+                        message += "Ab dieser Pluginversion (23718+) sind die Plugin Einstellungen dieses Plugins nur noch in der\r\n";
+                        message += "aktuellen JDownloader 2 BETA Version verfügbar.\r\n";
+                        message += "Dieser Schritt war wegen Kompatibilitätsproblemen notwendig, sorry!";
+                        message += getMessageEnd();
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
     // private static void showFeatureDialogAll() {
     // try {
     // SwingUtilities.invokeAndWait(new Runnable() {
@@ -1442,10 +1494,8 @@ public class SaveTv extends PluginForHost {
     // message += "- Benutzerdefinierte Dateinamen über ein Tag-System mit vielen Möglichkeiten\r\n";
     // message += "- Und viele mehr...\r\n";
     // message += "\r\n";
-    // message += "In JDownloader 0.9.581 findest du die Plugin Einstellungen unter:\r\n";
-    // message += "Einstellungen -> Anbieter -> save.tv -> Doppelklick oder anklicken und links unten auf 'Einstellungen'\r\n";
-    // message += "\r\n";
-    // message += "In der JDownloader 2 BETA findest du sie unter Einstellungen -> Plugin Einstellungen -> save.tv";
+    // message +=
+    // "Diese einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
     // message += getMessageEnd();
     // JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE,
     // JOptionPane.INFORMATION_MESSAGE, null);
