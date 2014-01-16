@@ -70,6 +70,28 @@ public class ShareRapidCz extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
+        prepBr(this.br);
+        br.getPage(link.getDownloadURL());
+        checkOffline();
+        br.setFollowRedirects(true);
+        String filename = Encoding.htmlDecode(br.getRegex("style=\"padding: 12px 0px 0px 10px; display: block\">(.*?)</ br>").getMatch(0));
+        if (filename == null) {
+            filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)- Share-Rapid</title>").getMatch(0));
+        }
+        final String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    private void checkOffline() throws PluginException {
+        if (br.containsHTML("Nastala chyba 404") || br.containsHTML("Soubor byl smazán")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
@@ -80,6 +102,7 @@ public class ShareRapidCz extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        br.getPage("http://share-rapid.com/mujucet/");
         long realTraffic = 0l;
         String trafficleft = null;
         /**
@@ -198,11 +221,12 @@ public class ShareRapidCz extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String dllink = null;
-        requestFileInformation(downloadLink);
-        login(account, true);
+        // requestFileInformation(downloadLink);
+        login(account, false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000); }
-        if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
+        checkOffline();
+        if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000);
+        if (br.containsHTML("Soubor byl chybně nahrán na server")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000);
         if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) {
             logger.info("share-rapid.cz: Not enough traffic left!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -216,7 +240,7 @@ public class ShareRapidCz extends PluginForHost {
         }
         // Handling for free accounts and premium accounts without enough traffic
         if (nonTrafficPremium == true || (dllink == null && account.getBooleanProperty("freeaccount"))) {
-            // Set max simultan downloads to 1, also for premium accounts which usually allow more because we're downloading as
+            // Set max simultan downloads to 1, also for premium accounts which usually allow more because we're maybe downloading as
             // free(registered) user here
             try {
                 maxPrem.set(1);
@@ -281,7 +305,6 @@ public class ShareRapidCz extends PluginForHost {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 setBrowserExclusive();
-                br.setCustomCharset("UTF-8");
                 br.setFollowRedirects(false);
                 br.setDebug(true);
                 prepBr(this.br);
@@ -314,14 +337,11 @@ public class ShareRapidCz extends PluginForHost {
                 form.put("pass1", Encoding.urlEncode(account.getPass()));
                 form.put("remember", "1");
                 br.submitForm(form);
-                if (!br.containsHTML("<td>GB:</td>")) {
-                    br.getPage("http://share-rapid.com/mujucet/");
-                    if (!br.containsHTML("<td>GB:</td>")) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
+                if (br.getCookie(COOKIE_HOST, "jablko") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 /** Save cookies */
@@ -342,26 +362,8 @@ public class ShareRapidCz extends PluginForHost {
 
     private void prepBr(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0");
-        br.setCookie(MAINPAGE, "lang", "cs");
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        setBrowserExclusive();
         br.setCustomCharset("UTF-8");
         br.setCookie(MAINPAGE, "lang", "cs");
-        br.getPage(link.getDownloadURL());
-        br.setFollowRedirects(true);
-        if (br.containsHTML("Nastala chyba 404") || br.containsHTML("Soubor byl smazán")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = Encoding.htmlDecode(br.getRegex("style=\"padding: 12px 0px 0px 10px; display: block\">(.*?)</ br>").getMatch(0));
-        if (filename == null) {
-            filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)- Share-Rapid</title>").getMatch(0));
-        }
-        final String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     public synchronized void controlPremium(final int num) {
