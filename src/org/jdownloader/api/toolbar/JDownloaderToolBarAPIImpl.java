@@ -293,7 +293,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                          * if the url cannot be handled because a plugin is broken, we check the dom
                          */
                         addCompleteDom(url, dom, link);
-
                     }
                 });
                 java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
@@ -371,7 +370,6 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         job.setCustomSourceUrl(url);
         AddLinksProgress d = new AddLinksProgress(job) {
             protected String getSearchInText() {
-
                 return url;
             }
 
@@ -380,9 +378,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 loc.x -= getPreferredSize().width / 2;
                 loc.y += 30;
                 return loc;
-
             }
-
         };
 
         if (d.isHiddenByDontShowAgain()) {
@@ -393,10 +389,8 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                         lc.waitForCrawling();
                         System.out.println("JOB DONE: " + lc.getCrawledLinksFoundCounter());
                     }
-
                 }
             };
-
             thread.start();
         } else {
             try {

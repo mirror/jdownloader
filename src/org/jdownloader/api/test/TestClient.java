@@ -149,7 +149,6 @@ public class TestClient {
         public String getName() {
             return "Test Config";
         }
-
     }
 
     /**

@@ -87,7 +87,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
 							 * 
 							 */
                             private static final long serialVersionUID = -2183896670625238331L;
-
                             {
                                 setSmallIcon(NewTheme.I().getIcon("cancel", 16));
                             }

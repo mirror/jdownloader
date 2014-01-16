@@ -6,14 +6,14 @@ import java.util.List;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiNamespace;
-import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
+import org.jdownloader.myjdownloader.client.bindings.AccountQueryInterface;
 
 @ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface.NAMESPACE)
 public interface AccountAPIV2 extends RemoteAPIInterface {
     public void addAccount(String premiumHoster, String username, String password);
 
     @AllowNonStorableObjects
-    public List<AccountAPIStorableV2> listAccounts(AccountQuery query);
+    public List<AccountAPIStorableV2> listAccounts(AccountQueryInterface query);
 
     public List<String> listPremiumHoster();
 
