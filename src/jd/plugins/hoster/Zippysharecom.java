@@ -164,7 +164,7 @@ public class Zippysharecom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         setBrowserExclusive();
-        prepareBrowser(downloadLink);
+        requestFileInformation(downloadLink);
         final String mainpage = downloadLink.getDownloadURL().substring(0, downloadLink.getDownloadURL().indexOf(".com/") + 5);
         // DLLINK via packed JS or Flash App
         if (br.containsHTML("DownloadButton_v1\\.14s\\.swf")) {
