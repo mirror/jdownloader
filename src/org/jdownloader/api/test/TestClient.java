@@ -41,6 +41,7 @@ import org.appwork.utils.swing.dialog.LoginDialog.LoginData;
 import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable;
+import org.jdownloader.myjdownloader.client.bindings.EnumOptionStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface;
 import org.jdownloader.myjdownloader.client.exceptions.APIException;
 import org.jdownloader.myjdownloader.client.exceptions.EmailNotValidatedException;
@@ -134,9 +135,14 @@ public class TestClient {
         public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
             final AdvancedConfigInterface link = api.link(AdvancedConfigInterface.class, chooseDevice(api));
             ArrayList<AdvancedConfigEntryDataStorable> fullList = link.list(".*", true, true, true);
+
             ArrayList<AdvancedConfigEntryDataStorable> captchacondif = link.list(".*captcha.*", false, true, false);
             System.out.println(fullList);
             System.out.println("maxforceddownloads = " + link.get("org.jdownloader.settings.GeneralSettings", null, "maxforceddownloads"));
+
+            ArrayList<AdvancedConfigEntryDataStorable> trigger = link.list("org.jdownloader.settings.GeneralSettings.CreateFolderTrigger", false, true, false);
+            ArrayList<EnumOptionStorable> enumValues = link.listEnum(trigger.get(0).getType());
+            System.out.println(enumValues);
         }
 
         @Override

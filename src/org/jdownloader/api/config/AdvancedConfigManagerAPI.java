@@ -6,11 +6,15 @@ import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.remoteapi.annotations.ApiDoc;
 import org.appwork.remoteapi.annotations.ApiNamespace;
+import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.config.annotations.AllowStorage;
 import org.jdownloader.settings.advanced.AdvancedConfigAPIEntry;
 
 @ApiNamespace(org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface.NAMESPACE)
 public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
+    @ApiDoc("list all possible enum values")
+    @AllowNonStorableObjects
+    public ArrayList<EnumOption> listEnum(String type) throws BadParameterException;
 
     @ApiDoc("list all available config entries")
     @AllowNonStorableObjects

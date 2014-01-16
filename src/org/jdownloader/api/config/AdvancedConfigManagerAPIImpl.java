@@ -4,9 +4,12 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.annotations.EnumLabel;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.StringUtils;
@@ -157,6 +160,37 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
     @Override
     public ArrayList<AdvancedConfigAPIEntry> list() {
         return list(null, false, false, false);
+    }
+
+    @Override
+    public ArrayList<EnumOption> listEnum(String type) throws BadParameterException {
+
+        try {
+            Class<?> cls = Class.forName(type);
+
+            ArrayList<EnumOption> ret = new ArrayList<EnumOption>();
+
+            Object[] values = (Object[]) cls.getMethod("values", new Class[] {}).invoke(null, new Object[] {});
+            for (final Object o : values) {
+                String label = null;
+                EnumLabel lbl = cls.getDeclaredField(o.toString()).getAnnotation(EnumLabel.class);
+                if (lbl != null) {
+                    label = lbl.value();
+                } else {
+
+                    if (o instanceof LabelInterface) {
+
+                        label = (((LabelInterface) o).getLabel());
+                    }
+                }
+                ret.add(new EnumOption(o.toString(), label));
+            }
+
+            return ret;
+        } catch (Exception e) {
+            throw new BadParameterException(e, "Bad Type: " + type);
+        }
+
     }
 
 }
