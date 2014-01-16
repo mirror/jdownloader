@@ -271,20 +271,19 @@ public class LnkCrptWs extends PluginForDecrypt {
                             }
                         } else {
                             image = new BufferedImage[images];
-                            BufferedImage tmpImage = null;
                             try {
-                                tmpImage = ImageIO.read(stream = imageUrls[0].openStream());
+                                BufferedImage tmpImage = ImageIO.read(stream = imageUrls[0].openStream());
+                                int w = tmpImage.getWidth();
+                                int h = tmpImage.getHeight() / images;
+                                for (int i = 0; i < image.length; i++) {
+                                    image[i] = tmpImage.getSubimage(0, i * h, w, h);
+                                    bar.setValue(i + 1);
+                                }
                             } finally {
                                 try {
                                     stream.close();
                                 } catch (final Throwable e) {
                                 }
-                            }
-                            int w = tmpImage.getWidth();
-                            int h = tmpImage.getHeight() / images;
-                            for (int i = 0; i < image.length; i++) {
-                                image[i] = tmpImage.getSubimage(0, i * h, w, h);
-                                bar.setValue(i + 1);
                             }
                         }
                     } catch (IOException e) {
@@ -706,6 +705,15 @@ public class LnkCrptWs extends PluginForDecrypt {
                     if (f.containsHTML("var s_s_c_user_id = ('\\d+'|\"\\d+\")")) {
                         FORM = f;
                         break;
+                    }
+                }
+                if (FORM == null) {
+                    String st = br.getRegex("(<script type=\'text/javascript\'>var s_s_c_.*?\'></script>)").getMatch(0);
+                    if (st != null) {
+                        Browser f = br.cloneBrowser();
+                        FORM = new Form();
+                        f.getRequest().setHtmlCode("<form>" + st + "</form>");
+                        FORM = f.getForm(0);
                     }
                 }
                 if (FORM == null) {
