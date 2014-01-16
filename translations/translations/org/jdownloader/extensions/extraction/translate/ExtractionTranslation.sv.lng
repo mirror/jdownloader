@@ -51,6 +51,7 @@ extractprogress_label=Extraherad %s1: %s2 filer
 failed=Extrahering misslyckades: %s1
 failed_no_details=Extrahering misslyckades
 file_exists=Filen existerar
+file_exists_message=Det uppstod ett problem vid uppackning av ett arkiv.\nFilen som ska packas upp finn redan på din hårddisk.Välj vad du vill göra:
 file_exists_not=Filen existerar inte
 filename=Filnamn
 files2=fil(er
