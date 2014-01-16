@@ -359,8 +359,13 @@ public class CatShareNet extends PluginForHost {
         doSomething();
         String dllink = getDllink();
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("Twój dzienny limit transferu")) {
+                UserIO.getInstance().requestMessageDialog(0, "CatShare.net Premium Error", "Daily Limit exceeded!" + "\r\nPremium disabled, will continue downloads as Free User");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
 
         logger.info("Final downloadlink = " + dllink + " starting the download...");
