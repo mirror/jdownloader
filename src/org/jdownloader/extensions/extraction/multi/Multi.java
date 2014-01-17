@@ -169,16 +169,13 @@ public class Multi extends IExtraction {
             List<ArchiveFile> files = link.createPartFileList(file, pattern);
             if (files.size() == 1 && files.get(0).getName().matches(REGEX_ZIP$)) {
                 // single zip
-
                 archive.setArchiveFiles(files);
                 canBeSingleType = true;
-
             } else {
                 // multizip
                 archive.setArchiveFiles(files);
                 canBeSingleType = false;
             }
-
         } else if (file.matches(REGEX_ANY_7ZIP_PART)) {
             /* MUST BE LAST ONE! */
             /* multipart 7zip */
@@ -191,7 +188,7 @@ public class Multi extends IExtraction {
         ArchiveFile firstArchiveFile = null;
         if (archive.getArchiveFiles().size() == 1 && canBeSingleType) {
             archive.setType(ArchiveType.SINGLE_FILE);
-            firstArchiveFile = link;
+            firstArchiveFile = archive.getArchiveFiles().get(0);
         } else {
             for (ArchiveFile l : archive.getArchiveFiles()) {
                 if ((archive.getType() == null || ArchiveType.MULTI_RAR == archive.getType()) && (l.getFilePath().matches(REGEX_FIRST_PART_MULTI_RAR) || l.getFilePath().matches(REGEX_ZERO_PART_MULTI_RAR))) {
@@ -214,7 +211,7 @@ public class Multi extends IExtraction {
                 } else if (l.getFilePath().matches(REGEX_ENDS_WITH_DOT_RAR) && !l.getFilePath().matches(REGEX_ANY_MULTI_RAR_PART_FILE)) {
                     if (archive.getArchiveFiles().size() == 1) {
                         archive.setType(ArchiveType.SINGLE_FILE);
-                        firstArchiveFile = link;
+                        firstArchiveFile = archive.getArchiveFiles().get(0);
                     } else {
                         archive.setType(ArchiveType.MULTI_RAR);
                         firstArchiveFile = l;
@@ -254,7 +251,6 @@ public class Multi extends IExtraction {
                 }
                 // TODO several multipart archive types are missing in this loop
             }
-            archive.setFirstArchiveFile(firstArchiveFile);
             if (archive.getType() == null) {
                 // maybe first part missing? try to get archive type without
                 // first part
@@ -302,6 +298,7 @@ public class Multi extends IExtraction {
                 }
             }
         }
+        archive.setFirstArchiveFile(firstArchiveFile);
         if (archive.getType() == null) { //
             throw new ArchiveException("Unsupported Archive: " + link.getFilePath());
         }
