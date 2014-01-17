@@ -41,9 +41,11 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
 
         super("linkgrabber");
         layoutComponents();
-        offline.setVisible(false);
-        progressCircle.setIndeterminate(true);
-        progressCircle.setValue(0);
+        if (offline != null) offline.setVisible(false);
+        if (progressCircle != null) {
+            progressCircle.setIndeterminate(true);
+            progressCircle.setValue(0);
+        }
 
     }
 
