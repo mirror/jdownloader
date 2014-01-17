@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -73,8 +72,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -182,12 +180,13 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     static public byte[] KEY = new byte[] { 0x01, 0x03, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
 
     private List<LazyCrawlerPlugin> update(LogSource logger, HashMap<String, ArrayList<LazyPlugin>> pluginCache) throws MalformedURLException {
-        LinkedHashMap<String, ArrayList<AbstractCrawlerPlugin>> ret = new LinkedHashMap<String, ArrayList<AbstractCrawlerPlugin>>();
-        LinkedHashMap<String, LazyCrawlerPlugin> ret2 = new LinkedHashMap<String, LazyCrawlerPlugin>();
-        Comparator<AbstractCrawlerPlugin> comp = new Comparator<AbstractCrawlerPlugin>() {
+        ArrayList<AbstractCrawlerPlugin> ret = new ArrayList<AbstractCrawlerPlugin>();
+        HashMap<String, ArrayList<LazyCrawlerPlugin>> ret2 = new HashMap<String, ArrayList<LazyCrawlerPlugin>>();
+
+        Comparator<LazyCrawlerPlugin> comp = new Comparator<LazyCrawlerPlugin>() {
 
             @Override
-            public int compare(AbstractCrawlerPlugin o1, AbstractCrawlerPlugin o2) {
+            public int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
                 if (o1.getInterfaceVersion() == o2.getInterfaceVersion()) return 0;
                 if (o1.getInterfaceVersion() > o2.getInterfaceVersion()) return 1;
                 return -1;
@@ -196,16 +195,14 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter", pluginCache)) {
             if (c.getLazyPlugin() != null) {
                 LazyCrawlerPlugin plugin = (LazyCrawlerPlugin) c.getLazyPlugin();
-                ret2.put(plugin.getDisplayName() + plugin.getPattern(), plugin);
-                ArrayList<AbstractCrawlerPlugin> existingPlugin = ret.get(plugin.getDisplayName());
-                if (existingPlugin == null) {
-                    existingPlugin = new ArrayList<AbstractCrawlerPlugin>();
-                    ret.put(plugin.getDisplayName(), existingPlugin);
+                ret.add(plugin.getAbstractCrawlerPlugin());
+                ArrayList<LazyCrawlerPlugin> existingLazyPlugin = ret2.get(plugin.getDisplayName());
+                if (existingLazyPlugin == null) {
+                    existingLazyPlugin = new ArrayList<LazyCrawlerPlugin>();
+                    ret2.put(plugin.getDisplayName(), existingLazyPlugin);
                 }
-
-                existingPlugin.add(plugin.getAbstractCrawlerPlugin());
-
-                Collections.sort(existingPlugin, comp);
+                existingLazyPlugin.add(plugin);
+                if (existingLazyPlugin.size() > 1) Collections.sort(existingLazyPlugin, comp);
                 logger.finer("@CrawlerPlugin ok(cached):" + plugin.getClassname() + " " + plugin.getDisplayName() + " " + plugin.getVersion());
                 continue;
             }
@@ -245,7 +242,6 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             LazyCrawlerPlugin l = null;
                             try {
                                 String displayName = new String(names[i]);
-                                ArrayList<AbstractCrawlerPlugin> existingPlugin = ret.get(displayName);
                                 /* we use new String() here to dereference the Annotation and it's loaded class */
                                 AbstractCrawlerPlugin ap = new AbstractCrawlerPlugin(new String(c.getClazz().getSimpleName()));
                                 ap.setCacheVersion(AbstractCrawlerPlugin.CACHEVERSION);
@@ -258,14 +254,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                 ap.setMainClassLastModified(c.getMainClassLastModified());
                                 ap.setMainClassFilename(c.getFile().getName());
                                 l = new LazyCrawlerPlugin(ap, null, classLoader);
-                                if (existingPlugin == null) {
-                                    existingPlugin = new ArrayList<AbstractCrawlerPlugin>();
-                                    ret.put(displayName, existingPlugin);
-                                }
-
-                                existingPlugin.add(ap);
-
-                                Collections.sort(existingPlugin, comp);
+                                ret.add(ap);
                                 try {
                                     /* check for stable compatibility */
                                     classLoader.setPluginClass(new String(c.getClazz().getName()));
@@ -285,10 +274,15 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                     logger.finest("@CrawlerPlugin incomplete:" + simpleName + " " + new String(names[i]) + " " + e.getMessage() + " " + revision);
                                     throw e;
                                 }
-                                if (existingPlugin.size() > 1) {
+                                ArrayList<LazyCrawlerPlugin> existingLazyPlugin = ret2.get(displayName);
+                                if (existingLazyPlugin == null) {
+                                    existingLazyPlugin = new ArrayList<LazyCrawlerPlugin>();
+                                    ret2.put(displayName, existingLazyPlugin);
+                                }
+                                existingLazyPlugin.add(l);
+                                if (existingLazyPlugin.size() > 1) {
                                     logger.finest("@CrawlerPlugin multiple crawler:" + displayName + "->" + simpleName + " " + revision);
                                 }
-                                ret2.put(ap.getDisplayName() + ap.getPattern(), l);
                                 logger.finest("@CrawlerPlugin ok:" + simpleName + " " + new String(names[i]) + " " + revision);
                             } catch (Throwable e) {
                                 logger.severe("@CrawlerPlugin failed:" + simpleName + " " + new String(names[i]) + " " + revision);
@@ -311,13 +305,14 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 logger.severe("@CrawlerPlugin missing:" + simpleName);
             }
         }
-        java.util.List<AbstractCrawlerPlugin> saveList = new ArrayList<AbstractCrawlerPlugin>();
-        for (ArrayList<AbstractCrawlerPlugin> crawler : ret.values()) {
-            saveList.addAll(crawler);
-        }
-        save(saveList);
+        save(ret);
         validateCache();
-        return new ArrayList<LazyCrawlerPlugin>(ret2.values());
+        ArrayList<LazyCrawlerPlugin> retList = new ArrayList<LazyCrawlerPlugin>();
+        for (ArrayList<LazyCrawlerPlugin> plugins : ret2.values()) {
+            if (plugins.size() > 1) Collections.sort(plugins, comp);
+            retList.addAll(plugins);
+        }
+        return retList;
     }
 
     private void save(List<AbstractCrawlerPlugin> save) {
