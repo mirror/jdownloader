@@ -21,6 +21,9 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.URL;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
@@ -52,18 +55,19 @@ import org.jdownloader.translate._JDT;
  */
 public abstract class Plugin implements ActionListener {
 
-    public static final String           HTTP_LINKS_HOST     = "http links";
-    public static final String           DIRECT_HTTP_HOST    = "DirectHTTP";
-    public static final String           FTP_HOST            = "ftp";
+    public static final String                   HTTP_LINKS_HOST     = "http links";
+    public static final String                   DIRECT_HTTP_HOST    = "DirectHTTP";
+    public static final String                   FTP_HOST            = "ftp";
 
     /* to keep 0.95xx comp */
     /* switch this on every stable update */
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /* afer 0.95xx */
-    protected Logger                     logger              = LogController.TRASH;
+    protected Logger                             logger              = LogController.TRASH;
 
-    protected CopyOnWriteArrayList<File> cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
+    protected CopyOnWriteArrayList<File>         cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
+    private static final HashMap<String, Object> CACHE               = new HashMap<String, Object>();
 
     public void setLogger(Logger logger) {
         if (logger == null) logger = LogController.TRASH;
@@ -74,9 +78,31 @@ public abstract class Plugin implements ActionListener {
         return logger;
     }
 
+    public void setCache(String key, Object value) {
+        synchronized (CACHE) {
+            CACHE.put(getHost() + "." + key, value);
+        }
+    }
+
+    public void removeCache(String key) {
+        synchronized (CACHE) {
+            CACHE.remove(getHost() + "." + key);
+        }
+    }
+
+    public void clearCache() {
+        synchronized (CACHE) {
+            String ID = getHost() + ".";
+            Iterator<Entry<String, Object>> it = CACHE.entrySet().iterator();
+            while (it.hasNext()) {
+                if (it.next().getKey().startsWith(ID)) it.remove();
+            }
+        }
+    }
+
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer
-     * DownloadLink.getName() verwendet werden
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet
+     * werden
      * 
      * @return Datename des Downloads.
      */
@@ -172,8 +198,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
-     * Patterns vorhanden ist.
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
      * 
      * @param data
      *            der zu prüfende Text
