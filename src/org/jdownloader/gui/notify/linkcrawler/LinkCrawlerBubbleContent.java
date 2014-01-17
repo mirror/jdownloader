@@ -38,7 +38,6 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     private Pair online;
 
     public LinkCrawlerBubbleContent() {
-
         super("linkgrabber");
         layoutComponents();
         if (offline != null) offline.setVisible(false);

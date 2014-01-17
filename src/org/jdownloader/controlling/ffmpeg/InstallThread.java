@@ -102,7 +102,7 @@ public class InstallThread extends Thread {
             }
 
         } else if (CrossSystem.isMac()) {
-            // different ffmpeg version fpor 10.6-
+            // different ffmpeg version for 10.6-
             if (CrossSystem.getMacOSVersion() < 10600000) {
                 path = FFMpegInstallTypeChooserDialog.searchFileIn(Application.getResource("tools/mac/ffmpeg_10.5.x-/"), JDGui.getInstance() == null ? null : JDGui.getInstance().getMainFrame(), true);
             } else {

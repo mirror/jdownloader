@@ -43,12 +43,12 @@ public class SubConfiguration extends Property implements Serializable {
     protected transient boolean                                 valid            = false;
     protected transient final File                              file;
 
-    protected AtomicLong                                        setMark          = new AtomicLong(0);
-    protected AtomicLong                                        writeMark        = new AtomicLong(0);
+    private final AtomicLong                                    setMark          = new AtomicLong(0);
+    private final AtomicLong                                    writeMark        = new AtomicLong(0);
     protected static volatile HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
     protected static final HashMap<String, AtomicInteger>       LOCKS            = new HashMap<String, AtomicInteger>();
-    protected static byte[]                                     KEY              = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
-    protected static DelayedRunnable                            saveDelayer      = new DelayedRunnable(5000, 30000) {
+    protected static final byte[]                               KEY              = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
+    protected static final DelayedRunnable                      SAVEDELAYER      = new DelayedRunnable(5000, 30000) {
 
                                                                                      @Override
                                                                                      public void delayedrun() {
@@ -56,7 +56,7 @@ public class SubConfiguration extends Property implements Serializable {
                                                                                      }
                                                                                  };
 
-    {
+    static {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
             @Override
             public String toString() {
@@ -148,7 +148,7 @@ public class SubConfiguration extends Property implements Serializable {
         boolean change = super.setProperty(key, value);
         if (valid && change) {
             setMark.incrementAndGet();
-            saveDelayer.run();
+            SAVEDELAYER.run();
         }
         return change;
     }
@@ -158,7 +158,7 @@ public class SubConfiguration extends Property implements Serializable {
         super.setProperties(properties);
         if (valid) {
             setMark.incrementAndGet();
-            saveDelayer.run();
+            SAVEDELAYER.run();
         }
     }
 

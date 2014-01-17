@@ -25,6 +25,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.ConfigInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
@@ -63,8 +64,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
         this.list = null;
@@ -297,8 +297,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             try {
                                 String displayName = new String(names[i]);
                                 /*
-                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin
-                                 * for each downloadLink
+                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
                                  */
                                 AbstractHostPlugin existingPlugin = ret.get(displayName);
                                 if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
@@ -324,8 +323,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
                                     PluginForHost plg = l.newInstance(classLoader);
                                     /* set configinterface */
-                                    ap.setConfigInterface(plg.getConfigInterface().getName());
-                                    l.setConfigInterface(plg.getConfigInterface().getName());
+                                    Class<? extends ConfigInterface> configInterface = plg.getConfigInterface();
+                                    if (configInterface != null) {
+                                        String name = new String(configInterface.getName());
+                                        ap.setConfigInterface(name);
+                                        l.setConfigInterface(name);
+                                    }
                                     /* set premium */
                                     ap.setPremium(plg.isPremiumEnabled());
                                     l.setPremium(plg.isPremiumEnabled());
