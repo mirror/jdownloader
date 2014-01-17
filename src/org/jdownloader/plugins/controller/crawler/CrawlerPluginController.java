@@ -188,8 +188,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             @Override
             public int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
                 if (o1.getInterfaceVersion() == o2.getInterfaceVersion()) return 0;
-                if (o1.getInterfaceVersion() > o2.getInterfaceVersion()) return 1;
-                return -1;
+                if (o1.getInterfaceVersion() > o2.getInterfaceVersion()) return -1;
+                return 1;
             }
         };
         for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter", pluginCache)) {
