@@ -1135,15 +1135,18 @@ public class Multi extends IExtraction {
     @Override
     public boolean isArchivSupported(ArchiveFactory factory, boolean allowDeepInspection) {
         String[] patterns = new String[] { PA_R_T_0_9_RAR$, REGEX_EXTENSION_RAR, ZIP$, _7Z$, TAR_GZ$, TAR_BZ2$, REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER, TAR$, Z_D_$, _7Z_D };
-
+        String archiveName = factory.getName();
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(p, Pattern.CASE_INSENSITIVE);
 
-            Matcher matcher = pattern.matcher(factory.getName());
+            Matcher matcher = pattern.matcher(archiveName);
             if (matcher.find()) {
 
                 //
                 //
+                if (_7Z_D.equals(p)) {
+                    if (!archiveName.contains("7z.") && !archiveName.contains("7Z.")) continue;
+                }
                 return true;
 
             }
@@ -1151,14 +1154,13 @@ public class Multi extends IExtraction {
 
         for (String p : patterns) {
             Pattern pattern = Pattern.compile(".+?" + p, Pattern.CASE_INSENSITIVE);
-
-            Matcher matcher = pattern.matcher(factory.getName());
+            Matcher matcher = pattern.matcher(archiveName);
             if (matcher.find()) {
-
                 //
-                //
+                if (_7Z_D.equals(p)) {
+                    if (!archiveName.contains("7z.") && !archiveName.contains("7Z.")) continue;
+                }
                 return true;
-
             }
         }
         return false;
