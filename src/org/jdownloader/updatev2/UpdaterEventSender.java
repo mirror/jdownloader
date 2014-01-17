@@ -10,6 +10,9 @@ public class UpdaterEventSender extends Eventsender<UpdaterListener, UpdaterEven
         case UPDATES_AVAILABLE:
             listener.onUpdatesAvailable((Boolean) event.getParameter(0), (InstallLog) event.getParameter(1));
             break;
+        case UPDATE_STATUS:
+            listener.onUpdaterStatusUpdate(((UpdateStatusUpdateEvent) event).getLabel(), ((UpdateStatusUpdateEvent) event).getIcon(), ((UpdateStatusUpdateEvent) event).getProgress());
+            break;
         // fill
         default:
             System.out.println("Unhandled Event: " + event);

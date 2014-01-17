@@ -6,10 +6,19 @@ public class AbstractHostPlugin implements Storable {
     public AbstractHostPlugin(/* STorable */) {
     }
 
-    public static final int CACHEVERSION   = 3;
+    public static final int CACHEVERSION    = 3;
     private boolean         premium;
     private boolean         hasConfig;
-    private boolean         hasLinkRewrite = false;
+    private boolean         hasLinkRewrite  = false;
+    private String          configInterface = null;
+
+    public String getConfigInterface() {
+        return configInterface;
+    }
+
+    public void setConfigInterface(String configInterface) {
+        this.configInterface = configInterface;
+    }
 
     public boolean isHasLinkRewrite() {
         return hasLinkRewrite;

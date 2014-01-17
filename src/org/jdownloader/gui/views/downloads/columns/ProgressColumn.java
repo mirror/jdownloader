@@ -175,8 +175,10 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             if (dLink.getDefaultPlugin() == null) {
                 return _GUI._.gui_treetable_error_plugin();
             } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
-
-            return format(progress.getPercent()); }
+                double prgs = progress.getPercent();
+                if (prgs < 0) { return ""; }
+                return format(prgs);
+            }
         }
         if (total < 0) return "~";
         return format(getPercentString(current, total));

@@ -109,8 +109,19 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         return pluginWrapper;
     }
 
-    public LazyPlugin(String patternString, String className, String displayName, long version, Class<T> class1, PluginClassLoaderChild classLoader) {
+    private String configInterface = null;
+
+    public String getConfigInterface() {
+        return configInterface;
+    }
+
+    public void setConfigInterface(String configInterface) {
+        this.configInterface = configInterface;
+    }
+
+    public LazyPlugin(String patternString, String className, String configInterface, String displayName, long version, Class<T> class1, PluginClassLoaderChild classLoader) {
         pattern = patternString;
+        this.configInterface = configInterface;
         if (class1 != null) {
             pluginClass = new WeakReference<Class<T>>(class1);
         }

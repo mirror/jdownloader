@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
@@ -78,6 +79,9 @@ public class UpdateController implements UpdateCallbackInterface {
     private String             appid;
     private String             updaterid;
     private UpdaterEventSender eventSender;
+    private Icon               statusIcon;
+    private String             statusLabel;
+    private double             statusProgress = -1;
 
     public UpdateHandler getHandler() {
         return handler;
@@ -118,17 +122,23 @@ public class UpdateController implements UpdateCallbackInterface {
 
     @Override
     public void updateGuiIcon(ImageIcon icon) {
+        this.statusIcon = (Icon) icon;
+        eventSender.fireEvent(new UpdateStatusUpdateEvent(this, statusLabel, statusIcon, statusProgress));
     }
 
     @Override
     public void updateGuiText(String text) {
         lazyGetIcon().setTitle(text);
+        this.statusLabel = text;
+        eventSender.fireEvent(new UpdateStatusUpdateEvent(this, statusLabel, statusIcon, statusProgress));
     }
 
     @Override
     public void updateGuiProgress(double progress) {
+        this.statusProgress = progress;
         lazyGetIcon().setIndeterminate(progress < 0);
         lazyGetIcon().setValue((int) progress);
+        eventSender.fireEvent(new UpdateStatusUpdateEvent(this, statusLabel, statusIcon, statusProgress));
     }
 
     public String getAppID() {

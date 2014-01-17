@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
@@ -29,7 +30,7 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.settings.IfFileExistsAction;
 
-public class DownloadSession {
+public class DownloadSession extends Property {
 
     public static enum STOPMARK {
         /* no stopmark is set */
@@ -269,6 +270,7 @@ public class DownloadSession {
     }
 
     protected DownloadSession(DownloadSession previousSession) {
+
         if (previousSession == null) {
             proxyInfoHistory = new ProxyInfoHistory();
         } else {

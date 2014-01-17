@@ -11,7 +11,7 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     protected static final String JD_PLUGINS_DECRYPTER = "jd.plugins.decrypter.";
 
     public LazyCrawlerPlugin(AbstractCrawlerPlugin ap, Class<PluginForDecrypt> class1, PluginClassLoaderChild classLoader) {
-        super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1, classLoader);
+        super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getConfigInterface(), ap.getDisplayName(), ap.getVersion(), class1, classLoader);
         hasConfig = ap.isHasConfig();
         maxConcurrentInstances = ap.getMaxConcurrentInstances();
         mainClassFilename = ap.getMainClassFilename();

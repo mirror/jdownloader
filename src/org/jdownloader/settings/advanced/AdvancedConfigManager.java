@@ -11,6 +11,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.synthetica.SyntheticaSettings;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
@@ -18,6 +19,12 @@ import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.RtmpdumpSettings;
 import org.jdownloader.settings.SoundSettings;
@@ -115,9 +122,62 @@ public class AdvancedConfigManager {
         eventSender.fireEvent(new AdvancedConfigEvent(this, AdvancedConfigEvent.Types.UPDATED, cf));
     }
 
+    @SuppressWarnings("unchecked")
+    public java.util.List<AdvancedConfigEntry> listPluginsInterfaces() {
+
+        ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
+        HostPluginController.getInstance().ensureLoaded();
+        for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
+
+            String ifName = hplg.getConfigInterface();
+            if (StringUtils.isNotEmpty(ifName)) {
+                ConfigInterface cf;
+                try {
+                    cf = PluginJsonConfig.get((Class<ConfigInterface>) PluginClassLoader.getInstance().loadClass(ifName));
+
+                    HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
+
+                    for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
+
+                        if (map.containsKey(m)) continue;
+
+                        if (m.getAnnotation(AboutConfig.class) != null) {
+                            if (m.getSetter() == null) {
+                                throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
+                            } else if (m.getGetter() == null) {
+                                throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
+                            } else {
+
+                                ret.add(new AdvancedConfigEntry(cf, m));
+
+                                map.put(m, true);
+                            }
+                        }
+
+                    }
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println(ifName);
+            }
+        }
+
+        for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
+
+            String ifName = cplg.getConfigInterface();
+            if (StringUtils.isNotEmpty(ifName)) {
+                System.out.println(ifName);
+            }
+        }
+        return ret;
+    }
+
     public java.util.List<AdvancedConfigEntry> list() {
         synchronized (configInterfaces) {
-            return new ArrayList<AdvancedConfigEntry>(configInterfaces);
+            ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>(configInterfaces);
+            ret.addAll(listPluginsInterfaces());
+            return ret;
         }
     }
 

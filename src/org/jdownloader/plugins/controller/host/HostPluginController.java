@@ -63,7 +63,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private HostPluginController() {
         this.list = null;
@@ -296,7 +297,8 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             try {
                                 String displayName = new String(names[i]);
                                 /*
-                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
+                                 * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin
+                                 * for each downloadLink
                                  */
                                 AbstractHostPlugin existingPlugin = ret.get(displayName);
                                 if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {
@@ -310,6 +312,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                 ap.setPattern(new String(patterns[i]));
                                 ap.setVersion(revision);
                                 ap.setInterfaceVersion(a.interfaceVersion());
+
                                 /* information to speed up rescan */
                                 ap.setMainClassSHA256(c.getMainClassSHA256());
                                 ap.setMainClassLastModified(c.getMainClassLastModified());
@@ -320,7 +323,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     classLoader.setPluginClass(new String(c.getClazz().getName()));
                                     classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
                                     PluginForHost plg = l.newInstance(classLoader);
-
+                                    /* set configinterface */
+                                    ap.setConfigInterface(plg.getConfigInterface().getName());
+                                    l.setConfigInterface(plg.getConfigInterface().getName());
                                     /* set premium */
                                     ap.setPremium(plg.isPremiumEnabled());
                                     l.setPremium(plg.isPremiumEnabled());

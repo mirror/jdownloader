@@ -1,6 +1,6 @@
 package org.jdownloader.controlling.ffmpeg;
 
-
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.utils.Application;
@@ -8,7 +8,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
 public class FFmpegProvider {
-    private static final FFmpegProvider INSTANCE = new FFmpegProvider();
+    public static final String          FFMPEG_INSTALL_CHECK = "FFMPEG_INSTALL_CHECK";
+    private static final FFmpegProvider INSTANCE             = new FFmpegProvider();
 
     /**
      * get the only existing instance of FFmpegProvider. This is a singleton
@@ -19,9 +20,9 @@ public class FFmpegProvider {
         return FFmpegProvider.INSTANCE;
     }
 
-    private boolean       installing = false;
-    InstallThread installThread;
-    private LogSource     logger;
+    private boolean   installing = false;
+    InstallThread     installThread;
+    private LogSource logger;
 
     /**
      * Create a new instance of FFmpegProvider. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
@@ -42,9 +43,11 @@ public class FFmpegProvider {
     }
 
     public void install(FFMpegInstallProgress progress, String task) throws InterruptedException {
-
+        // we do not want to ask twice on one session
+        if (DownloadWatchDog.getInstance().getSession().getBooleanProperty(FFMPEG_INSTALL_CHECK, false)) return;
+        DownloadWatchDog.getInstance().getSession().setProperty(FFMPEG_INSTALL_CHECK, true);
         synchronized (this) {
-            if (installThread == null) {
+            if (installThread == null || !installThread.isAlive()) {
                 installThread = new InstallThread(this, task);
                 installThread.start();
                 logger.info("Started Install process");

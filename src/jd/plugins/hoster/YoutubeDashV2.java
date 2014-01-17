@@ -20,6 +20,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
@@ -80,10 +81,13 @@ import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.UpdateController;
 
-@HostPlugin(revision = "$Revision: 24000 $", interfaceVersion = 3, names = { "youtube.jd" }, urls = { "youtubev2://.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 24000 $", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
 
     private final String           DASH_AUDIO_SIZE     = "DASH_AUDIO_SIZE";
@@ -104,6 +108,11 @@ public class YoutubeDashV2 extends PluginForHost {
     public String getAGBLink() {
         //
         return "http://youtube.com/t/terms";
+    }
+
+    @Override
+    public Class<? extends ConfigInterface> getConfigInterface() {
+        return YoutubeConfig.class;
     }
 
     @Override
@@ -781,18 +790,30 @@ public class YoutubeDashV2 extends PluginForHost {
 
     public void handleDash(final DownloadLink downloadLink, Account account) throws Exception {
         FFmpeg ffmpeg = new FFmpeg();
-        if (!ffmpeg.isAvailable()) {
-            FFMpegInstallProgress progress = new FFMpegInstallProgress();
-            downloadLink.setPluginProgress(progress);
-            try {
-                FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
-            } finally {
-                downloadLink.setPluginProgress(null);
-            }
-            ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
+        synchronized (DownloadWatchDog.getInstance()) {
+
             if (!ffmpeg.isAvailable()) {
-                //
-                throw new PluginException(LinkStatus.ERROR_FATAL, _GUI._.YoutubeDash_handleFree_ffmpegmissing());
+                FFMpegInstallProgress progress = new FFMpegInstallProgress();
+                downloadLink.setPluginProgress(progress);
+                try {
+
+                    FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
+                } finally {
+                    downloadLink.setPluginProgress(null);
+                }
+                ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
+                if (!ffmpeg.isAvailable()) {
+                    //
+                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                    if (requestedInstalls != null && requestedInstalls.contains("ffmpeg")) {
+                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
+
+                    } else {
+                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                    }
+
+                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.YoutubeDash_handleFree_ffmpegmissing());
+                }
             }
         }
 

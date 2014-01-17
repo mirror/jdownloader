@@ -80,8 +80,8 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "The Update Server is not available right now. Please try again later or contact our support", "Der Updateserver ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut oder kontaktieren Sie unseren Support." })
     String errordialog_server_error();
 
-    @Default(lngs = { "en", "de" }, values = { "The Update Server is busy right now. Please try again in a few minutes.", "Der Updateserver ist ausgelastet. Bitte versuchen Sie es in einigen Minuten erneut." })
-    String errordialog_server_locked();
+    @Default(lngs = { "en", "de" }, values = { "We are preparing a new Update Package right now. Please try again in a few minutes", "Wir bereiten gerade ein neues Aktualisierungspaket vor. Bitte versuch es in einigen Minuten erneut." })
+    String errordialog_server_locked2();
 
     @Default(lngs = { "en", "de" }, values = { "The Update Server is not available right now. Please try again later.", "Der Updateserver ist momentan nicht erreichbar. Bitte versuchen Sie es später erneut." })
     String errordialog_server_offline();

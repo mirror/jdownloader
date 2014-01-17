@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -904,8 +905,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT and only put the
-     * mainframe stuff into EDT
+     * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
+     * and only put the mainframe stuff into EDT
      * 
      * restores the dimension and location to the window
      */
@@ -1575,8 +1576,8 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     }
 
     /**
-     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to avoid sideeffects when
-     * changing anything
+     * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
+     * avoid sideeffects when changing anything
      * 
      * @param minimize
      */
@@ -1832,6 +1833,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
         }
         return true;
+    }
+
+    @Override
+    public void onUpdaterStatusUpdate(String label, Icon icon, double progress) {
     }
 
 }

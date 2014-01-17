@@ -34,6 +34,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
             ap.setPremiumUrl(getPremiumUrl());
         }
         ap.setHasAccountRewrite(isHasAccountRewrite());
+        ap.setConfigInterface(getConfigInterface());
         ap.setHasLinkRewrite(isHasLinkRewrite());
         ap.setPattern(getPatternSource());
         ap.setVersion(getVersion());
@@ -90,7 +91,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private boolean hasLinkRewrite;
 
     public LazyHostPlugin(AbstractHostPlugin ap, Class<PluginForHost> class1, PluginClassLoaderChild classLoaderChild) {
-        super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1, classLoaderChild);
+        super(ap.getPattern(), JD_PLUGINS_HOSTER + ap.getClassname(), ap.getConfigInterface(), ap.getDisplayName(), ap.getVersion(), class1, classLoaderChild);
         premiumUrl = ap.getPremiumUrl();
         premium = ap.isPremium();
         hasConfig = ap.isHasConfig();
@@ -100,6 +101,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         interfaceVersion = ap.getInterfaceVersion();
         hasAccountRewrite = ap.isHasAccountRewrite();
         hasLinkRewrite = ap.isHasLinkRewrite();
+
     }
 
     public boolean isHasAccountRewrite() {

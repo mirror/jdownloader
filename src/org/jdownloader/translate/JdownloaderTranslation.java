@@ -505,4 +505,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Disabled -  Don't Group" })
     String YoutubeDash_GroupLogic_NO_GROUP();
 
+    @Default(lngs = { "en" }, values = { "Skipped - Restart Required" })
+    String DownloadLink_setSkipped_statusmessage_update_restart();
+
+    @Default(lngs = { "en" }, values = { "Skipped - FFmpeg™ missing" })
+    String DownloadLink_setSkipped_statusmessage_ffmpeg();
+
 }

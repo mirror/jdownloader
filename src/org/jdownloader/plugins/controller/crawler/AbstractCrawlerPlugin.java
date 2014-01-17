@@ -17,6 +17,15 @@ public class AbstractCrawlerPlugin implements Storable {
     private String          mainClassSHA256        = null;
     private String          mainClassFilename      = null;
     private int             cacheVersion           = -1;
+    private String          configInterface        = null;
+
+    public String getConfigInterface() {
+        return configInterface;
+    }
+
+    public void setConfigInterface(String configInterface) {
+        this.configInterface = configInterface;
+    }
 
     public int getCacheVersion() {
         return cacheVersion;

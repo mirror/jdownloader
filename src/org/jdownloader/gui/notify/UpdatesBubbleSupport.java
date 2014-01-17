@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 
+import javax.swing.Icon;
+
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 
 import org.appwork.utils.swing.EDTRunner;
@@ -49,6 +51,10 @@ public class UpdatesBubbleSupport extends AbstractBubbleSupport implements Updat
     @Override
     public List<Element> getElements() {
         return null;
+    }
+
+    @Override
+    public void onUpdaterStatusUpdate(String label, Icon icon, double progress) {
     }
 
 }

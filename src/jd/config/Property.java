@@ -29,8 +29,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.NullsafeAtomicReference;
 
 /**
- * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache Dialogelemente zu
- * erstellen. Ein Automatisiertes speichern/laden wird dadurch möglich
+ * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache
+ * Dialogelemente zu erstellen. Ein Automatisiertes speichern/laden wird dadurch möglich
  * 
  * @author JD-Team
  * 
@@ -48,6 +48,10 @@ public class Property implements Serializable {
     private transient NullsafeAtomicReference<ConcurrentHashMap<String, Object>> threadSafeproperties = new NullsafeAtomicReference<ConcurrentHashMap<String, Object>>(null);
 
     public Property() {
+    }
+
+    public void removeProperty(String key) {
+        setProperty(key, Property.NULL);
     }
 
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {

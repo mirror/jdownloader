@@ -1,5 +1,7 @@
 package org.jdownloader.gui.jdtrayicon.actions;
 
+import javax.swing.Icon;
+
 import jd.gui.swing.jdgui.components.toolbar.actions.UpdateAction;
 
 import org.jdownloader.gui.jdtrayicon.translate._TRAY;
@@ -29,6 +31,10 @@ public class TrayUpdateAction extends UpdateAction implements UpdaterListener {
     @Override
     public void onUpdatesAvailable(boolean selfupdate, InstallLog installlog) {
         updateName();
+    }
+
+    @Override
+    public void onUpdaterStatusUpdate(String label, Icon icon, double progress) {
     }
 
 }

@@ -71,7 +71,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -281,6 +282,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                     classLoader.setPluginClass(new String(c.getClazz().getName()));
                                     classLoader.setCheckStableCompatibility(a.interfaceVersion() == 2);
                                     PluginForDecrypt plg = l.newInstance(classLoader);
+                                    ap.setConfigInterface(plg.getConfigInterface().getName());
+                                    l.setConfigInterface(plg.getConfigInterface().getName());
                                     ap.setHasConfig(plg.hasConfig());
                                     ap.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());
                                     l.setMaxConcurrentInstances(ap.getMaxConcurrentInstances());

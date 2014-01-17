@@ -15,7 +15,9 @@ public enum SkipReason {
     DISK_FULL(_JDT._.DownloadLink_setSkipped_statusmessage_disk_full(), IconKey.ICON_SAVE),
     NO_ACCOUNT(_JDT._.DownloadLink_setSkipped_statusmessage_account(), IconKey.ICON_PREMIUM),
     INVALID_DESTINATION(_JDT._.DownloadLink_setSkipped_statusmessage_invalid_path(), IconKey.ICON_SAVETO),
-    FILE_EXISTS(_JDT._.DownloadLink_setSkipped_statusmessage_file_exists(), IconKey.ICON_COPY);
+    FILE_EXISTS(_JDT._.DownloadLink_setSkipped_statusmessage_file_exists(), IconKey.ICON_COPY),
+    UPDATE_RESTART_REQUIRED(_JDT._.DownloadLink_setSkipped_statusmessage_update_restart(), IconKey.ICON_RESTART),
+    FFMPEG_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffmpeg(), "ffmpeg");
 
     private final String exp;
     private String       iconKey;

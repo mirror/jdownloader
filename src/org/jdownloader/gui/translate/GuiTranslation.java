@@ -3551,8 +3551,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "FFmpeg is missing!" })
     String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title();
 
-    @Default(lngs = { "en" }, values = { "To %s1, the \"Third party\" application FFmpeg™ is required.\r\nFFmpeg™ is a leading multimedia application that can be started by JDownloader \r\nto merge video and audio streams and vice versa. Unfortunately, JDownloader \r\ncould not find FFmpeg™ installed on your system." })
-    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd(String str);
+    @Default(lngs = { "en" }, values = { "<html>To %s1, the \"Third party\" application FFmpeg™ is required.FFmpeg™ is a leading multimedia application that can be started by JDownloader to merge video and audio streams and vice versa. Unfortunately, JDownloader could not find FFmpeg™ installed on your system.</html>" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd_2(String str);
 
     @Default(lngs = { "en" }, values = { "Ok, but what now?" })
     String FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser();
@@ -3581,8 +3581,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "What's the matter?" })
     String FFMpegInstallTypeChooserDialog_layoutDialogContent_problem();
 
-    @Default(lngs = { "en" }, values = { "If you have FFmpeg™ installed, please tell us the installation path. \r\nIf not, you should download & install it first, or click cancel to skip this task." })
-    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve();
+    @Default(lngs = { "en" }, values = { "<html>If you want JDownloader to download and install the required official FFmpeg™ Package, please click [Install FFmpeg™ now].</html>" })
+    String FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve2();
 
     @Default(lngs = { "en" }, values = { "Searching for the FFmpeg™ Binary" })
     String FFMpegInstallTypeChooserDialog_run_searching_();
@@ -3705,7 +3705,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Import Accounts?" })
     String AccountLoader_onNewFile_title();
 
-    @Default(lngs = { "en" }, values = { "Do you want to import these Premium Accounts:\r\n%s1?" })
+    @Default(lngs = { "en" }, values = { "Do you want to import these Premium Accou\r\n%s1?" })
     String AccountLoader_onNewFile_msg(String absolutePath);
 
     @Default(lngs = { "en" }, values = { "Could not import and new Accounts..." })
@@ -3851,4 +3851,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "<html>Fast Crawling skips the filesize check and this increases the crawling performance. If enabled, you will not see the final filesize until the actual download starts.</html>" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc();
+
+    @Default(lngs = { "en" }, values = { "Install FFmpeg™ now" })
+    String ffmpeg_install_now();
 }
