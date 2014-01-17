@@ -78,6 +78,44 @@ public abstract class Plugin implements ActionListener {
         return logger;
     }
 
+    public static PluginCache getCache(final String id) {
+        return new PluginCache() {
+            final String ID = id + ".";
+
+            @Override
+            public void setCache(String key, Object value) {
+                synchronized (CACHE) {
+                    CACHE.put(ID + key, value);
+                }
+            }
+
+            @Override
+            public void removeCache(String key) {
+                synchronized (CACHE) {
+                    CACHE.remove(ID + key);
+                }
+            }
+
+            @Override
+            public <T> T getCache(String key, T defaultValue) {
+                synchronized (CACHE) {
+                    return (T) CACHE.get(ID + key);
+                }
+            }
+
+            @Override
+            public void clearCache() {
+                synchronized (CACHE) {
+                    Iterator<Entry<String, Object>> it = CACHE.entrySet().iterator();
+                    while (it.hasNext()) {
+                        if (it.next().getKey().startsWith(ID)) it.remove();
+                    }
+                }
+            }
+
+        };
+    }
+
     public void setCache(String key, Object value) {
         synchronized (CACHE) {
             CACHE.put(getHost() + "." + key, value);
