@@ -13,7 +13,6 @@ import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
 import jd.gui.swing.jdgui.views.settings.components.ProxyInput;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
-import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.decrypter.YoutubeVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
@@ -24,7 +23,6 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
-import org.appwork.utils.Application;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
@@ -224,16 +222,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         extraAudio = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, new MultiVariantBox(this, audio));
         extraVideo = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, new MultiVariantBox(this, image));
 
-        if (!Application.isJared(Application.class)) {
-            addHeader("DEBUG ONLY... This Plugin is not finished yet", NewTheme.I().getIcon(IconKey.ICON_WARNING, 18));
-            add(new AdvancedTable(model = new AdvancedConfigTableModel("YoutubeConfig") {
-                @Override
-                public void refresh(String filterText) {
-                    _fireTableStructureChanged(register(), true);
-                }
-            }));
-            model.refresh("Youtube");
-        }
         updateBest();
     }
 

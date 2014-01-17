@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -351,6 +352,7 @@ public class YoutubeHelper {
         if (page != null && page instanceof MinTimeWeakReference) {
             String content = ((MinTimeWeakReference<String>) page).get();
             if (StringUtils.isNotEmpty(content)) {
+                clone.setRequest(new GetRequest(absolute));
                 clone.getRequest().setHtmlCode(content);
                 return content;
             }
