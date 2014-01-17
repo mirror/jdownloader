@@ -7,7 +7,6 @@ import org.appwork.storage.Storage;
 import org.jdownloader.api.test.TestClient.Test;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
-import org.jdownloader.myjdownloader.client.bindings.AccountQueryInterface;
 import org.jdownloader.myjdownloader.client.bindings.AccountStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface;
 
@@ -18,7 +17,7 @@ public class AccountTest extends Test {
         //
         final AccountInterface accounts = api.link(AccountInterface.class, chooseDevice(api));
         final ArrayList<String> premiumhoster = accounts.listPremiumHoster();
-        AccountQueryInterface query = new AccountQuery();
+        AccountQuery query = new AccountQuery();
         query.setUserName(true);
         // should contain all
         ArrayList<AccountStorable> list = accounts.listAccounts(query);
