@@ -13,7 +13,7 @@ import jd.plugins.AccountInfo;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.myjdownloader.client.bindings.AccountQueryInterface;
+import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -24,7 +24,7 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         RemoteAPIController.validateInterfaces(AccountAPIV2.class, AccountInterface.class);
     }
 
-    public List<AccountAPIStorableV2> listAccounts(AccountQueryInterface queryParams) {
+    public List<AccountAPIStorableV2> listAccounts(AccountQuery queryParams) {
 
         List<Account> accs = AccountController.getInstance().list();
 
