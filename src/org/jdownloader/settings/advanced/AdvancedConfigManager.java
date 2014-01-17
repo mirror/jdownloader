@@ -2,6 +2,8 @@ package org.jdownloader.settings.advanced;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.controlling.linkchecker.LinkCheckerConfig;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
@@ -21,6 +23,7 @@ import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
@@ -50,13 +53,13 @@ public class AdvancedConfigManager {
         return AdvancedConfigManager.INSTANCE;
     }
 
-    private java.util.List<AdvancedConfigEntry> configInterfaces;
-    private AdvancedConfigEventSender           eventSender;
-    private LogSource                           logger;
+    private Set<AdvancedConfigEntry>  configInterfaces;
+    private AdvancedConfigEventSender eventSender;
+    private LogSource                 logger;
 
     private AdvancedConfigManager() {
         logger = LogController.getInstance().getLogger(AdvancedConfigManager.class.getName());
-        configInterfaces = new ArrayList<AdvancedConfigEntry>();
+        configInterfaces = new CopyOnWriteArraySet<AdvancedConfigEntry>();
         eventSender = new AdvancedConfigEventSender();
         // REFERENCE via static CFG_* classes if possible. this way, we get error messages if there are error in the static refs
         this.register(CFG_GENERAL.CFG);
@@ -110,9 +113,7 @@ public class AdvancedConfigManager {
                 } else if (m.getGetter() == null) {
                     throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
                 } else {
-                    synchronized (configInterfaces) {
-                        configInterfaces.add(new AdvancedConfigEntry(cf, m));
-                    }
+                    configInterfaces.add(new AdvancedConfigEntry(cf, m));
                     map.put(m, true);
                 }
             }
@@ -124,61 +125,54 @@ public class AdvancedConfigManager {
 
     @SuppressWarnings("unchecked")
     public java.util.List<AdvancedConfigEntry> listPluginsInterfaces() {
-
         ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
-        HostPluginController.getInstance().ensureLoaded();
-        for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
-
-            String ifName = hplg.getConfigInterface();
-            if (StringUtils.isNotEmpty(ifName)) {
-                ConfigInterface cf;
-                try {
-                    cf = PluginJsonConfig.get((Class<ConfigInterface>) PluginClassLoader.getInstance().loadClass(ifName));
-
-                    HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
-
-                    for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
-
-                        if (map.containsKey(m)) continue;
-
-                        if (m.getAnnotation(AboutConfig.class) != null) {
-                            if (m.getSetter() == null) {
-                                throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
-                            } else if (m.getGetter() == null) {
-                                throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
-                            } else {
-
-                                ret.add(new AdvancedConfigEntry(cf, m));
-
-                                map.put(m, true);
+        PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
+        ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(pluginClassLoader);
+            for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
+                String ifName = hplg.getConfigInterface();
+                if (StringUtils.isNotEmpty(ifName)) {
+                    ConfigInterface cf;
+                    try {
+                        cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
+                        HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
+                        for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
+                            if (map.containsKey(m)) continue;
+                            if (m.getAnnotation(AboutConfig.class) != null) {
+                                if (m.getSetter() == null) {
+                                    throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
+                                } else if (m.getGetter() == null) {
+                                    throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
+                                } else {
+                                    ret.add(new AdvancedConfigEntry(cf, m));
+                                    map.put(m, true);
+                                }
                             }
                         }
-
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
                     }
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                    System.out.println(ifName);
                 }
-
-                System.out.println(ifName);
             }
-        }
 
-        for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
-
-            String ifName = cplg.getConfigInterface();
-            if (StringUtils.isNotEmpty(ifName)) {
-                System.out.println(ifName);
+            for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
+                String ifName = cplg.getConfigInterface();
+                if (StringUtils.isNotEmpty(ifName)) {
+                    System.out.println(ifName);
+                }
             }
+        } finally {
+            Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
         return ret;
     }
 
     public java.util.List<AdvancedConfigEntry> list() {
-        synchronized (configInterfaces) {
-            ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>(configInterfaces);
-            ret.addAll(listPluginsInterfaces());
-            return ret;
-        }
+        ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>(configInterfaces);
+        ret.addAll(listPluginsInterfaces());
+        return ret;
     }
 
 }

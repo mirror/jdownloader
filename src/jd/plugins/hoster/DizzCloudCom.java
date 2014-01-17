@@ -194,15 +194,20 @@ public class DizzCloudCom extends PluginForHost {
         }
         br.getPage("http://dizzcloud.com/");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex(">Premium till ([^<>\"]*?) \\&nbsp;\\&nbsp;</span>").getMatch(0);
+        final String expire = br.getRegex(">Premium till.*?(\\d+\\.\\d+\\.\\d+).*?\\&nbsp;\\&nbsp;</span>").getMatch(0);
         if (expire == null) {
             logger.info("JD could not detect account expire time, your account has been determined as a free account");
             account.setProperty("free", true);
             ai.setStatus("Free User");
         } else {
             account.setProperty("free", false);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.ENGLISH));
-            ai.setStatus("Premium User");
+            if ("11.11.2222".equals(expire)) {
+                ai.setValidUntil(-1);
+                ai.setStatus("Lifetime Premium User");
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.ENGLISH));
+                ai.setStatus("Premium User");
+            }
         }
         account.setValid(true);
         return ai;
@@ -233,6 +238,11 @@ public class DizzCloudCom extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"orange\\-btn\">DOWNLOAD</a>").getMatch(0);
+            if (dllink == null) {
+                br.postPage(downloadLink.getDownloadURL(), "getlnk=1");
+                dllink = br.getRegex("msg\":\"(http.*?)\"").getMatch(0);
+                if (dllink != null) dllink = dllink.replace("\\", "");
+            }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
