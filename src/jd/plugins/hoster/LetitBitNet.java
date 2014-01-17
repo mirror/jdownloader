@@ -77,7 +77,7 @@ public class LetitBitNet extends PluginForHost {
      */
     public final String          APIKEY                            = "VjR1U3JGUkNx";
     public final String          APIPAGE                           = "http://api.letitbit.net/";
-    private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>File not found<|id=\"videocaptcha_)";
+    private final String         TEMPDISABLED                      = "(>File not found<|id=\"videocaptcha_)";
     private String               agent                             = null;
     private static final boolean PLUGIN_BROKEN                     = false;
     private static Object        PREMIUMLOCK                       = new Object();

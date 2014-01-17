@@ -558,6 +558,10 @@ public class TurboBitNet extends PluginForHost {
             dllink = br.getRegex("(\\'|\")(http://([a-z0-9\\.]+)?turbobit\\.net//?download/redirect/.*?)(\\'|\")").getMatch(1);
         }
         if (dllink == null) {
+            if (br.containsHTML("'>Premium access is blocked<")) {
+                logger.info("No traffic available");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             if (br.containsHTML("Our service is currently unavailable in your country\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country."); }
             logger.warning("dllink equals null, plugin seems to be broken!");
             if (br.getCookie("http://turbobit.net", "user_isloggedin") == null || "deleted".equalsIgnoreCase(br.getCookie("http://turbobit.net", "user_isloggedin"))) {
@@ -728,7 +732,7 @@ public class TurboBitNet extends PluginForHost {
                         br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&user%5Bcaptcha_type%5D=recaptcha&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
                     }
                 }
-                if (!br.containsHTML("yesturbo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid accounttype (no premium account)!\r\nUngültiger Accounttyp (kein Premiumaccount)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML("/banturbo\\.png\\'>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid accounttype (no premium account)!\r\nUngültiger Accounttyp (kein Premiumaccount)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (br.getCookie(MAINPAGE + "/", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();

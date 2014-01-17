@@ -59,7 +59,7 @@ public class ShareFlareNet extends PluginForHost {
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     private static final String  APIKEY                            = "VjR1U3JGUkNx";
     private static final String  APIPAGE                           = "http://api.letitbit.net/";
-    private final String         TEMPDISABLED                      = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>File not found<|id=\"videocaptcha_)";
+    private final String         TEMPDISABLED                      = "(>File not found<|id=\"videocaptcha_)";
     private static String        agent                             = null;
     private String               AJAXMAINURL                       = null;
     // Static reCaptcha ID (API key)
@@ -578,7 +578,7 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     private void handleNonApiErrors(final DownloadLink dl) throws IOException, PluginException {
-        if (br.containsHTML(TEMPDISABLED) && !br.containsHTML(">For logging in, your E-mail will be used as your username\\. The password will be sent to your E\\-mail\\.</p>[\t\n\r ]+<script type=\"text/javascript\" src=\"http://www\\.google\\.com/recaptcha")) {
+        if (br.containsHTML(TEMPDISABLED)) {
             br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/check_link\",{\"link\":\"" + dl.getDownloadURL() + "\"}]]"));
             final String availableMirrors = br.getRegex("\"data\":\\[(\\d+)\\]").getMatch(0);
             if (availableMirrors != null) {
