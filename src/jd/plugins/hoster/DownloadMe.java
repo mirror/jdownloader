@@ -33,7 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -43,6 +42,7 @@ public class DownloadMe extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private static final String                            FAIL_STRING        = "downloadme";
 
     public DownloadMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -158,7 +158,21 @@ public class DownloadMe extends PluginForHost {
         showMessage(link, "Phase 1/3: Generating id");
         br.getPage("https://www.download.me/dlapi/file?url=" + url);
         final String id = getJson("id");
-        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // Should never happen
+        if (id == null) {
+            logger.info(this.getHost() + ": id is null");
+            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_idnull", 1);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 20) {
+                timesFailed++;
+                link.setProperty("timesfailed" + FAIL_STRING + "_idnull", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "id is null");
+            } else {
+                link.setProperty("timesfailed" + FAIL_STRING + "_idnull", Property.NULL);
+                logger.info(this.getHost() + ": id is null");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error: id is null", 5 * 60 * 1000l);
+            }
+        }
 
         String dllink = null;
         showMessage(link, "Phase 2/3: Generating downloadlink");
@@ -213,7 +227,17 @@ public class DownloadMe extends PluginForHost {
         if (dllink == null) {
             logger.warning("Unhandled download error on download.me:");
             logger.warning(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_dlunknown", 1);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 20) {
+                timesFailed++;
+                link.setProperty("timesfailed" + FAIL_STRING + "_dlunknown", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
+            } else {
+                link.setProperty("timesfailed" + FAIL_STRING + "_dlunknown", Property.NULL);
+                logger.info(this.getHost() + ": Unknown download error -> Disabling current host");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error: id is null", 5 * 60 * 1000l);
+            }
         }
         dllink = dllink.replace("\\", "");
         showMessage(link, "Phase 3/3: Download begins!");
@@ -222,22 +246,26 @@ public class DownloadMe extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.info("Unhandled download error on download.me: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
-            }
-            final String errormessage = link.getLinkStatus().getErrorMessage();
-            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
-                {
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(DownloadMe.NOCHUNKS, false) == false) {
-                        link.setProperty(DownloadMe.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
                 }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(DownloadMe.NOCHUNKS, false) == false) {
+                    link.setProperty(DownloadMe.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DownloadMe.NOCHUNKS, false) == false) {
+                link.setProperty(DownloadMe.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
     }

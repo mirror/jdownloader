@@ -51,6 +51,7 @@ public class PremiumizeMe extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            SENDDEBUGLOG       = "SENDDEBUGLOG";
     private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private static final String                            FAIL_STRING        = "premiumizeme";
 
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -170,15 +171,15 @@ public class PremiumizeMe extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
         } catch (final SocketTimeoutException e) {
             logger.info(this.getHost() + ": SocketTimeoutException on downloadstart");
-            int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_sockettimeout", 1);
+            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_sockettimeout", 1);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 20) {
                 timesFailed++;
-                link.setProperty("timesfailedpremiumizeme_sockettimeout", timesFailed);
+                link.setProperty("timesfailed" + FAIL_STRING + "_sockettimeout", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
-                link.setProperty("timesfailedpremiumizeme_sockettimeout", Property.NULL);
-                logger.info("premiumize.me: SocketTimeoutException on downloadstart -> Show 'Connection problems' error'");
+                link.setProperty("timesfailed" + FAIL_STRING + "_sockettimeout", Property.NULL);
+                logger.info(this.getHost() + ": SocketTimeoutException on downloadstart -> Show 'Connection problems' error'");
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection problems", 5 * 60 * 1000l);
             }
         }
@@ -222,14 +223,14 @@ public class PremiumizeMe extends PluginForHost {
             sendErrorLog(link, account);
             handleAPIErrors(br, account, link);
             logger.info("premiumize.me: Unknown error2");
-            int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown2", 1);
+            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_unknown2", 1);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 3) {
                 timesFailed++;
-                link.setProperty("timesfailedpremiumizeme_unknown2", timesFailed);
+                link.setProperty("timesfailed" + FAIL_STRING + "_unknown2", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
-                link.setProperty("timesfailedpremiumizeme_unknown2", Property.NULL);
+                link.setProperty("timesfailed" + FAIL_STRING + "_unknown2", Property.NULL);
                 logger.info("premiumize.me: Unknown error2 - disabling current host!");
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
@@ -243,13 +244,13 @@ public class PremiumizeMe extends PluginForHost {
         /* request Download */
         br.getPage("https://api.premiumize.me/pm-api/v1.php?method=directdownloadlink&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()) + "&params[link]=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML(">403 Forbidden<")) {
-            int timesFailed = link.getIntegerProperty("timesfailedpremiumize", 0);
+            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING, 0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty("timesfailedpremiumize", timesFailed);
+                link.setProperty("timesfailed" + FAIL_STRING, timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
-                link.setProperty("timesfailedpremiumize", Property.NULL);
+                link.setProperty("timesfailed" + FAIL_STRING, Property.NULL);
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
@@ -263,14 +264,14 @@ public class PremiumizeMe extends PluginForHost {
         if (dllink == null) {
             logger.info(this.getHost() + ": Unknown error");
             sendErrorLog(link, account);
-            int timesFailed = link.getIntegerProperty("timesfailedpremiumizeme_unknown", 0);
+            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_unknown", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty("timesfailedpremiumizeme_unknown", timesFailed);
+                link.setProperty("timesfailed" + FAIL_STRING + "_unknown", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
             } else {
-                link.setProperty("timesfailedpremiumizeme_unknown", Property.NULL);
+                link.setProperty("timesfailed" + FAIL_STRING + "_unknown", Property.NULL);
                 logger.info("premiumize.me: Unknown error - disabling current host!");
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }

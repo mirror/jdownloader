@@ -115,9 +115,9 @@ public class SockShareCom extends PluginForHost {
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         freeform.put("confirm", "Continue+as+Free+User");
         if (freeform.containsHTML("/include/captcha")) {
-            String captchaIMG = br.getRegex("<img src=\"(/include/captcha.php\\?[^\"]+)\" />").getMatch(0);
+            final String captchaIMG = getCaptchaIMG();
             if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), downloadLink);
+            final String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), downloadLink);
             if (captcha != null) freeform.put("captcha_code", Encoding.urlEncode(captcha));
         }
         /** Can still be skipped */
@@ -238,10 +238,10 @@ public class SockShareCom extends PluginForHost {
                 Form login = br.getForm(0);
                 if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("captcha.php\\?")) {
-                    String captchaIMG = br.getRegex("<img src=\"(/include/captcha.php\\?[^\"]+)\" />").getMatch(0);
+                    String captchaIMG = getCaptchaIMG();
                     if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    DownloadLink dummyLink = new DownloadLink(this, "Account", "sockshare.com", "http://sockshare.com", true);
-                    String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), dummyLink);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "sockshare.com", "http://sockshare.com", true);
+                    final String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), dummyLink);
                     if (captcha != null) login.put("captcha_code", Encoding.urlEncode(captcha));
                 }
                 login.put("user", Encoding.urlEncode(account.getUser()));
@@ -358,6 +358,10 @@ public class SockShareCom extends PluginForHost {
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return dllink;
+    }
+
+    private String getCaptchaIMG() {
+        return br.getRegex("<img src=\"(/include/captcha\\.php\\?[^<>\"]+)\".*?/>").getMatch(0);
     }
 
     private void fixFilename(final DownloadLink downloadLink) {

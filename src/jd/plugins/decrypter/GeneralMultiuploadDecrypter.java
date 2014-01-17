@@ -139,7 +139,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             String dllink = null;
             // Handling for links that need to be regexed or that need to be get
             // by redirect
-            if (singleLink.matches("(?i)/(redirect|rd?|dl|mirror)/.+")) {
+            if (singleLink.matches("(?i)/(redirect|rd?|dl|mirror).+")) {
                 getPage(brc, singleLink);
                 dllink = decryptLink(brc, parameter);
             } else {

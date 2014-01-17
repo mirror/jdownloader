@@ -135,7 +135,7 @@ public class PutLockerCom extends PluginForHost {
         if (freeform.containsHTML("/include/captcha")) {
             final String captchaIMG = getCaptchaIMG();
             if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), downloadLink);
+            final String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), downloadLink);
             if (captcha != null) freeform.put("captcha_code", Encoding.urlEncode(captcha));
         }
         /** Can still be skipped */
@@ -327,10 +327,10 @@ public class PutLockerCom extends PluginForHost {
                 Form login = br.getForm(0);
                 if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("captcha.php\\?")) {
-                    String captchaIMG = getCaptchaIMG();
+                    final String captchaIMG = getCaptchaIMG();
                     if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    DownloadLink dummyLink = new DownloadLink(this, "Account", "putlocker.com", "http://putlocker.com", true);
-                    String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), dummyLink);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "putlocker.com", "http://putlocker.com", true);
+                    final String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), dummyLink);
                     if (captcha != null) login.put("captcha_code", Encoding.urlEncode(captcha));
                 }
                 login.put("user", Encoding.urlEncode(account.getUser()));
@@ -434,7 +434,7 @@ public class PutLockerCom extends PluginForHost {
     }
 
     private String getCaptchaIMG() {
-        return br.getRegex("<img src=\"(/include/captcha.php\\?[^<>\"]+)\".*?/>").getMatch(0);
+        return br.getRegex("<img src=\"(/include/captcha\\.php\\?[^<>\"]+)\".*?/>").getMatch(0);
     }
 
     private void fixFilename(final DownloadLink downloadLink) {
