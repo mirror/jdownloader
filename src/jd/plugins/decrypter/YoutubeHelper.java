@@ -14,7 +14,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 
 import javax.swing.Icon;
@@ -31,6 +30,8 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
@@ -39,6 +40,7 @@ import jd.utils.locale.JDL;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -79,20 +81,18 @@ public class YoutubeHelper {
         return variantsMap;
     }
 
-    public static final String                 YT_EXT             = "YT_EXT";
-    public static final String                 YT_TITLE           = "YT_TITLE";
-    public static final String                 YT_PLAYLIST_INT    = "YT_PLAYLIST_INT";
-    public static final String                 YT_ID              = "YT_ID";
-    public static final String                 YT_AGE_GATE        = "YT_AGE_GATE";
-    public static final String                 YT_CHANNEL         = "YT_CHANNEL";
-    public static final String                 YT_USER            = "YT_USER";
-    public static final String                 YT_DATE            = "YT_DATE";
-    public static final String                 YT_VARIANTS        = "YT_VARIANTS";
-    public static final String                 YT_VARIANT         = "YT_VARIANT";
-    public static final String                 YT_STREAMURL_VIDEO = "YT_STREAMURL_VIDEO";
-    public static final String                 YT_STREAMURL_AUDIO = "YT_STREAMURL_AUDIO";
-
-    private static WeakHashMap<String, String> JS_CACHE           = new WeakHashMap<String, String>();
+    public static final String YT_EXT             = "YT_EXT";
+    public static final String YT_TITLE           = "YT_TITLE";
+    public static final String YT_PLAYLIST_INT    = "YT_PLAYLIST_INT";
+    public static final String YT_ID              = "YT_ID";
+    public static final String YT_AGE_GATE        = "YT_AGE_GATE";
+    public static final String YT_CHANNEL         = "YT_CHANNEL";
+    public static final String YT_USER            = "YT_USER";
+    public static final String YT_DATE            = "YT_DATE";
+    public static final String YT_VARIANTS        = "YT_VARIANTS";
+    public static final String YT_VARIANT         = "YT_VARIANT";
+    public static final String YT_STREAMURL_VIDEO = "YT_STREAMURL_VIDEO";
+    public static final String YT_STREAMURL_AUDIO = "YT_STREAMURL_AUDIO";
 
     private static String handleRule(String s, final String line) throws PluginException {
 
@@ -236,15 +236,14 @@ public class YoutubeHelper {
         String jsUrl = this.br.getMatch("\"js\"\\: \"(.+?)\"");
         jsUrl = jsUrl.replace("\\/", "/");
         jsUrl = "http:" + jsUrl;
+        String des = null;
 
-        String des = YoutubeHelper.JS_CACHE.get(jsUrl);
-        if (des == null) {
-            String jsContent = this.br.cloneBrowser().getPage(jsUrl);
-            final String descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
-            final String func = "function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
-            des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
-            YoutubeHelper.JS_CACHE.put(jsUrl, des);
-        }
+        Browser clone = br.cloneBrowser();
+
+        String jsContent = getAbsolute(jsUrl, jsUrl, clone);
+        final String descrambler = new Regex(jsContent, "\\w+\\.signature\\=([\\w\\d]+)\\([\\w\\d]+\\)").getMatch(0);
+        final String func = "function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}";
+        des = new Regex(jsContent, Pattern.compile(func)).getMatch(1);
 
         String s = sig;
         // Debug code.
@@ -344,8 +343,25 @@ public class YoutubeHelper {
 
     }
 
-    public void getPage(final String relativeUrl) throws IOException {
-        this.br.getPage(this.base + relativeUrl);
+    public String getAbsolute(final String absolute, String id, Browser clone) throws IOException {
+        if (clone == null) clone = br;
+        if (id == null) id = absolute;
+        PluginCache pluginCache = Plugin.getCache("youtube.com");
+        Object page = pluginCache.getCache(id, null);
+        if (page != null && page instanceof MinTimeWeakReference) {
+            String content = ((MinTimeWeakReference<String>) page).get();
+            if (StringUtils.isNotEmpty(content)) {
+                clone.getRequest().setHtmlCode(content);
+                return content;
+            }
+        }
+
+        clone.getPage(absolute);
+        if (clone.getRequest().getHttpConnection().getResponseCode() == 200) {
+            pluginCache.setCache(id, new MinTimeWeakReference<String>(clone.getRequest().getHtmlCode(), 30000, id));
+        }
+        return clone.getRequest().getHtmlCode();
+
     }
 
     protected void handleContentWarning(final Browser br) throws Exception {
@@ -395,7 +411,8 @@ public class YoutubeHelper {
 
         this.br.setCookie("youtube.com", "PREF", "f2=40100000&hl=en-GB");
         this.br.getHeaders().put("User-Agent", "Wget/1.12");
-        this.br.getPage(this.base + "/watch?v=" + vid.videoID);
+
+        getAbsolute(base + "/watch?v=" + vid.videoID, null, br);
         if (this.br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
 
         this.extractData(vid);
@@ -840,8 +857,7 @@ public class YoutubeHelper {
         } else {
             return urls;
         }
-
-        br.getPage(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"));
+        getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" + vid.videoID, br);
 
         ttsUrl = ttsUrl.replaceFirst("v=[a-zA-Z0-9\\-_]+", "");
 

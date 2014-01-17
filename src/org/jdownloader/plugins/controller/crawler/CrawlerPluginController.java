@@ -2,10 +2,11 @@ package org.jdownloader.plugins.controller.crawler;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.nutils.Formatter;
@@ -72,7 +73,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -182,6 +184,15 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     private List<LazyCrawlerPlugin> update(LogSource logger, HashMap<String, ArrayList<LazyPlugin>> pluginCache) throws MalformedURLException {
         LinkedHashMap<String, ArrayList<AbstractCrawlerPlugin>> ret = new LinkedHashMap<String, ArrayList<AbstractCrawlerPlugin>>();
         LinkedHashMap<String, LazyCrawlerPlugin> ret2 = new LinkedHashMap<String, LazyCrawlerPlugin>();
+        Comparator<AbstractCrawlerPlugin> comp = new Comparator<AbstractCrawlerPlugin>() {
+
+            @Override
+            public int compare(AbstractCrawlerPlugin o1, AbstractCrawlerPlugin o2) {
+                if (o1.getInterfaceVersion() == o2.getInterfaceVersion()) return 0;
+                if (o1.getInterfaceVersion() > o2.getInterfaceVersion()) return 1;
+                return -1;
+            }
+        };
         for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter", pluginCache)) {
             if (c.getLazyPlugin() != null) {
                 LazyCrawlerPlugin plugin = (LazyCrawlerPlugin) c.getLazyPlugin();
@@ -191,21 +202,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     existingPlugin = new ArrayList<AbstractCrawlerPlugin>();
                     ret.put(plugin.getDisplayName(), existingPlugin);
                 }
-                boolean added = false;
-                ListIterator<AbstractCrawlerPlugin> it = existingPlugin.listIterator();
-                /* plugins with higher interfaceVersion will be sorted in list */
-                while (it.hasNext()) {
-                    AbstractCrawlerPlugin next = it.next();
-                    if (plugin.getInterfaceVersion() > next.getInterfaceVersion()) {
-                        it.add(plugin.getAbstractCrawlerPlugin());
-                        added = true;
-                        break;
-                    }
-                }
-                if (added == false) {
-                    /* add plugin at the end of list */
-                    existingPlugin.add(plugin.getAbstractCrawlerPlugin());
-                }
+
+                existingPlugin.add(plugin.getAbstractCrawlerPlugin());
+
+                Collections.sort(existingPlugin, comp);
                 logger.finer("@CrawlerPlugin ok(cached):" + plugin.getClassname() + " " + plugin.getDisplayName() + " " + plugin.getVersion());
                 continue;
             }
@@ -262,21 +262,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                     existingPlugin = new ArrayList<AbstractCrawlerPlugin>();
                                     ret.put(displayName, existingPlugin);
                                 }
-                                boolean added = false;
-                                ListIterator<AbstractCrawlerPlugin> it = existingPlugin.listIterator();
-                                /* plugins with higher interfaceVersion will be sorted in list */
-                                while (it.hasNext()) {
-                                    AbstractCrawlerPlugin next = it.next();
-                                    if (a.interfaceVersion() > next.getInterfaceVersion()) {
-                                        it.add(ap);
-                                        added = true;
-                                        break;
-                                    }
-                                }
-                                if (added == false) {
-                                    /* add plugin at the end of list */
-                                    existingPlugin.add(ap);
-                                }
+
+                                existingPlugin.add(ap);
+
+                                Collections.sort(existingPlugin, comp);
                                 try {
                                     /* check for stable compatibility */
                                     classLoader.setPluginClass(new String(c.getClazz().getName()));

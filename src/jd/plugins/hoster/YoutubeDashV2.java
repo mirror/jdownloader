@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,8 +28,10 @@ import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
@@ -352,7 +355,9 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
-
+        if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
+            convertOldLink(downloadLink);
+        }
         if (Thread.currentThread() instanceof LinkCheckerThread && cfg.isFastLinkCheckEnabled()) return AvailableStatus.UNCHECKED;
 
         YoutubeHelper helper = getCachedHelper();
@@ -452,6 +457,13 @@ public class YoutubeDashV2 extends PluginForHost {
         // // we should cache this information:
 
         downloadLink.setFinalFileName(helper.createFilename(downloadLink));
+        String oldLinkName = downloadLink.getStringProperty("name", null);
+        if (StringUtils.isNotEmpty(oldLinkName)) {
+            // old link?
+
+            downloadLink.setFinalFileName(oldLinkName);
+        }
+
         downloadLink.setCustomFileOutputFilenameAppend(null);
         YoutubeVariantInterface v = getVariant(downloadLink);
         if (v.hasConverer(downloadLink)) {
@@ -463,6 +475,73 @@ public class YoutubeDashV2 extends PluginForHost {
         }
 
         return AvailableStatus.TRUE;
+    }
+
+    private void convertOldLink(DownloadLink link) throws PluginException {
+        try {
+
+            link.setProperty(YoutubeHelper.YT_ID, link.getStringProperty("ytID", null));
+            if (link.getBooleanProperty("DASH", false)) {
+                String video = link.getStringProperty("DASH_VIDEO");
+                String audio = link.getStringProperty("DASH_AUDIO");
+                YoutubeITAG videoTag = StringUtils.isEmpty(video) ? null : YoutubeITAG.get(Integer.parseInt(video));
+                YoutubeITAG audioTag = StringUtils.isEmpty(audio) ? null : YoutubeITAG.get(Integer.parseInt(audio));
+                YoutubeVariant variant = null;
+                for (YoutubeVariant v : YoutubeVariant.values()) {
+                    if (v.getiTagAudio() == audioTag && v.getiTagVideo() == videoTag) {
+                        variant = v;
+                        break;
+                    }
+                }
+                if (variant == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Old Link. Please readd the Link"); }
+                setActiveVariantByLink(link, variant);
+            } else {
+                String url = link.getDownloadURL();
+
+                YoutubeVariantInterface variant = null;
+                String[] matches = new Regex(url, "http://img.youtube.com/vi/(.+)/(.+)\\.jpg").getRow(0);
+                if (matches != null) {
+                    link.setProperty(YoutubeHelper.YT_ID, matches[0]);
+                    if (matches[1].equals("default")) {
+                        variant = YoutubeVariant.IMAGE_LQ;
+                    } else if (matches[1].equals("mqdefault")) {
+
+                        variant = YoutubeVariant.IMAGE_MQ;
+
+                    } else if (matches[1].equals("hqdefault")) {
+
+                        variant = YoutubeVariant.IMAGE_HQ;
+
+                    } else if (matches[1].equals("maxresdefault")) {
+
+                        variant = YoutubeVariant.IMAGE_MAX;
+                    }
+                }
+                if (variant == null) {
+                    LinkedHashMap<String, String> params = Request.parseQuery(url);
+                    if (url.contains("/api/timedtext")) {
+                        link.setProperty(YoutubeHelper.YT_ID, params.get("v"));
+                        variant = new SubtitleVariant(params.get("lang"));
+                    } else {
+                        String itag = params.get("itag");
+                        YoutubeITAG videoTag = YoutubeITAG.get(Integer.parseInt(itag));
+
+                        for (YoutubeVariant v : YoutubeVariant.values()) {
+                            if (v.getiTagAudio() == null && v.getiTagVideo() == videoTag) {
+                                variant = v;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (variant == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Old Link. Please readd the Link"); }
+                setActiveVariantByLink(link, variant);
+            }
+
+        } catch (Exception e) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Old Link. Please readd the Link");
+        }
+
     }
 
     private UrlCollection getUrlPair(DownloadLink downloadLink) throws Exception {
@@ -511,6 +590,15 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeHelper helper = getCachedHelper();
         Map<YoutubeITAG, YoutubeStreamData> info = helper.loadVideo(vid);
         if (info == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
+        // write properties in old links and update properties in all others
+        downloadLink.setProperty(YoutubeHelper.YT_TITLE, vid.title);
+        downloadLink.setProperty(YoutubeHelper.YT_ID, vid.videoID);
+        downloadLink.setProperty(YoutubeHelper.YT_AGE_GATE, vid.ageCheck);
+        downloadLink.setProperty(YoutubeHelper.YT_CHANNEL, vid.channel);
+        downloadLink.setProperty(YoutubeHelper.YT_USER, vid.user);
+        downloadLink.setProperty(YoutubeHelper.YT_DATE, vid.date);
+        downloadLink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, vid.length);
+
         if (variant.getGroup() == YoutubeVariantInterface.VariantGroup.SUBTITLES) {
 
             String code = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, null);
@@ -520,6 +608,7 @@ public class YoutubeDashV2 extends PluginForHost {
                 if (si.getLang().equals(code)) {
 
                     downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_DATA, si._getUrl(vid.videoID));
+                    break;
                 }
 
             }
@@ -908,6 +997,10 @@ public class YoutubeDashV2 extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
+
+        if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
+            convertOldLink(downloadLink);
+        }
         YoutubeHelper helper = getCachedHelper();
         YoutubeVariantInterface variant = getVariant(downloadLink);
 
@@ -1261,6 +1354,11 @@ public class YoutubeDashV2 extends PluginForHost {
                 downloadLink.setLinkID("youtubev2://" + v.getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + filename);
             }
 
+        }
+        if (downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null) == null) {
+            // old link?
+            String oldLinkName = downloadLink.getStringProperty("name", null);
+            downloadLink.setFinalFileName(oldLinkName);
         }
 
     }
