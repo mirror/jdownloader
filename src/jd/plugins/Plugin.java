@@ -90,6 +90,12 @@ public abstract class Plugin implements ActionListener {
         }
     }
 
+    public <T> T getCache(String key, T defaultValue) {
+        synchronized (CACHE) {
+            return (T) CACHE.get(getHost() + "." + key);
+        }
+    }
+
     public void clearCache() {
         synchronized (CACHE) {
             String ID = getHost() + ".";
