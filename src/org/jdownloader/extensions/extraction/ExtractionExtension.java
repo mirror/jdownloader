@@ -227,7 +227,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         for (ExtractionController ec : extractionQueue.getJobs()) {
             if (ec.getArchiv() == archive) return ec;
         }
-        if (!archive.getFirstArchiveFile().isComplete()) {
+        if (archive.getFirstArchiveFile() == null || !archive.getFirstArchiveFile().isComplete()) {
             logger.info("First File is not complete: " + archive.getFirstArchiveFile());
             return null;
         }

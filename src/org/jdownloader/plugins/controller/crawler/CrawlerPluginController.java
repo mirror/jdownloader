@@ -171,10 +171,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 plugin.setClassLoader(null);
             }
             list = plugins;
-            int i = 0;
-            for (LazyCrawlerPlugin s : list) {
-                System.out.println((i++) + ". " + s);
-            }
+
             System.gc();
             return plugins;
         }

@@ -566,11 +566,11 @@ public class LinkCrawler {
                          * first we will walk through all available decrypter plugins
                          */
                         for (final LazyCrawlerPlugin pDecrypt : CrawlerPluginController.getInstance().list()) {
-                            System.out.println("Try " + pDecrypt);
+
                             if (isBlacklisted(pDecrypt)) continue;
 
                             if (pDecrypt.canHandle(url)) {
-                                System.out.println("Handle " + pDecrypt);
+
                                 try {
                                     final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), possibleCryptedLink, null);
                                     if (allPossibleCryptedLinks != null) {
