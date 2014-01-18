@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -37,7 +38,7 @@ import jd.utils.locale.JDL;
 public class NaszaKlasa extends PluginForHost {
 
     private static Object       LOCK     = new Object();
-    private static final String MAINPAGE = "www.nk.pl";
+    private static final String MAINPAGE = "nk.pl";
     private static final String USERTEXT = "Only downloadable for registered users!";
 
     public NaszaKlasa(final PluginWrapper wrapper) {
@@ -116,7 +117,41 @@ public class NaszaKlasa extends PluginForHost {
                     return;
                 }
             }
-            br.postPage("https://nk.pl/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1&form_name=login_form&target=&manual=1");
+            Form dlForm = new Form();
+            String loginPage = "https://nk.pl/login?captcha=0";
+            boolean captcha = false;
+            int tryouts = 0;
+
+            while (true) {
+                br.getPage(loginPage);
+                dlForm = br.getFormbyKey("form_name", "login_form");
+
+                dlForm.put("target", "");
+                dlForm.put("login", Encoding.urlEncode(account.getUser()));
+                dlForm.put("password", Encoding.urlEncode(account.getPass()));
+                dlForm.put("remember", "1");
+                if (captcha) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "nk.pl", "http://nk.pl", true);
+
+                    String captchaCode = getCaptchaCode("http://nk.pl/captcha?" + Math.floor(Math.random() * 10000), dummyLink);
+                    // dlForm.setProperty("__captcha", captchaCode);
+                    dlForm.put("__captcha", captchaCode);
+
+                }
+                br.submitForm(dlForm);
+
+                // br.postPage("https://nk.pl/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" +
+                // Encoding.urlEncode(account.getPass()) + "&remember=1&form_name=login_form&target=&manual=1");
+                if ((!captcha && br.containsHTML("https://nk\\.pl/login\\?captcha=1")) || (captcha && br.containsHTML("<strong>Kod z obrazka: nieprawidłowy kod</strong>"))) {
+                    loginPage = "https://nk.pl/login?captcha=1";
+                    captcha = true;
+                    tryouts++;
+                    if (tryouts > 3) break;
+                } else {
+                    break;
+                }
+            }
+
             if (br.getCookie(MAINPAGE, "remember_me") == null || br.getCookie(MAINPAGE, "lltkck") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
