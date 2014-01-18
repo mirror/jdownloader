@@ -20,6 +20,11 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
         interfaceVersion = ap.getInterfaceVersion();
     }
 
+    @Override
+    public String toString() {
+        return this.getClassname();
+    }
+
     protected AbstractCrawlerPlugin getAbstractCrawlerPlugin() {
         /* we only need the classname and not complete path */
         String className = getClassname().substring(JD_PLUGINS_DECRYPTER.length());

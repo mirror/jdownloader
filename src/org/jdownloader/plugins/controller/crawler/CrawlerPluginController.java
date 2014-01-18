@@ -72,7 +72,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -170,6 +171,10 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 plugin.setClassLoader(null);
             }
             list = plugins;
+            int i = 0;
+            for (LazyCrawlerPlugin s : list) {
+                System.out.println((i++) + ". " + s);
+            }
             System.gc();
             return plugins;
         }
