@@ -43,6 +43,7 @@ import jd.gui.swing.jdgui.BasicJDTable;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -79,8 +80,6 @@ public class FreeWayMe extends PluginForHost {
     }
 
     public void setConfigElements() {
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEBETAENCODING,
-        // "Use beta encoding").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, "Enable resume of stopped downloads (Warning: This can cause CRC errors)").setDefaultValue(true));
     }
 
@@ -96,32 +95,35 @@ public class FreeWayMe extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        boolean betaEncoding = true;// this.getPluginConfig().getBooleanProperty(USEBETAENCODING, false);
-
+        logger.info("{fetchAccInfo} Update free-way account: " + account.getUser());
         AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        String username = (betaEncoding) ? Encoding.urlTotalEncode(account.getUser()) : Encoding.urlEncode(account.getUser());
-        String pass = (betaEncoding) ? Encoding.urlTotalEncode(account.getPass()) : Encoding.urlEncode(account.getPass());
+        String username = Encoding.urlTotalEncode(account.getUser());
+        String pass = Encoding.urlTotalEncode(account.getPass());
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass + ((betaEncoding) ? "&encoded" : ""));
+        br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass + "&encoded");
         final String lang = System.getProperty("user.language");
         // "Invalid login" / "Banned" / "Valid login"
         if (br.toString().equalsIgnoreCase("Valid login")) {
-            account.setValid(true);
+            logger.info("{fetchAccInfo} Account " + username + " is valid");
         } else if (br.toString().equalsIgnoreCase("Invalid login")) {
-            account.setValid(false);
+            account.setError(AccountError.INVALID, "Invalid login");
+            logger.info("{fetchAccInfo} Account " + username + " is invalid");
+            logger.info("{fetchAccInfo} Request result: " + br.toString());
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         } else if (br.toString().equalsIgnoreCase("Banned")) {
-            account.setValid(false);
+            logger.info("{fetchAccInfo} Account banned by free-way! -> advise to contact free-way support");
+            logger.info("{fetchAccInfo} Request result: " + br.toString());
+            account.setError(AccountError.INVALID, "Account banned");
 
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -129,8 +131,10 @@ public class FreeWayMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         } else {
+            logger.severe("{fetchAccInfo} Unknown ERROR!");
+            logger.severe("{fetchAccInfo} Add to error parser: " + br.toString());
             // unknown error
-            account.setValid(false);
+            account.setError(AccountError.INVALID, "Unknown error");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unbekannter Accountstatus (deaktiviert)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
@@ -138,7 +142,7 @@ public class FreeWayMe extends PluginForHost {
             }
         }
         // account should be valid now, let's get account information:
-        br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + ((betaEncoding) ? "&encoded" : ""));
+        br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
 
         int maxPremi = 1;
         final String maxPremApi = getJson("parallel", br.toString());
@@ -150,7 +154,9 @@ public class FreeWayMe extends PluginForHost {
         try {
             Long guthaben = Long.parseLong(getRegexTag(br.toString(), "guthaben").getMatch(0));
             ac.setTrafficLeft(guthaben * 1024 * 1024);
+            logger.info("{fetchAccInfo} Limited traffic: " + guthaben * 1024 * 1024);
         } catch (Exception e) {
+            logger.info("{fetchAccInfo} Unlimited traffic, api response: " + br.toString());
             ac.setUnlimitedTraffic(); // workaround
         }
         try {
@@ -163,10 +169,12 @@ public class FreeWayMe extends PluginForHost {
         ac.setValidUntil(-1);
         if (accountType != null) {
             if (accountType.equalsIgnoreCase("Flatrate")) {
+                logger.info("{fetchAccInfo} Flatrate Account");
                 ac.setUnlimitedTraffic();
                 long validUntil = Long.parseLong(getRegexTag(br.toString(), "Flatrate").getMatch(0));
                 ac.setValidUntil(validUntil * 1000);
             } else if (accountType.equalsIgnoreCase("Spender")) {
+                logger.info("{fetchAccInfo} Spender Account");
                 ac.setUnlimitedTraffic();
             }
         }
@@ -213,21 +221,20 @@ public class FreeWayMe extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        boolean betaEncoding = true;// this.getPluginConfig().getBooleanProperty(USEBETAENCODING, false);
-        String user = (betaEncoding) ? Encoding.urlTotalEncode(acc.getUser()) : Encoding.urlEncode(acc.getUser());
-        String pw = (betaEncoding) ? Encoding.urlTotalEncode(acc.getPass()) : Encoding.urlEncode(acc.getPass());
-        final String url = (betaEncoding) ? Encoding.urlTotalEncode(link.getDownloadURL()) : Encoding.urlEncode(link.getDownloadURL());
+        String user = Encoding.urlTotalEncode(acc.getUser());
+        String pw = Encoding.urlTotalEncode(acc.getPass());
+        final String url = Encoding.urlTotalEncode(link.getDownloadURL());
 
-        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + ((betaEncoding) ? "&encoded" : "");
+        logger.info("{handleMultiHost} Try download with account " + acc.getUser() + " file: " + link.getDownloadURL());
 
-        if (betaEncoding) {
-            /* Begin workaround for wrong encoding while redirect */
-            br.setFollowRedirects(false);
-            br.getPage(dllink);
-            String location = br.getRedirectLocation();
-            dllink = location.substring(0, location.indexOf("?")) + dllink.substring(dllink.indexOf("?"), dllink.length()) + "&s=" + location.substring(location.length() - 1, location.length());
-            /* end workaround for wrong encoding while redirect */
-        }
+        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + "&encoded";
+
+        /* Begin workaround for wrong encoding while redirect */
+        br.setFollowRedirects(false);
+        br.getPage(dllink);
+        String location = br.getRedirectLocation();
+        dllink = location.substring(0, location.indexOf("?")) + dllink.substring(dllink.indexOf("?"), dllink.length()) + "&s=" + location.substring(location.length() - 1, location.length());
+        /* end workaround for wrong encoding while redirect */
 
         boolean resume = this.getPluginConfig().getBooleanProperty(ALLOWRESUME, false);
         if (link.getBooleanProperty(FreeWayMe.NORESUME, false)) {
@@ -279,12 +286,14 @@ public class FreeWayMe extends PluginForHost {
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: Retry in few secs" + msg, 20 * 1000l);
             } else if (error.startsWith("Die Datei darf maximal")) {
+                logger.info("{handleMultiHost} File download limit");
                 tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Mehrere Computer haben in letzter Zeit diesen Account genutzt")) {
+                logger.info("{handleMultiHost} free-way ip ban");
                 acc.setTempDisabled(true);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            logger.info("Unhandled download error on free-way.me: " + br.toString());
+            logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
             int timesFailed = link.getIntegerProperty("timesfailedfreewayme_unknown", 0);
             if (timesFailed <= 2) {
                 timesFailed++;
@@ -467,7 +476,6 @@ public class FreeWayMe extends PluginForHost {
 
     private ArrayList<String> getDisabledHosts(Account account) {
         final Object disabledHostsObject = account.getAccountInfo().getProperty("disabledHosts", Property.NULL);
-        ArrayList<String> disabledHosts;
         if (disabledHostsObject.equals(Property.NULL)) return new ArrayList<String>();
         return (ArrayList<String>) disabledHostsObject;
     }
@@ -515,6 +523,8 @@ public class FreeWayMe extends PluginForHost {
 
     public class MultihostTable extends BasicJDTable<MultihostContainer> {
 
+        private static final long serialVersionUID = 3954591041479889404L;
+
         public MultihostTable(ExtTableModel<MultihostContainer> tableModel) {
             super(tableModel);
             setSearchEnabled(true);
@@ -523,6 +533,8 @@ public class FreeWayMe extends PluginForHost {
     }
 
     public class MultihostTableModel extends ExtTableModel<MultihostContainer> {
+
+        private static final long serialVersionUID = 1170104165705748962L;
 
         public MultihostTableModel() {
             super("multihostTable");
