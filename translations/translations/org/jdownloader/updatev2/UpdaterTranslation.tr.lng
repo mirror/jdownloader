@@ -30,6 +30,7 @@ errordialog_noconnection=JDownloader Güncelleme Sunucusuna bağlanamadı.\nLüt
 errordialog_not_enough_space=Sabit diskiniz C: içinde yeterli boş alan yok.\nEn az %s1 boş alan (%s2 daha gerekli) olduğundan emin olun ve güncellemeyi yeniden başlatın.
 errordialog_selfupdate_failed=Güncellemeyi yükleme başarısız. Lütfen daha sonra tekrar deneyin.\nEğer bu sorun birkaç saat sonra "kendiliğinden çözülmezse", destek birimimizle temasa geçin ya da JDownloader'ı yeniden yükleyin.
 errordialog_server_error=Güncelleme Sunucusu şu anda kullanılabilir değil. Lütfen daha sonra tekrar deneyin ya da destek birimimizle temasa geçin
+errordialog_server_locked2=Yeni bir Güncelleme Paketini hemen şimdi hazırlıyoruz. Lütfen birkaç dakika içinde tekrar deneyin.
 errordialog_server_offline=Güncelleme Sunucusu şu anda kullanılabilir değil. Lütfen daha sonra tekrar deneyin.
 guiless_you_are_up2date=Zaten en son sürüme sahipsiniz
 installframe_frametitle=JDownloader Güncelleyicisi
