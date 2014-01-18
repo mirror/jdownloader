@@ -296,9 +296,7 @@ FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_m
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_others=FFmpeg™ uygulamasını indirin. Önerilen Sürüm: Resmi "%s1 için FFmpeg build"
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_windows2=FFmpeg™ uygulamasını indirin. Önerilen Sürüm: Resmi "Windows için FFmpeg.exe build"
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_install=Yükle
-FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd=%s1 için "Üçüncü parti" uygulaması FFmpeg™ gerekir.\nFFmpeg™ görüntü ve ses akışlarını ya da tam tersini birleştirmek için JDownloader \ntarafından başlatılabilen lider çoklu ortam uygulamasıdır. Ne yazık ki, JDownloader \nsisteminizde yüklü FFmpeg™ uygulamasını bulamadı.
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_path=JDownloader'a Kurulum Yerini Söyleyin
-FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve=Eğer yüklü FFmpeg™ uygulamasına sahipseniz, lütfen bize kurulum yolunu söyleyin. \nEğer değilse, önce indirmeli ve yüklemelisiniz ya da bu görevi atlamak için iptal'e tıklamalısınız.
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title=FFmpeg eksik!
 FFMpegInstallTypeChooserDialog_layoutDialogContent_help_=Lütfen FFmpeg™ binary için doğru yolu seçin...
 FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser=Tamam, ama şimdi ne olacak?
@@ -1029,6 +1027,7 @@ downloadview_skipped=Atlanmış İndirmeler
 downloadview_successful=Başarılı İndirmeler
 downloadview_todo=Bekleyen İndirmeler
 extensionManager_title=Uzantı Modülleri
+ffmpeg_install_now=Şimdi FFmpeg™ yükle
 filecolumn_title=Adı
 gui_btn_select=Gözat
 gui_captchaWindow_askForInput=Devam etmek için %s1 adresine ait Captcha'yı girin!
