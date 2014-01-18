@@ -40,7 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#\\!(q(\\?|%3F))*?album(=|%3D)\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.pl/#?profile/\\d+/gallery(/album/\\d+(/\\d+)?|/\\d+|#\\!(q(\\?|%3F))*?album(=|%3D)\\d+|\\?src=profile_(box_see_more|button)#!album(=|%3D)\\d+)?" }, flags = { 0 })
 public class NkPlGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -63,7 +63,8 @@ public class NkPlGallery extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("%3D|%3d", "=").replaceAll("%3F|%3f", "?").replace("/profile/", "/#profile/");
+        final String parameter = param.toString().replaceAll("%3D|%3d", "=").replaceAll("%3F|%3f", "?").replaceAll("\\?src=profile_(box_see_more|button)", "").replace("/profile/", "/#profile/");
+
         br.setCookiesExclusive(true);
         synchronized (LOCK) {
             if (!getUserLogin()) {
