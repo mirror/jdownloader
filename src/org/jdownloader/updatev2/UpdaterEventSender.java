@@ -18,7 +18,8 @@ public class UpdaterEventSender extends Eventsender<UpdaterListener, UpdaterEven
             default:
                 System.out.println("Unhandled Event: " + event);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // catch exceptions. the could damage the updatesystem
             e.printStackTrace();
         }
     }
