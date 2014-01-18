@@ -40,7 +40,7 @@ public class UpdateAction extends AbstractToolBarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (false) {
+        if (true) {
             /* WebUpdate is running in its own Thread */
             new Thread() {
                 public void run() {
