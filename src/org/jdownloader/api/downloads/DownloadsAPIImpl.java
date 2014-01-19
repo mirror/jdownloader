@@ -83,7 +83,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 if (queryParams._getQueryParam("size", Boolean.class, false)) {
                     long size = 0;
                     for (DownloadLink dl : fp.getChildren()) {
-                        size = size + dl.getDownloadSize();
+                        size = size + dl.getView().getBytesTotalEstimated();
                     }
                     infomap.put("size", size);
                 }
@@ -112,7 +112,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 if (queryParams._getQueryParam("done", Boolean.class, false)) {
                     Long done = 0l;
                     for (DownloadLink dl : fp.getChildren()) {
-                        done = done + dl.getDownloadCurrent();
+                        done = done + dl.getView().getBytesLoaded();
                     }
                     infomap.put("done", done);
                 }
@@ -215,13 +215,13 @@ public class DownloadsAPIImpl implements DownloadsAPI {
                 infomap.put("host", dl.getHost());
             }
             if (queryParams._getQueryParam("size", Boolean.class, false)) {
-                infomap.put("size", dl.getDownloadSize());
+                infomap.put("size", dl.getView().getBytesTotalEstimated());
             }
             if (queryParams._getQueryParam("done", Boolean.class, false)) {
-                infomap.put("done", dl.getDownloadCurrent());
+                infomap.put("done", dl.getView().getBytesLoaded());
             }
             if (queryParams._getQueryParam("speed", Boolean.class, false)) {
-                infomap.put("speed", dl.getDownloadSpeed());
+                infomap.put("speed", dl.getView().getSpeedBps());
             }
             if (queryParams._getQueryParam("eta", Boolean.class, false)) {
                 infomap.put("eta", -1);

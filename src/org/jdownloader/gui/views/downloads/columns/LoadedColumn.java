@@ -39,7 +39,7 @@ public class LoadedColumn extends ExtFileSizeColumn<AbstractNode> {
     @Override
     protected long getBytes(AbstractNode o2) {
         if (o2 instanceof DownloadLink) {
-            return ((DownloadLink) o2).getDownloadCurrent();
+            return ((DownloadLink) o2).getView().getBytesLoaded();
         } else {
             return ((FilePackage) o2).getView().getDone();
         }

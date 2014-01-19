@@ -1014,7 +1014,7 @@ public class LinkCrawler {
             if (props != null && !props.isEmpty()) {
                 dl.setProperties(props);
             }
-            dl.setDownloadSize(source.getKnownDownloadSize());
+            dl.setDownloadSize(source.getView().getBytesTotal());
         }
     }
 

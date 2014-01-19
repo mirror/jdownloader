@@ -37,7 +37,7 @@ public class CrawledLinkStoreable implements Storable {
 	public long getSize() {
 		if (link == null)
 			return -1l;
-		return link.getDownloadLink().getDownloadSize();
+		return link.getDownloadLink().getView().getBytesTotalEstimated();
 	}
 
 	public boolean isEnabled() {

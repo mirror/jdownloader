@@ -23,7 +23,7 @@ public class PollingAPIDownloadLinkStorable implements Storable {
     }
 
     public Long getDone() {
-        return link.getDownloadCurrent();
+        return link.getView().getBytesLoaded();
     }
 
     public Boolean getFinished() {
@@ -31,11 +31,11 @@ public class PollingAPIDownloadLinkStorable implements Storable {
     }
 
     public Long getSize() {
-        return link.getDownloadSize();
+        return link.getView().getBytesTotalEstimated();
     }
 
     public Long getSpeed() {
-        return link.getDownloadSpeed();
+        return link.getView().getSpeedBps();
     }
 
     public Long getEta() {

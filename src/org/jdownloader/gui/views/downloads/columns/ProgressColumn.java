@@ -124,12 +124,12 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     public void updateRanges(final AbstractNode obj, final MultiProgressBar mpb) {
         if (obj instanceof DownloadLink) {
-            mpb.getModel().setMaximum(((DownloadLink) obj).getKnownDownloadSize());
+            mpb.getModel().setMaximum(((DownloadLink) obj).getView().getBytesTotal());
             java.util.List<Range> ranges = new ArrayList<Range>();
 
-            long[] chunks = ((DownloadLink) obj).getChunksProgress();
+            long[] chunks = ((DownloadLink) obj).getView().getChunksProgress();
             if (chunks != null) {
-                long part = ((DownloadLink) obj).getKnownDownloadSize() / chunks.length;
+                long part = ((DownloadLink) obj).getView().getBytesTotal() / chunks.length;
                 for (int i = 0; i < chunks.length; i++) {
                     ranges.add(new Range(i * part, chunks[i]));
                 }
@@ -145,8 +145,8 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 List<DownloadLink> children = ((FilePackage) obj).getChildren();
                 long all = 0;
                 for (int i = 0; i < children.size(); i++) {
-                    ranges.add(new Range(all, all + children.get(i).getDownloadCurrent()));
-                    all += children.get(i).getDownloadSize();
+                    ranges.add(new Range(all, all + children.get(i).getView().getBytesLoaded()));
+                    all += children.get(i).getView().getBytesTotalEstimated();
                 }
                 mpb.getModel().setRanges(ranges.toArray(new Range[] {}));
             } finally {
@@ -218,7 +218,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return (progress.getTotal());
             } else if (FinalLinkState.CheckFinished(dLink.getFinalLinkState())) {
                 return 100;
-            } else if ((size = dLink.getKnownDownloadSize()) > 0) {
+            } else if ((size = dLink.getView().getBytesTotal()) > 0) {
                 return size;
             } else {
                 return -1;
@@ -253,8 +253,8 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return (progress.getCurrent());
             } else if (FinalLinkState.CheckFinished(dLink.getFinalLinkState())) {
                 return 100;
-            } else if (dLink.getKnownDownloadSize() > 0) {
-                return dLink.getDownloadCurrent();
+            } else if (dLink.getView().getBytesTotal() > 0) {
+                return dLink.getView().getBytesLoaded();
             } else {
                 return 0;
             }

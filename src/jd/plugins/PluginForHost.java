@@ -649,7 +649,7 @@ public abstract class PluginForHost extends Plugin {
         AccountInfo ai = null;
         if (account != null && (ai = account.getAccountInfo()) != null) {
             if (ai.isUnlimitedTraffic()) return true;
-            if (ai.getTrafficLeft() >= 0 && ai.getTrafficLeft() < downloadLink.getDownloadSize()) return false;
+            if (ai.getTrafficLeft() >= 0 && ai.getTrafficLeft() < downloadLink.getView().getBytesTotalEstimated()) return false;
         }
         return true;
     }

@@ -28,9 +28,9 @@ public class MirrorLoading implements ConditionalSkipReason, DownloadLinkConditi
             link.setFinishedDate(getDownloadLink().getFinishedDate());
             link.setName(getDownloadLink().getName());
             link.setFinalFileOutput(getDownloadLink().getFinalFileOutput());
-            long fileSize = getDownloadLink().getKnownDownloadSize();
+            long fileSize = getDownloadLink().getView().getBytesTotal();
             if (fileSize >= 0) link.setDownloadSize(fileSize);
-            link.setDownloadCurrent(getDownloadLink().getDownloadCurrent());
+            link.setDownloadCurrent(getDownloadLink().getView().getBytesLoaded());
         }
     }
 

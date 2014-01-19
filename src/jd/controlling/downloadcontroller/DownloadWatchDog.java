@@ -499,7 +499,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -839,15 +840,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private Boolean hasSameSize(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
         int fileSizeEquality = config.getMirrorDetectionFileSizeEquality();
-        long sizeA = linkCandidate.getVerifiedFileSize();
-        long sizeB = mirrorCandidate.getVerifiedFileSize();
+        long sizeA = linkCandidate.getView().getBytesTotalVerified();
+        long sizeB = mirrorCandidate.getView().getBytesTotalVerified();
         if (fileSizeEquality == 10000) {
             /* 100 percent sure, only use verifiedFileSizes */
             if (sizeA >= 0 && sizeB >= 0) return sizeA == sizeB;
         } else {
             /* we use knownDownloadSize for check */
-            sizeA = linkCandidate.getKnownDownloadSize();
-            sizeB = mirrorCandidate.getKnownDownloadSize();
+            sizeA = linkCandidate.getView().getBytesTotal();
+            sizeB = mirrorCandidate.getView().getBytesTotal();
             if (sizeA >= 0 && sizeB >= 0) {
                 long diff = Math.abs(sizeA - sizeB);
                 int maxDiffPercent = 10000 - fileSizeEquality;
@@ -2001,7 +2002,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         Throwable throwable = result.getCaughtThrowable();
         DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
         DownloadLink link = candidate.getLink();
-        long sizeChange = Math.max(0, link.getDownloadCurrent() - singleDownloadController.getSizeBefore());
+        long sizeChange = Math.max(0, link.getView().getBytesLoaded() - singleDownloadController.getSizeBefore());
         Account account = singleDownloadController.getAccount();
         if (account != null && sizeChange > 0) {
             /* updates traffic available for used account */
@@ -2682,8 +2683,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }
@@ -3123,7 +3124,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             for (final SingleDownloadController con : getSession().getControllers()) {
                 DownloadInterface dl = con.getDownloadInstance();
                 if (dl != null && !con.getDownloadLink().isResumeable() && selection.contains(con.getDownloadLink())) {
-                    i += con.getDownloadLink().getDownloadCurrent();
+                    i += con.getDownloadLink().getView().getBytesLoaded();
                 }
             }
         }
@@ -3146,7 +3147,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             for (final SingleDownloadController con : getSession().getControllers()) {
                 DownloadInterface dl = con.getDownloadInstance();
                 if (dl != null && !con.getDownloadLink().isResumeable()) {
-                    i += con.getDownloadLink().getDownloadCurrent();
+                    i += con.getDownloadLink().getView().getBytesLoaded();
                 }
             }
         }

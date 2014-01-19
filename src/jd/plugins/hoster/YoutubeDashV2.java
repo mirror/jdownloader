@@ -37,6 +37,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkDatabindingInterface;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
@@ -75,12 +76,14 @@ import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.controllingg.DownloadLinkView;
 import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
@@ -93,15 +96,17 @@ import org.jdownloader.updatev2.UpdateController;
 @HostPlugin(revision = "$Revision: 24000 $", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" }, flags = { 2 })
 public class YoutubeDashV2 extends PluginForHost {
 
-    private final String           DASH_AUDIO_SIZE     = "DASH_AUDIO_SIZE";
-    private final String           DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";
-    private final String           DASH_AUDIO_CHUNKS   = "DASH_AUDIO_CHUNKS";
-    private final String           DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
+    private static final String    DASH_AUDIO_FINISHED = "DASH_AUDIO_FINISHED";
 
-    private final String           DASH_VIDEO_SIZE     = "DASH_VIDEO_SIZE";
-    private final String           DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
+    private static final String    DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
+
+    private static final String    DASH_AUDIO_LOADED   = "DASH_AUDIO_LOADED";
+
+    private static final String    DASH_VIDEO_LOADED   = "DASH_VIDEO_LOADED";
+
+    private final String           DASH_AUDIO_CHUNKS   = "DASH_AUDIO_CHUNKS";
+
     private final String           DASH_VIDEO_CHUNKS   = "DASH_VIDEO_CHUNKS";
-    private final String           DASH_VIDEO_FINISHED = "DASH_VIDEO_FINISHED";
 
     private YoutubeConfig          cfg;
     private YoutubeHelper          cachedHelper;
@@ -355,6 +360,7 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
             convertOldLink(downloadLink);
         }
@@ -418,7 +424,8 @@ public class YoutubeDashV2 extends PluginForHost {
                     con.disconnect();
                     if (con.getResponseCode() == 200) {
                         totalSize += con.getLongContentLength();
-                        downloadLink.setProperty(DASH_VIDEO_SIZE, con.getLongContentLength());
+                        data.setDashVideoSize(con.getLongContentLength());
+
                     } else {
                         if (i == 0) {
                             resetStreamUrls(downloadLink);
@@ -434,7 +441,8 @@ public class YoutubeDashV2 extends PluginForHost {
                     con.disconnect();
                     if (con.getResponseCode() == 200) {
                         totalSize += con.getLongContentLength();
-                        downloadLink.setProperty(DASH_AUDIO_SIZE, con.getLongContentLength());
+                        data.setDashAudioSize(con.getLongContentLength());
+
                         break;
                     } else {
 
@@ -634,32 +642,71 @@ public class YoutubeDashV2 extends PluginForHost {
 
     }
 
-    private boolean downloadDashStream(final DownloadLink downloadLink, boolean videoORAudio) throws Exception {
+    public static interface YoutubeProperties extends DownloadLinkDatabindingInterface {
+        public static final String DASH_VIDEO_SIZE = "DASH_VIDEO_SIZE";
+        public static final String DASH_AUDIO_SIZE = "DASH_AUDIO_SIZE";
+
+        @Key(DASH_VIDEO_SIZE)
+        long getDashVideoSize();
+
+        @Key(DASH_VIDEO_SIZE)
+        void setDashVideoSize(long longContentLength);
+
+        @Key(DASH_AUDIO_SIZE)
+        long getDashAudioSize();
+
+        @Key(DASH_AUDIO_SIZE)
+        void setDashAudioSize(long longContentLength);
+
+        @Key(DASH_VIDEO_FINISHED)
+        void setDashVideoFinished(boolean b);
+
+        @Key(DASH_AUDIO_FINISHED)
+        void setDashAudioFinished(boolean b);
+
+        @Key(DASH_VIDEO_FINISHED)
+        boolean isDashVideoFinished();
+
+        @Key(DASH_AUDIO_FINISHED)
+        boolean isDashAudioFinished();
+
+        @Key(DASH_VIDEO_LOADED)
+        long getDashVideoBytesLoaded();
+
+        @Key(DASH_AUDIO_LOADED)
+        long getDashAudioBytesLoaded();
+
+        @Key(DASH_VIDEO_LOADED)
+        void setDashVideoBytesLoaded(long bytesLoaded);
+
+        @Key(DASH_AUDIO_LOADED)
+        void setDashAudioBytesLoaded(long bytesLoaded);
+
+    }
+
+    private boolean downloadDashStream(final DownloadLink downloadLink, final YoutubeProperties data, final boolean isVideoStream) throws Exception {
         final long totalSize = downloadLink.getDownloadSize();
+
         UrlCollection urls = getUrlPair(downloadLink);
         GetRequest request = null;
         final String dashName;
         final String dashChunksProperty;
-        final String dashSizeProperty;
-        final String dashLoadedProperty;
-        final String dashFinishedProperty;
+
+        // final String dashLoadedProperty;
+        // final String dashFinishedProperty;
         final long chunkOffset;
-        if (videoORAudio) {
+        if (isVideoStream) {
             request = new GetRequest(urls.video);
             dashName = getDashVideoFileName(downloadLink);
             dashChunksProperty = DASH_VIDEO_CHUNKS;
-            dashSizeProperty = DASH_VIDEO_SIZE;
-            dashLoadedProperty = DASH_VIDEO_LOADED;
-            dashFinishedProperty = DASH_VIDEO_FINISHED;
+
             chunkOffset = 0;
         } else {
             request = new GetRequest(urls.audio);
             dashName = getDashAudioFileName(downloadLink);
             dashChunksProperty = DASH_AUDIO_CHUNKS;
-            dashSizeProperty = DASH_AUDIO_SIZE;
-            dashLoadedProperty = DASH_AUDIO_LOADED;
-            dashFinishedProperty = DASH_AUDIO_FINISHED;
-            chunkOffset = downloadLink.getLongProperty(DASH_VIDEO_SIZE, -1l);
+
+            chunkOffset = data.getDashVideoSize();
         }
         request.setProxy(br.getProxy());
         final String dashPath = new File(downloadLink.getDownloadDirectory(), dashName).getAbsolutePath();
@@ -745,7 +792,12 @@ public class YoutubeDashV2 extends PluginForHost {
 
             @Override
             public long getVerifiedFileSize() {
-                return downloadLink.getLongProperty(dashSizeProperty, -1l);
+                if (isVideoStream) {
+                    return data.getDashVideoSize();
+                } else {
+                    return data.getDashAudioSize();
+                }
+
             }
 
             @Override
@@ -769,20 +821,35 @@ public class YoutubeDashV2 extends PluginForHost {
 
             @Override
             public void setLinkStatus(int finished) {
-                if (LinkStatus.FINISHED == finished) {
-                    downloadLink.setProperty(dashFinishedProperty, true);
+                if (isVideoStream) {
+
+                    data.setDashVideoFinished(LinkStatus.FINISHED == finished);
+
                 } else {
-                    downloadLink.setProperty(dashFinishedProperty, Property.NULL);
+                    data.setDashAudioFinished(LinkStatus.FINISHED == finished);
+
                 }
+
             }
 
             @Override
             public void setVerifiedFileSize(long length) {
-                if (length >= 0) {
-                    downloadLink.setProperty(dashSizeProperty, length);
+                if (isVideoStream) {
+                    if (length >= 0) {
+                        data.setDashVideoSize(length);
+
+                    } else {
+                        data.setDashVideoSize(-1);
+                    }
                 } else {
-                    downloadLink.setProperty(dashSizeProperty, Property.NULL);
+                    if (length >= 0) {
+                        data.setDashAudioSize(length);
+
+                    } else {
+                        data.setDashAudioSize(-1);
+                    }
                 }
+
             }
 
             @Override
@@ -796,7 +863,12 @@ public class YoutubeDashV2 extends PluginForHost {
 
             @Override
             public long getDownloadTotalBytes() {
-                return downloadLink.getLongProperty(dashLoadedProperty, -1);
+                if (isVideoStream) {
+                    return data.getDashVideoBytesLoaded();
+                } else {
+                    return data.getDashAudioBytesLoaded();
+                }
+
             }
 
             @Override
@@ -806,11 +878,20 @@ public class YoutubeDashV2 extends PluginForHost {
 
             @Override
             public void setDownloadBytesLoaded(long bytes) {
-                if (bytes < 0) {
-                    downloadLink.setProperty(dashLoadedProperty, Property.NULL);
+                if (isVideoStream) {
+                    if (bytes < 0) {
+                        data.setDashVideoBytesLoaded(0);
+                    } else {
+                        data.setDashVideoBytesLoaded(bytes);
+                    }
                 } else {
-                    downloadLink.setProperty(dashLoadedProperty, bytes);
+                    if (bytes < 0) {
+                        data.setDashAudioBytesLoaded(0);
+                    } else {
+                        data.setDashAudioBytesLoaded(bytes);
+                    }
                 }
+
                 downloadLink.setDownloadCurrent(chunkOffset + bytes);
             }
 
@@ -877,125 +958,146 @@ public class YoutubeDashV2 extends PluginForHost {
         return true;
     }
 
-    public void handleDash(final DownloadLink downloadLink, Account account) throws Exception {
+    public void handleDash(final DownloadLink downloadLink, final YoutubeProperties data, Account account) throws Exception {
         FFmpeg ffmpeg = new FFmpeg();
-        synchronized (DownloadWatchDog.getInstance()) {
-
-            if (!ffmpeg.isAvailable()) {
-                FFMpegInstallProgress progress = new FFMpegInstallProgress();
-                downloadLink.setPluginProgress(progress);
-                try {
-
-                    FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
-                } finally {
-                    downloadLink.setPluginProgress(null);
-                }
-                ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
-                if (!ffmpeg.isAvailable()) {
-                    //
-                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                    if (requestedInstalls != null && requestedInstalls.contains("ffmpeg")) {
-                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
-
-                    } else {
-                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
-                    }
-
-                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.YoutubeDash_handleFree_ffmpegmissing());
-                }
-            }
-        }
-
-        // debug
-
-        requestFileInformation(downloadLink);
-
-        final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
-        List<File> locks = new ArrayList<File>();
-        locks.addAll(listProcessFiles(downloadLink));
+        DownloadLinkView oldView = downloadLink.getView();
         try {
-            for (File lock : locks) {
-                logger.info("Lock " + lock);
-                dlc.lockFile(lock);
-            }
-            String videoStreamPath = getVideoStreamPath(downloadLink);
-            if (videoStreamPath != null && new File(videoStreamPath).exists()) {
-                downloadLink.setProperty(DASH_VIDEO_FINISHED, true);
-            }
-            YoutubeVariantInterface variant = getVariant(downloadLink);
-            boolean loadVideo = !downloadLink.getBooleanProperty(DASH_VIDEO_FINISHED, false);
+            downloadLink.setView(new DefaultDownloadLinkViewImpl() {
+                @Override
+                public long getBytesLoaded() {
+                    if (data.isDashVideoFinished()) {
 
-            if (videoStreamPath == null || variant.getType() == YoutubeVariantInterface.DownloadType.DASH_AUDIO) {
-                /* Skip video if just audio should be downloaded */
-                loadVideo = false;
-            } else {
-                loadVideo |= !new File(videoStreamPath).exists();
-            }
-
-            if (loadVideo) {
-                /* videoStream not finished yet, resume/download it */
-                if (!downloadDashStream(downloadLink, true)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            }
-            if (new File(getAudioStreamPath(downloadLink)).exists()) {
-                downloadLink.setProperty(DASH_AUDIO_FINISHED, true);
-            }
-            /* videoStream is finished */
-            boolean loadAudio = !downloadLink.getBooleanProperty(DASH_AUDIO_FINISHED, false);
-            loadAudio |= !new File(getAudioStreamPath(downloadLink)).exists();
-            if (loadAudio) {
-                /* audioStream not finished yet, resume/download it */
-                if (!downloadDashStream(downloadLink, false)) {
-
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            }
-            if (new File(getAudioStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
-                /* audioStream also finished */
-                /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
-                if (videoStreamPath != null && new File(videoStreamPath).exists()) {
-                    FFMpegProgress progress = new FFMpegProgress();
-                    downloadLink.setPluginProgress(progress);
-                    try {
-                        if (ffmpeg.merge(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
-                            downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                            new File(videoStreamPath).delete();
-                            new File(getAudioStreamPath(downloadLink)).delete();
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
-
-                        }
-                    } finally {
-                        downloadLink.setPluginProgress(null);
-                    }
-                } else {
-                    /* Just renaming the temp-file didn't work */
-                    FFMpegProgress progress = new FFMpegProgress();
-                    downloadLink.setPluginProgress(progress);
-                    try {
-                        if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
-                            downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                            new File(getAudioStreamPath(downloadLink)).delete();
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
-
-                        }
-                    } finally {
-                        downloadLink.setPluginProgress(null);
+                        return super.getBytesLoaded() + data.getDashVideoSize();
+                    } else {
+                        return super.getBytesLoaded();
                     }
 
                 }
+
+            });
+
+            synchronized (DownloadWatchDog.getInstance()) {
+
+                if (!ffmpeg.isAvailable()) {
+                    FFMpegInstallProgress progress = new FFMpegInstallProgress();
+                    downloadLink.setPluginProgress(progress);
+                    try {
+
+                        FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
+                    } finally {
+                        downloadLink.setPluginProgress(null);
+                    }
+                    ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
+                    if (!ffmpeg.isAvailable()) {
+                        //
+                        List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                        if (requestedInstalls != null && requestedInstalls.contains("ffmpeg")) {
+                            throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
+
+                        } else {
+                            throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                        }
+
+                        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+                        // _GUI._.YoutubeDash_handleFree_ffmpegmissing());
+                    }
+                }
             }
-        } catch (final FileIsLockedException e) {
-            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+
+            // debug
+
+            requestFileInformation(downloadLink);
+
+            final SingleDownloadController dlc = downloadLink.getDownloadLinkController();
+            List<File> locks = new ArrayList<File>();
+            locks.addAll(listProcessFiles(downloadLink));
+            try {
+                for (File lock : locks) {
+                    logger.info("Lock " + lock);
+                    dlc.lockFile(lock);
+                }
+                String videoStreamPath = getVideoStreamPath(downloadLink);
+                if (videoStreamPath != null && new File(videoStreamPath).exists()) {
+                    data.setDashVideoFinished(true);
+
+                }
+                YoutubeVariantInterface variant = getVariant(downloadLink);
+                boolean loadVideo = !data.isDashVideoFinished();
+
+                if (videoStreamPath == null || variant.getType() == YoutubeVariantInterface.DownloadType.DASH_AUDIO) {
+                    /* Skip video if just audio should be downloaded */
+                    loadVideo = false;
+                } else {
+                    loadVideo |= !new File(videoStreamPath).exists();
+                }
+
+                if (loadVideo) {
+                    /* videoStream not finished yet, resume/download it */
+                    if (!downloadDashStream(downloadLink, data, true)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                }
+                if (new File(getAudioStreamPath(downloadLink)).exists()) {
+                    data.setDashAudioFinished(true);
+                }
+                /* videoStream is finished */
+                boolean loadAudio = !data.isDashAudioFinished();
+                loadAudio |= !new File(getAudioStreamPath(downloadLink)).exists();
+                if (loadAudio) {
+                    /* audioStream not finished yet, resume/download it */
+                    if (!downloadDashStream(downloadLink, data, false)) {
+
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                }
+                if (new File(getAudioStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
+                    /* audioStream also finished */
+                    /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
+                    if (videoStreamPath != null && new File(videoStreamPath).exists()) {
+                        FFMpegProgress progress = new FFMpegProgress();
+                        downloadLink.setPluginProgress(progress);
+                        try {
+                            if (ffmpeg.merge(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
+                                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                new File(videoStreamPath).delete();
+                                new File(getAudioStreamPath(downloadLink)).delete();
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+
+                            }
+                        } finally {
+                            downloadLink.setPluginProgress(null);
+                        }
+                    } else {
+                        /* Just renaming the temp-file didn't work */
+                        FFMpegProgress progress = new FFMpegProgress();
+                        downloadLink.setPluginProgress(progress);
+                        try {
+                            if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
+                                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                new File(getAudioStreamPath(downloadLink)).delete();
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+
+                            }
+                        } finally {
+                            downloadLink.setPluginProgress(null);
+                        }
+
+                    }
+                }
+            } catch (final FileIsLockedException e) {
+                throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+            } finally {
+                for (File lock : locks) {
+                    dlc.unlockFile(lock);
+                }
+            }
         } finally {
-            for (File lock : locks) {
-                dlc.unlockFile(lock);
-            }
+            downloadLink.setView(oldView);
         }
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-
+        YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
         if (!downloadLink.getDownloadURL().startsWith("youtubev2://")) {
@@ -1058,7 +1160,7 @@ public class YoutubeDashV2 extends PluginForHost {
             break;
         case DASH_AUDIO:
         case DASH_VIDEO:
-            handleDash(downloadLink, null);
+            handleDash(downloadLink, data, null);
             break;
 
         }
@@ -1071,12 +1173,15 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink downloadLink) {
         resetStreamUrls(downloadLink);
-        downloadLink.setProperty("DASH_VIDEO_CHUNKS", Property.NULL);
-        downloadLink.setProperty("DASH_AUDIO_CHUNKS", Property.NULL);
-        downloadLink.setProperty("DASH_VIDEO_LOADED", Property.NULL);
-        downloadLink.setProperty("DASH_AUDIO_LOADED", Property.NULL);
-        downloadLink.setProperty("DASH_VIDEO_FINISHED", Property.NULL);
-        downloadLink.setProperty("DASH_AUDIO_FINISHED", Property.NULL);
+        YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
+        data.setDashAudioBytesLoaded(0);
+        data.setDashAudioFinished(false);
+        data.setDashAudioSize(0);
+        data.setDashVideoBytesLoaded(0);
+        data.setDashVideoFinished(false);
+        data.setDashVideoSize(0);
+        downloadLink.setProperty(DASH_VIDEO_CHUNKS, Property.NULL);
+        downloadLink.setProperty(DASH_AUDIO_CHUNKS, Property.NULL);
 
     }
 

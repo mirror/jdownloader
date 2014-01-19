@@ -46,9 +46,9 @@ public class RemainingColumn extends ExtFileSizeColumn<AbstractNode> {
     protected long getBytes(AbstractNode o2) {
         if (o2 instanceof DownloadLink) {
             DownloadLink link = ((DownloadLink) o2);
-            long size = link.getKnownDownloadSize();
+            long size = link.getView().getBytesTotal();
             if (size >= 0) {
-                return Math.max(-1, size - link.getDownloadCurrent());
+                return Math.max(-1, size - link.getView().getBytesLoaded());
             } else
                 return -1;
         } else if (o2 instanceof FilePackage) {

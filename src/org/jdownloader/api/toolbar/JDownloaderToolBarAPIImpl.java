@@ -210,8 +210,8 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         long todo = 0;
         long done = 0;
         for (DownloadLink link : calc_progress) {
-            done += Math.max(0, link.getDownloadCurrent());
-            todo += Math.max(0, link.getDownloadSize());
+            done += Math.max(0, link.getView().getBytesLoaded());
+            todo += Math.max(0, link.getView().getBytesTotalEstimated());
         }
         ret.put("download_current", done);
         ret.put("download_complete", todo);

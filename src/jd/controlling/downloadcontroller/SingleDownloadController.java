@@ -144,7 +144,7 @@ public class SingleDownloadController extends BrowserSettingsThread {
         this.candidate = candidate;
         super.setCurrentProxy(candidate.getProxy());
         this.downloadLink = candidate.getLink();
-        this.sizeBefore = Math.max(0, downloadLink.getDownloadCurrent());
+        this.sizeBefore = Math.max(0, downloadLink.getView().getBytesLoaded());
         this.account = candidate.getCachedAccount().getAccount();
         String host = candidate.getCachedAccount().getPlugin().getHost();
         queueItem = LAST_DOWNLOAD_START_TIMESTAMPS.get(host);
@@ -255,8 +255,8 @@ public class SingleDownloadController extends BrowserSettingsThread {
                 @Override
                 public void run() throws Exception {
                     final File partFile = new File(getDownloadLink().getFileOutput() + ".part");
-                    long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), getDownloadLink().getDownloadCurrent());
-                    final long remainingSize = downloadLink.getKnownDownloadSize() - Math.max(0, doneSize);
+                    long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), getDownloadLink().getView().getBytesLoaded());
+                    final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
                     DISKSPACERESERVATIONRESULT result = watchDog.getSession().getDiskSpaceManager().check(new DiskSpaceReservation() {
 
                         @Override

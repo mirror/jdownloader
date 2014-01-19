@@ -119,7 +119,7 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
             Iterator<DownloadSession> it = sessions.iterator();
             while (it.hasNext()) {
                 DownloadSession session = it.next();
-                if (session.getWatchAsYouDownloadSession().getTotalDownloaded() != session.getDownloadLink().getDownloadSize()) { return false; }
+                if (session.getWatchAsYouDownloadSession().getTotalDownloaded() != session.getDownloadLink().getView().getBytesTotalEstimated()) { return false; }
             }
             // sessions.remove(session);
             // NeembuuExtension.getInstance().getGUI().removeSession(session);
@@ -153,7 +153,7 @@ public final class NB_VirtualFileSystem extends SimpleReadOnlyFileSystem {
         synchronized (sessions) {
             if (sessions.size() == 0) return false;
             for (DownloadSession ds : sessions) {
-                if (ds.getWatchAsYouDownloadSession().getTotalDownloaded() < ds.getDownloadLink().getDownloadSize()) { return false; }
+                if (ds.getWatchAsYouDownloadSession().getTotalDownloaded() < ds.getDownloadLink().getView().getBytesTotalEstimated()) { return false; }
             }
         }
         return true;

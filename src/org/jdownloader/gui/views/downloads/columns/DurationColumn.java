@@ -48,7 +48,7 @@ public class DurationColumn extends ExtTextColumn<AbstractNode> {
     @Override
     public String getStringValue(AbstractNode value) {
         if (value instanceof DownloadLink) {
-            long time = ((DownloadLink) value).getDownloadTime();
+            long time = ((DownloadLink) value).getView().getDownloadTime();
             PluginProgress progress = ((DownloadLink) value).getPluginProgress();
             if (progress instanceof DownloadPluginProgress) {
                 time = time + ((DownloadPluginProgress) progress).getDuration();

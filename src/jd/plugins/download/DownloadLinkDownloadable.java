@@ -82,7 +82,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public long getVerifiedFileSize() {
-        return downloadLink.getVerifiedFileSize();
+        return downloadLink.getView().getBytesTotalVerified();
     }
 
     @Override
@@ -107,7 +107,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public long[] getChunksProgress() {
-        return downloadLink.getChunksProgress();
+        return downloadLink.getView().getChunksProgress();
     }
 
     @Override
@@ -203,7 +203,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public long getDownloadTotalBytes() {
-        return downloadLink.getDownloadSize();
+        return downloadLink.getView().getBytesTotalEstimated();
     }
 
     @Override
@@ -238,7 +238,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public long getKnownDownloadSize() {
-        return downloadLink.getKnownDownloadSize();
+        return downloadLink.getView().getBytesTotal();
     }
 
     @Override
@@ -521,7 +521,7 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public long getDownloadBytesLoaded() {
-        return downloadLink.getDownloadCurrent();
+        return downloadLink.getView().getBytesLoaded();
     }
 
     @Override

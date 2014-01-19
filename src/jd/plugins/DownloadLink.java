@@ -20,8 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,6 +40,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.exceptions.WTFException;
@@ -45,9 +51,12 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controllingg.DownloadLinkView;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -213,6 +222,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.defaultplugin = plugin;
+        setView(new DefaultDownloadLinkViewImpl());
         setName(name);
         downloadMax = -1;
         setHost(host);
@@ -252,6 +262,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
+    /**
+     * @deprecated use {@link #getView()}
+     * @return
+     */
     public long getDownloadTime() {
         return getLongProperty(PROPERTY_DOWNLOADTIME, 0l);
     }
@@ -362,6 +376,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * Gibt ein arry mit den Chunkfortschritten zurueck. Dieses Array wird von der Downloadinstanz zu resumezwecken verwendet
      * 
      * @return
+     * @deprecated use {@link #getView()}
      */
     public long[] getChunksProgress() {
         return chunksProgress;
@@ -371,17 +386,23 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * Liefert die bisher heruntergeladenen Bytes zurueck
      * 
      * @return Anzahl der heruntergeladenen Bytes
+     * @deprecated use {@link #getView()} instead
      */
     public long getDownloadCurrent() {
         SingleDownloadController dlc = getDownloadLinkController();
         DownloadInterface dli = null;
         if (dlc != null && (dli = dlc.getDownloadInstance()) != null) {
-            if (dli.getTotalLinkBytesLoadedLive() == 0 && downloadCurrent != 0) {
-                return downloadCurrent;
+            if (dli.getTotalLinkBytesLoadedLive() == 0 && getDownloadCurrentRaw() != 0) {
+                return getDownloadCurrentRaw();
             } else {
                 return dli.getTotalLinkBytesLoadedLive();
             }
         }
+        return getDownloadCurrentRaw();
+
+    }
+
+    public long getDownloadCurrentRaw() {
         return downloadCurrent;
     }
 
@@ -393,6 +414,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * Die Groesse der Datei
      * 
      * @return Die Groesse der Datei
+     * @deprecated use {@link #getView()} sintead
      */
     public long getDownloadSize() {
         return Math.max(getDownloadCurrent(), downloadMax);
@@ -402,12 +424,25 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurueck
      * 
      * @return Downloadgeschwindigkeit in bytes/sekunde
+     * @deprecated use {@link #getView()}
      */
     public long getDownloadSpeed() {
         SingleDownloadController dlc = getDownloadLinkController();
         DownloadInterface dli = null;
         if (dlc != null && (dli = dlc.getDownloadInstance()) != null) { return dli.getManagedConnetionHandler().getSpeed(); }
         return 0;
+    }
+
+    private DownloadLinkView view;
+
+    public DownloadLinkView getView() {
+        return view;
+    }
+
+    public void setView(DownloadLinkView status) {
+        if (status == null) throw new NullPointerException();
+        status.setLink(this);
+        this.view = status;
     }
 
     public String getDownloadURL() {
@@ -748,7 +783,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setCustomFileOutputFilename(null);
         setFinalFileName(null);
         setFinalLinkState(null);
-        long size = getKnownDownloadSize();
+        long size = getView().getBytesTotal();
         setVerifiedFileSize(-1);
         if (size >= 0) setDownloadSize(size);
         setChunksProgress(null);
@@ -795,9 +830,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * 
      * @param downloadedCurrent
      *            Anzahl der heruntergeladenen Bytes
+     * 
      */
     public void setDownloadCurrent(long downloadedCurrent) {
-        if (downloadCurrent == downloadedCurrent) return;
+
+        if (getDownloadCurrentRaw() == downloadedCurrent) return;
         downloadCurrent = downloadedCurrent;
         if (hasNotificationListener() && this.getCurrentDownloadInterface() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
     }
@@ -1067,6 +1104,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * returns real downloadMAx Value. use #getDownloadSize if you are not sure
      * 
      * @return
+     * @deprecated use {@link #getView()} instead
      */
     public long getKnownDownloadSize() {
         long ret = getVerifiedFileSize();
@@ -1166,6 +1204,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
+    /**
+     * @deprecated use {@link #getView()}
+     * @return
+     */
     public long getVerifiedFileSize() {
         return getLongProperty(PROPERTY_VERIFIEDFILESIZE, -1);
     }
@@ -1345,4 +1387,130 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getBooleanProperty(VARIANT_SUPPORT, false);
     }
 
+    public <T extends DownloadLinkDatabindingInterface> T bindData(Class<T> clazz) {
+        synchronized (this) {
+
+            @SuppressWarnings("unchecked")
+            final T ret = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, new InvocationHandler() {
+
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    String key;
+                    boolean setter = false;
+                    if (method.getName().startsWith("set")) {
+                        setter = true;
+                        key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                    } else if (method.getName().startsWith("is")) {
+                        key = method.getName().substring(2).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                    } else if (method.getName().startsWith("get")) {
+                        key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                    } else {
+                        throw new WTFException("Only Setter and getter are allowed");
+                    }
+                    Key keyAnnotation = method.getAnnotation(Key.class);
+                    if (keyAnnotation != null) key = keyAnnotation.value();
+
+                    if (setter) {
+                        if (method.getParameterTypes().length != 1) { throw new WTFException("Setter " + method + " should have 1 parameter. instead: " + Arrays.toString(method.getParameterTypes())); }
+                        if (!Clazz.isVoid(method.getReturnType())) { throw new WTFException("Setter " + method + " must not have any return type. Has: " + method.getReturnType()); }
+
+                        if (Clazz.isBoolean(method.getParameterTypes()[0])) {
+                            if (args[0].equals(Boolean.FALSE)) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        } else if (Clazz.isByte(method.getParameterTypes()[0])) {
+                            if (args[0].equals(0)) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        } else if (Clazz.isDouble(method.getParameterTypes()[0])) {
+                            if (args[0].equals(0d)) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        } else if (Clazz.isEnum(method.getParameterTypes()[0])) {
+                            if (args[0] == null) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        } else if (Clazz.isFloat(method.getParameterTypes()[0])) {
+                            if (args[0].equals(0f)) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        } else if (Clazz.isInteger(method.getParameterTypes()[0])) {
+                            if (args[0].equals(0)) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        } else if (Clazz.isLong(method.getParameterTypes()[0])) {
+                            if (args[0].equals(0l)) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        } else if (Clazz.isShort(method.getParameterTypes()[0])) {
+                            if (args[0].equals(0)) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        } else if (Clazz.isString(method.getParameterTypes()[0])) {
+
+                            if (args[0] == null) {
+                                setProperty(key, Property.NULL);
+                                return null;
+                            }
+                        }
+                        setProperty(key, args[0]);
+                    } else {
+                        Type returnType = method.getGenericReturnType();
+                        if (method.getParameterTypes().length != 0) { throw new WTFException("Getter " + method + " must not have any parameter. instead: " + Arrays.toString(method.getParameterTypes())); }
+                        if (Clazz.isVoid(method.getReturnType())) { throw new WTFException("Getter " + method + " must have a return type. is Void."); }
+
+                        boolean contains = hasProperty(key);
+                        if (!contains) {
+                            if (Clazz.isBoolean(returnType)) {
+                                return false;
+                            } else if (Clazz.isByte(returnType)) {
+                                return 0;
+                            } else if (Clazz.isDouble(returnType)) {
+                                return 0d;
+                            } else if (Clazz.isEnum(returnType)) {
+                                return null;
+                            } else if (Clazz.isFloat(returnType)) {
+                                return 0f;
+                            } else if (Clazz.isInteger(returnType)) {
+                                return 0;
+                            } else if (Clazz.isLong(returnType)) {
+                                return 0l;
+                            } else if (Clazz.isShort(returnType)) {
+                                return 0;
+                            } else if (Clazz.isString(returnType)) { return null; }
+
+                        }
+                        Object value = getProperty(key);
+
+                        // if (returnType instanceof Enum<?> && value instanceof String) {
+                        // try {
+                        // value = Enum.valueOf((Class<T>) returnType, (String) value);
+                        //
+                        // } catch (final Throwable e) {
+                        // Log.exception(e);
+                        // if (this.autoPutValues) {
+                        // this.put(key, (Enum<?>) def);
+                        // }
+                        // ret = def;
+                        // }
+                        // }
+                        return value;
+
+                    }
+                    return null;
+                }
+            });
+
+            return ret;
+        }
+
+    }
 }

@@ -1,7 +1,5 @@
 package org.jdownloader.api.jdanywhere.api.storable;
 
-import java.util.HashMap;
-
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
@@ -34,7 +32,7 @@ public class DownloadLinkStorable implements Storable {
         return link.getHost();
     }
 
-    private DownloadLink            link;
+    private DownloadLink                                      link;
     private org.jdownloader.myjdownloader.client.json.JsonMap infoMap = null;
 
     public DownloadLinkStorable(/* Storable */) {
@@ -48,12 +46,12 @@ public class DownloadLinkStorable implements Storable {
 
     public long getSize() {
         if (link == null) return -1l;
-        return link.getKnownDownloadSize();
+        return link.getView().getBytesTotal();
     }
 
     public long getDone() {
         if (link == null) return -1l;
-        return link.getDownloadCurrent();
+        return link.getView().getBytesLoaded();
     }
 
     public boolean isEnabled() {
@@ -63,7 +61,7 @@ public class DownloadLinkStorable implements Storable {
 
     public long getSpeed() {
         if (link == null) return 0;
-        return link.getDownloadSpeed();
+        return link.getView().getSpeedBps();
     }
 
     public long getAdded() {

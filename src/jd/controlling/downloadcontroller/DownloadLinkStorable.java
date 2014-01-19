@@ -119,7 +119,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public long getSize() {
-        return link.getKnownDownloadSize();
+        return link.getView().getBytesTotal();
     }
 
     public void setSize(long size) {
@@ -127,7 +127,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public long getCurrent() {
-        return link.getDownloadCurrent();
+        return link.getView().getBytesLoaded();
     }
 
     public void setCurrent(long current) {
@@ -171,7 +171,7 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public long[] getChunkProgress() {
-        return link.getChunksProgress();
+        return link.getView().getChunksProgress();
     }
 
     public void setChunkProgress(long[] p) {

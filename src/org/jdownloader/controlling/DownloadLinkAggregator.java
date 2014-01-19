@@ -134,8 +134,8 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                     }
                 }
             } else {
-                speed += link.getDownloadSpeed();
-                totalBytes += link.getKnownDownloadSize();
+                speed += link.getView().getSpeedBps();
+                totalBytes += link.getView().getBytesTotal();
                 if (isLocalFileUsageEnabled()) {
                     File a = new File(link.getFileOutput() + ".part");
                     if (a.exists()) {
@@ -150,9 +150,9 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                     }
 
                 } else {
-                    bytesLoaded += link.getDownloadCurrent();
+                    bytesLoaded += link.getView().getBytesLoaded();
                 }
-                bytesToDo += Math.max(0, link.getKnownDownloadSize() - link.getDownloadSize());
+                bytesToDo += Math.max(0, link.getView().getBytesTotal() - link.getView().getBytesTotalEstimated());
                 total++;
                 if (FinalLinkState.CheckFinished(link.getFinalLinkState()) && (link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL || new File(link.getFileOutput()).exists())) {
                     finished++;

@@ -39,7 +39,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         downloadLinks.add(link);
         name = new File(link.getFileOutput()).getName();
         filePath = link.getFileOutput();
-        size = link.getDownloadSize();
+        size = link.getView().getBytesTotalEstimated();
     }
 
     public String toString() {
@@ -134,7 +134,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public void addMirror(DownloadLink link) {
         downloadLinks.add(link);
-        size = Math.max(link.getKnownDownloadSize(), size);
+        size = Math.max(link.getView().getBytesTotal(), size);
     }
 
     public void setProperty(String key, Object value) {

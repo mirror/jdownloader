@@ -123,8 +123,8 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
                 return false;
             }
             DownloadInterface dli = dlc.getDownloadInstance();
-            if (dli != null && ((DownloadLink) value).getDownloadCurrent() > 100 * 1024) {
-                if (((DownloadLink) value).getDownloadSpeed() < 50 * 1024) { return true; }
+            if (dli != null && ((DownloadLink) value).getView().getBytesLoaded() > 100 * 1024) {
+                if (((DownloadLink) value).getView().getSpeedBps() < 50 * 1024) { return true; }
             }
         }
         return false;

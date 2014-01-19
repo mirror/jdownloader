@@ -105,7 +105,7 @@ public class EnabledAction extends CustomizableTableContextAppAction {
                                     count++;
                                     DownloadInterface dl = slc.getDownloadInstance();
                                     if (dl != null && !slc.getDownloadLink().isResumeable()) {
-                                        i += slc.getDownloadLink().getDownloadCurrent();
+                                        i += slc.getDownloadLink().getView().getBytesLoaded();
                                     }
                                 }
 

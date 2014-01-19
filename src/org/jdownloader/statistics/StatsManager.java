@@ -76,7 +76,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
             @Override
             public void doRemoteCall() {
 
-                remote.enabled(isEnabled());
+                // remote.enabled(isEnabled());
 
             }
 

@@ -183,7 +183,7 @@ public class RuleWrapper<T extends FilterRule> {
 
     public boolean checkFileSize(CrawledLink link) {
         if (getFilesizeRule() != null) {
-            // if (link.getDownloadLink().getDownloadSize() <= 0) return true;
+            // if (link.getDownloadLink().getView().getBytesTotal() <= 0) return true;
             if (link.getLinkState() != LinkState.ONLINE) return false;
             return getFilesizeRule().matches(link.getSize());
         }

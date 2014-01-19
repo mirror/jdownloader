@@ -578,7 +578,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         switch (type) {
         case HOSTER:
             if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return -1;
-            return ((PluginForHost) plugin).getDownloadLink().getKnownDownloadSize();
+            return ((PluginForHost) plugin).getDownloadLink().getView().getBytesTotal();
         }
         return -1;
     }

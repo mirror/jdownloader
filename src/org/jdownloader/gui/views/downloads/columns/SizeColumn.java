@@ -234,7 +234,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         } else if (o2 instanceof CrawledLink) {
             return ((CrawledLink) o2).getSize();
         } else if (o2 instanceof DownloadLink) {
-            return ((DownloadLink) o2).getKnownDownloadSize();
+            return ((DownloadLink) o2).getView().getBytesTotal();
         } else if (o2 instanceof FilePackage) {
             return ((FilePackage) o2).getView().getSize();
         } else

@@ -146,7 +146,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_TYPE, "Link");
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getComment()));
-            line = line.replace(PATTERN_FILESIZE, nulltoString(link.getDownloadSize()));
+            line = line.replace(PATTERN_FILESIZE, nulltoString(link.getView().getBytesTotalEstimated()));
             line = line.replace(PATTERN_MD5, nulltoString(link.getMD5Hash()));
             line = line.replace(PATTERN_NAME, nulltoString(link.getName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getSha1Hash()));

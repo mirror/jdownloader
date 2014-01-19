@@ -161,13 +161,13 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 dls.setHost(dl.getHost());
             }
             if (queryParams.isBytesTotal()) {
-                dls.setBytesTotal(dl.getDownloadSize());
+                dls.setBytesTotal(dl.getView().getBytesTotalEstimated());
             }
             if (queryParams.isBytesLoaded()) {
-                dls.setBytesLoaded(dl.getDownloadCurrent());
+                dls.setBytesLoaded(dl.getView().getBytesLoaded());
             }
             if (queryParams.isSpeed()) {
-                dls.setSpeed(dl.getDownloadSpeed());
+                dls.setSpeed(dl.getView().getSpeedBps());
             }
             if (queryParams.isEta()) {
                 PluginProgress plg = dl.getPluginProgress();

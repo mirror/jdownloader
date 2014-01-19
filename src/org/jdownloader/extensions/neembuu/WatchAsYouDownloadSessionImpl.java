@@ -144,7 +144,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 
         // all paramters below are compulsary. None of these may be left
         // unspecified.
-        SeekableConnectionFile file = SeekableConnectionFileImplBuilder.build(new SeekableConnectionFileParams.Builder().setDiskManager(diskManager).setTroubleHandler(troubleHandler).setFileName(jdds.getDownloadLink().getName()).setFileSize(jdds.getDownloadLink().getDownloadSize()).setNewConnectionProvider(newConnectionProvider).setParent(fileSystem.getRootDirectory()).setThrottleFactory(throttleFactory).build());
+        SeekableConnectionFile file = SeekableConnectionFileImplBuilder.build(new SeekableConnectionFileParams.Builder().setDiskManager(diskManager).setTroubleHandler(troubleHandler).setFileName(jdds.getDownloadLink().getName()).setFileSize(jdds.getDownloadLink().getView().getBytesTotalEstimated()).setNewConnectionProvider(newConnectionProvider).setParent(fileSystem.getRootDirectory()).setThrottleFactory(throttleFactory).build());
 
         MonitoredHttpFile httpFile = new MonitoredHttpFile(file, newConnectionProvider);
         final String mountLocation = fileSystem.getMountLocation(jdds);
@@ -237,7 +237,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
     public void waitForDownloadToFinish() throws PluginException {
         jdds.getDownloadInterface().getManagedConnetionHandler().addThrottledConnection(new FakeThrottledConnection(jdds));
         jdds.getDownloadLink().setChunksProgress(new long[] { getTotalDownloaded() });
-        UPDATE_LOOP: while (totalDownloaded < jdds.getDownloadLink().getDownloadSize() && jdds.getWatchAsYouDownloadSession().isMounted()) {
+        UPDATE_LOOP: while (totalDownloaded < jdds.getDownloadLink().getView().getBytesTotalEstimated() && jdds.getWatchAsYouDownloadSession().isMounted()) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ie) {
@@ -301,7 +301,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                 @Override
                 public void run() {
                     try {
-                        jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getFileStorageManager().completeSession(new File(jdds.getDownloadLink().getFileOutput()), jdds.getDownloadLink().getDownloadSize());
+                        jdds.getWatchAsYouDownloadSession().getSeekableConnectionFile().getFileStorageManager().completeSession(new File(jdds.getDownloadLink().getFileOutput()), jdds.getDownloadLink().getView().getBytesTotalEstimated());
                     } catch (Exception i) {
                         Log.L.log(Level.SEVERE, "Problem in completing session", i);
                     } finally {

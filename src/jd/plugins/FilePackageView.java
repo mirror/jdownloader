@@ -141,8 +141,10 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                 tmp.newSize += size;
             }
             for (Long done : tmp.downloadDone.values()) {
+
                 tmp.newDone += done;
             }
+            System.out.println("Test: " + tmp.newDone + " - " + tmp.newSize);
             writeTempToFields(tmp);
             updatesDone = lupdatesRequired;
 
@@ -459,17 +461,18 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             tmp.newEnabledCount++;
         }
         Long downloadSize = tmp.downloadSizes.get(link.getName());
+
         if (downloadSize == null) {
-            tmp.downloadSizes.put(link.getName(), link.getDownloadSize());
-            tmp.downloadDone.put(link.getName(), link.getDownloadCurrent());
+            tmp.downloadSizes.put(link.getName(), link.getView().getBytesTotalEstimated());
+            tmp.downloadDone.put(link.getName(), link.getView().getBytesLoaded());
         } else {
             if (!tmp.eta.contains(link.getName())) {
                 if (link.isEnabled()) {
-                    tmp.downloadSizes.put(link.getName(), link.getDownloadSize());
-                    tmp.downloadDone.put(link.getName(), link.getDownloadCurrent());
-                } else if (downloadSize < link.getDownloadSize()) {
-                    tmp.downloadSizes.put(link.getName(), link.getDownloadSize());
-                    tmp.downloadDone.put(link.getName(), link.getDownloadCurrent());
+                    tmp.downloadSizes.put(link.getName(), link.getView().getBytesTotalEstimated());
+                    tmp.downloadDone.put(link.getName(), link.getView().getBytesLoaded());
+                } else if (downloadSize < link.getView().getBytesTotalEstimated()) {
+                    tmp.downloadSizes.put(link.getName(), link.getView().getBytesTotalEstimated());
+                    tmp.downloadDone.put(link.getName(), link.getView().getBytesLoaded());
                 }
             }
         }
@@ -484,15 +487,15 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     tmp.eta.add(link.getName());
                 }
 
-                if (link.getKnownDownloadSize() >= 0) {
+                if (link.getView().getBytesTotal() >= 0) {
                     /* we know at least one filesize */
                     tmp.sizeKnown = true;
                 }
-                long linkTodo = Math.max(0, link.getDownloadSize() - link.getDownloadCurrent());
+                long linkTodo = Math.max(0, link.getView().getBytesTotalEstimated() - link.getView().getBytesLoaded());
                 SingleDownloadController sdc = link.getDownloadLinkController();
                 DownloadInterface dli = null;
                 if (sdc != null) dli = sdc.getDownloadInstance();
-                long linkSpeed = link.getDownloadSpeed();
+                long linkSpeed = link.getView().getSpeedBps();
                 if (dli == null || (System.currentTimeMillis() - dli.getStartTimeStamp()) < 5000) {
                     /* wait at least 5 secs when download is running, to avoid speed fluctuations in overall ETA */
                     linkSpeed = 0;
@@ -528,6 +531,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
              */
             tmp.newFinishedDate = link.getFinishedDate();
         }
+        System.out.println("Done: " + tmp.downloadDone);
     }
 
     @Override

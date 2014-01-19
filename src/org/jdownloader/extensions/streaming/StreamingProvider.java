@@ -87,7 +87,7 @@ public class StreamingProvider {
                             final URLConnectionAdapter con = null;
                             // getDownloadInstance().getConnection();
                             if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
-                                if (remoteLink.getVerifiedFileSize() < 0) {
+                                if (remoteLink.getView().getBytesTotalVerified() < 0) {
                                     /* we don't have a verified filesize yet, let's check if we have it now! */
                                     if (con.getRange() != null) {
                                         if (con.getRange()[2] > 0) {
@@ -179,7 +179,7 @@ public class StreamingProvider {
 
                     @Override
                     public long getFinalFileSize() {
-                        long ret = remoteLink.getVerifiedFileSize();
+                        long ret = remoteLink.getView().getBytesTotalVerified();
                         if (ret != -1) return ret;
                         return fileSize;
                     }

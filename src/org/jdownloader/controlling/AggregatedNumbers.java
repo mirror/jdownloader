@@ -89,20 +89,20 @@ public class AggregatedNumbers {
         for (DownloadLink dl : selection.getChildren()) {
             if (dl == null) continue;
             if (FinalLinkState.CheckFailed(dl.getFinalLinkState())) {
-                failedTotalBytes += dl.getDownloadSize();
+                failedTotalBytes += dl.getView().getBytesTotalEstimated();
             } else {
                 if (dl.isEnabled()) {
 
-                    totalBytes += dl.getDownloadSize();
-                    loadedBytes += dl.getDownloadCurrent();
+                    totalBytes += dl.getView().getBytesTotalEstimated();
+                    loadedBytes += dl.getView().getBytesLoaded();
 
                 } else {
 
-                    disabledTotalBytes += dl.getDownloadSize();
-                    disabledLoadedBytes += dl.getDownloadCurrent();
+                    disabledTotalBytes += dl.getView().getBytesTotalEstimated();
+                    disabledLoadedBytes += dl.getView().getBytesLoaded();
                 }
             }
-            downloadSpeed += dl.getDownloadSpeed();
+            downloadSpeed += dl.getView().getSpeedBps();
             SingleDownloadController sdc = dl.getDownloadLinkController();
             if (sdc != null) {
                 running++;

@@ -1032,7 +1032,7 @@ public class D extends PluginsC {
 
                     filename.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getName())));
 
-                    size.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getDownloadSize() + "")));
+                    size.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getView().getBytesTotalEstimated() + "")));
 
                     FilePackage.getLastChild().appendChild(url);
                     FilePackage.getLastChild().appendChild(filename);

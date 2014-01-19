@@ -55,7 +55,7 @@ public class RAFChunk extends Thread {
 
     private OldRAFDownload                  dl;
 
-    private Downloadable                    downloadLink;
+    private Downloadable                    downloadable;
 
     private Logger                          logger;
 
@@ -92,7 +92,7 @@ public class RAFChunk extends Thread {
         this.requestedEndByte = endByte;
         this.originalConnection = connection;
         this.dl = dl;
-        this.downloadLink = link;
+        this.downloadable = link;
 
         this.logger = dl.getLogger();
         if (CrossSystem.isWindows()) {
@@ -147,14 +147,14 @@ public class RAFChunk extends Thread {
         }
 
         try {
-            downloadLink.waitForNextConnectionAllowed();
+            downloadable.waitForNextConnectionAllowed();
         } catch (InterruptedException e1) {
             LogSource.exception(logger, e1);
             return null;
         }
         try {
             /* only forward referer if referer already has been sent! */
-            Browser br = downloadLink.getContextBrowser();
+            Browser br = downloadable.getContextBrowser();
             boolean forwardReferer = br.getHeaders().contains("Referer");
 
             br.setReadTimeout(dl.getReadTimeout());
@@ -344,7 +344,7 @@ public class RAFChunk extends Thread {
             }
             logger.info("ExternalAbort: " + isExternalyAborted());
             long endPosition = endByte;
-            if (endPosition < 0) endPosition = downloadLink.getVerifiedFileSize();
+            if (endPosition < 0) endPosition = downloadable.getVerifiedFileSize();
             if (endPosition >= 0 && getCurrentBytesPosition() < endPosition) {
                 logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition);
                 dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete()));
@@ -452,7 +452,7 @@ public class RAFChunk extends Thread {
      */
     private boolean isExternalyAborted() {
 
-        return isInterrupted() || (dl != null && dl.externalDownloadStop()) || downloadLink.isInterrupted();
+        return isInterrupted() || (dl != null && dl.externalDownloadStop()) || downloadable.isInterrupted();
     }
 
     /**
@@ -471,7 +471,7 @@ public class RAFChunk extends Thread {
         try {
             logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
             long endCheck = endByte;
-            if (endCheck < 0) endCheck = downloadLink.getVerifiedFileSize();
+            if (endCheck < 0) endCheck = downloadable.getVerifiedFileSize();
             if (startByte >= endCheck && endCheck >= 0) return;
             if (dl.getChunkNum() > 1) {
                 /* we requested multiple chunks */

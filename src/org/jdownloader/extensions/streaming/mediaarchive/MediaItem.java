@@ -131,7 +131,7 @@ public abstract class MediaItem implements MediaNode {
 
     public long getSize() {
 
-        return size <= 0 ? downloadLink.getDownloadSize() : size;
+        return size <= 0 ? downloadLink.getView().getBytesTotalEstimated() : size;
     }
 
     public String getThumbnailPath() {

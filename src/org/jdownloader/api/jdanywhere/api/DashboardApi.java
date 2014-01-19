@@ -134,8 +134,8 @@ public class DashboardApi implements IDashboardApi {
         long todo = 0;
         long done = 0;
         for (DownloadLink link : calc_progress) {
-            done += Math.max(0, link.getDownloadCurrent());
-            todo += Math.max(0, link.getDownloadSize());
+            done += Math.max(0, link.getView().getBytesLoaded());
+            todo += Math.max(0, link.getView().getBytesTotalEstimated());
         }
         ret.put("download_current", done);
         ret.put("download_complete", todo);
@@ -212,7 +212,8 @@ public class DashboardApi implements IDashboardApi {
     /*
      * (non-Javadoc)
      * 
-     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org .appwork.remoteapi.RemoteAPIRequest, org.appwork.remoteapi.RemoteAPIResponse)
+     * @see org.jdownloader.extensions.jdanywhere.api.IDashboardApi#speedMeter(org .appwork.remoteapi.RemoteAPIRequest,
+     * org.appwork.remoteapi.RemoteAPIResponse)
      */
     @Override
     public void speedMeter(RemoteAPIRequest request, RemoteAPIResponse response) throws InternalApiException {
@@ -260,14 +261,14 @@ public class DashboardApi implements IDashboardApi {
             for (FilePackage fpkg : dlc.getPackages()) {
                 synchronized (fpkg) {
                     for (DownloadLink link : fpkg.getChildren()) {
-                        if (link.getDownloadSpeed() > 0) {
+                        if (link.getView().getSpeedBps() > 0) {
                             RunningObjectStorable ro = new RunningObjectStorable();
                             ro.setPackageID(fpkg.getUniqueID().getID());
                             ro.setLinkID(link.getUniqueID().getID());
-                            ro.setDone(link.getDownloadCurrent());
-                            ro.setSpeed(link.getDownloadSpeed());
-                            long remainingBytes = (link.getKnownDownloadSize() - link.getDownloadCurrent());
-                            ro.setETA(remainingBytes / link.getDownloadSpeed());
+                            ro.setDone(link.getView().getBytesLoaded());
+                            ro.setSpeed(link.getView().getSpeedBps());
+                            long remainingBytes = (link.getView().getBytesTotal() - link.getView().getBytesLoaded());
+                            ro.setETA(remainingBytes / link.getView().getSpeedBps());
                             ret.add(ro);
                         }
                     }
