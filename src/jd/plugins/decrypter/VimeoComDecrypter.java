@@ -307,6 +307,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    // IMPOORTANT: Sync with HOSTER AND DECRYPTER plugin
     private String[][] getQualities(Browser br, String ID, String title) throws Exception {
         /*
          * little pause needed so the next call does not return trash
@@ -314,7 +315,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         Thread.sleep(1000);
         String qualities[][] = null;
         String configURL = br.getRegex("data-config-url=\"(https?://player.vimeo.com/v2/video/\\d+/config.*?)\"").getMatch(0);
-        if (configURL != null) {
+        if (br.containsHTML("iconify_down_b")) {
+            // Last checked with: http://vimeo.com/28606268
+            /* With dl button */
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("http://vimeo.com/" + ID + "?action=download");
+            qualities = br.getRegex("href=\"[^\"]+(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
+        } else if (configURL != null) {
             configURL = configURL.replaceAll("&amp;", "&");
             br.getPage(configURL);
             String fmts = br.getRegex("\"files\":\\{\"(h264|vp6)\":\\{(.*?)\\}\\}").getMatch(1);
@@ -329,10 +336,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     qualities[i][3] = null;
                 }
             }
-        } else if (br.containsHTML("iconify_down_b")) {
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://vimeo.com/" + ID + "?action=download");
-            qualities = br.getRegex("href=\"[^\"]+(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
         } else {
             /* withoutDlBtn */
             String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);

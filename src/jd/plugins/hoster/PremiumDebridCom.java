@@ -233,7 +233,11 @@ public class PremiumDebridCom extends PluginForHost {
         final Object ret = acc.getProperty("multiHostSupportHostsOptions", null);
         boolean download_generator = true;
         final HashMap<String, Boolean> multihostoptions = (HashMap<String, Boolean>) ret;
-        if (multihostoptions != null) download_generator = multihostoptions.get(link.getHost());
+        if (multihostoptions != null && multihostoptions.containsKey(link.getHost())) {
+            download_generator = multihostoptions.get(link.getHost());
+        } else {
+            logger.info("Current host " + link.getHost() + " was not found in list -> Downloading via generator!");
+        }
         String dllink = checkDirectLink(link, "premiumdebridcomdirectlink");
 
         if (dllink == null) {

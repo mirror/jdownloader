@@ -88,6 +88,8 @@ public class WallBaseCc extends PluginForHost {
     private String getDllink() throws PluginException {
         String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
         if (finallink == null) finallink = br.getRegex("\"(http://ns\\d+\\.ovh\\.net/.*?)\"").getMatch(0);
+        // Example: http://wallbase.cc/wallpaper/84929
+        if (finallink == null) finallink = br.getRegex("class=\"content clr\">[\t\n\r ]+<img src=\"(https?://[^<>\"]*?)\"").getMatch(0);
         /* simple Base64 */
         if (finallink == null) {
             finallink = br.getRegex("\\d+x\\d+ Wallpaper\"[^\\(]+\\(\'([^\']+)\'\\)").getMatch(0);
@@ -172,7 +174,7 @@ public class WallBaseCc extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Account active");
+        ai.setStatus("Registered (free) user");
         return ai;
     }
 

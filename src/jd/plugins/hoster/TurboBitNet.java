@@ -37,6 +37,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -213,7 +214,7 @@ public class TurboBitNet extends PluginForHost {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.ENGLISH));
         }
         ai.setStatus("Premium User");
         return ai;
@@ -553,11 +554,9 @@ public class TurboBitNet extends PluginForHost {
         sleep(2000, link);
         br.setCookie(MAINPAGE, "JD", "1");
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("<h1><a href=\\'(.*?)\\'>").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("(\\'|\")(http://([a-z0-9\\.]+)?turbobit\\.net//?download/redirect/.*?)(\\'|\")").getMatch(1);
-        }
-        if (dllink == null) {
+        String dllink = null;
+        final String[] mirrors = br.getRegex("(\\'|\")(http://([a-z0-9\\.]+)?turbobit\\.net//?download/redirect/.*?)(\\'|\")").getColumn(1);
+        if (mirrors == null || mirrors.length == 0) {
             if (br.containsHTML("'>Premium access is blocked<")) {
                 logger.info("No traffic available");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -573,18 +572,30 @@ public class TurboBitNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!dllink.contains("turbobit.net")) {
-            dllink = MAINPAGE + dllink;
-        }
         br.setFollowRedirects(false);
-        // Future redirects at this point, but we want to catch them not process
-        // them in order to get the MD5sum. Which provided within the
-        // URL args, within the final redirect
-        // example url structure
-        // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
-        br.getPage(dllink);
-        if (br.getRedirectLocation() != null) {
-            dllink = br.getRedirectLocation();
+        boolean isdllable = false;
+        for (final String currentlink : mirrors) {
+            logger.info("Checking mirror: " + currentlink);
+            br.getPage(currentlink);
+            if (br.getRedirectLocation() != null) {
+                dllink = br.getRedirectLocation();
+                if (dllink != null) {
+                    if (!dllink.contains("turbobit.net")) {
+                        dllink = MAINPAGE + dllink;
+                    }
+                    isdllable = isDownloadable(dllink);
+                    if (isdllable) {
+                        logger.info("Mirror is okay: " + currentlink);
+                        break;
+                    } else {
+                        logger.info("Mirror is down: " + currentlink);
+                    }
+                }
+            }
+        }
+        if (!isdllable) {
+            logger.info("Mirror: All mirrors failed -> Server error ");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
         if (dllink.matches(".+&md5=[a-z0-9]{32}.+")) {
             String md5sum = new Regex(dllink, "md5=([a-z0-9]{32})").getMatch(0);
@@ -615,6 +626,19 @@ public class TurboBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean isDownloadable(final String directlink) {
+        try {
+            final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = br2.openGetConnection(directlink);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) { return false; }
+            con.disconnect();
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
     }
 
     public void handlePremiumLink(final DownloadLink link) throws Exception {
@@ -732,7 +756,8 @@ public class TurboBitNet extends PluginForHost {
                         br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&user%5Bcaptcha_type%5D=recaptcha&user%5Bcaptcha_subtype%5D=&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
                     }
                 }
-                if (!br.containsHTML("/banturbo\\.png\\'>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid accounttype (no premium account)!\r\nUngültiger Accounttyp (kein Premiumaccount)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // valid premium (currently no traffic)|valid premium (traffic available)
+                if (!br.containsHTML("/banturbo\\.png\\'>|icon/yesturbo\\.png\\'>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid accounttype (no premium account)!\r\nUngültiger Accounttyp (kein Premiumaccount)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (br.getCookie(MAINPAGE + "/", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
