@@ -97,7 +97,6 @@ public class SoundcloudCom extends PluginForHost {
         url = parameter.getStringProperty("directlink");
         if (url != null) {
             checkDirectLink(parameter, url);
-            url = null;
             if (url != null) {
                 parameter.setFinalFileName(getFormattedFilename(parameter));
                 return AvailableStatus.TRUE;
