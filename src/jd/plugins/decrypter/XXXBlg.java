@@ -73,6 +73,7 @@ public class XXXBlg extends PluginForDecrypt {
             if (fpname == null) fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
             String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
             if (pagepiece == null) pagepiece = br.getRegex("<div class=\"entry\">(.+)\\s+</div>\\s+<br />").getMatch(0);
+            if (pagepiece == null) pagepiece = br.getRegex("<table class=\"dltable\"(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
             if (pagepiece == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

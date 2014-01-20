@@ -66,7 +66,7 @@ public class Keep2ShareCc extends PluginForHost {
     public static final String     DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
     private final String           MAINPAGE         = "http://keep2share.cc";
     private final String           DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
-    private final String           DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN;
+    private final String           DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
 
     private static Object          LOCK             = new Object();
 

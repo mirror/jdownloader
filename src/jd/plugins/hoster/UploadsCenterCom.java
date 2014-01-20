@@ -45,18 +45,18 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadrive.com" }, urls = { "https?://(www\\.)?uploadrive\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class UploaDriveCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadscenter.com" }, urls = { "https?://(www\\.)?uploadscenter\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class UploadsCenterCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://uploadrive.com";
+    private static final String  COOKIE_HOST                  = "http://uploadscenter.com";
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(uploadrive\\.com)";
+    private static final String  DOMAINS                      = "(uploadscenter\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -66,8 +66,8 @@ public class UploaDriveCom extends PluginForHost {
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 6;
+    private static final int     FREE_MAXCHUNKS               = -3;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
@@ -83,8 +83,8 @@ public class UploaDriveCom extends PluginForHost {
     private String               fuid                         = null;
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.4.2
-    // mods:requestFileInformation and scanInfo
+    // XfileSharingProBasic Version 2.6.4.4
+    // mods:
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -105,7 +105,7 @@ public class UploaDriveCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public UploaDriveCom(PluginWrapper wrapper) {
+    public UploadsCenterCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -151,7 +151,6 @@ public class UploaDriveCom extends PluginForHost {
         }
         final String[] fileInfo = new String[3];
         scanInfo(fileInfo);
-        if (fileInfo[0] == null || fileInfo[0].equals("")) fileInfo[0] = new Regex(link.getDownloadURL(), "([a-z0-9]{12})").getMatch(0);
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -190,6 +189,15 @@ public class UploaDriveCom extends PluginForHost {
                             }
                         }
                     }
+                }
+            }
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
             }
         }
@@ -724,8 +732,9 @@ public class UploaDriveCom extends PluginForHost {
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'no file'", 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, Pattern.compile("Wrong IP", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
     }
 
     @Override

@@ -94,6 +94,7 @@ public class FileparadoxIn extends PluginForHost {
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
+    private final boolean              waitTimeSkipableVideoCaptcha = false;
     private final boolean              captchaSkipableSolveMedia    = false;
 
     // Connection Management
@@ -391,6 +392,8 @@ public class FileparadoxIn extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                download1.remove("method_free");
+                download1.put("method_free", "Free+Download");
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
@@ -552,6 +555,7 @@ public class FileparadoxIn extends PluginForHost {
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]*>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        if (inValidate(ttt)) ttt = cbr.getRegex(">(\\d+)</span></span><span id=\"second\"").getMatch(0);
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
             final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -1387,7 +1391,20 @@ public class FileparadoxIn extends PluginForHost {
             if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
             form.put("capcode", result);
             skipWaitTime = waitTimeSkipableKeyCaptcha;
+        } else if (cbr.containsHTML("id=\"videocaptcha_word\"")) {
+            final boolean vcapbroken = true;
+            if (vcapbroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String captchalink = cbr.getRegex("class=\"mcmp_img\" style=\"[^<>\"/]+\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            final String skey = form.getInputField("videocaptcha_skey").getValue();
+            if (captchalink == null || skey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.setCookie(COOKIE_HOST, "vcaptcha_skey", skey);
+            final String code = getCaptchaCode(captchalink, downloadLink);
+            form.put("videocaptcha_word", Encoding.urlEncode(code));
+            skipWaitTime = waitTimeSkipableVideoCaptcha;
         }
+        form.remove("method_free");
+        form.remove(null);
+        form.put("method_free", "Free+Download");
         downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
     }

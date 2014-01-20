@@ -67,7 +67,10 @@ public class CnetCom extends PluginForHost {
         // Maybe we're already on the download page
         String dllink = br.getRegex("\\'(http://software\\-files\\-[a-z0-9]+\\.cnet\\.com/s/software/[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) {
-            String continueLink = br.getRegex("class=\"downloadNow\"> <a href=\"(http[^<>\"]*?)\"").getMatch(0);
+            // Try to get installer without adware
+            String continueLink = br.getRegex("\"(https?://[^<>\"]*?)\" id=\"loggedInUserDlLink\">Direct Download Link</a>").getMatch(0);
+            // Try other ways (witd adware, ...)
+            if (continueLink == null) continueLink = br.getRegex("class=\"downloadNow\"> <a href=\"(http[^<>\"]*?)\"").getMatch(0);
             if (continueLink == null) continueLink = br.getRegex("\"(http://(www\\.)?dw\\.com\\.com/redir\\?[^<>\"]*?)\"").getMatch(0);
             if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(continueLink);

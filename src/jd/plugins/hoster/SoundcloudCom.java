@@ -61,7 +61,7 @@ public class SoundcloudCom extends PluginForHost {
     public final static String  CLIENTID                      = "b45b1aa10f1ac2941910a7f0d10f8e28";
     private static final String APP_VERSION                   = "5367f3cb";
     private static final String CUSTOM_DATE                   = "CUSTOM_DATE";
-    private static final String CUSTOM_FILENAME               = "CUSTOM_FILENAME";
+    private static final String CUSTOM_FILENAME_2             = "CUSTOM_FILENAME_2";
     private static final String GRAB500THUMB                  = "GRAB500THUMB";
     private static final String GRABORIGINALTHUMB             = "GRABORIGINALTHUMB";
     private static final String CUSTOM_PACKAGENAME            = "CUSTOM_PACKAGENAME";
@@ -97,6 +97,7 @@ public class SoundcloudCom extends PluginForHost {
         url = parameter.getStringProperty("directlink");
         if (url != null) {
             checkDirectLink(parameter, url);
+            url = null;
             if (url != null) {
                 parameter.setFinalFileName(getFormattedFilename(parameter));
                 return AvailableStatus.TRUE;
@@ -172,10 +173,6 @@ public class SoundcloudCom extends PluginForHost {
         }
         filename = Encoding.htmlDecode(filename.trim().replace("\"", "'"));
         final String id = getXML("id", source);
-        if (id != null) {
-            /* avoid duplicates */
-            filename = filename + "_" + id;
-        }
         final String filesize = getXML("original-content-size", source);
         final String description = getXML("description", source);
         if (description != null) {
@@ -208,6 +205,7 @@ public class SoundcloudCom extends PluginForHost {
         parameter.setProperty("channel", username);
         parameter.setProperty("plainfilename", filename);
         parameter.setProperty("originaldate", date);
+        parameter.setProperty("linkid", id);
         parameter.setProperty("type", type);
         final String formattedfilename = getFormattedFilename(parameter);
         parameter.setFinalFileName(formattedfilename);
@@ -385,7 +383,7 @@ public class SoundcloudCom extends PluginForHost {
     public String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         String songTitle = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("soundcloud.com");
-        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_2, defaultCustomFilename);
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
         if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
         String ext = downloadLink.getStringProperty("type", null);
@@ -396,6 +394,7 @@ public class SoundcloudCom extends PluginForHost {
 
         String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
+        final String linkid = downloadLink.getStringProperty("linkid", null);
 
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
@@ -422,6 +421,9 @@ public class SoundcloudCom extends PluginForHost {
             else
                 formattedFilename = formattedFilename.replace("*date*", "");
         }
+        if (formattedFilename.contains("*linkid*") && linkid != null) {
+            formattedFilename = formattedFilename.replace("*linkid*", linkid);
+        }
         if (formattedFilename.contains("*channelname*") && channelName != null) {
             formattedFilename = formattedFilename.replace("*channelname*", channelName);
         }
@@ -439,7 +441,7 @@ public class SoundcloudCom extends PluginForHost {
         return "JDownloader's soundcloud.com plugin helps downloading audiofiles. JDownloader provides settings for the filenames.";
     }
 
-    private final static String defaultCustomFilename    = "*songtitle* - *channelname**ext*";
+    private final static String defaultCustomFilename    = "*songtitle*_*linkid* - *channelname**ext*";
     private final static String defaultCustomPackagename = "*channelname* - *playlistname*";
 
     private void setConfigElements() {
@@ -452,12 +454,13 @@ public class SoundcloudCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filenames:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the filename! Example: '*channelname*_*date*_*songtitle**ext*'"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, JDL.L("plugins.hoster.soundcloud.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_2, JDL.L("plugins.hoster.soundcloud.customfilename", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*channelname* = name of the channel/uploader\r\n");
         sb.append("*date* = date when the link was posted - appears in the user-defined format above\r\n");
         sb.append("*songtitle* = name of the song without extension\r\n");
+        sb.append("*linkid* = unique ID of the link - can be used to avoid duplicate filename for different links\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp3'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
