@@ -1477,7 +1477,7 @@ public class TbCm extends PluginForDecrypt {
         return dlink;
     }
 
-    private HashMap<Integer, String[]> parseLinks(String html5_fmt_map, boolean allowVideoOnly) throws IOException, PluginException {
+    private HashMap<Integer, String[]> parseLinks(Browser br, String html5_fmt_map, boolean allowVideoOnly) throws IOException, PluginException {
         final HashMap<Integer, String[]> links = new HashMap<Integer, String[]>();
         if (html5_fmt_map != null) {
             if (html5_fmt_map.contains(UNSUPPORTEDRTMP)) { return links; }
@@ -1489,7 +1489,7 @@ public class TbCm extends PluginForDecrypt {
                     String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
                     if (sig == null) sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
                     if (sig == null) sig = new Regex(hit, "(sig|signature)%3D(.*?)%26").getMatch(1);
-                    if (sig == null) sig = descrambleSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0));
+                    if (sig == null) sig = descrambleSignature(new Regex(hit, "s=(.*?)(\\&|$)").getMatch(0), br);
                     String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
                     String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
                     if (hitQ == null && allowVideoOnly) {
@@ -1582,14 +1582,14 @@ public class TbCm extends PluginForDecrypt {
                 return null;
             }
             if (html5_fmt_map != null) {
-                HashMap<Integer, String[]> ret = parseLinks(html5_fmt_map, false);
+                HashMap<Integer, String[]> ret = parseLinks(br, html5_fmt_map, false);
                 if (ret.size() == 0) return links;
                 links.putAll(ret);
                 if (isJDownloader2()) {
                     /* not playable by vlc */
                     /* check for adaptive fmts */
                     String adaptive = br.getRegex("\"adaptive_fmts\": \"(.*?)\"").getMatch(0);
-                    ret = parseLinks(adaptive, true);
+                    ret = parseLinks(br, adaptive, true);
                     links.putAll(ret);
                 }
             } else {
@@ -1761,7 +1761,7 @@ public class TbCm extends PluginForDecrypt {
      * @throws IOException
      * @throws PluginException
      */
-    private String descrambleSignature(String sig) throws IOException, PluginException {
+    private String descrambleSignature(String sig, Browser br) throws IOException, PluginException {
         if (sig == null) return null;
         String jsUrl = br.getMatch("\"js\"\\: \"(.+?)\"");
         jsUrl = jsUrl.replace("\\/", "/");

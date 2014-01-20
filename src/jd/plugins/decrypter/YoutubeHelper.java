@@ -235,7 +235,6 @@ public class YoutubeHelper {
      */
     String descrambleSignature(final String sig) throws IOException, PluginException {
         if (sig == null) { return null; }
-
         String jsUrl = this.br.getMatch("\"js\"\\: \"(.+?)\"");
         jsUrl = jsUrl.replace("\\/", "/");
         jsUrl = "http:" + jsUrl;
