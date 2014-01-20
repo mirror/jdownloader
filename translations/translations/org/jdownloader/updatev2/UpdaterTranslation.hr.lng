@@ -30,7 +30,6 @@ errordialog_noconnection=JDownloader se nemože spojiti na poslužitelj za ažur
 errordialog_not_enough_space=Nemate dovoljno mjesta na disku C:.\r\nBudite sigurni da imate najmanje %s1 slobodnog mjesta (%s2 potrebito) i ponovno pokrenite ažuriranje.
 errordialog_selfupdate_failed=Ažuriranje nije instalirano. Molimo pokušajte kasnije.\r\n Ako se problem "sam neriješi" nakon par sati, kontaktirajte podršku ili reinstalirajte JDownloader.
 errordialog_server_error=Poslužitelj za ažuriranja trenutno nije dostupan.\r\nMolimo pokušajte ponovo ili kontaktirajte podršku.
-errordialog_server_locked=Poslužitelj za ažuriranja je trenutno zauzet.\r\nMolimo pokušajte ponovo za par minuta.
 errordialog_server_offline=Poslužitelj za ažuriranja trenutno nije dostupan.\r\nMolimo pokušajte ponovo.
 guiless_you_are_up2date=Već imate najnoviju verziju
 installframe_frametitle=JDownloader Updater
