@@ -234,7 +234,8 @@ public class PremiumDebridCom extends PluginForHost {
         boolean download_generator = true;
         final HashMap<String, Boolean> multihostoptions = (HashMap<String, Boolean>) ret;
         if (multihostoptions != null && multihostoptions.containsKey(link.getHost())) {
-            download_generator = multihostoptions.get(link.getHost());
+            Boolean bool = multihostoptions.get(link.getHost());
+            if (bool != null) download_generator = bool;
         } else {
             logger.info("Current host " + link.getHost() + " was not found in list -> Downloading via generator!");
         }
