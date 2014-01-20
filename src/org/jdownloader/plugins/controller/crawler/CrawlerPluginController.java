@@ -72,8 +72,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -363,6 +362,17 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             if (plugin.getDisplayName().equalsIgnoreCase(displayName)) return plugin;
         }
         return null;
+    }
+
+    public List<LazyCrawlerPlugin> getAll(String displayName) {
+        ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
+        List<LazyCrawlerPlugin> llist = ensureLoaded();
+        for (LazyCrawlerPlugin plugin : llist) {
+            if (plugin.getDisplayName().equalsIgnoreCase(displayName)) {
+                ret.add(plugin);
+            }
+        }
+        return ret;
     }
 
     public static void invalidateCacheIfRequired() {

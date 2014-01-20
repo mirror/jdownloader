@@ -250,7 +250,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 oldLogger = bThread.getLogger();
                 bThread.setLogger(logger);
             }
-
+            boolean validAccountCheck = false;
             try {
                 Browser br = new Browser();
                 br.setLogger(logger);
@@ -271,6 +271,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                      * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
                      */
                     ai = plugin.fetchAccountInfo(account);
+                    validAccountCheck = true;
                     account.setAccountInfo(ai);
                 } finally {
                     account.setUpdateTime(System.currentTimeMillis());
@@ -296,7 +297,6 @@ public class AccountController implements AccountControllerListener, AccountProp
                     account.setTempDisabled(false);
                 }
                 logger.clear();
-
             } catch (final Throwable e) {
                 logger.log(e);
                 ai = account.getAccountInfo();
@@ -307,6 +307,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 if (e instanceof PluginException) {
                     PluginException pe = (PluginException) e;
                     if ((pe.getLinkStatus() == LinkStatus.ERROR_PREMIUM)) {
+                        validAccountCheck = true;
                         if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                             logger.clear();
                             LogController.CL().info("Account " + whoAmI + " traffic limit reached!");
@@ -363,6 +364,15 @@ public class AccountController implements AccountControllerListener, AccountProp
                 account.setError(AccountError.TEMP_DISABLED, errorMsg);
                 return ai;
             } finally {
+                try {
+                    if (validAccountCheck) {
+                        plugin.validateLastChallengeResponse();
+                    } else {
+                        plugin.invalidateLastChallengeResponse();
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
                 logger.close();
                 if (bThread != null) {
                     /* remove logger from browserSettingsThread */

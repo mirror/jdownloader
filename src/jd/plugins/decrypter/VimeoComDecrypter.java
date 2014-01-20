@@ -308,7 +308,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     }
 
     // IMPOORTANT: Sync with HOSTER AND DECRYPTER plugin
-    private String[][] getQualities(Browser br, String ID, String title) throws Exception {
+    public String[][] getQualities(Browser br, String ID, String title) throws Exception {
         /*
          * little pause needed so the next call does not return trash
          */
@@ -316,7 +316,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         String qualities[][] = null;
         String configURL = br.getRegex("data-config-url=\"(https?://player.vimeo.com/v2/video/\\d+/config.*?)\"").getMatch(0);
         if (br.containsHTML("iconify_down_b")) {
-            // Last checked with: http://vimeo.com/28606268
             /* With dl button */
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://vimeo.com/" + ID + "?action=download");

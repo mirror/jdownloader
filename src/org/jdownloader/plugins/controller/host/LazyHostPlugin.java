@@ -13,8 +13,8 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     private boolean               hasConfig         = false;
     private LazyHostPlugin        fallBackPlugin    = null;
 
-    private long                  parses            = 0;
-    private long                  parsesRuntime     = 0;
+    private volatile long         parses            = 0;
+    private volatile long         parsesRuntime     = 0;
 
     public long getAverageParseRuntime() {
         synchronized (this) {
@@ -56,6 +56,10 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 parsesRuntime += r;
             }
         }
+    }
+
+    public long getParsesCounter() {
+        return parses;
     }
 
     public boolean isHasConfig() {

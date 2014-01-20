@@ -2,10 +2,12 @@ package jd.controlling.linkcrawler;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -78,7 +80,8 @@ public class LinkCrawler {
     public static final String             PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
     public static final UniqueAlltimeID    PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
     private boolean                        doDuplicateFinderFinalCheck = true;
-    private List<LazyHostPlugin>           pHosts;
+    private final List<LazyHostPlugin>     pHosts;
+    private List<LazyCrawlerPlugin>        cHosts;
     protected final PluginClassLoaderChild classLoader;
     private boolean                        directHttpEnabled           = true;
 
@@ -165,30 +168,47 @@ public class LinkCrawler {
             LinkCrawlerThread thread = (LinkCrawlerThread) Thread.currentThread();
             parentCrawler = thread.getCurrentLinkCrawler();
             classLoader = parentCrawler.getPluginClassLoaderChild();
+            this.pHosts = parentCrawler.pHosts;
+            this.directHTTP = parentCrawler.directHTTP;
+            this.ftp = parentCrawler.ftp;
+            this.directHttpEnabled = parentCrawler.directHttpEnabled;
         } else {
             parentCrawler = null;
             classLoader = PluginClassLoader.getInstance().getChild();
-        }
-        pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
-        for (LazyHostPlugin pHost : pHosts) {
-            if (directHTTP == null && HTTP_LINKS.equals(pHost.getDisplayName())) {
-                /* for direct access to the directhttp plugin */
-                // we have at least 2 directHTTP entries in pHost. each one listens to a different regex
-                // the one we found here listens to "https?viajd://[\\w\\.:\\-@]*/.*\\.(jdeatme|3gp|7zip|7z|abr...
-                // the other listens to directhttp://.+
-                directHTTP = pHost;
+            pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());
+            /* sort pHosts according to their usage */
+            Collections.sort(pHosts, new Comparator<LazyHostPlugin>() {
+
+                public int compare(long x, long y) {
+                    return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                }
+
+                @Override
+                public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                    return compare(o1.getParsesCounter(), o2.getParsesCounter());
+                }
+
+            });
+            for (LazyHostPlugin pHost : pHosts) {
+                if (directHTTP == null && HTTP_LINKS.equals(pHost.getDisplayName())) {
+                    /* for direct access to the directhttp plugin */
+                    // we have at least 2 directHTTP entries in pHost. each one listens to a different regex
+                    // the one we found here listens to "https?viajd://[\\w\\.:\\-@]*/.*\\.(jdeatme|3gp|7zip|7z|abr...
+                    // the other listens to directhttp://.+
+                    directHTTP = pHost;
+                }
+
+                if (ftp == null && "ftp".equals(pHost.getDisplayName())) {
+                    /* for generic ftp sites */
+                    ftp = pHost;
+                }
             }
 
-            if (ftp == null && "ftp".equals(pHost.getDisplayName())) {
-                /* for generic ftp sites */
-                ftp = pHost;
+            if (ftp != null) {
+                /* generic ftp handling is done at the end */
+                /* remove from list, then we don't have to compare each single plugin each round */
+                pHosts.remove(ftp);
             }
-        }
-
-        if (ftp != null) {
-            /* generic ftp handling is done at the end */
-            /* remove from list, then we don't have to compare each single plugin each round */
-            pHosts.remove(ftp);
         }
         this.created = System.currentTimeMillis();
         this.doDuplicateFinderFinalCheck = avoidDuplicates;
@@ -202,8 +222,7 @@ public class LinkCrawler {
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
      * 
-     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
-     * child
+     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this child
      * 
      * @param thisGeneration
      * @return
@@ -221,8 +240,8 @@ public class LinkCrawler {
         crawl(text, null, false);
     }
 
-    private HashSet<String> crawlerPluginBlacklist = new HashSet<String>();
-    private HashSet<String> hostPluginBlacklist    = new HashSet<String>();
+    private volatile Set<String> crawlerPluginBlacklist = new HashSet<String>();
+    private volatile Set<String> hostPluginBlacklist    = new HashSet<String>();
 
     public void setCrawlerPluginBlacklist(String[] list) {
         HashSet<String> lcrawlerPluginBlacklist = new HashSet<String>();
@@ -235,12 +254,12 @@ public class LinkCrawler {
     }
 
     public boolean isBlacklisted(LazyCrawlerPlugin plugin) {
-        if (parentCrawler != null) return parentCrawler.isBlacklisted(plugin);
+        if (parentCrawler != null && parentCrawler.isBlacklisted(plugin)) return true;
         return crawlerPluginBlacklist.contains(plugin.getDisplayName());
     }
 
     public boolean isBlacklisted(LazyHostPlugin plugin) {
-        if (parentCrawler != null) return parentCrawler.isBlacklisted(plugin);
+        if (parentCrawler != null && parentCrawler.isBlacklisted(plugin)) return true;
         return hostPluginBlacklist.contains(plugin.getDisplayName());
     }
 
@@ -298,8 +317,8 @@ public class LinkCrawler {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             if (insideCrawlerPlugin()) {
                 /*
-                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
-                 * for linkcrawler results
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
+                 * results
                  */
                 distribute(possibleCryptedLinks);
                 return;
@@ -530,8 +549,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
-                                             * deadlocks on plugin waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
+                                             * waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -565,7 +584,7 @@ public class LinkCrawler {
                         /*
                          * first we will walk through all available decrypter plugins
                          */
-                        for (final LazyCrawlerPlugin pDecrypt : CrawlerPluginController.getInstance().list()) {
+                        for (final LazyCrawlerPlugin pDecrypt : getCrawlerPlugins()) {
 
                             if (isBlacklisted(pDecrypt)) continue;
 
@@ -576,8 +595,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
-                                             * deadlocks on plugin waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
+                                             * waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -656,8 +675,7 @@ public class LinkCrawler {
                     }
                     if (unnknownHandler != null) {
                         /*
-                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable
-                         * by a Plugin
+                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
                          */
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);
@@ -764,6 +782,13 @@ public class LinkCrawler {
         } finally {
             checkFinishNotify();
         }
+    }
+
+    protected List<LazyCrawlerPlugin> getCrawlerPlugins() {
+        if (parentCrawler != null) return parentCrawler.getCrawlerPlugins();
+        if (cHosts == null) return cHosts;
+        cHosts = CrawlerPluginController.getInstance().list();
+        return cHosts;
     }
 
     public boolean isDirectHttpEnabled() {
