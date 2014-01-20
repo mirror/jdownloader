@@ -3,6 +3,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -311,12 +313,14 @@ public class YoutubeHelper {
 
         if (vid.date <= 0) {
             final Locale locale = Locale.ENGLISH;
-            SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy", locale);
-            String date = this.br.getRegex("id=\"eow-date\" class=\"watch-video-date\" >(\\d{2}\\.\\d{2}\\.\\d{4})</span>").getMatch(0);
+            SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yyyy", locale);
+            String date = this.br.getRegex("class=\"watch-video-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
+
             if (date == null) {
                 formatter = new SimpleDateFormat("dd MMM yyyy", locale);
-                date = this.br.getRegex("class=\"watch-video-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
+                date = this.br.getRegex("<strong>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(1);
             }
+
             if (date != null) {
                 try {
                     vid.date = formatter.parse(date).getTime();
@@ -335,12 +339,14 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.user)) {
-            final String match = this.br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(0);
+            final String match = this.br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
             if (match != null) {
                 vid.user = Encoding.htmlDecode(match.trim());
 
             }
         }
+
+        //
 
     }
 
@@ -694,12 +700,11 @@ public class YoutubeHelper {
         return;
     }
 
-    private static final String DATE_FORMAT           = "dd.MM.yyyy_HH-mm-ss";
-    public static final String  YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
-    public static final String  YT_STATIC_URL         = "YT_STATIC_URL";
-    public static final String  YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
-    public static final String  YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";
-    public static final String  YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
+    public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
+    public static final String YT_STATIC_URL         = "YT_STATIC_URL";
+    public static final String YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
+    public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";
+    public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
     public String createFilename(DownloadLink link) {
         String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
@@ -730,16 +735,18 @@ public class YoutubeHelper {
         formattedFilename = formattedFilename.replaceAll("\\*videonumber(\\[[^\\]]+\\])?\\*", playlistNumber >= 0 ? df.format(playlistNumber) : "");
         // date
         format = new Regex(formattedFilename, "\\*date\\[(.+?)\\]\\*").getMatch(0);
-        if (StringUtils.isEmpty(format)) format = DATE_FORMAT;
-        SimpleDateFormat formatter;
-        try {
-            formatter = new SimpleDateFormat(format);
-        } catch (Exception e) {
-            logger.log(e);
-            formatter = new SimpleDateFormat(DATE_FORMAT);
+        DateFormat formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
+
+        if (StringUtils.isNotEmpty(format)) {
+            try {
+                formatter = new SimpleDateFormat(format);
+            } catch (Exception e) {
+                logger.log(e);
+
+            }
         }
         long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
-        formattedFilename = formattedFilename.replaceAll("\\*date(\\[[^\\]]+\\])?\\*", timestamp >= 0 ? formatter.format(timestamp) : "");
+        formattedFilename = formattedFilename.replaceAll("\\*date(\\[[^\\]]+\\])?\\*", timestamp > 0 ? formatter.format(timestamp) : "");
         // channelname
         formattedFilename = formattedFilename.replace("*channelname*", link.getStringProperty(YoutubeHelper.YT_CHANNEL, ""));
         formattedFilename = formattedFilename.replace("*username*", link.getStringProperty(YoutubeHelper.YT_USER, ""));

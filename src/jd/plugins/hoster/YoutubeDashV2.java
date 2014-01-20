@@ -153,6 +153,12 @@ public class YoutubeDashV2 extends PluginForHost {
 
         void setCreateBestVideoVariantLinkEnabled(boolean b);
 
+        @DefaultBooleanValue(false)
+        @AboutConfig
+        boolean isCustomChunkValueEnabled();
+
+        void setCustomChunkValueEnabled(boolean b);
+
         @DefaultBooleanValue(true)
         @AboutConfig
         boolean isCreateBestAudioVariantLinkEnabled();
@@ -947,7 +953,9 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     private int getChunksPerStream() {
-        int maxChunks = PluginJsonConfig.get(YoutubeConfig.class).getChunksCount();
+        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        if (!cfg.isCustomChunkValueEnabled()) return 0;
+        int maxChunks = cfg.getChunksCount();
         if (maxChunks <= 0) {
             maxChunks = 0;
         }
