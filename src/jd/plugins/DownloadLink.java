@@ -281,6 +281,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
+        setView(new DefaultDownloadLinkViewImpl());
         uniqueID = new UniqueAlltimeID();
         skipReason = new NullsafeAtomicReference<SkipReason>(null);
         conditionalSkipReason = new NullsafeAtomicReference<ConditionalSkipReason>(null);
