@@ -52,7 +52,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             boolean readL = fp.getModifyLock().readLock();
             try {
                 FilePackageView fpView = new FilePackageView(fp);
-                fpView.aggregate();
+                fpView.setItems(null);
                 FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
 
                 if (queryParams.isSaveTo()) {
