@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -85,7 +86,7 @@ public class FileparadoxIn extends PluginForHost {
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = true;
     private final boolean              enforcesHTTPS                = false;
-    private final boolean              useRUA                       = false;
+    private final boolean              useRUA                       = true;
     private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
@@ -422,6 +423,7 @@ public class FileparadoxIn extends PluginForHost {
                 }
                 /* Captcha START */
                 dlForm = captchaForm(downloadLink, dlForm);
+                dlForm.setAction(br.getURL());
                 /* Captcha END */
                 if (!skipWaitTime) waitTime(timeBefore, downloadLink);
                 sendForm(dlForm);
@@ -1396,10 +1398,13 @@ public class FileparadoxIn extends PluginForHost {
             if (vcapbroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final String captchalink = cbr.getRegex("class=\"mcmp_img\" style=\"[^<>\"/]+\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             final String skey = form.getInputField("videocaptcha_skey").getValue();
-            if (captchalink == null || skey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String key = br.getRegex("key:\\'([a-z0-9]+)\\'").getMatch(0);
+            if (captchalink == null || skey == null || key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setCookie(COOKIE_HOST, "vcaptcha_skey", skey);
             final String code = getCaptchaCode(captchalink, downloadLink);
             form.put("videocaptcha_word", Encoding.urlEncode(code));
+            br.cloneBrowser().getPage("http://antibotsystem.com/data?callback=jQuery" + System.currentTimeMillis() + "_" + new Random().nextInt(100000000) + "&r=%5B%22" + key + "%22%2C%5B%5B%22validate_site_key%22%2C%7B%22token%22%3A%22256f73945e43ebfc11f083f9c6a88a8e%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
+            br.cloneBrowser().getPage("http://antibotsystem.com/stat?callback=jQuery" + System.currentTimeMillis() + "_" + new Random().nextInt(100000000) + "&r=%5B%22" + key + "%22%2C%5B%5B%22setPlay%22%2C%7B%22key%22%3A%22" + skey + "%22%2C%22token%22%3A%22256f73945e43ebfc11f083f9c6a88a8e%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
             skipWaitTime = waitTimeSkipableVideoCaptcha;
         }
         form.remove("method_free");

@@ -70,6 +70,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKWALL_GRAB_AUDIO          = "VKWALL_GRAB_AUDIO";
     private static final String VKWALL_GRAB_VIDEO          = "VKWALL_GRAB_VIDEO";
     private static final String VKVIDEO_USEIDASPACKAGENAME = "VKVIDEO_USEIDASPACKAGENAME";
+    private static final String VKAUDIO_USEIDASPACKAGENAME = "VKAUDIO_USEIDASPACKAGENAME";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
@@ -486,6 +487,9 @@ public class VKontakteRuHoster extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/video' links: "));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKVIDEO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.videoUseIdAsPackagename", "Use video-ID as packagename ('videoXXXX_XXXX' or 'video-XXXX_XXXX')?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/audios' links: "));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VKAUDIO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.audioUseIdAsPackagename", "Use audio-ID as packagename ('audiosXXXX' or 'audios-XXXX')?")).setDefaultValue(false));
     }
 
     @Override

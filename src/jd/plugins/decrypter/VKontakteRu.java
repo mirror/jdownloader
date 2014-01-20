@@ -70,6 +70,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     VKWALL_GRAB_AUDIO                  = "VKWALL_GRAB_AUDIO";
     private static final String     VKWALL_GRAB_VIDEO                  = "VKWALL_GRAB_VIDEO";
     private static final String     VKVIDEO_USEIDASPACKAGENAME         = "VKVIDEO_USEIDASPACKAGENAME";
+    private static final String     VKAUDIO_USEIDASPACKAGENAME         = "VKAUDIO_USEIDASPACKAGENAME";
 
     private static final String     FILEOFFLINE                        = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String     DOMAIN                             = "http://vk.com";
@@ -303,6 +304,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private void decryptAudioAlbum() throws IOException {
         String fpName = br.getRegex("\"htitle\":\"([^<>\"]*?)\"").getMatch(0);
         if (fpName == null) fpName = "vk.com audio - " + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+        if (cfg.getBooleanProperty(VKAUDIO_USEIDASPACKAGENAME, false)) fpName = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0);
         int overallCounter = 1;
         final DecimalFormat df = new DecimalFormat("00000");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
