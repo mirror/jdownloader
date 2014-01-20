@@ -185,24 +185,22 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                     }
                                 }
 
-                                private DecimalFormat format = new DecimalFormat("00.00 %");
+                                private DecimalFormat format = new DecimalFormat("00.00");
 
                                 @Override
                                 public String getString() {
 
                                     if (controller != null) {
-                                        return T._.extractprogress_label(format.format(controller.getProgress()), controller.getArchiv().getExtractedFiles().size() + "");
+                                        return T._.extractprogress_label(format.format(controller.getProgress()) + " %", controller.getArchiv().getExtractedFiles().size() + "");
                                     } else {
-                                        return format.format(0d);
+                                        return format.format(0d) + " %";
                                     }
                                 }
 
                                 @Override
                                 public int getProgress() {
                                     if (controller == null) return 0;
-                                    int ret = (int) (controller.getProgress() * 100);
-
-                                    return Math.min(99, ret);
+                                    return Math.min(99, (int) controller.getProgress());
                                 }
 
                                 @Override

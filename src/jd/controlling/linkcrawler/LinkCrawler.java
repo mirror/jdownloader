@@ -786,7 +786,7 @@ public class LinkCrawler {
 
     protected List<LazyCrawlerPlugin> getCrawlerPlugins() {
         if (parentCrawler != null) return parentCrawler.getCrawlerPlugins();
-        if (cHosts == null) return cHosts;
+        if (cHosts != null) return cHosts;
         cHosts = CrawlerPluginController.getInstance().list();
         return cHosts;
     }

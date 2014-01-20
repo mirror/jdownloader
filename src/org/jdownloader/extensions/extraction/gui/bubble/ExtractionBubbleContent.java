@@ -51,7 +51,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
 
         double prog = caller.getProgress();
         if (progressCircle != null) {
-            progressCircle.setValue((int) (prog * 100));
+            progressCircle.setValue((int) (prog));
             progressCircle.setIndeterminate((prog < .01));
             progressCircle.setStringPainted(true);
         }

@@ -233,7 +233,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 panel = new RendererMigPanel("ins 0", "[][grow,fill]", "[]");
                 panel.add(determinatedRenderer, "width 20!,height 20!");
                 label = new RenderLabel();
-                format = new DecimalFormat("00.00 %");
+                format = new DecimalFormat("00.00");
                 panel.add(label);
             }
 
@@ -250,14 +250,13 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             @Override
             public JComponent getRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getRendererComponent(value, isSelected, hasFocus, row, column);
-
                 return panel;
             }
 
             @Override
             public void configureRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.configureRendererComponent(value, isSelected, hasFocus, row, column);
-                label.setText(format.format(value.getProgress()));
+                label.setText(format.format(value.getProgress()) + " %");
             }
 
             @Override
