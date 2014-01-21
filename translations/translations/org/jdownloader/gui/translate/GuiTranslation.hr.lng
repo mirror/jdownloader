@@ -296,7 +296,9 @@ FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_m
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_others=Preuzmi FFmpeg™. Preporučena verzija: Službeno "FFmpeg build za %s1"
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_download_windows2=Preuzimanje FFmpeg™. Preporučena verzija: Službeni "FFmpeg.exe build za Windows"
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_install=Instaliraj
+FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_parameterd_2=<html>Za %s1, je potrebna aplikacija FFmpeg™. FFmpeg™ je vodeća multimedijalna aplikacija koju je moguće pokrenuti sa JDownloader-om za spajanje videa i audio strujanja i obrnuto. Nažalost, JDownloader nije mogao pronaći instaliran FFmpeg™ na vašem sustavu.</html>
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_message_path=Reci JDownloader-u mjesto instalacije
+FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_solve2=<html>Ako želite da JDownloader preuzme i instalira potrebnan službeni FFmpeg™ paket, kliknite [Instaliraj FFmpeg™ sada].</html>
 FFMpegInstallTypeChooserDialog_FFMpegInstallTypeChooserDialog_title=Nedostaje FFmpeg!
 FFMpegInstallTypeChooserDialog_layoutDialogContent_help_=Molimo odaberite ispravnu putanju prema  FFmpeg™ binary...
 FFMpegInstallTypeChooserDialog_layoutDialogContent_path_chooser=U redu, a što sada?
@@ -911,11 +913,15 @@ ViewTestResultTableModel_initColumns_matches_=Podudarnosti
 WatchAsYouDownloadColumn_WatchAsYouDownloadColumn=Gledajte dok preuzimate
 WatchAsYouDownload_WatchAsYouDownloadAction_=Gledajte dok preuzimate
 YoutubeDashConfigPanel_MultiVariantBox_getLabel_=Kvaliteta: %s1
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc=<html>Ako želite da JDownloader napravi više linkova osim 'Linkova najbolje kvalitete', možete to postaviti ispod.</html>
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling=Brzo sakupljanje
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc=<html>Brzo sakupljanje preskače provjeru veličine datoteke, a to povećava brzinu sakupljanja. Ako je omogućeno, nećete vidjeti konačnu veličinu datoteke dogod se trenutno preuzimanje ne pokrene.</html>
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_desc=<html>Objašnjenje dostupnih oznaka:<br>*channelname* = uploaders/channels text name (nice name, allows long names & spaces)<br>*username* = uploaders/channels user name (youtube.com/users/example = example)<br>*date* = date when the video was posted - appears in the user-defined format above<br>*videoname* = name of the video without extension<br>*videoid* = id of the video: 'youtube.com/watch?v=YOUTUBE_VIDEO_ID'<br>*videonumber* = number of the video (position in playlist or 'user' link)<br>*quality* = the quality of the video e.g. '(1080p_H.264-AAC)'<br>*ext* = extension of the video e.g. '.mp4'</html>
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern=Prilagođeni naziv datoteke
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_header=Nazivi datoteka
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping=Grupiranje varijanti po
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_https=Preferiraj HTTPS povezivanja
+YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist=Ako linkovi sadrže video i informacije
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_proxy_header=Proxy
 YoutubeDashConfigPanel_YoutubeDashConfigPanel_userproxy=Omogući Proxy
 YoutubeDashConfigPanel_allowedtypoes=Dozvoljene vrste medija
