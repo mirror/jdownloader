@@ -155,8 +155,6 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             aa.setValid(false);
             return false;
         }
-        // Account is valid, let's just add it
-        AccountController.getInstance().addAccount(hostPlugin, aa);
         return true;
     }
 
