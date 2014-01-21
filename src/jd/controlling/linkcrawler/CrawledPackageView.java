@@ -40,73 +40,20 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     @Override
     public void aggregate() {
-        long lupdatesRequired = updatesRequired.get();
+        Temp tmp = new Temp();
+
         synchronized (this) {
             /* this is called for repaint, so only update values that could have changed for existing items */
-            List<CrawledLink> litems = getItems();
-            boolean newEnabled = false;
-            int newOffline = 0;
-            Priority priorityLowset = Priority.HIGHEST;
-            Priority priorityHighest = Priority.LOWER;
-            int newOnline = 0;
-            long newFileSize = 0;
-            HashMap<String, Long> names = new HashMap<String, Long>();
-            String sameSource = null;
-            boolean sameSourceFullUrl = true;
-            for (CrawledLink item : litems) {
+            List<CrawledLink> updatedItems = getItems();
 
-                DownloadLink dlLink = ((CrawledLink) item).getDownloadLink();
-                String sourceUrl = null;
-                if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                    if (dlLink.gotBrowserUrl()) sourceUrl = dlLink.getBrowserUrl();
-                } else {
-                    sourceUrl = dlLink.getBrowserUrl();
-                }
-                if (sourceUrl != null) {
-                    sameSource = StringUtils.getCommonalities(sameSource, sourceUrl);
-                    sameSourceFullUrl = sameSourceFullUrl && sameSource.equals(sourceUrl);
-                }
-                if (item.getPriority().ordinal() < priorityLowset.ordinal()) {
-                    priorityLowset = item.getPriority();
-                }
-                if (item.getPriority().ordinal() > priorityHighest.ordinal()) {
-                    priorityHighest = item.getPriority();
-                }
-                // enabled
-                if (item.isEnabled()) newEnabled = true;
-                if (item.getLinkState() == LinkState.OFFLINE) {
-                    // offline
-                    newOffline++;
-                } else if (item.getLinkState() == LinkState.ONLINE) {
-                    // online
-                    newOnline++;
-                }
-                String name = item.getName();
-                Long size = names.get(name);
-                /* we use the largest filesize */
-                long itemSize = Math.max(0, item.getSize());
-                if (size == null) {
-                    names.put(name, itemSize);
-                    newFileSize += itemSize;
-                } else if (size < itemSize) {
-                    newFileSize -= size;
-                    names.put(name, itemSize);
-                    newFileSize += itemSize;
-                }
+            for (CrawledLink item : updatedItems) {
+                addtoTmp(tmp, item);
+
             }
-            this.commonSourceUrl = sameSource;
-            if (!sameSourceFullUrl) {
-                commonSourceUrl += "[...]";
-            }
-            fileSize = newFileSize;
-            enabled = newEnabled;
-            this.lowestPriority = priorityLowset;
-            this.highestPriority = priorityHighest;
-            offline = newOffline;
-            online = newOnline;
-            updateAvailability(litems.size(), newOffline, newOnline);
-            updatesDone = lupdatesRequired;
-            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(newOnline, litems.size());
+
+            writeTmpToFields(tmp);
+            updateAvailability(updatedItems.size(), tmp.newOffline, tmp.newOnline);
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, updatedItems.size());
         }
     }
 
@@ -118,79 +65,100 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         return highestPriority;
     }
 
-    public void setItems(List<CrawledLink> updatedItems) {
-        long lupdatesRequired = updatesRequired.get();
-        synchronized (this) {
-            /* this is called for tablechanged, so update everything for given items */
-            boolean newEnabled = false;
-            int newOffline = 0;
-            Priority priorityLowset = Priority.HIGHEST;
-            Priority priorityHighest = Priority.LOWER;
-            int newOnline = 0;
-            long newFileSize = 0;
-            HashMap<String, Long> names = new HashMap<String, Long>();
-            TreeSet<DomainInfo> domains = new TreeSet<DomainInfo>();
-            String sameSource = null;
-            boolean sameSourceFullUrl = true;
-            for (CrawledLink item : updatedItems) {
+    private class Temp {
+        HashMap<String, Long> names             = new HashMap<String, Long>();
+        TreeSet<DomainInfo>   domains           = new TreeSet<DomainInfo>();
+        int                   newOnline         = 0;
+        long                  newFileSize       = 0;
+        boolean               newEnabled        = false;
+        int                   newOffline        = 0;
+        Priority              priorityLowset    = Priority.HIGHEST;
+        Priority              priorityHighest   = Priority.LOWER;
 
-                DownloadLink dlLink = ((CrawledLink) item).getDownloadLink();
-                String sourceUrl = null;
-                if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                    if (dlLink.gotBrowserUrl()) sourceUrl = dlLink.getBrowserUrl();
-                } else {
-                    sourceUrl = dlLink.getBrowserUrl();
-                }
-                if (sourceUrl != null) {
-                    sameSource = StringUtils.getCommonalities(sameSource, sourceUrl);
-                    sameSourceFullUrl = sameSourceFullUrl && sameSource.equals(sourceUrl);
-                }
-                if (item.getPriority().getId() < priorityLowset.getId()) {
-                    priorityLowset = item.getPriority();
-                }
-                if (item.getPriority().getId() > priorityHighest.getId()) {
-                    priorityHighest = item.getPriority();
-                }
+        String                sameSource        = null;
+        boolean               sameSourceFullUrl = true;
+        long                  lupdatesRequired  = updatesRequired.get();
+    }
+
+    public void setItems(List<CrawledLink> updatedItems) {
+        Temp tmp = new Temp();
+
+        synchronized (this) {
+
+            /* this is called for tablechanged, so update everything for given items */
+
+            for (CrawledLink item : updatedItems) {
                 // domain
-                domains.add(item.getDomainInfo());
-                // enabled
-                if (item.isEnabled()) newEnabled = true;
-                if (item.getLinkState() == LinkState.OFFLINE) {
-                    // offline
-                    newOffline++;
-                } else if (item.getLinkState() == LinkState.ONLINE) {
-                    // online
-                    newOnline++;
-                }
-                String name = item.getName();
-                Long size = names.get(name);
-                /* we use the largest filesize */
-                long itemSize = Math.max(0, item.getSize());
-                if (size == null) {
-                    names.put(name, itemSize);
-                    newFileSize += itemSize;
-                } else if (size < itemSize) {
-                    newFileSize -= size;
-                    names.put(name, itemSize);
-                    newFileSize += itemSize;
-                }
+                tmp.domains.add(item.getDomainInfo());
+                addtoTmp(tmp, item);
             }
-            this.commonSourceUrl = sameSource;
-            if (!sameSourceFullUrl) {
-                commonSourceUrl += "[...]";
-            }
-            fileSize = newFileSize;
-            enabled = newEnabled;
-            offline = newOffline;
-            online = newOnline;
-            updateAvailability(updatedItems.size(), newOffline, newOnline);
-            this.lowestPriority = priorityLowset;
-            this.highestPriority = priorityHighest;
+            writeTmpToFields(tmp);
+            domainInfos = tmp.domains.toArray(new DomainInfo[] {});
+            updateAvailability(updatedItems.size(), tmp.newOffline, tmp.newOnline);
             items = updatedItems;
-            domainInfos = domains.toArray(new DomainInfo[] {});
-            updatesDone = lupdatesRequired;
-            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(newOnline, updatedItems.size());
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, updatedItems.size());
         }
+    }
+
+    protected void writeTmpToFields(Temp tmp) {
+        this.commonSourceUrl = tmp.sameSource;
+        if (!tmp.sameSourceFullUrl) {
+            commonSourceUrl += "[...]";
+        }
+        fileSize = tmp.newFileSize;
+        enabled = tmp.newEnabled;
+        offline = tmp.newOffline;
+        online = tmp.newOnline;
+
+        this.lowestPriority = tmp.priorityLowset;
+        this.highestPriority = tmp.priorityHighest;
+
+        updatesDone = tmp.lupdatesRequired;
+
+    }
+
+    protected void addtoTmp(Temp tmp, CrawledLink link) {
+        DownloadLink dlLink = ((CrawledLink) link).getDownloadLink();
+        String sourceUrl = null;
+        if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+            if (dlLink.gotBrowserUrl()) sourceUrl = dlLink.getBrowserUrl();
+        } else {
+            sourceUrl = dlLink.getBrowserUrl();
+        }
+        if (sourceUrl != null) {
+            tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
+            tmp.sameSourceFullUrl = tmp.sameSourceFullUrl && tmp.sameSource.equals(sourceUrl);
+        }
+
+        if (link.getPriority().getId() < tmp.priorityLowset.getId()) {
+            tmp.priorityLowset = link.getPriority();
+        }
+        if (link.getPriority().getId() > tmp.priorityHighest.getId()) {
+            tmp.priorityHighest = link.getPriority();
+        }
+
+        // enabled
+        if (link.isEnabled()) tmp.newEnabled = true;
+        if (link.getLinkState() == LinkState.OFFLINE) {
+            // offline
+            tmp.newOffline++;
+        } else if (link.getLinkState() == LinkState.ONLINE) {
+            // online
+            tmp.newOnline++;
+        }
+        String name = link.getName();
+        Long size = tmp.names.get(name);
+        /* we use the largest filesize */
+        long itemSize = Math.max(0, link.getSize());
+        if (size == null) {
+            tmp.names.put(name, itemSize);
+            tmp.newFileSize += itemSize;
+        } else if (size < itemSize) {
+            tmp.newFileSize -= size;
+            tmp.names.put(name, itemSize);
+            tmp.newFileSize += itemSize;
+        }
+
     }
 
     private final void updateAvailability(int size, int offline, int online) {
