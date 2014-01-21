@@ -268,21 +268,21 @@ public class FreeWayMe extends PluginForHost {
                 // we handle this few lines later
             }
             if (error.contains("ltiger Login")) { // Ungü
-                acc.setTempDisabled(true);
+                acc.setError(AccountError.TEMP_DISABLED, "Invalid login");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (error.contains("ltige URL")) { // Ungültige URL
-                tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+                tempUnavailableHoster(acc, link, 2 * 60 * 1000l, "Invalid URL");
             } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
-                tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
+                tempUnavailableHoster(acc, link, 10 * 60 * 1000l, "Traffic limit");
             } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
                 acc.setUpdateTime(30 * 1000); // 30s
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 1 * 60 * 1000l);
             } else if (error.contains("ltiger Hoster")) { // Ungü...
-                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
+                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, "Invalid host link");
             } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
-                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
+                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, "Host temporary disabled");
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
-                tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
+                tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
             } else if (error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
                  * after x retries we disable this host and retry with normal plugin
@@ -290,17 +290,17 @@ public class FreeWayMe extends PluginForHost {
                 if (link.getLinkStatus().getRetryCount() >= 2) {
                     /* reset retrycounter */
                     link.getLinkStatus().setRetryCount(0);
-                    tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+                    tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l, error);
                 }
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: Retry in few secs" + msg, 20 * 1000l);
             } else if (error.startsWith("Die Datei darf maximal")) {
                 logger.info("{handleMultiHost} File download limit");
-                tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+                tempUnavailableHoster(acc, link, 2 * 60 * 1000l, error);
             } else if (error.equalsIgnoreCase("Mehrere Computer haben in letzter Zeit diesen Account genutzt")) {
                 logger.info("{handleMultiHost} free-way ip ban");
-                acc.setTempDisabled(true);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                acc.setError(AccountError.TEMP_DISABLED, "IP ban");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "IP ban");
             }
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
             int timesFailed = link.getIntegerProperty("timesfailedfreewayme_unknown", 0);
@@ -489,7 +489,7 @@ public class FreeWayMe extends PluginForHost {
         return (ArrayList<String>) disabledHostsObject;
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout, String msg) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -501,7 +501,7 @@ public class FreeWayMe extends PluginForHost {
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
             account.setProperty("unavailablemap", unavailableMap);
         }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
+        throw new PluginException(LinkStatus.ERROR_RETRY, msg);
     }
 
     @Override
