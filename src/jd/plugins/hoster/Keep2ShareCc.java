@@ -481,9 +481,10 @@ public class Keep2ShareCc extends PluginForHost {
             String newDomain = null;
             String dllink = br.getRedirectLocation();
             if (dllink == null) dllink = getDllinkPremium();
-            if (dllink != null && !getDomain(dllink).contains(currentDomain))
+            String possibleDomain = getDomain(dllink);
+            if (dllink != null && possibleDomain != null && !possibleDomain.contains(currentDomain)) {
                 newDomain = getDomain(dllink); // dllink = /prx-169.keep2share.cc/
-            else if (!br.getURL().contains(currentDomain)) {
+            } else if (!br.getURL().contains(currentDomain)) {
                 newDomain = getDomain(br.getURL());
             }
             if (newDomain != null) {
@@ -526,6 +527,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     private String getDomain(final String link) {
+        if (link == null) return null;
         return new Regex(link, "https?://(www\\.)?([A-Za-z0-9\\-\\.]+)/").getMatch(1);
     }
 
