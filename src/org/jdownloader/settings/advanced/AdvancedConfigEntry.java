@@ -80,6 +80,8 @@ public class AdvancedConfigEntry {
                             }
 
                         };
+                        d.show();
+
                     }
                 }
             }

@@ -7,6 +7,7 @@ import org.jdownloader.api.test.TestClient.Test;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.bindings.DownloadLinkStorable;
 import org.jdownloader.myjdownloader.client.bindings.LinkQuery;
+import org.jdownloader.myjdownloader.client.bindings.PackageQuery;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
 
 public class DownloadListTest extends Test {
@@ -16,18 +17,21 @@ public class DownloadListTest extends Test {
         DownloadsListInterface link = api.link(DownloadsListInterface.class, chooseDevice(api));
         List<DownloadLinkStorable> smallList = link.queryLinks(new LinkQuery());
         LinkQuery query = new LinkQuery();
-        query.setBytesLoaded(true);
-        query.setBytesTotal(true);
-        query.setEnabled(true);
-        query.setEta(true);
-        query.setExtractionStatus(true);
-        query.setFinished(true);
+        // query.setBytesLoaded(true);
+        // query.setBytesTotal(true);
+        // query.setEnabled(true);
+        // query.setEta(true);
+        // query.setExtractionStatus(true);
+        // query.setFinished(true);
         query.setHost(true);
-        query.setRunning(true);
-        query.setSkipped(true);
-        query.setSpeed(true);
-        query.setUrl(true);
+        // query.setRunning(true);
+        // query.setSkipped(true);
+        // query.setSpeed(true);
+        // query.setUrl(true);
         List<DownloadLinkStorable> bigList = link.queryLinks(query);
+        PackageQuery pq = new PackageQuery();
+        pq.setHosts(true);
+        link.queryPackages(pq);
 
         System.out.println(1);
     }
