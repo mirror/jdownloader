@@ -40,6 +40,8 @@ public class DivxHostingNet extends PluginForHost {
         return "http://www.divxhosting.net/tos.html";
     }
 
+    private static final String NORESUME = "NORESUME";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -59,13 +61,36 @@ public class DivxHostingNet extends PluginForHost {
         br.postPage(br.getURL(), "goto=download");
         final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.divxhosting\\.net/files/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(DivxHostingNet.NORESUME, false)) {
+            resume = false;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fixFilename(downloadLink);
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(DivxHostingNet.NORESUME, false) == false) {
+                    downloadLink.setProperty(DivxHostingNet.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(DivxHostingNet.NORESUME, false) == false) {
+                downloadLink.setProperty(DivxHostingNet.NORESUME, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     /**

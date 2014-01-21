@@ -22,13 +22,16 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -56,6 +59,8 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         PARAMETER = param.toString();
         br.setFollowRedirects(true);
+        // Log in if possible to get 720p quality
+        getUserLogin(false);
         br.getPage(PARAMETER);
         if (br.containsHTML("Video not found<|class=\"play\\-error\"")) {
             final DownloadLink dl = createDownloadlink("http://playviddecrypted.com/" + System.currentTimeMillis());
@@ -135,6 +140,24 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         } else {
             return null;
         }
+    }
+
+    private boolean getUserLogin(final boolean force) throws Exception {
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("playvid.com");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa == null) {
+            logger.warning("There is no account available...");
+            return false;
+        }
+        try {
+            ((jd.plugins.hoster.PlayVidCom) hostPlugin).login(this.br, aa, force);
+        } catch (final PluginException e) {
+            aa.setValid(false);
+            return false;
+        }
+        // Account is valid, let's just add it
+        AccountController.getInstance().addAccount(hostPlugin, aa);
+        return true;
     }
 
     /* NO OVERRIDE!! */

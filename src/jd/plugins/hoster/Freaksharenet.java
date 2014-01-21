@@ -18,12 +18,17 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -45,11 +50,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net", "freakshare.com" }, urls = { "REGEXNOTUSED_BLAHASDAHAHDAHAHSDHAHDASDHAHD1223", "http://(www\\.)?freakshare\\.(net|com)/files?/[\\w]+/.+(\\.html)?" }, flags = { 0, 2 })
 public class Freaksharenet extends PluginForHost {
 
-    private boolean              NOPREMIUM          = false;
     private static final String  WAIT1              = "WAIT1";
     private static AtomicInteger MAXPREMDLS         = new AtomicInteger(-1);
     private static final String  MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
     private static final String  LIMITREACHED       = "Your Traffic is used up for today|Der Traffic für heute ist verbraucht";
+    private static Object        LOCK               = new Object();
 
     public Freaksharenet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -230,8 +235,9 @@ public class Freaksharenet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
+        MAXPREMDLS.set(1);
         try {
-            login(account);
+            login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
@@ -248,7 +254,15 @@ public class Freaksharenet extends PluginForHost {
         if (hostedFiles != null) {
             ai.setFilesNum(Integer.parseInt(hostedFiles));
         }
-        if (!NOPREMIUM) {
+        if (account.getBooleanProperty("freeacc", false)) {
+            try {
+                MAXPREMDLS.set(1);
+                account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+            }
+            ai.setStatus("Registered (free) User");
+        } else {
             final String left = br.getRegex(">Traffic left:</td>.*?<td>(.*?)</td>").getMatch(0);
             if (left != null) {
                 ai.setTrafficLeft(left);
@@ -261,18 +275,12 @@ public class Freaksharenet extends PluginForHost {
                 account.setValid(true);
             }
             try {
+                MAXPREMDLS.set(20);
                 account.setMaxSimultanDownloads(-1);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
             ai.setStatus("Premium User");
-        } else {
-            try {
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
-            ai.setStatus("Registered (free) User");
         }
         return ai;
     }
@@ -325,10 +333,10 @@ public class Freaksharenet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account);
+        login(account, false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Sorry, you cant download more then 50 files at time.")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
-        if (NOPREMIUM) {
+        if (account.getBooleanProperty("freeacc", false)) {
             doFree(downloadLink);
         } else {
             String url = null;
@@ -364,26 +372,59 @@ public class Freaksharenet extends PluginForHost {
         return true;
     }
 
-    public void login(final Account account) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.setCustomCharset("UTF-8");/* workaround for buggy server */
-        br.setFollowRedirects(false);
-        /*
-         * set english language in phpsession because we have no cookie for that
-         */
-        br.getPage("http://freakshare.com/?language=US");
-        br.postPage("http://freakshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-        if (br.getCookie("http://freakshare.com", "login") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        br.getPage("http://freakshare.com/");
-        if (!br.containsHTML("<td><b>Member \\(free\\)</b></td>") && !br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) {
-            logger.info("JD couldn't find out the membership of this account!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (!br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) {
-            NOPREMIUM = true;
-            MAXPREMDLS.set(1);
-        } else {
-            MAXPREMDLS.set(-1);
+    private static final String COOKIE_HOST = "http://freakshare.com";
+
+    public void login(final Account account, final boolean force) throws IOException, PluginException {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                setBrowserExclusive();
+                br.setCustomCharset("UTF-8");/* workaround for buggy server */
+                br.setFollowRedirects(false);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                /*
+                 * set english language in phpsession because we have no cookie for that
+                 */
+                br.getPage("http://freakshare.com/?language=US");
+                br.postPage("http://freakshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+                if (br.getCookie("http://freakshare.com", "login") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                br.getPage("http://freakshare.com/");
+                if (!br.containsHTML("<td><b>Member \\(free\\)</b></td>") && !br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) {
+                    logger.info("JD couldn't find out the membership of this account!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (!br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) {
+                    account.setProperty("freeacc", true);
+                } else {
+                    account.setProperty("freeacc", false);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
         }
     }
 
