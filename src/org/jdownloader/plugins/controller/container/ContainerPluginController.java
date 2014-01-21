@@ -26,6 +26,11 @@ public class ContainerPluginController {
     public void init() {
         List<PluginsC> plugins = new ArrayList<PluginsC>();
         try {
+            plugins.add(new org.jdownloader.container.JD1Import());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
             plugins.add(new org.jdownloader.container.AMZ());
         } catch (final Throwable e) {
             Log.exception(e);

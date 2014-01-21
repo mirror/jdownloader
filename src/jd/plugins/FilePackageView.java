@@ -66,7 +66,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
      */
     public FilePackageView(FilePackage fp) {
         this.fp = fp;
-
         this.falseIcon = NewTheme.I().getIcon("false", 16);
 
     }

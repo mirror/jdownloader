@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,7 +43,6 @@ import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.crypt.Base64;
 import jd.http.Browser;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -59,6 +60,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
@@ -816,7 +818,7 @@ public class Uploadedto extends PluginForHost {
                 if (token != null && liveToken == false) return token;
                 /** URLDecoder can make the password invalid or throw an IllegalArgumentException */
                 // JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH))
-                br.postPage(getProtocol() + "api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(account.getPass().toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
+                br.postPage(getProtocol() + "api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + getLoginSHA1Hash(account.getPass()) + "&ishash=1&app=JDownloader");
                 token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
                 if (token == null) handleErrorCode(br, account, token, true);
                 account.setProperty("token", token);
@@ -826,6 +828,19 @@ public class Uploadedto extends PluginForHost {
                 account.setProperty("tokenType", null);
                 throw e;
             }
+        }
+    }
+
+    public static String getLoginSHA1Hash(String arg) throws PluginException {
+        try {
+            arg = URLDecoder.decode(arg, "ISO-8859-1");
+            arg = arg.toLowerCase(Locale.ENGLISH);
+            final MessageDigest md = MessageDigest.getInstance("SHA1");
+            final byte[] digest = md.digest(arg.getBytes("UTF-8"));
+            return HexFormatter.byteArrayToHex(digest);
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 

@@ -40,17 +40,17 @@ public class DatabaseConnector {
 
     private LinkedHashMap<String, Long[]> objectIndices = new LinkedHashMap<String, Long[]>();
 
-    private final String                  configpath;
+    private final String                  configFile;
 
     public DatabaseConnector() {
-        this(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/");
+        this(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/database.script");
     }
 
     public DatabaseConnector(String path) {
-        configpath = path;
+        configFile = path;
         LogSource logger = LogController.CL();
         File dataBase = null;
-        if (!(dataBase = new File(configpath + "database.script")).exists()) {
+        if (!(dataBase = new File(path)).exists()) {
             logger.info("Found no old database to import!");
             return;
         }
@@ -141,7 +141,7 @@ public class DatabaseConnector {
         FileInputStream fis = null;
         final LogSource logger = LogController.CL();
         try {
-            fis = new FileInputStream(configpath + "database.script");
+            fis = new FileInputStream(configFile);
             fis.skip(startIndex);
             LimitedInputStream is = new LimitedInputStream(fis, stopIndex - startIndex);
             return new ObjectInputStream(new HexInputStream(is)) {
