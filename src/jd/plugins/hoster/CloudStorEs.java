@@ -90,7 +90,7 @@ public class CloudStorEs extends PluginForHost {
         } else {
             final Regex dlInfo = br.getRegex("hash: \\'([A-Za-z0-9_]+)\\', token: \\'([a-z0-9]+)\\'");
             if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.postPage("http://cloudstor.es/submit/_dl_qs.php", "hash=" + dlInfo.getMatch(0) + "&token=" + dlInfo.getMatch(1));
+            br.postPage("http://cloudstor.es/submit/_dl.php", "hash=" + dlInfo.getMatch(0) + "&token=" + dlInfo.getMatch(1));
         }
         br.getHeaders().put("Content-Type", null);
         String dllink = br.toString();
