@@ -70,6 +70,7 @@ public class FreeWayMe extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
     private final String                                   ALLOWRESUME        = "ALLOWRESUME";
+    private final String                                   BETAUSER           = "FREEWAYBETAUSER";
     private static final String                            NORESUME           = "NORESUME";
 
     public FreeWayMe(PluginWrapper wrapper) {
@@ -81,6 +82,7 @@ public class FreeWayMe extends PluginForHost {
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, "Enable resume of stopped downloads (Warning: This can cause CRC errors)").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BETAUSER, "Enable beta service (Requires free-way beta account)").setDefaultValue(false));
     }
 
     @Override
@@ -180,8 +182,15 @@ public class FreeWayMe extends PluginForHost {
         }
         account.setProperty("notifications", br.getRegex("\"notis\":(\\d+)").getMatch(0));
         account.setProperty("acctype", accountType);
+        // check if beta-account is enabled
+        String hostsUrl = "https://www.free-way.me/ajax/jd.php?id=3";
+        if (this.getPluginConfig().getBooleanProperty(BETAUSER, false)) {
+            hostsUrl += "&user=" + username + "&pass=" + pass + "&encoded&beta=1";
+            logger.info("{fetchAccInfo} free-way beta account enabled");
+        }
+
         // now let's get a list of all supported hosts:
-        br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
+        br.getPage(hostsUrl);
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
