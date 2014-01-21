@@ -12,6 +12,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
 
+import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -25,7 +26,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     @Override
-    public List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) {
+    public List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException {
+
         DownloadController dlc = DownloadController.getInstance();
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
 
@@ -65,7 +67,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
                 }
                 if (queryParams.isChildCount()) {
-                    fps.setChildCount(fpView.getItems().size());
+                    fps.setChildCount(fp.size());
                 }
                 if (queryParams.isHosts()) {
                     DomainInfo[] di = fpView.getDomainInfos();
@@ -352,7 +354,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return ret;
     }
 
-    protected static HashSet<Long> createLookupSet(long[] linkIds) {
+    public static HashSet<Long> createLookupSet(long[] linkIds) {
         if (linkIds == null || linkIds.length == 0) return null;
         HashSet<Long> linkLookup = new HashSet<Long>();
         for (long l : linkIds)

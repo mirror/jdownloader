@@ -32,8 +32,6 @@ public interface YoutubeVariantInterface extends LinkVariant {
 
     String getFileExtension();
 
-    String getUniqueId();
-
     String getMediaTypeID();
 
     YoutubeITAG getiTagVideo();

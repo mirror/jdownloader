@@ -3,11 +3,11 @@ package org.jdownloader.controlling.filter;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class RuleWrapper<T extends FilterRule> {
 
@@ -172,7 +172,7 @@ public class RuleWrapper<T extends FilterRule> {
 
     public boolean checkFileType(CrawledLink link) {
         if (getFiletypeFilter() != null) {
-            if (link.getLinkState() != LinkState.ONLINE) return false;
+            if (link.getLinkState() != AvailableLinkState.ONLINE) return false;
             String ext = Files.getExtension(link.getName());
             // if there is no extension, this filter does not match
             if (ext == null) return false;
@@ -184,7 +184,7 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileSize(CrawledLink link) {
         if (getFilesizeRule() != null) {
             // if (link.getDownloadLink().getView().getBytesTotal() <= 0) return true;
-            if (link.getLinkState() != LinkState.ONLINE) return false;
+            if (link.getLinkState() != AvailableLinkState.ONLINE) return false;
             return getFilesizeRule().matches(link.getSize());
         }
         return true;
@@ -210,7 +210,7 @@ public class RuleWrapper<T extends FilterRule> {
     public boolean checkFileName(CrawledLink link) {
 
         if (getFileNameRule() != null) {
-            if (link.getLinkState() != LinkState.ONLINE) return false;
+            if (link.getLinkState() != AvailableLinkState.ONLINE) return false;
 
             return getFileNameRule().matches(link.getName());
         }
@@ -249,7 +249,7 @@ public class RuleWrapper<T extends FilterRule> {
     }
 
     public boolean checkOnlineStatus(CrawledLink link) {
-        if (LinkState.UNKNOWN == link.getLinkState()) return false;
+        if (AvailableLinkState.UNKNOWN == link.getLinkState()) return false;
         if (getOnlineStatusFilter() != null) { return getOnlineStatusFilter().matches(link.getLinkState()); }
         return true;
     }
@@ -258,7 +258,7 @@ public class RuleWrapper<T extends FilterRule> {
 
         if (getOriginFilter() != null) {
             if (link == null || link.getOrigin() == null) return false;
-            return getOriginFilter().matches(link.getOrigin());
+            return getOriginFilter().matches(link.getOrigin().getOrigin());
         }
         return true;
     }

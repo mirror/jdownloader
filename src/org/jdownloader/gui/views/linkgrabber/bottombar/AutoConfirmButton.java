@@ -19,7 +19,6 @@ import jd.controlling.linkchecker.LinkCheckerListener;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerEvent;
@@ -40,6 +39,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
 public class AutoConfirmButton extends ExtButton implements ChangeListener, TableModelListener {
@@ -190,7 +190,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                                 boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
                                 boolean autoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
                                 for (CrawledLink l : LinkGrabberTableModel.getInstance().getAllChildrenNodes()) {
-                                    if (l.getLinkState() == LinkState.OFFLINE) continue;
+                                    if (l.getLinkState() == AvailableLinkState.OFFLINE) continue;
                                     if (l.isAutoConfirmEnabled() || autoConfirm) {
                                         list.add(l);
                                         if (l.isAutoStartEnabled()) autoStart = true;

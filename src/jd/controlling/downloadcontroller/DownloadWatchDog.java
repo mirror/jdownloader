@@ -52,6 +52,7 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.proxy.ProxyController;
@@ -2871,7 +2872,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         sb.append("file://");
                         sb.append(file.getPath());
                     }
-                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.DOWNLOADED_CONTAINER, sb.toString()));
+                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.DOWNLOADED_CONTAINER, null), sb.toString()));
                 }
 
             }.start();

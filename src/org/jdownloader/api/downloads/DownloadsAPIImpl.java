@@ -38,6 +38,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         return DownloadWatchDog.getInstance().getStateMachine().getState().getLabel();
     }
 
+    @Deprecated
     public DownloadsAPIImpl() {
 
     }

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
+import org.appwork.remoteapi.exceptions.BadParameterException;
 
 @ApiNamespace("downloadsV2")
 public interface DownloadsAPIV2 extends RemoteAPIInterface {
@@ -32,7 +33,7 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
      * @return
      */
 
-    List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams);
+    List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException;
 
     void removeLinks(final long[] linkIds, final long[] packageIds);
 
@@ -73,6 +74,6 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
      * 
      * @return
      */
-    List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams);
+    List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams) throws BadParameterException;
 
 }

@@ -57,15 +57,68 @@ public class CrawledLinkStorable implements Storable {
 
     public String getOrigin() {
         if (link.getOrigin() == null) return null;
-        return link.getOrigin().name();
+        return link.getOrigin().getOrigin().name();
     }
 
-    public void setOrigin(String str) {
-        try {
-            link.setOrigin(LinkOrigin.valueOf(str));
-        } catch (Throwable e) {
-            link.setOrigin(null);
+    public static class LinkOriginStorable implements Storable {
+        public LinkOriginStorable(/* Storable */) {
+
         }
+
+        public LinkOriginStorable(LinkOriginDetails origin) {
+            this.id = origin.getOrigin().name();
+            this.details = origin.getDetails();
+        }
+
+        private String id;
+        private String details;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getDetails() {
+            return details;
+        }
+
+        public void setDetails(String details) {
+            this.details = details;
+        }
+    }
+
+    public LinkOriginStorable getOriginDetails() {
+        LinkOriginDetails origin = link.getOrigin();
+        if (origin == null) return null;
+        return new LinkOriginStorable(origin);
+    }
+
+    @Deprecated
+    public void setOrigin(String origin) {
+        if (origin != null) {
+            try {
+                LinkOrigin enu = LinkOrigin.valueOf(origin);
+                link.setOrigin(new LinkOriginDetails(enu, null));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    public void setOriginDetails(LinkOriginStorable origin) {
+        if (origin != null) {
+            try {
+                LinkOrigin enu = LinkOrigin.valueOf(origin.id);
+                link.setOrigin(new LinkOriginDetails(enu, origin.details));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     public long getUID() {

@@ -1,9 +1,9 @@
 package org.jdownloader.api.toolbar;
 
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class LinkStatus implements Storable {
 
@@ -34,7 +34,7 @@ public class LinkStatus implements Storable {
         return link.getURL();
     }
 
-    public LinkState getStatus() {
+    public AvailableLinkState getStatus() {
         return link.getLinkState();
     }
 

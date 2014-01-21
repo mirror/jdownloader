@@ -1,7 +1,6 @@
 package org.jdownloader.api.linkcollector;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -9,8 +8,8 @@ import java.util.Set;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
@@ -22,8 +21,10 @@ import org.appwork.remoteapi.APIQuery;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.GeneralSettings;
 
+@Deprecated
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
@@ -83,7 +84,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                     String availabilityString = "";
                     int onlineCount = 0;
                     for (CrawledLink cl : pkg.getChildren()) {
-                        if (LinkState.ONLINE.equals(cl.getLinkState())) {
+                        if (AvailableLinkState.ONLINE.equals(cl.getLinkState())) {
                             onlineCount++;
                         }
                     }
@@ -97,7 +98,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 if (queryParams._getQueryParam("availabilityCount", Boolean.class, false)) {
                     int onlineCount = 0;
                     for (CrawledLink cl : pkg.getChildren()) {
-                        if (LinkState.ONLINE.equals(cl.getLinkState())) {
+                        if (AvailableLinkState.ONLINE.equals(cl.getLinkState())) {
                             onlineCount++;
                         }
                         infomap.put("availabilityCount", onlineCount);
@@ -235,7 +236,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     private Boolean addLinks(String links, final String finalPackageName, String extractPassword, final String downloadPassword, final String destinationFolder, final boolean autostart) {
         LinkCollector lc = LinkCollector.getInstance();
-        LinkCollectingJob lcj = new LinkCollectingJob(LinkOrigin.MYJD, links);
+        LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null), links);
         HashSet<String> extPws = null;
         if (StringUtils.isNotEmpty(extractPassword)) {
             extPws = new HashSet<String>();

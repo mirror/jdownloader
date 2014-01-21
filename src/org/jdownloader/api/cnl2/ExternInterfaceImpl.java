@@ -14,6 +14,7 @@ import javax.swing.ImageIcon;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -122,7 +123,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             String jk = HttpRequest.getParameterbyKey(request, "jk");
             String k = HttpRequest.getParameterbyKey(request, "k");
             String urls = decrypt(crypted, jk, k);
-            clickAndLoad2Add(urls, request);
+            clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
             /*
              * we need the \r\n else the website will not handle response correctly
              */
@@ -135,16 +136,16 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     // For My JD API
     public void addcrypted2Remote(String crypted, String jk, String source) {
         String urls = decrypt(crypted, jk, null);
-        LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CNL, urls);
+        LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, null), urls);
         job.setCustomSourceUrl(source);
         LinkCollector.getInstance().addCrawlerJob(job);
     }
 
-    private void clickAndLoad2Add(String urls, RemoteAPIRequest request) throws IOException {
+    private void clickAndLoad2Add(LinkOriginDetails origin, String urls, RemoteAPIRequest request) throws IOException {
         final String finalPasswords = HttpRequest.getParameterbyKey(request, "passwords");
         String source = HttpRequest.getParameterbyKey(request, "source");
         final String finalComment = HttpRequest.getParameterbyKey(request, "comment");
-        LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CNL, urls);
+        LinkCollectingJob job = new LinkCollectingJob(origin, urls);
         final String finalDestination = HttpRequest.getParameterbyKey(request, "dir");
         job.setCustomSourceUrl(source);
         final String finalPackageName = HttpRequest.getParameterbyKey(request, "package");
@@ -245,7 +246,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         try {
             askPermission(request);
             String urls = HttpRequest.getParameterbyKey(request, "urls");
-            clickAndLoad2Add(urls, request);
+            clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
@@ -255,7 +256,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     // For My JD API
     @Override
     public void add(String passwords, String source, String urls) throws InternalApiException {
-        LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.CNL, urls);
+        LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, null), urls);
         // String dir = HttpRequest.getParameterbyKey(request, "dir");
         // if (!StringUtils.isEmpty(dir)) {
         // job.setOutputFolder(new File(dir));
@@ -289,7 +290,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
             String url = "file://" + tmp.getAbsolutePath();
-            clickAndLoad2Add(url, request);
+            clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), url, request);
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
@@ -392,7 +393,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 /*
                  * create LinkCollectingJob to forward general Information like directory, autostart...
                  */
-                LinkCollectingJob job = new LinkCollectingJob(LinkOrigin.FLASHGOT, null);
+                LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.FLASHGOT, request.getRequestHeaders().getValue("user-agent")), null);
                 final String finalPackageName = HttpRequest.getParameterbyKey(request, "package");
                 final String finalDestination = HttpRequest.getParameterbyKey(request, "dir");
 
@@ -505,4 +506,5 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             throw new InternalApiException(e);
         }
     }
+
 }

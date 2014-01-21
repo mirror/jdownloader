@@ -7,6 +7,7 @@ import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.LinkCrawler;
 
 import org.appwork.utils.swing.dialog.Dialog;
@@ -59,7 +60,7 @@ public class PasteLinksAction extends CustomizableAppAction implements ActionCon
             @Override
             public void run() {
                 ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
-                final LinkCollectingJob crawljob = new LinkCollectingJob(LinkOrigin.PASTE_LINKS_ACTION, content != null ? content.getContent() : null);
+                final LinkCollectingJob crawljob = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.PASTE_LINKS_ACTION, null), content != null ? content.getContent() : null);
                 if (content != null) crawljob.setCustomSourceUrl(content.getBrowserURL());
                 crawljob.setDeepAnalyse(isDeepDecryptEnabled());
 

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink;
 
@@ -15,6 +14,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
@@ -139,10 +139,10 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
         // enabled
         if (link.isEnabled()) tmp.newEnabled = true;
-        if (link.getLinkState() == LinkState.OFFLINE) {
+        if (link.getLinkState() == AvailableLinkState.OFFLINE) {
             // offline
             tmp.newOffline++;
-        } else if (link.getLinkState() == LinkState.ONLINE) {
+        } else if (link.getLinkState() == AvailableLinkState.ONLINE) {
             // online
             tmp.newOnline++;
         }

@@ -31,6 +31,7 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -101,7 +102,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                 }
                 if (adapter.openURIlinks != null) {
                     LogController.GL.info("Distribute links: " + adapter.openURIlinks);
-                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.START_PARAMETER, adapter.openURIlinks));
+                    LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.START_PARAMETER, null), adapter.openURIlinks));
                     adapter.openURIlinks = null;
                 }
             }
@@ -328,7 +329,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
             sb.append("file://");
             sb.append(file.getPath());
         }
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK, sb.toString()));
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), sb.toString()));
     }
 
     public void openURI(AppEvent.OpenURIEvent e) {
@@ -337,7 +338,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         String links = e.getURI().toString();
         if (SecondLevelLaunch.GUI_COMPLETE.isReached()) {
             LogController.GL.info("Distribute links: " + links);
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.MAC_DOCK, links));
+            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), links));
         } else {
             openURIlinks = links;
         }

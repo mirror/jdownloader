@@ -7,7 +7,7 @@ import javax.swing.ImageIcon;
 
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -27,15 +27,9 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier {
-
-    public static enum LinkState {
-        ONLINE,
-        OFFLINE,
-        UNKNOWN,
-        TEMP_UNKNOWN
-    }
 
     private boolean crawlDeep = false;
 
@@ -54,17 +48,17 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private boolean                   autoConfirmEnabled   = false;
 
     private transient UniqueAlltimeID uniqueID             = new UniqueAlltimeID();
-    private LinkOrigin                origin;
+    private LinkOriginDetails         origin;
 
     public boolean isAutoConfirmEnabled() {
         return autoConfirmEnabled;
     }
 
-    public void setOrigin(LinkOrigin source) {
+    public void setOrigin(LinkOriginDetails source) {
         this.origin = source;
     }
 
-    public LinkOrigin getOrigin() {
+    public LinkOriginDetails getOrigin() {
         return origin;
     }
 
@@ -116,11 +110,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
-     * the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
+     * about how to prozess the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
+     * different.
      * 
      * @return
      */
@@ -394,22 +389,22 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return matchingFilter;
     }
 
-    public LinkState getLinkState() {
+    public AvailableLinkState getLinkState() {
         if (dlLink != null) {
             switch (dlLink.getAvailableStatus()) {
             case FALSE:
-                return LinkState.OFFLINE;
+                return AvailableLinkState.OFFLINE;
             case TRUE:
-                return LinkState.ONLINE;
+                return AvailableLinkState.ONLINE;
             case UNCHECKABLE:
-                return LinkState.TEMP_UNKNOWN;
+                return AvailableLinkState.TEMP_UNKNOWN;
             case UNCHECKED:
-                return LinkState.UNKNOWN;
+                return AvailableLinkState.UNKNOWN;
             default:
-                return LinkState.UNKNOWN;
+                return AvailableLinkState.UNKNOWN;
             }
         }
-        return LinkState.UNKNOWN;
+        return AvailableLinkState.UNKNOWN;
     }
 
     public Priority getPriority() {

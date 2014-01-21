@@ -56,6 +56,7 @@ import org.jdownloader.api.jd.JDAPIImpl;
 import org.jdownloader.api.jdanywhere.JDAnywhereAPI;
 import org.jdownloader.api.linkcollector.LinkCollectorAPIImpl;
 import org.jdownloader.api.linkcollector.LinkCollectorEventPublisher;
+import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
 import org.jdownloader.api.linkcrawler.LinkCrawlerAPIImpl;
 import org.jdownloader.api.linkcrawler.LinkCrawlerEventPublisher;
 import org.jdownloader.api.myjdownloader.MyJDownloaderPostRequest;
@@ -231,6 +232,7 @@ public class RemoteAPIController {
         register(new AccountAPIImpl());
         register(new AccountAPIImplV2());
         register(new LinkCollectorAPIImpl());
+        register(new LinkCollectorAPIImplV2());
         register(new ContentAPIImpl());
         register(new ContentAPIImplV2());
         register(new PollingAPIImpl());

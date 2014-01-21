@@ -23,6 +23,7 @@ import java.io.File;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.gui.UserIO;
 import jd.nutils.io.JDFileFilter;
 
@@ -51,7 +52,7 @@ public class AddContainerAction extends CustomizableAppAction {
             sb.append("file://");
             sb.append(r.getAbsolutePath());
         }
-        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(LinkOrigin.ADD_CONTAINER_ACTION, sb.toString()));
+        LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.ADD_CONTAINER_ACTION, null), sb.toString()));
     }
 
 }

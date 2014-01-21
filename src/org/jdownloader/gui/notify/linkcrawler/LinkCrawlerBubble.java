@@ -65,7 +65,7 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
         if (crawler instanceof JobLinkCrawler) {
             JobLinkCrawler jlc = (JobLinkCrawler) crawler;
 
-            LinkOrigin src = jlc.getJob().getOrigin();
+            LinkOrigin src = jlc.getJob().getOrigin().getOrigin();
 
             if (src == null) {
                 setHeaderText(_GUI._.LinkCrawlerBubble_update_header());

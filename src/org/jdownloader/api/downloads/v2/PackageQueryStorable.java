@@ -7,4 +7,5 @@ public class PackageQueryStorable extends PackageQuery implements Storable {
     public PackageQueryStorable(/* Storable */) {
 
     }
+
 }

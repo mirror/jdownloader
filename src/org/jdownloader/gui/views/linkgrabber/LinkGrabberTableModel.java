@@ -4,7 +4,6 @@ import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
@@ -26,6 +25,7 @@ import org.jdownloader.gui.views.linkgrabber.columns.DownloadFolderColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.PartColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.VariantColumn;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPackage, CrawledLink> {
 
@@ -59,7 +59,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         boolean autoConfirm = ret.size() > 0 && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue();
         if (!autoConfirm) {
             for (CrawledLink l : ret.getAllChildrenNodes()) {
-                if (l.getLinkState() != LinkState.OFFLINE) {
+                if (l.getLinkState() != AvailableLinkState.OFFLINE) {
                     if (l.isAutoConfirmEnabled()) {
                         autoConfirm = true;
                         break;

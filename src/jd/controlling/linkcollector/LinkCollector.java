@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.zip.ZipEntry;
@@ -26,7 +27,6 @@ import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackage.TYPE;
@@ -85,6 +85,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -644,7 +645,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                             add.add(link);
                             LinkCollector.this.moveOrAddAt(getPermanentOfflineCrawledPackage(), add, -1);
-                        } else if (!ignoreSpecialPackages && link.getLinkState() == LinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
+                        } else if (!ignoreSpecialPackages && link.getLinkState() == AvailableLinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
                             java.util.List<CrawledLink> list = getIdentifiedMap(identifier, offlineMap);
                             list.add(link);
                             List<CrawledLink> add = new ArrayList<CrawledLink>(1);
@@ -1807,6 +1808,105 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         });
+    }
+
+    private WeakHashMap<UniqueAlltimeID, CrawledLink>    linkMap     = new WeakHashMap<UniqueAlltimeID, CrawledLink>();
+    private WeakHashMap<UniqueAlltimeID, CrawledPackage> packageMap2 = new WeakHashMap<UniqueAlltimeID, CrawledPackage>();
+
+    public CrawledLink getLinkByID(long longID) {
+        UniqueAlltimeID linkId = new UniqueAlltimeID(longID);
+        synchronized (linkMap) {
+
+            CrawledLink ret = linkMap.get(linkId);
+            if (ret != null) return ret;
+            updateIdMaps();
+            return linkMap.get(linkId);
+        }
+
+    }
+
+    protected void updateIdMaps() {
+        LinkCollector dlc = LinkCollector.getInstance();
+
+        boolean readL = dlc.readLock();
+        try {
+            for (CrawledPackage pkg : dlc.getPackages()) {
+                packageMap2.put(pkg.getUniqueID(), pkg);
+                boolean readL2 = pkg.getModifyLock().readLock();
+                try {
+                    for (CrawledLink child : pkg.getChildren()) {
+                        linkMap.put(child.getUniqueID(), child);
+
+                    }
+                } finally {
+                    pkg.getModifyLock().readUnlock(readL2);
+                }
+
+            }
+        } finally {
+            dlc.readUnlock(readL);
+        }
+    }
+
+    public CrawledPackage getPackageByID(long longID) {
+        UniqueAlltimeID packageId = new UniqueAlltimeID(longID);
+        synchronized (linkMap) {
+            CrawledPackage ret = packageMap2.get(packageId);
+            if (ret != null) return ret;
+            updateIdMaps();
+            return packageMap2.get(packageId);
+        }
+    }
+
+    public List<CrawledLink> getLinksByID(long[] packageUUIDs) {
+        boolean updated = false;
+        synchronized (linkMap) {
+            ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+            for (long longID : packageUUIDs) {
+
+                UniqueAlltimeID l = new UniqueAlltimeID(longID);
+                CrawledLink p = linkMap.get(l);
+                if (p != null) {
+                    ret.add(p);
+                } else {
+                    // only update once
+                    if (updated) continue;
+                    updateIdMaps();
+                    updated = true;
+                    p = linkMap.get(l);
+                    if (p != null) {
+                        ret.add(p);
+                    }
+                }
+
+            }
+            return ret;
+        }
+    }
+
+    public List<CrawledPackage> getPackagesByID(long[] packageUUIDs) {
+        boolean updated = false;
+        synchronized (linkMap) {
+            ArrayList<CrawledPackage> ret = new ArrayList<CrawledPackage>();
+            for (long longID : packageUUIDs) {
+                UniqueAlltimeID l = new UniqueAlltimeID(longID);
+                CrawledPackage p = packageMap2.get(l);
+                if (p != null) {
+                    ret.add(p);
+                } else {
+                    // only update once
+                    if (updated) continue;
+                    updateIdMaps();
+                    updated = true;
+                    p = packageMap2.get(l);
+                    if (p != null) {
+                        ret.add(p);
+                    }
+                }
+
+            }
+            return ret;
+        }
     }
 
 }

@@ -32,11 +32,11 @@ public class LinkCollectingJob {
         this.customSourceUrl = customSource;
     }
 
-    public LinkCollectingJob(LinkOrigin origin) {
+    public LinkCollectingJob(LinkOriginDetails origin) {
         this(origin, null);
     }
 
-    public LinkCollectingJob(LinkOrigin origin, String jobContent) {
+    public LinkCollectingJob(LinkOriginDetails origin, String jobContent) {
         this.jobContent = jobContent;
         this.origin = origin;
     }
@@ -49,9 +49,9 @@ public class LinkCollectingJob {
         this.jobContent = text;
     }
 
-    private final LinkOrigin origin;
+    private final LinkOriginDetails origin;
 
-    public LinkOrigin getOrigin() {
+    public LinkOriginDetails getOrigin() {
         return origin;
     }
 

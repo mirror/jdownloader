@@ -33,6 +33,7 @@ import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.PackageInfo;
@@ -216,7 +217,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     @Override
     protected LinkCollectingJob createReturnValue() {
-        LinkCollectingJob ret = new LinkCollectingJob(LinkOrigin.ADD_LINKS_DIALOG, input.getText());
+        LinkCollectingJob ret = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG, null), input.getText());
         final boolean overwritePackagizerRules = isOverwritePackagizerEnabled();
         final String finalPackageName = packagename.getText().trim();
         if (StringUtils.isNotEmpty(finalPackageName)) PackageHistoryManager.getInstance().add(finalPackageName);

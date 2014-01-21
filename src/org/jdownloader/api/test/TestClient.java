@@ -170,6 +170,7 @@ public class TestClient {
         register(new AccountTest());
         register(new EventsTest());
         register(new DownloadListTest());
+        register(new LinkgrabberTest());
         register(new KeepAliveTest());
 
         register(new ChangePasswordTest());
