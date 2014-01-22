@@ -6,6 +6,7 @@ ValidateArchiveAction_actionPerformed_bad=压缩文档有 %s1 个部分并且是
 and=并且至少
 archivename=压缩文档名称
 ask_for_password=压缩文档需要密码!
+bubblecontent_progress=进度图标
 cannot_extract_incopmplete=不能提取 %s1。压缩文档是不完整的!
 close=关闭
 context_cleanup=在提取后清理
