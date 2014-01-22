@@ -37,6 +37,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    // All similar: IleProtectCom, ExtremeProtectCom, TopProtectNet
     private static final String RECAPTCHATEXT  = "api\\.recaptcha\\.net";
     private static final String RECAPTCHATEXT2 = "google\\.com/recaptcha/api/challenge";
 

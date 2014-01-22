@@ -125,7 +125,7 @@ public class UnrestrictLi extends PluginForHost {
         br.setCookie("http://unrestrict.li", "lang", "EN");
         br.setCookie("http://unrestrict.li", "ssl", "0");
         br.postPage("http://unrestrict.li/unrestrict.php", "jdownloader=1&domain=long&link=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getStringProperty("pass", null) != null ? "&download_password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
-        String generated = br.getRegex("\\{\"(.*?)\":\\{\"host").getMatch(0);
+        String generated = br.getRegex("\\{\"(.*?)\":\\{\"").getMatch(0);
         // Get and set chunks to use
         String cons = br.getRegex("\"cons\":(.*?)\\}").getMatch(0);
         if (cons != null) {
