@@ -165,7 +165,10 @@ public class NowDownloadEu extends PluginForHost {
         }
         if (dllink == null) {
             final String tokenPage = br.getRegex("\"(/api/token\\.php\\?token=[a-z0-9]+)\"").getMatch(0);
-            final String continuePage = br.getRegex("\"(/dl2/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
+            String continuePage = br.getRegex("\"(/dl2/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
+            if (continuePage == null) {
+                continuePage = br.getRegex("href=\"([^<>]+)\">Download your file").getMatch(0);
+            }
             if (tokenPage == null || continuePage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             int wait = 30;
             final String waittime = br.getRegex("\\.countdown\\(\\{until: \\+(\\d+),").getMatch(0);
@@ -255,10 +258,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRegex("\"(http://(?!www\\.)[^/]+/nowdownload/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("href=\"([^<>]+)\">Download your file").getMatch(0);
-        }
+        String dllink = br.getRegex("\"(http://(?!www\\.)[^/]+/(nowdownload|dl)/[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
 
