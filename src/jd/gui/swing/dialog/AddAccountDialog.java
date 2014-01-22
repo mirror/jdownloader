@@ -106,6 +106,10 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
         }
         AccountError error = ac.getError();
         String errorMessage = ac.getErrorString();
+        if (StringUtils.isEmpty(errorMessage)) {
+            AccountInfo ai = ac.getAccountInfo();
+            if (ai != null) errorMessage = ai.getStatus();
+        }
         if (error != null) {
             switch (error) {
             case PLUGIN_ERROR:
@@ -118,7 +122,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 return true;
             case TEMP_DISABLED:
                 if (StringUtils.isEmpty(errorMessage)) errorMessage = _GUI._.accountdialog_check_failed();
-                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_valid(errorMessage));
+                Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_result(errorMessage));
                 AccountController.getInstance().addAccount(ac, false);
                 return true;
             default:

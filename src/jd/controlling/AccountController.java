@@ -345,6 +345,9 @@ public class AccountController implements AccountControllerListener, AccountProp
                          */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
+                        account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
+                        // try again in 1 min
+                        account.setTmpDisabledTimeout(System.currentTimeMillis() + 60 * 1000l);
                         return ai;
                     } catch (final IPCheckException e2) {
                     }

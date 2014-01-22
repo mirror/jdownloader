@@ -3863,4 +3863,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Failed Link(s):" })
     String DownloadOverview_DownloadOverview_failed_downloads();
+
+    @Default(lngs = { "en" }, values = { "Result of the Account Verification:\r\n%s1" })
+    String accountdialog_check_result(String errorMessage);
 }

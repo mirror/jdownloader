@@ -83,6 +83,8 @@ public interface MyJDownloaderSettings extends ConfigInterface {
         IO,
         @EnumLabel("Unknown error")
         UNKNOWN,
+        @EnumLabel("No Internet Connection")
+        NO_INTERNET_CONNECTION,
 
     }
 

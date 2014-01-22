@@ -17,6 +17,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -356,6 +360,19 @@ public class MyJDownloaderConnectThread extends Thread {
                             myJDownloaderExtension.onError(MyJDownloaderError.SERVER_DOWN);
                             currentHelper.requestbackoff();
                         } else {
+
+                            BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
+                            try {
+                                onlineCheck.getExternalIP();
+
+                            } catch (final OfflineException e2) {
+                                logger.info("Could not connect! NO Internet!");
+
+                                currentHelper.requestbackoff();
+                                break;
+                            } catch (final IPCheckException e2) {
+                            }
+
                             logger.log(e);
                             currentHelper.requestbackoff();
                             if (unknownErrorSafeOff-- == 0) {
@@ -364,6 +381,7 @@ public class MyJDownloaderConnectThread extends Thread {
                                 return;
                             }
                             myJDownloaderExtension.onError(MyJDownloaderError.UNKNOWN);
+
                         }
                     } catch (final Throwable e) {
                         logger.log(e);

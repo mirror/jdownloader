@@ -280,6 +280,8 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
                     return new AbstractIcon(IconKey.ICON_ERROR, 16);
                 case PLUGIN_ERROR:
                     return new AbstractIcon(IconKey.ICON_ERROR, 16);
+                case TEMP_DISABLED:
+                    return new AbstractIcon(IconKey.ICON_WAIT, 16);
                 }
 
                 return new AbstractIcon(IconKey.ICON_OK, 16);

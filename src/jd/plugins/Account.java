@@ -236,6 +236,7 @@ public class Account extends Property {
         EXPIRED,
         INVALID,
         PLUGIN_ERROR;
+
     }
 
     public void setError(final AccountError error, String errorString) {
@@ -253,6 +254,10 @@ public class Account extends Property {
             this.errorString = errorString;
             notifyUpdate(AccountProperty.Property.ERROR, error);
         }
+    }
+
+    public void setTmpDisabledTimeout(long tmpDisabledTimeout) {
+        this.tmpDisabledTimeout = tmpDisabledTimeout;
     }
 
     public AccountError getError() {
