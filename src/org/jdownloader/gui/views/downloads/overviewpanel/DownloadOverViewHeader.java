@@ -6,6 +6,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
 import org.appwork.swing.components.ExtButton;
+import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.properties.AbstractPanelHeader;
@@ -15,10 +16,12 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class DownloadOverViewHeader extends AbstractPanelHeader {
 
-    private JPopupMenu pu;
+    private JPopupMenu       pu;
+    private DownloadOverview overView;
 
-    public DownloadOverViewHeader() {
+    public DownloadOverViewHeader(DownloadOverview overView) {
         super(_GUI._.OverViewHeader_OverViewHeader_(), NewTheme.I().getIcon("download", 16));
+        this.overView = overView;
 
     }
 
@@ -41,7 +44,12 @@ public class DownloadOverViewHeader extends AbstractPanelHeader {
         pu.add(selected);
         pu.add(new JSeparator(JSeparator.HORIZONTAL));
         pu.add(new CheckboxMenuItem(_GUI._.OverViewHeader_actionPerformed_quicksettings(), CFG_GUI.DOWNLOAD_PANEL_OVERVIEW_SETTINGS_VISIBLE));
+        for (DataEntry<AggregatedNumbers> de : overView.createDataEntries()) {
+            if (de.getVisibleKeyHandler() != null) {
+                pu.add(new CheckboxMenuItem(de.getPopupLabel(), de.getVisibleKeyHandler()));
+            }
 
+        }
         int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
         Dimension pref = pu.getPreferredSize();

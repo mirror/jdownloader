@@ -24,6 +24,7 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.w3c.dom.Document;
@@ -445,6 +446,12 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 ret = Encoding.UTF8Encode(ret);
             } else if (fnc.equalsIgnoreCase("MD5")) {
                 ret = JDHash.getMD5(ret);
+            } else if (fnc.equalsIgnoreCase("SHA256")) {
+                ret = Hash.getSHA256(ret);
+
+                // required by a huwai router that uses base64(sha256(pass))
+            } else if (fnc.equalsIgnoreCase("BASE64_SHA256")) {
+                ret = Encoding.Base64Encode(Hash.getSHA256(ret));
             } else if (fnc.equalsIgnoreCase("BASE64")) {
                 ret = Encoding.Base64Encode(ret);
             }

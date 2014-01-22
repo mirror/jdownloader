@@ -48,8 +48,9 @@ public class RightBottomBar extends MigPanel {
             }
 
         };
-        searchField.setSelectedCategory(extension.getSettings().getSelectedSearchCategory());
+
         searchField.setCategories(new MediaArchiveSearchCategory[] { MediaArchiveSearchCategory.FILENAME });
+        searchField.setSelectedCategory(extension.getSettings().getSelectedSearchCategory());
         searchField.addKeyListener(new KeyListener() {
 
             public void keyTyped(KeyEvent e) {

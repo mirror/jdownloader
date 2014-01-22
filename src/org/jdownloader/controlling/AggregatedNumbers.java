@@ -16,6 +16,24 @@ public class AggregatedNumbers {
 
     private long totalBytes;
 
+    public String getFinishedString(boolean inclDisabled) {
+        long ret = downloadsFinished;
+        if (inclDisabled) ret += disabledDownloadsFinished;
+        return ret + "";
+    }
+
+    public String getSkippedString(boolean inclDisabled) {
+        long ret = downloadsSkipped;
+        if (inclDisabled) ret += disabledDownloadsSkipped;
+        return ret + "";
+    }
+
+    public String getFailedString(boolean inclDisabled) {
+        long ret = downloadsFailed;
+        if (inclDisabled) ret += disabledDownloadsFailed;
+        return ret + "";
+    }
+
     public String getTotalBytesString(boolean inclDisabled) {
         if (inclDisabled) return format(totalBytes + disabledTotalBytes);
         return format(totalBytes);
@@ -65,7 +83,13 @@ public class AggregatedNumbers {
     private long connections;
     private long disabledTotalBytes;
     private long disabledLoadedBytes;
-    private long failedTotalBytes;
+
+    private long downloadsFinished;
+    private long downloadsFailed;
+    private long downloadsSkipped;
+    private long disabledDownloadsFinished;
+    private long disabledDownloadsFailed;
+    private long disabledDownloadsSkipped;
 
     public long getDisabledTotalBytes() {
         return disabledTotalBytes;
@@ -79,29 +103,56 @@ public class AggregatedNumbers {
         totalBytes = 0l;
         disabledTotalBytes = 0l;
         disabledLoadedBytes = 0l;
-        failedTotalBytes = 0l;
+
         loadedBytes = 0l;
         downloadSpeed = 0l;
         running = 0l;
         connections = 0l;
         packageCount = selection.getPackageViews().size();
         linkCount = selection.getChildren().size();
+        downloadsFinished = 0l;
+        downloadsFailed = 0l;
+        downloadsSkipped = 0l;
+        disabledDownloadsFinished = 0l;
+        disabledDownloadsFailed = 0l;
+        disabledDownloadsSkipped = 0l;
         for (DownloadLink dl : selection.getChildren()) {
             if (dl == null) continue;
-            if (FinalLinkState.CheckFailed(dl.getFinalLinkState())) {
-                failedTotalBytes += dl.getView().getBytesTotalEstimated();
-            } else {
-                if (dl.isEnabled()) {
 
-                    totalBytes += dl.getView().getBytesTotalEstimated();
-                    loadedBytes += dl.getView().getBytesLoaded();
-
+            if (dl.isEnabled()) {
+                FinalLinkState state = dl.getFinalLinkState();
+                if (state == null) {
+                    if (dl.isSkipped()) {
+                        downloadsSkipped++;
+                    }
                 } else {
-
-                    disabledTotalBytes += dl.getView().getBytesTotalEstimated();
-                    disabledLoadedBytes += dl.getView().getBytesLoaded();
+                    if (state.isFailed()) {
+                        downloadsFailed++;
+                    } else if (state.isFinished()) {
+                        downloadsFinished++;
+                    }
                 }
+                totalBytes += dl.getView().getBytesTotalEstimated();
+                loadedBytes += dl.getView().getBytesLoaded();
+
+            } else {
+                FinalLinkState state = dl.getFinalLinkState();
+                if (state == null) {
+                    if (dl.isSkipped()) {
+                        disabledDownloadsSkipped++;
+                    }
+                } else {
+                    if (state.isFailed()) {
+                        disabledDownloadsFailed++;
+                    } else if (state.isFinished()) {
+                        disabledDownloadsFinished++;
+                    }
+                }
+                disabledTotalBytes += dl.getView().getBytesTotalEstimated();
+                disabledLoadedBytes += dl.getView().getBytesLoaded();
+
             }
+
             downloadSpeed += dl.getView().getSpeedBps();
             SingleDownloadController sdc = dl.getDownloadLinkController();
             if (sdc != null) {
@@ -121,10 +172,6 @@ public class AggregatedNumbers {
 
         eta = downloadSpeed == 0 ? 0 : (totalBytes - loadedBytes) / downloadSpeed;
 
-    }
-
-    public long getFailedTotalBytes() {
-        return failedTotalBytes;
     }
 
     public long getTotalBytes() {

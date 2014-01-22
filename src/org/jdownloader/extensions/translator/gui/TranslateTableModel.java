@@ -466,7 +466,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
     }
 
-    public void updateFilter(SearchField searchField) {
+    public void updateFilter(TranslatorSearchField searchField) {
         this.filter = searchField.filterPatterns;
 
         _fireTableStructureChanged(extension.getTranslationEntries(), true);

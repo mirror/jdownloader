@@ -113,7 +113,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
     // super.onDoubleClick(e, obj);
     // }
 
-    public void updaterFilter(SearchField searchField) {
+    public void updaterFilter(TranslatorSearchField searchField) {
 
         ((TranslateTableModel) getModel()).updateFilter(searchField);
     }

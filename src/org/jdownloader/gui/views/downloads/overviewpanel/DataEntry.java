@@ -3,12 +3,13 @@ package org.jdownloader.gui.views.downloads.overviewpanel;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class DataEntry {
+public abstract class DataEntry<T> {
 
     private JLabel total;
 
@@ -32,15 +33,24 @@ public class DataEntry {
         return label;
     }
 
+    @Override
+    public String toString() {
+        return getLabel();
+    }
+
     public DataEntry(String label) {
         this.label = label;
-        total = new JLabel();
-        filtered = new JLabel();
-        selected = new JLabel();
+        total = new JLabel("-1");
+        filtered = new JLabel("-1");
+        selected = new JLabel("-1");
         total.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip1());
         filtered.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip2());
         selected.setToolTipText(_GUI._.DownloadOverview_DownloadOverview_tooltip3());
         updateVisibility(false);
+    }
+
+    public String getPopupLabel() {
+        return getLabel().replace(":", "");
     }
 
     private JComponent createHeaderLabel(String label) {
@@ -90,5 +100,9 @@ public class DataEntry {
             selected.setVisible(CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled());
         }
     }
+
+    abstract public void setData(T total, T filtered, T selected);
+
+    abstract public BooleanKeyHandler getVisibleKeyHandler();
 
 }

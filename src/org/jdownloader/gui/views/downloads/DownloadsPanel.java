@@ -355,7 +355,12 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
             ret = new OverviewHeaderScrollPane(overView);
             final HeaderScrollPane finalRet = ret;
             LAFOptions.getInstance().applyPanelBackground(ret);
-            ret.setColumnHeaderView(new DownloadOverViewHeader() {
+            ret.setColumnHeaderView(new DownloadOverViewHeader(overView) {
+
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = 1L;
 
                 @Override
                 protected void onCloseAction() {

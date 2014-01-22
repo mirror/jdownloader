@@ -857,4 +857,114 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isOSRSurveyEnabled();
 
     void setOSRSurveyEnabled(boolean b);
+
+    //
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadPackageCountVisible();
+
+    void setOverviewPanelDownloadPackageCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelLinkgrabberHosterCountVisible();
+
+    void setOverviewPanelLinkgrabberHosterCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadLinkCountVisible();
+
+    void setOverviewPanelDownloadLinkCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadTotalBytesVisible();
+
+    void setOverviewPanelDownloadTotalBytesVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isOverviewPanelDownloadLinksFailedCountVisible();
+
+    void setOverviewPanelDownloadLinksFailedCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isOverviewPanelDownloadLinksFinishedCountVisible();
+
+    void setOverviewPanelDownloadLinksFinishedCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isOverviewPanelDownloadLinksSkippedCountVisible();
+
+    void setOverviewPanelDownloadLinksSkippedCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadRunningDownloadsCountVisible();
+
+    void setOverviewPanelDownloadRunningDownloadsCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadSpeedVisible();
+
+    void setOverviewPanelDownloadSpeedVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadETAVisible();
+
+    void setOverviewPanelDownloadETAVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadConnectionsVisible();
+
+    void setOverviewPanelDownloadConnectionsVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadBytesLoadedVisible();
+
+    void setOverviewPanelDownloadBytesLoadedVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelLinkgrabberPackageCountVisible();
+
+    void setOverviewPanelLinkgrabberPackageCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelLinkgrabberLinksCountVisible();
+
+    void setOverviewPanelLinkgrabberLinksCountVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelLinkgrabberTotalBytesVisible();
+
+    void setOverviewPanelLinkgrabberTotalBytesVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelLinkgrabberStatusUnknownVisible();
+
+    void setOverviewPanelLinkgrabberStatusUnknownVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelLinkgrabberStatusOnlineVisible();
+
+    void setOverviewPanelLinkgrabberStatusOnlineVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isOverviewPanelLinkgrabberStatusOfflineVisible();
+
+    void setOverviewPanelLinkgrabberStatusOfflineVisible(boolean b);
+
 }

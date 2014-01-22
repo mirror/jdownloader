@@ -284,9 +284,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         if (selectedCategory == null) {
             Log.exception(Level.WARNING, new NullPointerException("selectedCategory null"));
         }
-
+        SearchCat old = this.selectedCategory;
         this.selectedCategory = selectedCategory;
-        if (this.selectedCategory != selectedCategory) onChanged();
+        if (this.selectedCategory != old) onChanged();
         if (label != null) {
             label.setText(selectedCategory.getLabel());
             setHelpText(selectedCategory.getHelpText());
@@ -316,8 +316,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             labelWidth = Math.max(label.getPreferredSize().width, labelWidth);
         }
         if (!found) {
+            SearchCat old = selectedCategory;
             this.selectedCategory = searchCategories[0];
-            if (this.selectedCategory != searchCategories[0]) onChanged();
+            if (this.selectedCategory != old) onChanged();
         }
         label.setSize(labelWidth, 24);
         // label.setEnabled(false);

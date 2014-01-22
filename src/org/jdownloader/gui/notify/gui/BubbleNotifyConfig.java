@@ -132,7 +132,7 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     }
 
     @AboutConfig()
-    @DefaultEnumValue("ALWAYS")
+    @DefaultEnumValue("JD_NOT_ACTIVE")
     public BubbleNotifyEnabledState getBubbleNotifyEnabledState();
 
     public void setBubbleNotifyEnabledState(BubbleNotifyEnabledState b);

@@ -103,7 +103,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private volatile boolean    isWizard;
     private MigPanel            menuPanel2;
     private QuickEdit           qe;
-    private SearchField         search;
+    private TranslatorSearchField         search;
     private LogSource           logger;
 
     public TranslatorGui(TranslatorExtension plg) {
@@ -133,7 +133,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         panel.add(menuPanel);
         panel.add(menuPanel2);
         sp = new JScrollPane(table);
-        search = new SearchField(table);
+        search = new TranslatorSearchField(table);
         qe = new QuickEdit(table);
 
         panel.add(sp);

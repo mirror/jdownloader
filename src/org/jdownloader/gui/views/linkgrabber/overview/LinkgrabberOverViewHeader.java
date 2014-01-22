@@ -6,8 +6,10 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
 import org.appwork.swing.components.ExtButton;
+import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.gui.components.CheckboxMenuItem;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.downloads.overviewpanel.DataEntry;
 import org.jdownloader.gui.views.linkgrabber.properties.AbstractPanelHeader;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -15,8 +17,11 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkgrabberOverViewHeader extends AbstractPanelHeader {
 
-    public LinkgrabberOverViewHeader() {
+    private LinkgrabberOverview overview;
+
+    public LinkgrabberOverViewHeader(LinkgrabberOverview loverView) {
         super(_GUI._.LinkgrabberOverViewHeader_LinkgrabberOverViewHeader_(), NewTheme.I().getIcon("download", 16));
+        this.overview = loverView;
 
     }
 
@@ -37,6 +42,15 @@ public class LinkgrabberOverViewHeader extends AbstractPanelHeader {
         pu.add(total);
         pu.add(filtered);
         pu.add(selected);
+
+        pu.add(new JSeparator(JSeparator.HORIZONTAL));
+
+        for (DataEntry<AggregatedCrawlerNumbers> de : overview.createDataEntries()) {
+            if (de.getVisibleKeyHandler() != null) {
+                pu.add(new CheckboxMenuItem(de.getPopupLabel(), de.getVisibleKeyHandler()));
+            }
+
+        }
         int[] insets = LAFOptions.getInstance().getPopupBorderInsets();
 
         Dimension pref = pu.getPreferredSize();

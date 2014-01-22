@@ -2072,10 +2072,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Show Quicksettings" })
     String OverViewHeader_actionPerformed_quicksettings();
 
-    @Default(lngs = { "en" }, values = { "Running Downloads" })
+    @Default(lngs = { "en" }, values = { "Running Downloads:" })
     String DownloadOverview_DownloadOverview_running_downloads();
 
-    @Default(lngs = { "en" }, values = { "Open Connections" })
+    @Default(lngs = { "en" }, values = { "Open Connections:" })
     String DownloadOverview_DownloadOverview_connections();
 
     @Default(lngs = { "en" }, values = { "Do you want to delete all selected Downloadlinks? Be wise - Once confirmed, this cannot be undone!" })
@@ -3854,4 +3854,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Install FFmpeg™ now" })
     String ffmpeg_install_now();
+
+    @Default(lngs = { "en" }, values = { "Finished Link(s):" })
+    String DownloadOverview_DownloadOverview_finished_downloads();
+
+    @Default(lngs = { "en" }, values = { "Skipped Link(s):" })
+    String DownloadOverview_DownloadOverview_skipped_downloads();
+
+    @Default(lngs = { "en" }, values = { "Failed Link(s):" })
+    String DownloadOverview_DownloadOverview_failed_downloads();
 }

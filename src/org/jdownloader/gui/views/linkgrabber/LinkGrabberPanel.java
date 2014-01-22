@@ -270,7 +270,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             ret = new OverviewHeaderScrollPane(loverView);
             final OverviewHeaderScrollPane finalRet = ret;
             LAFOptions.getInstance().applyPanelBackground(ret);
-            ret.setColumnHeaderView(new LinkgrabberOverViewHeader() {
+            ret.setColumnHeaderView(new LinkgrabberOverViewHeader(loverView) {
 
                 @Override
                 protected void onCloseAction() {
