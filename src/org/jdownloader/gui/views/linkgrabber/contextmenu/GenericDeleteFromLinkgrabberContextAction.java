@@ -78,7 +78,7 @@ public class GenericDeleteFromLinkgrabberContextAction extends GenericDeleteFrom
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         includedSelection.setIncludeSelectedLinks(true);
         includedSelection.setIncludeUnselectedLinks(false);
     }

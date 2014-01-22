@@ -11,7 +11,6 @@ import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
-import javax.swing.KeyStroke;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
@@ -103,6 +102,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
     public void setMnemonic(String mnemonic) {
         this.mnemonic = mnemonic;
+        clearCachedAction();
     }
 
     public Type getType() {
@@ -135,6 +135,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
     public void setName(String name) {
         this.name = name;
+        clearCachedAction();
     }
 
     public String getIconKey() {
@@ -143,6 +144,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
     public void setIconKey(String iconKey) {
         this.iconKey = iconKey;
+        clearCachedAction();
     }
 
     public void add(MenuItemData child) {
@@ -206,11 +208,6 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
         action.requestUpdate(this);
         if (!isVisible()) return null;
         if (!action.isVisible()) return null;
-        if (StringUtils.isNotEmpty(getShortcut())) {
-            action.setAccelerator(KeyStroke.getKeyStroke(getShortcut()));
-        } else if (MenuItemData.isEmptyValue(getShortcut())) {
-            action.setAccelerator(null);
-        }
 
         if (action instanceof ComponentProviderInterface) { return ((ComponentProviderInterface) action).createComponent(this); }
         JMenuItem ret = action.isToggle() ? new JCheckBoxMenuItem(action) : new JMenuItem(action);
@@ -264,8 +261,10 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
         Constructor<?> c = clazz.getConstructor(new Class[] {});
         ret = (CustomizableAppAction) c.newInstance(new Object[] {});
         ret.setMenuItemData(this);
+        ret.applyMenuItemData();
         ret.initContextDefaults();
         ret.loadContextSetups();
+
         minWeakAction = new MinTimeWeakReference<CustomizableAppAction>(ret, 30 * 1000l, "MenuItemAction", this);
         action.set(minWeakAction);
         return (ret);
@@ -368,7 +367,9 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
     }
 
     public void setShortcut(String shortcut) {
+
         this.shortcut = shortcut;
+        clearCachedAction();
     }
 
     // public String _getShortcut() {
@@ -389,6 +390,7 @@ public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
 
     public void setVisible(boolean b) {
         visible = b;
+        clearCachedAction();
 
     }
 

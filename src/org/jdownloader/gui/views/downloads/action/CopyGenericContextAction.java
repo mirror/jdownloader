@@ -86,7 +86,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         super.initContextDefaults();
         patternPackages = "";
         patternLinks = PATTERN_TYPE + ";" + PATTERN_NAME + ";" + PATTERN_URL;

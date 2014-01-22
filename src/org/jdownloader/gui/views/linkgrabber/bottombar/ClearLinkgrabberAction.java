@@ -13,7 +13,7 @@ public class ClearLinkgrabberAction extends GenericDeleteFromLinkgrabberAction {
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         super.initContextDefaults();
         setDeleteAll(true);
         includedSelection.setIncludeSelectedLinks(true);

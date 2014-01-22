@@ -78,7 +78,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         super.initContextDefaults();
         includedSelection.setIncludeSelectedLinks(true);
         includedSelection.setIncludeUnselectedLinks(true);

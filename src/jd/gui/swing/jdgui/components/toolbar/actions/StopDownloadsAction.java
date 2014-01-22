@@ -32,7 +32,7 @@ public class StopDownloadsAction extends AbstractToolBarAction implements Downlo
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         setHideIfDownloadsAreStopped(false);
     }
 

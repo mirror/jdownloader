@@ -45,7 +45,7 @@ public class ConfirmHashValuesAction extends CustomizableTableContextAppAction i
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         super.initContextDefaults();
 
     }

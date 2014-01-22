@@ -101,7 +101,7 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         setCtrlToggle(false);
     }
 

@@ -50,7 +50,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         setHideIfDownloadsAreRunning(false);
 
     }

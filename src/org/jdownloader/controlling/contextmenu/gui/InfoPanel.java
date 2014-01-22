@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.lang.reflect.Constructor;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.controlling.contextmenu.ActionData;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
@@ -88,7 +90,6 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
     private ExtTextField      shortcut;
 
-    protected KeyStroke       currentShortcut;
     private CustomPanel       customPanel;
 
     private JLabel            namelabel;
@@ -98,6 +99,8 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
     private JButton           nameReset;
 
     private JButton           shortCutReset;
+
+    private JLabel            shortcutLabel;
 
     public Dimension getPreferredSize() {
         Dimension ret = super.getPreferredSize();
@@ -126,7 +129,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             @Override
             public void onChanged() {
                 item.setName(name.getText());
-                item.clearCachedAction();
+
                 updateResetButtons(item);
                 updateHeaderLabel(item);
                 managerFrame.fireUpdate();
@@ -180,7 +183,7 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                             String v = list.getSelectedValue().toString();
                             v = v.substring(0, v.length() - 4);
                             item.setIconKey(v);
-                            item.clearCachedAction();
+
                             updateInfo(item);
                             p.setVisible(false);
                             managerFrame.fireUpdate();
@@ -207,18 +210,19 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                     @Override
                     protected void runInEDT() {
-                        String newName = null;
-                        String oldName = item.getName();
-                        if (StringUtils.isNotEmpty(oldName)) {
-                            if (MenuItemData.isEmptyValue(oldName)) {
-                                newName = null;
-                            } else {
-                                newName = MenuItemData.EMPTY;
-                            }
-                        } else {
-                            newName = MenuItemData.EMPTY;
-                        }
-                        item.setName(newName);
+                        // String newName = null;
+                        // String oldName = item.getName();
+                        // if (StringUtils.isNotEmpty(oldName)) {
+                        // if (MenuItemData.isEmptyValue(oldName)) {
+                        // newName = null;
+                        // } else {
+                        // newName = MenuItemData.EMPTY;
+                        // }
+                        // } else {
+                        // newName = MenuItemData.EMPTY;
+                        // }
+                        name.setText(resetName);
+                        item.setName(resetName);
                         item.clearCachedAction();
                         updateInfo(item);
                         managerFrame.fireUpdate();
@@ -240,18 +244,18 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                     @Override
                     protected void runInEDT() {
-                        String newIconKey = null;
-                        String oldIconKey = item.getIconKey();
-                        if (StringUtils.isNotEmpty(oldIconKey)) {
-                            if (MenuItemData.isEmptyValue(oldIconKey)) {
-                                newIconKey = null;
-                            } else {
-                                newIconKey = MenuItemData.EMPTY;
-                            }
-                        } else {
-                            newIconKey = MenuItemData.EMPTY;
-                        }
-                        item.setIconKey(newIconKey);
+                        // String newIconKey = null;
+                        // String oldIconKey = item.getIconKey();
+                        // if (StringUtils.isNotEmpty(oldIconKey)) {
+                        // if (MenuItemData.isEmptyValue(oldIconKey)) {
+                        // newIconKey = null;
+                        // } else {
+                        // newIconKey = MenuItemData.EMPTY;
+                        // }
+                        // } else {
+                        // newIconKey = MenuItemData.EMPTY;
+                        // }
+                        item.setIconKey(resetIconKey);
                         item.clearCachedAction();
                         updateInfo(item);
                         managerFrame.fireUpdate();
@@ -276,16 +280,18 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             @Override
             public void keyPressed(KeyEvent event) {
                 String msg1 = KeyUtils.getShortcutString(event, true);
-                currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
+                KeyStroke currentShortcut = KeyStroke.getKeyStroke(event.getKeyCode(), event.getModifiersEx());
                 shortcut.setText(msg1);
-                save();
+                item.setShortcut(currentShortcut == null ? null : currentShortcut.toString());
+
+                // managerFrame.repaint();
                 updateResetButtons(item);
             }
 
         });
         if (managerFrame.getManager().isAcceleratorsEnabled()) {
-            add(label(_GUI._.InfoPanel_InfoPanel_shortcuts()));
-            add(shortcut, "newline");
+            add(shortcutLabel = label(_GUI._.InfoPanel_InfoPanel_shortcuts()), "hidemode 3");
+            add(shortcut, "newline,hidemode 3");
             add(shortCutReset = new JButton(new AppAction() {
                 {
                     setIconKey("reset");
@@ -297,26 +303,26 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
                         @Override
                         protected void runInEDT() {
-                            String newShortcut = null;
-                            String oldShortcut = item.getShortcut();
-                            if (StringUtils.isNotEmpty(oldShortcut)) {
-                                if (MenuItemData.isEmptyValue(oldShortcut)) {
-                                    newShortcut = null;
-                                } else {
-                                    newShortcut = MenuItemData.EMPTY;
-                                }
-                            } else {
-                                newShortcut = MenuItemData.EMPTY;
-                            }
-                            item.setShortcut(newShortcut);
-                            item.clearCachedAction();
+                            // String newShortcut = null;
+                            // String oldShortcut = item.getShortcut();
+                            // if (StringUtils.isNotEmpty(oldShortcut)) {
+                            // if (MenuItemData.isEmptyValue(oldShortcut)) {
+                            // newShortcut = null;
+                            // } else {
+                            // newShortcut = MenuItemData.EMPTY;
+                            // }
+                            // } else {
+                            // newShortcut = MenuItemData.EMPTY;
+                            // }
+                            item.setShortcut(resetShortcut);
+
                             updateInfo(item);
                             managerFrame.fireUpdate();
                         }
                     };
                 }
 
-            }), "width 22!,height 22!");
+            }), "width 22!,height 22!,hidemode 3");
         }
 
         add(label(_GUI._.InfoPanel_InfoPanel_hidden_2()));
@@ -326,6 +332,11 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         customPanel = new CustomPanel(managerFrame);
         add(customPanel, "spanx,growx,pushx");
     }
+
+    private String resetIconKey;
+
+    private String resetName;
+    private String resetShortcut;
 
     private JLabel label(String infoPanel_InfoPanel_hideIfDisabled) {
         return new JLabel(infoPanel_InfoPanel_hideIfDisabled);
@@ -357,22 +368,45 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
             }
         } else {
             try {
+
                 if (value.getActionData() == null) return;
-                CustomizableAppAction action = value.createAction();
-                String defaultIconKey = action.getInitialValue("ICONKEY");
-                iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(defaultIconKey));
-                // iconKeyReset.setEnabled(value.getIconKey() != null && !StringUtils.equals(value.getIconKey(), defaultIconKey));
+                ActionData actionData = value.getActionData();
+
+                Class<?> clazz = actionData._getClazz();
+                Constructor<?> c = clazz.getConstructor(new Class[] {});
+                CustomizableAppAction ret = (CustomizableAppAction) c.newInstance(new Object[] {});
+                ret.setMenuItemData(value);
+                // do not apply to get the defaults
+                // ret.applyMenuItemData();
+                ret.initContextDefaults();
+                ret.loadContextSetups();
                 iconKeyReset.setEnabled(true);
-                String defaultName = action.getInitialValue(Action.NAME);
-                nameReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(defaultName));
-                // nameReset.setEnabled(value.getName() != null && !StringUtils.equals(value.getName(), defaultName));
                 nameReset.setEnabled(true);
-                if (shortCutReset != null) {
-                    String defaultShortCut = action.getInitialValue(Action.ACCELERATOR_KEY);
-                    shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(defaultShortCut));
-                    // shortCutReset.setEnabled(value.getShortcut() != null && !StringUtils.equals(value.getShortcut(), defaultShortCut));
-                    shortCutReset.setEnabled(true);
+                shortCutReset.setEnabled(true);
+
+                if (StringUtils.equals(name.getText(), ret.getName())) {
+                    resetName = MenuItemData.EMPTY;
+                } else {
+                    resetName = ret.getName();
                 }
+
+                if (StringUtils.equals(value.getShortcut(), ret.getValue(Action.ACCELERATOR_KEY) + "")) {
+                    resetShortcut = MenuItemData.EMPTY;
+                } else {
+                    resetShortcut = ret.getValue(Action.ACCELERATOR_KEY) + "";
+                }
+
+                if (StringUtils.equals(value.getIconKey(), ret.getIconKey())) {
+                    resetIconKey = MenuItemData.EMPTY;
+                } else {
+                    resetIconKey = ret.getIconKey();
+                }
+
+                iconKeyReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetIconKey));
+
+                nameReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetName));
+                shortCutReset.setToolTipText(_GUI._.ManagerFrame_layoutPanel_resettodefault_parametered(resetShortcut));
+
             } catch (Throwable e) {
                 LogController.CL().log(e);
             }
@@ -409,6 +443,9 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
         CustomizableAppAction action;
         try {
             if (mid.getActionData() != null) {
+                shortcutLabel.setVisible(!(mid instanceof MenuLink));
+                shortcut.setVisible(!(mid instanceof MenuLink));
+                shortCutReset.setVisible(!(mid instanceof MenuLink));
                 action = mid.createAction();
                 name.setText(action.getName());
                 if (StringUtils.isEmpty(action.getName())) {
@@ -419,14 +456,11 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                 }
                 KeyStroke ks = (KeyStroke) action.getValue(Action.ACCELERATOR_KEY);
                 if (ks != null) {
-                    currentShortcut = ks;
-                    if (currentShortcut != null) {
-                        shortcut.setText(KeyUtils.getShortcutString(currentShortcut, true));
-                    } else {
-                        shortcut.setText("");
-                    }
+
+                    shortcut.setText(KeyUtils.getShortcutString(ks, true));
+
                 } else {
-                    currentShortcut = null;
+
                     shortcut.setText("");
                 }
                 List<ActionContext> sos = action.getSetupObjects();
@@ -468,6 +502,12 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
                         customPanel.add(e.mid.getActionData(), action, e.so, e.gs);
                     }
                 }
+            } else {
+                shortcut.setText("");
+
+                shortcutLabel.setVisible(false);
+                shortcut.setVisible(false);
+                shortCutReset.setVisible(false);
             }
 
         } catch (Exception e) {
@@ -552,21 +592,10 @@ public class InfoPanel extends MigPanel implements ActionListener, Scrollable {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        save();
+        item.setVisible(visibleBox.isSelected());
+
+        managerFrame.repaint();
 
     }
 
-    private void save() {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-
-                item.setVisible(visibleBox.isSelected());
-                item.setShortcut(currentShortcut == null ? null : currentShortcut.toString());
-                managerFrame.repaint();
-            }
-        }.waitForEDT();
-
-    }
 }

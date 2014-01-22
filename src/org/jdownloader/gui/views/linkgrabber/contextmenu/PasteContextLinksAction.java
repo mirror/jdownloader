@@ -38,7 +38,7 @@ public class PasteContextLinksAction extends CustomizableTableContextAppAction {
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         super.initContextDefaults();
         // tableContext.setItemVisibleForEmptySelection(true);
         // tableContext.setItemVisibleForSelections(false);

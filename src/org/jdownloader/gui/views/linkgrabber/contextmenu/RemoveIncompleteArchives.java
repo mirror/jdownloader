@@ -57,7 +57,7 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         super.initContextDefaults();
     }
 

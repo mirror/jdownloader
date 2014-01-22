@@ -27,7 +27,7 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
 
         setHideIfDownloadsAreStopped(false);
     }

@@ -79,7 +79,7 @@ public class GenericDeleteFromDownloadlistContextAction extends GenericDeleteFro
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         includedSelection.setIncludeSelectedLinks(true);
         includedSelection.setIncludeUnselectedLinks(false);
     }

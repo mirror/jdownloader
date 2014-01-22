@@ -2,11 +2,9 @@ package org.jdownloader.controlling.contextmenu;
 
 import java.awt.AlphaComposite;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
@@ -24,9 +22,8 @@ import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.images.NewTheme;
 
 public abstract class CustomizableAppAction extends AppAction {
-    private MenuItemData            menuItemData;
-    private HashSet<ActionContext>  setupObjects;
-    private HashMap<String, String> initialValues = new HashMap<String, String>();
+    private MenuItemData           menuItemData;
+    private HashSet<ActionContext> setupObjects;
 
     public List<ActionContext> getSetupObjects() {
         if (setupObjects == null) return null;
@@ -114,19 +111,21 @@ public abstract class CustomizableAppAction extends AppAction {
                 setTooltipText(actualName);
             }
         }
-        if (!initialValues.containsKey(NAME)) initialValues.put(NAME, name);
+
         super.setName(name);
     }
 
     @Override
-    public BasicAction setAccelerator(final KeyStroke stroke) {
-        if (!initialValues.containsKey(AbstractAction.ACCELERATOR_KEY)) {
-            if (stroke != null) {
-                initialValues.put(AbstractAction.ACCELERATOR_KEY, stroke.toString());
-            } else {
-                initialValues.put(AbstractAction.ACCELERATOR_KEY, null);
+    public BasicAction setAccelerator(KeyStroke stroke) {
+
+        if (menuItemData != null) {
+
+            if (StringUtils.isNotEmpty(menuItemData.getShortcut())) {
+                stroke = KeyStroke.getKeyStroke(menuItemData.getShortcut());
+
             }
         }
+
         return super.setAccelerator(stroke);
     }
 
@@ -137,7 +136,7 @@ public abstract class CustomizableAppAction extends AppAction {
         }
     }
 
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
 
     }
 
@@ -165,12 +164,7 @@ public abstract class CustomizableAppAction extends AppAction {
     public void setMenuItemData(MenuItemData data) {
         this.menuItemData = data;
         fill(setupObjects);
-        applyMenuItemData();
 
-    }
-
-    public String getInitialValue(String key) {
-        return initialValues.get(key);
     }
 
     @Override
@@ -186,7 +180,7 @@ public abstract class CustomizableAppAction extends AppAction {
 
             }
         }
-        if (!initialValues.containsKey("ICONKEY")) initialValues.put("ICONKEY", iconKey);
+
         super.setIconKey(iconKey);
     }
 
@@ -199,8 +193,12 @@ public abstract class CustomizableAppAction extends AppAction {
 
             @Override
             protected void runInEDT() {
+                // the setters read property from the menuItem Data backend. this setName(getName()) makes sense and is NO bug!
+
                 setName(getName());
                 setIconKey(getIconKey());
+                setAccelerator(null);
+
             }
         }.getReturnValue();
 

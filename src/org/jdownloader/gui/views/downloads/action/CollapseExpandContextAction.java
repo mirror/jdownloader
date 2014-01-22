@@ -35,7 +35,7 @@ public class CollapseExpandContextAction extends CustomizableTableContextAppActi
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         super.initContextDefaults();
         setSelectionOnly(false);
     }

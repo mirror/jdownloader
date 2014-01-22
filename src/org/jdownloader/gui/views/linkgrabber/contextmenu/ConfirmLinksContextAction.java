@@ -262,7 +262,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Override
-    protected void initContextDefaults() {
+    public void initContextDefaults() {
         setAutoStart(AutoStartOptions.AUTO);
     }
 
