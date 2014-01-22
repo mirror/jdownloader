@@ -39,4 +39,6 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
     List<LinkVariantStorableV2> getVariants(long linkid) throws BadParameterException;
 
     void setVariant(long linkid, String variantID) throws BadParameterException;
+
+    void addVariantCopy(long linkid, long destinationAfterLinkID, long destinationPackageID, String variantID) throws BadParameterException;
 }

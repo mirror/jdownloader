@@ -5,10 +5,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledPackage;
@@ -19,6 +21,7 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -441,7 +444,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     public void moveLinks(long[] linkIds, long afterLinkID, long destPackageID) throws BadParameterException {
         LinkCollector dlc = LinkCollector.getInstance();
         List<CrawledLink> selectedLinks = getLinksById(linkIds);
-        CrawledLink afterLink = getLinkById(afterLinkID);
+        CrawledLink afterLink = afterLinkID <= 0 ? null : getLinkById(afterLinkID);
         CrawledPackage destpackage = getPackageByID(destPackageID);
         dlc.move(selectedLinks, destpackage, afterLink);
 
@@ -486,6 +489,69 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             }
         }
         throw new BadParameterException("Unknown variantID");
+
+    }
+
+    @Override
+    public void addVariantCopy(long linkid, final long destinationAfterLinkID, final long destinationPackageID, String variantID) throws BadParameterException {
+        // get link
+        final CrawledLink link = getLinkById(linkid);
+        // search variant by id
+        LinkVariant v = null;
+        for (LinkVariant lv : link.getDownloadLink().getDefaultPlugin().getVariantsByLink(link.getDownloadLink())) {
+            if (lv.getUniqueId().equals(variantID)) {
+                v = lv;
+                break;
+            }
+        }
+        if (v == null) { throw new BadParameterException("Unknown variantID"); }
+
+        // create new downloadlink
+        DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+        dllink.setProperties(link.getDownloadLink().getProperties());
+        link.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(dllink, v);
+
+        // check if package already contains this variant
+
+        boolean readL = link.getParentNode().getModifyLock().readLock();
+
+        try {
+
+            for (CrawledLink cl : link.getParentNode().getChildren()) {
+                if (dllink.getLinkID().equals(cl.getLinkID())) { throw new BadParameterException("Variant is already in this package"); }
+
+            }
+        } finally {
+            link.getParentNode().getModifyLock().readUnlock(readL);
+        }
+
+        // create crawledlink
+        final CrawledLink cl = new CrawledLink(dllink);
+
+        final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
+        list.add(cl);
+        // move and add
+        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, BadParameterException>() {
+
+            @Override
+            protected Void run() throws BadParameterException {
+                if (destinationPackageID < 0) {
+                    LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
+                } else {
+
+                    LinkCollector dlc = LinkCollector.getInstance();
+
+                    CrawledLink afterLink = destinationAfterLinkID <= 0 ? null : getLinkById(destinationAfterLinkID);
+                    CrawledPackage destpackage = getPackageByID(destinationPackageID);
+                    dlc.move(list, destpackage, afterLink);
+                }
+                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                checkableLinks.add(cl);
+                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                linkChecker.check(checkableLinks);
+                return null;
+            }
+        });
 
     }
 }

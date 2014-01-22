@@ -28,7 +28,9 @@ public class LinkgrabberTest extends Test {
         // link.queryPackages(pq);
         CrawledLinkStorable cl = smallList[0];
         LinkVariantStorable[] variants = link.getVariants(cl.getUuid());
-        link.setVariant(cl.getUuid(), variants[0].getId());
+        // link.setVariant(cl.getUuid(), variants[0].getId());
+
+        link.addVariantCopy(cl.getUuid(), 0, smallList[1].getPackageUUID(), variants[0].getId());
         System.out.println(1);
     }
 }
