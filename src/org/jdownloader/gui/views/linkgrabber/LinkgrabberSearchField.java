@@ -52,8 +52,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
             public void keyPressed(KeyEvent e) {
             }
         });
-        setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedLinkgrabberSearchCategory());
         setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT });
+        setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedLinkgrabberSearchCategory());
+
     }
 
     @Override

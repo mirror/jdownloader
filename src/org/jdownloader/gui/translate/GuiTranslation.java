@@ -1133,8 +1133,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable/Disable this option" })
     String AbstractConfigPanel_addPair_enabled();
 
-    @Default(lngs = { "en" }, values = { "Enter Filename Filter Expression..." })
-    String SearchField_SearchField_helptext();
+    // @Default(lngs = { "en" }, values = { "Enter Filename Filter Expression..." })
+    // String SearchField_SearchField_helptext();
 
     @Default(lngs = { "en" }, values = { "Start Downloads" })
     String ConfirmAction_ConfirmAction_context_add_and_start();

@@ -35,7 +35,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
@@ -77,7 +76,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
         LAFOptions lafo = LAFOptions.getInstance();
         bgColor = (lafo.getColorForPanelHeaderBackground());
-        setHelpText(_GUI._.SearchField_SearchField_helptext());
+
         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         popIcon = NewTheme.I().getImage("popUpSmall", -1);
         delayedFilter = new DelayedRunnable(150l, 2000l) {
@@ -97,6 +96,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, 28, 0, 18)));
         addMouseMotionListener(this);
         addMouseListener(this);
+        // setSelectedCategory(defCategory);
     }
 
     public Image getPopIcon() {
@@ -284,8 +284,9 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         if (selectedCategory == null) {
             Log.exception(Level.WARNING, new NullPointerException("selectedCategory null"));
         }
-        if (this.selectedCategory != selectedCategory) onChanged();
+
         this.selectedCategory = selectedCategory;
+        if (this.selectedCategory != selectedCategory) onChanged();
         if (label != null) {
             label.setText(selectedCategory.getLabel());
             setHelpText(selectedCategory.getHelpText());
@@ -305,17 +306,24 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
             }
         };
 
+        SearchCat preSel = selectedCategory;
+        boolean found = false;
         for (SearchCat sc : searchCategories) {
+            if (sc == preSel) {
+                found = true;
+            }
             label.setText(sc.getLabel());
             labelWidth = Math.max(label.getPreferredSize().width, labelWidth);
         }
-
-        label.setText(selectedCategory.getLabel());
-
+        if (!found) {
+            this.selectedCategory = searchCategories[0];
+            if (this.selectedCategory != searchCategories[0]) onChanged();
+        }
         label.setSize(labelWidth, 24);
         // label.setEnabled(false);
         setBorder(BorderFactory.createCompoundBorder(orgBorder, BorderFactory.createEmptyBorder(0, labelWidth + 14 + iconGap, 0, 18)));
-
+        label.setText(selectedCategory.getLabel());
+        setHelpText(selectedCategory.getHelpText());
     }
 
 }

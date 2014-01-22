@@ -23,8 +23,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
     public DownloadsTableSearchField(PackageControllerTable<FilePackage, DownloadLink> table2Filter, LinktablesSearchCategory defCategory) {
         super(table2Filter, defCategory);
-        setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
         setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT });
+        setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
+
         addKeyListener(new KeyListener() {
 
             public void keyTyped(KeyEvent e) {
