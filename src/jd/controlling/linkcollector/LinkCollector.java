@@ -15,7 +15,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.zip.ZipEntry;
@@ -1231,6 +1230,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     break;
                                 }
                             }
+                            updateUniqueAlltimeIDMaps(lpackages);
                             packages.addAll(0, lpackages);
                         } finally {
                             writeUnlock();
@@ -1799,7 +1799,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     return null;
                 }
                 crawledLink.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(crawledLink.getDownloadLink(), linkVariant);
-
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
                 checkableLinks.add(crawledLink);
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
@@ -1808,105 +1807,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         });
-    }
-
-    private WeakHashMap<UniqueAlltimeID, CrawledLink>    linkMap     = new WeakHashMap<UniqueAlltimeID, CrawledLink>();
-    private WeakHashMap<UniqueAlltimeID, CrawledPackage> packageMap2 = new WeakHashMap<UniqueAlltimeID, CrawledPackage>();
-
-    public CrawledLink getLinkByID(long longID) {
-        UniqueAlltimeID linkId = new UniqueAlltimeID(longID);
-        synchronized (linkMap) {
-
-            CrawledLink ret = linkMap.get(linkId);
-            if (ret != null) return ret;
-            updateIdMaps();
-            return linkMap.get(linkId);
-        }
-
-    }
-
-    protected void updateIdMaps() {
-        LinkCollector dlc = LinkCollector.getInstance();
-
-        boolean readL = dlc.readLock();
-        try {
-            for (CrawledPackage pkg : dlc.getPackages()) {
-                packageMap2.put(pkg.getUniqueID(), pkg);
-                boolean readL2 = pkg.getModifyLock().readLock();
-                try {
-                    for (CrawledLink child : pkg.getChildren()) {
-                        linkMap.put(child.getUniqueID(), child);
-
-                    }
-                } finally {
-                    pkg.getModifyLock().readUnlock(readL2);
-                }
-
-            }
-        } finally {
-            dlc.readUnlock(readL);
-        }
-    }
-
-    public CrawledPackage getPackageByID(long longID) {
-        UniqueAlltimeID packageId = new UniqueAlltimeID(longID);
-        synchronized (linkMap) {
-            CrawledPackage ret = packageMap2.get(packageId);
-            if (ret != null) return ret;
-            updateIdMaps();
-            return packageMap2.get(packageId);
-        }
-    }
-
-    public List<CrawledLink> getLinksByID(long[] packageUUIDs) {
-        boolean updated = false;
-        synchronized (linkMap) {
-            ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
-            for (long longID : packageUUIDs) {
-
-                UniqueAlltimeID l = new UniqueAlltimeID(longID);
-                CrawledLink p = linkMap.get(l);
-                if (p != null) {
-                    ret.add(p);
-                } else {
-                    // only update once
-                    if (updated) continue;
-                    updateIdMaps();
-                    updated = true;
-                    p = linkMap.get(l);
-                    if (p != null) {
-                        ret.add(p);
-                    }
-                }
-
-            }
-            return ret;
-        }
-    }
-
-    public List<CrawledPackage> getPackagesByID(long[] packageUUIDs) {
-        boolean updated = false;
-        synchronized (linkMap) {
-            ArrayList<CrawledPackage> ret = new ArrayList<CrawledPackage>();
-            for (long longID : packageUUIDs) {
-                UniqueAlltimeID l = new UniqueAlltimeID(longID);
-                CrawledPackage p = packageMap2.get(l);
-                if (p != null) {
-                    ret.add(p);
-                } else {
-                    // only update once
-                    if (updated) continue;
-                    updateIdMaps();
-                    updated = true;
-                    p = packageMap2.get(l);
-                    if (p != null) {
-                        ret.add(p);
-                    }
-                }
-
-            }
-            return ret;
-        }
     }
 
 }

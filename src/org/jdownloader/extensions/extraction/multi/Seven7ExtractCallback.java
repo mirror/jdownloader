@@ -38,7 +38,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
     protected final AtomicBoolean            error                     = new AtomicBoolean(false);
     protected final LogSource                logger;
     protected final boolean                  slowDownWorkaroundNeeded;
-    protected final static long              SLOWDOWNWORKAROUNDTIMEOUT = 100;
+    protected final static long              SLOWDOWNWORKAROUNDTIMEOUT = 150;
 
     public ExtractOperationResult getResult(int index) {
         return results[index];

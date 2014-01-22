@@ -303,9 +303,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                             return null;
                         }
                     }
-                    logger.info("Execute unpacking of " + archive);
+                    logger.info("Execute unpacking of:" + archive);
                     logger.info("Extract to " + getExtractToFolder());
-                    crashLog.write("Use Password: " + archive.getFinalPassword());
+                    crashLog.write("Use Password: " + archive.getFinalPassword() + "|PW Protected:" + archive.isProtected() + ":" + archive.isPasswordRequiredToOpen());
                     ScheduledExecutorService scheduler = null;
                     try {
                         crashLog.write("Start Extracting " + extractor);

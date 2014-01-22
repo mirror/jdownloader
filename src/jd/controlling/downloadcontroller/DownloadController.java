@@ -442,6 +442,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                     try {
                         writeLock();
+                        updateUniqueAlltimeIDMaps(lpackages);
                         packages.addAll(0, lpackages);
                     } finally {
                         writeUnlock();

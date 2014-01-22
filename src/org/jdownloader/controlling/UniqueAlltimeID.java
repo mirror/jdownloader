@@ -21,6 +21,7 @@ public class UniqueAlltimeID {
 
     @Override
     public boolean equals(Object o) {
+        if (o == null) return false;
         if (this == o) return true;
         if (o instanceof UniqueAlltimeID) {
             if (((UniqueAlltimeID) o).id == id) return true;

@@ -23,7 +23,7 @@ public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetText
     private final String                     password;
     private final SignatureCheckingOutStream signatureOutStream;
     private boolean                          optimized;
-    protected final static long              SLOWDOWNWORKAROUNDTIMEOUT = 100;
+    protected final static long              SLOWDOWNWORKAROUNDTIMEOUT = 150;
 
     public Seven7PWCallback(ISevenZipInArchive inArchive, AtomicBoolean passwordfound, String password, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, FileSignatures filesignatures, boolean optimized) {
         this.passwordfound = passwordfound;

@@ -1387,129 +1387,125 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public <T extends DownloadLinkDatabindingInterface> T bindData(Class<T> clazz) {
-        synchronized (this) {
 
-            @SuppressWarnings("unchecked")
-            final T ret = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, new InvocationHandler() {
+        @SuppressWarnings("unchecked")
+        final T ret = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, new InvocationHandler() {
 
-                @Override
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    String key;
-                    boolean setter = false;
-                    if (method.getName().startsWith("set")) {
-                        setter = true;
-                        key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
-                    } else if (method.getName().startsWith("is")) {
-                        key = method.getName().substring(2).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
-                    } else if (method.getName().startsWith("get")) {
-                        key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
-                    } else {
-                        throw new WTFException("Only Setter and getter are allowed");
-                    }
-                    Key keyAnnotation = method.getAnnotation(Key.class);
-                    if (keyAnnotation != null) key = keyAnnotation.value();
-
-                    if (setter) {
-                        if (method.getParameterTypes().length != 1) { throw new WTFException("Setter " + method + " should have 1 parameter. instead: " + Arrays.toString(method.getParameterTypes())); }
-                        if (!Clazz.isVoid(method.getReturnType())) { throw new WTFException("Setter " + method + " must not have any return type. Has: " + method.getReturnType()); }
-
-                        if (Clazz.isBoolean(method.getParameterTypes()[0])) {
-                            if (args[0].equals(Boolean.FALSE)) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        } else if (Clazz.isByte(method.getParameterTypes()[0])) {
-                            if (args[0].equals(0)) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        } else if (Clazz.isDouble(method.getParameterTypes()[0])) {
-                            if (args[0].equals(0d)) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        } else if (Clazz.isEnum(method.getParameterTypes()[0])) {
-                            if (args[0] == null) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        } else if (Clazz.isFloat(method.getParameterTypes()[0])) {
-                            if (args[0].equals(0f)) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        } else if (Clazz.isInteger(method.getParameterTypes()[0])) {
-                            if (args[0].equals(0)) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        } else if (Clazz.isLong(method.getParameterTypes()[0])) {
-                            if (args[0].equals(0l)) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        } else if (Clazz.isShort(method.getParameterTypes()[0])) {
-                            if (args[0].equals(0)) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        } else if (Clazz.isString(method.getParameterTypes()[0])) {
-
-                            if (args[0] == null) {
-                                setProperty(key, Property.NULL);
-                                return null;
-                            }
-                        }
-                        setProperty(key, args[0]);
-                    } else {
-                        Type returnType = method.getGenericReturnType();
-                        if (method.getParameterTypes().length != 0) { throw new WTFException("Getter " + method + " must not have any parameter. instead: " + Arrays.toString(method.getParameterTypes())); }
-                        if (Clazz.isVoid(method.getReturnType())) { throw new WTFException("Getter " + method + " must have a return type. is Void."); }
-
-                        boolean contains = hasProperty(key);
-                        if (!contains) {
-                            if (Clazz.isBoolean(returnType)) {
-                                return false;
-                            } else if (Clazz.isByte(returnType)) {
-                                return 0;
-                            } else if (Clazz.isDouble(returnType)) {
-                                return 0d;
-                            } else if (Clazz.isEnum(returnType)) {
-                                return null;
-                            } else if (Clazz.isFloat(returnType)) {
-                                return 0f;
-                            } else if (Clazz.isInteger(returnType)) {
-                                return 0;
-                            } else if (Clazz.isLong(returnType)) {
-                                return 0l;
-                            } else if (Clazz.isShort(returnType)) {
-                                return 0;
-                            } else if (Clazz.isString(returnType)) { return null; }
-
-                        }
-                        Object value = getProperty(key);
-
-                        // if (returnType instanceof Enum<?> && value instanceof String) {
-                        // try {
-                        // value = Enum.valueOf((Class<T>) returnType, (String) value);
-                        //
-                        // } catch (final Throwable e) {
-                        // Log.exception(e);
-                        // if (this.autoPutValues) {
-                        // this.put(key, (Enum<?>) def);
-                        // }
-                        // ret = def;
-                        // }
-                        // }
-                        return value;
-
-                    }
-                    return null;
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                String key;
+                boolean setter = false;
+                if (method.getName().startsWith("set")) {
+                    setter = true;
+                    key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                } else if (method.getName().startsWith("is")) {
+                    key = method.getName().substring(2).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                } else if (method.getName().startsWith("get")) {
+                    key = method.getName().substring(3).replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ENGLISH);
+                } else {
+                    throw new WTFException("Only Setter and getter are allowed");
                 }
-            });
+                Key keyAnnotation = method.getAnnotation(Key.class);
+                if (keyAnnotation != null) key = keyAnnotation.value();
 
-            return ret;
-        }
+                if (setter) {
+                    if (method.getParameterTypes().length != 1) { throw new WTFException("Setter " + method + " should have 1 parameter. instead: " + Arrays.toString(method.getParameterTypes())); }
+                    if (!Clazz.isVoid(method.getReturnType())) { throw new WTFException("Setter " + method + " must not have any return type. Has: " + method.getReturnType()); }
+
+                    if (Clazz.isBoolean(method.getParameterTypes()[0])) {
+                        if (args[0].equals(Boolean.FALSE)) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    } else if (Clazz.isByte(method.getParameterTypes()[0])) {
+                        if (args[0].equals(0)) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    } else if (Clazz.isDouble(method.getParameterTypes()[0])) {
+                        if (args[0].equals(0d)) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    } else if (Clazz.isEnum(method.getParameterTypes()[0])) {
+                        if (args[0] == null) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    } else if (Clazz.isFloat(method.getParameterTypes()[0])) {
+                        if (args[0].equals(0f)) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    } else if (Clazz.isInteger(method.getParameterTypes()[0])) {
+                        if (args[0].equals(0)) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    } else if (Clazz.isLong(method.getParameterTypes()[0])) {
+                        if (args[0].equals(0l)) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    } else if (Clazz.isShort(method.getParameterTypes()[0])) {
+                        if (args[0].equals(0)) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    } else if (Clazz.isString(method.getParameterTypes()[0])) {
+                        if (args[0] == null) {
+                            setProperty(key, Property.NULL);
+                            return null;
+                        }
+                    }
+                    setProperty(key, args[0]);
+                } else {
+                    Type returnType = method.getGenericReturnType();
+                    if (method.getParameterTypes().length != 0) { throw new WTFException("Getter " + method + " must not have any parameter. instead: " + Arrays.toString(method.getParameterTypes())); }
+                    if (Clazz.isVoid(method.getReturnType())) { throw new WTFException("Getter " + method + " must have a return type. is Void."); }
+
+                    boolean contains = hasProperty(key);
+                    if (!contains) {
+                        if (Clazz.isBoolean(returnType)) {
+                            return false;
+                        } else if (Clazz.isByte(returnType)) {
+                            return 0;
+                        } else if (Clazz.isDouble(returnType)) {
+                            return 0d;
+                        } else if (Clazz.isEnum(returnType)) {
+                            return null;
+                        } else if (Clazz.isFloat(returnType)) {
+                            return 0f;
+                        } else if (Clazz.isInteger(returnType)) {
+                            return 0;
+                        } else if (Clazz.isLong(returnType)) {
+                            return 0l;
+                        } else if (Clazz.isShort(returnType)) {
+                            return 0;
+                        } else if (Clazz.isString(returnType)) { return null; }
+
+                    }
+                    Object value = getProperty(key);
+
+                    // if (returnType instanceof Enum<?> && value instanceof String) {
+                    // try {
+                    // value = Enum.valueOf((Class<T>) returnType, (String) value);
+                    //
+                    // } catch (final Throwable e) {
+                    // Log.exception(e);
+                    // if (this.autoPutValues) {
+                    // this.put(key, (Enum<?>) def);
+                    // }
+                    // ret = def;
+                    // }
+                    // }
+                    return value;
+
+                }
+                return null;
+            }
+        });
+        return ret;
 
     }
 }

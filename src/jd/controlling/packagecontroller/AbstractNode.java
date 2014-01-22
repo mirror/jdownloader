@@ -1,5 +1,7 @@
 package jd.controlling.packagecontroller;
 
+import org.jdownloader.controlling.UniqueAlltimeID;
+
 public interface AbstractNode {
 
     String getName();
@@ -11,5 +13,7 @@ public interface AbstractNode {
     long getCreated();
 
     long getFinishedDate();
+
+    UniqueAlltimeID getUniqueID();
 
 }

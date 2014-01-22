@@ -62,7 +62,6 @@ public class CrawledLinkStorable implements Storable {
 
     public static class LinkOriginStorable implements Storable {
         public LinkOriginStorable(/* Storable */) {
-
         }
 
         public LinkOriginStorable(LinkOriginDetails origin) {
@@ -114,7 +113,7 @@ public class CrawledLinkStorable implements Storable {
             try {
                 LinkOrigin enu = LinkOrigin.valueOf(origin.id);
                 link.setOrigin(new LinkOriginDetails(enu, origin.details));
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }

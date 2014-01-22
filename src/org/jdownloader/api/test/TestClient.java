@@ -28,6 +28,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.utils.IO;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
@@ -195,6 +196,7 @@ public class TestClient {
         register(new RegisterTest());
 
         register(new RestoreSessionTest());
+        register(new TerminateAccountTest());
 
         register(new CancelRegistrationTest());
         JacksonMapper jm;
@@ -253,7 +255,23 @@ public class TestClient {
                 HTTPConnection con = null;
                 byte[] ret = null;
                 final BasicHTTP br = new BasicHTTP();
+                br.setLogger(new LogInterface() {
 
+                    @Override
+                    public void log(Throwable e) {
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void info(String msg) {
+                        System.out.println(msg);
+                    }
+
+                    @Override
+                    public void fine(String string) {
+                        System.out.println(string);
+                    }
+                });
                 br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
                 final int[] codes = new int[999];
                 for (int i = 0; i < codes.length; i++) {
@@ -315,7 +333,7 @@ public class TestClient {
 
         api.setServerRoot("http://api.jdownloader.org");
 
-        // api.setServerRoot("http://localhost:10101");
+        api.setServerRoot("http://192.168.2.110:10101");
 
         if (false) {
             api.connect(config.get("email", ""), config.get("password", ""));
