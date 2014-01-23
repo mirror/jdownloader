@@ -540,6 +540,7 @@ public class VodLockerCom extends PluginForHost {
                 String b = cbr.getRegex("(vod|\\.mp4)\\?h=([a-z0-9]{58})\"").getMatch(1);
                 if (!inValidate(a) && !inValidate(b)) dllink = a + b + "/video.mp4";
             }
+            if (inValidate(dllink)) dllink = cbr.getRegex("file: \"(https?://[^<>\"]*?)\"").getMatch(0);
             if (inValidate(dllink)) {
                 final String cryptedScripts[] = cbr.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -1465,7 +1466,7 @@ public class VodLockerCom extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * */
-   private void controlSlot(final int num, final Account account) {
+    private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
                 int was = maxFree.get();

@@ -350,8 +350,8 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-
-        if (usePremiumAPI.get()) {
+        usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
+        if (usePremiumAPI.get() && usePremiumDownloadAPI) {
             // This password won't work: FLR&Y$9i,?+yk=Kx08}:PhkmÖ]nmYAr#n6O=xHiZzm,NI&k)Qü
             return fetchAccountInfo_API(account);
         } else {

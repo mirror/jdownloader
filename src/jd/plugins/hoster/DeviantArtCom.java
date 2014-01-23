@@ -107,6 +107,7 @@ public class DeviantArtCom extends PluginForHost {
         String filesize = null;
         if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false)) {
             HTMLALLOWED = true;
+            DLLINK = br.getURL();
             filename = findServerFilename(filename);
             ext = "html";
         } else if (br.containsHTML(">ZIP download<")) {

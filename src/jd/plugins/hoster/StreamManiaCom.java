@@ -42,6 +42,7 @@ public class StreamManiaCom extends PluginForHost {
      * 3 Hoster use streammania domain as private api, but there are different public domains
      */
     private String                                         hostPublicDomain   = "streammania.com";
+    private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     public StreamManiaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -149,8 +150,11 @@ public class StreamManiaCom extends PluginForHost {
         showMessage(link, "Phase 1/2: Get download link");
         String genlink = br.getPage("http://www." + hostPublicDomain + "/api/get_ddl.php?login=" + user + "&password=" + pw + "&url=" + url);
         String maxChunksString = br.getRequest().getResponseHeader("X-MaxChunks");
+        // Tested with share-online.biz: max 4 chunks possible
         int maxChunks = 1;
-        if (maxChunksString != null) {
+        if (link.getBooleanProperty(NOCHUNKS, false) && !true) {
+            maxChunks = 1;
+        } else if (maxChunksString != null) {
             try {
                 maxChunks = -(Integer.parseInt(maxChunksString));
             } catch (final Throwable e) {
@@ -171,13 +175,23 @@ public class StreamManiaCom extends PluginForHost {
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
         }
-        /* TODO: add support for chunks */
         showMessage(link, "Phase 2/2: Start download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, maxChunks);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String serverfilename = getFileNameFromHeader(dl.getConnection());
+        if ("Too_many_open_connections.txt".equals(serverfilename)) {
+            logger.info("received 'Too_many_open_connections.txt' as server filename...");
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(StreamManiaCom.NOCHUNKS, false) == false) {
+                link.setProperty(StreamManiaCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+            }
         }
         if (!dl.getConnection().isContentDisposition()) {
             /* unknown error */
@@ -186,7 +200,31 @@ public class StreamManiaCom extends PluginForHost {
             /* disable for 20 min */
             tempUnavailableHoster(acc, link, 20 * 60 * 1000);
         }
-        dl.startDownload();
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("final downloadlink leads to html code...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(StreamManiaCom.NOCHUNKS, false) == false) {
+                    link.setProperty(StreamManiaCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(StreamManiaCom.NOCHUNKS, false) == false) {
+                link.setProperty(StreamManiaCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override

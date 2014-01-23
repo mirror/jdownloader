@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -29,7 +30,11 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultddl.ws" }, urls = { "http://(www\\.)?adultddl\\.(com|ws)/\\d{4}/\\d{2}/\\d{2}/[^<>\"\\'/]+" }, flags = { 0 })
 public class AdltDlCom extends PluginForDecrypt {
@@ -145,15 +150,29 @@ public class AdltDlCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean handleCaptcha(final CryptedLink param, final String id) throws IOException, DecrypterException {
+    private boolean handleCaptcha(final CryptedLink param, final String id) throws IOException, DecrypterException, PluginException {
         boolean done = false;
         for (int i = 1; i <= 3; i++) {
             br.postPage("http://secure.adultddl.ws/captcha.php", "submit=Click+Here&decrypt=" + id);
-            final String cLnk = br.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);
-            if (cLnk == null) { return false; }
-            final String c = getCaptchaCode("http://secure.adultddl.ws" + cLnk, param);
-            br.postPage("http://secure.adultddl.ws/verify.php", "submit=Submit&captcha_code=" + Encoding.urlEncode(c) + "&decrypt=" + id);
-            if (br.containsHTML("The CAPTCHA entered was incorrect")) {
+            String c = null;
+            String postData = null;
+            if (br.containsHTML("google\\.com/recaptcha")) {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.findID();
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                c = getCaptchaCode(cf, param);
+                postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+            } else {
+                final String cLnk = br.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);
+                if (cLnk == null) { return false; }
+                c = getCaptchaCode("http://secure.adultddl.ws" + cLnk, param);
+                postData = "captcha_code=" + c;
+            }
+            postData += "&submit=Submit&decrypt=" + id;
+            br.postPage("http://secure.adultddl.ws/verify.php", postData);
+            if (br.containsHTML("The CAPTCHA entered was incorrect|Please go back and try again")) {
                 continue;
             }
             done = true;

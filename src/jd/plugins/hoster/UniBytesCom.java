@@ -194,24 +194,23 @@ public class UniBytesCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) {
-            AccountInfo ai = new AccountInfo();
-            String expireDate = br.getRegex("(Ваш VIP-аккаунт действителен до|Your VIP account valid till) ([0-9\\.]+)\\.<").getMatch(1);
-            if (expireDate != null) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
-            } else {
-                ai.setExpired(true);
-            }
-            account.setAccountInfo(ai);
-            if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        String dllink = br.getRegex("style=\"text-align:center; padding:50px 0;\"><a href=\"(http.*?)\"").getMatch(0);
-        dllink = null;
+        String dllink = br.getRegex("style=\"text\\-align:center; clear: both; padding\\-top: 3em;\"><a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/download/file.*?\\?referer=.*?)\"").getMatch(0);
         if (dllink == null) {
+            final Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa != null) {
+                AccountInfo ai = new AccountInfo();
+                String expireDate = br.getRegex("(Ваш VIP-аккаунт действителен до|Your VIP account valid till) ([0-9\\.]+)\\.<").getMatch(1);
+                if (expireDate != null) {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
+                } else {
+                    ai.setExpired(true);
+                }
+                account.setAccountInfo(ai);
+                if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
