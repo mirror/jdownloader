@@ -293,7 +293,7 @@ public class PseudoMultiCombo<Type> extends ExtButton {
         setToolTipText(getToolTip(list));
     }
 
-    private String getToolTip(List<Type> list) {
+    protected String getToolTip(List<Type> list) {
         if (list.size() == 0) { return _GUI._.PseudoMultiCombo_nothing(); }
         StringBuilder sb = new StringBuilder();
         for (Type t : list) {

@@ -9,7 +9,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
-import javax.swing.JTextArea;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
@@ -43,19 +42,20 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         setOpaque(false);
     }
 
-    public JTextArea addDescription(String description) {
-        JTextArea txt = addDescriptionPlain(description);
+    public JLabel addDescription(String description) {
+        JLabel txt = addDescriptionPlain(description);
         add(new JSeparator(), "gapleft " + getLeftGap() + ",spanx,growx,pushx,gapbottom 5");
         return txt;
     }
 
-    public JTextArea addDescriptionPlain(String description) {
-        JTextArea txt = new JTextArea();
+    public JLabel addDescriptionPlain(String description) {
+
+        if (!description.toLowerCase().startsWith("<html>")) {
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
+        }
+        JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
-        txt.setEditable(false);
-        txt.setLineWrap(true);
-        txt.setWrapStyleWord(true);
-        txt.setFocusable(false);
+        txt.setEnabled(false);
         // txt.setEnabled(false);
         txt.setText(description);
         add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");

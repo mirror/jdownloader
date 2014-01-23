@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.streaming;
 
-import javax.swing.JTextArea;
+import javax.swing.JLabel;
 
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
@@ -23,7 +23,7 @@ public class StreamingConfigPanel extends ExtensionConfigPanel<StreamingExtensio
     private TextInput             vlcPath;
     private TextInput             brokerTopic;
 
-    private JTextArea             revision         = null;
+    private JLabel                revision         = null;
     private String                vlcRevision      = null;
 
     private void initComponents() {

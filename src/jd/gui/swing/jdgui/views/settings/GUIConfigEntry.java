@@ -346,6 +346,16 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
         configEntry.valueChanged(getText());
     }
 
+    public void reload() {
+        load();
+        if (input != null) {
+
+            boolean state = configEntry.isConditionalEnabled(null, null);
+            enableComponent(input, configEntry.isEnabled() && state);
+            enableComponent(decoration, configEntry.isEnabled() && state);
+        }
+    }
+
     /**
      * updates config --> gui
      */

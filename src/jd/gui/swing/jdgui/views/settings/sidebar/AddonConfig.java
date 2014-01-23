@@ -82,9 +82,4 @@ public class AddonConfig extends ConfigPanel {
         return p;
     }
 
-    public synchronized static void resetInstance(ConfigContainer container, String ext, boolean showGroups) {
-        if (MAP == null) MAP = new HashMap<String, AddonConfig>();
-        MAP.remove(container + "_" + ext);
-    }
-
 }

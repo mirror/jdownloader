@@ -17,7 +17,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.Scrollable;
+import javax.swing.SwingUtilities;
 
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
@@ -134,8 +136,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
                             } else {
                                 proto.getPluginConfig().reset();
-
-                                AddonConfig.resetInstance(proto.getConfig(), "", false);
+                                AddonConfig.getInstance(proto.getConfig(), "", false).reload();
 
                             }
                             // avoid that the panel saves it's data on hide;
@@ -307,6 +308,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
             @Override
             protected void runInEDT() {
+                final long start = System.currentTimeMillis();
                 card.removeAll();
                 if (configPanel != null) {
                     configPanel.setHidden();
@@ -315,6 +317,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
                 PluginConfigPanelNG newCP;
                 try {
+                    JDGui.getInstance().setWaiting(true);
                     newCP = selectedItem.getPrototype(null).createConfigPanel();
 
                     if (newCP != null) {
@@ -342,8 +345,18 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                     }
                 } catch (UpdateRequiredClassNotFoundException e) {
                     logger.log(e);
+                } finally {
+                    JDGui.getInstance().setWaiting(false);
                 }
                 revalidate();
+                System.out.println("Finished 1: " + (System.currentTimeMillis() - start));
+                SwingUtilities.invokeLater(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        System.out.println("Finished 2: " + (System.currentTimeMillis() - start));
+                    }
+                });
             }
         };
     }
@@ -396,7 +409,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         sp.getViewport().setOpaque(false);
         sp.setViewportBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
 
-        return ret;
+        return createConfigPanel;
     }
 
     public void setHidden() {

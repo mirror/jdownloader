@@ -175,6 +175,13 @@ public abstract class ConfigPanel extends SwitchPanel {
         this.loadSpecial();
     }
 
+    public void reload() {
+        for (GUIConfigEntry akt : entries) {
+            akt.reload();
+        }
+        this.loadSpecial();
+    }
+
     private final void loadConfigEntries() {
         for (GUIConfigEntry akt : entries) {
             akt.load();

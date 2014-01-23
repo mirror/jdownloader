@@ -78,6 +78,11 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         }
 
         @Override
+        protected String getLabel(YoutubeVariant sc) {
+            return sc.getName();
+        }
+
+        @Override
         protected String getLabel(List<YoutubeVariant> list) {
             if (list.size() == 0) return super.getLabel(list);
             StringBuilder sb = new StringBuilder();
@@ -124,7 +129,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, box);
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_https(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("PreferHttpsEnabled", BooleanKeyHandler.class), null));
-        addHtmlDescription(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc(), false);
+        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc());
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
 
         HashSet<String> dupe = new HashSet<String>();
@@ -194,7 +199,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         subtitles = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_subtitles(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("SubtitlesEnabled", BooleanKeyHandler.class), null));
 
         addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
-        addHtmlDescription(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_desc(), false);
+        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_desc());
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("FilenamePattern", StringKeyHandler.class)));
 
         addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_proxy_header(), NewTheme.I().getIcon(IconKey.ICON_PROXY, 18));
@@ -210,7 +215,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         best3D = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_3d(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBest3DVariantLinkEnabled", BooleanKeyHandler.class), null));
         bestSubtitle = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_best_subtitle(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("CreateBestSubtitleVariantLinkEnabled", BooleanKeyHandler.class), null));
 
-        addHtmlDescription(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc(), false);
+        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_extra_desc());
         extraVideoMp4 = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBox(this, videoMP4));
         extraVideoWebm = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_webm(), null, null, new MultiVariantBox(this, videoWEBM));
         extraVideoFlv = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_flv(), null, null, new MultiVariantBox(this, videoFLV));

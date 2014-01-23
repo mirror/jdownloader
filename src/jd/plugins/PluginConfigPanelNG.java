@@ -3,7 +3,6 @@ package jd.plugins;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
-import javax.swing.JTextArea;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -30,48 +29,48 @@ public abstract class PluginConfigPanelNG extends AbstractConfigPanel {
 
     }
 
-    public void addHtmlDescription(String description, boolean underlined) {
-        if (description.toLowerCase().startsWith("<html>")) {
-            JLabel txt = new JLabel();
-            SwingUtils.setOpaque(txt, false);
-            txt.setEnabled(false);
-            // txt.setEnabled(false);
-            txt.setText(description);
-            add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
+    public JLabel addStartDescription(String description) {
 
-            if (underlined) add(new JSeparator(), "gapleft " + getLeftGap() + ",spanx,growx,pushx,gapbottom 5");
-
-        } else {
-            addDescription(description);
+        if (!description.toLowerCase().startsWith("<html>")) {
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
         }
-    }
-
-    public JTextArea addStartDescription(String description) {
-        JTextArea txt = new JTextArea();
+        JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
-        txt.setEditable(false);
-        txt.setLineWrap(true);
-        txt.setWrapStyleWord(true);
-        txt.setFocusable(false);
+
         // txt.setEnabled(false);
         txt.setText(description);
         add(txt, "gaptop 0,spanx,growx,pushx,gapleft 0,gapbottom 5,wmin 10");
 
         add(new JSeparator(), "gapleft 0,spanx,growx,pushx,gapbottom 5");
+
         return txt;
     }
 
-    public JTextArea addDescriptionPlain(String description) {
-        JTextArea txt = new JTextArea();
+    @Override
+    public JLabel addDescription(String description) {
+        if (!description.toLowerCase().startsWith("<html>")) {
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
+        }
+        JLabel txt = new JLabel();
         SwingUtils.setOpaque(txt, false);
-        txt.setEditable(false);
-        txt.setLineWrap(true);
-        txt.setWrapStyleWord(true);
-        txt.setFocusable(false);
         txt.setEnabled(false);
+        // txt.setEnabled(false);
         txt.setText(description);
         add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
+        add(new JSeparator(), "gapleft " + getLeftGap() + ",spanx,growx,pushx,gapbottom 5");
+        return txt;
+    }
 
+    public JLabel addDescriptionPlain(String description) {
+        if (!description.toLowerCase().startsWith("<html>")) {
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
+        }
+        JLabel txt = new JLabel();
+        SwingUtils.setOpaque(txt, false);
+        txt.setEnabled(false);
+        // txt.setEnabled(false);
+        txt.setText(description);
+        add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
         return txt;
     }
 
