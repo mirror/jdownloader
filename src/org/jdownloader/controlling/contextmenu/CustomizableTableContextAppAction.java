@@ -35,7 +35,6 @@ public abstract class CustomizableTableContextAppAction<PackageType extends Abst
     protected void requestTableContextUpdate() {
         boolean has = !isEmptyContext();
         if (tableContext != null) {
-
             if (has) {
                 if (tableContext.isItemVisibleForSelections()) {
                     setVisible(true);
@@ -43,7 +42,6 @@ public abstract class CustomizableTableContextAppAction<PackageType extends Abst
                     setVisible(false);
                     setEnabled(false);
                 }
-
             } else {
                 if (tableContext.isItemVisibleForEmptySelection()) {
                     setVisible(true);
@@ -52,7 +50,6 @@ public abstract class CustomizableTableContextAppAction<PackageType extends Abst
                     setVisible(false);
                     setEnabled(false);
                 }
-
             }
         } else if (!has) {
             setVisible(false);

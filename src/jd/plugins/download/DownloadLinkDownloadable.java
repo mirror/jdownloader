@@ -287,7 +287,9 @@ public class DownloadLinkDownloadable implements Downloadable {
                         cur += n;
                         hashProgress.setCurrent(cur);
                     }
-                    hashFile = Long.toHexString(cis.getChecksum().getValue());
+                    long value = cis.getChecksum().getValue();
+                    byte[] longBytes = new byte[] { (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value };
+                    hashFile = HexFormatter.byteArrayToHex(longBytes);
                 } catch (final Throwable e) {
                     LogSource.exception(getLogger(), e);
                 } finally {
