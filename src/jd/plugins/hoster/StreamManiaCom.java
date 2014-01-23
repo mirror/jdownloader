@@ -43,6 +43,7 @@ public class StreamManiaCom extends PluginForHost {
      */
     private String                                         hostPublicDomain   = "streammania.com";
     private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private static final String                            FAIL_STRING        = "streammaniacom";
 
     public StreamManiaCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -203,7 +204,18 @@ public class StreamManiaCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("final downloadlink leads to html code...");
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info(this.getHost() + ": unknowndlerror");
+            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_unknowndlerror", 1);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 20) {
+                timesFailed++;
+                link.setProperty("timesfailed" + FAIL_STRING + "_unknowndlerror", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
+            } else {
+                link.setProperty("timesfailed" + FAIL_STRING + "_unknowndlerror", Property.NULL);
+                logger.info(this.getHost() + ": unknowndlerror --> Remporarily desabling current host");
+                tempUnavailableHoster(acc, link, 60 * 60 * 1000);
+            }
         }
         try {
             if (!this.dl.startDownload()) {
