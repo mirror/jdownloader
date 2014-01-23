@@ -1394,22 +1394,18 @@ public class FileparadoxIn extends PluginForHost {
             form.put("capcode", result);
             skipWaitTime = waitTimeSkipableKeyCaptcha;
         } else if (cbr.containsHTML("id=\"videocaptcha_word\"")) {
-            final boolean vcapbroken = true;
-            if (vcapbroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final String captchalink = cbr.getRegex("class=\"mcmp_img\" style=\"[^<>\"/]+\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             final String skey = form.getInputField("videocaptcha_skey").getValue();
             final String key = br.getRegex("key:\\'([a-z0-9]+)\\'").getMatch(0);
-            if (captchalink == null || skey == null || key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String videoCaptchaToken = br.getRegex("name=\"videocaptcha_token\" value=\"([0-9a-f]+)\">").getMatch(0);
+            if (captchalink == null || skey == null || key == null || videoCaptchaToken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setCookie(COOKIE_HOST, "vcaptcha_skey", skey);
             final String code = getCaptchaCode(captchalink, downloadLink);
             form.put("videocaptcha_word", Encoding.urlEncode(code));
-            br.cloneBrowser().getPage("http://antibotsystem.com/data?callback=jQuery" + System.currentTimeMillis() + "_" + new Random().nextInt(100000000) + "&r=%5B%22" + key + "%22%2C%5B%5B%22validate_site_key%22%2C%7B%22token%22%3A%22256f73945e43ebfc11f083f9c6a88a8e%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
-            br.cloneBrowser().getPage("http://antibotsystem.com/stat?callback=jQuery" + System.currentTimeMillis() + "_" + new Random().nextInt(100000000) + "&r=%5B%22" + key + "%22%2C%5B%5B%22setPlay%22%2C%7B%22key%22%3A%22" + skey + "%22%2C%22token%22%3A%22256f73945e43ebfc11f083f9c6a88a8e%22%7D%5D%5D%5D&_=" + System.currentTimeMillis());
+            String jQueryPath = new Random().nextInt(1000000000) + "_" + System.currentTimeMillis() + "&r=" + Encoding.urlEncode("[\"" + key + "\",[[\"validate_site_key\",{\"token\":\"" + videoCaptchaToken + "\"}]]]") + "&_=" + (System.currentTimeMillis() + 3033);
+            br.cloneBrowser().getPage("http://antibotsystem.com/data?callback=jQuery" + jQueryPath);
             skipWaitTime = waitTimeSkipableVideoCaptcha;
         }
-        form.remove("method_free");
-        form.remove(null);
-        form.put("method_free", "Free+Download");
         downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
     }
