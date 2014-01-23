@@ -470,6 +470,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void moveOrAddAt(final CrawledPackage pkg, final List<CrawledLink> movechildren, final int index) {
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                for (CrawledLink l : movechildren) {
+                    dupeCheckMap.add(l.getLinkID());
+                }
+                return null;
+            }
+
+        });
 
         super.moveOrAddAt(pkg, movechildren, index);
 
@@ -505,6 +516,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             @Override
             protected Void run() throws RuntimeException {
                 try {
+                    dupeCheckMap.add(link.getLinkID());
                     LinkCollectingJob job = link.getSourceJob();
                     if (job != null) {
                         try {
@@ -1785,6 +1797,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void setActiveVariantForLink(final CrawledLink crawledLink, final LinkVariant linkVariant) {
+
         getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
@@ -1798,19 +1811,99 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     /* link does not support variants */
                     return null;
                 }
-                String old = crawledLink.getLinkID();
-
-                crawledLink.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(crawledLink.getDownloadLink(), linkVariant);
-                dupeCheckMap.remove(old);
-                dupeCheckMap.add(crawledLink.getLinkID());
+                setActiveVariantForLink(crawledLink.getDownloadLink(), linkVariant);
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
                 checkableLinks.add(crawledLink);
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                 linkChecker.check(checkableLinks);
+
+                return null;
+            }
+
+        });
+
+    }
+
+    public boolean canSetActiveVariantForLink(final DownloadLink link, final LinkVariant variant) {
+
+        return Boolean.TRUE.equals(getQueue().addWait(new QueueAction<Boolean, RuntimeException>() {
+
+            @Override
+            protected Boolean run() throws RuntimeException {
+
+                LinkVariant oldVariant = link.getDefaultPlugin().getActiveVariantByLink(link);
+                try {
+                    link.getDefaultPlugin().setActiveVariantByLink(link, variant);
+
+                    return dupeCheckMap.contains(link.getLinkID());
+
+                } finally {
+                    link.getDefaultPlugin().setActiveVariantByLink(link, oldVariant);
+                }
+
+            }
+
+        }));
+    }
+
+    public void setActiveVariantForLink(final DownloadLink link, final LinkVariant variant) {
+
+        getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+
+                String old = link.getLinkID();
+                LinkVariant oldVariant = link.getDefaultPlugin().getActiveVariantByLink(link);
+                link.getDefaultPlugin().setActiveVariantByLink(link, variant);
+                if (dupeCheckMap.contains(link.getLinkID())) {
+                    // variant available
+                    link.getDefaultPlugin().setActiveVariantByLink(link, oldVariant);
+                    return null;
+                }
+                dupeCheckMap.remove(old);
+                dupeCheckMap.add(link.getLinkID());
+
                 return null;
             }
 
         });
     }
 
+    public boolean containsLinkId(final String linkID) {
+        return Boolean.TRUE.equals(getQueue().addWait(new QueueAction<Boolean, RuntimeException>() {
+
+            @Override
+            protected Boolean run() throws RuntimeException {
+
+                return dupeCheckMap.contains(linkID);
+
+            }
+
+        }));
+    }
+
+    public CrawledLink addAdditional(final CrawledLink link, final LinkVariant o) {
+
+        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+        dllink.setProperties(link.getDownloadLink().getProperties());
+        final CrawledLink cl = new CrawledLink(dllink);
+
+        cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
+
+        return LinkCollector.getInstance().getQueue().addWait(new QueueAction<CrawledLink, RuntimeException>() {
+
+            @Override
+            protected CrawledLink run() throws RuntimeException {
+                if (LinkCollector.getInstance().containsLinkId(cl.getLinkID())) { return null; }
+                final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
+                list.add(cl);
+
+                LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
+
+                return cl;
+            }
+        });
+
+    }
 }

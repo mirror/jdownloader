@@ -3831,21 +3831,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Set Variant" })
     String YoutubeDashV2_extendLinkgrabberContextMenu_context_menu();
 
-    @Default(lngs = { "en" }, values = { "Video" })
-    String YoutubeDashV2_runInEDT_video();
-
-    @Default(lngs = { "en" }, values = { "Audio" })
-    String YoutubeDashV2_runInEDT_audio();
-
-    @Default(lngs = { "en" }, values = { "Image" })
-    String YoutubeDashV2_runInEDT_image();
-
-    @Default(lngs = { "en" }, values = { "3D-Video" })
-    String YoutubeDashV2_runInEDT_video3D();
-
-    @Default(lngs = { "en" }, values = { "Subtitles" })
-    String YoutubeDashV2_runInEDT_subtitle();
-
     @Default(lngs = { "en" }, values = { "Fast Crawling" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling();
 
@@ -3917,4 +3902,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Subtitles" })
     String YoutubeVariantInterface_getLabel_subtitles();
+
+    @Default(lngs = { "en" }, values = { "Add additional Variant" })
+    String YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add();
+
+    @Default(lngs = { "en" }, values = { "Best %s1 available" })
+    String YoutubeDashV2_add_best(String label);
+
+    @Default(lngs = { "en" }, values = { "Worst %s1 available" })
+    String YoutubeDashV2_add_worst(String label);
 }

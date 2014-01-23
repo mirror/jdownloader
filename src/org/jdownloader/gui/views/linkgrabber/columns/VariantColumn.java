@@ -130,6 +130,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
                             @Override
                             protected Void run() throws RuntimeException {
+
                                 LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
 
                                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);

@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -26,6 +27,7 @@ import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Request;
@@ -38,6 +40,7 @@ import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.DownloadLinkDatabindingInterface;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
@@ -71,6 +74,8 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.action.BasicAction;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
@@ -85,8 +90,11 @@ import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.controllingg.DownloadLinkView;
 import org.jdownloader.downloadcore.v15.Downloadable;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -328,6 +336,12 @@ public class YoutubeDashV2 extends PluginForHost {
         String getPackagePattern();
 
         void setPackagePattern(String pattern);
+
+        @AboutConfig
+        @DefaultBooleanValue(true)
+        void setSubtitleCopyforEachVideoVariant(boolean b);
+
+        boolean isSubtitleCopyforEachVideoVariant();
     }
 
     @Override
@@ -513,7 +527,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
                 }
                 if (variant == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Old Link. Please readd the Link"); }
-                setActiveVariantByLink(link, variant);
+                LinkCollector.getInstance().setActiveVariantForLink(link, variant);
             } else {
                 String url = link.getDownloadURL();
 
@@ -554,7 +568,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
                 }
                 if (variant == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Old Link. Please readd the Link"); }
-                setActiveVariantByLink(link, variant);
+                LinkCollector.getInstance().setActiveVariantForLink(link, variant);
             }
 
         } catch (Exception e) {
@@ -1154,6 +1168,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
             }
             if (!this.dl.startDownload()) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+
             break;
         case VIDEO:
 
@@ -1179,6 +1194,57 @@ public class YoutubeDashV2 extends PluginForHost {
         }
         if (variant.hasConverer(downloadLink)) {
             variant.convert(downloadLink);
+        }
+        switch (variant.getType()) {
+        case SUBTITLES:
+            // rename subtitles to match the videos.
+            // this code
+            if (cfg.isSubtitleCopyforEachVideoVariant()) {
+                FilePackage pkg = downloadLink.getParentNode();
+                boolean readL2 = pkg.getModifyLock().readLock();
+                File finalFile = new File(downloadLink.getFileOutput(false, false));
+                boolean copied = false;
+                try {
+                    String myID = downloadLink.getStringProperty(YoutubeHelper.YT_ID, null);
+                    for (DownloadLink child : pkg.getChildren()) {
+                        try {
+                            if (myID.equals(child.getStringProperty(YoutubeHelper.YT_ID, null))) {
+                                LinkVariant v = getActiveVariantByLink(child);
+                                if (v instanceof YoutubeVariant) {
+                                    switch (((YoutubeVariant) v).getGroup()) {
+                                    case VIDEO:
+                                    case VIDEO_3D:
+                                        String ext = Files.getExtension(child.getFinalFileName());
+                                        if (StringUtils.isNotEmpty(ext)) {
+                                            String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
+
+                                            String code = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, "");
+                                            Locale locale = Locale.forLanguageTag(code);
+
+                                            File newFile;
+                                            IO.copyFile(finalFile, newFile = new File(finalFile.getParentFile(), base + "." + locale.getDisplayLanguage() + ".srt"));
+                                            downloadLink.setFinalFileOutput(newFile.getAbsolutePath());
+                                            downloadLink.setFinalFileName(newFile.getName());
+                                            copied = true;
+                                        }
+                                        break;
+                                    default:
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            getLogger().log(e);
+                        }
+
+                    }
+                    if (copied) finalFile.delete();
+                } finally {
+                    pkg.getModifyLock().readUnlock(readL2);
+                }
+            }
+
+            break;
         }
 
     }
@@ -1432,6 +1498,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
+
         if (variant == null) return;
         if (variant instanceof SubtitleVariant) {
 
@@ -1535,9 +1602,14 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void extendLinkgrabberContextMenu(final JComponent parent, final PluginView<CrawledLink> pv) {
-        final JMenu m = new JMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
-        m.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
-        m.setEnabled(false);
+        final JMenu setVariants = new JMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu());
+        setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());
+        setVariants.setEnabled(false);
+
+        final JMenu addVariants = new JMenu(_GUI._.YoutubeDashV2_extendLinkgrabberContextMenu_context_menu_add());
+
+        addVariants.setIcon(new BadgeIcon(DomainInfo.getInstance(getHost()).getFavIcon(), new AbstractIcon(IconKey.ICON_ADD, 16), 4, 4));
+        addVariants.setEnabled(false);
         new Thread("Collect Variants") {
             public void run() {
                 HashMap<String, YoutubeVariantInterface> map = new HashMap<String, YoutubeVariantInterface>();
@@ -1559,35 +1631,84 @@ public class YoutubeDashV2 extends PluginForHost {
                         }
                     }
                 }
-                System.out.println(1);
+
                 new EDTRunner() {
 
                     @Override
                     protected void runInEDT() {
 
-                        add(m, pv, list, VariantGroup.VIDEO, _GUI._.YoutubeDashV2_runInEDT_video());
-                        add(m, pv, list, VariantGroup.AUDIO, _GUI._.YoutubeDashV2_runInEDT_audio());
+                        add(setVariants, addVariants, pv, list, VariantGroup.VIDEO);
+                        add(setVariants, addVariants, pv, list, VariantGroup.AUDIO);
 
-                        add(m, pv, list, VariantGroup.IMAGE, _GUI._.YoutubeDashV2_runInEDT_image());
+                        add(setVariants, addVariants, pv, list, VariantGroup.IMAGE);
 
-                        add(m, pv, list, VariantGroup.VIDEO_3D, _GUI._.YoutubeDashV2_runInEDT_video3D());
-                        add(m, pv, list, VariantGroup.SUBTITLES, _GUI._.YoutubeDashV2_runInEDT_subtitle());
-                        m.setEnabled(list.size() > 0);
+                        add(setVariants, addVariants, pv, list, VariantGroup.VIDEO_3D);
+                        add(setVariants, addVariants, pv, list, VariantGroup.SUBTITLES);
 
                     }
 
-                    private void add(JMenu m, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> map, VariantGroup video, String string) {
-                        ArrayList<YoutubeVariantInterface> list = map.get(video.name());
+                    private void add(JMenu setVariants, JMenu addVariants, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> map, final VariantGroup group) {
+                        ArrayList<YoutubeVariantInterface> list = map.get(group.name());
                         if (list == null || list.size() == 0) return;
-                        Collections.sort(list, new Comparator<YoutubeVariantInterface>() {
+                        final Comparator<YoutubeVariantInterface> comp;
+                        Collections.sort(list, comp = new Comparator<YoutubeVariantInterface>() {
 
                             @Override
                             public int compare(YoutubeVariantInterface o1, YoutubeVariantInterface o2) {
                                 return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
                             }
                         });
-                        JMenu groupMenu = new JMenu(string);
+                        setVariants.setEnabled(true);
+                        addVariants.setEnabled(true);
 
+                        addToAddMenu(addVariants, pv, map, group, list, comp);
+                        addToSetMenu(setVariants, pv, map, group, list, comp);
+
+                    }
+
+                    protected void addToAddMenu(JMenu addSubmenu, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> map, final VariantGroup group, ArrayList<YoutubeVariantInterface> list, final Comparator<YoutubeVariantInterface> comp) {
+                        JMenu groupMenu = new JMenu(group.getLabel());
+                        if (map.size() == 1) {
+                            groupMenu = addSubmenu;
+                        } else {
+                            addSubmenu.add(groupMenu);
+                        }
+                        groupMenu.add(new JMenuItem(new BasicAction() {
+                            {
+                                setName(_GUI._.YoutubeDashV2_add_best(group.getLabel()));
+                            }
+
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+
+                                for (CrawledLink cl : pv.getChildren()) {
+                                    List<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
+                                    for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
+                                        if (v instanceof YoutubeVariantInterface) variants.add((YoutubeVariantInterface) v);
+                                    }
+                                    Collections.sort(variants, comp);
+                                    for (YoutubeVariantInterface variant : variants) {
+                                        if (variant.getGroup() == group) {
+                                            CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, variant);
+
+                                            if (newLink != null) {
+                                                checkableLinks.add(newLink);
+                                            } else {
+                                                Toolkit.getDefaultToolkit().beep();
+                                            }
+                                            break;
+                                        }
+
+                                    }
+
+                                }
+
+                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                linkChecker.check(checkableLinks);
+                            }
+
+                        }));
                         for (final YoutubeVariantInterface v : list) {
                             groupMenu.add(new JMenuItem(new BasicAction() {
                                 {
@@ -1602,7 +1723,120 @@ public class YoutubeDashV2 extends PluginForHost {
                                         for (LinkVariant variants : getVariantsByLink(cl.getDownloadLink())) {
                                             if (variants instanceof YoutubeVariantInterface) {
                                                 if (((YoutubeVariantInterface) variants).getTypeId().equals(v.getTypeId())) {
-                                                    setActiveVariantByLink(cl.getDownloadLink(), v);
+                                                    CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, v);
+
+                                                    if (newLink != null) {
+                                                        checkableLinks.add(newLink);
+                                                    } else {
+                                                        Toolkit.getDefaultToolkit().beep();
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                    }
+
+                                    LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                    linkChecker.check(checkableLinks);
+                                }
+
+                            }));
+
+                        }
+
+                        groupMenu.add(new JMenuItem(new BasicAction() {
+                            {
+                                setName(_GUI._.YoutubeDashV2_add_worst(group.getLabel()));
+                            }
+
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+
+                                for (CrawledLink cl : pv.getChildren()) {
+                                    List<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
+                                    for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
+                                        if (v instanceof YoutubeVariantInterface) variants.add((YoutubeVariantInterface) v);
+                                    }
+                                    Collections.sort(variants, comp);
+                                    for (int i = variants.size() - 1; i >= 0; i--) {
+                                        YoutubeVariantInterface variant = variants.get(i);
+                                        if (variant.getGroup() == group) {
+                                            CrawledLink newLink = LinkCollector.getInstance().addAdditional(cl, variant);
+
+                                            if (newLink != null) {
+                                                checkableLinks.add(newLink);
+                                            } else {
+                                                Toolkit.getDefaultToolkit().beep();
+                                            }
+                                            break;
+                                        }
+
+                                    }
+
+                                }
+
+                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                linkChecker.check(checkableLinks);
+                            }
+
+                        }));
+                    }
+
+                    protected void addToSetMenu(JMenu setVariants, final PluginView<CrawledLink> pv, HashMap<String, ArrayList<YoutubeVariantInterface>> map, final VariantGroup group, ArrayList<YoutubeVariantInterface> list, final Comparator<YoutubeVariantInterface> comp) {
+                        JMenu groupMenu = new JMenu(group.getLabel());
+                        if (map.size() == 1) {
+                            groupMenu = setVariants;
+                        } else {
+                            setVariants.add(groupMenu);
+                        }
+                        groupMenu.add(new JMenuItem(new BasicAction() {
+                            {
+                                setName(_GUI._.YoutubeDashV2_add_best(group.getLabel()));
+                            }
+
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+
+                                for (CrawledLink cl : pv.getChildren()) {
+                                    List<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
+                                    for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
+                                        if (v instanceof YoutubeVariantInterface) variants.add((YoutubeVariantInterface) v);
+                                    }
+                                    Collections.sort(variants, comp);
+                                    for (YoutubeVariantInterface variant : variants) {
+                                        if (variant.getGroup() == group) {
+                                            LinkCollector.getInstance().setActiveVariantForLink(cl.getDownloadLink(), variant);
+
+                                            checkableLinks.add(cl);
+                                            break;
+                                        }
+
+                                    }
+
+                                }
+
+                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                linkChecker.check(checkableLinks);
+                            }
+
+                        }));
+                        for (final YoutubeVariantInterface v : list) {
+                            groupMenu.add(new JMenuItem(new BasicAction() {
+                                {
+                                    setName(v.getName());
+                                }
+
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+
+                                    for (CrawledLink cl : pv.getChildren()) {
+                                        for (LinkVariant variants : getVariantsByLink(cl.getDownloadLink())) {
+                                            if (variants instanceof YoutubeVariantInterface) {
+                                                if (((YoutubeVariantInterface) variants).getTypeId().equals(v.getTypeId())) {
+                                                    LinkCollector.getInstance().setActiveVariantForLink(cl.getDownloadLink(), v);
                                                     checkableLinks.add(cl);
                                                 }
                                             }
@@ -1617,15 +1851,48 @@ public class YoutubeDashV2 extends PluginForHost {
                             }));
 
                         }
-                        m.add(groupMenu);
 
+                        groupMenu.add(new JMenuItem(new BasicAction() {
+                            {
+                                setName(_GUI._.YoutubeDashV2_add_worst(group.getLabel()));
+                            }
+
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+
+                                for (CrawledLink cl : pv.getChildren()) {
+                                    List<YoutubeVariantInterface> variants = new ArrayList<YoutubeVariantInterface>();
+                                    for (LinkVariant v : getVariantsByLink(cl.getDownloadLink())) {
+                                        if (v instanceof YoutubeVariantInterface) variants.add((YoutubeVariantInterface) v);
+                                    }
+                                    Collections.sort(variants, comp);
+                                    for (int i = variants.size() - 1; i >= 0; i--) {
+                                        YoutubeVariantInterface variant = variants.get(i);
+                                        if (variant.getGroup() == group) {
+                                            LinkCollector.getInstance().setActiveVariantForLink(cl.getDownloadLink(), variant);
+
+                                            checkableLinks.add(cl);
+                                            break;
+                                        }
+
+                                    }
+
+                                }
+
+                                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                                linkChecker.check(checkableLinks);
+                            }
+
+                        }));
                     }
                 };
 
             };
         }.start();
 
-        parent.add(m);
+        parent.add(setVariants);
+        parent.add(addVariants);
     }
 
     protected void setConfigElements() {
