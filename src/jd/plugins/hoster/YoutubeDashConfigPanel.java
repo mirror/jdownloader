@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.swing.JLabel;
+
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.MultiComboBox;
@@ -13,6 +15,8 @@ import jd.gui.swing.jdgui.views.settings.components.ProxyInput;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
 import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.decrypter.YoutubeHelper;
+import jd.plugins.decrypter.YoutubeHelper.Replacer;
 import jd.plugins.decrypter.YoutubeVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
@@ -21,6 +25,7 @@ import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAct
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
+import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
@@ -198,9 +203,30 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         videoPair = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, new MultiVariantBox(this, image));
         subtitles = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_subtitles(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("SubtitlesEnabled", BooleanKeyHandler.class), null));
 
-        addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
-        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_desc());
+        addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
+        addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags());
+        for (Replacer r : YoutubeHelper.REPLACER) {
+
+            StringBuilder sb = new StringBuilder();
+            for (String s : r.getTags()) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append("*").append(s).append("*");
+            }
+            JLabel txt = new JLabel("<html>" + sb.toString().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
+            SwingUtils.setOpaque(txt, false);
+            txt.setEnabled(false);
+
+            add(txt, "gaptop 0,growx,pushx,gapleft 10,gapbottom 0,gaptop 0,aligny top");
+
+            txt = new JLabel("<html>" + r.getDescription().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
+            SwingUtils.setOpaque(txt, false);
+            txt.setEnabled(false);
+            add(txt, "gaptop 0,spanx,growx,pushx,wmin 10,gapbottom 0,gaptop 0,aligny top");
+
+        }
+
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("FilenamePattern", StringKeyHandler.class)));
+        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePattern", StringKeyHandler.class)));
 
         addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_proxy_header(), NewTheme.I().getIcon(IconKey.ICON_PROXY, 18));
         Pair<Checkbox> checkbox = addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_userproxy(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("ProxyEnabled", BooleanKeyHandler.class), null));

@@ -3738,14 +3738,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "If Link contains Video & Playlist Information" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist();
 
-    @Default(lngs = { "en" }, values = { "<html>Explanation of the available tags:<br>*channelname* = uploaders/channels text name (nice name, allows long names & spaces)<br>*username* = uploaders/channels user name (youtube.com/users/example = example)<br>*date* = date when the video was posted - appears in the user-defined format above<br>*videoname* = name of the video without extension<br>*videoid* = id of the video: 'youtube.com/watch?v=YOUTUBE_VIDEO_ID'<br>*videonumber* = number of the video (position in playlist or 'user' link)<br>*quality* = the quality of the video e.g. '(1080p_H.264-AAC)'<br>*ext* = extension of the video e.g. '.mp4'</html>" })
-    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_desc();
+    @Default(lngs = { "en" }, values = { "Explanation of the available tags:" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags();
 
     @Default(lngs = { "en" }, values = { "Customized Filename" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern();
 
-    @Default(lngs = { "en" }, values = { "Filenames" })
-    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_header();
+    @Default(lngs = { "en" }, values = { "Filename & Packagename" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header();
 
     @Default(lngs = { "en" }, values = { "Group Variants by" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping();
@@ -3866,4 +3866,55 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Result of the Account Verification:\r\n%s1" })
     String accountdialog_check_result(String errorMessage);
+
+    @Default(lngs = { "en" }, values = { "Media Type: Video,3DVideo,Audio,Subtitles,..." })
+    String YoutubeHelper_getDescription_group();
+
+    @Default(lngs = { "en" }, values = { "VariantID. e.g. 'mp4_128kbit_acc'" })
+    String YoutubeHelper_getDescription_variantid();
+
+    @Default(lngs = { "en" }, values = { "Variant tag. e.g. '1080p'" })
+    String YoutubeHelper_getDescription_quality();
+
+    @Default(lngs = { "en" }, values = { "Unique Video ID" })
+    String YoutubeHelper_getDescription_id();
+
+    @Default(lngs = { "en" }, values = { "File Extension e.g. .mp4" })
+    String YoutubeHelper_getDescription_extension();
+
+    @Default(lngs = { "en" }, values = { "Age Protection true|false" })
+    String YoutubeHelper_getDescription_age();
+
+    @Default(lngs = { "en" }, values = { "Uploader Name" })
+    String YoutubeHelper_getDescription_user();
+
+    @Default(lngs = { "en" }, values = { "Channel" })
+    String YoutubeHelper_getDescription_channel();
+
+    @Default(lngs = { "en" }, values = { "Video Title" })
+    String YoutubeHelper_getDescription_title();
+
+    @Default(lngs = { "en" }, values = { "Publishing Date. *date* or e.g. *date[YYYY/MM/DD]*" })
+    String YoutubeHelper_getDescription_date();
+
+    @Default(lngs = { "en" }, values = { "Playlist Number. *videonumber* or e.g. *videonumber[000]*" })
+    String YoutubeHelper_getDescription_videonumber();
+
+    @Default(lngs = { "en" }, values = { "Customized Packagename" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern();
+
+    @Default(lngs = { "en" }, values = { "Audio" })
+    String YoutubeVariantInterface_getLabel_audio();
+
+    @Default(lngs = { "en" }, values = { "Video" })
+    String YoutubeVariantInterface_getLabel_video();
+
+    @Default(lngs = { "en" }, values = { "3D-Video" })
+    String YoutubeVariantInterface_getLabel_video3d();
+
+    @Default(lngs = { "en" }, values = { "Images" })
+    String YoutubeVariantInterface_getLabel_image();
+
+    @Default(lngs = { "en" }, values = { "Subtitles" })
+    String YoutubeVariantInterface_getLabel_subtitles();
 }

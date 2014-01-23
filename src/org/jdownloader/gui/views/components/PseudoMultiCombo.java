@@ -277,6 +277,13 @@ public class PseudoMultiCombo<Type> extends ExtButton {
     }
 
     @Override
+    public Dimension getMinimumSize() {
+        Dimension ret = super.getMinimumSize();
+        ret.width = ret.height;
+        return ret;
+    }
+
+    @Override
     public String getText() {
         if (orgText == null) return null;
         return SwingUtilities2.clipStringIfNecessary(this, this.getFontMetrics(this.getFont()), orgText, getWidth() - getMargin().left - getMargin().right - 10);

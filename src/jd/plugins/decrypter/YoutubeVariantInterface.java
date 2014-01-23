@@ -5,7 +5,9 @@ import java.util.List;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.gui.translate._GUI;
 
 public interface YoutubeVariantInterface extends LinkVariant {
 
@@ -22,12 +24,38 @@ public interface YoutubeVariantInterface extends LinkVariant {
 
     }
 
-    public static enum VariantGroup {
-        AUDIO,
-        VIDEO,
-        VIDEO_3D,
-        IMAGE,
-        SUBTITLES
+    public static enum VariantGroup implements LabelInterface {
+        AUDIO {
+
+            @Override
+            public String getLabel() {
+                return _GUI._.YoutubeVariantInterface_getLabel_audio();
+            }
+        },
+        VIDEO {
+            @Override
+            public String getLabel() {
+                return _GUI._.YoutubeVariantInterface_getLabel_video();
+            }
+        },
+        VIDEO_3D {
+            @Override
+            public String getLabel() {
+                return _GUI._.YoutubeVariantInterface_getLabel_video3d();
+            }
+        },
+        IMAGE {
+            @Override
+            public String getLabel() {
+                return _GUI._.YoutubeVariantInterface_getLabel_image();
+            }
+        },
+        SUBTITLES {
+            @Override
+            public String getLabel() {
+                return _GUI._.YoutubeVariantInterface_getLabel_subtitles();
+            }
+        };
     }
 
     String getFileExtension();

@@ -323,6 +323,11 @@ public class YoutubeDashV2 extends PluginForHost {
 
         void setCustomVariants(ArrayList<YoutubeCustomVariantStorable> list);
 
+        @AboutConfig
+        @DefaultStringValue("*videoname*")
+        String getPackagePattern();
+
+        void setPackagePattern(String pattern);
     }
 
     @Override

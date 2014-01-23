@@ -630,11 +630,6 @@ public class TbCmV2 extends PluginForDecrypt {
             DownloadLink thislink;
             thislink = createDownloadlink("youtubev2://" + variantInfo.variant + "/" + clip.videoID + "/");
 
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(clip.title);
-            // let the packagizer merge several packages that have the same name
-            fp.setProperty("ALLOW_MERGE", true);
-            fp.add(thislink);
             // thislink.setAvailable(true);
 
             thislink.setBrowserUrl(getBase() + "/watch?v=" + clip.videoID);
@@ -686,6 +681,12 @@ public class TbCmV2 extends PluginForDecrypt {
             String filename;
             thislink.setFinalFileName(filename = getCachedHelper().createFilename(thislink));
             thislink.setLinkID("youtubev2://" + variantInfo.variant + "/" + clip.videoID + "/" + URLEncode.encodeRFC2396(filename));
+            FilePackage fp = FilePackage.getInstance();
+            YoutubeHelper helper = getCachedHelper();
+            fp.setName(helper.replaceVariables(thislink, helper.getConfig().getPackagePattern()));
+            // let the packagizer merge several packages that have the same name
+            fp.setProperty("ALLOW_MERGE", true);
+            fp.add(thislink);
 
             return thislink;
         } catch (Exception e) {

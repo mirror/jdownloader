@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.pluginsettings;
 
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -361,21 +362,20 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         };
     }
 
-    public class Scroll extends SwitchPanel implements Scrollable {
+    public class Scroll extends JPanel implements Scrollable {
         public Scroll() {
             setOpaque(false);
 
         }
 
         @Override
-        protected void onShow() {
-        }
+        public Dimension getPreferredSize() {
 
-        @Override
-        protected void onHide() {
+            return super.getPreferredSize();
         }
 
         public Dimension getPreferredScrollableViewportSize() {
+
             return getPreferredSize();
         }
 
@@ -389,6 +389,13 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }
 
         public boolean getScrollableTracksViewportWidth() {
+            Container p = getParent();
+
+            if (p.getSize().width < getMinimumSize().width) {
+                // enable horizontal scrolling if the viewport size is less than the minimum panel size
+                return false;
+            }
+
             return true;
         }
 
@@ -397,11 +404,12 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         }
     }
 
-    protected SwitchPanel scrollerWrapper(PluginConfigPanelNG createConfigPanel) {
+    protected SwitchPanel scrollerWrapper(final PluginConfigPanelNG createConfigPanel) {
         Scroll ret = new Scroll();
         ret.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
+        ret.add(createConfigPanel);
         JScrollPane sp;
-        ret.add(sp = new JScrollPane(createConfigPanel));
+        sp = new JScrollPane(ret);
         // sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         sp.getVerticalScrollBar().setUnitIncrement(24);
         sp.setBorder(null);
@@ -409,7 +417,25 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         sp.getViewport().setOpaque(false);
         sp.setViewportBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
 
-        return createConfigPanel;
+        SwitchPanel wrapper = new SwitchPanel() {
+            {
+                setOpaque(false);
+                setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
+            }
+
+            @Override
+            protected void onShow() {
+                createConfigPanel.setShown();
+
+            }
+
+            @Override
+            protected void onHide() {
+                createConfigPanel.setHidden();
+            }
+        };
+        wrapper.add(sp);
+        return wrapper;
     }
 
     public void setHidden() {

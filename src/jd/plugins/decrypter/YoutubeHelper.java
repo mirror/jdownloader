@@ -49,6 +49,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
@@ -84,18 +85,234 @@ public class YoutubeHelper {
         return variantsMap;
     }
 
-    public static final String YT_EXT             = "YT_EXT";
-    public static final String YT_TITLE           = "YT_TITLE";
-    public static final String YT_PLAYLIST_INT    = "YT_PLAYLIST_INT";
-    public static final String YT_ID              = "YT_ID";
-    public static final String YT_AGE_GATE        = "YT_AGE_GATE";
-    public static final String YT_CHANNEL         = "YT_CHANNEL";
-    public static final String YT_USER            = "YT_USER";
-    public static final String YT_DATE            = "YT_DATE";
-    public static final String YT_VARIANTS        = "YT_VARIANTS";
-    public static final String YT_VARIANT         = "YT_VARIANT";
-    public static final String YT_STREAMURL_VIDEO = "YT_STREAMURL_VIDEO";
-    public static final String YT_STREAMURL_AUDIO = "YT_STREAMURL_AUDIO";
+    public static abstract class Replacer {
+
+        private String[] tags;
+
+        public String[] getTags() {
+            return tags;
+        }
+
+        abstract public String getDescription();
+
+        public Replacer(String... tags) {
+            this.tags = tags;
+        }
+
+        public String replace(String name, YoutubeHelper helper, DownloadLink link) {
+            for (String tag : tags) {
+                String mod = new Regex(name, "\\*" + tag + "\\[(.+?)\\]\\*").getMatch(0);
+                if (mod != null) {
+                    name = name.replaceAll("\\*" + tag + "(\\[[^\\]]+\\])?\\*", getValue(link, helper, mod));
+                }
+                name = name.replace("*" + tag + "*", getValue(link, helper, null));
+
+            }
+            return name;
+        }
+
+        abstract protected String getValue(DownloadLink link, YoutubeHelper helper, String mod);
+
+    }
+
+    public static LogSource      LOGGER             = LogController.getInstance().getLogger(YoutubeHelper.class.getName());
+    public static List<Replacer> REPLACER           = new ArrayList<Replacer>();
+    static {
+        REPLACER.add(new Replacer("group") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+                try {
+                    return variant.getGroup().getLabel();
+                } catch (Exception e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_group();
+            }
+
+        });
+        REPLACER.add(new Replacer("variant") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_variantid();
+            }
+
+        });
+        REPLACER.add(new Replacer("quality") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_quality();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+                try {
+                    return variant.getQualityExtension();
+                } catch (Exception e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+        REPLACER.add(new Replacer("videoid", "id") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_id();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_ID, "");
+            }
+
+        });
+        REPLACER.add(new Replacer("ext", "extension") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_extension();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_EXT, "unknown");
+            }
+
+        });
+
+        REPLACER.add(new Replacer("agegate", "age") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getBooleanProperty(YoutubeHelper.YT_AGE_GATE, false) + "";
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_age();
+            }
+
+        });
+        REPLACER.add(new Replacer("username", "user") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_USER, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_user();
+            }
+
+        });
+
+        REPLACER.add(new Replacer("channel", "channelname") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_CHANNEL, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_channel();
+            }
+
+        });
+
+        REPLACER.add(new Replacer("videoname", "title") {
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_TITLE, "");
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_title();
+            }
+
+        });
+        REPLACER.add(new Replacer("date", "time") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_date();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+
+                DateFormat formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
+
+                if (StringUtils.isNotEmpty(mod)) {
+                    try {
+                        formatter = new SimpleDateFormat(mod);
+                    } catch (Exception e) {
+                        LOGGER.log(e);
+
+                    }
+                }
+                long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
+                return timestamp > 0 ? formatter.format(timestamp) : "";
+            }
+
+        });
+        REPLACER.add(new Replacer("videonumber") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_videonumber();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+
+                // playlistnumber
+
+                if (StringUtils.isEmpty(mod)) mod = "0000";
+                DecimalFormat df;
+                try {
+                    df = new DecimalFormat(mod);
+                } catch (Exception e) {
+                    LOGGER.log(e);
+                    df = new DecimalFormat("0000");
+                }
+                int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1);
+                return playlistNumber >= 0 ? df.format(playlistNumber) : "";
+            }
+
+        });
+    }
+    public static final String   YT_EXT             = "YT_EXT";
+    public static final String   YT_TITLE           = "YT_TITLE";
+    public static final String   YT_PLAYLIST_INT    = "YT_PLAYLIST_INT";
+    public static final String   YT_ID              = "YT_ID";
+    public static final String   YT_AGE_GATE        = "YT_AGE_GATE";
+    public static final String   YT_CHANNEL         = "YT_CHANNEL";
+    public static final String   YT_USER            = "YT_USER";
+    public static final String   YT_DATE            = "YT_DATE";
+    public static final String   YT_VARIANTS        = "YT_VARIANTS";
+    public static final String   YT_VARIANT         = "YT_VARIANT";
+    public static final String   YT_STREAMURL_VIDEO = "YT_STREAMURL_VIDEO";
+    public static final String   YT_STREAMURL_AUDIO = "YT_STREAMURL_AUDIO";
 
     private static String handleRule(String s, final String line) throws PluginException {
 
@@ -706,62 +923,33 @@ public class YoutubeHelper {
     public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
     public String createFilename(DownloadLink link) {
-        String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
-        YoutubeVariantInterface variant = getVariantById(var);
+
         YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
-        LogSource logger = LogController.getInstance().getLogger(TbCmV2.class.getName());
+
         String formattedFilename = cfg.getFilenamePattern();
         // validate the pattern
         if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = jd.plugins.hoster.Youtube.defaultCustomFilename;
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*videoname**quality**ext*";
+
+        formattedFilename = replaceVariables(link, formattedFilename);
+        return formattedFilename;
+    }
+
+    public String replaceVariables(DownloadLink link, String formattedFilename) {
+        LogSource logger = LogController.getInstance().getLogger(TbCmV2.class.getName());
+        String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+        YoutubeVariantInterface variant = getVariantById(var);
         try {
             formattedFilename = variant.modifyFileName(formattedFilename, link);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        // playlistnumber
-        String format = new Regex(formattedFilename, "\\*videonumber\\[(.+?)\\]\\*").getMatch(0);
 
-        if (StringUtils.isEmpty(format)) format = "0000";
-        DecimalFormat df;
-        try {
-            df = new DecimalFormat(format);
-        } catch (Exception e) {
-            logger.log(e);
-            df = new DecimalFormat("0000");
-        }
-        int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_INT, -1);
-        formattedFilename = formattedFilename.replaceAll("\\*videonumber(\\[[^\\]]+\\])?\\*", playlistNumber >= 0 ? df.format(playlistNumber) : "");
-        // date
-        format = new Regex(formattedFilename, "\\*date\\[(.+?)\\]\\*").getMatch(0);
-        DateFormat formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
-
-        if (StringUtils.isNotEmpty(format)) {
-            try {
-                formatter = new SimpleDateFormat(format);
-            } catch (Exception e) {
-                logger.log(e);
-
-            }
-        }
-        long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
-        formattedFilename = formattedFilename.replaceAll("\\*date(\\[[^\\]]+\\])?\\*", timestamp > 0 ? formatter.format(timestamp) : "");
         // channelname
-        formattedFilename = formattedFilename.replace("*channelname*", link.getStringProperty(YoutubeHelper.YT_CHANNEL, ""));
-        formattedFilename = formattedFilename.replace("*username*", link.getStringProperty(YoutubeHelper.YT_USER, ""));
-        formattedFilename = formattedFilename.replace("*agegate*", link.getBooleanProperty(YoutubeHelper.YT_AGE_GATE, false) + "");
-        formattedFilename = formattedFilename.replace("*ext*", link.getStringProperty(YoutubeHelper.YT_EXT, "unknown"));
-        formattedFilename = formattedFilename.replace("*videoid*", link.getStringProperty(YoutubeHelper.YT_ID, ""));
 
-        try {
-
-            formattedFilename = formattedFilename.replace("*quality*", variant.getQualityExtension());
-        } catch (Exception e) {
-            // old variant
-            formattedFilename = formattedFilename.replace("*quality*", "[INVALID LINK!]");
+        for (Replacer r : REPLACER) {
+            formattedFilename = r.replace(formattedFilename, this, link);
         }
-        formattedFilename = formattedFilename.replace("*videoname*", link.getStringProperty(YoutubeHelper.YT_TITLE, "")).replace("*title*", link.getStringProperty(YoutubeHelper.YT_TITLE, ""));
-        formattedFilename = formattedFilename.replace("*variant*", link.getStringProperty(YoutubeHelper.YT_VARIANT, ""));
         try {
             formattedFilename = variant.modifyFileName(formattedFilename, link);
         } catch (Exception e) {
@@ -908,6 +1096,10 @@ public class YoutubeHelper {
             }
         }
         return ret;
+    }
+
+    public YoutubeConfig getConfig() {
+        return cfg;
     }
 
 }
