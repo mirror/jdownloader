@@ -938,7 +938,7 @@ public class D extends PluginsC {
         for (DownloadLink l : links) {
             String url = null;
             if (l.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                if (l.gotBrowserUrl()) url = l.getBrowserUrl();
+                url = l.getBrowserUrl();
             } else {
                 url = l.getDownloadURL();
             }
@@ -949,7 +949,6 @@ public class D extends PluginsC {
             map.put(url, l);
         }
         links = filter;
-
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         SubConfiguration cfg = SubConfiguration.getConfig("DLCCONFIG");
         InputSource inSourceHeader = new InputSource(new StringReader("<header><generator><app></app><version/><url></url></generator><tribute/><dlcxmlversion/></header>"));

@@ -202,7 +202,7 @@ public class DLCFactory extends D {
         for (CrawledLink l : links) {
             String url = null;
             if (l.getDownloadLink().getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                if (l.getDownloadLink().gotBrowserUrl()) url = l.getDownloadLink().getBrowserUrl();
+                url = l.getDownloadLink().getBrowserUrl();
             } else {
                 url = l.getDownloadLink().getDownloadURL();
             }
