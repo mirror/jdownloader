@@ -97,18 +97,19 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
                 ExtMenuItem mi;
                 m.add(mi = new ExtMenuItem(new BasicAction() {
-                    private DownloadLink dllink;
+
+                    private CrawledLink cl;
 
                     {
-                        dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+                        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
                         dllink.setProperties(link.getDownloadLink().getProperties());
-                        link.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(dllink, o);
-
+                        cl = new CrawledLink(dllink);
                         setSmallIcon(o.getIcon());
                         setName(o.getName());
-                        System.out.println(dllink.getLinkID());
-                        setEnabled(!dupeSet.contains(dllink.getLinkID()));
 
+                        cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
+
+                        setEnabled(!dupeSet.contains(cl.getLinkID()));
                     }
 
                     @Override
@@ -118,7 +119,6 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                             Toolkit.getDefaultToolkit().beep();
                             return;
                         }
-                        final CrawledLink cl = new CrawledLink(dllink);
 
                         final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
                         list.add(cl);

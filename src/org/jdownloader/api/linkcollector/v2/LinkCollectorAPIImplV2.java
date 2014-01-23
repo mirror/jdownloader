@@ -482,9 +482,11 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public void setVariant(long linkid, String variantID) throws BadParameterException {
         CrawledLink cl = getLinkById(linkid);
+
         for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
             if (lv.getUniqueId().equals(variantID)) {
-                cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), lv);
+                LinkCollector.getInstance().setActiveVariantForLink(cl, lv);
+
                 return;
             }
         }
@@ -493,48 +495,51 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     @Override
-    public void addVariantCopy(long linkid, final long destinationAfterLinkID, final long destinationPackageID, String variantID) throws BadParameterException {
+    public void addVariantCopy(long linkid, final long destinationAfterLinkID, final long destinationPackageID, final String variantID) throws BadParameterException {
         // get link
         final CrawledLink link = getLinkById(linkid);
-        // search variant by id
-        LinkVariant v = null;
-        for (LinkVariant lv : link.getDownloadLink().getDefaultPlugin().getVariantsByLink(link.getDownloadLink())) {
-            if (lv.getUniqueId().equals(variantID)) {
-                v = lv;
-                break;
-            }
-        }
-        if (v == null) { throw new BadParameterException("Unknown variantID"); }
 
-        // create new downloadlink
-        DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
-        dllink.setProperties(link.getDownloadLink().getProperties());
-        link.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(dllink, v);
-
-        // check if package already contains this variant
-
-        boolean readL = link.getParentNode().getModifyLock().readLock();
-
-        try {
-
-            for (CrawledLink cl : link.getParentNode().getChildren()) {
-                if (dllink.getLinkID().equals(cl.getLinkID())) { throw new BadParameterException("Variant is already in this package"); }
-
-            }
-        } finally {
-            link.getParentNode().getModifyLock().readUnlock(readL);
-        }
-
-        // create crawledlink
-        final CrawledLink cl = new CrawledLink(dllink);
-
-        final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
-        list.add(cl);
         // move and add
         LinkCollector.getInstance().getQueue().add(new QueueAction<Void, BadParameterException>() {
 
             @Override
             protected Void run() throws BadParameterException {
+                // search variant by id
+                LinkVariant v = null;
+                for (LinkVariant lv : link.getDownloadLink().getDefaultPlugin().getVariantsByLink(link.getDownloadLink())) {
+                    if (lv.getUniqueId().equals(variantID)) {
+                        v = lv;
+                        break;
+                    }
+                }
+                if (v == null) { throw new BadParameterException("Unknown variantID"); }
+
+                // create new downloadlink
+                final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+                dllink.setProperties(link.getDownloadLink().getProperties());
+
+                // create crawledlink
+                final CrawledLink cl = new CrawledLink(dllink);
+
+                final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
+                list.add(cl);
+
+                cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), v);
+
+                // check if package already contains this variant
+
+                boolean readL = link.getParentNode().getModifyLock().readLock();
+
+                try {
+
+                    for (CrawledLink cLink : link.getParentNode().getChildren()) {
+                        if (dllink.getLinkID().equals(cLink.getLinkID())) { throw new BadParameterException("Variant is already in this package"); }
+
+                    }
+                } finally {
+                    link.getParentNode().getModifyLock().readUnlock(readL);
+                }
+
                 if (destinationPackageID < 0) {
                     LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
                 } else {

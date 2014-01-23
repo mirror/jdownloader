@@ -1798,7 +1798,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     /* link does not support variants */
                     return null;
                 }
+                String old = crawledLink.getLinkID();
+
                 crawledLink.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(crawledLink.getDownloadLink(), linkVariant);
+                dupeCheckMap.remove(old);
+                dupeCheckMap.add(crawledLink.getLinkID());
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
                 checkableLinks.add(crawledLink);
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);

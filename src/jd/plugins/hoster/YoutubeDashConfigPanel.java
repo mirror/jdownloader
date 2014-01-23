@@ -3,7 +3,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -19,7 +18,6 @@ import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
 
-import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
@@ -28,7 +26,6 @@ import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
@@ -245,34 +242,14 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
     }
 
-    public ArrayList<AdvancedConfigEntry> register() {
-        ArrayList<AdvancedConfigEntry> configInterfaces = new ArrayList<AdvancedConfigEntry>();
-        HashMap<KeyHandler, Boolean> map = new HashMap<KeyHandler, Boolean>();
+    @Override
+    public void reset() {
 
         for (KeyHandler m : cf._getStorageHandler().getMap().values()) {
 
-            if (map.containsKey(m)) continue;
-
-            if (m.getAnnotation(AboutConfig.class) != null) {
-                if (m.getSetter() == null) {
-                    throw new RuntimeException("Setter for " + m.getGetter().getMethod() + " missing");
-                } else if (m.getGetter() == null) {
-                    throw new RuntimeException("Getter for " + m.getSetter().getMethod() + " missing");
-                } else {
-                    synchronized (configInterfaces) {
-                        configInterfaces.add(new AdvancedConfigEntry(cf, m));
-                    }
-                    map.put(m, true);
-                }
-            }
-
+            m.setValue(m.getDefaultValue());
         }
 
-        return configInterfaces;
-    }
-
-    @Override
-    public void reset() {
     }
 
     @Override
