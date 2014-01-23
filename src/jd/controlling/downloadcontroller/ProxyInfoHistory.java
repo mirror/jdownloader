@@ -26,13 +26,15 @@ public class ProxyInfoHistory {
     public static final class WaitingSkipReasonContainer {
         private final WaitingSkipReason         skipReason;
         private WaitWhileWaitingSkipReasonIsSet waitWhile = null;
-        private final String                    host;
+        private final String                    acchost;
+        private final String                    dlHost;
         private final ProxyInfo                 proxyInfo;
         private final Account                   account;
 
         private WaitingSkipReasonContainer(WaitingSkipReason skipReason, DownloadLinkCandidate candidate) {
             this.skipReason = skipReason;
-            this.host = candidate.getCachedAccount().getPlugin().getHost();
+            this.acchost = candidate.getCachedAccount().getPlugin().getHost();
+            this.dlHost = candidate.getLink().getHost();
             this.proxyInfo = candidate.getProxy();
             this.account = candidate.getCachedAccount().getAccount();
         }
@@ -41,8 +43,12 @@ public class ProxyInfoHistory {
             skipReason.invalidate();
         }
 
-        public final String getHost() {
-            return host;
+        public final String getAccHost() {
+            return acchost;
+        }
+
+        public final String getDlHost() {
+            return dlHost;
         }
 
         public final WaitingSkipReason getWaitingSkipReason() {

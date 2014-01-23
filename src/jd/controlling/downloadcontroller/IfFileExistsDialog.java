@@ -145,12 +145,10 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         case AUTO_RENAME:
             rename.setSelected(true);
             break;
-
         case OVERWRITE_FILE:
             overwrite.setSelected(true);
             break;
         default:
-
             skip.setSelected(true);
         }
         result = def;

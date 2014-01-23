@@ -313,7 +313,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         String name = getName();
         if ((hash = getMD5Hash()) != null && hash.length() == 32) {
             /* MD5 Check */
-
             return new HashInfo(hash, HashResult.TYPE.MD5);
         } else if (!StringUtils.isEmpty(hash = getSha1Hash()) && hash.length() == 40) {
             /* SHA1 Check */
@@ -341,7 +340,6 @@ public class DownloadLinkDownloadable implements Downloadable {
                         String sfvText;
                         try {
                             sfvText = IO.readFileToString(file);
-
                             if (sfvText != null) {
                                 /* Delete comments */
                                 sfvText = sfvText.replaceAll(";(.*?)[\r\n]{1,2}", "");

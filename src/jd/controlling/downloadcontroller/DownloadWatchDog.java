@@ -129,6 +129,7 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.ValidatableConditionalSkipReason;
 import org.jdownloader.plugins.WaitForAccountSkipReason;
+import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 import org.jdownloader.settings.CleanAfterDownloadAction;
@@ -500,8 +501,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -2241,10 +2241,23 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         thread.start();
     }
 
-    private boolean isReconnectPossible() {
+    private boolean isReconnectPossible(List<WaitingSkipReasonContainer> reconnectRequests) {
         if (CFG_RECONNECT.CFG.isReconnectAllowedToInterruptResumableDownloads()) {
             for (final SingleDownloadController con : getSession().getControllers()) {
-                if (!con.getDownloadLink().isResumeable()) return false;
+                if (!con.getDownloadLink().isResumeable()) {
+                    /*
+                     * running downloadLink is not resumable
+                     */
+                    return false;
+                }
+                for (WaitingSkipReasonContainer reconnectRequest : reconnectRequests) {
+                    if (StringUtils.equals(reconnectRequest.getDlHost(), con.getDownloadLink().getHost())) {
+                        /*
+                         * running downloadLink is from same host as reconnectRequest (avoid loops from free/free registered)
+                         */
+                        return false;
+                    }
+                }
             }
             return true;
         } else {
@@ -2252,31 +2265,63 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
+    private boolean isReconnectRequired(DownloadSession currentSession, WaitingSkipReasonContainer reconnectRequest) {
+        if (!reconnectRequest.getProxyInfo().isReconnectSupported()) return false;
+        HashSet<DownloadLink> alreadyChecked = new HashSet<DownloadLink>();
+        for (DownloadLink link : currentSession.getForcedLinks()) {
+            if (alreadyChecked.add(link) == false || canRemove(link, true)) continue;
+
+            ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+            if (conditionalSkipReason != null) {
+                if (conditionalSkipReason instanceof WaitWhileWaitingSkipReasonIsSet) {
+                    conditionalSkipReason = ((WaitWhileWaitingSkipReasonIsSet) conditionalSkipReason).getConditionalSkipReason();
+                }
+                if (conditionalSkipReason instanceof WaitingSkipReason) {
+                    if (StringUtils.equals(reconnectRequest.getDlHost(), link.getHost())) return true;
+                }
+            }
+        }
+        if (currentSession.isForcedOnlyModeEnabled() == false) {
+            for (DownloadLink link : currentSession.getActivationRequests()) {
+                if (alreadyChecked.add(link) == false || canRemove(link, false)) continue;
+
+                ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+                if (conditionalSkipReason != null) {
+                    if (conditionalSkipReason instanceof WaitWhileWaitingSkipReasonIsSet) {
+                        conditionalSkipReason = ((WaitWhileWaitingSkipReasonIsSet) conditionalSkipReason).getConditionalSkipReason();
+                    }
+                    if (conditionalSkipReason instanceof WaitingSkipReason) {
+                        if (StringUtils.equals(reconnectRequest.getDlHost(), link.getHost())) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private void validateProxyInfoHistory() {
         enqueueJob(new DownloadWatchDogJob() {
 
             @Override
             public void execute(DownloadSession currentSession) {
-                ProxyInfoHistory proxyInfoHistory = currentSession.getProxyInfoHistory();
-                proxyInfoHistory.validate();
-                Set<ProxyInfo> reconnects = proxyInfoHistory.list(WaitingSkipReason.CAUSE.IP_BLOCKED);
-                boolean reconnectRequested = false;
-                if (reconnects != null && reconnects.size() > 0) {
-                    for (ProxyInfo proxyInfo : reconnects) {
-                        if (!proxyInfo.isReconnectSupported()) continue;
-                        reconnectRequested = true;
-                        break;
+                if (isAutoReconnectEnabled()) {
+                    ProxyInfoHistory proxyInfoHistory = currentSession.getProxyInfoHistory();
+                    proxyInfoHistory.validate();
+                    List<WaitingSkipReasonContainer> reconnectRequests = proxyInfoHistory.list(WaitingSkipReason.CAUSE.IP_BLOCKED, null);
+                    if (reconnectRequests != null) {
+                        for (WaitingSkipReasonContainer reconnectRequest : reconnectRequests) {
+                            if (isReconnectRequired(currentSession, reconnectRequest)) {
+                                currentSession.compareAndSetSessionState(DownloadSession.SessionState.NORMAL, DownloadSession.SessionState.RECONNECT_REQUESTED);
+                                if (currentSession.getSessionState() == DownloadSession.SessionState.RECONNECT_REQUESTED && isReconnectPossible(reconnectRequests)) {
+                                    currentSession.setSessionState(DownloadSession.SessionState.RECONNECT_RUNNING);
+                                    invokeReconnect();
+                                }
+                                return;
+                            }
+                        }
                     }
                 }
-                if (reconnectRequested && isAutoReconnectEnabled()) {
-                    currentSession.compareAndSetSessionState(DownloadSession.SessionState.NORMAL, DownloadSession.SessionState.RECONNECT_REQUESTED);
-                    if (currentSession.getSessionState() == DownloadSession.SessionState.RECONNECT_REQUESTED && isReconnectPossible()) {
-                        currentSession.setSessionState(DownloadSession.SessionState.RECONNECT_RUNNING);
-                        invokeReconnect();
-                    }
-                } else {
-                    currentSession.compareAndSetSessionState(DownloadSession.SessionState.RECONNECT_REQUESTED, DownloadSession.SessionState.NORMAL);
-                }
+                currentSession.compareAndSetSessionState(DownloadSession.SessionState.RECONNECT_REQUESTED, DownloadSession.SessionState.NORMAL);
             }
 
             @Override
@@ -2684,8 +2729,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without
-                                         * waiting for new links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
+                                         * links/user interaction
                                          */
                                         break;
                                     }

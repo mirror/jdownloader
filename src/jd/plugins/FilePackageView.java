@@ -143,7 +143,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
                 tmp.newDone += done;
             }
-            System.out.println("Test: " + tmp.newDone + " - " + tmp.newSize);
             writeTempToFields(tmp);
             updatesDone = lupdatesRequired;
 
@@ -530,7 +529,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
              */
             tmp.newFinishedDate = link.getFinishedDate();
         }
-        System.out.println("Done: " + tmp.downloadDone);
     }
 
     @Override
