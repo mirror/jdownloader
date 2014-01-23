@@ -373,7 +373,12 @@ public class SingleDownloadController extends BrowserSettingsThread {
     public void run() {
         LogSource downloadLogger = null;
         try {
-            downloadLogger = LogController.getInstance().getLogger(downloadLink.getDefaultPlugin());
+            String logID = downloadLink.getDefaultPlugin().getHost();
+            if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
+                logID = logID + "_" + candidate.getCachedAccount().getPlugin().getHost();
+            }
+            downloadLogger = LogController.getInstance().getLogger(logID);
+            downloadLogger.setMaxSizeInMemory(256 * 1024);
             downloadLogger.setAllowTimeoutFlush(false);
             downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
             super.setLogger(downloadLogger);
