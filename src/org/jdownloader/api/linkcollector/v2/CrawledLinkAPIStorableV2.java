@@ -3,7 +3,7 @@ package org.jdownloader.api.linkcollector.v2;
 import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.storage.Storable;
-import org.jdownloader.myjdownloader.client.bindings.CrawledLinkStorable;
+import org.jdownloader.myjdownloader.client.bindings.linkgrabber.CrawledLinkStorable;
 
 public class CrawledLinkAPIStorableV2 extends CrawledLinkStorable implements Storable {
 

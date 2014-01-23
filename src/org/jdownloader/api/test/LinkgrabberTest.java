@@ -3,10 +3,10 @@ package org.jdownloader.api.test;
 import org.appwork.storage.Storage;
 import org.jdownloader.api.test.TestClient.Test;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
-import org.jdownloader.myjdownloader.client.bindings.CrawledLinkQuery;
-import org.jdownloader.myjdownloader.client.bindings.CrawledLinkStorable;
 import org.jdownloader.myjdownloader.client.bindings.LinkVariantStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
+import org.jdownloader.myjdownloader.client.bindings.linkgrabber.CrawledLinkQuery;
+import org.jdownloader.myjdownloader.client.bindings.linkgrabber.CrawledLinkStorable;
 
 public class LinkgrabberTest extends Test {
 

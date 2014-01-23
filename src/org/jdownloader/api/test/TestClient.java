@@ -333,7 +333,7 @@ public class TestClient {
 
         api.setServerRoot("http://api.jdownloader.org");
 
-        api.setServerRoot("http://192.168.2.110:10101");
+        // api.setServerRoot("http://192.168.2.110:10101");
 
         if (false) {
             api.connect(config.get("email", ""), config.get("password", ""));
