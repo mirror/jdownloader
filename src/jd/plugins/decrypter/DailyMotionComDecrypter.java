@@ -279,7 +279,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 }
             }
 
-            FOUNDQUALITIES = findVideoQualities(PARAMETER, VIDEOSOURCE);
+            FOUNDQUALITIES = findVideoQualities(this.br, PARAMETER, VIDEOSOURCE);
             if (FOUNDQUALITIES.isEmpty() && decryptedLinks.size() == 0) {
                 logger.warning("Found no quality for link: " + PARAMETER);
                 return null;
@@ -319,7 +319,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 if (hds) selectedQualities.add("7");
             }
             for (final String selectedQualityValue : selectedQualities) {
-                final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);
+                final DownloadLink dl = getVideoDownloadlink(this.br, FOUNDQUALITIES, selectedQualityValue);
                 if (dl != null) {
                     fp.add(dl);
                     decryptedLinks.add(dl);
@@ -334,7 +334,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public LinkedHashMap<String, String[]> findVideoQualities(final String parameter, String videosource) throws IOException {
+    public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
         LinkedHashMap<String, String[]> QUALITIES = new LinkedHashMap<String, String[]>();
         final String[][] qualities = { { "hd1080URL", "1" }, { "hd720URL", "2" }, { "hqURL", "3" }, { "sdURL", "4" }, { "ldURL", "5" }, { "video_url", "5" } };
         for (final String quality[] : qualities) {
@@ -414,7 +414,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     }
 
     /* Sync the following functions in hoster- and decrypterplugin */
-    private String getVideosource(final Browser br) {
+    public static String getVideosource(final Browser br) {
         String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
         if (videosource == null) videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
         if (videosource == null) videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
@@ -422,8 +422,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return videosource;
     }
 
-    private DownloadLink getVideoDownloadlink(final String qualityValue) {
-        String directlinkinfo[] = FOUNDQUALITIES.get(qualityValue);
+    private DownloadLink getVideoDownloadlink(final Browser br, final LinkedHashMap<String, String[]> foundqualities, final String qualityValue) {
+        String directlinkinfo[] = foundqualities.get(qualityValue);
         if (directlinkinfo != null) {
             final String directlink = Encoding.htmlDecode(directlinkinfo[0]);
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
@@ -444,7 +444,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private String getQuality(final String quality, final String videosource) {
+    private static String getQuality(final String quality, final String videosource) {
         return new Regex(videosource, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
     }
 

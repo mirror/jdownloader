@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -31,8 +32,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
@@ -85,28 +88,18 @@ public class DailyMotionCom extends PluginForHost {
         } else if (downloadLink.getBooleanProperty("isrtmp", false)) {
             getRTMPlink();
         } else {
-            dllink = downloadLink.getStringProperty("directlink");
+            dllink = downloadLink.getStringProperty("directlink", null);
             if (dllink == null) {
                 logger.warning("dllink is null...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.setFollowRedirects(false);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(dllink);
-                if (con.getResponseCode() == 302) {
-                    br.followConnection();
-                    dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
-                    br.getHeaders().put("Referer", dllink);
-                    con = br.openGetConnection(dllink);
+            if (!checkDirectLink(downloadLink)) {
+                dllink = findFreshDirectlink(downloadLink);
+                if (dllink == null) {
+                    logger.warning("dllink is null...");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (con.getResponseCode() == 410 || con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
+                if (!checkDirectLink(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         return AvailableStatus.TRUE;
@@ -136,6 +129,26 @@ public class DailyMotionCom extends PluginForHost {
         }
     }
 
+    private String findFreshDirectlink(final DownloadLink dl) throws IOException {
+        try {
+            dllink = null;
+            br.setFollowRedirects(true);
+            br.getPage(dl.getStringProperty("mainlink", null));
+            br.setFollowRedirects(false);
+            final PluginForDecrypt decryptPlugin = JDUtilities.getPluginForDecrypt("dailymotion.com");
+            final String videosource = ((jd.plugins.decrypter.DailyMotionComDecrypter) decryptPlugin).getVideosource(this.br);
+            if (videosource == null) return null;
+            LinkedHashMap<String, String[]> foundqualities = ((jd.plugins.decrypter.DailyMotionComDecrypter) decryptPlugin).findVideoQualities(this.br, dl.getDownloadURL(), videosource);
+            final String qualityvalue = dl.getStringProperty("qualityvalue", null);
+            final String directlinkinfo[] = foundqualities.get(qualityvalue);
+            dllink = Encoding.htmlDecode(directlinkinfo[0]);
+        } catch (final Throwable e) {
+            dllink = null;
+            return null;
+        }
+        return dllink;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -148,6 +161,34 @@ public class DailyMotionCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         ai.setStatus("Registered (free) User");
         return ai;
+    }
+
+    private boolean checkDirectLink(final DownloadLink downloadLink) {
+        if (dllink != null) {
+            br.setFollowRedirects(false);
+            try {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(dllink);
+                    if (con.getResponseCode() == 302) {
+                        br.followConnection();
+                        dllink = br.getRedirectLocation().replace("#cell=core&comment=", "");
+                        br.getHeaders().put("Referer", dllink);
+                        con = br.openGetConnection(dllink);
+                    }
+                    if (con.getResponseCode() == 410 || con.getContentType().contains("html")) return false;
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            } catch (final Exception e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

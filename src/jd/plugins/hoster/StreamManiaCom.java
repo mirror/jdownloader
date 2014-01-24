@@ -191,7 +191,7 @@ public class StreamManiaCom extends PluginForHost {
                 link.setProperty(StreamManiaCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
             }
         }
         if (!dl.getConnection().isContentDisposition()) {

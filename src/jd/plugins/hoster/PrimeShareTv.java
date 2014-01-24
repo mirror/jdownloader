@@ -73,7 +73,11 @@ public class PrimeShareTv extends PluginForHost {
         if (br.containsHTML("files per hour for free users\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         String dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.primeshare\\.tv(:\\d+)?/get/[^<>\"]*?)(\"|\\')").getMatch(1);
         if (dllink == null && br.containsHTML("\\.val \\(\\'Continue\\'\\);")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            // Won't work via browser either
+            if (br.containsHTML("var cWaitTime = ")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Chunkload possible but deactivated because of server problems
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {

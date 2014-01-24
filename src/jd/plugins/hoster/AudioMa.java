@@ -55,8 +55,8 @@ public class AudioMa extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<div class=\"download\\-song orange\\-btn\">[\t\n\r ]+<a href=\"(http:/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://music\\.audiomack\\.com/tracks/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("id=\"audiomack\\-embed\"[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://music\\.audiomack\\.com/tracks/[a-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

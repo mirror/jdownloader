@@ -72,7 +72,9 @@ public class AndroidFileHostCom extends PluginForHost {
         br.postPage("http://www.androidfilehost.com/libs/otf/mirrors.otf.php", "submit=submit&action=getdownloadmirrors&fid=" + fid);
         final String[] adresses = br.getRegex("\"address\":\"([^<>\"]*?)\"").getColumn(0);
         if (adresses == null || adresses.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String adress = adresses[new Random().nextInt(adresses.length - 1)];
+        int position = 0;
+        if (adresses.length > 1) position = new Random().nextInt(adresses.length - 1);
+        final String adress = adresses[position];
         if (adress == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = "http://" + adress + "/download.php?fid=" + fid + "&registered=0&waittime=10&fid=" + fid + "&flid=" + flid + "&uid=&file_size=" + filesize + "&hc=" + hc + "&tid=" + tid + "&download_id=" + download_id + "&filename=" + downloadLink.getFinalFileName() + "&action=download";
         // Disabled chunks and resume because different downloadserver = different connection limits
