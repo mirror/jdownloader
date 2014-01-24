@@ -240,7 +240,12 @@ public class FreeWayMe extends PluginForHost {
 
         /* Begin workaround for wrong encoding while redirect */
         br.setFollowRedirects(false);
-        br.getPage(dllink);
+        String page = br.getPage(dllink);
+        if (page.contains("Invalid login")) {
+            logger.info("{handleMultiHost} Invalid Login for account: " + acc.getUser());
+            acc.setError(AccountError.TEMP_DISABLED, "Invalid login");
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         String location = br.getRedirectLocation();
         dllink = location.substring(0, location.indexOf("?")) + dllink.substring(dllink.indexOf("?"), dllink.length()) + "&s=" + location.substring(location.length() - 1, location.length());
         /* end workaround for wrong encoding while redirect */
@@ -283,7 +288,12 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, "Host temporary disabled");
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
-            } else if (error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
+            } else if (error.equalsIgnoreCase("Unbekannter Fehler #3") || error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
+                /*
+                 * "Unbekannter Fehler #3" -> free-way has internal routing problem "Es ist ein unbekannter Fehler aufgetreten (#1)" ->
+                 * free-way has internally no traffic for host
+                 */
+
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
