@@ -93,15 +93,15 @@ public class UpDownBz extends PluginForHost {
         account.setProperty("expires_at", getsid_data.get("expires_at"));
 
         // eval traffic data
-        if ((long) data.get("traffic_max") == -1)
+        if ((Long) data.get("traffic_max") == -1)
             ai.setUnlimitedTraffic();
         else {
-            ai.setTrafficLeft((long) data.get("traffic_max") - (long) data.get("traffic_used"));
-            ai.setTrafficMax((long) data.get("traffic_max"));
+            ai.setTrafficLeft((Long) data.get("traffic_max") - (Long) data.get("traffic_used"));
+            ai.setTrafficMax((Long) data.get("traffic_max"));
         }
 
         // set premium state data
-        long premium_until = (long) data.get("premium_until") * 1000L;
+        Long premium_until = (Long) data.get("premium_until") * 1000L;
         ai.setValidUntil(premium_until);
         ai.setStatus("Premium");
         if (premium_until > System.currentTimeMillis()) {
@@ -262,8 +262,8 @@ public class UpDownBz extends PluginForHost {
             // try to parse json response
             JSonFactory json_factory = new JSonFactory(response);
             JSonObject json_response = (JSonObject) json_factory.parse();
-            long code = (long) (((JSonValue) json_response.get("c")).getValue());
-            if (code > 0) {
+            Long code = (Long) (((JSonValue) json_response.get("c")).getValue());
+            if (code != null && code > 0) {
                 data = new HashMap<String, HashMap<String, Object>>();
                 if (json_response.containsKey("d")) {
                     JSonArray json_data_array = (JSonArray) json_response.get("d");
@@ -348,8 +348,8 @@ public class UpDownBz extends PluginForHost {
             // try to parse json response
             JSonFactory json_factory = new JSonFactory(response);
             JSonObject json_response = (JSonObject) json_factory.parse();
-            long code = (long) (((JSonValue) json_response.get("c")).getValue());
-            if (code > 0) {
+            Long code = (Long) (((JSonValue) json_response.get("c")).getValue());
+            if (code != null && code > 0) {
                 data = new HashMap<String, String>();
                 if (json_response.containsKey("d")) {
                     JSonObject json_data = (JSonObject) json_response.get("d");
@@ -392,8 +392,8 @@ public class UpDownBz extends PluginForHost {
             // try to parse json response
             JSonFactory json_factory = new JSonFactory(response);
             JSonObject json_response = (JSonObject) json_factory.parse();
-            long code = (long) (((JSonValue) json_response.get("c")).getValue());
-            if (code > 0) {
+            Long code = (Long) (((JSonValue) json_response.get("c")).getValue());
+            if (code != null && code > 0) {
                 data = new HashMap<String, String>();
                 if (json_response.containsKey("d")) {
                     JSonObject json_data = (JSonObject) json_response.get("d");
@@ -432,15 +432,15 @@ public class UpDownBz extends PluginForHost {
             // try to parse json response
             JSonFactory json_factory = new JSonFactory(response);
             JSonObject json_response = (JSonObject) json_factory.parse();
-            long code = (long) (((JSonValue) json_response.get("c")).getValue());
-            if (code > 0) {
+            Long code = (Long) (((JSonValue) json_response.get("c")).getValue());
+            if (code != null && code > 0) {
                 if (json_response.containsKey("d")) {
                     JSonObject json_data = (JSonObject) json_response.get("d");
 
                     // extract the actual data values
-                    long premium_until = (long) ((JSonValue) json_data.get("premium_until")).getValue();
-                    long traffic_used = (long) ((JSonValue) json_data.get("traffic_used")).getValue();
-                    long traffic_max = (long) ((JSonValue) json_data.get("traffic_max")).getValue();
+                    Long premium_until = (Long) ((JSonValue) json_data.get("premium_until")).getValue();
+                    Long traffic_used = (Long) ((JSonValue) json_data.get("traffic_used")).getValue();
+                    Long traffic_max = (Long) ((JSonValue) json_data.get("traffic_max")).getValue();
 
                     // add values to output store
                     data = new HashMap<String, Object>();
@@ -461,7 +461,7 @@ public class UpDownBz extends PluginForHost {
 
     private String createStorageUrl(DownloadLink dl_link, String sessionid, String host, String share_password) {
         String url = getHttpProtocol() + host + "/d/?file=" + dl_link.getProperty("id") + "&sid=" + sessionid;
-        if (share_password != null && (boolean) dl_link.getProperty("protected")) url += "&pass=" + share_password;
+        if (share_password != null && Boolean.TRUE.equals((Boolean) dl_link.getProperty("protected"))) url += "&pass=" + share_password;
         return url;
     }
 
