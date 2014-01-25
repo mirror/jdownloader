@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw)/[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
@@ -47,8 +47,8 @@ public class AdfLy extends PluginForDecrypt {
 
     private final boolean supportsHTTPS = true;
     private String        protocol      = null;
-    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw)";
-    private final String  INVALIDLINKS  = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw)/(link\\-deleted\\.php|index|login|static).+";
+    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy)";
+    private final String  INVALIDLINKS  = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy)/(link\\-deleted\\.php|index|login|static).+";
     private static Object LOCK          = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -78,24 +78,29 @@ public class AdfLy extends PluginForDecrypt {
                 parameter = linkInsideLink.replace("www.", "");
             }
         }
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.76");
         boolean skipWait = true;
         String finallink = null;
         for (int i = 0; i <= 2; i++) {
             synchronized (LOCK) {
                 br.getPage(parameter.replaceFirst("https?://", protocol));
             }
-            if (br.containsHTML("(<b style=\"font-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)") || (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("ink-deleted.php") || br.getRedirectLocation().contains("/suspended")))) {
-                logger.info("adf.ly link offline: " + parameter);
-                return decryptedLinks;
-            }
-            if (br.containsHTML("Sorry, there has been a problem\\.")) {
-                logger.info("adf.ly link offline: " + parameter);
-                return decryptedLinks;
-            }
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("https?://adf\\.ly/?")) {
-                logger.info("adf.ly link offline: " + parameter);
-                return decryptedLinks;
+            if (true) {
+                String redir = br.getRedirectLocation();
+                if (redir != null && redir.contains("http://") && isProtocolHTTPS()) {
+                    // redirects can happen here to alternative domains, lets return back into the decrypter.
+                    decryptedLinks.add(createDownloadlink(redir));
+                    return decryptedLinks;
+                } else if (redir != null && redir.matches("https?://adf\\.ly/?")) {
+                    logger.info("adf.ly link offline: " + parameter);
+                    return decryptedLinks;
+                } else if (br.containsHTML("(<b style=\"font-size: 20px;\">Sorry the page you are looking for does not exist|>404 Not Found<|>Not Found<|>Sorry, but the requested page was not found)") || (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("ink-deleted.php") || br.getRedirectLocation().contains("/suspended")))) {
+                    logger.info("adf.ly link offline: " + parameter);
+                    return decryptedLinks;
+                } else if (br.containsHTML("Sorry, there has been a problem\\.")) {
+                    logger.info("adf.ly link offline: " + parameter);
+                    return decryptedLinks;
+                }
             }
             /* javascript vars 20130328 */
             String countdown = getWaittime();
@@ -285,6 +290,17 @@ public class AdfLy extends PluginForDecrypt {
 
     private boolean isJD2() {
         if (System.getProperty("jd.revision.jdownloaderrevision") != null)
+            return true;
+        else
+            return false;
+    }
+
+    /**
+     * returns true when current this.protocol value is https
+     * 
+     */
+    private boolean isProtocolHTTPS() {
+        if ("https://".equalsIgnoreCase(this.protocol))
             return true;
         else
             return false;
