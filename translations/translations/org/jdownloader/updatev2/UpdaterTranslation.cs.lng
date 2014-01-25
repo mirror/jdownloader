@@ -30,7 +30,6 @@ errordialog_noconnection=JDownloader se nemohl připojit k aktualizačnímu serv
 errordialog_not_enough_space=Na vašem disku C: není dostatek volného místa.\nUjistěte se, že je tam alespoň %s1 volného místa (je potřeba více o %s2) a restartujte aktualizaci.
 errordialog_selfupdate_failed=Nezdařilo se nainstalovat aktualizaci. Zkuste to znovu později.\nPokud se tento problém "nevyřeší sám" po několika hodinách, kontaktujte naši podporu nebo přeinstalujte JDownloader.
 errordialog_server_error=Aktualizační server není právě teď dostupný. Zkuste to znovu později nebo kontaktujte naši podporu.
-errordialog_server_locked=Aktualizační server je právě teď zaneprázdněn. Zkuste to znovu za několik minut.
 errordialog_server_offline=Aktualizační server není právě teď dostupný. Zkuste to znovu později.
 guiless_you_are_up2date=Již máte nejnovější verzi
 installframe_frametitle=Aktualizátor JDownloaderu
