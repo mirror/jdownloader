@@ -502,16 +502,30 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            final String id = br.getRegex("onclick=\'go\\((\\d+)").getMatch(0);
             final String sec = br.getRegex("f\\.lastChild\\.value=\"(\\w+)\"").getMatch(0);
             final String t = br.getRegex("&t=(\\d+)\"").getMatch(0);
-            final int s = (int) (1 + Math.random() * 20);
-            final int m = (int) (1 + Math.random() * 250);
             String url = br.getRegex("\"POST\",\"(.*?)\"").getMatch(0);
-            if (id == null || sec == null || t == null || url == null) { return null; }
+            if (sec == null || t == null || url == null) { return null; }
             url = url.startsWith("http") ? url : "http://www.icefilms.info" + url;
-            br.postPage(url, "id=" + id + "&s=" + String.valueOf(s) + "&iqs=&url=&m=-" + String.valueOf(m) + "&cap=&sec=" + sec + "&t=" + t);
-            finallink = Encoding.htmlDecode(br.getRegex("url=(.*?)$").getMatch(0));
+            String[] results = br.getRegex("(<a rel=\\d+.*?</a>)").getColumn(0);
+            if (results == null || results.length == 0) return null;
+            for (String result : results) {
+                final String id = new Regex(result, "onclick=\'go\\((\\d+)").getMatch(0);
+                // continue when we can't find go value!
+                if (id == null) continue;
+                final int s = (int) (1 + Math.random() * 20);
+                final int m = (int) (1 + Math.random() * 250);
+                Browser br2 = br.cloneBrowser();
+                // non jd2 doesn't set this header.
+                br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                br2.postPage(url, "id=" + id + "&s=" + String.valueOf(s) + "&iqs=&url=&m=-" + String.valueOf(m) + "&cap=&sec=" + sec + "&t=" + t);
+                final String link = Encoding.htmlDecode(br2.getRegex("url=(.*?)$").getMatch(0));
+                // continues on link failure.. not all mirrors are live.
+                if (link != null) decryptedLinks.add(createDownloadlink(link));
+                // small pause to prevent high loads
+                Thread.sleep(1500);
+            }
+            return decryptedLinks;
         } else if (parameter.contains("q32.ru/")) {
             final Form dlForm = br.getForm(0);
             if (dlForm != null) {
