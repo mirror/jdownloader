@@ -959,6 +959,7 @@ public class YoutubeDashV2 extends PluginForHost {
         };
         dl = BrowserAdapter.openDownload(br, dashDownloadable, request, true, getChunksPerStream());
         if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("audio") && !this.dl.getConnection().getContentType().startsWith("application")) {
+            if (dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.hoster_servererror("Youtube"), 5 * 60 * 1000l); }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -1146,6 +1147,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).data, resume, 1);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("image/")) {
+                if (dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.hoster_servererror("Youtube"), 5 * 60 * 1000l); }
 
                 this.dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -1162,6 +1164,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).data, resume, 1);
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("text/xml")) {
+                if (dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.hoster_servererror("Youtube"), 5 * 60 * 1000l); }
 
                 this.dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -1179,6 +1182,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getUrlPair(downloadLink).video, resume, getChunksPerStream());
             if (!this.dl.getConnection().isContentDisposition() && !this.dl.getConnection().getContentType().startsWith("video") && !this.dl.getConnection().getContentType().startsWith("application")) {
+                if (dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _GUI._.hoster_servererror("Youtube"), 5 * 60 * 1000l); }
 
                 this.dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
