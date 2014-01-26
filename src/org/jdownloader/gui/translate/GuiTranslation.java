@@ -3855,7 +3855,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Media Type: Video,3DVideo,Audio,Subtitles,..." })
     String YoutubeHelper_getDescription_group();
 
-    @Default(lngs = { "en" }, values = { "VariantID. e.g. 'mp4_128kbit_acc'" })
+    @Default(lngs = { "en" }, values = { "VariantID. e.g. 'mp4_128kbit_aac'" })
     String YoutubeHelper_getDescription_variantid();
 
     @Default(lngs = { "en" }, values = { "Variant tag. e.g. '1080p'" })
