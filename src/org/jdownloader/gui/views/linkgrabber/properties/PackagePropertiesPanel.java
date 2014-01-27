@@ -22,17 +22,14 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected void addFilename(int height, MigPanel p) {
-
     }
 
     protected void addDownloadFrom(int height, MigPanel p) {
-
     }
 
     @Override
     protected List<Archive> loadArchives() {
         return ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null, false));
-
     }
 
     public void fillPopup(JPopupMenu pu) {
@@ -51,14 +48,11 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
     @Override
     protected Priority loadPriority() {
         Priority p = currentPackage.getView().getHighestPriority();
-
         if (p != currentPackage.getView().getLowestPriority()) {
-
             return null;
         } else {
             return p;
         }
-
     }
 
     @Override
@@ -75,7 +69,6 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
     @Override
     protected void savePriority(Priority priop) {
         if (priop != null) {
-
             boolean readL = currentPackage.getModifyLock().readLock();
             try {
                 for (CrawledLink dl : currentPackage.getChildren()) {
@@ -84,7 +77,6 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
             } finally {
                 currentPackage.getModifyLock().readUnlock(readL);
             }
-
         }
     }
 
@@ -100,12 +92,10 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected void addChecksum(int height, MigPanel p) {
-
     }
 
     @Override
     protected void addDownloadPassword(int height, MigPanel p) {
-
     }
 
 }

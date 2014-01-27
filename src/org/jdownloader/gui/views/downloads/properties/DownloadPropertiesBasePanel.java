@@ -58,7 +58,6 @@ public class DownloadPropertiesBasePanel extends MigPanel {
     }
 
     public void fillPopup(JPopupMenu pu) {
-
         if (linkPanel.isVisible()) {
             linkPanel.fillPopup(pu);
         } else {

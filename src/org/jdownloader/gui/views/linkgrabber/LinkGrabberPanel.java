@@ -23,6 +23,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -98,20 +99,37 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
         tableModel = LinkGrabberTableModel.getInstance();
         table = new LinkGrabberTable(this, tableModel);
+
+        final DelayedRunnable propertiesDelayer = new DelayedRunnable(100l, 1000l) {
+
+            @Override
+            public void delayedrun() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (table.getModel().hasSelectedObjects()) {
+                            setPropertiesPanelVisible(true);
+                            propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+                        } else {
+                            setPropertiesPanelVisible(false);
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public String getID() {
+                return "updateDelayer";
+            }
+
+        };
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (!CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() || e.getValueIsAdjusting()) return;
-                if (table.getModel().hasSelectedObjects()) {
-                    setPropertiesPanelVisible(true);
-                    propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
-                } else {
-
-                    setPropertiesPanelVisible(false);
-
-                }
-
+                if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) return;
+                propertiesDelayer.run();
             }
         });
         tableScrollPane = new JScrollPane(table);

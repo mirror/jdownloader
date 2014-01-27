@@ -22,18 +22,15 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected void addFilename(int height, MigPanel p) {
-
     }
 
     @Override
     protected void addDownloadFrom(int height, MigPanel p) {
-
     }
 
     @Override
     protected List<Archive> loadArchives() {
         return ArchiveValidator.validate(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null, false));
-
     }
 
     public void fillPopup(JPopupMenu pu) {
@@ -63,12 +60,10 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected void addChecksum(int height, MigPanel p) {
-
     }
 
     @Override
     protected void saveSaveTo(final String stringpath) {
-
         new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null, false)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
@@ -81,7 +76,6 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected void addDownloadPassword(int height, MigPanel p) {
-
     }
 
     @Override
@@ -92,14 +86,11 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
     @Override
     protected Priority loadPriority() {
         Priority p = currentPackage.getView().getHighestPriority();
-
         if (p != currentPackage.getView().getLowestPriority()) {
-
             return null;
         } else {
             return p;
         }
-
     }
 
 }

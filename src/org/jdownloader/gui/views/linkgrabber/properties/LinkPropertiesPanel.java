@@ -31,7 +31,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements LinkCollectorListener {
 
-    protected CrawledLink currentLink;
+    protected volatile CrawledLink currentLink;
 
     //
     // protected void saveInEDT() {
@@ -106,7 +106,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     }
 
-    protected CrawledPackage currentPackage;
+    protected volatile CrawledPackage currentPackage;
 
     public LinkPropertiesPanel() {
         super();
@@ -303,11 +303,13 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected void saveArchivePasswords(List<String> hashSet) {
+        if (currentArchive == null) return;
         currentArchive.getSettings().setPasswords(hashSet);
     }
 
     @Override
     protected void saveAutoExtract(BooleanStatus selectedItem) {
+        if (currentArchive == null) return;
         currentArchive.getSettings().setAutoExtract(selectedItem);
     }
 
@@ -351,9 +353,14 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
             @Override
             protected void runInEDT() {
+                boolean changesDetected = currentLink != link || (link != null && currentPackage != link.getParentNode());
                 currentLink = link;
-                currentPackage = link.getParentNode();
-                refresh(true);
+                if (link == null) {
+                    currentPackage = null;
+                } else {
+                    currentPackage = link.getParentNode();
+                }
+                refresh(changesDetected);
             }
         };
     }
@@ -363,9 +370,10 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
             @Override
             protected void runInEDT() {
+                boolean changesDetected = currentPackage != pkg;
                 currentLink = null;
                 currentPackage = pkg;
-                refresh(true);
+                refresh(changesDetected);
             }
         };
 
@@ -385,5 +393,10 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
         LinkCollector.getInstance().getEventsender().addListener(this, true);
 
+    }
+
+    @Override
+    protected boolean isAbstractNodeSelected() {
+        return currentLink != null || currentPackage != null;
     }
 }

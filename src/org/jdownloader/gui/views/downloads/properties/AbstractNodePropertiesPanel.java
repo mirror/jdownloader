@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -83,10 +84,8 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     protected ExtTextField                        password;
     protected PseudoCombo<Priority>               priority;
     private DelayedRunnable                       saveDelayer;
-    protected boolean                             saving;
-
-    protected boolean                             setting;
-
+    protected final AtomicInteger                 savingLock  = new AtomicInteger(0);
+    protected final AtomicInteger                 settingLock = new AtomicInteger(0);
     private DelayedRunnable                       updateDelayer;
 
     @Override
@@ -127,7 +126,13 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
             @Override
             public void delayedrun() {
-                save();
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        save();
+                    }
+                };
             }
 
             @Override
@@ -513,12 +518,10 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         autoExtract.setEnabled(false);
         password.setEnabled(false);
         onHidden();
-
     }
 
     protected void onHidden() {
         save();
-
     }
 
     protected void onShowing() {
@@ -599,8 +602,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     }
 
     protected void delayedSave() {
-        if (setting) return;
-        saveDelayer.resetAndStart();
+        if (settingLock.get() == 0) saveDelayer.resetAndStart();
     }
 
     abstract protected Icon getHighestPackagePriorityIcon();
@@ -695,66 +697,47 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
             @Override
             protected void runInEDT() {
-                if (!isShowing()) return;
-
-                if (saving) return;
-                System.out.println("REFRESH PANEL! " + newData + " +" + this);
+                if (!isAbstractNodeSelected() || !isShowing() || savingLock.get() > 0) return;
                 currentArchive = null;
                 new Thread("PropertiesPanelUpdater") {
                     public void run() {
-
                         final List<Archive> archives = loadArchives();
-
                         new EDTRunner() {
-
                             @Override
                             protected void runInEDT() {
-                                setting = true;
                                 try {
+                                    settingLock.incrementAndGet();
                                     autoExtract.setEnabled(archives != null && archives.size() == 1);
                                     password.setEnabled(archives != null && archives.size() == 1);
                                     if (password.isEnabled()) {
                                         updateArchiveInEDT(archives.get(0), newData);
-
                                     }
                                 } finally {
-                                    setting = false;
+                                    settingLock.decrementAndGet();
                                 }
                             }
                         };
                     }
 
                 }.start();
-                setting = true;
                 try {
+                    settingLock.incrementAndGet();
                     updateInEDT(newData);
-
                 } finally {
-                    setting = false;
+                    settingLock.decrementAndGet();
                 }
-                // extractToggle.setSelected(true);
-
             }
         };
-
     }
 
     public void save() {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                if (setting) return;
-                saving = true;
-                try {
-                    saveInEDT();
-                } finally {
-                    saving = false;
-                }
-            }
-
-        };
-
+        if (settingLock.get() > 0 || !isAbstractNodeSelected()) return;
+        try {
+            savingLock.incrementAndGet();
+            saveInEDT();
+        } finally {
+            savingLock.decrementAndGet();
+        }
     }
 
     abstract protected void saveArchivePasswords(List<String> hashSet);
@@ -767,47 +750,46 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
     abstract protected void saveFilename(String text);
 
+    abstract protected boolean isAbstractNodeSelected();
+
     protected void saveInEDT() {
-        if (priority.isShowing()) {
-            Priority priop = priority.getSelectedItem();
-            savePriority(priop);
+        if (priority.getParent() != null) {
+            savePriority(priority.getSelectedItem());
         }
-        if (comment.isShowing()) {
+        if (comment.getParent() != null) {
             saveComment(comment.getText());
         }
-        if (filename.isShowing()) {
+        if (filename.getParent() != null) {
             saveFilename(filename.getText());
         }
-        if (downloadpassword.isShowing()) {
+        if (downloadpassword.getParent() != null) {
             saveDownloadPassword(downloadpassword.getText());
         }
-        if (checksum.isShowing()) {
+        if (checksum.getParent() != null) {
             String cs = checksum.getText();
             cs = cs.replaceAll("\\[.*?\\]", "").trim();
             if (cs.length() == 32) {
                 saveMd5(cs);
-
             } else if (cs.length() == 40) {
                 saveSha1(cs);
-
             } else {
                 saveMd5(null);
-                saveSha1(cs);
+                saveSha1(null);
             }
         }
-        if (packagename.isShowing()) {
-            if (!loadPackageName().equals(packagename.getText())) {
-                savePackageName(packagename.getText());
-                PackageHistoryManager.getInstance().add(packagename.getText());
+        if (packagename.getParent() != null) {
+            String newName = packagename.getText();
+            if (!loadPackageName().equals(newName)) {
+                savePackageName(newName);
+                PackageHistoryManager.getInstance().add(newName);
             }
         }
-        if (password.isShowing()) {
+        if (password.getParent() != null) {
             if (currentArchive != null) {
-                System.out.println("SAVE");
                 ArrayList<String> passwords = null;
                 String txt = password.getText().trim();
                 if (txt.startsWith("[") && txt.endsWith("]")) {
-                    passwords = JSonStorage.restoreFromString(password.getText(), new TypeRef<ArrayList<String>>() {
+                    passwords = JSonStorage.restoreFromString(txt, new TypeRef<ArrayList<String>>() {
                     }, null);
                 }
                 if (passwords != null && passwords.size() > 0) {
@@ -815,21 +797,18 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
                 } else {
                     List<String> hs = new ArrayList<String>();
-                    if (StringUtils.isNotEmpty(password.getText())) hs.add(password.getText().trim());
+                    if (StringUtils.isNotEmpty(txt)) hs.add(txt);
 
                     saveArchivePasswords(hs);
                 }
                 saveAutoExtract(autoExtract.getSelectedItem());
-
             }
         }
-        if (destination.getDestination().isShowing() && !loadSaveTo().equals(destination.getPath())) {
-            String lst = loadSaveTo();
-            saveSaveTo(destination.getPath());
-
-            DownloadPathHistoryManager.getInstance().add(destination.getPath());
+        String path;
+        if (destination.getDestination().getParent() != null && !loadSaveTo().equals(path = destination.getPath())) {
+            saveSaveTo(path);
+            DownloadPathHistoryManager.getInstance().add(path);
         }
-
     }
 
     abstract protected void saveMd5(String cs);
@@ -901,37 +880,33 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
 
     protected void updateArchiveInEDT(final Archive archive, boolean newData) {
         currentArchive = archive;
-        if ((newData || !password.hasFocus()) && password.isShowing()) {
+        if (password.getParent() != null && (newData || !password.hasFocus())) {
             if (currentArchive.getSettings().getPasswords() == null || currentArchive.getSettings().getPasswords().size() == 0) {
                 password.setText(null);
             } else if (currentArchive.getSettings().getPasswords().size() == 1) {
-
                 password.setText(currentArchive.getSettings().getPasswords().iterator().next());
             } else {
                 password.setText(JSonStorage.toString(currentArchive.getSettings().getPasswords()));
             }
         }
-        if (autoExtract.isShowing()) {
+        if (autoExtract.getParent() != null) {
             autoExtract.setSelectedItem(currentArchive.getSettings().getAutoExtract());
         }
     }
 
     protected void updateInEDT(boolean newData) {
-
-        if ((!downloadFrom.hasFocus() || newData) && downloadFrom.isShowing()) {
+        if (downloadFrom.getParent() != null && (newData || !downloadFrom.hasFocus())) {
             downloadFrom.setText(loadDownloadFrom());
         }
 
-        if ((!filename.hasFocus() || newData) && filename.isShowing()) {
+        if (filename.getParent() != null && (newData || !filename.hasFocus())) {
             filename.setText(loadFilename());
         }
-        if ((!comment.hasFocus() || newData) && comment.isShowing()) {
-
+        if (comment.getParent() != null && (newData || !comment.hasFocus())) {
             comment.setText(loadComment());
-
         }
 
-        if ((!destination.getDestination().hasFocus() || newData) && destination.getDestination().isShowing()) {
+        if (destination.getDestination().getParent() != null && (newData || !destination.getDestination().hasFocus())) {
             String saveto = null;
             List<String> pathlist = DownloadPathHistoryManager.getInstance().listPathes(saveto = loadSaveTo(), org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
 
@@ -939,9 +914,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             destination.setFile(new File(saveto));
         }
 
-        if ((!checksum.hasFocus() || newData) && checksum.isShowing()) {
-            //
-            // if (dl.getMD5Hash() != null) return "[MD5] " + dl.getMD5Hash();
+        if (checksum.getParent() != null && (newData || !checksum.hasFocus())) {
             String sha1 = loadSha1();
             String md5 = loadMD5();
             if (!StringUtils.isEmpty(sha1)) {
@@ -951,18 +924,19 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             } else {
                 checksum.setText(null);
             }
-
         }
-        if ((!downloadpassword.hasFocus() || newData) && downloadpassword.isShowing()) {
+        if (downloadpassword.getParent() != null && (newData || !downloadpassword.hasFocus())) {
             downloadpassword.setText(loadDownloadPassword());
         }
-        if ((!packagename.hasFocus() || newData) && packagename.isShowing()) {
+        if (packagename.getParent() != null && (newData || !packagename.hasFocus())) {
             packagename.setList(PackageHistoryManager.getInstance().list(new PackageHistoryEntry(loadPackageName())));
             packagename.setSelectedItem(new PackageHistoryEntry(loadPackageName()));
         }
 
-        if ((!password.hasFocus() || newData) && password.isShowing()) password.setText("");
-        if (priority.isShowing()) {
+        if (password.getParent() != null && (newData || !password.hasFocus())) {
+            password.setText("");
+        }
+        if (priority.getParent() != null) {
             priority.setSelectedItem(loadPriority());
         }
 

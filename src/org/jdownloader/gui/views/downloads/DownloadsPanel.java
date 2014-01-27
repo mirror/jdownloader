@@ -26,6 +26,7 @@ import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatusProperty;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -154,22 +155,37 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
         };
         propertiesPanel = createPropertiesPanel();
 
+        final DelayedRunnable propertiesDelayer = new DelayedRunnable(100l, 1000l) {
+
+            @Override
+            public void delayedrun() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (table.getSelectedRowCount() > 0) {
+                            setPropertiesPanelVisible(true);
+                            propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
+                        } else {
+                            setPropertiesPanelVisible(false);
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public String getID() {
+                return "updateDelayer";
+            }
+
+        };
+
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (e == null || e.getValueIsAdjusting() || table.getModel().isTableSelectionClearing() || !CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled()) return;
-                if (table.getSelectedRowCount() > 0) {
-                    setPropertiesPanelVisible(true);
-
-                    propertiesPanel.update(table.getModel().getObjectbyRow(table.getSelectionModel().getLeadSelectionIndex()));
-
-                } else {
-
-                    setPropertiesPanelVisible(false);
-
-                }
-
+                propertiesDelayer.run();
             }
         });
         DownloadController.DOWNLOADLIST_LOADED.executeWhen(new Runnable() {
@@ -460,8 +476,8 @@ public class DownloadsPanel extends SwitchPanel implements DownloadControllerLis
                     long contentChanges = DownloadController.getInstance().getContentChanges();
                     if (lastContentChanges != contentChanges && tableModel.isFilteredView()) {
                         /*
-                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the
-                         * tablemodel to reflect possible status changes in filtered view
+                         * in case we have content changes(eg downloads started) and an active filteredView, we need to recreate the tablemodel to reflect
+                         * possible status changes in filtered view
                          */
                         tableModel.recreateModel();
                     } else {

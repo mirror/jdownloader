@@ -40,8 +40,8 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel implements ActionListener, GenericConfigEventListener<Boolean>, DownloadControllerListener {
 
-    protected DownloadLink currentLink;
-    protected FilePackage  currentPackage;
+    protected volatile DownloadLink currentLink;
+    protected volatile FilePackage  currentPackage;
 
     public DownloadLinkPropertiesPanel() {
         super();
@@ -53,7 +53,6 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
         CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_CHECKSUM_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_COMMENT_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_ARCHIVEPASSWORD_VISIBLE.getEventSender().addListener(this, true);
-
     }
 
     @Override
@@ -88,7 +87,6 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
     }
 
     public void fillPopup(JPopupMenu pu) {
-
         pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_packagename(), CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_PACKAGENAME_VISIBLE));
         pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_filename(), CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_FILENAME_VISIBLE));
         pu.add(new CheckboxMenuItem(_GUI._.LinkgrabberPropertiesHeader_saveto(), CFG_GUI.DOWNLOADS_PROPERTIES_PANEL_SAVE_TO_VISIBLE));
@@ -155,7 +153,6 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
             } else {
                 return ("*******************************");
             }
-
         } else {
             return (dlLink.getBrowserUrl());
         }
@@ -260,28 +257,31 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
             refresh();
         } else if (downloadlink != null && downloadlink.getParentNode() == currentPackage) {
             // example:package is selected,and we change the archive password. this fires events on the packages links
-
             refresh();
         }
     }
 
     @Override
     protected void saveArchivePasswords(List<String> hashSet) {
+        if (currentArchive == null) return;
         currentArchive.getSettings().setPasswords(hashSet);
     }
 
     @Override
     protected void saveAutoExtract(BooleanStatus selectedItem) {
+        if (currentArchive == null) return;
         currentArchive.getSettings().setAutoExtract(selectedItem);
     }
 
     @Override
     protected void saveComment(String text) {
+        if (currentArchive == null) return;
         currentLink.getDownloadLink().setComment(text);
     }
 
     @Override
     protected void saveDownloadPassword(String text) {
+        if (currentArchive == null) return;
         currentLink.getDownloadLink().setDownloadPassword(text);
     }
 
@@ -307,10 +307,8 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected void saveSaveTo(final String stringpath) {
-        System.out.println(1);
         new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentLink, null, false)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
-
                 return new File(stringpath);
             };
         }.actionPerformed(null);
@@ -328,9 +326,14 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
             @Override
             protected void runInEDT() {
+                boolean changesDetected = currentLink != link || (link != null && currentPackage != link.getParentNode());
                 currentLink = link;
-                currentPackage = link.getParentNode();
-                refresh(true);
+                if (link == null) {
+                    currentPackage = null;
+                } else {
+                    currentPackage = link.getParentNode();
+                }
+                refresh(changesDetected);
             }
         };
     }
@@ -340,9 +343,10 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
             @Override
             protected void runInEDT() {
+                boolean changesDetected = currentPackage != pkg;
                 currentLink = null;
                 currentPackage = pkg;
-                refresh(true);
+                refresh(changesDetected);
             }
         };
 
@@ -351,18 +355,17 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
     @Override
     protected void onHidden() {
         super.onHidden();
-        System.out.println("Hidden " + this);
         DownloadController.getInstance().getEventSender().removeListener(this);
-
     }
 
     @Override
     protected void onShowing() {
         super.onShowing();
-        // remove listeners to avoid dupes
-
-        System.out.println("Showing " + this);
         DownloadController.getInstance().getEventSender().addListener(this, true);
+    }
 
+    @Override
+    protected boolean isAbstractNodeSelected() {
+        return currentLink != null || currentPackage != null;
     }
 }
