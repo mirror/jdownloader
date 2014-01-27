@@ -124,15 +124,16 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addStartDescription(description);
 
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_if_link_contains_video_and_playlist(), null, null, new ComboBox<IfUrlisAVideoAndPlaylistAction>(cf._getStorageHandler().getKeyHandler("LinkIsVideoAndPlaylistUrlAction", KeyHandler.class), IfUrlisAVideoAndPlaylistAction.values(), null));
-        ComboBox<GroupLogic> box = new ComboBox<GroupLogic>(cf._getStorageHandler().getKeyHandler("GroupLogic", KeyHandler.class), GroupLogic.values(), null) {
-            @Override
-            public void onConfigValueModified(KeyHandler<GroupLogic> keyHandler, GroupLogic newValue) {
-                super.onConfigValueModified(keyHandler, newValue);
-                updateBest();
-            }
-        };
-
-        addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, box);
+        // ComboBox<GroupLogic> box = new ComboBox<GroupLogic>(cf._getStorageHandler().getKeyHandler("GroupLogic", KeyHandler.class),
+        // GroupLogic.values(), null) {
+        // @Override
+        // public void onConfigValueModified(KeyHandler<GroupLogic> keyHandler, GroupLogic newValue) {
+        // super.onConfigValueModified(keyHandler, newValue);
+        // updateBest();
+        // }
+        // };
+        //
+        // addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_grouping(), null, null, box);
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_https(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("PreferHttpsEnabled", BooleanKeyHandler.class), null));
         addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling_desc());
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_fastcrawling(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("FastLinkCheckEnabled", BooleanKeyHandler.class), null));
@@ -205,6 +206,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
         addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags());
+
         for (Replacer r : YoutubeHelper.REPLACER) {
 
             StringBuilder sb = new StringBuilder();

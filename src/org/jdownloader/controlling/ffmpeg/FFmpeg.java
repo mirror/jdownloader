@@ -19,6 +19,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.GeneralSettings;
 
 public class FFmpeg {
 
@@ -201,6 +202,10 @@ public class FFmpeg {
 
     public boolean merge(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException {
         logger.info("Merging " + videoIn + " + " + audioIn + " = " + out);
+
+        long lastModifiedVideo = new File(videoIn).lastModified();
+        long lastModifiedAudio = new File(audioIn).lastModified();
+
         String[] mc = config.getMergeCommand();
         ArrayList<String> commandLine = new ArrayList<String>();
         commandLine.add(getFullPath());
@@ -269,6 +274,16 @@ public class FFmpeg {
 
                     logger.info(sb.toString());
                     logger.info(sb2.toString());
+
+                    try {
+
+                        if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                            new File(out).setLastModified(Math.max(lastModifiedAudio, lastModifiedAudio));
+                        }
+                    } catch (final Throwable e) {
+                        LogSource.exception(logger, e);
+                    }
+
                     return exitCode == 0;
                 } catch (IllegalThreadStateException e) {
                     // still running;
@@ -296,6 +311,7 @@ public class FFmpeg {
     public boolean generateAac(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
         /* Sorry for not respecting DRY. I didn't want to change such a method without coalados permisson. TheCrap */
         logger.info("Generating " + audioIn + " = " + out);
+        long lastModifiedAudio = new File(audioIn).lastModified();
         ArrayList<String> commandLine = new ArrayList<String>();
         commandLine.addAll(Arrays.asList(getFullPath(), "-i", audioIn, "-f", "adts", "-c:a", "copy", out, "-y"));
         logger.info("FFmpeg command: " + commandLine);
@@ -358,6 +374,14 @@ public class FFmpeg {
 
                     logger.info(sb.toString());
                     logger.info(sb2.toString());
+                    try {
+
+                        if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                            new File(out).setLastModified(lastModifiedAudio);
+                        }
+                    } catch (final Throwable e) {
+                        LogSource.exception(logger, e);
+                    }
                     return exitCode == 0;
                 } catch (IllegalThreadStateException e) {
                     // still running;

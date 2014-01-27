@@ -239,4 +239,20 @@ public class LAFOptions {
     public Color getColorForSpeedmeterLimiterTop() {
         return createColor(cfg.getColorForSpeedmeterLimiterTop());
     }
+
+    public Color getColorForTableAccountErrorRowForeground() {
+        return createColor(cfg.getColorForTableAccountErrorRowForeground());
+    }
+
+    public Color getColorForTableAccountErrorRowBackground() {
+        return createColor(cfg.getColorForTableAccountErrorRowBackground());
+    }
+
+    public Color getColorForTableAccountTempErrorRowForeground() {
+        return createColor(cfg.getColorForTableAccountTempErrorRowForeground());
+    }
+
+    public Color getColorForTableAccountTempErrorRowBackground() {
+        return createColor(cfg.getColorForTableAccountTempErrorRowBackground());
+    }
 }

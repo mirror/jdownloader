@@ -3876,11 +3876,23 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Channel" })
     String YoutubeHelper_getDescription_channel();
 
+    @Default(lngs = { "en" }, values = { "Channel ID" })
+    String YoutubeHelper_getDescription_channel_id();
+
+    @Default(lngs = { "en" }, values = { "Clip duration *duration* or e.g. *duration[seconds]*" })
+    String YoutubeHelper_getDescription_duration();
+
     @Default(lngs = { "en" }, values = { "Video Title" })
     String YoutubeHelper_getDescription_title();
 
-    @Default(lngs = { "en" }, values = { "Publishing Date. *date* or e.g. *date[YYYY/MM/DD]*" })
+    @Default(lngs = { "en" }, values = { "Publishing Date(Year,month,day). *date* or e.g. *date[YYYY/MM/DD]*" })
     String YoutubeHelper_getDescription_date();
+
+    @Default(lngs = { "en" }, values = { "Accurate publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[YYYY/MM/DD hh:mm]*" })
+    String YoutubeHelper_getDescription_date_accurate();
+
+    @Default(lngs = { "en" }, values = { "Accurate updated publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[YYYY/MM/DD hh:mm]*" })
+    String YoutubeHelper_getDescription_updatedate_accurate();
 
     @Default(lngs = { "en" }, values = { "Playlist Number. *videonumber* or e.g. *videonumber[000]*" })
     String YoutubeHelper_getDescription_videonumber();

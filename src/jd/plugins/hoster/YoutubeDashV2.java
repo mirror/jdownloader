@@ -78,6 +78,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
@@ -98,6 +99,7 @@ import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
@@ -1197,8 +1199,19 @@ public class YoutubeDashV2 extends PluginForHost {
 
         }
         if (variant.hasConverer(downloadLink)) {
+            long lastMod = new File(downloadLink.getFileOutput()).lastModified();
             variant.convert(downloadLink);
+
+            try {
+
+                if (lastMod > 0 && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                    new File(downloadLink.getFileOutput()).setLastModified(lastMod);
+                }
+            } catch (final Throwable e) {
+                LogSource.exception(logger, e);
+            }
         }
+
         switch (variant.getType()) {
         case SUBTITLES:
             // rename subtitles to match the videos.
@@ -1227,6 +1240,15 @@ public class YoutubeDashV2 extends PluginForHost {
 
                                             File newFile;
                                             IO.copyFile(finalFile, newFile = new File(finalFile.getParentFile(), base + "." + locale.getDisplayLanguage() + ".srt"));
+
+                                            try {
+
+                                                if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                                                    newFile.setLastModified(finalFile.lastModified());
+                                                }
+                                            } catch (final Throwable e) {
+                                                LogSource.exception(logger, e);
+                                            }
                                             downloadLink.setFinalFileOutput(newFile.getAbsolutePath());
                                             downloadLink.setFinalFileName(newFile.getName());
                                             copied = true;

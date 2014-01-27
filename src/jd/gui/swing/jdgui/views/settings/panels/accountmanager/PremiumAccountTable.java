@@ -16,7 +16,6 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
-import org.appwork.utils.ColorUtils;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarDisplay;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
@@ -39,7 +38,7 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
 
         });
 
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(Color.BLACK, ColorUtils.getAlphaInstance(Color.ORANGE, 50), null) {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(LAFOptions.getInstance().getColorForTableAccountTempErrorRowForeground(), LAFOptions.getInstance().getColorForTableAccountTempErrorRowBackground(), null) {
             public int getPriority() {
                 return Integer.MAX_VALUE;
             }
@@ -55,7 +54,7 @@ public class PremiumAccountTable extends BasicJDTable<AccountEntry> {
             }
 
         });
-        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(Color.BLACK, ColorUtils.getAlphaInstance(Color.RED, 50), null) {
+        this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(LAFOptions.getInstance().getColorForTableAccountErrorRowForeground(), LAFOptions.getInstance().getColorForTableAccountErrorRowBackground(), null) {
             public int getPriority() {
                 return Integer.MAX_VALUE;
             }

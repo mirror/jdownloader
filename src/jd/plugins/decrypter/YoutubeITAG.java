@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 public enum YoutubeITAG {
+
     // fake id
     SUBTITLE(10002, 0.1),
     // fake id

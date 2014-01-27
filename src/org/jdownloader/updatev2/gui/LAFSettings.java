@@ -111,6 +111,13 @@ public interface LAFSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @HexColorString
+    @DefaultStringValue("FF359E35")
+    public String getColorForSpeedMeterAverage();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
     @DefaultStringValue("CC3DC83D")
     public String getColorForSpeedmeterCurrentBottom();
 
@@ -120,6 +127,48 @@ public interface LAFSettings extends ConfigInterface {
     @HexColorString
     @DefaultStringValue("2051F251")
     public String getColorForSpeedmeterCurrentTop();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("00FF0000")
+    public String getColorForSpeedmeterLimiterBottom();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("ccFF0000")
+    public String getColorForSpeedmeterLimiterTop();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("7FFF0000")
+    public String getColorForTableAccountErrorRowBackground();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("FF000000")
+    public String getColorForTableAccountErrorRowForeground();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("7FFFC800")
+    public String getColorForTableAccountTempErrorRowBackground();
+
+    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    @HexColorString
+    @DefaultStringValue("FF000000")
+    public String getColorForTableAccountTempErrorRowForeground();
 
     @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
     @AboutConfig
@@ -233,9 +282,23 @@ public interface LAFSettings extends ConfigInterface {
 
     void setColorForScrollbarsNormalState(String color);
 
+    public void setColorForSpeedMeterAverage(String color);
+
     void setColorForSpeedmeterCurrentBottom(String colorHex);
 
     void setColorForSpeedmeterCurrentTop(String colorHex);
+
+    void setColorForSpeedmeterLimiterBottom(String colorHex);
+
+    void setColorForSpeedmeterLimiterTop(String colorHex);
+
+    public void setColorForTableAccountErrorRowBackground(String tableAccountErrorRowBackground);
+
+    public void setColorForTableAccountErrorRowForeground(String tableAccountErrorRowForeground);
+
+    public void setColorForTableAccountTempErrorRowBackground(String tableAccountTempErrorRowBackground);
+
+    public void setColorForTableAccountTempErrorRowForeground(String tableAccountTempErrorRowForeground);
 
     void setColorForTableAlternateRowBackground(String color);
 
@@ -266,32 +329,5 @@ public interface LAFSettings extends ConfigInterface {
     public abstract void setPaintStatusbarTopBorder(boolean paintStatusbarTopBorder);
 
     public abstract void setPopupBorderInsets(int[] popupBorderInsets);
-
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @HexColorString
-    @DefaultStringValue("FF359E35")
-    public String getColorForSpeedMeterAverage();
-
-    public void setColorForSpeedMeterAverage(String color);
-
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @HexColorString
-    @DefaultStringValue("00FF0000")
-    public String getColorForSpeedmeterLimiterBottom();
-
-    @DescriptionForConfigEntry("Customized Color in aRGB Format (Pure red: #ffFF0000)")
-    @AboutConfig
-    @RequiresRestart("A JDownloader Restart is Required")
-    @HexColorString
-    @DefaultStringValue("ccFF0000")
-    public String getColorForSpeedmeterLimiterTop();
-
-    void setColorForSpeedmeterLimiterBottom(String colorHex);
-
-    void setColorForSpeedmeterLimiterTop(String colorHex);
 
 }

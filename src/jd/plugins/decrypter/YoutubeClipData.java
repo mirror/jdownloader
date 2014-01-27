@@ -15,6 +15,10 @@ public class YoutubeClipData {
     public String  videoID;
     int            playlistEntryNumber;
     public int     length;
+    public String  category;
+    public int     duration;
+    public String  channelID;
+    public long    dateUpdated;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);
