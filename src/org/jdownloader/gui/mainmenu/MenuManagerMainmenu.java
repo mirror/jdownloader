@@ -137,13 +137,14 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         // add(new ParallelDownloadsPerHostEditor());
         // add(new SpeedlimitEditor());
 
-        ret.add(new ChunksEditorLink());
+        if (!CrossSystem.isMac()) {
+            ret.add(new ChunksEditorLink());
 
-        ret.add(new ParalellDownloadsEditorLink());
-        ret.add(new ParallelDownloadsPerHostEditorLink());
-        //
-        ret.add(new SpeedlimitEditorLink());
-
+            ret.add(new ParalellDownloadsEditorLink());
+            ret.add(new ParallelDownloadsPerHostEditorLink());
+            //
+            ret.add(new SpeedlimitEditorLink());
+        }
         return ret;
     }
 
