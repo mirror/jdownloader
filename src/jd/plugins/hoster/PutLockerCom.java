@@ -44,6 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 
 /** Works exactly like sockshare.com */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/((file|embed)|mobile/file)/[A-Z0-9]+" }, flags = { 2 })
@@ -220,6 +221,7 @@ public class PutLockerCom extends PluginForHost {
                 }
             }
         } catch (final PluginException e) {
+            LogSource.exception(logger, e);
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) == false) {

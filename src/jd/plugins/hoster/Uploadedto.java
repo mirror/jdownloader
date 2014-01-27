@@ -133,7 +133,7 @@ public class Uploadedto extends PluginForHost {
                 if (br.containsHTML("<title>uploaded.net - Maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l); }
                 return AvailableStatus.UNCHECKABLE;
             }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+            downloadLink.setFinalFileName(name.trim());
             downloadLink.setDownloadSize(SizeFormatter.getSize(size));
         } finally {
             br.setFollowRedirects(red);
@@ -318,7 +318,7 @@ public class Uploadedto extends PluginForHost {
                         /* id not in response, so its offline */
                         dl.setAvailable(false);
                     } else {
-                        dl.setFinalFileName(Encoding.htmlDecode(infos[hit][4].trim()));
+                        dl.setFinalFileName(infos[hit][4].trim());
                         long size = SizeFormatter.getSize(infos[hit][2]);
                         dl.setDownloadSize(size);
                         if (size > 0) {

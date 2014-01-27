@@ -180,7 +180,7 @@ public class LinkCrawler {
             Collections.sort(pHosts, new Comparator<LazyHostPlugin>() {
 
                 public int compare(long x, long y) {
-                    return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                    return (x < y) ? 1 : ((x == y) ? 0 : -1);
                 }
 
                 @Override
@@ -202,8 +202,8 @@ public class LinkCrawler {
                     /* for generic ftp sites */
                     ftp = pHost;
                 }
+                if (ftp != null && directHTTP != null) break;
             }
-
             if (ftp != null) {
                 /* generic ftp handling is done at the end */
                 /* remove from list, then we don't have to compare each single plugin each round */

@@ -32,7 +32,7 @@ import org.appwork.storage.simplejson.ParserException;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "updown.bz" }, urls = { "https?://(?:www\\.)?updown\\.bz/[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "updown.bz" }, urls = { "https?://(?:www\\.)?updown\\.bz/[a-zA-Z0-9]+" }, flags = { 0 })
 public class UpDownBz extends PluginForHost {
 
     /*
