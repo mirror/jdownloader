@@ -171,10 +171,10 @@ public class MenuManagerMainToolbar extends ContextMenuManager<FilePackage, Down
         ocr.add(CaptchaExchangeToogleAction.class);
         ocr.add(JAntiCaptchaToogleAction.class);
         ocr.add(RemoteCaptchaToogleAction.class);
-
-        mr.add(createDeleteMenu());
-
         ocr.add(CaptchaDialogsToogleAction.class);
+        opt.add(setIconKey(new ActionData(GenericDeleteFromTableToolbarAction.class).putSetup(GenericDeleteFromTableToolbarAction.DELETE_ALL, true).putSetup(GenericDeleteFromTableToolbarAction.ONLY_SELECTED_ITEMS, true), IconKey.ICON_DELETE));
+        opt.add(createDeleteMenu());
+
         opt.add(CollapseExpandAllAction.class);
         return mr;
     }

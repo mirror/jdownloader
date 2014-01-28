@@ -17,11 +17,10 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.remotecall.RemoteClient;
-import org.jdownloader.statistics.interfaces.StatisticsInterface;
+import org.jdownloader.statistics.interfaces.PluginStatsInterface;
 
 public class StatsManager implements GenericConfigEventListener<Object> {
     private static final StatsManager INSTANCE = new StatsManager();
@@ -35,7 +34,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
         return StatsManager.INSTANCE;
     }
 
-    private StatisticsInterface remote;
+    private PluginStatsInterface remote;
     private StatsManagerConfig  config;
     private Queue               queue;
 
@@ -46,7 +45,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
      * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #link()}.
      */
     private StatsManager() {
-        remote = new LoggerRemoteClient(new RemoteClient("update3.jdownloader.org/stats")).create(StatisticsInterface.class);
+        remote = new LoggerRemoteClient(new RemoteClient("update3.jdownloader.org/stats")).create(PluginStatsInterface.class);
         config = JsonConfig.create(StatsManagerConfig.class);
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
         queue = new Queue("StatsManager Queue") {
@@ -129,7 +128,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
                 public void doRemoteCall() {
                     if (!isEnabled()) return;
 
-                    remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp, speedBytePS, chunks);
+                    // remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp, speedBytePS, chunks);
 
                 }
 
@@ -189,13 +188,16 @@ public class StatsManager implements GenericConfigEventListener<Object> {
             @Override
             public void doRemoteCall() {
                 if (!isEnabled()) return;
-                if (Clazz.isEnum(keyHandler.getRawType())) {
-                    remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey(), keyHandler.getValue() + "");
-                } else if (Clazz.isString(keyHandler.getRawType())) {
-                    remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey(), null);
-                } else if (Clazz.isPrimitive(keyHandler.getRawType()) || Clazz.isPrimitiveWrapper(keyHandler.getRawType())) {
-                    remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") + "." + keyHandler.getKey(), keyHandler.getValue() + "");
-                }
+                // if (Clazz.isEnum(keyHandler.getRawType())) {
+                // remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") +
+                // "." + keyHandler.getKey(), keyHandler.getValue() + "");
+                // } else if (Clazz.isString(keyHandler.getRawType())) {
+                // remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") +
+                // "." + keyHandler.getKey(), null);
+                // } else if (Clazz.isPrimitive(keyHandler.getRawType()) || Clazz.isPrimitiveWrapper(keyHandler.getRawType())) {
+                // remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") +
+                // "." + keyHandler.getKey(), keyHandler.getValue() + "");
+                // }
 
             }
 

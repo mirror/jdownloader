@@ -53,33 +53,34 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions
 
 public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction implements ExtTableListener, DownloadControllerListener, GUIListener, LinkCollectorListener, ActionContext {
 
-    public static final String           DELETE_ALL        = "deleteAll";
-    public static final String           DELETE_DISABLED   = "deleteDisabled";
-    public static final String           DELETE_FAILED     = "deleteFailed";
-    public static final String           DELETE_FINISHED   = "deleteFinished";
-    public static final String           DELETE_OFFLINE    = "deleteOffline";
+    public static final String           ONLY_SELECTED_ITEMS = "OnlySelectedItems";
+    public static final String           DELETE_ALL          = "deleteAll";
+    public static final String           DELETE_DISABLED     = "deleteDisabled";
+    public static final String           DELETE_FAILED       = "deleteFailed";
+    public static final String           DELETE_FINISHED     = "deleteFinished";
+    public static final String           DELETE_OFFLINE      = "deleteOffline";
     /**
      * 
      */
-    private static final long            serialVersionUID  = 1L;
+    private static final long            serialVersionUID    = 1L;
 
     private DelayedRunnable              delayer;
-    private boolean                      deleteAll         = false;
+    private boolean                      deleteAll           = false;
 
-    private boolean                      deleteDisabled    = false;
+    private boolean                      deleteDisabled      = false;
 
-    private boolean                      deleteFailed      = false;
+    private boolean                      deleteFailed        = false;
 
-    private boolean                      deleteFinished    = false;
+    private boolean                      deleteFinished      = false;
 
-    private boolean                      deleteOffline     = false;
+    private boolean                      deleteOffline       = false;
 
-    private boolean                      ignoreFiltered    = true;
+    private boolean                      ignoreFiltered      = true;
 
     private CrawledLink                  lastCrawledLink;
     private DownloadLink                 lastDownloadLink;
 
-    private boolean                      onlySelectedItems = false;
+    private boolean                      onlySelectedItems   = false;
     private SelectionInfo<?, ?>          selection;
     private PackageControllerTable<?, ?> table;
     private ByPassDialogSetup            byPass;
@@ -316,6 +317,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     @Customizer(name = "Only Selected Links")
     public boolean isOnlySelectedItems() {
+
         return onlySelectedItems;
     }
 
