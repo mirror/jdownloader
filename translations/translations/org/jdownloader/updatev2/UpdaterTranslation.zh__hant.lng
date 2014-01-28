@@ -30,7 +30,6 @@ errordialog_noconnection=JDownloader 無法連線到更新伺服器。\r\n請確
 errordialog_not_enough_space=在您的硬碟 C: 上沒有足夠可用空間。\r\n確保至少有 %s1 可用空間 (多需要 %s2) 並重新啟動更新。
 errordialog_selfupdate_failed=無法安裝更新。請稍後重試。\r\n如果問題幾小時之後也「無法自我解決」，聯絡我們的技術支援或重新安裝 JDownloader。
 errordialog_server_error=更新伺服器現在無法使用。請稍後重試或者聯絡我們的技術支援
-errordialog_server_locked=更新伺服器現在繁忙。請幾分鐘之後重試。
 errordialog_server_offline=更新伺服器現在無法使用。請稍後重試。
 guiless_you_are_up2date=您已經擁有最新版本
 installframe_frametitle=JDownloader 更新程式
