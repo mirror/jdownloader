@@ -17,11 +17,12 @@ import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.restart.Restarter;
 
 public class RestartController implements ShutdownVetoListener {
@@ -48,6 +49,7 @@ public class RestartController implements ShutdownVetoListener {
     private ParameterParser startupParameters;
 
     private File            root = Application.getTemp().getParentFile();
+    private LogSource       logger;
 
     // public String updaterJar = "Updater.jar";
     //
@@ -62,7 +64,10 @@ public class RestartController implements ShutdownVetoListener {
     // private boolean silentShutDownEnabled = false;
 
     public void setRoot(File root) {
+
         if (root == null) root = Application.getTemp().getParentFile();
+
+        log("Set Root: " + root.getAbsolutePath());
         this.root = root;
     }
 
@@ -71,8 +76,9 @@ public class RestartController implements ShutdownVetoListener {
      * {@link #getInstance()}.
      */
     protected RestartController() {
-
+        logger = LogController.getInstance().getLogger(RestartController.class.getName());
         final Restarter restarter = Restarter.getInstance(this);
+
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             {
@@ -116,17 +122,29 @@ public class RestartController implements ShutdownVetoListener {
     }
 
     public void directRestart(RestartRequest request) {
+        log("Direct Restart: ");
         ShutdownController.getInstance().requestShutdown(request);
     }
 
     public void asyncRestart(final RestartRequest request) {
+        log("Asynch Restart: ");
         new Thread("RestartAsynch") {
             public void run() {
-                Log.L.info("asyn Restart");
+                log("Synch Restart NOW");
                 ShutdownController.getInstance().requestShutdown(request);
             }
         }.start();
 
+    }
+
+    protected void log(String string) {
+        try {
+            // this code may run in a shutdown hook. Classloading problems may be possible
+            System.out.println(string);
+            logger.info(string);
+        } catch (Throwable e) {
+
+        }
     }
 
     public void exitAsynch(final ShutdownRequest filter) {
