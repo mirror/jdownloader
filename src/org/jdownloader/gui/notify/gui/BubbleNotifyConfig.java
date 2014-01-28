@@ -51,9 +51,9 @@ public interface BubbleNotifyConfig extends ConfigInterface {
     @DescriptionForConfigEntry("Animation End Y Position. 0 is top screen edge -1 is bottom screen edge")
     public int getAnimationEndPositionY();
 
-    @DefaultStringValue("\\display9999")
+    @DefaultStringValue("\\Display9999")
     @AboutConfig
-    @DescriptionForConfigEntry("The bubbles iuse the current active screen. That means the screen that is used by the Main Window. You can set a hardcoded screen ID here. Like \\display0 for your main screen")
+    @DescriptionForConfigEntry("The bubbles iuse the current active screen. That means the screen that is used by the Main Window. You can set a hardcoded screen ID here. Like \\Display0 for your main screen")
     public String getScreenID();
 
     @AboutConfig
