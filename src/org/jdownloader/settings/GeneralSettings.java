@@ -102,6 +102,13 @@ public interface GeneralSettings extends ConfigInterface {
 
     public void setMirrorDetectionFileSizeEquality(int size);
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Mirrordetection enforces verified filesizes!")
+    boolean isForceMirrorDetectionFileSizeCheck();
+
+    public void setForceMirrorDetectionFileSizeCheck(boolean b);
+
     public void setMirrorDetectionDecision(MirrorDetectionDecision decision);
 
     @AboutConfig

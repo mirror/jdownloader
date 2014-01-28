@@ -40,9 +40,11 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
     private boolean autoVisible;
+    private boolean alwaysVisible;
 
-    public VariantColumn() {
+    public VariantColumn(boolean alwaysVisible) {
         super(_GUI._.VariantColumn_VariantColumn_name_(), null);
+        this.alwaysVisible = alwaysVisible;
     }
 
     @Override
@@ -237,7 +239,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
     @Override
     public boolean isVisible(boolean savedValue) {
-        return autoVisible && savedValue;
+        return (autoVisible || alwaysVisible) && savedValue;
     }
 
     public void setAutoVisible(boolean b) {

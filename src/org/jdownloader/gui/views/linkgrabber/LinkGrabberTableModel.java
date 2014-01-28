@@ -7,6 +7,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
@@ -21,6 +22,7 @@ import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.downloads.columns.HosterColumn;
 import org.jdownloader.gui.views.downloads.columns.PriorityColumn;
 import org.jdownloader.gui.views.downloads.columns.SizeColumn;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.gui.views.linkgrabber.columns.DownloadFolderColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.PartColumn;
 import org.jdownloader.gui.views.linkgrabber.columns.UrlColumn;
@@ -81,7 +83,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
     @Override
     protected void initColumns() {
         this.addColumn(expandCollapse = new FileColumn());
-        this.addColumn(variantColumn = new VariantColumn());
+        this.addColumn(variantColumn = new VariantColumn(JsonConfig.create(LinkgrabberSettings.class).isVariantsColumnAlwaysVisible()));
         addColumn(new PartColumn());
         this.addColumn(new UrlColumn());
         this.addColumn(new DownloadFolderColumn());

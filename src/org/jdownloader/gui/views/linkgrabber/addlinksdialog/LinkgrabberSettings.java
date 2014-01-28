@@ -16,6 +16,12 @@ import org.jdownloader.gui.packagehistorycontroller.PackageHistoryEntry;
 
 public interface LinkgrabberSettings extends ConfigInterface {
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    boolean isVariantsColumnAlwaysVisible();
+
+    void setVariantsColumnAlwaysVisible(boolean b);
+
     @DefaultJsonObject("[]")
     @AboutConfig
     List<DownloadPath> getDownloadDestinationHistory();
