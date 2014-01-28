@@ -857,7 +857,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 return diff <= maxDiff;
             }
         }
-        return null;
+        if (config.isForceMirrorDetectionFileSizeCheck()) {
+            return false;
+        } else {
+            return null;
+        }
     }
 
     private Boolean hasSameHash(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
@@ -2987,7 +2991,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         if (block == downloadLink) continue;
                         if (session.getFileAccessManager().isLockedBy(fileOutput, downloadController)) {
                             /* fileOutput is already locked */
-                            if (isMirrorCandidate(downloadLink, localCheck, block) && block.getFilePackage() == downloadLink.getFilePackage()) {
+                            if (block.getFilePackage() == downloadLink.getFilePackage() && isMirrorCandidate(downloadLink, localCheck, block)) {
                                 /* only throw ConditionalSkipReasonException when file is from same package */
                                 throw new ConditionalSkipReasonException(new MirrorLoading(block));
                             } else {
@@ -3055,11 +3059,26 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             duplicateFilenameCounter = Long.parseLong(alreadyDuplicated) + 1;
                             name = new Regex(name, "(.*)_\\d+$").getMatch(0);
                         }
-                        String newName = null;
                         try {
-                            newName = name + "_" + duplicateFilenameCounter + extension;
-                            while (new File(downloadPath, newName).exists()) {
+                            File check = null;
+                            String newName = null;
+                            while (true) {
                                 newName = name + "_" + (++duplicateFilenameCounter) + extension;
+                                check = new File(downloadPath, newName);
+                                if (check.exists()) {
+                                    check = null;
+                                } else {
+                                    for (SingleDownloadController downloadController : session.getControllers()) {
+                                        if (downloadController == controller) continue;
+                                        if (session.getFileAccessManager().isLockedBy(check, downloadController)) {
+                                            check = null;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (check != null) {
+                                    break;
+                                }
                             }
                             downloadLink.forceFileName(newName);
                             downloadLink.setChunksProgress(null);

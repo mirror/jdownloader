@@ -61,7 +61,13 @@ public class WallBaseCc extends PluginForHost {
         // Offline2
         if (br.containsHTML("(>Not found \\(404\\)|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\- Wallpaper \\(").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\(#\\d+\\) / Wallbase\\.cc</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\(#\\d+\\) / Wallbase\\.cc</title>").getMatch(0);
+            if (filename != null) {
+                String id = br.getRegex("<title>([^<>\"]*?) \\(#(\\d+)\\) / Wallbase\\.cc</title>").getMatch(1);
+                if (id != null) filename = filename.trim() + "_" + id;
+            }
+        }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".jpg");
         return AvailableStatus.TRUE;
