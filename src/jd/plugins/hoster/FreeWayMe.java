@@ -67,11 +67,14 @@ import org.jdownloader.images.NewTheme;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class FreeWayMe extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
-    private final String                                   ALLOWRESUME        = "ALLOWRESUME";
-    private final String                                   BETAUSER           = "FREEWAYBETAUSER";
-    private static final String                            NORESUME           = "NORESUME";
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
+    private static AtomicInteger                           maxPrem                        = new AtomicInteger(1);
+    private final String                                   ALLOWRESUME                    = "ALLOWRESUME";
+    private final String                                   BETAUSER                       = "FREEWAYBETAUSER";
+    private static final String                            NORESUME                       = "NORESUME";
+
+    public final String                                    ACC_PROPERTY_CONNECTIONS       = "parallel";
+    public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION = "ACC_TRAFFIC_REDUCTION";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -150,9 +153,17 @@ public class FreeWayMe extends PluginForHost {
         final String maxPremApi = getJson("parallel", br.toString());
         if (maxPremApi != null) {
             maxPremi = Integer.parseInt(maxPremApi);
-            account.setProperty("parallel", maxPremApi);
+            account.setProperty(ACC_PROPERTY_CONNECTIONS, maxPremApi);
         }
         maxPrem.set(maxPremi);
+
+        int trafficPerc = -1;
+        final String trafficPercApi = getJson("perc", br.toString());
+        if (trafficPercApi != null) {
+            trafficPerc = Integer.parseInt(trafficPercApi);
+        }
+        account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, trafficPerc);
+
         try {
             Long guthaben = Long.parseLong(getRegexTag(br.toString(), "guthaben").getMatch(0));
             ac.setTrafficLeft(guthaben * 1024 * 1024);
@@ -341,8 +352,9 @@ public class FreeWayMe extends PluginForHost {
                 ArrayList<String> supportedHosts = (ArrayList<String>) supported;
                 final String lang = System.getProperty("user.language");
                 final String accType = account.getStringProperty("acctype", null);
-                final String maxSimultanDls = account.getStringProperty("parallel", null);
+                final String maxSimultanDls = account.getStringProperty(ACC_PROPERTY_CONNECTIONS, null);
                 final String notifications = account.getStringProperty("notifications", "0");
+                final int trafficUsage = account.getIntegerProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, -1);
 
                 Set<MultihostContainer> hostList = new HashSet<MultihostContainer>();
 
@@ -378,6 +390,9 @@ public class FreeWayMe extends PluginForHost {
                     panelGenerator.addEntry("Account Typ:", accType);
 
                     if (maxSimultanDls != null) panelGenerator.addEntry("Gleichzeitige Downloads:", maxSimultanDls);
+
+                    panelGenerator.addEntry("Fullspeedvolumen verbraucht:", (trafficUsage == -1) ? "unbekannt" : ((trafficUsage >= 100) ? "gedrosselt" : trafficUsage + "%"));
+
                     panelGenerator.addEntry("Benachrichtigungen:", notifications);
 
                     panelGenerator.addCategory("Unterstützte Hoster");
@@ -391,6 +406,9 @@ public class FreeWayMe extends PluginForHost {
                     panelGenerator.addEntry("Account Type:", accType);
 
                     if (maxSimultanDls != null) panelGenerator.addEntry("Simultaneous Downloads:", maxSimultanDls);
+
+                    panelGenerator.addEntry("Fullspeed traffic:", (trafficUsage == -1) ? "unknown" : ((trafficUsage >= 100) ? "reduced" : trafficUsage + "%"));
+
                     panelGenerator.addEntry("Notifications:", notifications);
 
                     panelGenerator.addCategory("Supported Hosts");
