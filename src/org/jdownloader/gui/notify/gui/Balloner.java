@@ -17,18 +17,22 @@ import javax.swing.JFrame;
 import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.jdownloader.gui.jdtrayicon.ScreenStack;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.Anchor;
+import org.jdownloader.logging.LogController;
 
 public class Balloner implements ComponentListener {
     private HashMap<GraphicsDevice, ScreenStack> stacks;
     private JFrame                               owner;
+    private LogSource                            logger;
 
     public Balloner(JFrame owner) {
         this.owner = owner;
         stacks = new HashMap<GraphicsDevice, ScreenStack>();
+        logger = LogController.getInstance().getLogger(Balloner.class.getName());
     }
 
     public JFrame getOwner() {
@@ -196,8 +200,8 @@ public class Balloner implements ComponentListener {
         final GraphicsDevice[] screens = ge.getScreenDevices();
         if (getScreenID() != null) {
             for (final GraphicsDevice screen : screens) {
-
-                if (StringUtils.equals(getScreenID(), screen.getIDstring())) return screen;
+                logger.info(getScreenID() + " - " + screen.getIDstring());
+                if (StringUtils.equalsIgnoreCase(getScreenID(), screen.getIDstring())) return screen;
 
             }
         }
