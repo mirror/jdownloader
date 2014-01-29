@@ -75,6 +75,9 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.CaptchaStepProgress;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.SleepPluginProgress;
 import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -748,6 +751,11 @@ public abstract class PluginForHost extends Plugin {
             }
 
             @Override
+            public PluginTaskID getID() {
+                return PluginTaskID.WAIT;
+            }
+
+            @Override
             public void updateValues(long current, long total) {
                 if (current > 0) {
                     pluginMessage = _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(current / 1000));
@@ -822,25 +830,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected void sleep(long i, DownloadLink downloadLink, final String message) throws PluginException {
-        PluginProgress progress = new PluginProgress(i, i, null) {
-            private String pluginMessage = message;
+        PluginProgress progress = new SleepPluginProgress(i, message);
 
-            @Override
-            public String getMessage(Object requestor) {
-                return pluginMessage;
-            }
-
-            @Override
-            public void setCurrent(long current) {
-                if (current > 0) {
-                    pluginMessage = _JDT._.gui_download_waittime_status2(Formatter.formatSeconds(current / 1000));
-                } else {
-                    pluginMessage = message;
-                }
-                super.setCurrent(current);
-            }
-        };
-        progress.setIcon(NewTheme.I().getIcon("wait", 16));
         progress.setProgressSource(this);
         PluginProgress old = null;
         try {

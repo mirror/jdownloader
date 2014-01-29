@@ -8,6 +8,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.ProgressColumn;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
 
 public class FFMpegProgress extends PluginProgress {
 
@@ -17,6 +18,11 @@ public class FFMpegProgress extends PluginProgress {
         super(0, 100, null);
         setIcon(new AbstractIcon("ffmpeg", 18));
 
+    }
+
+    @Override
+    public PluginTaskID getID() {
+        return PluginTaskID.FFMPEG;
     }
 
     @Override

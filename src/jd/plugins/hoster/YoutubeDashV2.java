@@ -58,7 +58,6 @@ import jd.plugins.decrypter.YoutubeVariantInterface;
 import jd.plugins.decrypter.YoutubeVariantInterface.VariantGroup;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.DownloadPluginProgress;
 import jd.plugins.download.raf.HashResult;
 import jd.utils.locale.JDL;
 
@@ -96,6 +95,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
+import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.config.PluginJsonConfig;

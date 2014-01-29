@@ -1,11 +1,24 @@
 package org.jdownloader.plugins.tasks;
 
+import org.jdownloader.plugins.PluginTaskID;
+
 public abstract class AbstractPluginSubTask implements PluginSubTask {
 
     private long startTime;
 
+    @Override
     public long getStartTime() {
         return startTime;
+    }
+
+    private PluginTaskID id;
+
+    public PluginTaskID getId() {
+        return id;
+    }
+
+    protected void setId(PluginTaskID id) {
+        this.id = id;
     }
 
     @Override
@@ -17,11 +30,13 @@ public abstract class AbstractPluginSubTask implements PluginSubTask {
         endTime = -1;
     }
 
+    @Override
     public long getRuntime() {
         return endTime - startTime;
 
     }
 
+    @Override
     public long getEndTime() {
         return endTime;
     }

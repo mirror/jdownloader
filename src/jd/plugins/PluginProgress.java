@@ -21,9 +21,9 @@ import java.awt.Color;
 import javax.swing.Icon;
 
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.plugins.PluginTaskID;
 
 public abstract class PluginProgress {
-
     protected long   total;
     protected long   current;
     protected long   ETA            = -1;
@@ -33,6 +33,8 @@ public abstract class PluginProgress {
     protected Object progressSource = null;
 
     public abstract String getMessage(Object requestor);
+
+    public abstract PluginTaskID getID();
 
     public PluginProgress(final long current, final long total, final Color color) {
         this.total = total;

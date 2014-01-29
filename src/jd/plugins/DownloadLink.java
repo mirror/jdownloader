@@ -1169,6 +1169,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public PluginProgress setPluginProgress(PluginProgress progress) {
         PluginProgress ret = pluginProgress.getAndSet(progress);
         if (ret != progress) {
+
             if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, progress));
         }
         return ret;

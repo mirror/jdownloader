@@ -37,6 +37,7 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.downloadcore.v15.HashInfo;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 

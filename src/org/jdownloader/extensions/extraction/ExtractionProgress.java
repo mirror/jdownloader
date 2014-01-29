@@ -12,6 +12,7 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.gui.views.downloads.columns.ProgressColumn;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.PluginTaskID;
 
 public class ExtractionProgress extends PluginProgress {
 
@@ -25,6 +26,11 @@ public class ExtractionProgress extends PluginProgress {
         setIcon(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_COMPRESS, 16));
         message = T._.plugins_optional_extraction_status_extracting2();
         super.setProgressSource(controller);
+    }
+
+    @Override
+    public PluginTaskID getID() {
+        return PluginTaskID.EXTRACTION;
     }
 
     @Override

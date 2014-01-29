@@ -12,6 +12,7 @@ import jd.utils.JDUtilities;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
 
 public class YoutubeExternConverter implements YoutubeConverter {
 
@@ -31,6 +32,11 @@ public class YoutubeExternConverter implements YoutubeConverter {
                 {
                     setIcon(new AbstractIcon(IconKey.ICON_RUN, 18));
 
+                }
+
+                @Override
+                public PluginTaskID getID() {
+                    return PluginTaskID.CONVERT;
                 }
 
                 @Override

@@ -21,6 +21,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.tasks.PluginSubTask;
 import org.jdownloader.remotecall.RemoteClient;
 import org.jdownloader.statistics.interfaces.PluginStatsInterface;
@@ -152,6 +153,32 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             DownloadLink link = downloadController.getDownloadLink();
             long downloadTime = link.getView().getDownloadTime();
             List<PluginSubTask> tasks = downloadController.getTasks();
+            PluginSubTask plugintask = tasks.get(0);
+            PluginSubTask downloadTask = null;
+            long userIO = 0l;
+            long waittime = 0l;
+            for (int i = 1; i < tasks.size(); i++) {
+                PluginSubTask task = tasks.get(i);
+                if (downloadTask == null) {
+                    switch (task.getId()) {
+                    case CAPTCHA:
+                    case USERIO:
+                        userIO += task.getRuntime();
+                        break;
+                    case WAIT:
+                        waittime += task.getRuntime();
+                        break;
+
+                    }
+                }
+                if (task.getId() == PluginTaskID.DOWNLOAD) {
+                    downloadTask = task;
+                    break;
+                }
+            }
+            long pluginRuntime = downloadTask.getStartTime() - plugintask.getStartTime();
+            pluginRuntime -= userIO;
+
             System.out.println(tasks);
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);

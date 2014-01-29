@@ -59,6 +59,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import de.savemytube.flv.FLV;
@@ -479,6 +480,11 @@ public class YoutubeHelper {
                 {
                     setIcon(new AbstractIcon(IconKey.ICON_AUDIO, 18));
 
+                }
+
+                @Override
+                public PluginTaskID getID() {
+                    return PluginTaskID.CONVERT;
                 }
 
                 @Override

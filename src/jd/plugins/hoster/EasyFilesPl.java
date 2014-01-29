@@ -40,6 +40,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.PluginTaskID;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class EasyFilesPl extends PluginForHost {
@@ -200,6 +201,11 @@ public class EasyFilesPl extends PluginForHost {
                 protected long lastCurrent    = -1;
                 protected long lastTotal      = -1;
                 protected long startTimeStamp = -1;
+
+                @Override
+                public PluginTaskID getID() {
+                    return PluginTaskID.WAIT;
+                }
 
                 @Override
                 public String getMessage(Object requestor) {

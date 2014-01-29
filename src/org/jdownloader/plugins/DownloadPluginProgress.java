@@ -1,10 +1,11 @@
-package jd.plugins.download;
+package org.jdownloader.plugins;
 
 import java.awt.Color;
 
 import jd.nutils.Formatter;
 import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
+import jd.plugins.download.DownloadInterface;
 
 import org.jdownloader.api.jdanywhere.api.Helper;
 import org.jdownloader.downloadcore.v15.Downloadable;
@@ -66,6 +67,11 @@ public class DownloadPluginProgress extends PluginProgress {
 
     public long getSpeed() {
         return downloadInterface.getManagedConnetionHandler().getSpeed();
+    }
+
+    @Override
+    public PluginTaskID getID() {
+        return PluginTaskID.DOWNLOAD;
     }
 
 }

@@ -1,8 +1,10 @@
-package jd.plugins;
+package org.jdownloader.plugins;
 
 import java.awt.Color;
 
 import javax.swing.Icon;
+
+import jd.plugins.PluginProgress;
 
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
@@ -29,5 +31,10 @@ public final class CaptchaStepProgress extends PluginProgress {
             if (requestor instanceof ETAColumn) { return null; }
         }
         return _JDT._.gui_downloadview_statustext_jac();
+    }
+
+    @Override
+    public PluginTaskID getID() {
+        return PluginTaskID.CAPTCHA;
     }
 }

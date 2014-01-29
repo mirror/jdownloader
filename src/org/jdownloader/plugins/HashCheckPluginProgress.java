@@ -1,4 +1,4 @@
-package jd.plugins.download;
+package org.jdownloader.plugins;
 
 import java.awt.Color;
 import java.io.File;
@@ -21,6 +21,11 @@ public class HashCheckPluginProgress extends PluginProgress {
         super(0, file.length(), color);
         setIcon(NewTheme.I().getIcon("hashsum", 16));
         message = _JDT._.system_download_doCRC2(type.name());
+    }
+
+    @Override
+    public PluginTaskID getID() {
+        return PluginTaskID.HASH;
     }
 
     @Override

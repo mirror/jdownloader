@@ -386,6 +386,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     @Override
     public void run() {
         LogSource downloadLogger = null;
+        PluginProgressTask task = new PluginProgressTask(null);
         try {
             String logID = downloadLink.getDefaultPlugin().getHost();
             if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
@@ -396,6 +397,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             downloadLogger.setAllowTimeoutFlush(false);
             downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
             super.setLogger(downloadLogger);
+
+            task.open();
+            addTask(task);
             SingleDownloadReturnState returnState = download(downloadLogger);
             if (isAborting()) {
                 /* clear interrupted flag */
@@ -403,6 +407,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             }
             watchDog.detach(this, returnState);
         } finally {
+            task.reopen();
+            task.close();
             synchronized (activityFlag) {
                 activityFlag.set(false);
                 activityFlag.notifyAll();
@@ -472,8 +478,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
         try {
+            if (downloadlink != this.downloadLink) return;
             if (property.getProperty() == DownloadLinkProperty.Property.PLUGIN_PROGRESS) {
                 PluginProgress newProgress = downloadlink.getPluginProgress();
+                newProgress = (PluginProgress) property.getValue();
                 PluginProgressTask task = null;
                 synchronized (tasks) {
                     for (PluginSubTask t : tasks) {
@@ -485,17 +493,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                             }
                         }
                     }
-                }
-                if (task == null) {
-                    if (newProgress != null) {
+
+                    if (task == null) {
+
                         task = new PluginProgressTask(newProgress);
                         task.open();
-                        synchronized (tasks) {
-                            tasks.add(task);
-                        }
+                        addTask(task);
+
+                    } else {
+                        task.reopen();
                     }
-                } else {
-                    task.reopen();
                 }
             }
         } catch (Throwable e) {

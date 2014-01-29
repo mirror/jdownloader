@@ -55,6 +55,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.PluginTaskID;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter.com" }, urls = { "http://(www\\.)?megacrypter\\.com/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
 public class MegaCrypterCom extends PluginForHost {
@@ -232,6 +233,11 @@ public class MegaCrypterCom extends PluginForHost {
 
                 public String getMessage(Object requestor) {
                     return "Decrypting";
+                }
+
+                @Override
+                public PluginTaskID getID() {
+                    return PluginTaskID.DECRYPTING;
                 }
 
                 @Override

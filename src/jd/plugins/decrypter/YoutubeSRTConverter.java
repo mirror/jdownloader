@@ -10,6 +10,7 @@ import jd.plugins.PluginProgress;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.utils.SubtitleConverter;
 
 public class YoutubeSRTConverter implements YoutubeConverter {
@@ -45,6 +46,11 @@ public class YoutubeSRTConverter implements YoutubeConverter {
                 @Override
                 public long getCurrent() {
                     return 95;
+                }
+
+                @Override
+                public PluginTaskID getID() {
+                    return PluginTaskID.CONVERT;
                 }
 
                 @Override

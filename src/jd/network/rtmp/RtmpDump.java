@@ -23,7 +23,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadPluginProgress;
 import jd.plugins.hoster.RTMPDownload;
 
 import org.appwork.storage.config.JsonConfig;
@@ -36,6 +35,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.SpeedMeterInterface;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.nativ.NativeProcess;
+import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.settings.RtmpdumpSettings;
 import org.jdownloader.translate._JDT;
 

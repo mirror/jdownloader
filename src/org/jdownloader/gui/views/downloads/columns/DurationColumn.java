@@ -6,11 +6,11 @@ import javax.swing.SwingConstants;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginProgress;
-import jd.plugins.download.DownloadPluginProgress;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.DownloadPluginProgress;
 
 public class DurationColumn extends ExtTextColumn<AbstractNode> {
 

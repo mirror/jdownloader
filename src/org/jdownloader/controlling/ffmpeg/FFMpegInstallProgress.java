@@ -7,10 +7,16 @@ import jd.plugins.PluginProgress;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
 
 public class FFMpegInstallProgress extends PluginProgress {
 
     private String message;
+
+    @Override
+    public PluginTaskID getID() {
+        return PluginTaskID.FFMPEG_INSTALLATION;
+    }
 
     public FFMpegInstallProgress() {
         super(0, 100, null);
