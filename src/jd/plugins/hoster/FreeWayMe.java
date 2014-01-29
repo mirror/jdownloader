@@ -72,9 +72,11 @@ public class FreeWayMe extends PluginForHost {
     private final String                                   ALLOWRESUME                    = "ALLOWRESUME";
     private final String                                   BETAUSER                       = "FREEWAYBETAUSER";
     private static final String                            NORESUME                       = "NORESUME";
+    private static final String                            PREVENTSPRITUSAGE              = "PREVENTSPRITUSAGE";
 
     public final String                                    ACC_PROPERTY_CONNECTIONS       = "parallel";
     public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION = "ACC_TRAFFIC_REDUCTION";
+    public final String                                    ACC_PROPERTY_UNKOWN_FAILS      = "timesfailedfreewayme_unknown";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,9 +85,98 @@ public class FreeWayMe extends PluginForHost {
         this.enablePremium("https://www.free-way.me/premium");
     }
 
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("SETTING_RESUME", "Enable resume of stopped downloads (Warning: This can cause CRC errors)");
+                                                      put("SETTING_BETA", "Enable beta service (Requires free-way beta account)");
+                                                      put("SETTING_SPRITUSAGE", "Stop download if sprit would be used");
+                                                      put("ERROR_INVALID_LOGIN", "Invalid username/password!");
+                                                      put("ERROR_BAN", "Account banned");
+                                                      put("ERROR_UNKNOWN", "Unknown error");
+                                                      put("ERROR_UNKNOWN_FULL", "Unknown account status (deactivated)!");
+                                                      put("CHECK_ZERO_HOSTERS", "Account valid: 0 Hosts via free-way.me available");
+                                                      put("SUPPORTED_HOSTS_1", "Account valid: ");
+                                                      put("SUPPORTED_HOSTS_2", " Hosts via free-way.me available");
+                                                      put("ERROR_INVALID_URL", "Invalid URL");
+                                                      put("ERROR_RETRY_SECONDS", "Error: Retry in few secs");
+                                                      put("ERROR_SERVER", "Server error");
+                                                      put("ERROR_UNKNWON_CODE", "Unable to handle this errorcode!");
+                                                      put("ERROR_HOST_TMP_DISABLED", "Host temporary disabled");
+                                                      put("ERROR_INAVLID_HOST_URL", "Invalid host link");
+                                                      put("ERROR_CONNECTIONS", "Too many simultan downloads");
+                                                      put("ERROR_TRAFFIC_LIMIT", "Traffic limit");
+                                                      put("DETAILS_TITEL", "Account information");
+                                                      put("DETAILS_CATEGORY_ACC", "Account");
+                                                      put("DETAILS_ACCOUNT_NAME", "Account name:");
+                                                      put("DETAILS_ACCOUNT_TYPE", "Account type:");
+                                                      put("DETAILS_SIMULTAN_DOWNLOADS", "Simultaneous Downloads:");
+                                                      put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeed traffic:");
+                                                      put("DETAILS_FULLSPEED_UNKOWN", "unknown");
+                                                      put("DETAILS_FULLSPEED_REDUCED", "reduced");
+                                                      put("DETAILS_NOTIFICATIONS", "Notifications:");
+                                                      put("DETAILS_CATEGORY_HOSTS", "Supported Hosts");
+                                                      put("DETAILS_HOSTS_AMOUNT", "Amount: ");
+                                                      put("DETAILS_REVISION", "Plugin Revision:");
+                                                      put("CLOSE", "Close");
+                                                      put("ERROR_PREVENT_SPRIT_USAGE", "Sprit usage prevented!");
+                                                  }
+                                              };
+
+    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+                                                  {
+                                                      put("SETTING_RESUME", "Aktiviere das Fortsetzen von gestoppen Downloads (Warnung: Kann CRC-Fehler verursachen)");
+                                                      put("SETTING_BETA", "Aktiviere Betamodus (Erfordert einen free-way Beta-Account)");
+                                                      put("SETTING_SPRITUSAGE", "Nicht Downloaden, falls Sprit verwendet wird (Spender-Account)");
+                                                      put("ERROR_INVALID_LOGIN", "Ungültiger Benutzername oder ungültiges Passwort!");
+                                                      put("ERROR_BAN", "Account gesperrt!");
+                                                      put("ERROR_UNKNOWN", "Unbekannter Fehler");
+                                                      put("ERROR_UNKNOWN_FULL", "Unbekannter Accountstatus (deaktiviert)!");
+                                                      put("CHECK_ZERO_HOSTERS", "Account gültig: 0 Hosts via free-way.me verfügbar");
+                                                      put("SUPPORTED_HOSTS_1", "Account valid: ");
+                                                      put("SUPPORTED_HOSTS_2", " Hosts via free-way.me available");
+                                                      put("ERROR_INVALID_URL", "Ungültige URL");
+                                                      put("ERROR_RETRY_SECONDS", "Fehler: Erneuter in wenigen sek.");
+                                                      put("ERROR_SERVER", "Server Fehler");
+                                                      put("ERROR_UNKNWON_CODE", "Unbekannter Fehlercode!");
+                                                      put("ERROR_HOST_TMP_DISABLED", "Hoster temporär deaktiviert!");
+                                                      put("ERROR_INAVLID_HOST_URL", "Ungültiger Hoster Link");
+                                                      put("ERROR_CONNECTIONS", "Zu viele parallele Downloads");
+                                                      put("ERROR_TRAFFIC_LIMIT", "Traffic Begrenzung");
+                                                      put("DETAILS_TITEL", "Account Zusatzinformationen");
+                                                      put("DETAILS_CATEGORY_ACC", "Account");
+                                                      put("DETAILS_ACCOUNT_NAME", "Account Name:");
+                                                      put("DETAILS_ACCOUNT_TYPE", "Account Typ:");
+                                                      put("DETAILS_SIMULTAN_DOWNLOADS", "Gleichzeitige Downloads:");
+                                                      put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeedvolumen verbraucht:");
+                                                      put("DETAILS_FULLSPEED_UNKOWN", "unbekannt");
+                                                      put("DETAILS_FULLSPEED_REDUCED", "gedrosselt");
+                                                      put("DETAILS_NOTIFICATIONS", "Benachrichtigungen:");
+                                                      put("DETAILS_CATEGORY_HOSTS", "Unterstützte Hoster");
+                                                      put("DETAILS_HOSTS_AMOUNT", "Anzahl: ");
+                                                      put("DETAILS_REVISION", "Plugin Version:");
+                                                      put("CLOSE", "Schließen");
+                                                      put("ERROR_PREVENT_SPRIT_USAGE", "Spritverbrauch verhindert!");
+                                                  }
+                                              };
+
+    /**
+     * Returns a germen/english translation of a phrase - we don't use the JDownloader translation framework since we need only germen and
+     * english (provider is german)
+     * 
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
+            return phrasesDE.get(key);
+        } else if (phrasesEN.containsKey(key)) { return phrasesEN.get(key); }
+        return "Translation not found!";
+    }
+
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, "Enable resume of stopped downloads (Warning: This can cause CRC errors)").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BETAUSER, "Enable beta service (Requires free-way beta account)").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, getPhrase("SETTING_RESUME")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BETAUSER, getPhrase("SETTING_BETA")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREVENTSPRITUSAGE, getPhrase("SETTING_SPRITUSAGE")).setDefaultValue(false));
     }
 
     @Override
@@ -112,39 +203,26 @@ public class FreeWayMe extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
         br.getPage("https://www.free-way.me/ajax/jd.php?id=1&user=" + username + "&pass=" + pass + "&encoded");
-        final String lang = System.getProperty("user.language");
         // "Invalid login" / "Banned" / "Valid login"
         if (br.toString().equalsIgnoreCase("Valid login")) {
             logger.info("{fetchAccInfo} Account " + username + " is valid");
         } else if (br.toString().equalsIgnoreCase("Invalid login")) {
-            account.setError(AccountError.INVALID, "Invalid login");
+            account.setError(AccountError.INVALID, getPhrase("ERROR_INVALID_LOGIN"));
             logger.info("{fetchAccInfo} Account " + username + " is invalid");
             logger.info("{fetchAccInfo} Request result: " + br.toString());
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + getPhrase("ERROR_INVALID_LOGIN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.toString().equalsIgnoreCase("Banned")) {
             logger.info("{fetchAccInfo} Account banned by free-way! -> advise to contact free-way support");
             logger.info("{fetchAccInfo} Request result: " + br.toString());
-            account.setError(AccountError.INVALID, "Account banned");
+            account.setError(AccountError.INVALID, getPhrase("ERROR_BAN"));
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_BAN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
 
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
         } else {
             logger.severe("{fetchAccInfo} Unknown ERROR!");
             logger.severe("{fetchAccInfo} Add to error parser: " + br.toString());
             // unknown error
-            account.setError(AccountError.INVALID, "Unknown error");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unbekannter Accountstatus (deaktiviert)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown account status (deactivated)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            account.setError(AccountError.INVALID, getPhrase("ERROR_UNKNOWN"));
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_UNKNOWN_FULL"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // account should be valid now, let's get account information:
         br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
@@ -211,9 +289,9 @@ public class FreeWayMe extends PluginForHost {
         }
 
         if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via free-way.me available");
+            ac.setStatus(getPhrase("CHECK_ZERO_HOSTERS"));
         } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via free-way.me available");
+            ac.setStatus(getPhrase("SUPPORTED_HOSTS_1") + supportedHosts.size() + getPhrase("SUPPORTED_HOSTS_2"));
             ac.setProperty("multiHostSupport", supportedHosts);
         }
         return ac;
@@ -239,8 +317,20 @@ public class FreeWayMe extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
+    private boolean prevetSpritUsage(Account acc) {
+        boolean doPrevent = this.getPluginConfig().getBooleanProperty(PREVENTSPRITUSAGE, false);
+        boolean unlimitedTraffic = acc.getAccountInfo().isUnlimitedTraffic();
+        return doPrevent && !unlimitedTraffic;
+    }
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        if (prevetSpritUsage(acc)) {
+            // we stop if the user won't lose sprit
+            acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_PREVENT_SPRIT_USAGE"));
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+
         String user = Encoding.urlTotalEncode(acc.getUser());
         String pw = Encoding.urlTotalEncode(acc.getPass());
         final String url = Encoding.urlTotalEncode(link.getDownloadURL());
@@ -254,7 +344,7 @@ public class FreeWayMe extends PluginForHost {
         String page = br.getPage(dllink);
         if (page.contains("Invalid login")) {
             logger.info("{handleMultiHost} Invalid Login for account: " + acc.getUser());
-            acc.setError(AccountError.TEMP_DISABLED, "Invalid login");
+            acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         String location = br.getRedirectLocation();
@@ -284,19 +374,19 @@ public class FreeWayMe extends PluginForHost {
                 // we handle this few lines later
             }
             if (error.contains("ltiger Login")) { // Ungü
-                acc.setError(AccountError.TEMP_DISABLED, "Invalid login");
+                acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (error.contains("ltige URL")) { // Ungültige URL
-                tempUnavailableHoster(acc, link, 2 * 60 * 1000l, "Invalid URL");
+                tempUnavailableHoster(acc, link, 2 * 60 * 1000l, getPhrase("ERROR_INVALID_URL"));
             } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
-                tempUnavailableHoster(acc, link, 10 * 60 * 1000l, "Traffic limit");
+                tempUnavailableHoster(acc, link, 10 * 60 * 1000l, getPhrase("ERROR_TRAFFIC_LIMIT"));
             } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
                 acc.setUpdateTime(30 * 1000); // 30s
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 1 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_CONNECTIONS"), 1 * 60 * 1000l);
             } else if (error.contains("ltiger Hoster")) { // Ungü...
-                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, "Invalid host link");
+                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
             } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
-                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, "Host temporary disabled");
+                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
             } else if (error.equalsIgnoreCase("Unbekannter Fehler #3") || error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
@@ -314,23 +404,23 @@ public class FreeWayMe extends PluginForHost {
                     tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l, error);
                 }
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error: Retry in few secs" + msg, 20 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_RETRY_SECONDS") + msg, 20 * 1000l);
             } else if (error.startsWith("Die Datei darf maximal")) {
                 logger.info("{handleMultiHost} File download limit");
                 tempUnavailableHoster(acc, link, 2 * 60 * 1000l, error);
             } else if (error.equalsIgnoreCase("Mehrere Computer haben in letzter Zeit diesen Account genutzt")) {
                 logger.info("{handleMultiHost} free-way ip ban");
-                acc.setError(AccountError.TEMP_DISABLED, "IP ban");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "IP ban");
+                acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_BAN"));
+                throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_BAN"));
             }
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
-            int timesFailed = link.getIntegerProperty("timesfailedfreewayme_unknown", 0);
+            int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty("timesfailedfreewayme_unknown", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+                link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_SERVER"));
             } else {
-                link.setProperty("timesfailedfreewayme_unknown", Property.NULL);
+                link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
@@ -350,7 +440,6 @@ public class FreeWayMe extends PluginForHost {
                 }
                 String windowTitleLangText = null;
                 ArrayList<String> supportedHosts = (ArrayList<String>) supported;
-                final String lang = System.getProperty("user.language");
                 final String accType = account.getStringProperty("acctype", null);
                 final String maxSimultanDls = account.getStringProperty(ACC_PROPERTY_CONNECTIONS, null);
                 final String notifications = account.getStringProperty("notifications", "0");
@@ -382,44 +471,26 @@ public class FreeWayMe extends PluginForHost {
                     logger.info("free-way.me revision number error: " + e);
                 }
 
-                if ("de".equalsIgnoreCase(lang)) {
-                    windowTitleLangText = "Account Zusatzinformationen";
+                windowTitleLangText = getPhrase("DETAILS_TITEL");
 
-                    panelGenerator.addCategory("Account");
-                    panelGenerator.addEntry("Account Name:", account.getUser());
-                    panelGenerator.addEntry("Account Typ:", accType);
+                panelGenerator.addCategory(getPhrase("DETAILS_CATEGORY_ACC"));
+                panelGenerator.addEntry(getPhrase("DETAILS_ACCOUNT_NAME"), account.getUser());
+                panelGenerator.addEntry(getPhrase("DETAILS_ACCOUNT_TYPE"), accType);
 
-                    if (maxSimultanDls != null) panelGenerator.addEntry("Gleichzeitige Downloads:", maxSimultanDls);
+                if (maxSimultanDls != null) panelGenerator.addEntry(getPhrase("DETAILS_SIMULTAN_DOWNLOADS"), maxSimultanDls);
 
-                    panelGenerator.addEntry("Fullspeedvolumen verbraucht:", (trafficUsage == -1) ? "unbekannt" : ((trafficUsage >= 100) ? "gedrosselt" : trafficUsage + "%"));
+                panelGenerator.addEntry(getPhrase("DETAILS_FULLSPEED_TRAFFIC"), (trafficUsage == -1) ? getPhrase("DETAILS_FULLSPEED_UNKOWN") : ((trafficUsage >= 100) ? getPhrase("DETAILS_FULLSPEED_REDUCED") : trafficUsage + "%"));
 
-                    panelGenerator.addEntry("Benachrichtigungen:", notifications);
+                panelGenerator.addEntry(getPhrase("DETAILS_NOTIFICATIONS"), notifications);
 
-                    panelGenerator.addCategory("Unterstützte Hoster");
-                    panelGenerator.addEntry("Anzahl: ", Integer.toString(hostList.size()));
+                panelGenerator.addCategory(getPhrase("DETAILS_CATEGORY_HOSTS"));
+                panelGenerator.addEntry(getPhrase("DETAILS_HOSTS_AMOUNT"), Integer.toString(hostList.size()));
 
-                } else {
-                    windowTitleLangText = "Account Information";
-
-                    panelGenerator.addCategory("Account");
-                    panelGenerator.addEntry("Account Name:", account.getUser());
-                    panelGenerator.addEntry("Account Type:", accType);
-
-                    if (maxSimultanDls != null) panelGenerator.addEntry("Simultaneous Downloads:", maxSimultanDls);
-
-                    panelGenerator.addEntry("Fullspeed traffic:", (trafficUsage == -1) ? "unknown" : ((trafficUsage >= 100) ? "reduced" : trafficUsage + "%"));
-
-                    panelGenerator.addEntry("Notifications:", notifications);
-
-                    panelGenerator.addCategory("Supported Hosts");
-                    panelGenerator.addEntry("Amount: ", Integer.toString(hostList.size()));
-
-                }
                 panelGenerator.addTable(hostList);
 
-                panelGenerator.addEntry("Plugin Revision:", revision);
+                panelGenerator.addEntry(getPhrase("DETAILS_REVISION"), revision);
 
-                ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, "Close", "");
+                ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, getPhrase("CLOSE"), "");
                 try {
                     Dialog.getInstance().showDialog(dialog);
                 } catch (DialogNoAnswerException e) {
@@ -518,7 +589,7 @@ public class FreeWayMe extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout, String msg) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("ERROR_UNKNWON_CODE"));
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -534,6 +605,9 @@ public class FreeWayMe extends PluginForHost {
 
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        // we stop if the user won't lose sprit
+        if (prevetSpritUsage(account)) return false;
+
         if (getDisabledHosts(account).contains(downloadLink.getHost())) return false;
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
