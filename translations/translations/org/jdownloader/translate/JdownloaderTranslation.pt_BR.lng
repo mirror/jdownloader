@@ -38,6 +38,7 @@ LinkSource_ADD_LINKS_DIALOG=Ação ao Adicionar Links
 LinkSource_CLIPBOARD=Área de Transferência
 LinkSource_CNL=Click'n'Load
 LinkSource_DOWNLOADED_CONTAINER=Contêiner baixado
+LinkSource_EXTENSION=Qualquer extensão
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Dock (somente Mac)
 LinkSource_MYJD=MyJDownloader
