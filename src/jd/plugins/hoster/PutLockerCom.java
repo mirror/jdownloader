@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -126,6 +127,8 @@ public class PutLockerCom extends PluginForHost {
         return -1;
     }
 
+    private static AtomicInteger ERROR_COUNTER = new AtomicInteger();
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -156,7 +159,10 @@ public class PutLockerCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
         }
         if (br.containsHTML(">You have exceeded the daily")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached");
-        if (br.containsHTML(">Server is Overloaded|>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
+
+        checkForErrors();
+        ERROR_COUNTER.set(0);
+
         String passCode = downloadLink.getStringProperty("pass");
         if (br.containsHTML("This file requires a password\\. Please enter it")) {
             br.setFollowRedirects(true);
@@ -183,15 +189,15 @@ public class PutLockerCom extends PluginForHost {
                     downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error 416", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error 416", calculateDynamicWaittime(10));
             }
             logger.warning("putlocker.com: final link leads to html code...");
             br.followConnection();
             // My experience was that such files just don't work, i wasn't able
             // to download a link with this error in 3 days!
             if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.MAINPAGEer.putlockercom.servererrorfilebroken", "Server error - file offline?"));
-            if (br.containsHTML(">This link has expired\\. Please try again") || br.containsHTML("This content server is down for maintenance\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            if (br.containsHTML("<title>Store Files Easily on PutLocker</title>|404 - Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+            if (br.containsHTML(">This link has expired\\. Please try again") || br.containsHTML("This content server is down for maintenance\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", calculateDynamicWaittime(5));
+            if (br.containsHTML("<title>Store Files Easily on PutLocker</title>|404 - Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", calculateDynamicWaittime(15));
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fixFilename(downloadLink);
@@ -256,9 +262,47 @@ public class PutLockerCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error3");
             } else {
                 downloadLink.setProperty("timesfailedputlockercom_unknown3", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error3", 30 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error3", calculateDynamicWaittime(30));
             }
         }
+    }
+
+    protected void checkForErrors() throws PluginException {
+        if (br.containsHTML(">This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<")) {
+
+            // very old: http://svn.jdownloader.org/issues/4031
+            // not sure if this is still a valid regex. please try to verify
+
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", calculateDynamicWaittime(20));
+        }
+        // verified on 29. January 2014
+        // <title>Request could not be processed :(</title>
+        // </head>
+        // <body>
+        // <div id="error_container">
+        // <h1>Server is Overloaded</h1>
+        // <img src="../images/error.png"><br>
+        // <div class="twitter">
+        if (br.containsHTML("Request could not be processed :\\(")) {
+            // uups
+
+            String errorMessage = br.getRegex("<div id=\"error_container\">.*?<h1>(.*?)</h1>").getMatch(0);
+            if (errorMessage == null || errorMessage.trim().length() == 0) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", calculateDynamicWaittime(20));
+            } else {
+                if ("Server is Overloaded".equals(errorMessage)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, calculateDynamicWaittime(20));
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, calculateDynamicWaittime(20));
+                }
+            }
+        }
+        // no error - reset
+
+    }
+
+    protected long calculateDynamicWaittime(int maxMinutes) {
+        return (long) (Math.min(maxMinutes * 60, (10 + Math.pow(2, ERROR_COUNTER.incrementAndGet()))) * 1000l);
     }
 
     @Override
@@ -272,9 +316,11 @@ public class PutLockerCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            checkForErrors();
+            if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", calculateDynamicWaittime(10));
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        ERROR_COUNTER.set(0);
         fixFilename(link);
         dl.startDownload();
     }
