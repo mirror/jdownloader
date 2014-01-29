@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -48,37 +49,64 @@ public class LnkBcks extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (link == null) {
+        if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("<div id=\"lb_header\">.*?/a>.*?<a.*?href=\"(.*?)\".*?class=\"lb", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
-        if (link == null) {
+        if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("AdBriteInit\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
-        if (link == null) {
+        if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("Linkbucks\\.TargetUrl = '(.*?)';", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
-        if (link == null) {
+        if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("Lbjs\\.TargetUrl = '(http://[^<>\"]*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
-        if (link == null) {
+        if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("src=\"http://static\\.linkbucks\\.com/tmpl/mint/img/lb\\.gif\" /></a>.*?<a href=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
-        if (link == null) {
+        if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("noresize=\"[0-9+]\" src=\"(http.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            if (link == null) {
+            if (inValidate(link)) {
                 link = br.getRegex(Pattern.compile("\"frame2\" frameborder.*?src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             }
         }
-        if (link == null) {
+        if (inValidate(link)) {
             link = br.getRegex(Pattern.compile("id=\"content\" src=\"([^\"]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
-        if (link == null) {
+        if (inValidate(link)) {
+            String token = br.getRegex("Token : '([a-f0-9]{40})'").getMatch(0);
+            if (token == null) token = br.getRegex("\\?t=([a-f0-9]{40})").getMatch(0);
+            Browser br2 = br.cloneBrowser();
+            br2.getPage("/director/?t=" + token);
+            // not needed though might be worth while
+            sleep(5 * 1000l, param);
+            Browser br3 = br.cloneBrowser();
+            br3.getPage("/intermission/loadTargetUrl?t=" + token);
+            link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);
+
+        }
+        if (inValidate(link)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     * 
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("") || s.equalsIgnoreCase("about:blank")))
+            return true;
+        else
+            return false;
     }
 
     /* NO OVERRIDE!! */
