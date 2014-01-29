@@ -48,6 +48,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -1320,6 +1321,12 @@ public class YoutubeHelper {
 
     public YoutubeConfig getConfig() {
         return cfg;
+    }
+
+    public static Locale forLanguageTag(String code) {
+        if (Application.getJavaVersion() >= Application.JAVA17) { return Locale.forLanguageTag(code); }
+
+        return TranslationFactory.stringToLocale(code);
     }
 
 }
