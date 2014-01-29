@@ -455,54 +455,6 @@ public class SecondLevelLaunch {
         }
     }
 
-    // private static void checkSessionInstallLog() {
-    // File logFile = null;
-    // try {
-    // InstallLogList tmpInstallLog = new InstallLogList();
-    // logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
-    // if (logFile.exists()) {
-    // Launcher.LOG.info("Check SessionInstallLog");
-    // tmpInstallLog = JSonStorage.restoreFromFile(logFile, tmpInstallLog);
-    //
-    // for (InstalledFile iFile : tmpInstallLog) {
-    // if (iFile.getRelPath().endsWith(".class")) {
-    // // Updated plugins
-    // JDInitFlags.REFRESH_CACHE = true;
-    // Launcher.LOG.info("RefreshCache=true");
-    // break;
-    // }
-    // if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar")) {
-    // // Updated extensions
-    // JDInitFlags.REFRESH_CACHE = true;
-    // Launcher.LOG.info("RefreshCache=true");
-    // break;
-    // }
-    // if (iFile.getRelPath().endsWith(".class.backup")) {
-    // // Updated plugins
-    // JDInitFlags.REFRESH_CACHE = true;
-    // Launcher.LOG.info("RefreshCache=true");
-    // break;
-    // }
-    // if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar.backup")) {
-    // // Updated extensions
-    // JDInitFlags.REFRESH_CACHE = true;
-    // Launcher.LOG.info("RefreshCache=true");
-    // break;
-    // }
-    // }
-    // }
-    //
-    // } catch (Throwable e) {
-    // // JUst to be sure
-    // Launcher.LOG.log(e);
-    // } finally {
-    // if (logFile != null) {
-    // logFile.renameTo(new File(logFile.getAbsolutePath() + "." + System.currentTimeMillis()));
-    //
-    // }
-    // }
-    // }
-
     private static void preInitChecks() {
         SecondLevelLaunch.javaCheck();
     }

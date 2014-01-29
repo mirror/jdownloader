@@ -39,7 +39,6 @@ import org.jdownloader.downloadcore.v15.HashInfo;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.statistics.StatsManager;
 
 public class DownloadLinkDownloadable implements Downloadable {
     /**
@@ -423,25 +422,6 @@ public class DownloadLinkDownloadable implements Downloadable {
         }
 
         return renameOkay;
-    }
-
-    @Override
-    public void logStats(File outputCompleteFile, int chunksCount, long downloadTimeInMs) {
-        if (StatsManager.I().isEnabled()) {
-            long speed = 0;
-            long startDelay = -1;
-            try {
-                speed = (outputCompleteFile.length() - Math.max(0, getDownloadLinkController().getSizeBefore())) / ((downloadTimeInMs) / 1000);
-            } catch (final Throwable e) {
-                // LogSource.exception(logger, e);
-            }
-            try {
-                startDelay = System.currentTimeMillis() - getDownloadLinkController().getStartTimestamp();
-            } catch (final Throwable e) {
-                // LogSource.exception(logger, e);
-            }
-            StatsManager.I().onFileDownloaded(outputCompleteFile, downloadLink, speed, startDelay, chunksCount);
-        }
     }
 
     @Override

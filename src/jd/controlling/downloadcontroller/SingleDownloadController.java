@@ -17,36 +17,47 @@
 package jd.controlling.downloadcontroller;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
 import jd.plugins.FilePackageView;
 import jd.plugins.LinkStatus;
+import jd.plugins.LinkStatusProperty;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.raf.HashResult;
 
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.tasks.PluginProgressTask;
+import org.jdownloader.plugins.tasks.PluginSubTask;
 
-public class SingleDownloadController extends BrowserSettingsThread {
+public class SingleDownloadController extends BrowserSettingsThread implements DownloadControllerListener {
 
     /**
      * signals that abort request has been received
@@ -85,6 +96,7 @@ public class SingleDownloadController extends BrowserSettingsThread {
     private CopyOnWriteArrayList<DownloadWatchDogJob>      jobsAfterDetach                = new CopyOnWriteArrayList<DownloadWatchDogJob>();
     private WaitingQueueItem                               queueItem;
     private final long                                     sizeBefore;
+    private ArrayList<PluginSubTask>                       tasks;
 
     public WaitingQueueItem getQueueItem() {
         return queueItem;
@@ -139,6 +151,7 @@ public class SingleDownloadController extends BrowserSettingsThread {
 
     protected SingleDownloadController(DownloadLinkCandidate candidate, DownloadWatchDog watchDog) {
         super("Download");
+        tasks = new ArrayList<PluginSubTask>();
         setPriority(Thread.MIN_PRIORITY);
         this.watchDog = watchDog;
         this.candidate = candidate;
@@ -155,6 +168,7 @@ public class SingleDownloadController extends BrowserSettingsThread {
         queueItem.queueLinks.add(downloadLink);
         linkStatus = new LinkStatus(downloadLink);
         setName("Download: " + downloadLink.getName() + "_" + downloadLink.getHost());
+
     }
 
     @Override
@@ -406,6 +420,112 @@ public class SingleDownloadController extends BrowserSettingsThread {
      */
     public long getSizeBefore() {
         return sizeBefore;
+    }
+
+    public void addTask(PluginSubTask subTask) {
+        synchronized (tasks) {
+
+            tasks.add(subTask);
+        }
+    }
+
+    public void onDetach(DownloadLink downloadLink) {
+        DownloadController.getInstance().getEventSender().removeListener(this);
+
+        synchronized (tasks) {
+            for (PluginSubTask t : tasks) {
+                t.close();
+
+            }
+        }
+    }
+
+    public void onAttach(DownloadLink downloadLink) {
+        DownloadController.getInstance().getEventSender().addListener(this, true);
+
+    }
+
+    @Override
+    public void onDownloadControllerAddedPackage(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh() {
+    }
+
+    @Override
+    public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
+    }
+
+    @Override
+    public void onDownloadControllerRemovedPackage(FilePackage pkg) {
+    }
+
+    @Override
+    public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+        try {
+            if (property.getProperty() == DownloadLinkProperty.Property.PLUGIN_PROGRESS) {
+                PluginProgress newProgress = downloadlink.getPluginProgress();
+                PluginProgressTask task = null;
+                synchronized (tasks) {
+                    for (PluginSubTask t : tasks) {
+                        if (t instanceof PluginProgressTask) {
+                            if (((PluginProgressTask) t).getProgress() != newProgress) {
+                                t.close();
+                            } else {
+                                task = (PluginProgressTask) t;
+                            }
+                        }
+                    }
+                }
+                if (task == null) {
+                    if (newProgress != null) {
+                        task = new PluginProgressTask(newProgress);
+                        task.open();
+                        synchronized (tasks) {
+                            tasks.add(task);
+                        }
+                    }
+                } else {
+                    task.reopen();
+                }
+            }
+        } catch (Throwable e) {
+            // TODO: handle exception
+        }
+
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+        System.out.println(property);
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
+    }
+
+    @Override
+    public void onDownloadControllerUpdatedData(FilePackage pkg) {
+    }
+
+    public List<PluginSubTask> getTasks() {
+        synchronized (tasks) {
+            return new ArrayList<PluginSubTask>(tasks);
+        }
+
     }
 
 }

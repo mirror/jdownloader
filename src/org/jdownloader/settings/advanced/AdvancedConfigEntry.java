@@ -17,7 +17,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.statistics.StatsManager;
 
 public class AdvancedConfigEntry {
 
@@ -69,7 +68,7 @@ public class AdvancedConfigEntry {
             Object v = getValue();
             keyHandler.getSetter().getMethod().invoke(configInterface, new Object[] { value });
             if (!equals(v, value)) {
-                StatsManager.I().trackAdvancedOptionChange(keyHandler);
+
                 if (keyHandler.getAnnotation(RequiresRestart.class) != null) {
                     if (JDGui.bugme(WarnLevel.NORMAL)) {
                         ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.AdvancedConfigEntry_setValue_restart_warning_title(keyHandler.getKey()), _GUI._.AdvancedConfigEntry_setValue_restart_warning(keyHandler.getKey()), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null, null) {

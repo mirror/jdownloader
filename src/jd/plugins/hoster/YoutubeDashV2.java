@@ -1236,7 +1236,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                             String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
 
                                             String code = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, "");
-                                            Locale locale = Locale.forLanguageTag(code);
+                                            Locale locale = YoutubeHelper.forLanguageTag(code);
 
                                             File newFile;
                                             IO.copyFile(finalFile, newFile = new File(finalFile.getParentFile(), base + "." + locale.getDisplayLanguage() + ".srt"));
@@ -1389,7 +1389,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
         public SubtitleVariant(String code) {
             this.code = code;
-            locale = Locale.forLanguageTag(code);
+            locale = YoutubeHelper.forLanguageTag(code);
         }
 
         @Override

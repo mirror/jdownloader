@@ -722,7 +722,7 @@ public class OldRAFDownload extends DownloadInterface {
         downloadable.setVerifiedFileSize(outputPartFile.length());
         boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
         if (renameOkay) {
-            downloadable.logStats(outputCompleteFile, chunks.size(), System.currentTimeMillis() - getStartTimeStamp());
+
             /* save absolutepath as final location property */
             downloadable.setFinalFileOutput(outputCompleteFile.getAbsolutePath());
             try {

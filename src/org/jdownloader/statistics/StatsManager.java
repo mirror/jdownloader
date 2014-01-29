@@ -3,13 +3,14 @@ package org.jdownloader.statistics;
 import java.io.File;
 import java.io.FileInputStream;
 import java.security.MessageDigest;
+import java.util.List;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
+import jd.plugins.download.raf.HashResult;
 
-import org.appwork.shutdown.ShutdownController;
-import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -17,12 +18,14 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.tasks.PluginSubTask;
 import org.jdownloader.remotecall.RemoteClient;
 import org.jdownloader.statistics.interfaces.PluginStatsInterface;
 
-public class StatsManager implements GenericConfigEventListener<Object> {
+public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener {
     private static final StatsManager INSTANCE = new StatsManager();
 
     /**
@@ -35,11 +38,11 @@ public class StatsManager implements GenericConfigEventListener<Object> {
     }
 
     private PluginStatsInterface remote;
-    private StatsManagerConfig  config;
-    private Queue               queue;
+    private StatsManagerConfig   config;
+    private Queue                queue;
 
-    private long                startTime;
-    private LogSource           logger;
+    private long                 startTime;
+    private LogSource            logger;
 
     /**
      * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #link()}.
@@ -50,52 +53,8 @@ public class StatsManager implements GenericConfigEventListener<Object> {
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
         queue = new Queue("StatsManager Queue") {
         };
-
-        logStart();
-        boolean fresh = false;
-        if (fresh) {
-            logFreshInstall();
-        }
-        startTime = System.currentTimeMillis();
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-            @Override
-            public void onShutdown(final ShutdownRequest shutdownRequest) {
-                logExit();
-            }
-        });
-        logEnabled();
+        DownloadWatchDog.getInstance().getEventSender().addListener(this);
         config._getStorageHandler().getKeyHandler("enabled").getEventSender().addListener(this);
-    }
-
-    private synchronized void logEnabled() {
-
-        queue.add(new AsynchLogger() {
-
-            @Override
-            public void doRemoteCall() {
-
-                // remote.enabled(isEnabled());
-
-            }
-
-        });
-    }
-
-    protected void logExit() {
-
-    }
-
-    private void logFreshInstall() {
-
-    }
-
-    public void logAction(String key) {
-
-    }
-
-    private void logStart() {
-
     }
 
     /**
@@ -108,34 +67,8 @@ public class StatsManager implements GenericConfigEventListener<Object> {
     }
 
     public boolean isEnabled() {
-        return false;
-        // return config.isEnabled();
-    }
 
-    public void onFileDownloaded(File outputCompleteFile, final DownloadLink downloadLink, final long speedBytePS, final long startDelay, final int chunks) {
-        if (!isEnabled()) return;
-        try {
-            final String fp = getFingerprint(outputCompleteFile);
-            PluginForHost plg = downloadLink.getLivePlugin();
-            final long size = outputCompleteFile.length();
-            final boolean accountUsed = downloadLink.getDownloadLinkController().getAccount() != null;
-            final long plgVersion = plg.getVersion();
-            final String plgHost = plg.getHost();
-            final String linkHost = downloadLink.getDomainInfo().getTld();
-
-            queue.add(new AsynchLogger() {
-                @Override
-                public void doRemoteCall() {
-                    if (!isEnabled()) return;
-
-                    // remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp, speedBytePS, chunks);
-
-                }
-
-            });
-        } catch (Throwable e) {
-
-        }
+        return config.isEnabled();
     }
 
     public static String getFingerprint(final File arg) {
@@ -179,29 +112,56 @@ public class StatsManager implements GenericConfigEventListener<Object> {
     @Override
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
 
-        logEnabled();
     }
 
-    public void trackAdvancedOptionChange(final KeyHandler<?> keyHandler) {
+    @Override
+    public void onDownloadWatchdogDataUpdate() {
+    }
 
-        queue.add(new AsynchLogger() {
-            @Override
-            public void doRemoteCall() {
-                if (!isEnabled()) return;
-                // if (Clazz.isEnum(keyHandler.getRawType())) {
-                // remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") +
-                // "." + keyHandler.getKey(), keyHandler.getValue() + "");
-                // } else if (Clazz.isString(keyHandler.getRawType())) {
-                // remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") +
-                // "." + keyHandler.getKey(), null);
-                // } else if (Clazz.isPrimitive(keyHandler.getRawType()) || Clazz.isPrimitiveWrapper(keyHandler.getRawType())) {
-                // remote.onAdvancedOptionUpdate(keyHandler.getStorageHandler().getConfigInterface().getSimpleName().replace("Config", "") +
-                // "." + keyHandler.getKey(), keyHandler.getValue() + "");
-                // }
+    @Override
+    public void onDownloadWatchdogStateIsIdle() {
+    }
 
-            }
+    @Override
+    public void onDownloadWatchdogStateIsPause() {
+    }
 
-        });
+    @Override
+    public void onDownloadWatchdogStateIsRunning() {
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopped() {
+    }
+
+    @Override
+    public void onDownloadWatchdogStateIsStopping() {
+    }
+
+    @Override
+    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    }
+
+    @Override
+    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
+        try {
+            DownloadLogEntry dl = new DownloadLogEntry();
+            HTTPProxy proxy = downloadController.getCurrentProxy();
+            HashResult hashResult = downloadController.getHashResult();
+            long startedAt = downloadController.getStartTimestamp();
+            DownloadLink link = downloadController.getDownloadLink();
+            long downloadTime = link.getView().getDownloadTime();
+            List<PluginSubTask> tasks = downloadController.getTasks();
+            System.out.println(tasks);
+            // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
+            log(dl);
+        } catch (Throwable e) {
+
+        }
+
+    }
+
+    private void log(DownloadLogEntry dl) {
     }
 
 }

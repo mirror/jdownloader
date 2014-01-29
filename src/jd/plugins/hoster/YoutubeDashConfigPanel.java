@@ -25,6 +25,7 @@ import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAct
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StringKeyHandler;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.Pair;
@@ -282,6 +283,13 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
             m.setValue(m.getDefaultValue());
         }
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                updateContents();
+            }
+        };
 
     }
 
