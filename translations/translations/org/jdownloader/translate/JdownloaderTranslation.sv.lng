@@ -38,6 +38,7 @@ LinkSource_ADD_LINKS_DIALOG=Lägg till länk Action
 LinkSource_CLIPBOARD=Klippbord
 LinkSource_CNL=Clicka och Ladda
 LinkSource_DOWNLOADED_CONTAINER=Nerladdnings container
+LinkSource_EXTENSION=Valfri extension
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Docka (Endast Mac)
 LinkSource_MYJD=MyJDownloader
