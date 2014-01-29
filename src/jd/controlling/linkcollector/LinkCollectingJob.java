@@ -3,6 +3,7 @@ package jd.controlling.linkcollector;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 
 public class LinkCollectingJob {
+
     private String              jobContent;
     private String              customSourceUrl;
     private CrawledLinkModifier crawledLinkModifier = null;

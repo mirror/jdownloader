@@ -402,6 +402,7 @@
 		</manifest>
 		<buildAddon package="JDChat" include="chat" />
 		<buildAddon package="infobar" include="infobar" />
+		<buildAddon package="FolderWarch" include="folderwatch" />
 
 		<buildAddon package="JDShutdown" include="shutdown" />
 

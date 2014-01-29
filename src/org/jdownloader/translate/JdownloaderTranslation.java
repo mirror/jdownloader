@@ -511,4 +511,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Skipped - FFmpeg™ missing" })
     String DownloadLink_setSkipped_statusmessage_ffmpeg();
 
+    @Default(lngs = { "en" }, values = { "Any Extension" })
+    String LinkSource_EXTENSION();
+
 }

@@ -1,4 +1,4 @@
-package org.jdownloader.controllingg;
+package org.jdownloader.controlling;
 
 import jd.plugins.DownloadLink;
 

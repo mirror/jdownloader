@@ -15,4 +15,8 @@ public enum BooleanStatus {
             return null;
         }
     }
+
+    public static BooleanStatus get(BooleanStatus status) {
+        return status == null ? UNSET : status;
+    }
 }

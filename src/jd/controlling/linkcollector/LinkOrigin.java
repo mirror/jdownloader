@@ -13,7 +13,8 @@ public enum LinkOrigin {
     FLASHGOT(_JDT._.LinkSource_FLASHGOT()),
     TOOLBAR(_JDT._.LinkSource_TOOLBAR()),
     PASTE_LINKS_ACTION(_JDT._.LinkSource_PASTE_LINKS_ACTION()),
-    DOWNLOADED_CONTAINER(_JDT._.LinkSource_DOWNLOADED_CONTAINER());
+    DOWNLOADED_CONTAINER(_JDT._.LinkSource_DOWNLOADED_CONTAINER()),
+    EXTENSION(_JDT._.LinkSource_EXTENSION());
 
     private String translation;
 

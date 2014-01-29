@@ -2,7 +2,6 @@ package org.jdownloader.controlling;
 
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.controllingg.DownloadLinkView;
 
 public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
 
