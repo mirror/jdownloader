@@ -3921,9 +3921,26 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Best %s1 available" })
     String YoutubeDashV2_add_best(String label);
 
-    @Default(lngs = { "en" }, values = { "Worst %s1 available" })
     String YoutubeDashV2_add_worst(String label);
 
     @Default(lngs = { "en" }, values = { "%s1 Server Error. Try again later" })
     String hoster_servererror(String string);
+
+    @Default(lngs = { "en" }, values = { "Password required" })
+    String AskForPasswordDialog_AskForPasswordDialog_title_();
+
+    @Default(lngs = { "en" }, values = { "User Google+ ID" })
+    String YoutubeHelper_getDescription_googleplus_id();
+
+    @Default(lngs = { "en" }, values = { "Ask me" })
+    String GraphicalUserInterfaceSettings_getLabel_ask_();
+
+    @Default(lngs = { "en" }, values = { "Do not move - keep in Linkgrabber" })
+    String GraphicalUserInterfaceSettings_getLabel_do_not_move();
+
+    @Default(lngs = { "en" }, values = { "Move to Downloadlist anyway" })
+    String GraphicalUserInterfaceSettings_getLabel_move_anyway();
+
+    @Default(lngs = { "en" }, values = { "Do not move - Delete Links" })
+    String GraphicalUserInterfaceSettings_getLabel_delete();
 }

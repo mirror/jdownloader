@@ -173,7 +173,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public int getDefaultWidth() {
-        return DEFAULT_ICON_COUNT * 19 + 7;
+        return DEFAULT_ICON_COUNT * 19 + 14;
     }
 
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {

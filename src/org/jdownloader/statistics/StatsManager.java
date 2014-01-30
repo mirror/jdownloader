@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.security.MessageDigest;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -21,6 +23,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.tasks.PluginSubTask;
 import org.jdownloader.remotecall.RemoteClient;
@@ -147,7 +150,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public void onDownloadControllerStopped(SingleDownloadController downloadController) {
         try {
             DownloadLogEntry dl = new DownloadLogEntry();
-            HTTPProxy proxy = downloadController.getCurrentProxy();
+
             HashResult hashResult = downloadController.getHashResult();
             long startedAt = downloadController.getStartTimestamp();
             DownloadLink link = downloadController.getDownloadLink();
@@ -177,8 +180,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 }
             }
             long pluginRuntime = downloadTask.getStartTime() - plugintask.getStartTime();
-            pluginRuntime -= userIO;
+            DownloadLinkCandidate candidate = downloadController.getDownloadLinkCandidate();
+            HTTPProxy usedProxy = downloadController.getUsedProxy();
+            CachedAccount account = candidate.getCachedAccount();
 
+            pluginRuntime -= userIO;
+            FinalLinkState linkState = link.getFinalLinkState();
             System.out.println(tasks);
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);

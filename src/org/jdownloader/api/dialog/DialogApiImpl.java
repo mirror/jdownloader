@@ -17,15 +17,17 @@ import org.appwork.remoteapi.events.EventsSender;
 import org.appwork.remoteapi.events.SimpleEventObject;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.CloseReason;
 import org.appwork.uio.In;
 import org.appwork.uio.Out;
 import org.appwork.uio.UserIODefinition;
-import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.bindings.interfaces.DialogInterface;
 
 public class DialogApiImpl implements EventPublisher, DialogApiInterface {
 
@@ -42,6 +44,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
     }
 
     public DialogApiImpl(RemoteAPIIOHandlerWrapper remoteAPIHandlerWrapper) {
+        RemoteAPIController.validateInterfaces(DialogApiInterface.class, DialogInterface.class);
         this.callback = remoteAPIHandlerWrapper;
         id = new AtomicLong();
         logger = LogController.getInstance().getLogger(DialogApiImpl.class.getName());
@@ -182,7 +185,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
     }
 
     @Override
-    public void answer(long id, final org.jdownloader.myjdownloader.client.json.JsonMap data) throws BadOrderException, InvalidIdException {
+    public void answer(long id, final HashMap<String, Object> data) throws BadOrderException, InvalidIdException {
         ApiHandle handle = null;
 
         synchronized (map) {
@@ -216,7 +219,7 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
                     }
 
                 }
-                org.jdownloader.myjdownloader.client.json.JsonMap d = data;
+
                 String key = method.getName().toLowerCase(Locale.ENGLISH);
                 if (key.startsWith("get")) {
                     key = key.substring(3);

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
@@ -97,6 +98,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private WaitingQueueItem                               queueItem;
     private final long                                     sizeBefore;
     private ArrayList<PluginSubTask>                       tasks;
+    private HTTPProxy                                      usedProxy;
 
     public WaitingQueueItem getQueueItem() {
         return queueItem;
@@ -247,11 +249,20 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         PluginForHost livePlugin = null;
         PluginForHost originalPlugin = null;
         boolean validateChallenge = true;
+        final AtomicReference<HTTPProxy> proxyRef = new AtomicReference<HTTPProxy>();
         try {
             final PluginClassLoaderChild cl;
             this.setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
             livePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(cl);
-            livePlugin.setBrowser(new Browser());
+            usedProxy = getCurrentProxy();
+            livePlugin.setBrowser(new Browser() {
+                @Override
+                public void setProxy(HTTPProxy proxy) {
+                    super.setProxy(proxy);
+                    proxyRef.set(proxy);
+
+                }
+            });
             livePlugin.setLogger(downloadLogger);
             livePlugin.setDownloadLink(downloadLink);
             originalPlugin = livePlugin;
@@ -303,6 +314,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 }
                 processingPlugin.set(livePlugin);
                 livePlugin.init();
+
                 livePlugin.handle(downloadLink, account);
                 SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, processingPlugin.getAndSet(null));
                 return ret;
@@ -329,6 +341,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             return ret;
         } finally {
             queueItem.queueLinks.remove(downloadLink);
+            usedProxy = proxyRef.get();
             downloadLink.setLivePlugin(null);
             finalizePlugins(downloadLogger, originalPlugin, livePlugin, validateChallenge);
             if (downloadLink.getFilePackage() != null) {
@@ -341,6 +354,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             }
 
         }
+    }
+
+    public HTTPProxy getUsedProxy() {
+        return usedProxy;
     }
 
     private void finalizePlugins(LogSource logger, PluginForHost originalPlugin, PluginForHost livePlugin, boolean valid) {

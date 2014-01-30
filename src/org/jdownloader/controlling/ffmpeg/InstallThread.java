@@ -5,9 +5,9 @@ import java.io.File;
 import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;

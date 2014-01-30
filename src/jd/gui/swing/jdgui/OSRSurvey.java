@@ -18,8 +18,8 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
-import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;

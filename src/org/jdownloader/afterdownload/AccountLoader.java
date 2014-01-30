@@ -11,8 +11,8 @@ import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSet
 import jd.plugins.Account;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
-import org.appwork.uio.UserIODefinition.CloseReason;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.FileCreationListener;

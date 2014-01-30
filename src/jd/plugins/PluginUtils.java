@@ -41,11 +41,6 @@ public class PluginUtils {
         return askPassword(plg.getHost(), "");
     }
 
-    public static String askPassword(String message, final DownloadLink link) {
-        if (message == null) message = _JDT._.jd_plugins_PluginUtils_askPassword(link.getName());
-        return askPassword(message, link.getDownloadPassword());
-    }
-
     public static String askPassword(String message, final CryptedLink link) {
         // with null message, long urls will push out the length of the dialog. Lets prevent that.
         if (message == null) {

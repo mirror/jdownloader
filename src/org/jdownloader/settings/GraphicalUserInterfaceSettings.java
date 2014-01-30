@@ -23,6 +23,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.View;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.settings.advanced.ActionClass;
 
@@ -966,5 +967,44 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isOverviewPanelLinkgrabberStatusOfflineVisible();
 
     void setOverviewPanelLinkgrabberStatusOfflineVisible(boolean b);
+
+    public static enum ConfirmIncompleteArchiveAction implements LabelInterface {
+        ASK() {
+
+            @Override
+            public String getLabel() {
+                return _GUI._.GraphicalUserInterfaceSettings_getLabel_ask_();
+            }
+
+        },
+        KEEP_IN_LINKGRABBER() {
+
+            @Override
+            public String getLabel() {
+                return _GUI._.GraphicalUserInterfaceSettings_getLabel_do_not_move();
+            }
+
+        },
+        MOVE_TO_DOWNLOADLIST() {
+            @Override
+            public String getLabel() {
+                return _GUI._.GraphicalUserInterfaceSettings_getLabel_move_anyway();
+            }
+
+        },
+        DELETE() {
+            @Override
+            public String getLabel() {
+                return _GUI._.GraphicalUserInterfaceSettings_getLabel_delete();
+            }
+
+        }
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("ASK")
+    ConfirmIncompleteArchiveAction getConfirmIncompleteArchiveAction();
+
+    void setConfirmIncompleteArchiveAction(ConfirmIncompleteArchiveAction action);
 
 }

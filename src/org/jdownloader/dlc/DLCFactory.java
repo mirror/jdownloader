@@ -21,7 +21,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
-import org.appwork.uio.UserIODefinition.CloseReason;
+import org.appwork.uio.CloseReason;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;

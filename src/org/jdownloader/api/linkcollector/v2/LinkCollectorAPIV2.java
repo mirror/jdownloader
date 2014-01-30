@@ -16,7 +16,7 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
 
     void moveToDownloadlist(long[] linkIds, long[] packageIds) throws BadParameterException;
 
-    void removeLinks(long[] packageIds, long[] linkIds) throws BadParameterException;
+    void removeLinks(long[] linkIds, long[] packageIds) throws BadParameterException;
 
     void setEnabled(boolean enabled, long[] linkIds, long[] packageIds) throws BadParameterException;
 

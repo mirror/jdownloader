@@ -7,7 +7,7 @@ import jd.gui.swing.jdgui.WarnLevel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-import org.appwork.uio.UserIODefinition.CloseReason;
+import org.appwork.uio.CloseReason;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.IconDialog;

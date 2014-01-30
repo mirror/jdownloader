@@ -306,6 +306,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                             for (String s : j.getExtractPasswords())
                                 list.add(s);
                             link.getArchiveInfo().getExtractionPasswords().addAll(list);
+
                         }
 
                         if (j.getAutoConfirm() != BooleanStatus.UNSET) {

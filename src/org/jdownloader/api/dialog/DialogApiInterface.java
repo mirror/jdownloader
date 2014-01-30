@@ -12,7 +12,7 @@ public interface DialogApiInterface extends RemoteAPIInterface {
     public DialogInfo get(long id, boolean icon, boolean properties) throws InvalidIdException;
 
     @AllowNonStorableObjects
-    public void answer(long id, org.jdownloader.myjdownloader.client.json.JsonMap data) throws BadOrderException, InvalidIdException;
+    public void answer(long id, HashMap<String, Object> data) throws BadOrderException, InvalidIdException;
 
     public long[] list();
 

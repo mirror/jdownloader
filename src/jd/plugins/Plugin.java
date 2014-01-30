@@ -41,10 +41,15 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.ConfigInterface;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForPasswordDialog;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.UserIOProgress;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
 
@@ -145,8 +150,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet
-     * werden
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer
+     * DownloadLink.getName() verwendet werden
      * 
      * @return Datename des Downloads.
      */
@@ -221,9 +226,26 @@ public abstract class Plugin implements ActionListener {
      *             if the user aborts the input
      */
     public static String getUserInput(final String message, final DownloadLink link) throws PluginException {
-        final String password = PluginUtils.askPassword(message, link);
-        if (password == null) { throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword()); }
-        return password;
+        PluginProgress old = link.getPluginProgress();
+        UserIOProgress prg = new UserIOProgress(message);
+
+        try {
+
+            link.setPluginProgress(prg);
+
+            AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog(message, link));
+            if (handle.getCloseReason() == CloseReason.OK) {
+                String password = handle.getText();
+
+                if (StringUtils.isEmpty(password)) { throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword()); }
+                return password;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
+            }
+
+        } finally {
+            link.compareAndSetPluginProgress(prg, old);
+        }
     }
 
     private volatile ConfigContainer config;
@@ -242,7 +264,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
+     * Patterns vorhanden ist.
      * 
      * @param data
      *            der zu prüfende Text

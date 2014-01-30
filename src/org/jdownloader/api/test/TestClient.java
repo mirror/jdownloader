@@ -174,6 +174,7 @@ public class TestClient {
         register(new LinkgrabberTest());
         register(new KeepAliveTest());
 
+        register(new DialogTest());
         register(new ChangePasswordTest());
 
         register(new ListDevicesTest());

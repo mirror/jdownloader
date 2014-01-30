@@ -7,7 +7,7 @@ import java.awt.event.WindowListener;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
 
-import org.appwork.uio.UserIODefinition.CloseReason;
+import org.appwork.uio.CloseReason;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;

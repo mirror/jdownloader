@@ -19,11 +19,13 @@ package org.jdownloader.extensions.extraction;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -33,9 +35,9 @@ import javax.swing.SwingConstants;
 import jd.controlling.TaskQueue;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.swing.MigPanel;
-import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.StringUtils;
@@ -51,6 +53,8 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 
@@ -61,6 +65,176 @@ import org.jdownloader.images.NewTheme;
  * 
  */
 public class ExtractionListenerList implements ExtractionListener {
+    public static final class ExtractPasswordDialog extends InputDialog implements ExtractPasswordDialogInterface {
+        private final ExtractionController controller;
+
+        public ExtractPasswordDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption, ExtractionController controller) {
+            super(flag, title, message, defaultMessage, icon, okOption, cancelOption);
+            this.controller = controller;
+            setTimeout(10 * 60 * 1000);
+        }
+
+        @Override
+        protected String createReturnValue() {
+
+            return super.createReturnValue();
+
+        }
+
+        @Override
+        public JComponent layoutDialogContent() {
+            final JPanel p = new MigPanel("ins 0,wrap 1", "[]", "[][]");
+            if (!StringUtils.isEmpty(message)) {
+                textField = new JTextPane() {
+                    private static final long serialVersionUID = 1L;
+
+                    @Override
+                    public boolean getScrollableTracksViewportWidth() {
+
+                        return !BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE);
+                    }
+
+                    public boolean getScrollableTracksViewportHeight() {
+                        return true;
+                    }
+                };
+
+                textField.setContentType("text/plain");
+
+                textField.setText(message);
+                textField.setEditable(false);
+                textField.setBackground(null);
+                textField.setOpaque(false);
+                textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+                textField.setCaretPosition(0);
+
+                p.add(textField, "pushx, growx");
+
+                // inout dialog can become too large(height) if we do not limit the
+                // prefered textFIled size here.
+                textField.setPreferredSize(textField.getPreferredSize());
+
+            }
+            try {
+                DownloadLink downloadLink = null;
+                ArchiveFile faf = controller.getArchiv().getFirstArchiveFile();
+                if (faf instanceof DownloadLinkArchiveFile) {
+                    downloadLink = ((DownloadLinkArchiveFile) faf).getDownloadLinks().get(0);
+                }
+                if (downloadLink != null) {
+                    String packagename = downloadLink.getParentNode().getName();
+                    p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_archivename())), "split 2,sizegroup left,alignx left");
+                    p.add(leftLabel(controller.getArchiv().getName()));
+                    p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_filename())), "split 2,sizegroup left,alignx left");
+                    p.add(leftLabel(new File(downloadLink.getFileOutput()).getName()));
+                    p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sizegroup left,alignx left");
+                    long bytes = 0;
+                    for (ArchiveFile af : controller.getArchiv().getArchiveFiles()) {
+                        bytes += af.getFileSize();
+                    }
+                    p.add(leftLabel(SizeFormatter.formatBytes(bytes)));
+                    p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
+                    p.add(leftLabel(packagename));
+                }
+            } catch (Exception e) {
+            }
+            input = getSmallInputComponent();
+            // this.input.setBorder(BorderFactory.createEtchedBorder());
+            input.setText(defaultMessage);
+            p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
+            p.add((JComponent) input, "w 450,pushx,growx");
+            getDialog().addWindowFocusListener(new WindowFocusListener() {
+
+                @Override
+                public void windowLostFocus(WindowEvent e) {
+                }
+
+                @Override
+                public void windowGainedFocus(WindowEvent e) {
+                    ArrayList<AbstractNode> links = new ArrayList<AbstractNode>();
+
+                    for (ArchiveFile faf : controller.getArchiv().getArchiveFiles()) {
+                        links.addAll(((DownloadLinkArchiveFile) faf).getDownloadLinks());
+                    }
+                    SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, links, true);
+
+                    ArrayList<AbstractNode> corrected = new ArrayList<AbstractNode>();
+                    for (PackageView<FilePackage, DownloadLink> pv : si.getPackageViews()) {
+                        if (pv.isFull()) {
+                            corrected.add(pv.getPackage());
+                        }
+                        corrected.addAll(pv.getChildren());
+                    }
+
+                    DownloadsTableModel.getInstance().setSelectedObjects(corrected);
+                }
+            });
+
+            return p;
+        }
+
+        private Component leftLabel(String name) {
+            JLabel ret = new JLabel(name);
+            ret.setHorizontalAlignment(SwingConstants.LEFT);
+            return ret;
+        }
+
+        @Override
+        protected void packed() {
+            super.packed();
+
+        }
+
+        @Override
+        public ModalityType getModalityType() {
+
+            return ModalityType.MODELESS;
+        }
+
+        @Override
+        public String getArchiveName() {
+            return controller.getArchiv().getName();
+        }
+
+        @Override
+        public ArchiveLinkStructure getArchiveLinkIds() {
+            ArchiveLinkStructure ret = new ArchiveLinkStructure();
+            ArchiveFile faf = controller.getArchiv().getFirstArchiveFile();
+            if (faf instanceof DownloadLinkArchiveFile) {
+
+                List<DownloadLink> links = ((DownloadLinkArchiveFile) faf).getDownloadLinks();
+                long[] array = new long[links.size()];
+                for (int i = 0; i < links.size(); i++) {
+                    DownloadLink dl = links.get(i);
+                    array[i] = dl.getUniqueID().getID();
+
+                }
+                ret.setFirstFile(array);
+            }
+
+            ArrayList<long[]> allFiles = new ArrayList<long[]>();
+            for (ArchiveFile af : controller.getArchiv().getArchiveFiles()) {
+
+                if (af instanceof DownloadLinkArchiveFile) {
+                    List<DownloadLink> links = ((DownloadLinkArchiveFile) af).getDownloadLinks();
+
+                    long[] array = new long[links.size()];
+                    for (int i = 0; i < links.size(); i++) {
+                        DownloadLink dl = links.get(i);
+                        array[i] = dl.getUniqueID().getID();
+
+                    }
+                    allFiles.add(array);
+
+                }
+            }
+
+            ret.setAllFiles(allFiles.toArray(new long[][] {}));
+            return ret;
+        }
+
+    }
+
     private ExtractionExtension ex;
 
     final private Color         green  = Color.GREEN.darker();
@@ -109,123 +283,9 @@ public class ExtractionListenerList implements ExtractionListener {
         case PASSWORD_NEEDED_TO_CONTINUE:
             if (ex.getSettings().isAskForUnknownPasswordsEnabled() || controller.isAskForUnknownPassword()) {
 
-                InputDialog id = new InputDialog(UIOManager.LOGIC_COUNTDOWN, T._.ask_for_password(), T._.plugins_optional_extraction_askForPassword2(), "", NewTheme.I().getIcon(IconKey.ICON_RAR, 32), null, null) {
-                    private FocusListener focusListener;
+                ExtractPasswordDialog id = new ExtractPasswordDialog(UIOManager.LOGIC_COUNTDOWN, T._.ask_for_password(), T._.plugins_optional_extraction_askForPassword2(), "", NewTheme.I().getIcon(IconKey.ICON_RAR, 32), null, null, controller);
 
-                    {
-                        setTimeout(10 * 60 * 1000);
-                        focusListener = new FocusListener() {
-
-                            @Override
-                            public void focusLost(FocusEvent e) {
-                            }
-
-                            @Override
-                            public void focusGained(FocusEvent e) {
-                                ArchiveFile faf = controller.getArchiv().getFirstArchiveFile();
-                                if (faf instanceof DownloadLinkArchiveFile) {
-                                    DownloadsTableModel.getInstance().setSelectedObjects(new ArrayList<AbstractNode>(((DownloadLinkArchiveFile) faf).getDownloadLinks()));
-
-                                }
-                                System.out.println();
-                            }
-                        };
-                    }
-
-                    @Override
-                    protected String createReturnValue() {
-                        if (textField != null) textField.removeFocusListener(focusListener);
-                        return super.createReturnValue();
-
-                    }
-
-                    @Override
-                    public JComponent layoutDialogContent() {
-                        final JPanel p = new MigPanel("ins 0,wrap 1", "[]", "[][]");
-                        if (!StringUtils.isEmpty(message)) {
-                            textField = new JTextPane() {
-                                private static final long serialVersionUID = 1L;
-
-                                @Override
-                                public boolean getScrollableTracksViewportWidth() {
-
-                                    return !BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE);
-                                }
-
-                                public boolean getScrollableTracksViewportHeight() {
-                                    return true;
-                                }
-                            };
-
-                            textField.setContentType("text/plain");
-
-                            textField.setText(message);
-                            textField.setEditable(false);
-                            textField.setBackground(null);
-                            textField.setOpaque(false);
-                            textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-                            textField.setCaretPosition(0);
-
-                            p.add(textField, "pushx, growx");
-
-                            // inout dialog can become too large(height) if we do not limit the
-                            // prefered textFIled size here.
-                            textField.setPreferredSize(textField.getPreferredSize());
-
-                        }
-                        try {
-                            DownloadLink downloadLink = null;
-                            ArchiveFile faf = controller.getArchiv().getFirstArchiveFile();
-                            if (faf instanceof DownloadLinkArchiveFile) {
-                                downloadLink = ((DownloadLinkArchiveFile) faf).getDownloadLinks().get(0);
-                            }
-                            if (downloadLink != null) {
-                                String packagename = downloadLink.getParentNode().getName();
-                                p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_archivename())), "split 2,sizegroup left,alignx left");
-                                p.add(leftLabel(controller.getArchiv().getName()));
-                                p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_filename())), "split 2,sizegroup left,alignx left");
-                                p.add(leftLabel(new File(downloadLink.getFileOutput()).getName()));
-                                p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_filesize2())), "split 2,sizegroup left,alignx left");
-                                long bytes = 0;
-                                for (ArchiveFile af : controller.getArchiv().getArchiveFiles()) {
-                                    bytes += af.getFileSize();
-                                }
-                                p.add(leftLabel(SizeFormatter.formatBytes(bytes)));
-                                p.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "split 2,sizegroup left,alignx left");
-                                p.add(leftLabel(packagename));
-                            }
-                        } catch (Exception e) {
-                        }
-                        input = getSmallInputComponent();
-                        // this.input.setBorder(BorderFactory.createEtchedBorder());
-                        input.setText(defaultMessage);
-                        p.add(SwingUtils.toBold(new JLabel(_GUI._.ExtractionListenerList_layoutDialogContent_password())), "split 2,sizegroup left,alignx left");
-                        p.add((JComponent) input, "w 450,pushx,growx");
-
-                        return p;
-                    }
-
-                    private Component leftLabel(String name) {
-                        JLabel ret = new JLabel(name);
-                        ret.setHorizontalAlignment(SwingConstants.LEFT);
-                        return ret;
-                    }
-
-                    @Override
-                    protected void packed() {
-                        super.packed();
-                        if (textField != null) textField.addFocusListener(focusListener);
-                    }
-
-                    @Override
-                    public ModalityType getModalityType() {
-
-                        return ModalityType.MODELESS;
-                    }
-
-                };
-
-                String pass = UIOManager.I().show(InputDialogInterface.class, id).getText();
+                String pass = UIOManager.I().show(ExtractPasswordDialogInterface.class, id).getText();
                 if (pass == null || pass.length() == 0) {
                     controller.getArchiv().getFirstArchiveFile().setStatus(controller, ExtractionStatus.ERROR_PW);
                     ex.onFinished(controller);
