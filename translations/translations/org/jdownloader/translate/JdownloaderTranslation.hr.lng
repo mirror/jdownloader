@@ -38,6 +38,7 @@ LinkSource_ADD_LINKS_DIALOG=Dodaj akciju za linkove
 LinkSource_CLIPBOARD=Međuspremnik
 LinkSource_CNL=Click'n'Load
 LinkSource_DOWNLOADED_CONTAINER=Preuzeti kontejner
+LinkSource_EXTENSION=Bilo koje proširenje
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Dock (Samo za Mac)
 LinkSource_MYJD=MojDownloader
