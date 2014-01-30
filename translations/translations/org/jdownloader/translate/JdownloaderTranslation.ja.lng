@@ -38,6 +38,7 @@ LinkSource_ADD_LINKS_DIALOG=リンク追加アクション
 LinkSource_CLIPBOARD=クリップボード
 LinkSource_CNL=Click'n'Load
 LinkSource_DOWNLOADED_CONTAINER=ダウンロード済コンテナ
+LinkSource_EXTENSION=全ての拡張子
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=ドック(Macのみ)
 LinkSource_MYJD=My JDownloader
