@@ -38,6 +38,7 @@ LinkSource_ADD_LINKS_DIALOG=Aggiungi azioni collegamenti
 LinkSource_CLIPBOARD=Clipboard
 LinkSource_CNL=Click'n'Load
 LinkSource_DOWNLOADED_CONTAINER=Contenitore file scaricati
+LinkSource_EXTENSION=Qualasiasi estensione
 LinkSource_FLASHGOT=FlashGot
 LinkSource_MAC_DOCK=Aggancia (solo Mac)
 LinkSource_MYJD=MyJDownloader
