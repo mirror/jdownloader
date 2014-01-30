@@ -19,6 +19,7 @@ public class YoutubeClipData {
     public int     duration;
     public String  channelID;
     public long    dateUpdated;
+    public String  userGooglePlusID;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);

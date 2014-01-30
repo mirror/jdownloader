@@ -66,11 +66,13 @@ import de.savemytube.flv.FLV;
 
 public class YoutubeHelper {
 
-    protected static final String YT_CHANNEL_ID  = "YT_CHANNEL_ID";
+    protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
 
-    protected static final String YT_DURATION    = "YT_DURATION";
+    protected static final String YT_DURATION       = "YT_DURATION";
 
-    protected static final String YT_DATE_UPDATE = "YT_DATE_UPDATE";
+    protected static final String YT_DATE_UPDATE    = "YT_DATE_UPDATE";
+
+    protected static final String YT_GOOGLE_PLUS_ID = "YT_GOOGLE_PLUS_ID";
 
     private Browser               br;
 
@@ -132,7 +134,8 @@ public class YoutubeHelper {
 
         public static enum DataSource {
             WEBSITE,
-            FEED
+            API_VIDEOS,
+            API_USERS
         }
 
         public DataSource getDataSource() {
@@ -271,7 +274,23 @@ public class YoutubeHelper {
             }
 
         });
+        REPLACER.add(new Replacer("googleplus_id") {
 
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, "");
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.API_USERS;
+            }
+
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_googleplus_id();
+            }
+
+        });
         REPLACER.add(new Replacer("duration") {
 
             @Override
@@ -352,7 +371,7 @@ public class YoutubeHelper {
             }
 
             public DataSource getDataSource() {
-                return DataSource.FEED;
+                return DataSource.API_VIDEOS;
             }
 
             @Override
@@ -381,7 +400,7 @@ public class YoutubeHelper {
             }
 
             public DataSource getDataSource() {
-                return DataSource.FEED;
+                return DataSource.API_VIDEOS;
             }
 
             @Override
@@ -797,7 +816,8 @@ public class YoutubeHelper {
         if (this.br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
 
         this.extractData(vid);
-        doExtendedData(vid);
+        doFeedScan(vid);
+        doUserAPIScan(vid);
         boolean getVideoInfoWorkaroundUsed = false;
         if (this.br.containsHTML("age-gate")) {
             vid.ageCheck = true;
@@ -865,17 +885,43 @@ public class YoutubeHelper {
         return ret;
     }
 
+    private void doUserAPIScan(YoutubeClipData vid) throws IOException {
+        String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern();
+        boolean extended = false;
+        // only load extra page, if we need the properties
+        for (Replacer r : REPLACER) {
+            if (r.getDataSource() == DataSource.API_USERS && r.matches(checkName)) {
+                extended = true;
+                break;
+            }
+        }
+        if (!extended) return;
+        if (StringUtils.isEmpty(vid.user)) return;
+        Browser clone = br.cloneBrowser();
+        if (cfg.isPreferHttpsEnabled()) {
+            clone.getPage("https://gdata.youtube.com/feeds/api/users/" + vid.user + "?v=2");
+        } else {
+            clone.getPage("http://gdata.youtube.com/feeds/api/users/" + vid.user + "?v=2");
+        }
+
+        String googleID = clone.getRegex("<yt\\:googlePlusUserId>(.*?)</yt\\:googlePlusUserId>").getMatch(0);
+        if (StringUtils.isNotEmpty(googleID)) {
+            vid.userGooglePlusID = googleID;
+        }
+
+    }
+
     public static void main(String[] args) {
         for (YoutubeITAG tag : YoutubeITAG.values())
             System.out.println(tag.name());
     }
 
-    private void doExtendedData(YoutubeClipData vid) throws IOException {
+    private void doFeedScan(YoutubeClipData vid) throws IOException {
         String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern();
         boolean extended = false;
         // only load extra page, if we need the properties
         for (Replacer r : REPLACER) {
-            if (r.getDataSource() == DataSource.FEED && r.matches(checkName)) {
+            if (r.getDataSource() == DataSource.API_VIDEOS && r.matches(checkName)) {
                 extended = true;
                 break;
             }
@@ -1222,7 +1268,7 @@ public class YoutubeHelper {
         final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")));
 
         final String quality = Encoding.urlDecode(query.get("quality"), false);
-        System.out.println(query);
+        logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
         if (url != null && itag != null) {
 
             return new YoutubeStreamData(vid, url, itag);

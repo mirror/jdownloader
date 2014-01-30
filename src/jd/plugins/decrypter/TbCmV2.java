@@ -645,7 +645,7 @@ public class TbCmV2 extends PluginForDecrypt {
             thislink.setProperty(YoutubeHelper.YT_USER, clip.user);
             thislink.setProperty(YoutubeHelper.YT_DATE, clip.date);
             thislink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, clip.length);
-
+            thislink.setProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, clip.userGooglePlusID);
             thislink.setProperty(YoutubeHelper.YT_CHANNEL_ID, clip.channelID);
             thislink.setProperty(YoutubeHelper.YT_DURATION, clip.duration);
             thislink.setProperty(YoutubeHelper.YT_DATE_UPDATE, clip.dateUpdated);
