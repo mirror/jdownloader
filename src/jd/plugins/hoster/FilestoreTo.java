@@ -60,10 +60,6 @@ public class FilestoreTo extends PluginForHost {
         return 2000;
     }
 
-    // Hm da stehts drinne: http://filestore.to/script/241013.js
-    final String KK  = "LDC";
-    final String KK2 = "LC";
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -79,8 +75,8 @@ public class FilestoreTo extends PluginForHost {
             } catch (final Exception e) {
                 continue;
             }
-            if (br.containsHTML(">Download\\-Datei wurde nicht gefunden<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (br.containsHTML(">Download\\-Datei wurde gesperrt<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML(">Download-Datei wurde nicht gefunden<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML(">Download-Datei wurde gesperrt<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             haveFun();
             downloadName = new Regex(aBrowser, zStatistic("f980f9f7fa02cce21b91b694df0640fc299570bb085ed8c71a4f5f3a1538868158d8fe3c8800e26f211652e9ef741972e4722ccac7c86638ac72d2e36f59363d5aa3cd7f5826fe9c21ac2eb95260c8b445fe8bdb6af198a19a8d2ec629657911c7763f016e8e81633b4605fa1b3f167f02b28e2031f8709081c0662e4e6f5c958e6249e7c93cd996324a0cdb")).getMatch(1);
@@ -105,25 +101,36 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String pwnage = br.getRegex("id=\"" + KK2 + "\" style=\"display:none\" wert=\"([^<>\"]*?)\"").getMatch(0);
+        String js = br.getRegex("(script/\\d+\\.js)").getMatch(0);
+        if (js == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser bjs = br.cloneBrowser();
+        bjs.getPage("/" + js);
+        String[] id = bjs.getRegex("data: '(\\w+)='\\+\\$\\('#(\\w+)'").getRow(0);
+        if (id == null || id.length != 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String jcount = bjs.getRegex("var countdown = \"(\\d+)\";").getMatch(0);
+        String pwnage = bjs.getRegex("\\$\\.ajax\\(\\s*\\{.*?data: '(\\w+=\\w+).*?\\}\\s*\\);").getMatch(0);
         if (pwnage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
-        final String dlink = "http://filestore.to/ajax/download.php?" + KK + "=";
+        final String ajax = "http://filestore.to/ajax/download.php?";
         int wait = 10;
-        if (waittime != null) {
-            if (Integer.parseInt(waittime) < 61) {
-                wait = Integer.parseInt(waittime);
-            }
-        }
+        if (jcount != null && Integer.parseInt(jcount) < 61)
+            wait = Integer.parseInt(jcount);
+        else if (waittime != null && Integer.parseInt(waittime) < 61) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        // If plugin breaks most times this link is changed
-        br.getPage(dlink + pwnage);
-        if (br.containsHTML("(Da hat etwas nicht geklappt|Wartezeit nicht eingehalten|Versuche es erneut)")) {
+        Browser br2 = br.cloneBrowser();
+        prepAjax(br2);
+        br2.getPage(ajax + pwnage);
+        if (br2.containsHTML("(Da hat etwas nicht geklappt|Wartezeit nicht eingehalten|Versuche es erneut)")) {
             logger.warning("FATAL waittime error!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String code = br.getRegex("id=\"" + id[1] + "\" code=\"([A-Z0-9]+)\"").getMatch(0);
+        if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser brd = br.cloneBrowser();
+        prepAjax(brd);
+        brd.getPage(ajax + id[0] + "=" + code);
         br.setFollowRedirects(true);
-        final String dllink = br.toString().replaceAll("%0D%0A", "").trim();
+        final String dllink = brd.toString().replaceAll("%0D%0A", "").trim();
         if (!dllink.startsWith("http://")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -133,6 +140,13 @@ public class FilestoreTo extends PluginForHost {
         dl.startDownload();
     }
 
+    private Browser prepAjax(Browser prepBr) {
+        prepBr.getHeaders().put("Accept", "*/*");
+        prepBr.getHeaders().put("Accept-Charset", null);
+        prepBr.getHeaders().put("X-Requested-With:", "XMLHttpRequest");
+        return prepBr;
+    }
+
     public void haveFun() throws Exception {
         final ArrayList<String> someStuff = new ArrayList<String>();
         final ArrayList<String> regexStuff = new ArrayList<String>();
@@ -140,8 +154,9 @@ public class FilestoreTo extends PluginForHost {
         regexStuff.add(zStatistic("Rjk4MEZFQTBGRTU2QzlCNzFFQzJCM0M4REE1Qw=="));
         regexStuff.add(zStatistic("Rjk4MEZEQTdGRTBB"));
         regexStuff.add(zStatistic("Rjk4MEZEQTJGQzUyQzlFRg=="));
+        aBrowser = br.toString();
+        aBrowser = aBrowser.replace("&nbsp;", " ");
         for (final String aRegex : regexStuff) {
-            aBrowser = br.toString();
             final String replaces[] = br.getRegex(aRegex).getColumn(0);
             if (replaces != null && replaces.length != 0) {
                 for (final String dingdang : replaces) {
