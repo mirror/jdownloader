@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.folderwatch;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -13,6 +12,7 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -68,12 +68,11 @@ public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExte
         try {
             JTextArea txt = new JTextArea();
             txt.setOpaque(false);
-            txt.setText(new String(IO.readStream(-1, getClass().getResource("./explain.txt").openStream()), "UTF-8"));
+            URL url = Application.getRessourceURL("org/jdownloader/extensions/folderwatch/explain.txt");
+            txt.setText(new String(IO.readStream(-1, url.openStream()), "UTF-8"));
 
             add(txt);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
