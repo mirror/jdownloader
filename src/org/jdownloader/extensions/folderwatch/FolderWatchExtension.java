@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.concurrent.Executors;
@@ -217,11 +218,15 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         File folder = new File(s);
                         if (!folder.isAbsolute()) folder = Application.getResource(s);
                         getLogger().info("Scan " + s + " - " + folder.getAbsolutePath());
+                        getLogger().info("exists: " + folder.exists());
+                        getLogger().info("isDirectory: " + folder.isDirectory());
                         if (folder.exists() && folder.isDirectory()) {
+                            getLogger().info(Arrays.toString(folder.list()));
                             for (File f : folder.listFiles(new FilenameFilter() {
 
                                 @Override
                                 public boolean accept(File dir, String name) {
+                                    getLogger().info(name + " : " + name.toLowerCase(Locale.ENGLISH).endsWith(".crawljob"));
                                     return name.toLowerCase(Locale.ENGLISH).endsWith(".crawljob");
                                 }
                             })) {
@@ -259,7 +264,10 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     }
 
     private void addCrawlJob(File f) throws IOException {
-        if (f.length() == 0) return;
+        if (f.length() == 0) {
+            getLogger().info("Ignore " + f);
+            return;
+        }
         getLogger().info("Parse " + f);
         String str = IO.readFileToString(f);
         if (str.trim().startsWith("[")) {
