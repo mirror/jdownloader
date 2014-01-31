@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -584,11 +586,11 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     }
 
     @Override
-    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
     }
 
     @Override
-    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
+    public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
     }
 
     @Override

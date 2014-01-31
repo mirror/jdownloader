@@ -2,6 +2,8 @@ package org.jdownloader.api.downloads;
 
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -91,12 +93,12 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
     }
 
     @Override
-    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
         // not implemented yet
     }
 
     @Override
-    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
+    public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         // not implemented yet
     }
 

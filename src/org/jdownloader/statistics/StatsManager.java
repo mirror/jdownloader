@@ -7,6 +7,7 @@ import java.util.List;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -143,11 +144,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     @Override
-    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
     }
 
     @Override
-    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
+    public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         try {
             DownloadLogEntry dl = new DownloadLogEntry();
 
@@ -179,8 +180,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     break;
                 }
             }
-            long pluginRuntime = downloadTask.getStartTime() - plugintask.getStartTime();
-            DownloadLinkCandidate candidate = downloadController.getDownloadLinkCandidate();
+            if (downloadTask == null) {
+                // download stopped or failed, before the downloadtask
+            }
+            long pluginRuntime = downloadTask != null ? (downloadTask.getStartTime() - plugintask.getStartTime()) : plugintask.getRuntime();
+
             HTTPProxy usedProxy = downloadController.getUsedProxy();
             CachedAccount account = candidate.getCachedAccount();
 

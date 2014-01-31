@@ -206,14 +206,17 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     @Override
     public void run() {
+        getLogger().info("RUN");
         try {
 
             String[] folders = getSettings().getFolders();
             if (folders != null) {
                 for (String s : folders) {
+
                     if (s != null) {
                         File folder = new File(s);
                         if (!folder.isAbsolute()) folder = Application.getResource(s);
+                        getLogger().info("Scan " + s + " - " + folder.getAbsolutePath());
                         if (folder.exists() && folder.isDirectory()) {
                             for (File f : folder.listFiles(new FilenameFilter() {
 
@@ -225,7 +228,6 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                                 try {
                                     addCrawlJob(f);
 
-                                    move(f);
                                 } catch (Exception e) {
                                     getLogger().log(e);
 
@@ -238,10 +240,13 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
         } catch (Exception e) {
             getLogger().log(e);
 
+        } finally {
+            getLogger().info("DONE");
         }
     }
 
     private void move(File f) {
+        getLogger().info("Move " + f);
         File dir = new File(f.getParentFile(), "added");
         dir.mkdirs();
         int i = 1;
@@ -254,13 +259,15 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     }
 
     private void addCrawlJob(File f) throws IOException {
-
+        if (f.length() == 0) return;
+        getLogger().info("Parse " + f);
         String str = IO.readFileToString(f);
         if (str.trim().startsWith("[")) {
             parseJson(f, str);
         } else {
             parseProperties(f, str);
         }
+        move(f);
 
     }
 
@@ -343,6 +350,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     }
 
     protected void addJob(File f, final CrawlJobStorable j) {
+        getLogger().info("AddJob \r\n" + JSonStorage.toString(j));
         switch (j.getType()) {
         case NORMAL:
 

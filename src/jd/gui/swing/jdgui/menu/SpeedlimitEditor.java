@@ -7,6 +7,8 @@ import javax.swing.JLabel;
 import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.SwingUtilities;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -172,10 +174,10 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
     }
 
     @Override
-    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
     }
 
     @Override
-    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
+    public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
     }
 }

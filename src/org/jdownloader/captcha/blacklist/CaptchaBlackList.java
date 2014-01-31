@@ -3,6 +3,8 @@ package org.jdownloader.captcha.blacklist;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.PrePluginCheckDummyChallenge;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -113,11 +115,11 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
     }
 
     @Override
-    public void onDownloadControllerStart(SingleDownloadController downloadController) {
+    public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
     }
 
     @Override
-    public void onDownloadControllerStopped(SingleDownloadController downloadController) {
+    public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
 
     }
 

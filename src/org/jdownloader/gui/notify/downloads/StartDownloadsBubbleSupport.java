@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -53,7 +55,7 @@ public class StartDownloadsBubbleSupport extends AbstractBubbleSupport implement
     }
 
     @Override
-    public void onDownloadControllerStart(final SingleDownloadController downloadController) {
+    public void onDownloadControllerStart(final SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
         if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED.isEnabled()) {
             started.clear();
             queue.clear();
@@ -104,7 +106,7 @@ public class StartDownloadsBubbleSupport extends AbstractBubbleSupport implement
     }
 
     @Override
-    public void onDownloadControllerStopped(final SingleDownloadController downloadController) {
+    public void onDownloadControllerStopped(final SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         if (!CFG_BUBBLE.BUBBLE_NOTIFY_START_STOP_DOWNLOADS_ENABLED.isEnabled()) {
             started.clear();
             queue.clear();

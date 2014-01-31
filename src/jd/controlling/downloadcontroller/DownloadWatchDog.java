@@ -501,7 +501,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
+                     * link
                      */
 
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
@@ -1833,7 +1834,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         candidate.getLink().setEnabled(true);
         getSession().getControllers().add(con);
         con.start();
-        eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STARTED, con));
+        eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STARTED, con, candidate));
         return con;
     }
 
@@ -1862,8 +1863,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     if (candidate.getProxy() != null) {
                         candidate.getProxy().remove(singleDownloadController);
                     }
+                    DownloadLinkCandidateResult result = null;
                     try {
-                        DownloadLinkCandidateResult result = handleReturnState(logger, singleDownloadController, returnState);
+                        result = handleReturnState(logger, singleDownloadController, returnState);
                         result.setStartTime(singleDownloadController.getStartTimestamp());
                         result.setFinishTime(returnState.getTimeStamp());
                         setFinalLinkStatus(candidate, result, singleDownloadController);
@@ -1890,7 +1892,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     } catch (final Throwable e) {
                         /* link can already be removed->nullpointer exception */
                     }
-                    eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController));
+                    eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController, candidate, result));
                     handleFinalLinkStates(finalLinkStateLinks, currentSession, logger, singleDownloadController);
                 } catch (final Throwable e) {
                     logger.log(e);
@@ -2733,8 +2735,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
-                                         * links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without
+                                         * waiting for new links/user interaction
                                          */
                                         break;
                                     }
