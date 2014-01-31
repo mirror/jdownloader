@@ -2,6 +2,7 @@ package org.jdownloader.api.myjdownloader;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.SessionInfoWrapper;
 import org.jdownloader.myjdownloader.client.SessionInfo;
 
 public class SessionInfoStorable implements Storable {
@@ -65,8 +66,8 @@ public class SessionInfoStorable implements Storable {
         this.deviceSecret = HexFormatter.byteArrayToHex(info.getDeviceSecret());
     }
 
-    public SessionInfo _getSessionInfo() {
-        return new SessionInfo(HexFormatter.hexToByteArray(getDeviceSecret()), HexFormatter.hexToByteArray(getServerEncryptionToken()), HexFormatter.hexToByteArray(getDeviceEncryptionToken()), getSessionToken(), getRegainToken());
+    public SessionInfoWrapper _getSessionInfoWrapper() {
+        return new SessionInfoWrapper(HexFormatter.hexToByteArray(getDeviceSecret()), HexFormatter.hexToByteArray(getServerEncryptionToken()), HexFormatter.hexToByteArray(getDeviceEncryptionToken()), getSessionToken(), getRegainToken());
     }
 
 }

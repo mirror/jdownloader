@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,6 +47,7 @@ import org.jdownloader.myjdownloader.client.exceptions.MaintenanceException;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 import org.jdownloader.myjdownloader.client.exceptions.OutdatedException;
 import org.jdownloader.myjdownloader.client.exceptions.OverloadException;
+import org.jdownloader.myjdownloader.client.exceptions.TokenException;
 import org.jdownloader.myjdownloader.client.exceptions.UnconnectedException;
 import org.jdownloader.myjdownloader.client.json.DeviceConnectionStatus;
 import org.jdownloader.myjdownloader.client.json.DeviceData;
@@ -53,6 +56,33 @@ import org.jdownloader.myjdownloader.client.json.NotificationRequestMessage.TYPE
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderConnectThread extends Thread {
+
+    public static class SessionInfoWrapper extends SessionInfo {
+
+        public static enum STATE {
+            VALID,
+            INVALID,
+            RECONNECT
+        }
+
+        private volatile NullsafeAtomicReference<STATE> state = new NullsafeAtomicReference<MyJDownloaderConnectThread.SessionInfoWrapper.STATE>(STATE.RECONNECT);
+
+        public SessionInfoWrapper(byte[] deviceSecret, byte[] serverEncryptionToken, byte[] deviceEncryptionToken, String sessionToken, String regainToken) {
+            super(deviceSecret, serverEncryptionToken, deviceEncryptionToken, sessionToken, regainToken);
+        }
+
+        public final STATE getState() {
+            return state.get();
+        }
+
+        public final void setState(STATE set) {
+            state.set(set);
+        }
+
+        public final boolean compareAndSetState(STATE expect, STATE set) {
+            return state.compareAndSet(expect, set);
+        }
+    }
 
     protected class DeviceConnectionHelper {
         private AtomicLong              backoffCounter = new AtomicLong(0);
@@ -118,7 +148,6 @@ public class MyJDownloaderConnectThread extends Thread {
         return logger;
     }
 
-    private AtomicBoolean                                          sessionValid              = new AtomicBoolean(false);
     private AtomicLong                                             syncMark                  = new AtomicLong(-1);
     private ScheduledExecutorService                               THREADQUEUE               = DelayedRunnable.getNewScheduledExecutorService();
     private final DeviceConnectionHelper[]                         deviceConnectionHelper;
@@ -127,7 +156,7 @@ public class MyJDownloaderConnectThread extends Thread {
     private String                                                 password;
     private String                                                 email;
     private String                                                 deviceName;
-    private HashSet<TYPE>                                          notifyInterests;
+    private Set<TYPE>                                              notifyInterests;
     private final static HashMap<Thread, Socket>                   openConnections           = new HashMap<Thread, Socket>();
     private final ArrayDeque<MyJDownloaderConnectionResponse>      responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
     private final ArrayList<MyJDownloaderWaitingConnectionThread>  waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
@@ -140,14 +169,19 @@ public class MyJDownloaderConnectThread extends Thread {
         setName("MyJDownloaderConnectThread");
         this.setDaemon(true);
         this.myJDownloaderExtension = myJDownloaderExtension;
-        api = new MyJDownloaderAPI(myJDownloaderExtension);
+        api = new MyJDownloaderAPI(myJDownloaderExtension) {
+            @Override
+            protected SessionInfo createSessionInfo(byte[] deviceSecret, byte[] serverEncryptionToken, byte[] deviceEncryptionToken, String sessionToken, String regainToken) {
+                return new SessionInfoWrapper(deviceSecret, serverEncryptionToken, deviceEncryptionToken, sessionToken, regainToken);
+            }
+        };
         logger = myJDownloaderExtension.getLogger();
         ArrayList<DeviceConnectionHelper> helper = new ArrayList<DeviceConnectionHelper>();
         for (int port : CFG_MYJD.CFG.getDeviceConnectPorts()) {
             helper.add(new DeviceConnectionHelper(port, CFG_MYJD.CFG.getConnectIP()));
         }
         deviceConnectionHelper = helper.toArray(new DeviceConnectionHelper[helper.size()]);
-        notifyInterests = new HashSet<NotificationRequestMessage.TYPE>();
+        notifyInterests = new CopyOnWriteArraySet<NotificationRequestMessage.TYPE>();
         sessionInfoCache = Application.getTempResource("myjd.session");
         loadSessionInfo();
     }
@@ -173,61 +207,57 @@ public class MyJDownloaderConnectThread extends Thread {
         return connected.get() == MyJDownloaderConnectionStatus.CONNECTED;
     }
 
-    private void invalidateSession() {
-        sessionValid.set(false);
-        try {
-            MyJDownloaderAPI lapi = api;
-            if (lapi != null) lapi.disconnect();
-        } catch (final Throwable e) {
-        }
-    }
-
-    private DeviceConnectionStatus handleResponse(MyJDownloaderConnectionResponse response) {
+    private DeviceConnectionStatus handleResponse(MyJDownloaderConnectionResponse response, SessionInfoWrapper currentSession) {
         boolean closeSocket = true;
         DeviceConnectionHelper currentHelper = null;
         try {
-            currentHelper = response.getConnectionHelper();
+            currentHelper = response.getRequest().getConnectionHelper();
             if (response.getThrowable() != null) throw response.getThrowable();
             DeviceConnectionStatus connectionStatus = response.getConnectionStatus();
             Socket socket = response.getConnectionSocket();
             if (connectionStatus != null) {
                 setConnected(MyJDownloaderConnectionStatus.CONNECTED);
                 long syncMark = 0;
-                currentHelper.reset();
                 switch (connectionStatus) {
                 case OUTDATED:
+                    currentHelper.reset();
                     logger.info("Outdated session");
-                    invalidateSession();
+                    response.getRequest().getSession().setState(SessionInfoWrapper.STATE.INVALID);
                     return connectionStatus;
                 case UNBOUND:
+                    currentHelper.reset();
                     logger.info("Unbound");
-                    invalidateSession();
+                    response.getRequest().getSession().setState(SessionInfoWrapper.STATE.INVALID);
                     return connectionStatus;
                 case KEEPALIVE:
+                    currentHelper.reset();
                     try {
                         syncMark = new AWFCUtils(socket.getInputStream()).readLongOptimized();
-                        sync(syncMark);
+                        sync(syncMark, currentSession);
                     } catch (final IOException e) {
                     }
                     logger.info("KeepAlive " + syncMark);
                     return connectionStatus;
                 case TOKEN:
+                    currentHelper.reset();
                     logger.info("Invalid sessionToken");
-                    invalidateSession();
+                    response.getRequest().getSession().compareAndSetState(SessionInfoWrapper.STATE.VALID, SessionInfoWrapper.STATE.RECONNECT);
                     return connectionStatus;
                 case OK:
+                    currentHelper.reset();
                     logger.info("valid connection(old Ok)");
-                    response.getThread().putRequest(new MyJDownloaderConnectionRequest(api.getSessionInfo().getSessionToken(), currentHelper));
+                    response.getThread().putRequest(new MyJDownloaderConnectionRequest(currentSession, currentHelper));
                     handleConnection(socket);
                     closeSocket = false;
                     return connectionStatus;
                 case OK_SYNC:
+                    currentHelper.reset();
                     syncMark = new AWFCUtils(socket.getInputStream()).readLongOptimized();
                     logger.info("valid connection (Ok: " + syncMark + ")");
-                    response.getThread().putRequest(new MyJDownloaderConnectionRequest(api.getSessionInfo().getSessionToken(), currentHelper));
+                    response.getThread().putRequest(new MyJDownloaderConnectionRequest(currentSession, currentHelper));
                     handleConnection(socket);
                     closeSocket = false;
-                    sync(syncMark);
+                    sync(syncMark, currentSession);
                     return connectionStatus;
                 case MAINTENANCE:
                 case OVERLOAD:
@@ -288,7 +318,7 @@ public class MyJDownloaderConnectThread extends Thread {
                         if (currentHelper == null || currentHelper.backoffrequested()) {
                             currentHelper = getNextDeviceConnectionHelper();
                         }
-                        ensureValidSession(currentHelper);
+                        SessionInfoWrapper currentSession = ensureValidSession(currentHelper);
                         if (connected.get() == MyJDownloaderConnectionStatus.UNCONNECTED) {
                             setConnected(MyJDownloaderConnectionStatus.PENDING);
                         }
@@ -302,7 +332,7 @@ public class MyJDownloaderConnectThread extends Thread {
                                 return;
                             }
                             for (MyJDownloaderWaitingConnectionThread waitingThread : waitingConnections) {
-                                if (request == null) request = new MyJDownloaderConnectionRequest(api.getSessionInfo().getSessionToken(), currentHelper);
+                                if (request == null) request = new MyJDownloaderConnectionRequest(currentSession, currentHelper);
                                 if (waitingThread.putRequest(request)) {
                                     waitForResponse = true;
                                     request = null;
@@ -314,7 +344,7 @@ public class MyJDownloaderConnectThread extends Thread {
                         }
                         MyJDownloaderConnectionResponse response = pollResponse(waitForResponse);
                         while (response != null) {
-                            DeviceConnectionStatus status = handleResponse(response);
+                            DeviceConnectionStatus status = handleResponse(response, currentSession);
                             if (status == null || (!DeviceConnectionStatus.OK.equals(status) && !DeviceConnectionStatus.OK_SYNC.equals(status))) {
                                 synchronized (waitingConnections) {
                                     if (waitingConnections.size() == 0) {
@@ -416,16 +446,19 @@ public class MyJDownloaderConnectThread extends Thread {
         myJDownloaderExtension.fireConnectionStatusChanged(connected.get(), connections);
     }
 
-    private void sync(final long nextSyncMark) {
+    private void sync(final long nextSyncMark, final SessionInfoWrapper session) {
         if (this.syncMark.getAndSet(nextSyncMark) == nextSyncMark) return;
         ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
         if (lTHREADQUEUE != null) {
             lTHREADQUEUE.execute(new Runnable() {
                 @Override
                 public void run() {
+                    boolean failed = true;
                     try {
                         MyJDownloaderAPI lapi = api;
                         if (lapi == null) return;
+                        if (lapi.getSessionInfo() != session) return;
+                        if (!SessionInfoWrapper.STATE.VALID.equals(session.getState())) return;
                         if (MyJDownloaderConnectThread.this.syncMark.get() != nextSyncMark) return;
                         TYPE[] types = lapi.listrequesteddevicesnotifications();
                         HashSet<TYPE> notifyTypes = new HashSet<TYPE>();
@@ -435,37 +468,41 @@ public class MyJDownloaderConnectThread extends Thread {
                             }
                         }
                         setNotifyTypes(notifyTypes);
+                        failed = false;
+                    } catch (final TokenException e) {
+                        session.compareAndSetState(SessionInfoWrapper.STATE.VALID, SessionInfoWrapper.STATE.RECONNECT);
+                    } catch (final UnconnectedException e) {
                     } catch (final Throwable e) {
-                        MyJDownloaderConnectThread.this.syncMark.set(0);
                         logger.log(e);
                     }
+                    if (failed) MyJDownloaderConnectThread.this.syncMark.compareAndSet(nextSyncMark, 0);
                 }
             });
         }
     }
 
     protected void setNotifyTypes(HashSet<TYPE> notifyTypes) {
-        notifyInterests = notifyTypes;
+        notifyInterests.clear();
+        if (notifyTypes != null) notifyInterests.addAll(notifyTypes);
     }
 
     private AtomicLong captchaSendMark = new AtomicLong(0);
 
     protected void pushCaptchaNotification(final boolean requested) {
-        synchronized (notifyInterests) {
-            if (!notifyInterests.contains(TYPE.CAPTCHA)) return;
-        }
+        if (!notifyInterests.contains(TYPE.CAPTCHA) || api == null) return;
         final long currentMark = captchaSendMark.incrementAndGet();
         ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
         if (lTHREADQUEUE != null) {
             lTHREADQUEUE.execute(new Runnable() {
                 @Override
                 public void run() {
+                    SessionInfoWrapper session = null;
                     try {
                         MyJDownloaderAPI lapi = api;
                         if (lapi == null) return;
-                        synchronized (notifyInterests) {
-                            if (!notifyInterests.contains(TYPE.CAPTCHA)) return;
-                        }
+                        if (!notifyInterests.contains(TYPE.CAPTCHA)) return;
+                        session = (SessionInfoWrapper) lapi.getSessionInfo();
+                        if (!SessionInfoWrapper.STATE.VALID.equals(session.getState())) return;
                         if (MyJDownloaderConnectThread.this.captchaSendMark.get() != currentMark) return;
                         NotificationRequestMessage message = new NotificationRequestMessage();
                         message.setType(TYPE.CAPTCHA);
@@ -475,6 +512,9 @@ public class MyJDownloaderConnectThread extends Thread {
                             removeInterest(TYPE.CAPTCHA);
 
                         }
+                    } catch (final TokenException e) {
+                        if (session != null) session.compareAndSetState(SessionInfoWrapper.STATE.VALID, SessionInfoWrapper.STATE.RECONNECT);
+                    } catch (final UnconnectedException e) {
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
@@ -484,9 +524,7 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     protected void removeInterest(TYPE captcha) {
-        synchronized (notifyInterests) {
-            notifyInterests.remove(captcha);
-        }
+        notifyInterests.remove(captcha);
     }
 
     private void handleConnection(final Socket clientSocket) {
@@ -535,6 +573,29 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
+    private void disconnectSession(MyJDownloaderAPI api, SessionInfoWrapper session) {
+        if (api == null) return;
+        try {
+            if (session == null) session = (SessionInfoWrapper) api.getSessionInfo();
+            session.setState(SessionInfoWrapper.STATE.INVALID);
+            if (api.getSessionInfo() != session) return;
+        } catch (UnconnectedException e) {
+            return;
+        }
+        try {
+            try {
+                api.disconnect(false);
+            } catch (UnconnectedException e) {
+            } catch (TokenException e) {
+                logger.log(e);
+                api.reconnect();
+                api.disconnect(true);
+            }
+        } catch (MyJDownloaderException e1) {
+            logger.log(e1);
+        }
+    }
+
     public void disconnect() {
         MyJDownloaderAPI lapi = api;
         api = null;
@@ -543,10 +604,7 @@ public class MyJDownloaderConnectThread extends Thread {
             interrupt();
         } catch (final Throwable e) {
         }
-        try {
-            lapi.disconnect();
-        } catch (final Throwable e) {
-        }
+        disconnectSession(lapi, null);
         synchronized (openConnections) {
             Iterator<Entry<Thread, Socket>> it = openConnections.entrySet().iterator();
             while (it.hasNext()) {
@@ -565,7 +623,7 @@ public class MyJDownloaderConnectThread extends Thread {
         ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
         THREADQUEUE = null;
         if (lTHREADQUEUE != null) lTHREADQUEUE.shutdownNow();
-        notifyInterests = new HashSet<NotificationRequestMessage.TYPE>();
+        notifyInterests.clear();
     }
 
     private void startWaitingConnections(boolean minimumORmaximum) {
@@ -584,19 +642,16 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
-    private void validateSession() {
-        saveSessionInfo();
+    private void validateSession(SessionInfoWrapper session) {
+        saveSessionInfo(session);
         startWaitingConnections(false);
-        sessionValid.set(true);
     }
 
-    private void saveSessionInfo() {
+    private void saveSessionInfo(SessionInfoWrapper session) {
         synchronized (SESSIONLOCK) {
             try {
-                MyJDownloaderAPI lapi = api;
-                if (lapi == null) return;
-                SessionInfo session = lapi.getSessionInfo();
                 if (session == null) return;
+                session.setState(SessionInfoWrapper.STATE.VALID);
                 JSonStorage.saveTo(sessionInfoCache, false, HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue())), JSonStorage.serializeToJson(new SessionInfoStorable(session)));
             } catch (final Throwable e) {
                 logger.log(e);
@@ -608,47 +663,48 @@ public class MyJDownloaderConnectThread extends Thread {
         synchronized (SESSIONLOCK) {
             try {
                 if (!sessionInfoCache.exists()) return;
-                MyJDownloaderAPI lapi = api;
-                if (lapi == null) return;
                 SessionInfoStorable sessionInfoStorable = JSonStorage.restoreFrom(sessionInfoCache, false, HexFormatter.hexToByteArray(Hash.getMD5(CFG_MYJD.PASSWORD.getValue())), new TypeRef<SessionInfoStorable>() {
                 }, null);
                 if (sessionInfoStorable == null) return;
-                SessionInfo sessionInfo = sessionInfoStorable._getSessionInfo();
+                SessionInfoWrapper sessionInfo = sessionInfoStorable._getSessionInfoWrapper();
                 if (sessionInfo == null) return;
-                lapi.setSessionInfo(sessionInfo);
+                sessionInfo.setState(SessionInfoWrapper.STATE.RECONNECT);
+                api.setSessionInfo(sessionInfo);
             } catch (final Throwable e) {
                 logger.log(e);
             }
         }
     }
 
-    protected void ensureValidSession(DeviceConnectionHelper connectionHelper) throws MyJDownloaderException, InterruptedException {
+    protected SessionInfoWrapper ensureValidSession(DeviceConnectionHelper connectionHelper) throws MyJDownloaderException, InterruptedException {
         MyJDownloaderAPI lapi = api;
         if (lapi == null) throw new WTFException("api is null, disconnected?!");
+        SessionInfoWrapper session = null;
         try {
-            if (sessionValid.get() && lapi.getSessionInfo() != null) return;
+            session = (SessionInfoWrapper) lapi.getSessionInfo();
+            if (session != null && SessionInfoWrapper.STATE.VALID.equals(session.getState())) return session;
         } catch (UnconnectedException e) {
-            logger.log(e);
-            invalidateSession();
+            /* not connected yet */
         }
         /* fetch new jdToken if needed */
         connectionHelper.backoff();
         try {
-            lapi.reconnect();
-            /* we need an additional call that will activate the new session */
-            lapi.keepalive();
-            validateSession();
-            return;
+            if (session != null && SessionInfoWrapper.STATE.RECONNECT.equals(session.getState())) {
+                session = (SessionInfoWrapper) lapi.reconnect();
+                /* we need an additional call that will activate the new session */
+                lapi.keepalive();
+                validateSession(session);
+                if (session != null) return session;
+            }
         } catch (UnconnectedException e) {
             /* let's connect first */
         } catch (MyJDownloaderException e) {
-            invalidateSession();
-            ensureValidSession(connectionHelper);
-            return;
+            if (session != null) session.setState(SessionInfoWrapper.STATE.INVALID);
+            return ensureValidSession(connectionHelper);
         }
         boolean deviceBound = false;
         try {
-            lapi.connect(getEmail(), getPassword());
+            session = (SessionInfoWrapper) lapi.connect(getEmail(), getPassword());
             // Thread.sleep(1000);
             DeviceData device = lapi.bindDevice(new DeviceData(CFG_MYJD.CFG.getUniqueDeviceID(), "jd", getDeviceName()));
             if (StringUtils.isNotEmpty(device.getId())) {
@@ -656,12 +712,13 @@ public class MyJDownloaderConnectThread extends Thread {
                     CFG_MYJD.CFG.setUniqueDeviceID(device.getId());
                     CFG_MYJD.CFG._getStorageHandler().write();
                 }
-                validateSession();
+                validateSession(session);
                 deviceBound = true;
             }
+            return session;
         } finally {
             if (deviceBound == false) {
-                invalidateSession();
+                disconnectSession(lapi, session);
             }
         }
 
