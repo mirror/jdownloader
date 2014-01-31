@@ -12,6 +12,7 @@ import jd.nutils.encoding.Encoding;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.Base64;
@@ -108,10 +109,17 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     private MyJDownloaderController extension;
 
-    public static int getRevision() {
+    public static String getRevision() {
+        try {
+            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+            });
+            Object ret = map.get("JDownloaderRevision");
+            if (ret != null) { return "core_" + ret.toString(); }
+        } catch (final Throwable e) {
+        }
         String revision = new Regex("$Revision$", "Revision:\\s*?(\\d+)").getMatch(0);
-        if (revision == null) return 0;
-        return Integer.parseInt(revision);
+        if (revision == null) return "api_0";
+        return "api_" + revision;
     }
 
     public MyJDownloaderAPI(MyJDownloaderController myJDownloaderExtension) {
