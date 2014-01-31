@@ -1,6 +1,7 @@
 package org.jdownloader.plugins.config;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,17 +25,17 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 
 public class PluginJsonConfig {
 
-    private static final WeakHashMap<ClassLoader, HashMap<String, ConfigInterface>> CONFIG_CACHE  = new WeakHashMap<ClassLoader, HashMap<String, ConfigInterface>>();
-    private static final HashMap<String, JsonKeyValueStorage>                       STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
-    protected static final DelayedRunnable                                          SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
+    private static final WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>> CONFIG_CACHE  = new WeakHashMap<ClassLoader, HashMap<String, WeakReference<ConfigInterface>>>();
+    private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
+    protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
 
-                                                                                                      @Override
-                                                                                                      public void delayedrun() {
-                                                                                                          saveAll();
-                                                                                                          cleanup();
-                                                                                                      }
-                                                                                                  };
-    private final static boolean                                                    DEBUG         = true;
+                                                                                                                     @Override
+                                                                                                                     public void delayedrun() {
+                                                                                                                         saveAll();
+                                                                                                                         cleanup();
+                                                                                                                     }
+                                                                                                                 };
+    private final static boolean                                                                   DEBUG         = true;
 
     static {
         File pluginsFolder = Application.getResource("cfg/plugins/");
@@ -74,15 +75,16 @@ public class PluginJsonConfig {
         final String ID = configInterface.getName();
         final ClassLoader cl = configInterface.getClassLoader();
         if (!(cl instanceof PluginClassLoaderChild)) throw new WTFException(configInterface + " got loaded by non PluginClassLoaderChild!");
-        HashMap<String, ConfigInterface> classLoaderMap = CONFIG_CACHE.get(cl);
+        HashMap<String, WeakReference<ConfigInterface>> classLoaderMap = CONFIG_CACHE.get(cl);
         if (classLoaderMap == null) {
-            classLoaderMap = new HashMap<String, ConfigInterface>();
+            classLoaderMap = new HashMap<String, WeakReference<ConfigInterface>>();
             CONFIG_CACHE.put(cl, classLoaderMap);
         }
-        ConfigInterface ret = classLoaderMap.get(ID);
-        if (ret != null) {
+        WeakReference<ConfigInterface> ret = classLoaderMap.get(ID);
+        ConfigInterface intf = null;
+        if (ret != null && (intf = ret.get()) != null) {
             if (DEBUG) System.out.println("Reuse cached ConfigInterface " + ID);
-            return (T) ret;
+            return (T) intf;
         } else {
             if (DEBUG) System.out.println("Create new ConfigInterface " + ID);
         }
@@ -108,8 +110,8 @@ public class PluginJsonConfig {
                 }
             }
         };
-        ret = (T) Proxy.newProxyInstance(configInterface.getClassLoader(), new Class<?>[] { configInterface }, storageHandler);
-        classLoaderMap.put(ID, ret);
-        return (T) ret;
+        intf = (T) Proxy.newProxyInstance(configInterface.getClassLoader(), new Class<?>[] { configInterface }, storageHandler);
+        classLoaderMap.put(ID, new WeakReference<ConfigInterface>(intf));
+        return (T) intf;
     }
 }
