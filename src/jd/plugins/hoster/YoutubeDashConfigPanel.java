@@ -1,4 +1,4 @@
-package jd.plugins.components;
+package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,9 +15,9 @@ import jd.gui.swing.jdgui.views.settings.components.ProxyInput;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
 import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.components.YoutubeVariant;
 import jd.plugins.decrypter.YoutubeHelper;
 import jd.plugins.decrypter.YoutubeHelper.Replacer;
-import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
@@ -119,7 +119,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
     }
 
     public YoutubeDashConfigPanel(String description) {
-        ;
         cf = PluginJsonConfig.get(YoutubeConfig.class);
 
         addStartDescription(description);

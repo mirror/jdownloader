@@ -691,6 +691,8 @@ public class LinkCrawler {
                         url = url.replaceFirst("http://", "httpviajd://");
                         url = url.replaceFirst("https://", "httpsviajd://");
                         /* create new CrawledLink that holds the modified CrawledLink */
+                        final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
+                        possibleCryptedLink.setCustomCrawledLinkModifier(null);
                         DownloadLink dl = possibleCryptedLink.getDownloadLink();
                         final CrawledLink modifiedPossibleCryptedLink;
                         if (dl != null) {
@@ -702,7 +704,7 @@ public class LinkCrawler {
                         } else {
                             modifiedPossibleCryptedLink = new CrawledLink(url);
                         }
-                        forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink);
+                        forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier);
                         if (directHTTP.canHandle(url)) {
                             if (insideCrawlerPlugin()) {
                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -820,14 +822,13 @@ public class LinkCrawler {
                 file = file.trim();
                 CrawledLink cli;
                 chits.add(cli = new CrawledLink(new CryptedLink(file)));
-                if (modifier != null) cli.setCustomCrawledLinkModifier(modifier);
             }
         }
         for (CrawledLink decryptThis : chits) {
             /*
              * forward important data to new ones
              */
-            forwardCrawledLinkInfos(possibleCryptedLink, decryptThis);
+            forwardCrawledLinkInfos(possibleCryptedLink, decryptThis, modifier);
             if (possibleCryptedLink.getCryptedLink() != null) {
                 /*
                  * source contains CryptedLink, so lets forward important infos
@@ -845,6 +846,8 @@ public class LinkCrawler {
     }
 
     protected void processHostPlugin(LazyHostPlugin pHost, CrawledLink possibleCryptedLink) {
+        final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
+        possibleCryptedLink.setCustomCrawledLinkModifier(null);
         if (!checkStartNotify()) return;
         ClassLoader oldClassLoader = null;
         try {
@@ -916,7 +919,7 @@ public class LinkCrawler {
                             /*
                              * forward important data to new ones
                              */
-                            forwardCrawledLinkInfos(possibleCryptedLink, link);
+                            forwardCrawledLinkInfos(possibleCryptedLink, link, parentLinkModifier);
                             handleCrawledLink(link);
                         }
                     }
@@ -942,11 +945,25 @@ public class LinkCrawler {
         }
     }
 
-    private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest) {
+    private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest, final CrawledLinkModifier linkModifier) {
         if (source == null || dest == null) return;
         dest.setSourceLink(source);
         dest.setMatchingFilter(source.getMatchingFilter());
         dest.setSourceJob(source.getSourceJob());
+        final CrawledLinkModifier childCustomModifier = dest.getCustomCrawledLinkModifier();
+        if (childCustomModifier == null) {
+            dest.setCustomCrawledLinkModifier(linkModifier);
+        } else {
+            dest.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
+
+                @Override
+                public void modifyCrawledLink(CrawledLink link) {
+                    if (linkModifier != null) linkModifier.modifyCrawledLink(link);
+                    childCustomModifier.modifyCrawledLink(link);
+                }
+            });
+        }
+
         // if we decrypted a dlc,source.getDesiredPackageInfo() is null, and dest might already have package infos from the container.
         // maybe it would be even better to merge the packageinfos
         // However. if there are crypted links in the container, it may be up to the decrypterplugin to decide
@@ -1077,6 +1094,8 @@ public class LinkCrawler {
     }
 
     protected void container(PluginsC oplg, final CrawledLink cryptedLink) {
+        final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
+        cryptedLink.setCustomCrawledLinkModifier(null);
         final int generation = this.getCrawlerGeneration(true);
         if (!checkStartNotify()) return;
         ClassLoader oldClassLoader = null;
@@ -1137,7 +1156,7 @@ public class LinkCrawler {
                     if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
                         /* we found some links, distribute them */
                         for (CrawledLink decryptedPossibleLink : decryptedPossibleLinks) {
-                            forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink);
+                            forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink, parentLinkModifier);
                         }
                         if (!checkStartNotify()) return;
                         /* enqueue distributing of the links */
@@ -1171,6 +1190,8 @@ public class LinkCrawler {
     }
 
     protected void crawl(LazyCrawlerPlugin lazyC, final CrawledLink cryptedLink) {
+        final CrawledLinkModifier parentLinkModifier = cryptedLink.getCustomCrawledLinkModifier();
+        cryptedLink.setCustomCrawledLinkModifier(null);
         final int generation = this.getCrawlerGeneration(true);
         if (!checkStartNotify()) return;
         ClassLoader oldClassLoader = null;
@@ -1257,19 +1278,21 @@ public class LinkCrawler {
                 /*
                  * set LinkCrawlerDistributer in case the plugin wants to add links in realtime
                  */
+                final CrawledLinkModifier lm = new CrawledLinkModifier() {
+                    /*
+                     * this modifier sets the BrowserURL if not set yet
+                     */
+                    public void modifyCrawledLink(CrawledLink link) {
+                        if (parentLinkModifier != null) {
+                            parentLinkModifier.modifyCrawledLink(link);
+                        }
+                        DownloadLink dl = link.getDownloadLink();
+                        if (dl != null && !dl.gotBrowserUrl()) {
+                            dl.setBrowserUrl(cryptedLink.getURL());
+                        }
+                    }
+                };
                 wplg.setDistributer(dist = new LinkCrawlerDistributer() {
-
-                    CrawledLinkModifier lm = new CrawledLinkModifier() {
-                                               /*
-                                                * this modifier sets the BrowserURL if not set yet
-                                                */
-                                               public void modifyCrawledLink(CrawledLink link) {
-                                                   DownloadLink dl = link.getDownloadLink();
-                                                   if (dl != null && !dl.gotBrowserUrl()) {
-                                                       dl.setBrowserUrl(cryptedLink.getURL());
-                                                   }
-                                               }
-                                           };
 
                     public void distribute(DownloadLink... links) {
                         if (links == null || links.length == 0) return;
@@ -1277,8 +1300,7 @@ public class LinkCrawler {
                         for (DownloadLink link : links) {
                             CrawledLink ret;
                             possibleCryptedLinks.add(ret = new CrawledLink(link));
-                            ret.setCustomCrawledLinkModifier(lm);
-                            forwardCrawledLinkInfos(cryptedLink, ret);
+                            forwardCrawledLinkInfos(cryptedLink, ret, lm);
                         }
                         if (useDelay) {
                             /* we delay the distribute */
@@ -1397,28 +1419,13 @@ public class LinkCrawler {
     protected void handleCrawledLink(CrawledLink link) {
         if (link == null) return;
         link.setCreated(getCreated());
-        /*
-         * build history of this crawledlink so we can call each existing LinkModifier in correct order
-         */
-        java.util.List<CrawledLink> history = new ArrayList<CrawledLink>();
-        CrawledLink source = link.getSourceLink();
-        CrawledLink origin = source;
-        history.add(link);
-        /* build history */
-        while (source != null) {
-            history.add(source);
-            source = source.getSourceLink();
-            if (source != null) origin = source;
-        }
-        for (int index = history.size() - 1; index >= 0; index--) {
-            /* call each LinkModifier from the beginning to this link */
-            CrawledLinkModifier customModifier = history.get(index).getCustomCrawledLinkModifier();
-            if (customModifier != null) {
-                try {
-                    customModifier.modifyCrawledLink(link);
-                } catch (final Throwable e) {
-                    LogController.CL().log(e);
-                }
+        CrawledLink origin = link.getOriginLink();
+        CrawledLinkModifier customModifier = link.getCustomCrawledLinkModifier();
+        if (customModifier != null) {
+            try {
+                customModifier.modifyCrawledLink(link);
+            } catch (final Throwable e) {
+                LogController.CL().log(e);
             }
         }
         /* clean up some references */

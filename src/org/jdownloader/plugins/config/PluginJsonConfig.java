@@ -74,7 +74,10 @@ public class PluginJsonConfig {
     public synchronized static <T extends ConfigInterface> T get(Class<T> configInterface) {
         final String ID = configInterface.getName();
         final ClassLoader cl = configInterface.getClassLoader();
-        if (!(cl instanceof PluginClassLoaderChild)) throw new WTFException(configInterface + " got loaded by non PluginClassLoaderChild!");
+        if (!(cl instanceof PluginClassLoaderChild)) {
+            //
+            throw new WTFException(configInterface + " got loaded by non PluginClassLoaderChild!");
+        }
         HashMap<String, WeakReference<ConfigInterface>> classLoaderMap = CONFIG_CACHE.get(cl);
         if (classLoaderMap == null) {
             classLoaderMap = new HashMap<String, WeakReference<ConfigInterface>>();

@@ -49,7 +49,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.YoutubeClipData;
 import jd.plugins.components.YoutubeCustomVariantStorable;
-import jd.plugins.components.YoutubeDashConfigPanel;
 import jd.plugins.components.YoutubeITAG;
 import jd.plugins.components.YoutubeStreamData;
 import jd.plugins.components.YoutubeSubtitleInfo;

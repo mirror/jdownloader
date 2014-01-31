@@ -261,7 +261,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 public void setProxy(HTTPProxy proxy) {
                     super.setProxy(proxy);
                     proxyRef.set(proxy);
-
                 }
             });
             livePlugin.setLogger(downloadLogger);
@@ -345,7 +344,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             usedProxy = proxyRef.get();
             DownloadInterface di = livePlugin.getDownloadInterface();
             resumed = di != null && di.isResumedDownload();
-            // di.getTotalLinkBytesLoadedLive()
             downloadLink.setLivePlugin(null);
             finalizePlugins(downloadLogger, originalPlugin, livePlugin, validateChallenge);
             if (downloadLink.getFilePackage() != null) {

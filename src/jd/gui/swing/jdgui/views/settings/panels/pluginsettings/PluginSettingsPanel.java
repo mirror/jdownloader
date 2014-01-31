@@ -319,7 +319,8 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
                 PluginConfigPanelNG newCP;
                 try {
                     JDGui.getInstance().setWaiting(true);
-                    newCP = selectedItem.getPrototype(null).createConfigPanel();
+                    Plugin protoType = selectedItem.getPrototype(null);
+                    newCP = protoType.createConfigPanel();
 
                     if (newCP != null) {
                         configPanel = scrollerWrapper(newCP);
