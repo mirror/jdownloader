@@ -104,7 +104,7 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         }
     }
 
-    protected AtomicLong            TIMESTAMP    = new AtomicLong(System.currentTimeMillis() + 1);
+    protected AtomicLong            TIMESTAMP    = new AtomicLong(System.currentTimeMillis() + 2);
     protected volatile String       connectToken = null;
 
     private MyJDownloaderController extension;
