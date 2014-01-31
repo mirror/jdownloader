@@ -408,16 +408,13 @@
 
 
 		<buildAddon package="JDTray" include="jdtrayicon" />
-		<buildAddon package="MyJDownloader" include="myjdownloader" />
+
 		<buildAddon package="JDGrowl" include="growl" />
 		<buildAddon package="AntiShutdown" include="antistandby" />
-
-		<buildAddon package="Streaming" include="streaming" />
-
 		<buildAddon package="Extraction" include="extraction" />
 
-		<buildAddon package="webinterface" include="webinterface" />
-		<buildAddon package="neembuu" include="neembuu" />
+
+
 		<buildAddon package="translator" include="translator" />
 		<delete file="${dist}/Manifest.MF" failonerror="true" />
 	</target>
