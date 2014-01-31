@@ -1139,7 +1139,7 @@ public class YoutubeDashV2 extends PluginForHost {
         if (account != null) {
             helper.login(account, false, false);
         }
-        if (true) throw new RuntimeException("Shit happened");
+
         boolean resume = true;
         switch (variant.getType()) {
         case IMAGE:
