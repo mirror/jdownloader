@@ -39,6 +39,14 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
+import jd.plugins.components.YoutubeClipData;
+import jd.plugins.components.YoutubeCustomConvertVariant;
+import jd.plugins.components.YoutubeCustomVariantStorable;
+import jd.plugins.components.YoutubeITAG;
+import jd.plugins.components.YoutubeStreamData;
+import jd.plugins.components.YoutubeSubtitleInfo;
+import jd.plugins.components.YoutubeVariant;
+import jd.plugins.components.YoutubeVariantInterface;
 import jd.plugins.decrypter.YoutubeHelper.Replacer.DataSource;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.utils.locale.JDL;
@@ -493,7 +501,7 @@ public class YoutubeHelper {
 
     }
 
-    protected static void convertToMp3(DownloadLink downloadLink) {
+    public static void convertToMp3(DownloadLink downloadLink) {
         try {
             downloadLink.setPluginProgress(new PluginProgress(0, 100, null) {
                 {
@@ -576,7 +584,7 @@ public class YoutubeHelper {
         if (list != null) {
             for (YoutubeCustomVariantStorable v : list) {
                 try {
-                    variants.add(v.toVariant());
+                    variants.add(YoutubeCustomConvertVariant.parse(v));
                 } catch (Exception e) {
                     e.printStackTrace();
 
@@ -866,20 +874,20 @@ public class YoutubeHelper {
         for (final String line : html5_fmt_map.split("\\,")) {
             final YoutubeStreamData match = this.parseLine(vid, line);
             if (match != null) {
-                ret.put(match.itag, match);
+                ret.put(match.getItag(), match);
             }
         }
         if (dashFmt != null) {
             for (final String line : dashFmt.split("\\,")) {
                 final YoutubeStreamData match = this.parseLine(vid, line);
                 if (match != null) {
-                    ret.put(match.itag, match);
+                    ret.put(match.getItag(), match);
                 }
             }
         }
 
         for (YoutubeStreamData sd : loadThumbnails(vid)) {
-            ret.put(sd.itag, sd);
+            ret.put(sd.getItag(), sd);
         }
 
         return ret;
@@ -1301,7 +1309,6 @@ public class YoutubeHelper {
             // PROXY_ADDRESS = new Regex(PROXY_ADDRESS, "^[0-9a-zA-Z]+://").matches() ? PROXY_ADDRESS : "http://" + PROXY_ADDRESS;
             // org.appwork.utils.net.httpconnection.HTTPProxy proxy =
             // org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(PROXY_ADDRESS + ":" + PROXY_PORT);
-
             if (proxy != null) {
                 HTTPProxy prxy = HTTPProxy.getHTTPProxy(proxy);
                 if (prxy != null) {

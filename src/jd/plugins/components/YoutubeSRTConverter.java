@@ -1,27 +1,36 @@
-package jd.plugins.decrypter;
+package jd.plugins.components;
 
 import java.io.File;
-import java.util.ArrayList;
 
 import javax.swing.Icon;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginProgress;
-import jd.utils.JDUtilities;
 
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.utils.SubtitleConverter;
 
-public class YoutubeExternConverter implements YoutubeConverter {
+public class YoutubeSRTConverter implements YoutubeConverter {
+    private static final YoutubeSRTConverter INSTANCE = new YoutubeSRTConverter();
 
-    private String   binary;
-    private String[] parameters;
+    /**
+     * get the only existing instance of YoutubeSRTConverter. This is a singleton
+     * 
+     * @return
+     */
+    public static YoutubeSRTConverter getInstance() {
+        return YoutubeSRTConverter.INSTANCE;
+    }
 
-    public YoutubeExternConverter(String string, String[] strings) {
-        this.binary = string;
-        this.parameters = strings;
+    /**
+     * Create a new instance of YoutubeSRTConverter. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
+     */
+    private YoutubeSRTConverter() {
+
     }
 
     @Override
@@ -30,18 +39,18 @@ public class YoutubeExternConverter implements YoutubeConverter {
         try {
             downloadLink.setPluginProgress(new PluginProgress(0, 100, null) {
                 {
-                    setIcon(new AbstractIcon(IconKey.ICON_RUN, 18));
+                    setIcon(new AbstractIcon(IconKey.ICON_TEXT, 18));
 
-                }
-
-                @Override
-                public PluginTaskID getID() {
-                    return PluginTaskID.CONVERT;
                 }
 
                 @Override
                 public long getCurrent() {
                     return 95;
+                }
+
+                @Override
+                public PluginTaskID getID() {
+                    return PluginTaskID.CONVERT;
                 }
 
                 @Override
@@ -58,17 +67,9 @@ public class YoutubeExternConverter implements YoutubeConverter {
             });
             File file = new File(downloadLink.getFileOutput());
 
-            // String[] commands = new String[] { "-i", "%input", "-acodec", "mp3", "-ac", "2", "-f", "mp3", "-ab", "128", "%output" };
-            ArrayList<String> cmds = new ArrayList<String>();
-            File finalFile = new File(downloadLink.getFileOutput(false, true));
-            for (String s : parameters) {
-                cmds.add(s.replace("%input", file.getAbsolutePath()).replace("%output", finalFile.getAbsolutePath()));
-            }
-            System.out.println(JDUtilities.runCommand(binary, cmds.toArray(new String[] {}), null, -1));
+            File finalFile;
+            SubtitleConverter.convertGoogleCC2SRTSubtitles(file, finalFile = new File(file.getAbsolutePath().replaceFirst("\\.srt\\.tmp$", ".srt")));
 
-            file.delete();
-            downloadLink.setDownloadSize(finalFile.length());
-            downloadLink.setDownloadCurrent(finalFile.length());
             try {
                 downloadLink.setFinalFileOutput(finalFile.getAbsolutePath());
                 downloadLink.setCustomFileOutputFilenameAppend(null);
@@ -78,6 +79,7 @@ public class YoutubeExternConverter implements YoutubeConverter {
         } finally {
             downloadLink.setPluginProgress(null);
         }
+
     }
 
 }

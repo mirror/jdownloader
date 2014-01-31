@@ -38,6 +38,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.YoutubeClipData;
+import jd.plugins.components.YoutubeITAG;
+import jd.plugins.components.YoutubeStreamData;
+import jd.plugins.components.YoutubeSubtitleInfo;
+import jd.plugins.components.YoutubeVariant;
+import jd.plugins.components.YoutubeVariantInterface;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
@@ -226,7 +232,7 @@ public class TbCmV2 extends PluginForDecrypt {
             videoIdsToAdd.addAll(parseUsergrid(userID));
             videoIdsToAdd.addAll(parseChannelgrid(channelID));
             if (StringUtils.isNotEmpty(videoID) && dupeCheckSet.add(videoID)) {
-                videoIdsToAdd.add(new jd.plugins.decrypter.YoutubeClipData(videoID));
+                videoIdsToAdd.add(new jd.plugins.components.YoutubeClipData(videoID));
             }
             if (videoIdsToAdd.size() == 0) {
                 videoIdsToAdd.addAll(parseGeneric(cleanedurl));

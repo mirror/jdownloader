@@ -1,8 +1,9 @@
-package jd.plugins.decrypter;
+package jd.plugins.components;
 
 import java.util.Locale;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.decrypter.YoutubeHelper;
 
 import org.jdownloader.gui.translate._GUI;
 

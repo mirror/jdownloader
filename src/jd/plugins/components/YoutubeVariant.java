@@ -1,4 +1,4 @@
-package jd.plugins.decrypter;
+package jd.plugins.components;
 
 import java.io.File;
 import java.util.ArrayList;

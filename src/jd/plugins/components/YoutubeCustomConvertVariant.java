@@ -1,4 +1,4 @@
-package jd.plugins.decrypter;
+package jd.plugins.components;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -7,6 +7,8 @@ import java.util.List;
 import javax.swing.Icon;
 
 import jd.plugins.DownloadLink;
+
+import org.appwork.utils.StringUtils;
 
 public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     private String                  typeID;
@@ -21,6 +23,19 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     private YoutubeConverter        converter;
     private String                  uniqueID;
     private DownloadType            downloadType;
+
+    public static YoutubeVariantInterface parse(YoutubeCustomVariantStorable storable) {
+        YoutubeITAG audio = StringUtils.isEmpty(storable.getAudioTag()) ? null : YoutubeITAG.valueOf(storable.getAudioTag());
+        YoutubeITAG video = StringUtils.isEmpty(storable.getVideoTag()) ? null : YoutubeITAG.valueOf(storable.getVideoTag());
+
+        double qr = storable.getQualityRating();
+        if (qr <= 0) {
+            qr = 0.001d;
+            if (audio != null) qr += audio.getQualityRating();
+            if (video != null) qr += video.getQualityRating();
+        }
+        return new YoutubeCustomConvertVariant(storable.getUniqueID(), storable.getTypeID(), DownloadType.valueOf(storable.getDownloadType()), VariantGroup.valueOf(storable.getGroup()), qr, storable.getName(), storable.getNameTag(), storable.getExtension(), audio, video, null, new YoutubeExternConverter(storable.getBinary(), storable.getParameters()));
+    }
 
     public YoutubeCustomConvertVariant(String uniqueID, String typeID, DownloadType dltype, VariantGroup group, double qualityRating, String variantName, String fileNameExtender, String fileExtension, YoutubeITAG audio, YoutubeITAG video, YoutubeFilenameModifier nameModifier, YoutubeConverter converter) {
         this.typeID = typeID;

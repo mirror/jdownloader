@@ -1,19 +1,15 @@
-package jd.plugins.decrypter;
-
-import jd.plugins.decrypter.YoutubeVariantInterface.DownloadType;
-import jd.plugins.decrypter.YoutubeVariantInterface.VariantGroup;
+package jd.plugins.components;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
-import org.appwork.utils.StringUtils;
 
 public class YoutubeCustomVariantStorable implements Storable {
+
     public static void main(String[] args) {
         System.out.println(JSonStorage.serializeToJson(new YoutubeCustomVariantStorable()));
     }
 
     private YoutubeCustomVariantStorable(/* storable */) {
-
     }
 
     private String uniqueID;
@@ -126,18 +122,4 @@ public class YoutubeCustomVariantStorable implements Storable {
     private String   binary;
     private String[] parameters;
 
-    public YoutubeVariantInterface toVariant() {
-        YoutubeITAG audio = StringUtils.isEmpty(getAudioTag()) ? null : YoutubeITAG.valueOf(getAudioTag());
-        YoutubeITAG video = StringUtils.isEmpty(getVideoTag()) ? null : YoutubeITAG.valueOf(getVideoTag());
-
-        double qr = qualityRating;
-        if (qualityRating <= 0) {
-            qr = 0.001d;
-            if (audio != null) qr += audio.getQualityRating();
-            if (video != null) qr += video.getQualityRating();
-        }
-
-        return new YoutubeCustomConvertVariant(getUniqueID(), getTypeID(), DownloadType.valueOf(getDownloadType()), VariantGroup.valueOf(getGroup()), qr, getName(), getNameTag(), getExtension(), audio, video, null, new YoutubeExternConverter(getBinary(), getParameters()));
-
-    }
 }

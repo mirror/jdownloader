@@ -1,4 +1,4 @@
-package jd.plugins.decrypter;
+package jd.plugins.components;
 
 public class YoutubeClipData {
 
@@ -13,7 +13,7 @@ public class YoutubeClipData {
     public boolean ageCheck;
     public String  title;
     public String  videoID;
-    int            playlistEntryNumber;
+    public int     playlistEntryNumber;
     public int     length;
     public String  category;
     public int     duration;

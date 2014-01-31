@@ -1,6 +1,7 @@
-package jd.plugins.decrypter;
+package jd.plugins.components;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.decrypter.YoutubeHelper;
 
 public class YoutubeFlvToMp3Converter implements YoutubeConverter {
     private static final YoutubeFlvToMp3Converter INSTANCE = new YoutubeFlvToMp3Converter();

@@ -1,4 +1,4 @@
-package jd.plugins.hoster;
+package jd.plugins.components;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +17,7 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableMode
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.decrypter.YoutubeHelper;
 import jd.plugins.decrypter.YoutubeHelper.Replacer;
-import jd.plugins.decrypter.YoutubeVariant;
+import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
