@@ -272,7 +272,7 @@ public class SendspaceCom extends PluginForHost {
                 }
                 handleErrors(false);
                 /* Link holen */
-                linkurl = br.getRegex("<a id=\"download_button\" href=\"(http://.*?)\"").getMatch(0);
+                linkurl = br.getRegex("<a id=\"download_button\" href=\"(https?://.*?)\"").getMatch(0);
                 if (linkurl == null) linkurl = br.getRegex("\"(http://fs\\d+n\\d+\\.sendspace\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
                 if (linkurl == null) {
                     if (br.containsHTML("has reached the 300MB hourly download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
