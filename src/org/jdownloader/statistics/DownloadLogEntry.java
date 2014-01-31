@@ -2,9 +2,7 @@ package org.jdownloader.statistics;
 
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
 
-import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
-
-public class DownloadLogEntry extends AbstractJsonData {
+public class DownloadLogEntry extends AbstractLogEntry {
     DownloadLogEntry() {
 
     }
@@ -13,6 +11,26 @@ public class DownloadLogEntry extends AbstractJsonData {
 
     public int getChunks() {
         return chunks;
+    }
+
+    private boolean resume = false;
+
+    public boolean isResume() {
+        return resume;
+    }
+
+    public void setResume(boolean resume) {
+        this.resume = resume;
+    }
+
+    private boolean canceled = false;
+
+    public boolean isCanceled() {
+        return canceled;
+    }
+
+    public void setCanceled(boolean canceled) {
+        this.canceled = canceled;
     }
 
     public void setChunks(int chunks) {

@@ -1,7 +1,12 @@
 package org.jdownloader.statistics.interfaces;
 
-import org.appwork.remotecall.RemoteCallInterface;
+import java.util.ArrayList;
 
-public interface PluginStatsInterface extends RemoteCallInterface {
+import org.appwork.remoteapi.RemoteAPIInterface;
+import org.jdownloader.statistics.LogEntryWrapper;
+
+public interface PluginStatsInterface extends RemoteAPIInterface {
+
+    void push(ArrayList<LogEntryWrapper> sendTo);
 
 }

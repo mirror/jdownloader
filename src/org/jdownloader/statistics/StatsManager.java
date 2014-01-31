@@ -3,6 +3,7 @@ package org.jdownloader.statistics;
 import java.io.File;
 import java.io.FileInputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
@@ -18,7 +19,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.Application;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -26,10 +27,8 @@ import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.tasks.PluginSubTask;
-import org.jdownloader.remotecall.RemoteClient;
-import org.jdownloader.statistics.interfaces.PluginStatsInterface;
 
-public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener {
+public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
     private static final StatsManager INSTANCE = new StatsManager();
 
     /**
@@ -41,24 +40,37 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         return StatsManager.INSTANCE;
     }
 
-    private PluginStatsInterface remote;
-    private StatsManagerConfig   config;
-    private Queue                queue;
+    private StatsManagerConfig          config;
 
-    private long                 startTime;
-    private LogSource            logger;
+    private long                        startTime;
+    private LogSource                   logger;
+    private ArrayList<AbstractLogEntry> list;
+    private Thread                      thread;
+
+    private void log(DownloadLogEntry dl) {
+        if (isEnabled()) {
+            synchronized (list) {
+                list.add(dl);
+                list.notifyAll();
+            }
+        }
+
+    }
 
     /**
      * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #link()}.
      */
     private StatsManager() {
-        remote = new LoggerRemoteClient(new RemoteClient("update3.jdownloader.org/stats")).create(PluginStatsInterface.class);
+        list = new ArrayList<AbstractLogEntry>();
+        // remote = new LoggerRemoteClient(new RemoteClient("update3.jdownloader.org/stats")).create(PluginStatsInterface.class);
         config = JsonConfig.create(StatsManagerConfig.class);
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
-        queue = new Queue("StatsManager Queue") {
-        };
+
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         config._getStorageHandler().getKeyHandler("enabled").getEventSender().addListener(this);
+        thread = new Thread(this);
+        thread.setName("StatsSender");
+        thread.start();
     }
 
     /**
@@ -72,7 +84,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public boolean isEnabled() {
 
-        return config.isEnabled();
+        return config.isEnabled() && !Application.isJared(StatsManager.class);
     }
 
     public static String getFingerprint(final File arg) {
@@ -190,10 +202,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             HTTPProxy usedProxy = downloadController.getUsedProxy();
             CachedAccount account = candidate.getCachedAccount();
             boolean aborted = downloadController.isAborting();
-            long duration = link.getView().getDownloadTime();
-            long speed = duration <= 0 ? 0 : link.getView().getBytesTotal() / duration;
+            // long duration = link.getView().getDownloadTime();
 
-            downloadController.isResumed();
+            long sizeChange = Math.max(0, link.getView().getBytesLoaded() - downloadController.getSizeBefore());
+            long duration = downloadTask != null ? downloadTask.getRuntime() : 0;
+            long speed = duration <= 0 ? 0 : (sizeChange * 1000) / duration;
+
             pluginRuntime -= userIO;
             pluginRuntime -= captcha;
 
@@ -237,12 +251,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (chunks != null) {
                 dl.setChunks(chunks.length);
             }
+            dl.setResume(downloadController.isResumed());
+            dl.setCanceled(aborted);
             dl.setHost(account.getHost());
             dl.setAccount(account.getPlugin().getHost());
             dl.setCaptchaRuntime(captcha);
             dl.setFilesize(link.getView().getBytesTotal());
             dl.setPluginRuntime(pluginRuntime);
-            dl.setProxy(usedProxy == null || usedProxy.isDirect() || usedProxy.isNone());
+            dl.setProxy(usedProxy != null && !usedProxy.isDirect() && !usedProxy.isNone());
             dl.setResult(result.getResult());
             dl.setSpeed(speed);
             dl.setWaittime(waittime);
@@ -256,7 +272,36 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
-    private void log(DownloadLogEntry dl) {
-    }
+    @Override
+    public void run() {
+        while (true) {
+            ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
+            ArrayList<AbstractLogEntry> sendRequest = new ArrayList<AbstractLogEntry>();
+            try {
+                while (list.size() == 0) {
+                    synchronized (list) {
+                        if (list.size() == 0) {
+                            list.wait(10 * 60 * 1000);
 
+                        }
+                    }
+                }
+
+                synchronized (list) {
+                    sendRequest.addAll(list);
+                    for (AbstractLogEntry e : list) {
+                        sendTo.add(new LogEntryWrapper(e));
+                    }
+                    list.clear();
+                }
+                if (sendTo.size() > 0) {
+                    // remote.push(sendTo);
+                }
+            } catch (Exception e) {
+                // failed. push back
+
+                e.printStackTrace();
+            }
+        }
+    }
 }
