@@ -99,6 +99,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private final long                                     sizeBefore;
     private ArrayList<PluginSubTask>                       tasks;
     private HTTPProxy                                      usedProxy;
+    private boolean                                        resumed;
 
     public WaitingQueueItem getQueueItem() {
         return queueItem;
@@ -342,6 +343,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         } finally {
             queueItem.queueLinks.remove(downloadLink);
             usedProxy = proxyRef.get();
+            DownloadInterface di = livePlugin.getDownloadInterface();
+            resumed = di != null && di.isResumedDownload();
+            // di.getTotalLinkBytesLoadedLive()
             downloadLink.setLivePlugin(null);
             finalizePlugins(downloadLogger, originalPlugin, livePlugin, validateChallenge);
             if (downloadLink.getFilePackage() != null) {
@@ -354,6 +358,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             }
 
         }
+    }
+
+    public boolean isResumed() {
+        return resumed;
     }
 
     public HTTPProxy getUsedProxy() {

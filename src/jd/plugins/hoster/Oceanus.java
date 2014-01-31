@@ -1032,6 +1032,11 @@ public class Oceanus extends PluginForHost {
             return null;
         }
 
+        @Override
+        public boolean isResumedDownload() {
+            return false;
+        }
+
     }
 
     @XmlAccessorType(XmlAccessType.FIELD)

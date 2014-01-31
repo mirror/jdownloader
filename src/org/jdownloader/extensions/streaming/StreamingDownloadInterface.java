@@ -97,4 +97,9 @@ public class StreamingDownloadInterface extends DownloadInterface {
         return null;
     }
 
+    @Override
+    public boolean isResumedDownload() {
+        return false;
+    }
+
 }

@@ -75,4 +75,12 @@ abstract public class DownloadInterface {
 
     public abstract Downloadable getDownloadable();
 
+    /* do not use in old JD 09581 plugins */
+    /**
+     * returns of the download has been resumed
+     * 
+     * @return
+     */
+    public abstract boolean isResumedDownload();
+
 }

@@ -57,6 +57,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     protected long                                  totalLinkBytesLoaded     = -1;
     protected AtomicLong                            totalLinkBytesLoadedLive = new AtomicLong(0);
     private long                                    startTimeStamp           = -1;
+    private boolean                                 resumed;
 
     public SimpleFTPDownloadInterface(SimpleFTP simpleFTP, final DownloadLink link, String filePath) {
         connectionHandler = new ManagedThrottledConnectionHandler();
@@ -115,9 +116,11 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         long resumePosition = 0;
         if (!simpleFTP.isBinary()) logger.info("Warning: Download in ASCII mode may fail!");
         InetSocketAddress pasv = simpleFTP.pasv();
+        resumed = false;
         if (resume) {
             resumePosition = raf.length();
             if (resumePosition > 0) {
+                resumed = true;
                 totalLinkBytesLoadedLive.set(resumePosition);
                 simpleFTP.sendLine("REST " + resumePosition);
                 try {
@@ -395,6 +398,11 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     @Override
     public Downloadable getDownloadable() {
         return downloadable;
+    }
+
+    @Override
+    public boolean isResumedDownload() {
+        return resumed;
     }
 
 }

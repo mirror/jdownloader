@@ -1,8 +1,11 @@
 package jd.plugins;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -238,7 +241,15 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             writeTempToFields(tmp);
             items = updatedItems;
             updatesDone = lupdatesRequired;
-            infos = tmp.newInfos.toArray(new DomainInfo[tmp.newInfos.size()]);
+            LinkedList<DomainInfo> lst = new LinkedList<DomainInfo>(tmp.newInfos);
+            Collections.sort(lst, new Comparator<DomainInfo>() {
+
+                @Override
+                public int compare(DomainInfo o1, DomainInfo o2) {
+                    return o1.getTld().compareTo(o2.getTld());
+                }
+            });
+            infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
         }
     }
 

@@ -24,7 +24,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.tasks.PluginSubTask;
 import org.jdownloader.remotecall.RemoteClient;
@@ -160,12 +159,15 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             PluginSubTask plugintask = tasks.get(0);
             PluginSubTask downloadTask = null;
             long userIO = 0l;
+            long captcha = 0l;
             long waittime = 0l;
             for (int i = 1; i < tasks.size(); i++) {
                 PluginSubTask task = tasks.get(i);
                 if (downloadTask == null) {
                     switch (task.getId()) {
                     case CAPTCHA:
+                        captcha += task.getRuntime();
+                        break;
                     case USERIO:
                         userIO += task.getRuntime();
                         break;
@@ -187,10 +189,65 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             HTTPProxy usedProxy = downloadController.getUsedProxy();
             CachedAccount account = candidate.getCachedAccount();
+            boolean aborted = downloadController.isAborting();
+            long duration = link.getView().getDownloadTime();
+            long speed = duration <= 0 ? 0 : link.getView().getBytesTotal() / duration;
 
+            downloadController.isResumed();
             pluginRuntime -= userIO;
-            FinalLinkState linkState = link.getFinalLinkState();
+            pluginRuntime -= captcha;
+
+            switch (result.getResult()) {
+            case ACCOUNT_INVALID:
+            case ACCOUNT_REQUIRED:
+            case ACCOUNT_UNAVAILABLE:
+            case CAPTCHA:
+            case CONDITIONAL_SKIPPED:
+            case CONNECTION_ISSUES:
+            case CONNECTION_UNAVAILABLE:
+            case FAILED:
+            case FAILED_EXISTS:
+            case FAILED_INCOMPLETE:
+            case FATAL_ERROR:
+            case FILE_UNAVAILABLE:
+
+            case FINISHED_EXISTS:
+            case HOSTER_UNAVAILABLE:
+            case IP_BLOCKED:
+            case OFFLINE_TRUSTED:
+            case OFFLINE_UNTRUSTED:
+            case PLUGIN_DEFECT:
+            case PROXY_UNAVAILABLE:
+            case RETRY:
+            case SKIPPED:
+            case STOPPED:
+
+                break;
+            case FINISHED:
+
+                if (downloadTask != null) {
+                    // we did at least download somthing
+                }
+
+            }
+            //
+
+            // dl.set
+            long[] chunks = link.getView().getChunksProgress();
+            if (chunks != null) {
+                dl.setChunks(chunks.length);
+            }
+            dl.setHost(account.getHost());
+            dl.setAccount(account.getPlugin().getHost());
+            dl.setCaptchaRuntime(captcha);
+            dl.setFilesize(link.getView().getBytesTotal());
+            dl.setPluginRuntime(pluginRuntime);
+            dl.setProxy(usedProxy == null || usedProxy.isDirect() || usedProxy.isNone());
+            dl.setResult(result.getResult());
+            dl.setSpeed(speed);
+            dl.setWaittime(waittime);
             System.out.println(tasks);
+
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);
         } catch (Throwable e) {

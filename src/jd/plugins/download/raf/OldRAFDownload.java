@@ -95,6 +95,7 @@ public class OldRAFDownload extends DownloadInterface {
     protected Request                           request                  = null;
     protected ManagedThrottledConnectionHandler connectionHandler        = null;
     private long                                startTimeStamp           = -1;
+    private boolean                             resumedDownload;
 
     /**
      * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks koennen nur vor dem Downloadstart gesetzt werden!
@@ -748,14 +749,20 @@ public class OldRAFDownload extends DownloadInterface {
         try {
             if (isRangeRequestSupported() && checkResumabled()) {
                 logger.finer("Setup resume");
+                this.resumedDownload = true;
                 this.setupResume();
             } else {
                 logger.finer("Setup virgin download");
+                this.resumedDownload = false;
                 this.setupVirginStart();
             }
         } catch (Exception e) {
             throw e;
         }
+    }
+
+    public boolean isResumedDownload() {
+        return resumedDownload;
     }
 
     private void setupVirginStart() throws FileNotFoundException {
