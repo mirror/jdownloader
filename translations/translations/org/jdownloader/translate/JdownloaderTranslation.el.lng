@@ -38,6 +38,7 @@ LinkSource_ADD_LINKS_DIALOG=Ενέργεια προσθήκης Συνδέσμω
 LinkSource_CLIPBOARD=Πρόχειρο
 LinkSource_CNL=Click'n'Load
 LinkSource_DOWNLOADED_CONTAINER=Ληφθέν Container
+LinkSource_EXTENSION=Οποιαδήποτε Επέκταση
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Αγκύρωση (Μόνο για Mac)
 LinkSource_MYJD=MyJDownloader
