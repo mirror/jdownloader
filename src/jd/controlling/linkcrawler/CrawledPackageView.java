@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
@@ -97,7 +96,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             }
             writeTmpToFields(tmp);
 
-            LinkedList<DomainInfo> lst = new LinkedList<DomainInfo>(tmp.domains);
+            ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
             Collections.sort(lst, new Comparator<DomainInfo>() {
 
                 @Override
