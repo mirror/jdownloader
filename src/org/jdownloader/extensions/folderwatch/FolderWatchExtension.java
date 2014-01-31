@@ -36,15 +36,22 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.simplejson.mapper.ClassCache;
+import org.appwork.storage.simplejson.mapper.Setter;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.controlling.contextmenu.ContextMenuManager;
 import org.jdownloader.controlling.contextmenu.MenuContainerRoot;
 import org.jdownloader.controlling.contextmenu.MenuExtenderHandler;
@@ -57,6 +64,9 @@ import org.jdownloader.extensions.folderwatch.translate.FolderWatchTranslation;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
 import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, FolderWatchTranslation> implements MenuExtenderHandler, Runnable, GenericConfigEventListener<Long> {
 
@@ -73,7 +83,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     }
 
     public FolderWatchExtension() throws StartException {
-        setTitle("FolderWatch");
+        setTitle(_.title());
 
     }
 
@@ -135,7 +145,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     @Override
     public String getDescription() {
-        return "Add All Links found in a Folder";
+        return _.description();
     }
 
     @Override
@@ -197,7 +207,7 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
     @Override
     public void run() {
         try {
-            System.out.println("RUN " + System.currentTimeMillis());
+
             String[] folders = getSettings().getFolders();
             if (folders != null) {
                 for (String s : folders) {
@@ -245,97 +255,199 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
     private void addCrawlJob(File f) throws IOException {
 
-        for (final CrawlJobStorable j : JSonStorage.restoreFromString(IO.readFileToString(f), new TypeRef<ArrayList<CrawlJobStorable>>() {
-        })) {
-            switch (j.getType()) {
-            case NORMAL:
-
-                LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.EXTENSION, "FolderWatch:" + f.getAbsolutePath()), j.getText());
-                job.setDeepAnalyse(j.isDeepAnalyseEnabled());
-
-                job.setCrawledLinkModifier(new CrawledLinkModifier() {
-
-                    private PackageInfo getPackageInfo(CrawledLink link, boolean createIfNotExisting) {
-                        PackageInfo packageInfo = link.getDesiredPackageInfo();
-                        if (packageInfo != null || createIfNotExisting == false) return packageInfo;
-                        packageInfo = new PackageInfo();
-                        link.setDesiredPackageInfo(packageInfo);
-                        return packageInfo;
-                    }
-
-                    @Override
-                    public void modifyCrawledLink(CrawledLink link) {
-                        if (StringUtils.isNotEmpty(j.getPackageName())) {
-                            PackageInfo existing = getPackageInfo(link, false);
-                            if (j.isOverwritePackagizerEnabled() || existing == null || StringUtils.isEmpty(existing.getName())) {
-                                existing = getPackageInfo(link, true);
-                                existing.setName(j.getPackageName());
-                                existing.setUniqueId(null);
-                            }
-                        }
-
-                        if (!BooleanStatus.UNSET.equals(j.getExtractAfterDownload())) {
-                            BooleanStatus existing = BooleanStatus.UNSET;
-                            if (link.hasArchiveInfo()) {
-                                existing = link.getArchiveInfo().getAutoExtract();
-                            }
-                            if (j.isOverwritePackagizerEnabled() || existing == null || BooleanStatus.UNSET.equals(existing)) link.getArchiveInfo().setAutoExtract(j.getExtractAfterDownload());
-                        }
-                        if (j.isOverwritePackagizerEnabled()) {
-                            link.setPriority(j.getPriority());
-                        }
-                        DownloadLink dlLink = link.getDownloadLink();
-                        if (dlLink != null) {
-                            if (StringUtils.isNotEmpty(j.getComment())) {
-                                if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getComment())) dlLink.setComment(j.getComment());
-                            }
-                            if (StringUtils.isNotEmpty(j.getDownloadPassword())) {
-                                if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getDownloadPassword())) dlLink.setDownloadPassword(j.getDownloadPassword());
-                            }
-                        }
-                        if (StringUtils.isNotEmpty(j.getDownloadFolder())) {
-                            PackageInfo existing = getPackageInfo(link, false);
-                            if (j.isOverwritePackagizerEnabled() || existing == null || StringUtils.isEmpty(existing.getDestinationFolder())) {
-                                existing = getPackageInfo(link, true);
-                                existing.setDestinationFolder(j.getDownloadFolder());
-                                existing.setUniqueId(null);
-                            }
-                        }
-                        if (j.getExtractPasswords() != null && j.getExtractPasswords().length > 0) {
-                            HashSet<String> list = new HashSet<String>();
-                            for (String s : j.getExtractPasswords())
-                                list.add(s);
-                            link.getArchiveInfo().getExtractionPasswords().addAll(list);
-
-                        }
-
-                        if (j.getAutoConfirm() != BooleanStatus.UNSET) {
-                            link.setAutoConfirmEnabled(j.getAutoConfirm().getBoolean());
-                        }
-                        if (j.getAutoStart() != BooleanStatus.UNSET) {
-                            link.setAutoStartEnabled(j.getAutoStart().getBoolean());
-                        }
-                        if (j.getForcedStart() != BooleanStatus.UNSET) {
-                            link.setForcedAutoStartEnabled(j.getForcedStart().getBoolean());
-                        }
-                        if (j.getChunks() > 0) {
-                            link.setChunks(j.getChunks());
-                        }
-                        if (StringUtils.isNotEmpty(j.getFilename())) {
-                            link.setName(j.getFilename());
-
-                        }
-                    }
-                });
-
-                LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
-
-                break;
-
-            }
-
+        String str = IO.readFileToString(f);
+        if (str.trim().startsWith("[")) {
+            parseJson(f, str);
+        } else {
+            parseProperties(f, str);
         }
 
+    }
+
+    private void parseProperties(File f, String str) {
+        try {
+            ClassCache cc = ClassCache.getClassCache(CrawlJobStorable.class);
+            CrawlJobStorable entry = (CrawlJobStorable) cc.getInstance();
+
+            for (String line : Regex.getLines(str)) {
+                line = line.trim();
+                if (line.startsWith("#")) continue;
+                int i = line.indexOf("=");
+                if (i <= 0) {
+                    // next
+                    if (StringUtils.isNotEmpty(entry.getText())) {
+                        addJob(f, entry);
+                    }
+                    entry = (CrawlJobStorable) cc.getInstance();
+                    continue;
+                }
+
+                String key = line.substring(0, i);
+                Setter setter = cc.getSetter(key);
+                if (setter == null) {
+                    getLogger().info("Unknown property: " + setter);
+                    continue;
+                }
+                String value = line.substring(i + 1).trim();
+                set(setter, entry, value);
+                // setter.setValue(entry, parameter)
+            }
+            if (StringUtils.isNotEmpty(entry.getText())) {
+                addJob(f, entry);
+            }
+
+        } catch (Exception e) {
+            getLogger().log(e);
+        }
+    }
+
+    private void set(Setter setter, CrawlJobStorable entry, String value) {
+        try {
+            if (setter.getType() == BooleanStatus.class && "null".equalsIgnoreCase(value)) {
+                value = "UNSET";
+            }
+            if (Clazz.isEnum(setter.getType())) {
+                value = value.toUpperCase(Locale.ENGLISH);
+                if (!value.startsWith("\"")) {
+                    value = "\"" + value + "\"";
+                }
+            }
+            if (Clazz.isString(setter.getType())) {
+                try {
+                    Object object = JSonStorage.restoreFromString(value, new TypeRef<Object>(setter.getType()) {
+
+                    });
+                    setter.setValue(entry, object);
+                    return;
+                } catch (JSonMapperException e) {
+                    setter.setValue(entry, value);
+                    return;
+                }
+            }
+            Object object = JSonStorage.restoreFromString(value, new TypeRef<Object>(setter.getType()) {
+
+            });
+            setter.setValue(entry, object);
+
+        } catch (Throwable e) {
+            getLogger().log(e);
+        }
+    }
+
+    protected void parseJson(File f, String str) {
+        for (final CrawlJobStorable j : JSonStorage.restoreFromString(str, new TypeRef<ArrayList<CrawlJobStorable>>() {
+        })) {
+            addJob(f, j);
+
+        }
+    }
+
+    protected void addJob(File f, final CrawlJobStorable j) {
+        switch (j.getType()) {
+        case NORMAL:
+
+            LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.EXTENSION, "FolderWatch:" + f.getAbsolutePath()), j.getText());
+            job.setDeepAnalyse(j.isDeepAnalyseEnabled());
+
+            job.setCrawledLinkModifier(new CrawledLinkModifier() {
+
+                private PackageInfo getPackageInfo(CrawledLink link, boolean createIfNotExisting) {
+                    PackageInfo packageInfo = link.getDesiredPackageInfo();
+                    if (packageInfo != null || createIfNotExisting == false) return packageInfo;
+                    packageInfo = new PackageInfo();
+                    link.setDesiredPackageInfo(packageInfo);
+                    return packageInfo;
+                }
+
+                @Override
+                public void modifyCrawledLink(CrawledLink link) {
+                    if (StringUtils.isNotEmpty(j.getPackageName())) {
+                        PackageInfo existing = getPackageInfo(link, false);
+                        if (j.isOverwritePackagizerEnabled() || existing == null || StringUtils.isEmpty(existing.getName())) {
+                            existing = getPackageInfo(link, true);
+                            existing.setName(j.getPackageName());
+                            existing.setUniqueId(null);
+                        }
+                    }
+
+                    if (!BooleanStatus.UNSET.equals(j.getExtractAfterDownload())) {
+                        BooleanStatus existing = BooleanStatus.UNSET;
+                        if (link.hasArchiveInfo()) {
+                            existing = link.getArchiveInfo().getAutoExtract();
+                        }
+                        if (j.isOverwritePackagizerEnabled() || existing == null || BooleanStatus.UNSET.equals(existing)) link.getArchiveInfo().setAutoExtract(j.getExtractAfterDownload());
+                    }
+                    if (j.isOverwritePackagizerEnabled()) {
+                        link.setPriority(j.getPriority());
+                    }
+                    DownloadLink dlLink = link.getDownloadLink();
+                    if (dlLink != null) {
+                        if (StringUtils.isNotEmpty(j.getComment())) {
+                            if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getComment())) dlLink.setComment(j.getComment());
+                        }
+                        if (StringUtils.isNotEmpty(j.getDownloadPassword())) {
+                            if (j.isOverwritePackagizerEnabled() || StringUtils.isEmpty(dlLink.getDownloadPassword())) dlLink.setDownloadPassword(j.getDownloadPassword());
+                        }
+                    }
+                    if (StringUtils.isNotEmpty(j.getDownloadFolder())) {
+                        PackageInfo existing = getPackageInfo(link, false);
+                        if (j.isOverwritePackagizerEnabled() || existing == null || StringUtils.isEmpty(existing.getDestinationFolder())) {
+                            existing = getPackageInfo(link, true);
+                            existing.setDestinationFolder(j.getDownloadFolder());
+                            existing.setUniqueId(null);
+                        }
+                    }
+                    if (j.getExtractPasswords() != null && j.getExtractPasswords().length > 0) {
+                        HashSet<String> list = new HashSet<String>();
+                        for (String s : j.getExtractPasswords())
+                            list.add(s);
+                        link.getArchiveInfo().getExtractionPasswords().addAll(list);
+
+                    }
+
+                    if (j.getAutoConfirm() != BooleanStatus.UNSET) {
+                        link.setAutoConfirmEnabled(j.getAutoConfirm().getBoolean());
+                    }
+                    if (j.getAutoStart() != BooleanStatus.UNSET) {
+                        link.setAutoStartEnabled(j.getAutoStart().getBoolean());
+                    }
+                    if (j.getForcedStart() != BooleanStatus.UNSET) {
+                        link.setForcedAutoStartEnabled(j.getForcedStart().getBoolean());
+                    }
+                    if (j.getChunks() > 0) {
+                        link.setChunks(j.getChunks());
+                    }
+                    if (StringUtils.isNotEmpty(j.getFilename())) {
+                        link.setName(j.getFilename());
+
+                    }
+                }
+            });
+
+            LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
+            lc.waitForCrawling();
+            if (lc.getCrawledLinksFoundCounter() == 0) {
+
+                DownloadLink dl;
+                try {
+                    dl = new DownloadLink(HostPluginController.getInstance().get("directhttp").getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild()), j.getText(), "folder.watch", j.getText(), false);
+                    FilePackage fp = FilePackage.getInstance();
+                    dl.setAvailableStatus(AvailableStatus.FALSE);
+                    fp.setName("FolderWatch Errors");
+                    // let the packagizer merge several packages that have the same name
+                    fp.setProperty("ALLOW_MERGE", true);
+                    fp.add(dl);
+                    CrawledLink cl = new CrawledLink(dl);
+                    cl.setName(j.getText());
+                    LinkCollector.getInstance().addCrawledLink(cl);
+                } catch (UpdateRequiredClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println(1);
+            break;
+
+        }
     }
 
     @Override

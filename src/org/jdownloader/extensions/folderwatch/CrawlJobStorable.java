@@ -9,6 +9,15 @@ public class CrawlJobStorable implements Storable {
     private String        filename;
     private int           chunks;
     private BooleanStatus autoConfirm;
+    private boolean       addOfflineLink = true;
+
+    public boolean isAddOfflineLink() {
+        return addOfflineLink;
+    }
+
+    public void setAddOfflineLink(boolean addOfflineLink) {
+        this.addOfflineLink = addOfflineLink;
+    }
 
     public static void main(String[] args) {
         System.out.println(JSonStorage.toString(new CrawlJobStorable[] { new CrawlJobStorable() }));

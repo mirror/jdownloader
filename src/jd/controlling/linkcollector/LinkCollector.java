@@ -486,7 +486,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     }
 
-    private void addCrawledLink(final CrawledLink link) {
+    public void addCrawledLink(final CrawledLink link) {
 
         /* try to find good matching package or create new one */
         QUEUE.add(new QueueAction<Void, RuntimeException>() {

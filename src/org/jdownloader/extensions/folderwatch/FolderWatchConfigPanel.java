@@ -1,8 +1,11 @@
 package org.jdownloader.extensions.folderwatch;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.JLabel;
 import javax.swing.JTextArea;
 
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedConfigTableModel;
@@ -10,8 +13,11 @@ import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedTable;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.IO;
+import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExtension> {
 
@@ -49,7 +55,9 @@ public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExte
 
     public FolderWatchConfigPanel(FolderWatchExtension extension) {
         super(extension);
-
+        JLabel lbl;
+        add(SwingUtils.toBold(lbl = new JLabel("THIS EXTENSION IS STILL UNDER CONSTRUCTION. Feel free to test it and to give Feedback.")));
+        lbl.setForeground(LAFOptions.getInstance().getColorForErrorForeground());
         add(new AdvancedTable(model = new AdvancedConfigTableModel("FolderWatchConfig") {
             @Override
             public void refresh(String filterText) {
@@ -57,10 +65,17 @@ public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExte
             }
         }));
         model.refresh("FolderWatch");
+        try {
+            JTextArea txt = new JTextArea();
+            txt.setOpaque(false);
+            txt.setText(new String(IO.readStream(-1, getClass().getResource("./explain.txt").openStream()), "UTF-8"));
 
-        JTextArea txt = new JTextArea();
-        txt.setText("[\r\n  {\r\n    \"chunks\": 0,\r\n    \"extractPasswords\": null,\r\n    \"enabled\": null,\r\n    \"text\": null,\r\n    \"packageName\": null,\r\n    \"autoStart\": \"UNSET\",\r\n    \"extractAfterDownload\": \"UNSET\",\r\n    \"downloadFolder\": null,\r\n    \"type\": \"NORMAL\",\r\n    \"priority\": \"DEFAULT\",\r\n    \"forcedStart\": \"UNSET\",\r\n    \"downloadPassword\": null,\r\n    \"filename\": null,\r\n    \"overwritePackagizerEnabled\": false,\r\n    \"comment\": null,\r\n    \"autoConfirm\": \"UNSET\",\r\n    \"deepAnalyseEnabled\": false\r\n  }\r\n]");
-        add(txt);
+            add(txt);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
