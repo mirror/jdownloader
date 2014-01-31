@@ -824,7 +824,15 @@ public class YoutubeDashV2 extends PluginForHost {
                 } else {
                     return data.getDashAudioSize();
                 }
+            }
 
+            @Override
+            public long getKnownDownloadSize() {
+                if (isVideoStream) {
+                    return data.getDashVideoSize();
+                } else {
+                    return data.getDashAudioSize();
+                }
             }
 
             @Override
