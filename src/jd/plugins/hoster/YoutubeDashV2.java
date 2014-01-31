@@ -1018,12 +1018,12 @@ public class YoutubeDashV2 extends PluginForHost {
 
                 if (!ffmpeg.isAvailable()) {
                     FFMpegInstallProgress progress = new FFMpegInstallProgress();
-                    downloadLink.setPluginProgress(progress);
+                    PluginProgress old = null;
                     try {
-
+                        old = downloadLink.setPluginProgress(progress);
                         FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
                     } finally {
-                        downloadLink.setPluginProgress(null);
+                        downloadLink.compareAndSetPluginProgress(progress, old);
                     }
                     ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
                     if (!ffmpeg.isAvailable()) {

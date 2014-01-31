@@ -26,9 +26,10 @@ public class YoutubeExternConverter implements YoutubeConverter {
 
     @Override
     public void run(DownloadLink downloadLink) {
-
+        PluginProgress old = null;
+        PluginProgress set = null;
         try {
-            downloadLink.setPluginProgress(new PluginProgress(0, 100, null) {
+            old = downloadLink.setPluginProgress(set = new PluginProgress(0, 100, null) {
                 {
                     setIcon(new AbstractIcon(IconKey.ICON_RUN, 18));
 
@@ -76,7 +77,7 @@ public class YoutubeExternConverter implements YoutubeConverter {
             } catch (final Throwable e) {
             }
         } finally {
-            downloadLink.setPluginProgress(null);
+            downloadLink.compareAndSetPluginProgress(set, old);
         }
     }
 

@@ -503,8 +503,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         try {
             if (downloadlink != this.downloadLink) return;
             if (property.getProperty() == DownloadLinkProperty.Property.PLUGIN_PROGRESS) {
-                PluginProgress newProgress = downloadlink.getPluginProgress();
-                newProgress = (PluginProgress) property.getValue();
+                PluginProgress newProgress = (PluginProgress) property.getValue();
                 PluginProgressTask task = null;
                 synchronized (tasks) {
                     for (PluginSubTask t : tasks) {
@@ -516,13 +515,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                             }
                         }
                     }
-
                     if (task == null) {
-
                         task = new PluginProgressTask(newProgress);
                         task.open();
                         addTask(task);
-
                     } else {
                         task.reopen();
                     }

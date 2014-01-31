@@ -502,8 +502,10 @@ public class YoutubeHelper {
     }
 
     public static void convertToMp3(DownloadLink downloadLink) {
+        PluginProgress old = null;
+        PluginProgress set = null;
         try {
-            downloadLink.setPluginProgress(new PluginProgress(0, 100, null) {
+            old = downloadLink.setPluginProgress(set = new PluginProgress(0, 100, null) {
                 {
                     setIcon(new AbstractIcon(IconKey.ICON_AUDIO, 18));
 
@@ -549,7 +551,7 @@ public class YoutubeHelper {
             } catch (final Throwable e) {
             }
         } finally {
-            downloadLink.setPluginProgress(null);
+            downloadLink.compareAndSetPluginProgress(set, old);
         }
     }
 

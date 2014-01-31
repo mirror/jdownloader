@@ -150,8 +150,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer
-     * DownloadLink.getName() verwendet werden
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet
+     * werden
      * 
      * @return Datename des Downloads.
      */
@@ -226,13 +226,10 @@ public abstract class Plugin implements ActionListener {
      *             if the user aborts the input
      */
     public static String getUserInput(final String message, final DownloadLink link) throws PluginException {
-        PluginProgress old = link.getPluginProgress();
         UserIOProgress prg = new UserIOProgress(message);
-
+        PluginProgress old = null;
         try {
-
-            link.setPluginProgress(prg);
-
+            old = link.setPluginProgress(prg);
             AskDownloadPasswordDialogInterface handle = UIOManager.I().show(AskDownloadPasswordDialogInterface.class, new AskForPasswordDialog(message, link));
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getText();
@@ -264,8 +261,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
-     * Patterns vorhanden ist.
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
      * 
      * @param data
      *            der zu prüfende Text
