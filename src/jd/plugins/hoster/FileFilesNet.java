@@ -53,7 +53,7 @@ public class FileFilesNet extends PluginForHost {
     // mods:
     // non account: 3 * 1
     // free account:
-    // premium account: 6 * 1
+    // premium account: 0 * 20
     // protocol: has https but is fubar.
     // other: no redirects
 
@@ -235,7 +235,7 @@ public class FileFilesNet extends PluginForHost {
             if (br.containsHTML("#downlink\\|#")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -6);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -246,7 +246,7 @@ public class FileFilesNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 20;
     }
 
     @Override
