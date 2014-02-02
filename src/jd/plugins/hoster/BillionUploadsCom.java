@@ -342,7 +342,7 @@ public class BillionUploadsCom extends PluginForHost {
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + " (\\w+)").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
-            if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) fileInfo[1] = linkInformation[1];
+            // if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) fileInfo[1] = linkInformation[1];
         } else {
             // not found! <td>link</td><td style="color:red;">Not found!</td><td></td>
             downloadLink.setAvailable(false);
