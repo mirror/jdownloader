@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -69,9 +70,22 @@ public class EcoStreamTv extends PluginForHost {
             noSenseForThat = br.getRegex("var [A-Za-z0-9]+=\\'([^<>\"]*?)\\';[\t\n\r ]+</script>[\t\n\r ]+<script src=\"/js/app\\.js\"").getMatch(0);
         }
         if (tmp == null || noSenseForThat == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String postpage = null;
+        try {
+            final Browser tmpbr = br.cloneBrowser();
+            tmpbr.getPage("http://www.ecostream.tv/js/app.js");
+            postpage = tmpbr.getRegex("\\$\\.post\\(\\'(/[^<>\"]*?)\\', \\{ id: \\$\\(\\'#play\\'\\)").getMatch(0);
+
+        } catch (final Throwable e) {
+        }
+        if (postpage != null) {
+            postpage = "http://www.ecostream.tv" + postpage;
+        } else {
+            postpage = "http://www.ecostream.tv/xhr/video/vidurlas";
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.postPage("http://www.ecostream.tv/xhr/video/vidurls", "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
+        br.postPage(postpage, "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
         String finallink = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         finallink = "http://www.ecostream.tv" + finallink;

@@ -57,6 +57,8 @@ public class DocsGoogleCom extends PluginForHost {
         }
     }
 
+    private static final String NOCHUNKS = "NOCHUNKS";
+
     private String getID(DownloadLink downloadLink) {
         // known url formats
         // https://docs.google.com/file/d/0B4AYQ5odYn-pVnJ0Z2V4d1E5UWc/preview?pli=1
@@ -112,7 +114,7 @@ public class DocsGoogleCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
@@ -132,12 +134,36 @@ public class DocsGoogleCom extends PluginForHost {
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(DocsGoogleCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(DocsGoogleCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override

@@ -61,7 +61,7 @@ public class DlPrtcCom extends PluginForDecrypt {
     private Browser              cbr            = new Browser();
 
     @SuppressWarnings("unchecked")
-    private Browser prepBrowser(Browser prepBr) {
+    private Browser prepBrowser(final Browser prepBr) {
         // load previous agent, could be referenced with cookie session. (not tested)
         if (agent == null) agent = this.getPluginConfig().getStringProperty("agent", null);
         if (agent == null) {
