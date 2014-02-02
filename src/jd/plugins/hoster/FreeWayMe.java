@@ -195,8 +195,8 @@ public class FreeWayMe extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
+        br.setConnectTimeout(30 * 1000);
+        br.setReadTimeout(30 * 1000);
         String username = Encoding.urlTotalEncode(account.getUser());
         String pass = Encoding.urlTotalEncode(account.getPass());
         String hosts[] = null;
@@ -338,6 +338,10 @@ public class FreeWayMe extends PluginForHost {
         logger.info("{handleMultiHost} Try download with account " + acc.getUser() + " file: " + link.getDownloadURL());
 
         String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + "&encoded";
+
+        // set timeout
+        br.setConnectTimeout(25 * 1000);
+        br.setReadTimeout(25 * 1000);
 
         /* Begin workaround for wrong encoding while redirect */
         br.setFollowRedirects(false);
