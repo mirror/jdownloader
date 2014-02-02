@@ -105,7 +105,7 @@ public class FilestoreTo extends PluginForHost {
         if (js == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser bjs = br.cloneBrowser();
         bjs.getPage("/" + js);
-        String[] id = bjs.getRegex("data: '(\\w+)='\\+\\$\\('#(\\w+)'").getRow(0);
+        String[] id = bjs.getRegex("data: '(\\w+)='\\+\\$\\('.(\\w+)'").getRow(0);
         if (id == null || id.length != 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String jcount = bjs.getRegex("var countdown = \"(\\d+)\";").getMatch(0);
         String pwnage = bjs.getRegex("\\$\\.ajax\\(\\s*\\{.*?data: '(\\w+=\\w+).*?\\}\\s*\\);").getMatch(0);
@@ -124,7 +124,7 @@ public class FilestoreTo extends PluginForHost {
             logger.warning("FATAL waittime error!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String code = br.getRegex("id=\"" + id[1] + "\" code=\"([A-Z0-9]+)\"").getMatch(0);
+        String code = br.getRegex("=\"" + id[1] + "\" (code|key)=\"([A-Z0-9]+)\"").getMatch(1);
         if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser brd = br.cloneBrowser();
         prepAjax(brd);
@@ -156,6 +156,7 @@ public class FilestoreTo extends PluginForHost {
         regexStuff.add(zStatistic("Rjk4MEZEQTJGQzUyQzlFRg=="));
         aBrowser = br.toString();
         aBrowser = aBrowser.replace("&nbsp;", " ");
+        aBrowser = aBrowser.replaceAll("(<p[^>]+display:none[^>]+>.*?</p>)|(<div[^>]+display:none[^>]+>.*?</div>)", "");
         for (final String aRegex : regexStuff) {
             final String replaces[] = br.getRegex(aRegex).getColumn(0);
             if (replaces != null && replaces.length != 0) {
