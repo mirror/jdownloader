@@ -22,6 +22,11 @@ public interface AdvancedConfigManagerAPI extends RemoteAPIInterface {
 
     @ApiDoc("list entries based on the pattern regex")
     @AllowNonStorableObjects
+    public ArrayList<AdvancedConfigAPIEntry> list(String pattern, boolean returnDescription, boolean returnValues, boolean returnDefaultValues, boolean returnEnumInfo);
+
+    @Deprecated
+    @ApiDoc("DEPRECATED! list entries based on the pattern regex")
+    @AllowNonStorableObjects
     public ArrayList<AdvancedConfigAPIEntry> list(String pattern, boolean returnDescription, boolean returnValues, boolean returnDefaultValues);
 
     @AllowStorage(value = { Object.class })

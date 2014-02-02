@@ -7,6 +7,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -19,6 +20,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.utils.IO;
 import org.appwork.utils.net.Base64InputStream;
+import org.appwork.utils.net.httpserver.requests.KeyValuePair;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.jdownloader.api.myjdownloader.MyJDownloaderGetRequest.GetData;
 import org.jdownloader.myjdownloader.client.json.JSonRequest;
@@ -35,7 +37,7 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
     private GetData requestProperties = GetData.EMPTY;
 
     @Override
-    public void setRequestedURLParameters(final LinkedList<String[]> requestedURLParameters) {
+    public void setRequestedURLParameters(final List<KeyValuePair> requestedURLParameters) {
         super.setRequestedURLParameters(requestedURLParameters);
 
         requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);
@@ -76,10 +78,10 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
         return getConnection().getRequestConnectToken();
     }
 
-    public synchronized LinkedList<String[]> getPostParameter() throws IOException {
+    public synchronized List<KeyValuePair> getPostParameter() throws IOException {
         if (postParameterParsed) { return postParameters; }
 
-        postParameters = new LinkedList<String[]>();
+        postParameters = new LinkedList<KeyValuePair>();
         Object[] params = getJsonRequest().getParams();
         if (params != null) {
             for (final Object parameter : params) {
@@ -87,31 +89,31 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
                     /*
                      * JSonObject has customized .toString which converts Map to Json!
                      */
-                    postParameters.add(new String[] { parameter.toString(), null });
+                    postParameters.add(new KeyValuePair(parameter.toString()));
                 } else {
                     final String jsonParameter = parameter + "";
-                    postParameters.add(new String[] { jsonParameter, null });
+                    postParameters.add(new KeyValuePair(jsonParameter));
                 }
             }
         }
         postParameterParsed = true;
 
-        for (final String[] param : postParameters) {
-            if (param[1] != null) {
+        for (final KeyValuePair param : postParameters) {
+            if (param.key != null) {
                 /* key=value(parameter) */
-                if (MyJDownloaderGetRequest.CALLBACK.equalsIgnoreCase(param[0])) {
+                if (MyJDownloaderGetRequest.CALLBACK.equalsIgnoreCase(param.key)) {
                     /* filter jquery callback */
-                    requestProperties.callback = param[1];
+                    requestProperties.callback = param.value;
                     continue;
-                } else if (MyJDownloaderGetRequest.SIGNATURE.equalsIgnoreCase(param[0])) {
+                } else if (MyJDownloaderGetRequest.SIGNATURE.equalsIgnoreCase(param.key)) {
                     /* filter url signature */
-                    requestProperties.signature = param[1];
+                    requestProperties.signature = param.value;
                     continue;
-                } else if (MyJDownloaderGetRequest.RID.equalsIgnoreCase(param[0])) {
-                    requestProperties.rid = Long.parseLong(param[1]);
+                } else if (MyJDownloaderGetRequest.RID.equalsIgnoreCase(param.key)) {
+                    requestProperties.rid = Long.parseLong(param.value);
                     continue;
-                } else if (MyJDownloaderGetRequest.API_VERSION.equalsIgnoreCase(param[0])) {
-                    requestProperties.apiVersion = Integer.parseInt(param[1]);
+                } else if (MyJDownloaderGetRequest.API_VERSION.equalsIgnoreCase(param.key)) {
+                    requestProperties.apiVersion = Integer.parseInt(param.value);
                     continue;
                 }
 

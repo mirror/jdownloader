@@ -1,10 +1,11 @@
 package org.jdownloader.api.myjdownloader;
 
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.List;
 
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.requests.KeyValuePair;
 
 public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloaderRequestInterface {
 
@@ -22,25 +23,25 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
 
     }
 
-    public static GetData parseGetData(final LinkedList<String[]> requestedURLParameters) {
+    public static GetData parseGetData(final List<KeyValuePair> requestedURLParameters) {
         final GetData ret = new GetData();
         if (requestedURLParameters != null) {
-            for (final String[] param : requestedURLParameters) {
-                if (param[1] != null) {
+            for (final KeyValuePair param : requestedURLParameters) {
+                if (param.key != null) {
                     /* key=value(parameter) */
-                    if (MyJDownloaderGetRequest.CALLBACK.equalsIgnoreCase(param[0])) {
+                    if (MyJDownloaderGetRequest.CALLBACK.equalsIgnoreCase(param.key)) {
                         /* filter jquery callback */
-                        ret.callback = param[1];
+                        ret.callback = param.value;
                         continue;
-                    } else if (MyJDownloaderGetRequest.SIGNATURE.equalsIgnoreCase(param[0])) {
+                    } else if (MyJDownloaderGetRequest.SIGNATURE.equalsIgnoreCase(param.key)) {
                         /* filter url signature */
-                        ret.signature = param[1];
+                        ret.signature = param.value;
                         continue;
-                    } else if (MyJDownloaderGetRequest.RID.equalsIgnoreCase(param[0])) {
-                        ret.rid = Long.parseLong(param[1]);
+                    } else if (MyJDownloaderGetRequest.RID.equalsIgnoreCase(param.key)) {
+                        ret.rid = Long.parseLong(param.value);
                         continue;
-                    } else if (MyJDownloaderGetRequest.API_VERSION.equalsIgnoreCase(param[0])) {
-                        ret.apiVersion = Integer.parseInt(param[1]);
+                    } else if (MyJDownloaderGetRequest.API_VERSION.equalsIgnoreCase(param.key)) {
+                        ret.apiVersion = Integer.parseInt(param.value);
                         continue;
                     }
 
@@ -67,7 +68,7 @@ public class MyJDownloaderGetRequest extends GetRequest implements MyJDownloader
     private GetData requestProperties = GetData.EMPTY;
 
     @Override
-    public void setRequestedURLParameters(final LinkedList<String[]> requestedURLParameters) {
+    public void setRequestedURLParameters(final List<KeyValuePair> requestedURLParameters) {
         super.setRequestedURLParameters(requestedURLParameters);
 
         requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);

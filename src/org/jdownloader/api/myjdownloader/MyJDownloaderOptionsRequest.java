@@ -1,8 +1,9 @@
 package org.jdownloader.api.myjdownloader;
 
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.List;
 
+import org.appwork.utils.net.httpserver.requests.KeyValuePair;
 import org.appwork.utils.net.httpserver.requests.OptionsRequest;
 import org.jdownloader.api.myjdownloader.MyJDownloaderGetRequest.GetData;
 
@@ -16,7 +17,7 @@ public class MyJDownloaderOptionsRequest extends OptionsRequest implements MyJDo
     private GetData requestProperties = GetData.EMPTY;
 
     @Override
-    public void setRequestedURLParameters(final LinkedList<String[]> requestedURLParameters) {
+    public void setRequestedURLParameters(final List<KeyValuePair> requestedURLParameters) {
         super.setRequestedURLParameters(requestedURLParameters);
 
         requestProperties = MyJDownloaderGetRequest.parseGetData(requestedURLParameters);

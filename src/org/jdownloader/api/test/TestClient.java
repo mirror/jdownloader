@@ -135,7 +135,7 @@ public class TestClient {
         @Override
         public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
             final AdvancedConfigInterface link = api.link(AdvancedConfigInterface.class, chooseDevice(api));
-            ArrayList<AdvancedConfigEntryDataStorable> fullList = link.list(".*", true, true, true);
+            ArrayList<AdvancedConfigEntryDataStorable> fullList = link.list(".*", true, true, true, true);
 
             ArrayList<AdvancedConfigEntryDataStorable> captchacondif = link.list(".*captcha.*", false, true, false);
             System.out.println(fullList);

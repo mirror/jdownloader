@@ -1,9 +1,11 @@
 package org.jdownloader.api.config;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -13,6 +15,7 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.StorageHandler;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface;
 import org.jdownloader.settings.advanced.AdvancedConfigAPIEntry;
@@ -24,17 +27,54 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
         RemoteAPIController.validateInterfaces(AdvancedConfigManagerAPI.class, AdvancedConfigInterface.class);
     }
 
+    @Deprecated
     public ArrayList<AdvancedConfigAPIEntry> list(String pattern, boolean returnDescription, boolean returnValues, boolean returnDefaultValues) {
-        ArrayList<AdvancedConfigAPIEntry> ret = new ArrayList<AdvancedConfigAPIEntry>();
-        java.util.List<AdvancedConfigEntry> entries = AdvancedConfigManager.getInstance().list();
-        Pattern cPat = StringUtils.isEmpty(pattern) ? null : Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        for (AdvancedConfigEntry entry : entries) {
-            String key = entry.getKeyHandler().getStorageHandler().getConfigInterface().getName() + "." + entry.getKeyHandler().getKey();
-            if (cPat == null || cPat.matcher(key).matches()) {
-                ret.add(new AdvancedConfigAPIEntry(entry, returnDescription, returnValues, returnDefaultValues));
+        return list(pattern, returnDescription, returnValues, returnDefaultValues, false);
+    }
+
+    public ArrayList<AdvancedConfigAPIEntry> list(String pattern, boolean returnDescription, boolean returnValues, boolean returnDefaultValues, boolean returnEnumInfo) {
+        try {
+            ArrayList<AdvancedConfigAPIEntry> ret = new ArrayList<AdvancedConfigAPIEntry>();
+            java.util.List<AdvancedConfigEntry> entries = AdvancedConfigManager.getInstance().list();
+            Pattern cPat = StringUtils.isEmpty(pattern) ? null : Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+            for (AdvancedConfigEntry entry : entries) {
+                String key = entry.getKeyHandler().getStorageHandler().getConfigInterface().getName() + "." + entry.getKeyHandler().getKey();
+                if (cPat == null || cPat.matcher(key).matches()) {
+                    AdvancedConfigAPIEntry acae;
+                    ret.add(acae = new AdvancedConfigAPIEntry(entry, returnDescription, returnValues, returnDefaultValues));
+                    if (returnEnumInfo && Clazz.isEnum(entry.getType())) {
+
+                        ArrayList<EnumOption> enumOptions;
+
+                        enumOptions = listEnumOptions(entry.getType());
+
+                        String[] constants = new String[enumOptions.size()];
+                        String[] labels = new String[enumOptions.size()];
+                        boolean hasLabels = false;
+                        String label = null;
+                        Enum<?> value = ((Enum<?>) entry.getValue());
+                        for (int i = 0; i < enumOptions.size(); i++) {
+                            EnumOption option = enumOptions.get(i);
+                            constants[i] = option.getName();
+                            labels[i] = option.getLabel();
+                            hasLabels |= StringUtils.isNotEmpty(labels[i]);
+                            if (value != null && value.name().equals(option.getName())) {
+                                label = labels[i];
+                            }
+                        }
+                        acae.setEnumLabel(label);
+                        acae.setEnumLabels(hasLabels ? labels : null);
+                        acae.setEnumOptions(constants);
+                    }
+
+                }
+
             }
+            return ret;
+        } catch (Exception e) {
+            throw new WTFException(e);
         }
-        return ret;
+
     }
 
     public Object get(String interfaceName, String storage, String key) {
@@ -159,7 +199,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
     @Override
     public ArrayList<AdvancedConfigAPIEntry> list() {
-        return list(null, false, false, false);
+        return list(null, false, false, false, false);
     }
 
     @Override
@@ -168,29 +208,41 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
         try {
             Class<?> cls = Class.forName(type);
 
-            ArrayList<EnumOption> ret = new ArrayList<EnumOption>();
-
-            Object[] values = (Object[]) cls.getMethod("values", new Class[] {}).invoke(null, new Object[] {});
-            for (final Object o : values) {
-                String label = null;
-                EnumLabel lbl = cls.getDeclaredField(o.toString()).getAnnotation(EnumLabel.class);
-                if (lbl != null) {
-                    label = lbl.value();
-                } else {
-
-                    if (o instanceof LabelInterface) {
-
-                        label = (((LabelInterface) o).getLabel());
-                    }
-                }
-                ret.add(new EnumOption(o.toString(), label));
-            }
-
-            return ret;
+            return listEnumOptions(cls);
         } catch (Exception e) {
             throw new BadParameterException(e, "Bad Type: " + type);
         }
 
+    }
+
+    /**
+     * @param cls
+     * @return
+     * @throws IllegalAccessException
+     * @throws InvocationTargetException
+     * @throws NoSuchMethodException
+     * @throws NoSuchFieldException
+     */
+    public ArrayList<EnumOption> listEnumOptions(Class<?> cls) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, NoSuchFieldException {
+        ArrayList<EnumOption> ret = new ArrayList<EnumOption>();
+
+        Object[] values = (Object[]) cls.getMethod("values", new Class[] {}).invoke(null, new Object[] {});
+        for (final Object o : values) {
+            String label = null;
+            EnumLabel lbl = cls.getDeclaredField(o.toString()).getAnnotation(EnumLabel.class);
+            if (lbl != null) {
+                label = lbl.value();
+            } else {
+
+                if (o instanceof LabelInterface) {
+
+                    label = (((LabelInterface) o).getLabel());
+                }
+            }
+            ret.add(new EnumOption(o.toString(), label));
+        }
+
+        return ret;
     }
 
 }

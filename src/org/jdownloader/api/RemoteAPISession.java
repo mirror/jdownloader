@@ -16,9 +16,9 @@ public class RemoteAPISession implements HttpSession {
 
     }
 
-    public HttpSessionController<? extends HttpSession> _getSessionController() {
-        return controller;
-    }
+    // public HttpSessionController<? extends HttpSession> _getSessionController() {
+    // return controller;
+    // }
 
     public String getSessionID() {
         return sessionID;

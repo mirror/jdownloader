@@ -2,6 +2,7 @@ package org.jdownloader.statistics;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.ConnectException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +13,11 @@ import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.download.raf.HashResult;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -62,7 +65,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
      */
     private StatsManager() {
         list = new ArrayList<AbstractLogEntry>();
-        // remote = new LoggerRemoteClient(new RemoteClient("update3.jdownloader.org/stats")).create(PluginStatsInterface.class);
+
         config = JsonConfig.create(StatsManagerConfig.class);
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
 
@@ -85,6 +88,19 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public boolean isEnabled() {
 
         return config.isEnabled() && !Application.isJared(StatsManager.class);
+    }
+
+    public static String getRandomStringHash(final String arg) {
+        try {
+            final MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(arg.getBytes("UTF-8"));
+            md.update((byte) (Math.random() * 3));
+            final byte[] digest = md.digest();
+            return HexFormatter.byteArrayToHex(digest);
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static String getFingerprint(final File arg) {
@@ -251,6 +267,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (chunks != null) {
                 dl.setChunks(chunks.length);
             }
+            dl.setRandom(getRandomStringHash(link.getLinkID()));
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
             dl.setHost(account.getHost());
@@ -277,6 +294,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         while (true) {
             ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
             ArrayList<AbstractLogEntry> sendRequest = new ArrayList<AbstractLogEntry>();
+            Browser br = new Browser();
             try {
                 while (list.size() == 0) {
                     synchronized (list) {
@@ -286,21 +304,37 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         }
                     }
                 }
-
-                synchronized (list) {
-                    sendRequest.addAll(list);
-                    for (AbstractLogEntry e : list) {
-                        sendTo.add(new LogEntryWrapper(e));
+                while (true) {
+                    try {
+                        synchronized (list) {
+                            sendRequest.addAll(list);
+                            for (AbstractLogEntry e : list) {
+                                sendTo.add(new LogEntryWrapper(e));
+                            }
+                            list.clear();
+                        }
+                        if (sendTo.size() > 0) {
+                            logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
+                            br.postPageRaw("http://localhost:8888/plugins/push", JSonStorage.serializeToJson(sendTo));
+                            break;
+                        }
+                        System.out.println(1);
+                    } catch (ConnectException e) {
+                        logger.log(e);
+                        logger.info("Wait and retry");
+                        Thread.sleep(15000);
+                        // not sent. push back
+                        synchronized (list) {
+                            list.addAll(sendRequest);
+                        }
                     }
-                    list.clear();
-                }
-                if (sendTo.size() > 0) {
-                    // remote.push(sendTo);
                 }
             } catch (Exception e) {
                 // failed. push back
-
-                e.printStackTrace();
+                logger.log(e);
+                // synchronized (list) {
+                // list.addAll(sendRequest);
+                // }
             }
         }
     }
