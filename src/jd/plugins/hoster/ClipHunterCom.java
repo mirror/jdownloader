@@ -164,6 +164,11 @@ public class ClipHunterCom extends PluginForHost {
         return foundQualities;
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
     @Override
     public String getDescription() {
         return "JDownloader's Cliphunter Plugin helps downloading videoclips from cliphunter.com. Cliphunter provides different video formats and qualities.";

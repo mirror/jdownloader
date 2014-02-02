@@ -263,6 +263,11 @@ public class DailyMotionCom extends PluginForHost {
         return "hds".equals(dl.getStringProperty("qualityname", null));
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
     @Override
     public String getDescription() {
         return "JDownloader's DailyMotion Plugin helps downloading Videoclips from dailymotion.com. DailyMotion provides different video formats and qualities.";

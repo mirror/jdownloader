@@ -171,6 +171,11 @@ public class JustinTv extends PluginForHost {
         return formattedFilename;
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
     @Override
     public String getDescription() {
         return "JDownloader's twitch.tv plugin helps downloading videoclips. JDownloader provides settings for the filenames.";

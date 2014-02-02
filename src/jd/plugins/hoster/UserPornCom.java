@@ -63,25 +63,6 @@ public class UserPornCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final String dllink = getFinalLink(downloadLink, "token1");
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (dllink.equals("ALGO_CONTROL_ERROR")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, VideoBbCom.ALGOCONTROLERROR, 15 * 1000l); }
-        sleep(3 * 1000l, downloadLink); // Flasplayer to slow
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: ", 30 * 1000l); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String tempName = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", tempName.substring(tempName.lastIndexOf("."))));
-        downloadLink.setProperty("nameok", true);
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -103,6 +84,25 @@ public class UserPornCom extends PluginForHost {
             downloadLink.setName(Encoding.htmlDecode(filename) + ".flv");
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        final String dllink = getFinalLink(downloadLink, "token1");
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink.equals("ALGO_CONTROL_ERROR")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, VideoBbCom.ALGOCONTROLERROR, 15 * 1000l); }
+        sleep(3 * 1000l, downloadLink); // Flasplayer to slow
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError: ", 30 * 1000l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String tempName = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", tempName.substring(tempName.lastIndexOf("."))));
+        downloadLink.setProperty("nameok", true);
+        dl.startDownload();
     }
 
     @Override
