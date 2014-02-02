@@ -642,7 +642,7 @@ public class ISaveLinkCom extends PluginForHost {
         // these errors imply (Premium Required) from the outset.
         final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<)";
         // let the fun begin!
-        if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
+        if (cbr.containsHTML(an + "|" + fa + "|" + pr) || br.getURL().contains("?op=login&redirect=")) {
             String msg = null;
             String fileSizeLimit = cbr.getRegex("You can download files up to(.*?)only").getMatch(0);
             if (!inValidate(fileSizeLimit)) fileSizeLimit = " :: You can download files up to " + fileSizeLimit.trim();

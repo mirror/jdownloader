@@ -249,7 +249,11 @@ public class Zippysharecom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            dl.startDownload();
+        } catch (final PluginException e) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        }
     }
 
     private void prepareBrowser(final DownloadLink downloadLink) throws IOException {

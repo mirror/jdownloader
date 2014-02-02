@@ -65,6 +65,8 @@ public class ModDbComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            // Fix invalid links
+            finalLink = finalLink.replace("/files/files/", "/files/");
             decryptedLinks.add(createDownloadlink(finalLink));
         } else {
             decryptedLinks.add(createDownloadlink(parameter.replace("moddb.com/", "moddbdecrypted.com/")));

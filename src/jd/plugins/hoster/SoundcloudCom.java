@@ -110,7 +110,12 @@ public class SoundcloudCom extends PluginForHost {
         if (url == null || sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Other handling for private links
         if (br.containsHTML("<sharing>private</sharing>")) {
-            br.getPage("https://api.soundcloud.com/i1/tracks/" + sid + "/streams?client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
+            final String secrettoken = br.getRegex("\\?secret_token=([A-Za-z0-9\\-_]+)</uri>").getMatch(0);
+            if (secrettoken != null) {
+                br.getPage("https://api.soundcloud.com/i1/tracks/" + sid + "/streams?secret_token=" + secrettoken + "&client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
+            } else {
+                br.getPage("https://api.soundcloud.com/i1/tracks/" + sid + "/streams?client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
+            }
             url = br.getRegex("\"http_mp3_128_url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             url = unescape(url);
@@ -128,6 +133,7 @@ public class SoundcloudCom extends PluginForHost {
     private void doFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (url == null && link.getBooleanProperty("rtmp", false)) {
+            link.setProperty("directlink", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
@@ -138,6 +144,10 @@ public class SoundcloudCom extends PluginForHost {
             }
             // start of file extension correction.
             // required because original-format implies the uploaded format might not be what the end user downloads.
+            if (dl.getConnection().getLongContentLength() == 0) {
+                link.setProperty("rtmp", true);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
+            }
             String oldName = link.getFinalFileName();
             if (oldName == null) oldName = link.getName();
             String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));

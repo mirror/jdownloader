@@ -1209,6 +1209,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 } else {
                     br.getPage(parameter);
                 }
+            } else if (br.containsHTML("server number not set \\(0\\)")) {
+                logger.info("Server says 'server number not set' --> Retrying");
+                br.getPage(parameter);
+                continue;
             } else {
                 break;
             }

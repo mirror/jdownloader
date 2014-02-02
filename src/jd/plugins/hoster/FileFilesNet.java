@@ -44,8 +44,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" }, flags = { 2 })
 public class FileFilesNet extends PluginForHost {
 
-    private static final String HOST = "http://flyfiles.net";
-    private static Object       LOCK = new Object();
+    private static final String HOST     = "http://flyfiles.net";
+    private static Object       LOCK     = new Object();
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     // TODO: rename plugin when jd2 goes stable, FlyFilesNet
 
@@ -53,7 +54,7 @@ public class FileFilesNet extends PluginForHost {
     // mods:
     // non account: 3 * 1
     // free account:
-    // premium account: 0 * 20
+    // premium account: 20 * 20
     // protocol: has https but is fubar.
     // other: no redirects
 
@@ -235,13 +236,38 @@ public class FileFilesNet extends PluginForHost {
             if (br.containsHTML("#downlink\\|#")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+
+        int maxChunks = 0;
+        if (link.getBooleanProperty(FileFilesNet.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty("premlink", dllink);
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(FileFilesNet.NOCHUNKS, false) == false) {
+                    link.setProperty(FileFilesNet.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FileFilesNet.NOCHUNKS, false) == false) {
+                link.setProperty(FileFilesNet.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override
