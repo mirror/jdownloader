@@ -735,7 +735,12 @@ public class RapidStoneCom extends PluginForHost {
         }
         if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 1);
+            maxPrem.set(1);
+            try {
+                account.setMaxSimultanDownloads(1);
+            } catch (final Throwable e) {
+            }
         } else {
             long expire = 0, expireD = 0, expireS = 0;
             final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
@@ -772,6 +777,11 @@ public class RapidStoneCom extends PluginForHost {
                 expire = expireD;
             }
             account.setProperty("totalMaxSim", 20);
+            maxPrem.set(20);
+            try {
+                account.setMaxSimultanDownloads(20);
+            } catch (final Throwable e) {
+            }
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }
