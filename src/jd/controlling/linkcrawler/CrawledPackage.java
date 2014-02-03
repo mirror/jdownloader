@@ -91,6 +91,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return type;
     }
 
+    private static final GeneralSettings                   generalSettings        = JsonConfig.create(GeneralSettings.class);
+
     private java.util.List<CrawledLink>                    children;
     private String                                         comment                = null;
     private PackageController<CrawledPackage, CrawledLink> controller             = null;
@@ -99,26 +101,30 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     private String                                         name                   = null;
 
-    private String                                         downloadFolder         = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+    private String                                         downloadFolder         = generalSettings.getDefaultDownloadFolder();
 
     private boolean                                        downloadFolderSet      = false;
 
     private boolean                                        expanded               = false;
-    private transient UniqueAlltimeID                      uniqueID               = new UniqueAlltimeID();
+    private transient volatile UniqueAlltimeID             uniqueID               = null;
     protected CrawledPackageView                           view;
     private String                                         compiledDownloadFolder = null;
-    private transient ModifyLock                           lock                   = new ModifyLock();
-    private static GeneralSettings                         cfg                    = JsonConfig.create(GeneralSettings.class);
+    private transient volatile ModifyLock                  lock                   = null;
 
     private PackageControllerComparator<CrawledLink>       sorter;
 
     public UniqueAlltimeID getUniqueID() {
+        if (uniqueID != null) return uniqueID;
+        synchronized (this) {
+            if (uniqueID != null) return uniqueID;
+            uniqueID = new UniqueAlltimeID();
+        }
         return uniqueID;
     }
 
     public CrawledPackage() {
         children = new ArrayList<CrawledLink>();
-        if (cfg.isAutoSortChildrenEnabled()) {
+        if (generalSettings.isAutoSortChildrenEnabled()) {
             sorter = SORTER_ASC;
         }
     }
@@ -293,6 +299,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     @Override
     public ModifyLock getModifyLock() {
+        if (lock != null) return lock;
+        synchronized (this) {
+            if (lock != null) return lock;
+            lock = new ModifyLock();
+        }
         return lock;
     }
 

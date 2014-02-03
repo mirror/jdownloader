@@ -321,7 +321,6 @@ public class MegaCrypterCom extends PluginForHost {
                 }
             }
         }
-
     }
 
     private byte[] b64decode(String data) {

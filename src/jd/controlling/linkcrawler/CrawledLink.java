@@ -1,6 +1,5 @@
 package jd.controlling.linkcrawler;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 
 import javax.swing.ImageIcon;
@@ -41,14 +40,14 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         this.crawlDeep = crawlDeep;
     }
 
-    private CrawledPackage            parent               = null;
-    private UnknownCrawledLinkHandler unknownHandler       = null;
-    private CrawledLinkModifier       modifyHandler        = null;
-    private BrokenCrawlerHandler      brokenCrawlerHandler = null;
-    private boolean                   autoConfirmEnabled   = false;
+    private CrawledPackage                     parent               = null;
+    private UnknownCrawledLinkHandler          unknownHandler       = null;
+    private CrawledLinkModifier                modifyHandler        = null;
+    private BrokenCrawlerHandler               brokenCrawlerHandler = null;
+    private boolean                            autoConfirmEnabled   = false;
 
-    private transient UniqueAlltimeID uniqueID             = new UniqueAlltimeID();
-    private LinkOriginDetails         origin;
+    private transient volatile UniqueAlltimeID uniqueID             = null;
+    private LinkOriginDetails                  origin;
 
     public boolean isAutoConfirmEnabled() {
         return autoConfirmEnabled;
@@ -110,12 +109,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
-     * about how to prozess the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
+     * the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
-     * different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
      * 
      * @return
      */
@@ -139,9 +137,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      */
     public void setSourceJob(LinkCollectingJob sourceJob) {
         this.sourceJob = sourceJob;
-        if (sourceJob != null) {
-            setOrigin(sourceJob.getOrigin());
-        }
     }
 
     public long getSize() {
@@ -364,16 +359,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public void setSourceLink(CrawledLink parent) {
-        if (parent != null) {
-            this.sourceLink = parent;
-            LinkedHashSet<String> sources = new LinkedHashSet<String>();
-            do {
-                sources.add(parent.getURL());
-            } while ((parent = parent.getSourceLink()) != null);
-            setSourceUrls(sources.toArray(new String[] {}));
-        } else {
-            setSourceUrls(null);
-        }
+        sourceLink = parent;
     }
 
     public void setMatchingFilter(FilterRule matchedFilter) {
@@ -477,6 +463,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public UniqueAlltimeID getUniqueID() {
         if (dlLink != null) return dlLink.getUniqueID();
+        if (uniqueID != null) return uniqueID;
+        synchronized (this) {
+            if (uniqueID != null) return uniqueID;
+            uniqueID = new UniqueAlltimeID();
+        }
         return uniqueID;
     }
 

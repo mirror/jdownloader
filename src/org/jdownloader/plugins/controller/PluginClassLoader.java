@@ -8,12 +8,14 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
+import jd.plugins.Plugin;
+
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 
 public class PluginClassLoader extends URLClassLoader {
-    private static HashMap<String, Class<?>>                   helperClasses           = new HashMap<String, Class<?>>();
-    private static WeakHashMap<PluginClassLoaderChild, String> sharedPluginClassLoader = new WeakHashMap<PluginClassLoader.PluginClassLoaderChild, String>();
+    private static HashMap<String, Class<?>>                                         helperClasses           = new HashMap<String, Class<?>>();
+    private static WeakHashMap<PluginClassLoaderChild, LazyPlugin<? extends Plugin>> sharedPluginClassLoader = new WeakHashMap<PluginClassLoaderChild, LazyPlugin<? extends Plugin>>();
 
     public static class PluginClassLoaderChild extends URLClassLoader {
 
@@ -196,36 +198,6 @@ public class PluginClassLoader extends URLClassLoader {
         }
     }
 
-    // private ClassLoader parentClassLoader;
-    //
-    // @Override
-    // protected synchronized Class<?> loadClass(String name, boolean resolve)
-    // throws ClassNotFoundException {
-    // try {
-    // return super.loadClass(name, resolve);
-    // } catch (ClassNotFoundException e) {
-    // return parentClassLoader.loadClass(name);
-    // }
-    //
-    // }
-    //
-    // @Override
-    // public URL getResource(String name) {
-    //
-    // URL ret = super.getResource(name);
-    // if (ret == null) ret = parentClassLoader.getResource(name);
-    // return ret;
-    //
-    // }
-    //
-    // @Override
-    // public Enumeration<URL> getResources(String name) throws IOException {
-    //
-    // Enumeration<URL> ret = super.getResources(name);
-    // if (ret == null || !ret.hasMoreElements()) ret =
-    // parentClassLoader.getResources(name);
-    // return ret;
-    // }
     private static final PluginClassLoader       INSTANCE                   = new PluginClassLoader();
     private static final HashMap<String, String> DYNAMIC_LOADABLE_LOBRARIES = new HashMap<String, String>();
     static {
@@ -247,16 +219,35 @@ public class PluginClassLoader extends URLClassLoader {
         return new PluginClassLoaderChild(this);
     }
 
-    public synchronized PluginClassLoaderChild getSharedChild(String id) {
-        if (id == null) return getChild();
-        Iterator<Entry<PluginClassLoaderChild, String>> it = sharedPluginClassLoader.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<PluginClassLoaderChild, String> next = it.next();
-            if (next.getValue().equals(id)) return next.getKey();
+    public PluginClassLoaderChild getSharedChild(LazyPlugin<? extends Plugin> lazyPlugin) {
+        if (lazyPlugin == null) return getChild();
+        PluginClassLoaderChild ret = fetchSharedChild(lazyPlugin, null);
+        if (ret == null) {
+            ret = getChild();
+            return fetchSharedChild(lazyPlugin, ret);
         }
-        PluginClassLoaderChild ret = getChild();
-        sharedPluginClassLoader.put(ret, id);
         return ret;
+    }
+
+    private PluginClassLoaderChild fetchSharedChild(LazyPlugin<? extends Plugin> lazyPlugin, PluginClassLoaderChild putIfAbsent) {
+        synchronized (this) {
+            PluginClassLoaderChild ret = null;
+            Iterator<Entry<PluginClassLoaderChild, LazyPlugin<? extends Plugin>>> it = sharedPluginClassLoader.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<PluginClassLoaderChild, LazyPlugin<? extends Plugin>> next = it.next();
+                LazyPlugin<? extends Plugin> plugin = next.getValue();
+                if (lazyPlugin == plugin || lazyPlugin.getClassname().equals(plugin.getClassname()) && lazyPlugin.getVersion() == plugin.getVersion() && lazyPlugin.getMainClassSHA256().equals(plugin.getMainClassSHA256())) {
+                    ret = next.getKey();
+                    if (ret != null) return ret;
+                    break;
+                }
+            }
+            if (putIfAbsent != null) {
+                sharedPluginClassLoader.put(putIfAbsent, lazyPlugin);
+                return putIfAbsent;
+            }
+            return null;
+        }
     }
 
     public static PluginClassLoaderChild getThreadPluginClassLoaderChild() {

@@ -176,7 +176,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private long                                                        created                             = -1l;
 
-    private transient UniqueAlltimeID                                   uniqueID                            = new UniqueAlltimeID();
+    private transient volatile UniqueAlltimeID                          uniqueID                            = null;
     private transient AbstractNodeNotifier                              propertyListener;
 
     private transient DomainInfo                                        domainInfo                          = null;
@@ -283,7 +283,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         stream.defaultReadObject();
         view = new NullsafeAtomicReference<DownloadLinkView>(null);
         setView(new DefaultDownloadLinkViewImpl());
-        uniqueID = new UniqueAlltimeID();
+        uniqueID = null;
         skipReason = new NullsafeAtomicReference<SkipReason>(null);
         conditionalSkipReason = new NullsafeAtomicReference<ConditionalSkipReason>(null);
         enabled = new AtomicBoolean(isEnabled);
@@ -308,6 +308,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public UniqueAlltimeID getUniqueID() {
+        if (uniqueID != null) return uniqueID;
+        synchronized (this) {
+            if (uniqueID != null) return uniqueID;
+            uniqueID = new UniqueAlltimeID();
+        }
         return uniqueID;
     }
 

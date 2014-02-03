@@ -587,7 +587,6 @@ public class MyJDownloaderConnectThread extends Thread {
                 api.disconnect(false);
             } catch (UnconnectedException e) {
             } catch (TokenException e) {
-                logger.log(e);
                 api.reconnect();
                 api.disconnect(true);
             }

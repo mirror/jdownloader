@@ -27,12 +27,12 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
 
-    private class ConstructorInfo<T extends Plugin> {
+    private class ConstructorInfo<T> {
         protected Constructor<T> constructor;
         protected Object[]       constructorParameters;
     }
 
-    private static class SharedPluginObjects extends HashMap<String, Object> {
+    private static final class SharedPluginObjects extends HashMap<String, Object> {
         protected final long version;
 
         private SharedPluginObjects(final long version) {
@@ -410,7 +410,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         PluginClassLoaderChild ret = null;
         if (classLoader != null && (ret = classLoader.get()) != null) return ret;
         if (createNew == false) return null;
-        ret = PluginClassLoader.getInstance().getSharedChild(getClassname() + "_" + getVersion());
+        ret = PluginClassLoader.getInstance().getSharedChild(this);
         setClassLoader(ret);
         return ret;
     }

@@ -255,8 +255,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private transient Boolean                                      isExpanded        = null;
 
     private transient PackageController<FilePackage, DownloadLink> controlledby      = null;
-    private transient UniqueAlltimeID                              uniqueID          = new UniqueAlltimeID(); ;
-    private transient ModifyLock                                   lock              = new ModifyLock();
+    private transient volatile UniqueAlltimeID                     uniqueID          = null;
+    private transient volatile ModifyLock                          lock              = null;
     public static final String                                     PROPERTY_EXPANDED = "EXPANDED";
     private static final String                                    PROPERTY_COMMENT  = "COMMENT";
 
@@ -264,6 +264,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @return the uniqueID
      */
     public UniqueAlltimeID getUniqueID() {
+        if (uniqueID != null) return uniqueID;
+        synchronized (this) {
+            if (uniqueID != null) return uniqueID;
+            uniqueID = new UniqueAlltimeID();
+        }
         return uniqueID;
     }
 
@@ -329,8 +334,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         } catch (final Throwable e) {
             isExpanded = false;
         }
-        uniqueID = new UniqueAlltimeID();
-        lock = new ModifyLock();
+        uniqueID = null;
+        lock = null;
     }
 
     /**
@@ -610,6 +615,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     @Override
     public ModifyLock getModifyLock() {
+        if (lock != null) return lock;
+        synchronized (this) {
+            if (lock != null) return lock;
+            lock = new ModifyLock();
+        }
         return lock;
     }
 
