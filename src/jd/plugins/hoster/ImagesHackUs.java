@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imageshack.us" }, urls = { "http://[\\w\\.]*?img[0-9]{1,4}\\.imageshack\\.us/i/[a-z0-9]+\\.[a-zA-Z0-9]{2,4}/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imageshack.com", "imageshack.us" }, urls = { "https?://(www\\.)?imageshack\\.(us|com)/i/[A-Za-z0-9]+", "z690hi09erhj6r0nrheswhrzogjrtehoDELETE_MEfhjtzjzjzthj" }, flags = { 0, 0 })
 public class ImagesHackUs extends PluginForHost {
 
     public ImagesHackUs(PluginWrapper wrapper) {
@@ -45,6 +45,35 @@ public class ImagesHackUs extends PluginForHost {
         return 1;
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("imageshack.us/", "imageshack.com/").replace("http://", "https://"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String finallink = br.getRegex("data\\-width=\"0\" data\\-height=\"0\" alt=\"\" src=\"(//imagizer\\.imageshack[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        finallink = "http" + finallink;
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(finallink);
+            if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            link.setName(getFileNameFromHeader(con));
+            link.setDownloadSize(con.getLongContentLength());
+        } catch (final Throwable e) {
+            try {
+                con.disconnect();
+            } catch (final Throwable e2) {
+            }
+        }
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -59,22 +88,6 @@ public class ImagesHackUs extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String finallink = br.getRegex("/rss\\+xml\" href=\"(.*?)\\.comments\\.xml\"").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(finallink);
-        if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        link.setName(getFileNameFromHeader(con));
-        link.setDownloadSize(con.getLongContentLength());
-        return AvailableStatus.TRUE;
     }
 
     @Override

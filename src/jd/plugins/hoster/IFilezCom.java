@@ -224,6 +224,10 @@ public class IFilezCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("class=\\'notice\\'>You spent limit on links per day")) {
+            logger.info("Daily limit reached, temp disabling premium");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
         if (dllink == null) {

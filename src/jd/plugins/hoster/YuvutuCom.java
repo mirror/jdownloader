@@ -111,6 +111,11 @@ public class YuvutuCom extends PluginForHost {
         dl.startDownload();
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
     @Override
     public void reset() {
     }
