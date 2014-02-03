@@ -14,7 +14,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -32,7 +31,6 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogConsoleHandler;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
@@ -847,51 +845,6 @@ public class LinkCrawler {
         return chits;
     }
 
-    protected LogSource getFastLogger(String id) {
-        LogSource ret = new LogSource(id) {
-            LogSource         log      = null;
-            LogConsoleHandler cHandler = LogController.getInstance().getConsoleHandler();
-
-            @Override
-            public synchronized Logger getParent() {
-                if (log != null) return log;
-                log = LogController.getInstance().getLogger(getName());
-                return log;
-            }
-
-            @Override
-            public synchronized void log(LogRecord record) {
-                try {
-                    if (cHandler != null) cHandler.publish(record);
-                } finally {
-                    super.log(record);
-                }
-            }
-
-            @Override
-            public synchronized void close() {
-                try {
-                    super.close();
-                } finally {
-                    if (log != null) log.close();
-                }
-            }
-
-            @Override
-            public synchronized void flush() {
-                try {
-                    super.flush();
-                } finally {
-                    if (log != null) log.flush();
-                }
-            }
-
-        };
-        ret.setMaxSizeInMemory(256 * 1024);
-        ret.setAllowTimeoutFlush(false);
-        return ret;
-    }
-
     protected void processHostPlugin(LazyHostPlugin pHost, CrawledLink possibleCryptedLink) {
         final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
         possibleCryptedLink.setCustomCrawledLinkModifier(null);
@@ -918,7 +871,7 @@ public class LinkCrawler {
                 boolean oldVerbose = false;
                 Logger oldLogger = null;
                 try {
-                    LogSource logger = getFastLogger(wplg.getHost());
+                    LogSource logger = LogController.getFastPluginLogger(wplg.getHost());
                     logger.info("Processing: " + possibleCryptedLink.getURL());
                     if (lct != null) {
                         /* mark thread to be used by crawler plugin */
@@ -1190,7 +1143,7 @@ public class LinkCrawler {
             boolean oldVerbose = false;
             Logger oldLogger = null;
             try {
-                LogSource logger = getFastLogger(plg.getName());
+                LogSource logger = LogController.getFastPluginLogger(plg.getName());
                 if (lct != null) {
                     /* mark thread to be used by crawler plugin */
                     owner = lct.getCurrentOwner();
@@ -1284,9 +1237,8 @@ public class LinkCrawler {
             Logger oldLogger = null;
             boolean oldVerbose = false;
             boolean oldDebug = false;
-            logger = getFastLogger(wplg.getHost());
+            logger = LogController.getFastPluginLogger(wplg.getHost());
             logger.info("Crawling: " + cryptedLink.getURL());
-            logger.setAllowTimeoutFlush(false);
             wplg.setLogger(logger);
             /* now we run the plugin and let it find some links */
             LinkCrawlerThread lct = null;

@@ -8,12 +8,12 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.BrowserSettingsThread;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 
 import org.appwork.utils.event.queue.QueueThread;
+import org.appwork.utils.logging2.LogConsoleHandler;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.LogSourceProvider;
 import org.jdownloader.extensions.extraction.ExtractionController;
@@ -133,9 +133,48 @@ public class LogController extends LogSourceProvider {
         return ret;
     }
 
-    public LogSource getLogger(Plugin loggerForPlugin) {
-        LogSource ret = getInstance().getLogger(loggerForPlugin.getHost());
+    public static LogSource getFastPluginLogger(String id) {
+        LogSource ret = new LogSource(id) {
+            LogSource         log      = null;
+            LogConsoleHandler cHandler = LogController.getInstance().getConsoleHandler();
+
+            @Override
+            public synchronized Logger getParent() {
+                if (log != null) return log;
+                log = LogController.getInstance().getLogger(getName());
+                return log;
+            }
+
+            @Override
+            public synchronized void log(LogRecord record) {
+                try {
+                    if (cHandler != null) cHandler.publish(record);
+                } finally {
+                    super.log(record);
+                }
+            }
+
+            @Override
+            public synchronized void close() {
+                try {
+                    super.close();
+                } finally {
+                    if (log != null) log.close();
+                }
+            }
+
+            @Override
+            public synchronized void flush() {
+                try {
+                    super.flush();
+                } finally {
+                    if (log != null) log.flush();
+                }
+            }
+
+        };
         ret.setMaxSizeInMemory(256 * 1024);
+        ret.setAllowTimeoutFlush(false);
         return ret;
     }
 

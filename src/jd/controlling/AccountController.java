@@ -235,9 +235,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                 return null;
             }
             String whoAmI = account.getUser() + "->" + account.getHoster();
-            LogSource logger = LogController.getInstance().getLogger(plugin);
+            LogSource logger = LogController.getFastPluginLogger("accountCheck:" + plugin.getHost());
             logger.info("Account Update: " + whoAmI);
-            logger.setAllowTimeoutFlush(false);
             plugin.setLogger(logger);
             Thread currentThread = Thread.currentThread();
             BrowserSettingsThread bThread = null;
