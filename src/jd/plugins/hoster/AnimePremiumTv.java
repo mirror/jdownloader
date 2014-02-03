@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21744 $", interfaceVersion = 2, names = { "animepremium.tv" }, urls = { "http://(s\\d000\\.animepremium\\.tv/download/\\d+|embeds\\.animepremium\\.tv/share\\.php\\?id=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animepremium.tv" }, urls = { "http://(s\\d000\\.animepremium\\.tv/download/\\d+|embeds\\.animepremium\\.tv/share\\.php\\?id=\\d+)" }, flags = { 0 })
 public class AnimePremiumTv extends PluginForHost {
 
     /**

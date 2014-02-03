@@ -15,7 +15,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 20794 $", interfaceVersion = 2, names = { "hdd.tomsk.ru" }, urls = { "http://(www|download\\.)?hdd\\.tomsk\\.ru/file/(?!notfound)[a-z]{8}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdd.tomsk.ru" }, urls = { "http://(www|download\\.)?hdd\\.tomsk\\.ru/file/(?!notfound)[a-z]{8}" }, flags = { 0 })
 public class HddTomskRu extends PluginForHost {
 
     public static final String  DOMAIN              = "http://hdd.tomsk.ru";

@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "videofun.me" }, urls = { "http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videofun.me" }, urls = { "http://(www\\.)?videofun\\.me/(embed/[a-f0-9]{32}|embed\\?.+)" }, flags = { 0 })
 public class VideoFunMe extends PluginForHost {
 
     // raztoki embed video player template.

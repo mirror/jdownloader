@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 22600 $", interfaceVersion = 2, names = { "fryhost.com" }, urls = { "http://(www\\.)?fryhost\\.com/[a-z0-9]+/?[a-z0-9\\-\\.]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fryhost.com" }, urls = { "http://(www\\.)?fryhost\\.com/[a-z0-9]+/?[a-z0-9\\-\\.]+" }, flags = { 0 })
 public class FryhostCom extends PluginForHost {
 
     private static AtomicInteger MAXPREMDLS         = new AtomicInteger(-1);

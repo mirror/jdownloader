@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "upload2.com" }, urls = { "http://(www\\.)?upload2\\.com/(embed|video)/[a-z0-9]{8}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload2.com" }, urls = { "http://(www\\.)?upload2\\.com/(embed|video)/[a-z0-9]{8}" }, flags = { 0 })
 public class UploadTwoCom extends PluginForHost {
 
     // raztoki embed video player template.

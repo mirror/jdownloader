@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 18160 $", interfaceVersion = 2, names = { "bc.vc" }, urls = { "http://(www\\.)?bc\\.vc/(?!advertising)([A-Za-z0-9\\-]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "http://(www\\.)?bc\\.vc/(?!advertising)([A-Za-z0-9\\-]+)?" }, flags = { 0 })
 public class BcVc extends PluginForDecrypt {
 
     public BcVc(PluginWrapper wrapper) {

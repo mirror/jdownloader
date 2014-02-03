@@ -20,7 +20,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 18471 $", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/file/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://put\\.io/file/\\d+" }, flags = { 2 })
 public class PutIO extends PluginForHost {
 
     public PutIO(PluginWrapper wrapper) {

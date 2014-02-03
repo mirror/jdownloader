@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/flowplayer/\\?.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/flowplayer/\\?.+" }, flags = { 0 })
 public class GogoAnimeCom extends PluginForHost {
 
     // raztoki embed video player template.

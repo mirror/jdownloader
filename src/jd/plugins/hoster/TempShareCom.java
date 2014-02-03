@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19117 $", interfaceVersion = 2, names = { "temp-share.com" }, urls = { "https?://(www\\.)?temp-share\\.com/show/[a-zA-Z0-9]{9}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "temp-share.com" }, urls = { "https?://(www\\.)?temp-share\\.com/show/[a-zA-Z0-9]{9}" }, flags = { 0 })
 public class TempShareCom extends PluginForHost {
 
     private static final String mainPage = "http://temp-share.com";

@@ -31,7 +31,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://(www\\.)?rapidshare\\.com/(download/)?share/[A-Fa-f0-9]{32}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://(www\\.)?rapidshare\\.com/(download/)?share/[A-Fa-f0-9]{32}" }, flags = { 0 })
 public class Rpdshr extends PluginForDecrypt {
 
     private static final String FOLDER = "folder:";

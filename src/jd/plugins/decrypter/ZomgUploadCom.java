@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "zomgupload.com" }, urls = { "http://(www\\.)?zomgupload\\.com/[a-z0-9]{12}\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zomgupload.com" }, urls = { "http://(www\\.)?zomgupload\\.com/[a-z0-9]{12}\\.html" }, flags = { 0 })
 public class ZomgUploadCom extends PluginForDecrypt {
 
     public ZomgUploadCom(PluginWrapper wrapper) {

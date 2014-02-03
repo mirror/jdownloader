@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 17860 $", interfaceVersion = 2, names = { "elcorillord.org" }, urls = { "https?://(www\\.)?elcorillord\\.org/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "elcorillord.org" }, urls = { "https?://(www\\.)?elcorillord\\.org/[a-z0-9]{12}" }, flags = { 0 })
 public class ElcorillordOrg extends PluginForHost {
 
     private String               correctedBR                  = "";

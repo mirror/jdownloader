@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "animeuploads.com", "cizgifilmlerizle.com" }, urls = { "http://(www\\.)?animeuploads\\.com/embed\\.php\\?file=.+", "http://(www\\.)?cizgifilmlerizle\\.com/embed\\.php\\?file=.+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animeuploads.com", "cizgifilmlerizle.com" }, urls = { "http://(www\\.)?animeuploads\\.com/embed\\.php\\?file=.+", "http://(www\\.)?cizgifilmlerizle\\.com/embed\\.php\\?file=.+" }, flags = { 0, 0 })
 public class AnimeUploadsCom extends PluginForHost {
 
     // raztoki 'fuck_you' embed video player template.

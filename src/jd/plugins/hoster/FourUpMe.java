@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "4upfiles.com" }, urls = { "https?://(www\\.)?(4upfiles\\.com|4up\\.(im|me))/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4upfiles.com" }, urls = { "https?://(www\\.)?(4upfiles\\.com|4up\\.(im|me))/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class FourUpMe extends PluginForHost {
 
     private String               correctedBR                  = "";

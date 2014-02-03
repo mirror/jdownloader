@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "wallobit.com" }, urls = { "https?://(www\\.)?wallobit\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wallobit.com" }, urls = { "https?://(www\\.)?wallobit\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class WalloBitCom extends PluginForHost {
 

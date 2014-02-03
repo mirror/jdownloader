@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 20294 $", interfaceVersion = 2, names = { "uploadedhd.com" }, urls = { "http://(www\\.)?uploadedhd\\.com/[a-f0-9]{16}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadedhd.com" }, urls = { "http://(www\\.)?uploadedhd\\.com/[a-f0-9]{16}" }, flags = { 2 })
 public class UploadedHdCom extends PluginForHost {
 
     private final String MAINPAGE = "http://www.uploadedhd.com";

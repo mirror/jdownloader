@@ -14,7 +14,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 2 $", interfaceVersion = 3, names = { "downitfaster.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-dpspwjrlfosjdhgidshg12" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downitfaster.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-dpspwjrlfosjdhgidshg12" }, flags = { 2 })
 public class DownItFasterCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();

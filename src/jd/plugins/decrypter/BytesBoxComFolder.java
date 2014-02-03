@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 17642 $", interfaceVersion = 2, names = { "bytesbox.com" }, urls = { "https?://(www\\.)?bytesbox\\.com/\\!{2}/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bytesbox.com" }, urls = { "https?://(www\\.)?bytesbox\\.com/\\!{2}/[A-Za-z0-9]+" }, flags = { 0 })
 public class BytesBoxComFolder extends PluginForDecrypt {
 
     public BytesBoxComFolder(PluginWrapper wrapper) {

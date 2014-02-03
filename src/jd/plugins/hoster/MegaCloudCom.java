@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19117 $", interfaceVersion = 2, names = { "megacloud.com" }, urls = { "https?://(www\\.)?megaclouddecrypted\\.com/s/[a-zA-Z0-9]{10,}/[^/<>]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacloud.com" }, urls = { "https?://(www\\.)?megaclouddecrypted\\.com/s/[a-zA-Z0-9]{10,}/[^/<>]+" }, flags = { 0 })
 public class MegaCloudCom extends PluginForHost {
 
     private static final String mainPage = "http://megacloud.com";

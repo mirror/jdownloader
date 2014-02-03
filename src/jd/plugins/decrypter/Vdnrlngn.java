@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 18813 $", interfaceVersion = 2, names = { "video.uni-erlangen.de" }, urls = { "http://(www\\.)?video\\.uni\\-erlangen\\.de/(clip|course)/id/\\d+\\.html|http://(www\\.)?video\\.uni\\-erlangen\\.de/get/file/\\d+\\.html\\?src=download" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.uni-erlangen.de" }, urls = { "http://(www\\.)?video\\.uni\\-erlangen\\.de/(clip|course)/id/\\d+\\.html|http://(www\\.)?video\\.uni\\-erlangen\\.de/get/file/\\d+\\.html\\?src=download" }, flags = { 0 })
 public class Vdnrlngn extends PluginForDecrypt {
 
     public Vdnrlngn(PluginWrapper wrapper) {

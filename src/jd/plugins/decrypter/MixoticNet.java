@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "mixotic.net" }, urls = { "(http://(www\\.)?mixotic\\.net/dj\\-sets/.*)|(http://(www\\.)?mixotic\\.net/dj\\-mixes/.*)|(http://feedproxy\\.google\\.com/~r/mixotic/.*)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixotic.net" }, urls = { "(http://(www\\.)?mixotic\\.net/dj\\-sets/.*)|(http://(www\\.)?mixotic\\.net/dj\\-mixes/.*)|(http://feedproxy\\.google\\.com/~r/mixotic/.*)" }, flags = { 0 })
 public class MixoticNet extends PluginForDecrypt {
 
     public MixoticNet(PluginWrapper wrapper) {

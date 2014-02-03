@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "filesfrog.net", "dogupload.com" }, urls = { "https?://(www\\.)?(dogupload\\.com|filesfrog\\.net)/((vid)?embed-)?[a-z0-9]{12}", "46689ntjvrDELETE_MEdfg58imn38fth894uzjhvjmn34hgm2490jhgrt" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesfrog.net", "dogupload.com" }, urls = { "https?://(www\\.)?(dogupload\\.com|filesfrog\\.net)/((vid)?embed-)?[a-z0-9]{12}", "46689ntjvrDELETE_MEdfg58imn38fth894uzjhvjmn34hgm2490jhgrt" }, flags = { 0, 0 })
 @SuppressWarnings("deprecation")
 public class DogUploadCom extends PluginForHost {
 

@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19283 $", interfaceVersion = 2, names = { "donevideo.com" }, urls = { "https?://(www\\.)?donevideo\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "donevideo.com" }, urls = { "https?://(www\\.)?donevideo\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class DoneVideoCom extends PluginForHost {
 
     private String               correctedBR                  = "";

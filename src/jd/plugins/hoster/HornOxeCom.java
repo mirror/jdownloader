@@ -11,7 +11,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision: 18671 $", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "https?://\\w+\\.hornoxedecrypted\\.com/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hornoxe.com" }, urls = { "https?://\\w+\\.hornoxedecrypted\\.com/.+" }, flags = { 0 })
 public class HornOxeCom extends PluginForHost {
 
     public HornOxeCom(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(((www\\.)?libgen\\.org)|gen\\.lib\\.rus\\.ec)/book/index\\.php\\?md5=[A-F0-9]{32}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "libgen.org" }, urls = { "https?://(((www\\.)?libgen\\.org)|gen\\.lib\\.rus\\.ec)/book/index\\.php\\?md5=[A-F0-9]{32}" }, flags = { 0 })
 public class LibGen extends PluginForDecrypt {
 
     public LibGen(PluginWrapper wrapper) {

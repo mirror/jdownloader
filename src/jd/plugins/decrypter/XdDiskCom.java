@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "7958.com" }, urls = { "^https?://(www\\.)?xddisk\\.com/(space_\\d+\\.html|space\\.php?username=\\d+)$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7958.com" }, urls = { "^https?://(www\\.)?xddisk\\.com/(space_\\d+\\.html|space\\.php?username=\\d+)$" }, flags = { 0 })
 public class XdDiskCom extends PluginForDecrypt {
 
     private String id = null;

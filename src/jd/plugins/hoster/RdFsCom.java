@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19496 $", interfaceVersion = 2, names = { "rd-fs.com", "flowhot.info" }, urls = { "https?://(www\\.)?(rd-fs\\.com|flowhot\\.info)/[a-z0-9]{12}", "dgzkj65u8efrj6hgDELETEME467zubvr4uijm" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rd-fs.com", "flowhot.info" }, urls = { "https?://(www\\.)?(rd-fs\\.com|flowhot\\.info)/[a-z0-9]{12}", "dgzkj65u8efrj6hgDELETEME467zubvr4uijm" }, flags = { 0, 0 })
 @SuppressWarnings("deprecation")
 public class RdFsCom extends PluginForHost {
 

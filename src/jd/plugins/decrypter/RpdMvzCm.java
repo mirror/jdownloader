@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?rapidmoviez\\.com/release/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidmoviez.com" }, urls = { "https?://(www\\.)?rapidmoviez\\.com/release/[a-z0-9\\-]+" }, flags = { 0 })
 public class RpdMvzCm extends PluginForDecrypt {
 
     public RpdMvzCm(PluginWrapper wrapper) {

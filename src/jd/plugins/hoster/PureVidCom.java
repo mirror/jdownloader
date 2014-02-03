@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "purevid.com" }, urls = { "http://(www\\.)?purevid\\.com/(\\?m=embed&id=[a-z0-9]+|v/[a-z0-9]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "purevid.com" }, urls = { "http://(www\\.)?purevid\\.com/(\\?m=embed&id=[a-z0-9]+|v/[a-z0-9]+/)" }, flags = { 0 })
 public class PureVidCom extends PluginForHost {
     // raztoki embed video player template.
 

@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16141 $", interfaceVersion = 2, names = { "filetobox.com" }, urls = { "http://(www\\.)?filetobox\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetobox.com" }, urls = { "http://(www\\.)?filetobox\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
 public class FileToBoxCom extends PluginForHost {
 
     public FileToBoxCom(PluginWrapper wrapper) {

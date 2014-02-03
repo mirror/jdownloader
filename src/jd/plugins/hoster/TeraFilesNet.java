@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19514 $", interfaceVersion = 2, names = { "terafiles.net" }, urls = { "http://(www\\.)?terafiles\\.net/v-\\d+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "terafiles.net" }, urls = { "http://(www\\.)?terafiles\\.net/v-\\d+\\.html" }, flags = { 2 })
 public class TeraFilesNet extends PluginForHost {
 
     public TeraFilesNet(PluginWrapper wrapper) {

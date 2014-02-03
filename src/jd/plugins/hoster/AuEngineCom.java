@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "auengine.com" }, urls = { "http://(www\\.)?auengine\\.com/embed\\.php\\?file=.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "auengine.com" }, urls = { "http://(www\\.)?auengine\\.com/embed\\.php\\?file=.+" }, flags = { 0 })
 public class AuEngineCom extends PluginForHost {
 
     // raztoki embed video player template.

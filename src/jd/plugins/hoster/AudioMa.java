@@ -27,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 18859 $", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/song/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/song/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
 public class AudioMa extends PluginForHost {
 
     public AudioMa(PluginWrapper wrapper) {

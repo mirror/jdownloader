@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "7958.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.7958\\.com/folder\\-\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7958.com" }, urls = { "https?://(?!www\\.)[a-z0-9]+\\.7958\\.com/folder\\-\\d+" }, flags = { 0 })
 public class SevenNineFiveEightCom extends PluginForDecrypt {
 
     private String id      = null;

@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 21813 $", interfaceVersion = 2, names = { "up-myfiles.com" }, urls = { "http://(www\\.)?up-myfiles\\.com/kleeja/do\\.php\\?filename=\\d+.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up-myfiles.com" }, urls = { "http://(www\\.)?up-myfiles\\.com/kleeja/do\\.php\\?filename=\\d+.+" }, flags = { 0 })
 public class UpMyFilesCom extends PluginForHost {
 
     public UpMyFilesCom(PluginWrapper wrapper) {
