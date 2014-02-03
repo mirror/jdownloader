@@ -68,12 +68,12 @@ public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExte
         try {
             JTextArea txt = new JTextArea();
             txt.setOpaque(false);
-            URL url = Application.getRessourceURL("org/jdownloader/extensions/folderwatch/explain.txt");
+            URL url = Application.getRessourceURL("org/jdownloader/extensions/folderwatchv2/explain.txt");
             txt.setText(new String(IO.readStream(-1, url.openStream()), "UTF-8"));
 
             add(txt);
         } catch (Throwable e) {
-            e.printStackTrace();
+            getExtension().getLogger().log(e);
         }
     }
 
