@@ -54,14 +54,8 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
         }
         if (defaultValues) {
             Object def = entry.getDefault();
-            boolean different;
-            if (value == null) {
-                different = (def != null);
-            } else {
-                different = (!value.equals(def));
-            }
 
-            if (different) setDefaultValue(def);
+            setDefaultValue(def);
 
         }
 
