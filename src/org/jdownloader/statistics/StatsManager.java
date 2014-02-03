@@ -21,6 +21,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
@@ -271,8 +272,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         }
                         if (sendTo.size() > 0) {
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
+                            if (Application.isJared(null)) {
+                                br.postPageRaw("http://stats.appwork.org/jcgi/plugins/push", JSonStorage.serializeToJson(sendTo));
+                            } else {
+                                br.postPageRaw("http://nas:81/thomas/fcgi/plugins/push", JSonStorage.serializeToJson(sendTo));
+                            }
 
-                            br.postPageRaw("http://nas:81/thomas/fcgi/plugins/push", JSonStorage.serializeToJson(sendTo));
                             // br.postPageRaw("http://localhost:8888/plugins/push", JSonStorage.serializeToJson(sendTo));
 
                             Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<Response>() {
