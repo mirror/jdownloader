@@ -24,6 +24,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.PluginTaskID;
@@ -233,6 +234,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setSpeed(speed);
             dl.setWaittime(waittime);
             dl.setRevision(candidate.getCachedAccount().getPlugin().getVersion());
+            dl.setOs(CrossSystem.getOSFamily().name());
 
             Throwable throwable = result.getThrowable();
 
@@ -274,7 +276,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         synchronized (list) {
                             sendRequest.addAll(list);
                             for (AbstractLogEntry e : list) {
-                                sendTo.add(new LogEntryWrapper(e));
+                                sendTo.add(new LogEntryWrapper(e, 2));
                             }
                             list.clear();
                         }

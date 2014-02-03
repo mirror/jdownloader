@@ -10,6 +10,16 @@ public class LogEntryWrapper implements Storable {
         return data;
     }
 
+    private int version = 0;
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
     public void setData(String data) {
         this.data = data;
     }
@@ -28,9 +38,10 @@ public class LogEntryWrapper implements Storable {
 
     }
 
-    public LogEntryWrapper(AbstractLogEntry e) {
+    public LogEntryWrapper(AbstractLogEntry e, int i) {
         this.data = JSonStorage.serializeToJson(e);
         this.type = e.getClass().getSimpleName();
+        setVersion(i);
     }
 
 }

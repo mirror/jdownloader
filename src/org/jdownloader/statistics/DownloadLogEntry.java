@@ -47,6 +47,16 @@ public class DownloadLogEntry extends AbstractLogEntry {
         return canceled;
     }
 
+    private String os = "WINDOWS";
+
+    public String getOs() {
+        return os;
+    }
+
+    public void setOs(String os) {
+        this.os = os;
+    }
+
     public void setCanceled(boolean canceled) {
         this.canceled = canceled;
     }
