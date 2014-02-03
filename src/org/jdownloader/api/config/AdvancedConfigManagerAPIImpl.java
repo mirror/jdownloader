@@ -9,6 +9,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.annotations.EnumLabel;
 import org.appwork.storage.config.annotations.LabelInterface;
@@ -18,6 +19,13 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AdvancedConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.advanced.AdvancedConfigAPIEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -48,22 +56,21 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
                         enumOptions = listEnumOptions(entry.getType());
 
-                        String[] constants = new String[enumOptions.size()];
-                        String[] labels = new String[enumOptions.size()];
+                        String[][] constants = new String[enumOptions.size()][2];
+
                         boolean hasLabels = false;
                         String label = null;
                         Enum<?> value = ((Enum<?>) entry.getValue());
                         for (int i = 0; i < enumOptions.size(); i++) {
                             EnumOption option = enumOptions.get(i);
-                            constants[i] = option.getName();
-                            labels[i] = option.getLabel();
-                            hasLabels |= StringUtils.isNotEmpty(labels[i]);
+                            constants[i] = new String[] { option.getName(), option.getLabel() };
+
                             if (value != null && value.name().equals(option.getName())) {
-                                label = labels[i];
+                                label = constants[i][1];
                             }
                         }
                         acae.setEnumLabel(label);
-                        acae.setEnumLabels(hasLabels ? labels : null);
+
                         acae.setEnumOptions(constants);
                     }
 
@@ -117,7 +124,43 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
     private KeyHandler<Object> getKeyHandler(String interfaceName, String storage, String key) {
         StorageHandler<?> storageHandler = StorageHandler.getStorageHandler(interfaceName, storage);
-        if (storageHandler == null) return null;
+
+        if (storageHandler == null) {
+            // check plugins
+            if (interfaceName.startsWith("jd.plugins.hoster.") || interfaceName.startsWith("jd.plugins.decrypter")) {
+                ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
+                PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
+                ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+                try {
+                    Thread.currentThread().setContextClassLoader(pluginClassLoader);
+                    for (LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
+                        String ifName = hplg.getConfigInterface();
+                        if (StringUtils.equals(ifName, interfaceName)) {
+                            ConfigInterface cf;
+                            try {
+                                cf = PluginJsonConfig.get((Class<ConfigInterface>) pluginClassLoader.loadClass(ifName));
+                                storageHandler = cf._getStorageHandler();
+                                break;
+
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                            System.out.println(ifName);
+                        }
+                    }
+
+                    for (LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
+                        String ifName = cplg.getConfigInterface();
+                        if (StringUtils.isNotEmpty(ifName)) {
+                            System.out.println(ifName);
+                        }
+                    }
+                } finally {
+                    Thread.currentThread().setContextClassLoader(oldClassLoader);
+                }
+            }
+            if (storageHandler == null) { return null; }
+        }
         KeyHandler<Object> kh = storageHandler.getKeyHandler(key);
         return kh;
     }

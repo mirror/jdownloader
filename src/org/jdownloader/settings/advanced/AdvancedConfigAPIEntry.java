@@ -2,6 +2,7 @@ package org.jdownloader.settings.advanced;
 
 import java.io.File;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.annotations.AllowNonStorableObjects;
 import org.appwork.storage.Storable;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -23,6 +24,19 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
         setInterfaceName(i);
 
         setKey(createKey(kh));
+        if (kh.getAnnotation(ActionClass.class) != null) {
+            setAbstractType(org.jdownloader.myjdownloader.client.bindings.AdvancedConfigEntryDataStorable.AbstractType.ACTION);
+            return;
+        } else {
+            try {
+                AbstractType abstractType = AbstractType.valueOf(kh.getAbstractType().name());
+                setAbstractType(abstractType);
+            } catch (Exception e) {
+                throw new WTFException(e);
+
+            }
+        }
+
         File expectedPath = Application.getResource("cfg/" + i);
         String storage = null;
         if (!expectedPath.equals(kh.getStorageHandler().getPath())) {
@@ -47,7 +61,7 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
                 different = (!value.equals(def));
             }
 
-            setDefaultValue(def);
+            if (different) setDefaultValue(def);
 
         }
 
