@@ -1,5 +1,6 @@
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -154,6 +155,37 @@ public class YoutubeDashV2 extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
+    }
+
+    public static final class DashDownloadPluginProgress extends DownloadPluginProgress {
+        private final long           totalSize;
+        private final PluginProgress progress;
+        private final long           chunkOffset;
+
+        public DashDownloadPluginProgress(Downloadable downloadable, DownloadInterface downloadInterface, Color color, long totalSize, PluginProgress progress, long chunkOffset) {
+            super(downloadable, downloadInterface, color);
+            this.totalSize = totalSize;
+            this.progress = progress;
+            this.chunkOffset = chunkOffset;
+        }
+
+        @Override
+        public long getCurrent() {
+            return chunkOffset + ((DownloadInterface) progress.getProgressSource()).getTotalLinkBytesLoadedLive();
+        }
+
+        @Override
+        public long getTotal() {
+            return totalSize;
+        }
+
+        public long getDuration() {
+            return System.currentTimeMillis() - startTimeStamp;
+        }
+
+        public long getSpeed() {
+            return ((DownloadInterface) progress.getProgressSource()).getManagedConnetionHandler().getSpeed();
+        }
     }
 
     public static interface YoutubeConfig extends ConfigInterface {
@@ -943,25 +975,7 @@ public class YoutubeDashV2 extends PluginForHost {
             @Override
             public PluginProgress setPluginProgress(final PluginProgress progress) {
                 if (progress != null && progress instanceof DownloadPluginProgress) {
-                    DownloadPluginProgress dashVideoProgress = new DownloadPluginProgress(this, (DownloadInterface) progress.getProgressSource(), progress.getColor()) {
-                        @Override
-                        public long getCurrent() {
-                            return chunkOffset + ((DownloadInterface) progress.getProgressSource()).getTotalLinkBytesLoadedLive();
-                        };
-
-                        @Override
-                        public long getTotal() {
-                            return totalSize;
-                        }
-
-                        public long getDuration() {
-                            return System.currentTimeMillis() - startTimeStamp;
-                        }
-
-                        public long getSpeed() {
-                            return ((DownloadInterface) progress.getProgressSource()).getManagedConnetionHandler().getSpeed();
-                        }
-                    };
+                    DownloadPluginProgress dashVideoProgress = new DashDownloadPluginProgress(this, (DownloadInterface) progress.getProgressSource(), progress.getColor(), totalSize, progress, chunkOffset);
                     return downloadLink.setPluginProgress(dashVideoProgress);
                 }
                 return downloadLink.setPluginProgress(progress);
