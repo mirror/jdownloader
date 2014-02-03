@@ -166,10 +166,12 @@ public class RealDebridCom extends PluginForHost {
     private void handleDL(final Account acc, final DownloadLink link, final String dllink) throws Exception {
         // real debrid connections are flakey at times! Do this instead of repeating download steps.
         int repeat = 3;
+        int maxChunks = 0;
+        if ("tusfiles.net".equals(link.getHost())) maxChunks = 4;
         for (int i = 0; i <= repeat; i++) {
             Browser br2 = br.cloneBrowser();
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, true, 0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, true, maxChunks);
                 if (dl.getConnection().isContentDisposition()) {
                     /* content disposition, lets download it */
                     RUNNING_DOWNLOADS.incrementAndGet();
