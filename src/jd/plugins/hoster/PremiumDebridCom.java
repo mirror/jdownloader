@@ -138,8 +138,6 @@ public class PremiumDebridCom extends PluginForHost {
                 supportedHosts.add("uploaded.to");
             }
         }
-        supportedHosts.remove("youtube.com");
-        supportedHosts.remove("vimeo.com");
 
         if (supportedHosts.size() == 0) {
             ac.setStatus("Account valid: 0 Hosts via premiumdebrid.com available");

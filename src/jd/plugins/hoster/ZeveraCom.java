@@ -380,9 +380,6 @@ public class ZeveraCom extends PluginForHost {
              * set ArrayList<String> with all supported multiHosts of this service
              */
             // we used local cached links provided by our decrypter, locked to ip addresses. Can not use multihoster
-            supportedHosts.remove("youtube.com");
-            supportedHosts.remove("vimeo.com");
-            supportedHosts.remove("megaupload.com"); // offline hoster
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
             account.setProperty("multiHostSupport", Property.NULL);

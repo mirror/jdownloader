@@ -51,6 +51,8 @@ public class FreeDiscPl extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
         try {
             br.getPage(link.getDownloadURL());
         } catch (final BrowserException e) {
@@ -64,6 +66,7 @@ public class FreeDiscPl extends PluginForHost {
         if (filename == null) filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         String filesize = br.getRegex("class=\\'frameFilesSize\\'>Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("Rozmiar plików</div><div class=\\'menuFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));

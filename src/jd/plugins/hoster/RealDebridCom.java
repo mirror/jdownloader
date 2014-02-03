@@ -457,12 +457,6 @@ public class RealDebridCom extends PluginForHost {
             }
             String[] hosts = new Regex(hostsSup, "\"([^\"]+)\"").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            // remove youtube support from this multihoster. Our youtube plugin works from cdn/cached final links and this does not work
-            // with multihosters as it has geolocation issues. To over come this we need to pass the watch link and not decrypted finallink
-            // results...
-            supportedHosts.remove("youtube.com");
-            // and so does vimeo
-            supportedHosts.remove("vimeo.com");
             // supportedHosts.remove("netload.in");
             if (supportedHosts.contains("freakshare.net")) {
                 supportedHosts.add("freakshare.com");

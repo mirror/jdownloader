@@ -103,6 +103,7 @@ public class ChipDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.setFollowRedirects(true);
         String step1 = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
         if (step1 == null) {
             step1 = br.getRegex("<h2 class=\"item hProduct\"><a href=\"(http.*?)\"").getMatch(0);

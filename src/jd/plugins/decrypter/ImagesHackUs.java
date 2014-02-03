@@ -103,7 +103,7 @@ public class ImagesHackUs extends PluginForDecrypt {
                 }
                 counter++;
                 offset += imagesPerOffset;
-            } while (addedlinks == 100 && useAltHandling);
+            } while (addedlinks == imagesPerOffset && useAltHandling);
             fp.addLinks(decryptedLinks);
         } else {
             /* Error handling */
