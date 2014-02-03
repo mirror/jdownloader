@@ -1,9 +1,6 @@
 package org.jdownloader.statistics;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.net.ConnectException;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,7 +20,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
-import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
@@ -88,53 +84,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public boolean isEnabled() {
 
         return config.isEnabled() && !Application.isJared(StatsManager.class);
-    }
-
-    public static String getRandomStringHash(final String arg) {
-        try {
-            final MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(arg.getBytes("UTF-8"));
-            md.update((byte) (Math.random() * 3));
-            final byte[] digest = md.digest();
-            return HexFormatter.byteArrayToHex(digest);
-        } catch (final Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static String getFingerprint(final File arg) {
-        if (arg == null || !arg.exists() || arg.isDirectory()) { return null; }
-        FileInputStream fis = null;
-        MessageDigest md = null;
-        try {
-            md = MessageDigest.getInstance("MD5");
-            // if (true) { throw new IOException("Any IOEXCeption"); }
-            final byte[] b = new byte[32767];
-
-            fis = new FileInputStream(arg);
-            int n = 0;
-            long total = 0;
-            while ((n = fis.read(b)) >= 0 && total < 2 * 1024 * 1024) {
-                if (n > 0) {
-                    md.update(b, 0, n);
-                }
-                total += n;
-            }
-            // add random number. We cannot reference back from a pseudo fingerprint to a certain file this way.
-            //
-            md.update((byte) (Math.random() * 3));
-        } catch (final Throwable e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            try {
-                fis.close();
-            } catch (final Throwable e) {
-            }
-        }
-        final byte[] digest = md.digest();
-        return HexFormatter.byteArrayToHex(digest);
     }
 
     @Override
@@ -267,7 +216,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (chunks != null) {
                 dl.setChunks(chunks.length);
             }
-            dl.setRandom(getRandomStringHash(link.getLinkID()));
+
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
             dl.setHost(account.getHost());

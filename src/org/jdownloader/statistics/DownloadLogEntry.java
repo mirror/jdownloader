@@ -7,16 +7,6 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     }
 
-    private String random;
-
-    public String getRandom() {
-        return random;
-    }
-
-    public void setRandom(String random) {
-        this.random = random;
-    }
-
     private int chunks = 1;
 
     public int getChunks() {

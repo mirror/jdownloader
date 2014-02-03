@@ -11,7 +11,10 @@ import org.jdownloader.statistics.LogEntryWrapper;
 @ApiNamespace("plugins")
 @ApiSessionRequired()
 public interface PluginStatsInterface extends RemoteAPIInterface {
+public static enum Response{
+    OK,
+}
 
-    void push(ArrayList<LogEntryWrapper> sendTo, RemoteAPIRequest request);
+    Response push(ArrayList<LogEntryWrapper> sendTo, RemoteAPIRequest request);
 
 }
