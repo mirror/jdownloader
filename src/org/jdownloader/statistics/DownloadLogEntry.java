@@ -7,7 +7,25 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     }
 
-    private int chunks = 1;
+    private int    chunks  = 0;
+    private String country = null;
+    private String isp     = null;
+
+    public String getIsp() {
+        return isp;
+    }
+
+    public void setIsp(String isp) {
+        this.isp = isp;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
 
     public int getChunks() {
         return chunks;
@@ -37,7 +55,7 @@ public class DownloadLogEntry extends AbstractLogEntry {
         this.chunks = chunks;
     }
 
-    private long waittime = -1;
+    private long waittime = 0;
 
     public long getWaittime() {
         return waittime;
@@ -67,11 +85,31 @@ public class DownloadLogEntry extends AbstractLogEntry {
         this.waittime = waittime;
     }
 
-    private long pluginRuntime  = -1;
-    private long captchaRuntime = -1;
+    private long pluginRuntime  = 0;
+    private long captchaRuntime = 0;
 
     public long getCaptchaRuntime() {
         return captchaRuntime;
+    }
+
+    private String errorID = null;
+
+    public String getErrorID() {
+        return errorID;
+    }
+
+    public void setErrorID(String errorID) {
+        this.errorID = errorID;
+    }
+
+    private long revision = 0;
+
+    public long getRevision() {
+        return revision;
+    }
+
+    public void setRevision(long revision) {
+        this.revision = revision;
     }
 
     public void setCaptchaRuntime(long captchaRuntime) {

@@ -86,6 +86,7 @@ public class DownloadLinkCandidateResult {
     }
 
     private final ConditionalSkipReason conditionalSkip;
+    private Throwable                   throwable;
 
     public ConditionalSkipReason getConditionalSkip() {
         return conditionalSkip;
@@ -123,6 +124,14 @@ public class DownloadLinkCandidateResult {
      */
     public RESULT getResult() {
         return result;
+    }
+
+    public void setThrowable(Throwable caughtThrowable) {
+        this.throwable = caughtThrowable;
+    }
+
+    public Throwable getThrowable() {
+        return throwable;
     }
 
 }

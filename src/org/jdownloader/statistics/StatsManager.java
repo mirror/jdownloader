@@ -226,18 +226,26 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setHost(account.getHost());
             dl.setAccount(account.getAccount() == null ? null : account.getPlugin().getHost());
             dl.setCaptchaRuntime(captcha);
-            dl.setFilesize(link.getView().getBytesTotal());
+            dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
             dl.setPluginRuntime(pluginRuntime);
             dl.setProxy(usedProxy != null && !usedProxy.isDirect() && !usedProxy.isNone());
             dl.setResult(result.getResult());
             dl.setSpeed(speed);
             dl.setWaittime(waittime);
-            System.out.println(tasks);
+            dl.setRevision(candidate.getCachedAccount().getPlugin().getVersion());
+
+            Throwable throwable = result.getThrowable();
+
+            if (throwable != null) {
+                // throwable.printStackTrace();
+                StackTraceElement strace = throwable.getStackTrace()[0];
+                dl.setErrorID(strace.toString());
+            }
 
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);
         } catch (Throwable e) {
-
+            logger.log(e);
         }
 
     }

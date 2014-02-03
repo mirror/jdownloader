@@ -1866,6 +1866,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     DownloadLinkCandidateResult result = null;
                     try {
                         result = handleReturnState(logger, singleDownloadController, returnState);
+                        result.setThrowable(returnState.getCaughtThrowable());
                         result.setStartTime(singleDownloadController.getStartTimestamp());
                         result.setFinishTime(returnState.getTimeStamp());
                         setFinalLinkStatus(candidate, result, singleDownloadController);
@@ -2009,6 +2010,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         Throwable throwable = result.getCaughtThrowable();
         DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
         DownloadLink link = candidate.getLink();
+
         long sizeChange = Math.max(0, link.getView().getBytesLoaded() - singleDownloadController.getSizeBefore());
         Account account = singleDownloadController.getAccount();
         if (account != null && sizeChange > 0) {
@@ -2177,6 +2179,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             if (ret == null) ret = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT);
             ret.setWaitTime(waitTime);
             ret.setMessage(message);
+
             return ret;
         }
         if (result.getController().isAborting()) {
