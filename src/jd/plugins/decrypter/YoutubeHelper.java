@@ -1,6 +1,5 @@
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.text.DateFormat;
@@ -17,7 +16,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.swing.Icon;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -38,7 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
-import jd.plugins.PluginProgress;
 import jd.plugins.components.YoutubeClipData;
 import jd.plugins.components.YoutubeCustomConvertVariant;
 import jd.plugins.components.YoutubeCustomVariantStorable;
@@ -56,21 +53,14 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-
-import de.savemytube.flv.FLV;
 
 public class YoutubeHelper {
 
@@ -499,60 +489,6 @@ public class YoutubeHelper {
         if (new Regex(line, "\\.join\\(\"\"\\)").matches()) { return s; }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown Signature Rule: " + line);
 
-    }
-
-    public static void convertToMp3(DownloadLink downloadLink) {
-        PluginProgress old = null;
-        PluginProgress set = null;
-        try {
-            old = downloadLink.setPluginProgress(set = new PluginProgress(0, 100, null) {
-                {
-                    setIcon(new AbstractIcon(IconKey.ICON_AUDIO, 18));
-
-                }
-
-                @Override
-                public PluginTaskID getID() {
-                    return PluginTaskID.CONVERT;
-                }
-
-                @Override
-                public long getCurrent() {
-                    return 95;
-                }
-
-                @Override
-                public Icon getIcon(Object requestor) {
-                    if (requestor instanceof ETAColumn) return null;
-                    return super.getIcon(requestor);
-                }
-
-                @Override
-                public String getMessage(Object requestor) {
-                    if (requestor instanceof ETAColumn) return "";
-                    return "Create Mp3";
-                }
-            });
-            File file = new File(downloadLink.getFileOutput());
-
-            new FLV(downloadLink.getFileOutput(), true, true);
-
-            file.delete();
-            File finalFile = new File(downloadLink.getFileOutput().replaceAll(".tmp$", ""));
-            finalFile.delete();
-            new File(downloadLink.getFileOutput().replaceAll(".tmp$", ".mp3")).renameTo(finalFile);
-            new File(downloadLink.getFileOutput().replaceAll(".tmp$", ".avi")).delete();
-            downloadLink.setDownloadSize(finalFile.length());
-            downloadLink.setDownloadCurrent(finalFile.length());
-            try {
-                downloadLink.setFinalFileOutput(finalFile.getAbsolutePath());
-                downloadLink.setCustomFileOutputFilenameAppend(null);
-                downloadLink.setCustomFileOutputFilename(null);
-            } catch (final Throwable e) {
-            }
-        } finally {
-            downloadLink.compareAndSetPluginProgress(set, old);
-        }
     }
 
     protected static String pk(final String s, final int idxI) {
@@ -1202,7 +1138,7 @@ public class YoutubeHelper {
     public static final String YT_LENGTH_SECONDS     = "YT_LENGTH_SECONDS";
     public static final String YT_STATIC_URL         = "YT_STATIC_URL";
     public static final String YT_STREAMURL_DATA     = "YT_STREAMURL_DATA";
-    public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";
+    public static final String YT_SUBTITLE_CODE      = "YT_SUBTITLE_CODE";     // Update YoutubeSubtitleName
     public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
     public String createFilename(DownloadLink link) {
@@ -1382,12 +1318,6 @@ public class YoutubeHelper {
 
     public YoutubeConfig getConfig() {
         return cfg;
-    }
-
-    public static Locale forLanguageTag(String code) {
-        if (Application.getJavaVersion() >= Application.JAVA17) { return Locale.forLanguageTag(code); }
-
-        return TranslationFactory.stringToLocale(code);
     }
 
 }

@@ -134,6 +134,7 @@ public class LogController extends LogSourceProvider {
     }
 
     public static LogSource getFastPluginLogger(String id) {
+        if (LogController.getInstance().isInstantFlushDefault()) return LogController.getInstance().getLogger(id);
         LogSource ret = new LogSource(id) {
             LogSource         log      = null;
             LogConsoleHandler cHandler = LogController.getInstance().getConsoleHandler();

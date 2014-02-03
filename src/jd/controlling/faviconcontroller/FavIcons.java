@@ -485,8 +485,7 @@ public class FavIcons {
      * downloads a favicon from the given host, icon must be bigger than 1x1, cause some hosts have fake favicon.ico with 1x1 size
      */
     public static BufferedImage downloadFavIcon(String host) {
-        LogSource logger = LogController.getInstance().getLogger("FavIcons");
-        logger.setAllowTimeoutFlush(false);
+        LogSource logger = LogController.getFastPluginLogger("FavIcons");
         logger.info("Download FavIcon for " + host);
         BufferedImage ret = null;
         try {

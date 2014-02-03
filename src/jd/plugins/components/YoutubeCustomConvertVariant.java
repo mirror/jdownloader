@@ -152,7 +152,6 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     @Override
     public List<File> listProcessFiles(DownloadLink link) {
         List<File> ret = new ArrayList<File>();
-
         return ret;
     }
 

@@ -415,9 +415,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             if (AccountCache.ACCOUNTTYPE.MULTI.equals(candidate.getCachedAccount().getType())) {
                 logID = logID + "_" + candidate.getCachedAccount().getPlugin().getHost();
             }
-            downloadLogger = LogController.getInstance().getLogger(logID);
-            downloadLogger.setMaxSizeInMemory(256 * 1024);
-            downloadLogger.setAllowTimeoutFlush(false);
+            downloadLogger = LogController.getFastPluginLogger(logID);
             downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
             super.setLogger(downloadLogger);
 

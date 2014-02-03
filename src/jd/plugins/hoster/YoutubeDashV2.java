@@ -74,6 +74,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.action.BasicAction;
+import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -1259,7 +1260,7 @@ public class YoutubeDashV2 extends PluginForHost {
                                             String base = child.getFinalFileName().substring(0, child.getFinalFileName().length() - ext.length() - 1);
 
                                             String code = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE, "");
-                                            Locale locale = YoutubeHelper.forLanguageTag(code);
+                                            Locale locale = TranslationFactory.stringToLocale(code);
 
                                             File newFile;
                                             IO.copyFile(finalFile, newFile = new File(finalFile.getParentFile(), base + "." + locale.getDisplayLanguage() + ".srt"));
@@ -1412,7 +1413,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
         public SubtitleVariant(String code) {
             this.code = code;
-            locale = YoutubeHelper.forLanguageTag(code);
+            locale = TranslationFactory.stringToLocale(code);
         }
 
         @Override
