@@ -14,12 +14,13 @@ import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.download.raf.HashResult;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
@@ -29,6 +30,8 @@ import org.jdownloader.plugins.tasks.PluginSubTask;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
     private static final StatsManager INSTANCE = new StatsManager();
+
+    private static final boolean      DISABLED = false;
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
@@ -83,7 +86,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public boolean isEnabled() {
 
-        return config.isEnabled() && !Application.isJared(StatsManager.class);
+        return config.isEnabled() && !DISABLED;
     }
 
     @Override
@@ -220,7 +223,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
             dl.setHost(account.getHost());
-            dl.setAccount(account.getPlugin().getHost());
+            dl.setAccount(account.getAccount() == null ? null : account.getPlugin().getHost());
             dl.setCaptchaRuntime(captcha);
             dl.setFilesize(link.getView().getBytesTotal());
             dl.setPluginRuntime(pluginRuntime);
@@ -238,6 +241,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
+    public static enum Response {
+        OK;
+    }
+
     @Override
     public void run() {
         while (true) {
@@ -253,7 +260,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         }
                     }
                 }
-                while (true) {
+                retry: while (true) {
                     try {
                         synchronized (list) {
                             sendRequest.addAll(list);
@@ -264,11 +271,32 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         }
                         if (sendTo.size() > 0) {
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
-                            br.postPageRaw("http://localhost:8888/plugins/push", JSonStorage.serializeToJson(sendTo));
-                            break;
+
+                            br.postPageRaw("http://nas:81/thomas/fcgi/plugins/push", JSonStorage.serializeToJson(sendTo));
+                            // br.postPageRaw("http://localhost:8888/plugins/push", JSonStorage.serializeToJson(sendTo));
+
+                            Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<Response>() {
+                            });
+                            if (response != null) {
+                                switch (response) {
+                                case OK:
+
+                                    break retry;
+                                }
+                            }
+                        } else {
+                            break retry;
                         }
                         System.out.println(1);
                     } catch (ConnectException e) {
+                        logger.log(e);
+                        logger.info("Wait and retry");
+                        Thread.sleep(15000);
+                        // not sent. push back
+                        synchronized (list) {
+                            list.addAll(sendRequest);
+                        }
+                    } catch (JSonMapperException e) {
                         logger.log(e);
                         logger.info("Wait and retry");
                         Thread.sleep(15000);
