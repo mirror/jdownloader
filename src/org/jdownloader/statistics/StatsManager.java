@@ -93,7 +93,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public boolean isEnabled() {
 
-        return config.isEnabled() && !DISABLED;
+        return true || (config.isEnabled() && !DISABLED);
     }
 
     @Override
