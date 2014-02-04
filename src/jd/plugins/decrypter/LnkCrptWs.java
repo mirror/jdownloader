@@ -1703,6 +1703,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (latestPassword != null) {
                 password.put("password", latestPassword);
                 br.submitForm(password);
+                //
             }
             // no defaultpassword, or defaultpassword is wrong
             for (int i = 0; i <= 3; i++) {
