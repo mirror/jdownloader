@@ -3955,4 +3955,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Do not move - Delete Links" })
     String GraphicalUserInterfaceSettings_getLabel_delete();
+
+    @Default(lngs = { "en" }, values = { "Address" })
+    String lit_url();
+
+    @Default(lngs = { "en" }, values = { "Plugin" })
+    String lit_plugin();
 }

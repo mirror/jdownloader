@@ -20,8 +20,7 @@ import jd.config.Property;
 import jd.controlling.ProgressController;
 
 /**
- * Hier werden alle notwendigen Informationen zu einem einzelnen Crypted Link
- * festgehalten.
+ * Hier werden alle notwendigen Informationen zu einem einzelnen Crypted Link festgehalten.
  * 
  * @author jiaz
  */
@@ -37,8 +36,6 @@ public class CryptedLink extends Property {
 
     // Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
     private String             decrypterPassword;
-
-    private PluginForDecrypt   plugin           = null;
 
     private DownloadLink       link             = null;
 
@@ -90,16 +87,14 @@ public class CryptedLink extends Property {
     }
 
     /**
-     * Gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden
-     * kann (zb. FolderPassword)
+     * Gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden kann (zb. FolderPassword)
      */
     public String getDecrypterPassword() {
         return this.decrypterPassword;
     }
 
     /**
-     * Setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb.
-     * FolderPassword)
+     * Setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb. FolderPassword)
      */
     public void setDecrypterPassword(final String pw) {
         this.decrypterPassword = pw;
@@ -113,18 +108,4 @@ public class CryptedLink extends Property {
         return this.cryptedUrl;
     }
 
-    /**
-     * @param plugin
-     *            the plugin to set
-     */
-    public void setPlugin(PluginForDecrypt plugin) {
-        this.plugin = plugin;
-    }
-
-    /**
-     * @return the plugin
-     */
-    public PluginForDecrypt getPlugin() {
-        return plugin;
-    }
 }

@@ -47,7 +47,9 @@ import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
 import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
+import org.jdownloader.gui.dialog.AskForCryptedLinkPasswordDialog;
 import org.jdownloader.gui.dialog.AskForPasswordDialog;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -152,8 +154,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet
-     * werden
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer
+     * DownloadLink.getName() verwendet werden
      * 
      * @return Datename des Downloads.
      */
@@ -212,9 +214,26 @@ public abstract class Plugin implements ActionListener {
      *             if the user aborts the input
      */
     public static String getUserInput(final String message, final CryptedLink link) throws DecrypterException {
-        final String password = PluginUtils.askPassword(message, link);
-        if (password == null) { throw new DecrypterException(DecrypterException.PASSWORD); }
-        return password;
+        // final String password = PluginUtils.askPassword(message, link);
+        // if (password == null) { throw new DecrypterException(DecrypterException.PASSWORD); }
+        // return password;
+
+        // UserIOProgress prg = new UserIOProgress(message);
+        // PluginProgress old = null;
+        try {
+            // old = link.setPluginProgress(prg);
+            AskCrawlerPasswordDialogInterface handle = UIOManager.I().show(AskCrawlerPasswordDialogInterface.class, new AskForCryptedLinkPasswordDialog(message, link, getCurrentActivePlugin()));
+            if (handle.getCloseReason() == CloseReason.OK) {
+                String password = handle.getText();
+
+                if (StringUtils.isEmpty(password)) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                return password;
+            } else {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+        } finally {
+            // link.compareAndSetPluginProgress(prg, old);
+        }
     }
 
     public static Plugin getCurrentActivePlugin() {
@@ -275,7 +294,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
+     * Patterns vorhanden ist.
      * 
      * @param data
      *            der zu prüfende Text

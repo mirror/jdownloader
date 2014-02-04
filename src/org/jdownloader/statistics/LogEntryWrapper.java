@@ -4,7 +4,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 
 public class LogEntryWrapper implements Storable {
-    public static final int VERSION = 4;
+    public static final int VERSION = 5;
     private String          data;
 
     public String getData() {

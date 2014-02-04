@@ -53,6 +53,7 @@ public class PluginUtils {
     }
 
     public static String askPassword(final String message, final String defaultmessage) {
+
         return UserIO.getInstance().requestInputDialog(0, message, defaultmessage);
     }
 

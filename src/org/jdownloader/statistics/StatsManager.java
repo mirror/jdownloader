@@ -243,7 +243,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
             dl.setErrorID(result.getErrorID());
             dl.setTimestamp(System.currentTimeMillis());
-
+            // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
+            // this.
+            dl.setLinkID(link.getUniqueID().getID());
             String id = dl.getErrorID() + "_" + dl.getHost() + "_" + dl.getAccount();
             AtomicInteger errorCounter = counterMap.get(id);
             if (errorCounter == null) {
@@ -260,7 +262,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public static enum Response {
-        OK;
+        OK,
+        WAIT_5,
+        KILL,
+        WAIT_30;
     }
 
     @Override
@@ -304,6 +309,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                 case OK:
 
                                     break retry;
+                                case WAIT_5:
+                                    Thread.sleep(5 * 60 * 1000l);
+                                case WAIT_30:
+                                    Thread.sleep(30 * 60 * 1000l);
+                                    break;
+                                case KILL:
+                                    return;
+
                                 }
                             }
                         } else {
@@ -313,7 +326,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     } catch (ConnectException e) {
                         logger.log(e);
                         logger.info("Wait and retry");
-                        Thread.sleep(15000);
+                        Thread.sleep(5 * 60 * 1000l);
                         // not sent. push back
                         synchronized (list) {
                             list.addAll(sendRequest);
@@ -321,7 +334,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     } catch (JSonMapperException e) {
                         logger.log(e);
                         logger.info("Wait and retry");
-                        Thread.sleep(15000);
+                        Thread.sleep(5 * 60 * 1000l);
                         // not sent. push back
                         synchronized (list) {
                             list.addAll(sendRequest);

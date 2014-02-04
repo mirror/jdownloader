@@ -184,6 +184,11 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     private boolean proxy   = false;
     private int     counter = 1;
+    private long    linkID  = -1;
+
+    public long getLinkID() {
+        return linkID;
+    }
 
     public int getCounter() {
         return counter;
@@ -199,5 +204,9 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     public void setCounter(int counter) {
         this.counter = counter;
+    }
+
+    public void setLinkID(long id) {
+        this.linkID = id;
     }
 }

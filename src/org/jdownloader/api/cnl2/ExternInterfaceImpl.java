@@ -1,5 +1,6 @@
 package org.jdownloader.api.cnl2;
 
+import java.awt.Dialog.ModalityType;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,6 +36,8 @@ import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -45,7 +48,7 @@ import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.HttpRequestInterface;
-import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.api.cnl2.translate.ExternInterfaceTranslation;
@@ -340,7 +343,13 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         String from = url != null ? url : app;
         try {
-            Dialog.getInstance().showConfirmDialog(0, ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_title(from), ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_message(), null, ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_btn_allow(), ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_btn_deny());
+            ConfirmDialog d = new ConfirmDialog(0, ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_title(from), ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_message(), null, ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_btn_allow(), ExternInterfaceTranslation._.jd_plugins_optional_interfaces_jdflashgot_security_btn_deny()) {
+                @Override
+                public ModalityType getModalityType() {
+                    return ModalityType.MODELESS;
+                }
+            };
+            UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
         } catch (DialogNoAnswerException e) {
             throw e;
         }
