@@ -358,6 +358,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         }
     }
 
+    public PluginForHost getProcessingPlugin() {
+        return processingPlugin.get();
+    }
+
     public boolean isResumed() {
         return resumed;
     }
