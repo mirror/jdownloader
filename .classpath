@@ -64,22 +64,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingWin.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/swingx.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/mqtt.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/jpfm.jar" sourcepath="ressourcen/code-ressourcen/neembuu/jpfm.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/jpfm-fs.jar" sourcepath="ressourcen/code-ressourcen/neembuu/jpfm-fs.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-config.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-config.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-diskmanager.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-diskmanager.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-swing.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-swing.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util-logging.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util-logging.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-util-weaklisteners.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-util-weaklisteners.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/neembuu-vfs.jar" sourcepath="ressourcen/code-ressourcen/neembuu/neembuu-vfs.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/rangearray.jar" sourcepath="ressourcen/code-ressourcen/neembuu/rangearray.src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/com-sun-tools-visualvm-charts.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/com-sun-tools-visualvm-uisupport.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-netbeans-lib-profiler-charts.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-netbeans-lib-profiler-ui.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-openide-util.jar"/>
-	<classpathentry kind="lib" path="ressourcen/libs/neembuu/org-openide-util-lookup.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-core.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/jackson-mapper.jar"/>
 	<classpathentry kind="lib" path="/AppWorkUtils/libs/miglayout.jar"/>
