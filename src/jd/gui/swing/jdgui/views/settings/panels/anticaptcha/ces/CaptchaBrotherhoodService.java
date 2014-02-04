@@ -36,6 +36,8 @@ public class CaptchaBrotherhoodService implements CESService {
 
             private TextInput     userName;
             private PasswordInput passWord;
+            private TextInput     blacklist;
+            private TextInput     whitelist;
 
             {
                 addHeader(getDisplayName(), NewTheme.I().getIcon("cbh", 32));
@@ -56,6 +58,8 @@ public class CaptchaBrotherhoodService implements CESService {
 
                 userName = new TextInput(CFG_CAPTCHABROTHERHOOD.USER);
                 passWord = new PasswordInput(CFG_CAPTCHABROTHERHOOD.PASS);
+                blacklist = new TextInput(CFG_CAPTCHABROTHERHOOD.BLACK_LIST);
+                whitelist = new TextInput(CFG_CAPTCHABROTHERHOOD.WHITE_LIST);
                 this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
                 this.addDescriptionPlain(_GUI._.captchabrotherhoodService_createPanel_logins_());
@@ -63,6 +67,8 @@ public class CaptchaBrotherhoodService implements CESService {
                 addPair(_GUI._.captchabrotherhoodService_createPanel_enabled(), null, new Checkbox(CFG_CAPTCHABROTHERHOOD.ENABLED, userName, passWord));
                 addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, userName);
                 addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, passWord);
+                addPair(_GUI._.captchabrotherhoodService_createPanel_blacklist(), null, blacklist);
+                addPair(_GUI._.captchabrotherhoodService_createPanel_whitelist(), null, whitelist);
 
             }
 

@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
 
+import jd.controlling.captcha.CaptchaSettings;
 import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 import jd.http.Browser;
@@ -50,7 +51,6 @@ public class CBSolver extends CESChallengeSolver<String> {
         config = JsonConfig.create(CaptchaBrotherHoodSettings.class);
         AdvancedConfigManager.getInstance().register(config);
         initServicePanel(CFG_CBH.USER, CFG_CBH.PASS, CFG_CBH.ENABLED);
-
     }
 
     @Override
@@ -60,7 +60,6 @@ public class CBSolver extends CESChallengeSolver<String> {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-
         return c instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);
     }
 
@@ -126,6 +125,28 @@ public class CBSolver extends CESChallengeSolver<String> {
 
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
 
+        job.getLogger().info("Start Captcha to CaptchaBrotherHood. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + challenge.getTypeID());
+        if (config.getWhiteList() != null) {
+            if (config.getWhiteList().length() > 5) {
+                if (config.getWhiteList().contains(challenge.getTypeID())) {
+                    job.getLogger().info("Hoster on WhiteList for CaptchaBrotherHood. - " + challenge.getTypeID());
+                } else {
+                    job.getLogger().info("Hoster not on WhiteList for CaptchaBrotherHood. - " + challenge.getTypeID());
+                    return;
+                }
+            }
+        }
+        if (config.getBlackList() != null) {
+            if (config.getBlackList().length() > 5) {
+                if (config.getBlackList().contains(challenge.getTypeID())) {
+                    job.getLogger().info("Hoster on BlackList for CaptchaBrotherHood. - " + challenge.getTypeID());
+                    return;
+                } else {
+                    job.getLogger().info("Hoster not on BlackList for CaptchaBrotherHood. - " + challenge.getTypeID());
+                }
+            }
+        }
+
         job.showBubble(this);
         checkInterruption();
         try {
@@ -145,7 +166,6 @@ public class CBSolver extends CESChallengeSolver<String> {
             data = null;
             Thread.sleep(6000);
             while (true) {
-
                 Thread.sleep(1000);
                 url = "http://www.captchabrotherhood.com/askCaptchaResult.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.7";
                 job.getLogger().info("Ask " + url);

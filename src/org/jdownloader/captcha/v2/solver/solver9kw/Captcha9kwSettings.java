@@ -45,8 +45,8 @@ public interface Captcha9kwSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(0)
-    @SpinnerValidator(min = 0, max = 10)
-    @DescriptionForConfigEntry("More priority for captchas (Cost +1-10)")
+    @SpinnerValidator(min = 0, max = 20)
+    @DescriptionForConfigEntry("More priority for captchas (Cost +1-20)")
     int getprio();
 
     void setprio(int seconds);
@@ -135,7 +135,7 @@ public interface Captcha9kwSettings extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is required after changes")
     @DefaultIntValue(3)
-    @SpinnerValidator(min = 0, max = 25)
+    @SpinnerValidator(min = 0, max = 10)
     @DescriptionForConfigEntry("Max. Captchas Parallel")
     int getThreadpoolSize();
 

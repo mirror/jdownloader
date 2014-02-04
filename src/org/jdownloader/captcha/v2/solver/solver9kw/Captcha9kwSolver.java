@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
 
@@ -184,7 +185,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         }
 
         try {
-
+            counter.incrementAndGet();
             job.showBubble(this);
             checkInterruption();
 
@@ -222,6 +223,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
                 }
                 if (ret.startsWith("OK-answered-")) {
+                    counterSolved.incrementAndGet();
                     job.setAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
                     return;
                 }
@@ -231,6 +233,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             }
 
         } catch (IOException e) {
+            counterInterrupted.incrementAndGet();
             job.getLogger().log(e);
         }
 
@@ -361,10 +364,18 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         }
     }
 
+    private AtomicInteger counterSolved      = new AtomicInteger();
+    private AtomicInteger counterInterrupted = new AtomicInteger();
+    private AtomicInteger counter            = new AtomicInteger();
+
     public NineKWAccount loadAccount() throws IOException {
         Browser br = new Browser();
         NineKWAccount ret = new NineKWAccount();
         String credits;
+
+        ret.setRequests(counter.get());
+        ret.setSkipped(counterInterrupted.get());
+        ret.setSolved(counterSolved.get());
 
         credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
 

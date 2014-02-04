@@ -4,6 +4,8 @@ import org.appwork.utils.StringUtils;
 
 public class NineKWAccount {
     private int solved;
+    private int requests;
+    private int skipped;
 
     public int getSolved() {
         return solved;
@@ -128,4 +130,19 @@ public class NineKWAccount {
         this.worker = worker;
     }
 
+    public int getRequests() {
+        return requests;
+    }
+
+    public void setRequests(int requests) {
+        this.requests = requests;
+    }
+
+    public int getSkipped() {
+        return skipped;
+    }
+
+    public void setSkipped(int skipped) {
+        this.skipped = skipped;
+    }
 }

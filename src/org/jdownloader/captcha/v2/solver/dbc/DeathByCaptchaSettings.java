@@ -32,7 +32,7 @@ public interface DeathByCaptchaSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Active the deathbycaptcha.eu service")
+    @DescriptionForConfigEntry("Activate the deathbycaptcha.eu service")
     boolean isEnabled();
 
     void setEnabled(boolean b);

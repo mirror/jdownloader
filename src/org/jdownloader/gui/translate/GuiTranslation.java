@@ -2807,11 +2807,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Selfsolve" })
     String NinekwService_createPanel_selfsolve();
 
-    @Default(lngs = { "en" }, values = { "Prio 1-10 (Cost +1-10)" })
+    @Default(lngs = { "en" }, values = { "Prio 1-20 (Cost +1-20)" })
     String NinekwService_createPanel_prio();
 
     @Default(lngs = { "en" }, values = { "Captcha per hour" })
     String NinekwService_createPanel_hour();
+
+    @Default(lngs = { "en" }, values = { "Max. Captchas Parallel" })
+    String NinekwService_createPanel_threadsizepool();
+
+    @Default(lngs = { "en" }, values = { "ms - Max. Timeout (60-999s)" })
+    String NinekwService_createPanel_9kwtimeout();
 
     @Default(lngs = { "en" }, values = { "Enter your Captcha Brotherhood Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String captchabrotherhoodService_createPanel_logins_();
@@ -2821,6 +2827,12 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Password" })
     String captchabrotherhoodService_createPanel_password();
+
+    @Default(lngs = { "en" }, values = { "Blacklist" })
+    String captchabrotherhoodService_createPanel_blacklist();
+
+    @Default(lngs = { "en" }, values = { "Whitelist" })
+    String captchabrotherhoodService_createPanel_whitelist();
 
     @Default(lngs = { "en" }, values = { "Finding Links..." })
     String LinkCrawlerBubble_update_header();
@@ -2867,7 +2879,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Use Hoster Rules if you have more than one Premium Account and want to specify in which order these accounts should be used." })
     String HosterOrderPanel_HosterOrderPanel_description_();
 
-    @Default(lngs = { "en" }, values = { "Enabled Captchabrotherhood's Service" })
+    @Default(lngs = { "en" }, values = { "Enabled Captchabrotherhood Service" })
     String captchabrotherhoodService_createPanel_enabled();
 
     @Default(lngs = { "en" }, values = { "Add, remove or modify premium accounts" })

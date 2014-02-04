@@ -1,5 +1,7 @@
 package org.jdownloader.settings.staticreferences;
 
+import jd.controlling.captcha.CaptchaSettings;
+
 import org.appwork.storage.config.ConfigUtils;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
@@ -10,10 +12,13 @@ import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 
 public class CFG_9KWCAPTCHA {
     public static void main(String[] args) {
+        ConfigUtils.printStaticMappings(CaptchaSettings.class);
         ConfigUtils.printStaticMappings(Captcha9kwSettings.class);
     }
 
     // Static Mappings for interface org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings
+    public static final CaptchaSettings                    CFGold             = JsonConfig.create(CaptchaSettings.class);
+    public static final StorageHandler<CaptchaSettings>    SHold              = (StorageHandler<CaptchaSettings>) CFGold._getStorageHandler();
     public static final Captcha9kwSettings                 CFG                = JsonConfig.create(Captcha9kwSettings.class);
     public static final StorageHandler<Captcha9kwSettings> SH                 = (StorageHandler<Captcha9kwSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
@@ -95,7 +100,17 @@ public class CFG_9KWCAPTCHA {
     public static final BooleanKeyHandler                  ENABLED            = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
 
     /**
-     * More priority for captchas (Cost +1-10)
+     * ThreadpoolSize for captchas (Max. 25)
+     **/
+    public static final IntegerKeyHandler                  THREADPOOL         = SH.getKeyHandler("ThreadpoolSize", IntegerKeyHandler.class);
+
+    /**
+     * ThreadpoolSize for captchas (Min. 60 - Max. 999)
+     **/
+    public static final IntegerKeyHandler                  Timeout9kw         = SHold.getKeyHandler("CaptchaDialog9kwTimeout", IntegerKeyHandler.class);
+
+    /**
+     * More priority for captchas (Cost +1-20)
      **/
     public static final IntegerKeyHandler                  PRIO               = SH.getKeyHandler("prio", IntegerKeyHandler.class);
 

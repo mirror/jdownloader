@@ -91,7 +91,7 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_credits_(), NewTheme.I().getIcon(IconKey.ICON_MONEY, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getCreditBalance() + ""));
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_solved(), NewTheme.I().getIcon(IconKey.ICON_LOGIN, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getSolved() + ""));
+                                panel.add(lbl(account.getSolved() + " (" + account.getRequests() + ")"));
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_answered(), NewTheme.I().getIcon(IconKey.ICON_LOGOUT, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getAnswered() + ""));
 

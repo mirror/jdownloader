@@ -13,14 +13,19 @@ public class CFG_CBH {
     }
 
     // Static Mappings for interface org.jdownloader.captcha.v2.solver.captchabrotherhood.CaptchaBrotherHoodSettings
-    public static final CaptchaBrotherHoodSettings                 CFG     = JsonConfig.create(CaptchaBrotherHoodSettings.class);
-    public static final StorageHandler<CaptchaBrotherHoodSettings> SH      = (StorageHandler<CaptchaBrotherHoodSettings>) CFG._getStorageHandler();
+    public static final CaptchaBrotherHoodSettings                 CFG        = JsonConfig.create(CaptchaBrotherHoodSettings.class);
+    public static final StorageHandler<CaptchaBrotherHoodSettings> SH         = (StorageHandler<CaptchaBrotherHoodSettings>) CFG._getStorageHandler();
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
 
-    public static final BooleanKeyHandler                          ENABLED = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                          ENABLED    = SH.getKeyHandler("Enabled", BooleanKeyHandler.class);
 
-    public static final StringKeyHandler                           USER    = SH.getKeyHandler("User", StringKeyHandler.class);
+    public static final StringKeyHandler                           USER       = SH.getKeyHandler("User", StringKeyHandler.class);
 
-    public static final StringKeyHandler                           PASS    = SH.getKeyHandler("Pass", StringKeyHandler.class);
+    public static final StringKeyHandler                           PASS       = SH.getKeyHandler("Pass", StringKeyHandler.class);
+
+    public static final StringKeyHandler                           BLACK_LIST = SH.getKeyHandler("BlackList", StringKeyHandler.class);
+
+    public static final StringKeyHandler                           WHITE_LIST = SH.getKeyHandler("WhiteList", StringKeyHandler.class);
+
 }
