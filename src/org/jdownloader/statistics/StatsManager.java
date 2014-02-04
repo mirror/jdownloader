@@ -271,7 +271,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         synchronized (list) {
                             sendRequest.addAll(list);
                             for (AbstractLogEntry e : list) {
-                                sendTo.add(new LogEntryWrapper(e, 2));
+                                sendTo.add(new LogEntryWrapper(e, LogEntryWrapper.VERSION));
                             }
                             list.clear();
                         }

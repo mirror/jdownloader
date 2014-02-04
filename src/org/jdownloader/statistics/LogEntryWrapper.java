@@ -4,13 +4,14 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 
 public class LogEntryWrapper implements Storable {
-    private String data;
+    public static final int VERSION = 3;
+    private String          data;
 
     public String getData() {
         return data;
     }
 
-    private int version = 0;
+    private int version = -1;
 
     public int getVersion() {
         return version;
@@ -38,10 +39,11 @@ public class LogEntryWrapper implements Storable {
 
     }
 
-    public LogEntryWrapper(AbstractLogEntry e, int i) {
+    public LogEntryWrapper(AbstractLogEntry e, int version2) {
         this.data = JSonStorage.serializeToJson(e);
         this.type = e.getClass().getSimpleName();
-        setVersion(i);
+        this.version = version2;
+
     }
 
 }
