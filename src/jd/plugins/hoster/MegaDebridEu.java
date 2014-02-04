@@ -31,13 +31,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega-debrid.eu" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class MegaDebridEu extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private final String                                   NOCHUNKS           = "NOCHUNKS";
+    private static final String                            NOCHUNKS           = "NOCHUNKS";
     private final String                                   mName              = "www.mega-debrid.eu";
     private final String                                   mProt              = "http://";
 
@@ -166,24 +165,24 @@ public class MegaDebridEu extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
-            }
-            final String errormessage = link.getLinkStatus().getErrorMessage();
-            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(NOCHUNKS, false) == false) {
-                    link.setProperty(NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else {
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(NOCHUNKS, false) == false) {
-                        link.setProperty(NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
                 }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false) == false) {
+                    link.setProperty(MegaDebridEu.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(MegaDebridEu.NOCHUNKS, false) == false) {
+                link.setProperty(MegaDebridEu.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
     }

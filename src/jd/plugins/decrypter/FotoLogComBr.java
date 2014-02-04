@@ -78,6 +78,14 @@ public class FotoLogComBr extends PluginForDecrypt {
             final String lastPage = br.getRegex("/(\\d+)\">Last ›</a>").getMatch(0);
             if (lastPage != null) maxOffset = Integer.parseInt(lastPage);
             while (offset != (maxOffset + picsPerPageMax) && picsPerPageGrabbed == picsPerPageMax) {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
+                    }
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
                 logger.info("Decrypting offset " + offset + " / " + maxOffset);
                 if (offset > 0) {
                     br.getPage(parameter + offset + "/");
@@ -92,9 +100,16 @@ public class FotoLogComBr extends PluginForDecrypt {
                     dl.setFinalFileName(fpName + "_" + df.format(counter) + ".jpg");
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
+                    counter++;
                 }
                 picsPerPageGrabbed = links.length;
                 offset += picsPerPageMax;
+                logger.info("Decrypted offset " + offset + " / " + maxOffset);
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);

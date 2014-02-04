@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/\\?ref=[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(iframe\\.php)?\\?ref=[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends PluginForHost {
 
     public VideoMegaTv(PluginWrapper wrapper) {
@@ -38,6 +38,10 @@ public class VideoMegaTv extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://videomega.tv/terms.html";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://videomega.tv/?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override

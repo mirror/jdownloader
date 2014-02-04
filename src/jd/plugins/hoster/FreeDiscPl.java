@@ -67,6 +67,7 @@ public class FreeDiscPl extends PluginForHost {
         String filesize = br.getRegex("class=\\'frameFilesSize\\'>Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("Rozmiar pliku</div>[\t\n\r ]+<div class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("Rozmiar plików</div><div class=\\'menuFilesCountNumber\\'>([^<>\"]*?)</div>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("class=\\'frameFilesCountNumber\\'>([^<>\"]*?)</div><div class=\\'frameFilesViews\\'><i class=").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));

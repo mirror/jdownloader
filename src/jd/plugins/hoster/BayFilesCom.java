@@ -46,7 +46,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class BayFilesCom extends PluginForHost {
 
     private static final String CAPTCHAFAILED = "\"Invalid captcha\"";
-    private static final String MAINPAGE      = "http://bayfiles.com";
+    private static final String MAINPAGE      = "http://bayfiles.net";
     private static Object       LOCK          = new Object();
 
     public BayFilesCom(PluginWrapper wrapper) {
@@ -215,8 +215,7 @@ public class BayFilesCom extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage("http://api.bayfiles.net/v1/account/login/" + Encoding.urlEncode(account.getUser()) + "/" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("\"error\":\"\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (br.getCookie(MAINPAGE, "SESSID") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "SESSID") == null || br.containsHTML("\"error\":\"invalid username or password\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
