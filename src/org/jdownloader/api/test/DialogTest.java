@@ -22,7 +22,7 @@ public class DialogTest extends Test {
         if (list.length > 0) {
             DialogStorable info = dialogs.get(list[0], true, true);
             DialogTypeStorable typeInfo = dialogs.getTypeInfo(info.getType());
-
+            //
             dialogs.answer(list[0], JSonStorage.restoreFromString(Dialog.getInstance().showInputDialog(info.getType()), new TypeRef<HashMap<String, Object>>() {
             }));
 
