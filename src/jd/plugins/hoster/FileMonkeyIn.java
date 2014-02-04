@@ -289,7 +289,9 @@ public class FileMonkeyIn extends PluginForHost {
         if (dllink == null) {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-            final String reconnectWait = br.getRegex("Please wait (\\d{2}(\\.\\d{2})?) minutes before downloading another file").getMatch(0);
+            // final String reconnectWait =
+            // br.getRegex("Please wait (\\d{2}(\\.\\d{2})?) minutes before downloading another file").getMatch(0);
+            final String reconnectWait = br.getRegex("(\\d{2}) minutes and \\d{2} seconds or get premium").getMatch(0);
             if (reconnectWait != null) {
                 final double reconWait = Double.parseDouble(reconnectWait) * 60;
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (long) reconWait * 1001 + 10000);
