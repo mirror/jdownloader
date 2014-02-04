@@ -238,7 +238,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
             dl.setErrorID(result.getErrorID());
-
+            dl.setTimestamp(System.currentTimeMillis());
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);
         } catch (Throwable e) {
