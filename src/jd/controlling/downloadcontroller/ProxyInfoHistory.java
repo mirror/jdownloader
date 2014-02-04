@@ -167,7 +167,7 @@ public class ProxyInfoHistory {
         List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), candidate.getProxy());
         if (list != null && list.size() > 0) {
             final WaitingSkipReason waitingSkipReason = list.get(0).getWaitingSkipReason();
-            return new DownloadLinkCandidateResult(RESULT.PROXY_UNAVAILABLE) {
+            return new DownloadLinkCandidateResult(RESULT.PROXY_UNAVAILABLE, null) {
                 @Override
                 public long getRemainingTime() {
                     return waitingSkipReason.getTimeOutLeft();

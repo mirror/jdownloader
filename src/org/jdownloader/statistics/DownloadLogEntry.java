@@ -15,6 +15,16 @@ public class DownloadLogEntry extends AbstractLogEntry {
         return isp;
     }
 
+    private long timestamp = 0;
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public void setIsp(String isp) {
         this.isp = isp;
     }
@@ -110,6 +120,16 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     public void setErrorID(String errorID) {
         this.errorID = errorID;
+    }
+
+    private int utcOffset = 0;
+
+    public int getUtcOffset() {
+        return utcOffset;
+    }
+
+    public void setUtcOffset(int utcOffset) {
+        this.utcOffset = utcOffset;
     }
 
     private long revision = 0;

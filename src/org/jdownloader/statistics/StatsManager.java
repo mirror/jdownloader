@@ -3,6 +3,7 @@ package org.jdownloader.statistics;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
@@ -235,14 +236,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setWaittime(waittime);
             dl.setRevision(candidate.getCachedAccount().getPlugin().getVersion());
             dl.setOs(CrossSystem.getOSFamily().name());
-
-            Throwable throwable = result.getThrowable();
-
-            if (throwable != null) {
-                // throwable.printStackTrace();
-                StackTraceElement strace = throwable.getStackTrace()[0];
-                dl.setErrorID(strace.toString());
-            }
+            dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
+            dl.setErrorID(result.getErrorID());
 
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);

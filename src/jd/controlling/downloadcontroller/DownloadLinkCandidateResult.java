@@ -86,7 +86,12 @@ public class DownloadLinkCandidateResult {
     }
 
     private final ConditionalSkipReason conditionalSkip;
-    private Throwable                   throwable;
+
+    private String                      errorID;
+
+    public String getErrorID() {
+        return errorID;
+    }
 
     public ConditionalSkipReason getConditionalSkip() {
         return conditionalSkip;
@@ -96,22 +101,39 @@ public class DownloadLinkCandidateResult {
         return skipReason;
     }
 
-    public DownloadLinkCandidateResult(RESULT result) {
+    public DownloadLinkCandidateResult(RESULT result, Throwable throwable) {
         this.result = result;
         this.skipReason = null;
         conditionalSkip = null;
+        updateErrorID(throwable);
+
     }
 
-    public DownloadLinkCandidateResult(ConditionalSkipReason conditionalSkip) {
+    private void updateErrorID(Throwable throwable) {
+        errorID = null;
+        if (throwable != null) {
+            StackTraceElement[] st = throwable.getStackTrace();
+            if (st != null && st.length > 0) {
+                errorID = st[0].toString();
+            } else {
+                errorID = throwable.toString();
+            }
+
+        }
+    }
+
+    public DownloadLinkCandidateResult(ConditionalSkipReason conditionalSkip, Throwable throwable) {
         this.result = RESULT.CONDITIONAL_SKIPPED;
         this.conditionalSkip = conditionalSkip;
         this.skipReason = null;
+        updateErrorID(throwable);
     }
 
-    public DownloadLinkCandidateResult(SkipReason skipReason) {
+    public DownloadLinkCandidateResult(SkipReason skipReason, Throwable throwable) {
         this.result = RESULT.SKIPPED;
         this.skipReason = skipReason;
         conditionalSkip = null;
+        updateErrorID(throwable);
     }
 
     @Override
@@ -124,14 +146,6 @@ public class DownloadLinkCandidateResult {
      */
     public RESULT getResult() {
         return result;
-    }
-
-    public void setThrowable(Throwable caughtThrowable) {
-        this.throwable = caughtThrowable;
-    }
-
-    public Throwable getThrowable() {
-        return throwable;
     }
 
 }
