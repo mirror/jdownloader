@@ -35,6 +35,8 @@ import javax.swing.ImageIcon;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -213,6 +215,18 @@ public abstract class Plugin implements ActionListener {
         final String password = PluginUtils.askPassword(message, link);
         if (password == null) { throw new DecrypterException(DecrypterException.PASSWORD); }
         return password;
+    }
+
+    public static Plugin getCurrentActivePlugin() {
+        Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof LinkCrawlerThread) {
+            //
+            return (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
+        } else if (currentThread instanceof SingleDownloadController) {
+            //
+            return ((SingleDownloadController) currentThread).getProcessingPlugin();
+        }
+        return null;
     }
 
     /**
