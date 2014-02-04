@@ -114,7 +114,36 @@ public class DownloadLinkCandidateResult {
         if (throwable != null) {
             StackTraceElement[] st = throwable.getStackTrace();
             if (st != null && st.length > 0) {
-                errorID = st[0].toString();
+                StringBuilder sb = new StringBuilder();
+                StringBuilder sb2 = new StringBuilder();
+                boolean found = false;
+                boolean found2 = false;
+                for (int i = 0; i < st.length; i++) {
+                    String line = st[i].toString();
+
+                    if (sb.length() > 0) sb.append("\r\n");
+                    sb.append(line);
+                    if (!found2) {
+                        if (sb2.length() > 0) sb2.append("\r\n");
+                        sb2.append(line);
+                    }
+                    if (st[i].getLineNumber() >= 0) {
+                        found2 = true;
+                    }
+                    if (line.startsWith("jd.plugins.hoster.")) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    errorID = sb.toString();
+                } else {
+                    if (found2) {
+                        errorID = sb2.toString();
+                    } else {
+                        errorID = st[0].toString();
+                    }
+                }
             } else {
                 errorID = throwable.toString();
             }

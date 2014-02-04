@@ -44,7 +44,6 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequestInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -119,9 +118,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     public void addcrypted2(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
-            String crypted = HttpRequest.getParameterbyKey(request, "crypted");
-            String jk = HttpRequest.getParameterbyKey(request, "jk");
-            String k = HttpRequest.getParameterbyKey(request, "k");
+            String crypted = request.getParameterbyKey("crypted");
+            String jk = request.getParameterbyKey("jk");
+            String k = request.getParameterbyKey("k");
             String urls = decrypt(crypted, jk, k);
             clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
             /*
@@ -129,6 +128,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
              */
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
+            e.printStackTrace();
             writeString(response, request, "failed " + e.getMessage() + "\r\n", true);
         }
     }
@@ -142,13 +142,13 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     }
 
     private void clickAndLoad2Add(LinkOriginDetails origin, String urls, RemoteAPIRequest request) throws IOException {
-        final String finalPasswords = HttpRequest.getParameterbyKey(request, "passwords");
-        String source = HttpRequest.getParameterbyKey(request, "source");
-        final String finalComment = HttpRequest.getParameterbyKey(request, "comment");
+        final String finalPasswords = request.getParameterbyKey("passwords");
+        String source = request.getParameterbyKey("source");
+        final String finalComment = request.getParameterbyKey("comment");
         LinkCollectingJob job = new LinkCollectingJob(origin, urls);
-        final String finalDestination = HttpRequest.getParameterbyKey(request, "dir");
+        final String finalDestination = request.getParameterbyKey("dir");
         job.setCustomSourceUrl(source);
-        final String finalPackageName = HttpRequest.getParameterbyKey(request, "package");
+        final String finalPackageName = request.getParameterbyKey("package");
         job.setCrawledLinkModifier(new CrawledLinkModifier() {
             private HashSet<String> pws = null;
             {
@@ -245,7 +245,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     public void add(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
-            String urls = HttpRequest.getParameterbyKey(request, "urls");
+            String urls = request.getParameterbyKey("urls");
             clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls, request);
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {
@@ -284,7 +284,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
-            String dlcContent = HttpRequest.getParameterbyKey(request, "crypted");
+            String dlcContent = request.getParameterbyKey("crypted");
             if (dlcContent == null) throw new IllegalArgumentException("no DLC Content available");
             String dlc = dlcContent.trim().replace(" ", "+");
             File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
@@ -328,7 +328,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         if (url == null) {
             /* no referer available, maybe a source variable is? */
-            url = HttpRequest.getParameterbyKey(request, "source");
+            url = request.getParameterbyKey("source");
         }
         if (url != null) {
             url = Browser.getHost(url);
@@ -380,22 +380,22 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             StringBuilder sb = new StringBuilder();
             sb.append(jdpath + "\r\n");
             sb.append("java -Xmx512m -jar " + jdpath + "\r\n");
-            final String urls[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "urls"));
+            final String urls[] = Regex.getLines(request.getParameterbyKey("urls"));
             if (urls != null && urls.length > 0) {
-                final String desc[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "descriptions"));
-                final String fnames[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "fnames"));
-                final String cookies = HttpRequest.getParameterbyKey(request, "cookies");
-                final String post = HttpRequest.getParameterbyKey(request, "postData");
-                final String referer = HttpRequest.getParameterbyKey(request, "referer");
-                final String downloadPasswords[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "dpass"));
-                final String archivePasswords[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "apass"));
-                final boolean finalAutostart = "1".equals(HttpRequest.getParameterbyKey(request, "autostart"));
+                final String desc[] = Regex.getLines(request.getParameterbyKey("descriptions"));
+                final String fnames[] = Regex.getLines(request.getParameterbyKey("fnames"));
+                final String cookies = request.getParameterbyKey("cookies");
+                final String post = request.getParameterbyKey("postData");
+                final String referer = request.getParameterbyKey("referer");
+                final String downloadPasswords[] = Regex.getLines(request.getParameterbyKey("dpass"));
+                final String archivePasswords[] = Regex.getLines(request.getParameterbyKey("apass"));
+                final boolean finalAutostart = "1".equals(request.getParameterbyKey("autostart"));
                 /*
                  * create LinkCollectingJob to forward general Information like directory, autostart...
                  */
                 LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.FLASHGOT, request.getRequestHeaders().getValue("user-agent")), null);
-                final String finalPackageName = HttpRequest.getParameterbyKey(request, "package");
-                final String finalDestination = HttpRequest.getParameterbyKey(request, "dir");
+                final String finalPackageName = request.getParameterbyKey("package");
+                final String finalDestination = request.getParameterbyKey("dir");
 
                 job.setCrawledLinkModifier(new CrawledLinkModifier() {
                     private HashSet<String> pws = null;

@@ -182,7 +182,12 @@ public class DownloadLogEntry extends AbstractLogEntry {
         this.pluginRuntime = pluginRuntime;
     }
 
-    private boolean proxy = false;
+    private boolean proxy   = false;
+    private int     counter = 1;
+
+    public int getCounter() {
+        return counter;
+    }
 
     public boolean isProxy() {
         return proxy;
@@ -190,5 +195,9 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     public void setProxy(boolean proxy) {
         this.proxy = proxy;
+    }
+
+    public void setCounter(int counter) {
+        this.counter = counter;
     }
 }

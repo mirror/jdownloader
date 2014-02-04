@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Target({ TYPE, METHOD, FIELD })
 @Retention(RUNTIME)
 @Documented
-public @interface Alternative2 {
+public @interface Alternative {
     //
 
 }

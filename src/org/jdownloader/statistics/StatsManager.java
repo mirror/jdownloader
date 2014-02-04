@@ -2,8 +2,10 @@ package org.jdownloader.statistics;
 
 import java.net.ConnectException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
@@ -45,12 +47,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         return StatsManager.INSTANCE;
     }
 
-    private StatsManagerConfig          config;
+    private StatsManagerConfig             config;
 
-    private long                        startTime;
-    private LogSource                   logger;
-    private ArrayList<AbstractLogEntry> list;
-    private Thread                      thread;
+    private long                           startTime;
+    private LogSource                      logger;
+    private ArrayList<AbstractLogEntry>    list;
+    private Thread                         thread;
+
+    private HashMap<String, AtomicInteger> counterMap;
 
     private void log(DownloadLogEntry dl) {
         if (isEnabled()) {
@@ -67,7 +71,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
      */
     private StatsManager() {
         list = new ArrayList<AbstractLogEntry>();
-
+        counterMap = new HashMap<String, AtomicInteger>();
         config = JsonConfig.create(StatsManagerConfig.class);
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
 
@@ -239,6 +243,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
             dl.setErrorID(result.getErrorID());
             dl.setTimestamp(System.currentTimeMillis());
+
+            String id = dl.getErrorID() + "_" + dl.getHost() + "_" + dl.getAccount();
+            AtomicInteger errorCounter = counterMap.get(id);
+            if (errorCounter == null) {
+                counterMap.put(id, errorCounter = new AtomicInteger());
+            }
+            dl.setCounter(errorCounter.incrementAndGet());
+            ;
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);
         } catch (Throwable e) {

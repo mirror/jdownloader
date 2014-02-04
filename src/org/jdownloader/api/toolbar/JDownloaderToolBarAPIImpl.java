@@ -33,7 +33,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.MinTimeWeakReference;
-import org.appwork.utils.net.httpserver.requests.HttpRequest;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -311,12 +310,12 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
     }
 
     private ChunkedDom getCompleteDOM(RemoteAPIRequest request) throws IOException {
-        String index = HttpRequest.getParameterbyKey(request, "index");
-        String data = HttpRequest.getParameterbyKey(request, "data");
-        String sessionID = HttpRequest.getParameterbyKey(request, "sessionid");
-        final String url = HttpRequest.getParameterbyKey(request, "url");
-        boolean lastChunk = "true".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "lastchunk"));
-        boolean debug = "true".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "debug"));
+        String index = request.getParameterbyKey("index");
+        String data = request.getParameterbyKey("data");
+        String sessionID = request.getParameterbyKey("sessionid");
+        final String url = request.getParameterbyKey("url");
+        boolean lastChunk = "true".equalsIgnoreCase(request.getParameterbyKey("lastchunk"));
+        boolean debug = "true".equalsIgnoreCase(request.getParameterbyKey("debug"));
         if (url == null) { throw new WTFException("No url?!"); }
         if (sessionID == null) { throw new WTFException("No sessionID?!"); }
         if (index == null) { throw new WTFException("No index?!"); }
@@ -414,8 +413,8 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         org.jdownloader.myjdownloader.client.json.JsonMap ret = new org.jdownloader.myjdownloader.client.json.JsonMap();
         ret.put("checkid", null);
         try {
-            boolean hosterOnly = "true".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "hosteronly"));
-            boolean map = "1".equals(HttpRequest.getParameterbyKey(request, "map"));
+            boolean hosterOnly = "true".equalsIgnoreCase(request.getParameterbyKey("hosteronly"));
+            boolean map = "1".equals(request.getParameterbyKey("map"));
             ChunkedDom chunkedDom = getCompleteDOM(request);
             if (chunkedDom != null) {
                 final CheckedDom checkSession = new CheckedDom(chunkedDom);
