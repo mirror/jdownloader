@@ -116,6 +116,9 @@ public class DownloadLinkCandidateResult {
             if (st != null && st.length > 0) {
                 StringBuilder sb = new StringBuilder();
                 StringBuilder sb2 = new StringBuilder();
+                sb.append(throwable.toString());
+                sb2.append(throwable.toString());
+
                 boolean found = false;
                 boolean found2 = false;
                 for (int i = 0; i < st.length; i++) {
