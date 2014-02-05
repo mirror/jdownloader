@@ -141,7 +141,7 @@ public class WebShareCz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                String pw = crypt_md5(account.getPass().getBytes("UTF-8"), "reset");
+                String pw = crypt_md5(account.getPass().getBytes("UTF-8"), salt);
                 pw = JDHash.getSHA1(pw);
                 br.postPage("https://webshare.cz/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + pw + "&keep_logged_in=true&wst=");
                 final String token = getXMLtagValue("token");
