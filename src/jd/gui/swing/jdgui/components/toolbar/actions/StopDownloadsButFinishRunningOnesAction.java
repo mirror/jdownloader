@@ -8,6 +8,7 @@ import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
@@ -21,10 +22,10 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
 
     public StopDownloadsButFinishRunningOnesAction() {
         setIconKey("stop_conditional");
+        setSelected(false);
         setEnabled(false);
         DownloadWatchDog.getInstance().getEventSender().addListener(this, true);
         DownloadWatchDog.getInstance().notifyCurrentState(this);
-
         addContextSetup(this);
     }
 
@@ -39,13 +40,14 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
 
             @Override
             public void execute(DownloadSession currentSession) {
-                currentSession.setStopMark(STOPMARK.RANDOM);
+                currentSession.toggleStopMark(STOPMARK.RANDOM);
             }
 
             @Override
             public void interrupt() {
             }
         });
+
     }
 
     private boolean            hideIfDownloadsAreStopped     = false;
@@ -77,7 +79,6 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
             @Override
             protected void runInEDT() {
                 setEnabled(false);
-
             }
         };
 
@@ -90,6 +91,7 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
             @Override
             protected void runInEDT() {
                 setEnabled(false);
+                setSelected(false);
                 if (isHideIfDownloadsAreStopped()) {
                     setVisible(false);
                 }
@@ -120,9 +122,7 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
             @Override
             protected void runInEDT() {
                 setEnabled(false);
-                if (isHideIfDownloadsAreStopped()) {
-                    setVisible(false);
-                }
+                setSelected(false);
             }
         };
     }
@@ -137,6 +137,18 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
+    }
+
+    @Override
+    public void onDownloadWatchDogPropertyChange(final DownloadWatchDogProperty propertyChange) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                Object ret = propertyChange.getValue();
+                setSelected(!DownloadSession.STOPMARK.NONE.equals(ret));
+            }
+        };
     }
 
 }

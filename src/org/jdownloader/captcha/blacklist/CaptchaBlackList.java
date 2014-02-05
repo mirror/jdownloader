@@ -6,6 +6,7 @@ import java.util.HashSet;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.PrePluginCheckDummyChallenge;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
@@ -154,5 +155,9 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
         synchronized (whitelist) {
             return whitelist.contains(downloadLink);
         }
+    }
+
+    @Override
+    public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
     }
 }

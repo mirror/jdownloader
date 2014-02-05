@@ -2,6 +2,7 @@ package jd.controlling.downloadcontroller.event;
 
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 
 import org.appwork.utils.event.Eventsender;
@@ -34,6 +35,9 @@ public class DownloadWatchdogEventSender extends Eventsender<DownloadWatchdogLis
             break;
         case LINK_STOPPED:
             listener.onDownloadControllerStopped((SingleDownloadController) event.getParameter(0), (DownloadLinkCandidate) event.getParameter(1), (DownloadLinkCandidateResult) event.getParameter(2));
+            break;
+        case PROPERTY_CHANGE:
+            listener.onDownloadWatchDogPropertyChange((DownloadWatchDogProperty) event.getParameter(0));
             break;
         // fill
         default:

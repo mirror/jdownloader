@@ -7,6 +7,7 @@ import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.jdgui.JDGui;
@@ -190,5 +191,9 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
+    }
+
+    @Override
+    public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
     }
 }

@@ -36,6 +36,7 @@ import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.controlling.linkchecker.LinkChecker;
@@ -391,6 +392,10 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
+    }
+
+    @Override
+    public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
     }
 
 }

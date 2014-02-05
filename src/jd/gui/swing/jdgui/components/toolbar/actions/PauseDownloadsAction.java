@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
@@ -154,6 +155,10 @@ public class PauseDownloadsAction extends AbstractToolBarAction implements Downl
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
+    }
+
+    @Override
+    public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
     }
 
 }

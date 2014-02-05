@@ -5,6 +5,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 
@@ -19,6 +20,10 @@ public class DownloadWatchDogEventPublisher implements EventPublisher, DownloadW
         RUNNING,
         PAUSED,
         STOPPED
+    }
+
+    @Override
+    public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
     }
 
     private CopyOnWriteArraySet<EventsSender> eventSenders = new CopyOnWriteArraySet<EventsSender>();

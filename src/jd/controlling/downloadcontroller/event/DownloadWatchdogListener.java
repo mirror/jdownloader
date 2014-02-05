@@ -4,6 +4,7 @@ import java.util.EventListener;
 
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 
 public interface DownloadWatchdogListener extends EventListener {
@@ -23,4 +24,6 @@ public interface DownloadWatchdogListener extends EventListener {
     void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate);
 
     void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result);
+
+    void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange);
 }

@@ -18,6 +18,7 @@ import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -244,12 +245,15 @@ public class DownloadSession extends Property {
     }
 
     public void toggleStopMark(Object entry) {
+        if (entry == STOPMARK.RANDOM) {
+            if (getStopMark() != STOPMARK.NONE) entry = null;
+        }
         if (entry == null || stopMark.get() == entry || entry == STOPMARK.NONE) {
             /* no stopmark OR toggle current set stopmark */
-            stopMark.set(STOPMARK.NONE);
+            setStopMark(STOPMARK.NONE);
         } else {
             /* set new stopmark */
-            stopMark.set(entry);
+            setStopMark(entry);
         }
     }
 
@@ -270,7 +274,6 @@ public class DownloadSession extends Property {
     }
 
     protected DownloadSession(DownloadSession previousSession) {
-
         if (previousSession == null) {
             proxyInfoHistory = new ProxyInfoHistory();
         } else {
@@ -282,7 +285,6 @@ public class DownloadSession extends Property {
             setMaxConcurrentDownloadsPerHost(previousSession.getMaxConcurrentDownloadsPerHost());
             setUseAccountsEnabled(previousSession.isUseAccountsEnabled());
             setMirrorManagementEnabled(previousSession.isMirrorManagementEnabled());
-
         }
     }
 
@@ -420,6 +422,7 @@ public class DownloadSession extends Property {
             }
         }
         stopMark.set(entry);
+        DownloadWatchDog.getInstance().getEventSender().fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.PROPERTY_CHANGE, new DownloadWatchDogProperty(DownloadWatchDogProperty.Property.STOPSIGN, entry)));
     }
 
     public IfFileExistsAction getOnFileExistsAction(FilePackage filePackage) {
