@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -55,9 +58,15 @@ public class DevArtCm extends PluginForDecrypt {
     // much, content as they wish. Hopefully this wont create any
     // issues.
 
+    private static Object       LOCK            = new Object();
+
     private static final String FASTLINKCHECK_2 = "FASTLINKCHECK_2";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        synchronized (LOCK) {
+            // checkFeatureDialog();
+            showFeatureDialogAll();
+        }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
@@ -153,6 +162,64 @@ public class DevArtCm extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    private void checkFeatureDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("featuredialog_Shown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialog_Shown2") == null) {
+                    showFeatureDialogAll();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showFeatureDialogAll() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "Deviantart.com Plugin";
+                        final String lang = System.getProperty("user.language");
+                        if ("de".equalsIgnoreCase(lang)) {
+                            message += "Für deviantArt.com wurde die schnelle Linküberprüfung aktiviert.\r\n";
+                            message += "Diese bewirkt, dass weder Dateiname noch -größe korrekt angezeigt\r\nund die Bilder somit erheblich schneller gesammelt werden.\r\n";
+                            message += "Du kannst dieses Verhalten jederzeit unter\r\n";
+                            message += "JD2 Beta: Einstellungen ->Plugins ->deviantArt.com\r\n";
+                            message += "JD 0.9.581: Einstellungen ->Anbieter ->deviantart.com ->Einstellungen\r\n";
+                            message += "deaktivieren.";
+                        } else {
+                            message += "For deviantArt.com the fast link check has been activated.\r\n";
+                            message += "This causes the loss of the correct filename and filesize but will ensure a much faster grabbing of pictures.\r\n";
+                            message += "You can deactivate this setting under\r\n";
+                            message += "JD2 Beta: Settings ->Plugins ->deviantArt.com\r\n";
+                            message += "JD 0.9.581: Settings ->Hoster ->deviantArt.com ->Settings\r\n";
+                            message += "at any time.";
+                        }
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
     }
 
     /* NO OVERRIDE!! */

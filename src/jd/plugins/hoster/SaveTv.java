@@ -154,15 +154,13 @@ public class SaveTv extends PluginForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
             link.getLinkStatus().setStatusText("Kann Links ohne gültigen Account nicht überprüfen");
-            checkAccountNeededDialog();
+            synchronized (LOCK) {
+                checkAccountNeededDialog();
+            }
             return AvailableStatus.UNCHECKABLE;
         }
         synchronized (LOCK) {
             checkFeatureDialog();
-            checkFeatureDialog2();
-            checkFeatureDialog3();
-            checkFeatureDialog4();
-            checkFeatureDialog5();
         }
         if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
             link.getLinkStatus().setStatusText("Linkcheck deaktiviert - korrekter Dateiname erscheint erst beim Downloadstart");
@@ -1208,9 +1206,9 @@ public class SaveTv extends PluginForHost {
         SubConfiguration config = null;
         try {
             config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialogShown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialogShown2") == null) {
-                    showFeatureDialog();
+            if (config.getBooleanProperty("featuredialog_all_Shown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialog_all_Shown2") == null) {
+                    showFeatureDialogAll();
                 } else {
                     config = null;
                 }
@@ -1220,16 +1218,14 @@ public class SaveTv extends PluginForHost {
         } catch (final Throwable e) {
         } finally {
             if (config != null) {
-                config.setProperty("featuredialogShown", Boolean.TRUE);
-                config.setProperty("featuredialogShown2", "shown");
+                config.setProperty("featuredialog_all_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_all_Shown2", "shown");
                 config.save();
             }
         }
     }
 
-    private static final short totalFeatureDialogNum = 5;
-
-    private static void showFeatureDialog() {
+    private static void showFeatureDialogAll() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -1238,25 +1234,15 @@ public class SaveTv extends PluginForHost {
                     try {
                         String message = "";
                         String title = null;
-                        title = "Save.tv - neue Features 1/" + totalFeatureDialogNum;
-                        message += "Hallo lieber save.tv Nutzer.\r\n";
-                        message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
-                        message += "- Die Dateinamen lassen sich individualisieren \r\n";
-                        message += "- Hinzufügen des kompletten Videoarchives über einen Klick\r\n  [Muss in den Einstellungen erst aktiviert werden!]\r\n";
-                        message += "- Neue Option 'Aufnahmen mit angewandter Schnittliste bevorzugen'\r\n";
-                        message += "--> Um diese Option nutzen zu können, muss die Option über dieser aktiviert sein.\r\n";
-                        message += "--> Ist sie aktiviert, wird JDownloader nur noch Videos laden, auf die die Schnittliste angewandt wurde.\r\n";
-                        message += "--> Alle anderen bekommen einen Warte-Status und werden nur geladen, falls die Schnittliste\r\n    nach der Wartezeit angewandt wurde.\r\n";
+                        title = "Save.tv Plugin - Features";
+                        message += "Hallo lieber save.tv Nutzer/liebe save.tv Nutzerin\r\n";
+                        message += "Das save.tv Plugin bietet folgende Features:\r\n";
+                        message += "- Automatisierter Download von save.tv Links (telecast-IDs)\r\n";
+                        message += "- Laden des kompletten save.tv Archivs über wenige Klicks\r\n";
+                        message += "- Benutzerdefinierte Dateinamen über ein Tag-System mit vielen Möglichkeiten\r\n";
+                        message += "- Und viele mehr...\r\n";
                         message += "\r\n";
-                        message += "In JDownloader 0.9.581 findest du die Plugin Einstellungen unter:\r\n";
-                        message += "Einstellungen -> Anbieter -> save.tv -> Doppelklick oder anklicken und links unten auf 'Einstellungen'\r\n";
-                        message += "Diese sind aufgrund eines Fehlers abgeschnitten -> Ggf. auf die JDownloader 2 BETA ausweichen\r\n";
-                        message += "\r\n";
-                        message += "In der JDownloader 2 BETA findest du sie unter Einstellungen -> Plugin Einstellungen -> save.tv\r\n";
-                        message += "\r\n";
-                        message += "Bedenke bitte, das gewisse Einstellungen dafür sorgen, dass die eigenen\r\nDateinamen erst zum Downloadstart und nicht direkt im Linkgrabber angezeigt werden.\r\n";
-                        message += "Dies steht im Normalfall bei den entsprechenden Einstellungen dabei und ist kein Bug.\r\n";
-                        message += "Sollte es dennoch vorkommen, dass eigene Dateinamen bei bestimmten Links nicht funktionieren,\r\nkönnte es sich um einen Bug handeln.";
+                        message += "Diese einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {
@@ -1266,244 +1252,4 @@ public class SaveTv extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-
-    private void checkFeatureDialog2() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog2Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog2Shown2") == null) {
-                    showFeatureDialog2();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog2Shown", Boolean.TRUE);
-                config.setProperty("featuredialog2Shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showFeatureDialog2() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv - neue Features 2/" + totalFeatureDialogNum;
-                        message += "Hallo lieber save.tv Nutzer.\r\n";
-                        message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
-                        message += "- JDownloader sollte ab sofort das komplette Save.tv Archiv (bei aktivierter Einstellung) korrekt erkennen\r\n";
-                        message += "- Die Plugin Einstellung 'Linkcheck deaktivieren':\r\n";
-                        message += "--> Ist diese aktiviert, werden im Linkgrabber zunächst keine korrekten Dateinamen angezeigt.\r\n";
-                        message += "--> Dafür kannst du Links schneller hinzufügen bzw. auch, wenn die save.tv Seite sehr langsam oder sogar nicht erreichbar ist.\r\n";
-                        message += "--> Sobald du den Download startest, werden die korrekten Dateinamen angezeigt.\r\n";
-                        message += "--> Fügt man das komplette Save.tv Archiv per JDownloader hinzu, werden trotz aktivierter Einstellung\r\n";
-                        message += "    schönere Dateinamen angezeigt, die sich beim Downloadstart jedoch auch zu den gewünschten Dateinamen ändern.\r\n";
-                        message += "\r\n";
-                        message += "In JDownloader 0.9.581 findest du die Plugin Einstellungen unter:\r\n";
-                        message += "Einstellungen -> Anbieter -> save.tv -> Doppelklick oder anklicken und links unten auf 'Einstellungen'\r\n";
-                        message += "\r\n";
-                        message += "In der JDownloader 2 BETA findest du sie unter Einstellungen -> Plugin Einstellungen -> save.tv\r\n";
-                        message += "\r\n";
-                        message += "Bedenke bitte, das gewisse Einstellungen dafür sorgen, dass die eigenen\r\nDateinamen erst zum Downloadstart und nicht direkt im Linkgrabber angezeigt werden.\r\n";
-                        message += "Dies steht im Normalfall bei den entsprechenden Einstellungen dabei und ist kein Bug.\r\n";
-                        message += "Sollte es dennoch vorkommen, dass eigene Dateinamen bei bestimmten Links nicht funktionieren,\r\nkönnte es sich um einen Bug handeln.";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
-    private void checkFeatureDialog3() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog3Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog3Shown2") == null) {
-                    showFeatureDialog3();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog3Shown", Boolean.TRUE);
-                config.setProperty("featuredialog3Shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showFeatureDialog3() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv - neue Features 3/" + totalFeatureDialogNum;
-                        message += "Hallo lieber save.tv Nutzer.\r\n";
-                        message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
-                        message += "- Über die Plugin Einstellungen lassen sich Filme/Serien bestimmen, bei denen die Original Dateinamen\r\n";
-                        message += "  unabhängig von den anderen Einstellungen erzwungen werden.\r\n";
-                        message += "- Sind originale Dateinamen aktiviert, sehen die vorläufigen Dateinamen im Linkgrabber den finalen\r\n";
-                        message += "  Dateinamen nun sehr ähnlich - wie zuvor auch ändern sich diese erst beim Downloadstart zu den Originalnamen.";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
-    private void checkFeatureDialog4() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog4Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog4Shown2") == null) {
-                    showFeatureDialog4();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog4Shown", Boolean.TRUE);
-                config.setProperty("featuredialog4Shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showFeatureDialog4() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv - neue Features 4/" + totalFeatureDialogNum;
-                        message += "Hallo lieber save.tv Nutzer.\r\n";
-                        message += "Ab sofort gibt es folgende neue Features für das save.tv Plugin:\r\n";
-                        message += "- Über die Plugin Einstellungen kann man telecast-IDs nun nach erfolgreichem Download löschen lassen\r\n";
-                        message += "- --> Entsprechende Warnhinweise dazu stehen nochmals in den save.tv Plugin Einstellungen\r\n";
-                        message += "- Neue Einstellungsmöglichkeit: 'Zeichen, mit dem Tags ersetzt werden sollen, deren Daten fehlen'\r\n";
-                        message += "- --> Bisher wurden Tags bei fehlenden Daten mit einem Bindestrich ('-') ersetzt.\r\n";
-                        message += "- --> Dies lässt sich nun nach Belieben anpassen.\r\n";
-                        message += "- Der Archiv Crawler funktioniert ab sofort vollständig und findet alle Links des Archivs.\r\n";
-                        message += "- --> Nach dem Vorgang meldet er sich über ein Info-Dialog und zeigt an, wie viele Links gefunden wurden.\r\n";
-                        message += "- ----> Diese Info-Dialoge lassen sich über 'Info Dialoge des Crawlers (Nach dem Crawlen oder im Fehlerfall) deaktivieren?' abschalten!";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
-    private void checkFeatureDialog5() {
-        SubConfiguration config = null;
-        try {
-            config = getPluginConfig();
-            if (config.getBooleanProperty("featuredialog5Shown", Boolean.FALSE) == false) {
-                if (config.getProperty("featuredialog5Shown2") == null) {
-                    showFeatureDialog5();
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("featuredialog5Shown", Boolean.TRUE);
-                config.setProperty("featuredialog5Shown2", "shown");
-                config.save();
-            }
-        }
-    }
-
-    private static void showFeatureDialog5() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String message = "";
-                        String title = null;
-                        title = "Save.tv - neue Features 5/" + totalFeatureDialogNum;
-                        message += "Hallo lieber save.tv Nutzer.\r\n";
-                        message += "Ab dieser Pluginversion (23718+) sind die Plugin Einstellungen dieses Plugins nur noch in der\r\n";
-                        message += "aktuellen JDownloader 2 BETA Version verfügbar.\r\n";
-                        message += "Dieser Schritt war wegen Kompatibilitätsproblemen notwendig, sorry!";
-                        message += getMessageEnd();
-                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
-    // private static void showFeatureDialogAll() {
-    // try {
-    // SwingUtilities.invokeAndWait(new Runnable() {
-    //
-    // @Override
-    // public void run() {
-    // try {
-    // String message = "";
-    // String title = null;
-    // title = "Save.tv Plugin - Features";
-    // message += "Hallo lieber save.tv Nutzer/liebe save.tv Nutzerin\r\n";
-    // message += "Das save.tv Plugin bietet folgende Features:\r\n";
-    // message += "- Automatisierter Download von save.tv Links (telecast-IDs)\r\n";
-    // message += "- Laden des kompletten save.tv Archivs über wenige Klicks\r\n";
-    // message += "- Benutzerdefinierte Dateinamen über ein Tag-System mit vielen Möglichkeiten\r\n";
-    // message += "- Und viele mehr...\r\n";
-    // message += "\r\n";
-    // message +=
-    // "Diese einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
-    // message += getMessageEnd();
-    // JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE,
-    // JOptionPane.INFORMATION_MESSAGE, null);
-    // } catch (Throwable e) {
-    // }
-    // }
-    // });
-    // } catch (Throwable e) {
-    // }
-    // }
 }

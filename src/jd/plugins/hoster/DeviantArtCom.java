@@ -354,8 +354,26 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_2, JDL.L("plugins.hoster.deviantartcom.fastLinkcheck", "Enable fast linkcheck (filesize and correct filename won't be shown in linkgrabber)?")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, JDL.L("plugins.hoster.deviantartcom.forceHTMLDownload", "Download html code instead of the media (files/pictures)?")).setDefaultValue(false));
+        final StringBuilder sbinfo = new StringBuilder();
+        String fastlinkchecktext = null;
+        String forcehtmldownloadtext = null;
+        final String lang = System.getProperty("user.language");
+        if ("de".equalsIgnoreCase(lang)) {
+            fastlinkchecktext = "Schnelle Linküberprüfung aktivieren? (Dateiname und -größe werden nicht korrekt angezeigt)";
+            forcehtmldownloadtext = "HTML Code statt eigentlichen Inhalt (Dateien/Bilder) laden?";
+            sbinfo.append("Bitte beachten: solltest Du nur Seite 1 einer Gallerie sammeln wollen, so stelle sicher, dass \"?offset=0\" am Ende der URL steht.\r\n");
+            sbinfo.append("Du kannst auch zu einer anderen Seite wechseln, auf Seite 1 klicken und dessen URL sammeln.");
+        } else {
+            fastlinkchecktext = "Enable fast link check? (file name and size won't be shown correctly)";
+            forcehtmldownloadtext = "Download html code instead of the media (files/pictures)?";
+            sbinfo.append("Please note: if you wanted to grab only page 1 of a gallery, please make sure that \"?offset=0\" is added to its URL.\r\n");
+            sbinfo.append("You can also switch to another page, click on page 1 and grab its URL.");
+        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_2, JDL.L("plugins.hoster.deviantartcom.fastLinkcheck", fastlinkchecktext)).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, JDL.L("plugins.hoster.deviantartcom.forceHTMLDownload", forcehtmldownloadtext)).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbinfo.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
     }
 
     @Override
