@@ -402,6 +402,10 @@ public class BillionUploadsCom extends PluginForHost {
             }
         }
         if (inValidate(dllink)) {
+            if (cbr.containsHTML("Incapsula incident")) {
+                logger.info(cbr.toString());
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Incapsula block", 10 * 60 * 1000l);
+            }
             Form dlForm = getFormByKey(cbr, "op", "download2");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
