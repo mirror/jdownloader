@@ -59,6 +59,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     private void log(DownloadLogEntry dl) {
         if (isEnabled()) {
             synchronized (list) {
+                if (list.size() > 20) list.clear();
                 list.add(dl);
                 list.notifyAll();
             }
@@ -328,17 +329,17 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         logger.info("Wait and retry");
                         Thread.sleep(5 * 60 * 1000l);
                         // not sent. push back
-                        synchronized (list) {
-                            list.addAll(sendRequest);
-                        }
+                        // synchronized (list) {
+                        // list.addAll(sendRequest);
+                        // }
                     } catch (JSonMapperException e) {
                         logger.log(e);
                         logger.info("Wait and retry");
                         Thread.sleep(5 * 60 * 1000l);
                         // not sent. push back
-                        synchronized (list) {
-                            list.addAll(sendRequest);
-                        }
+                        // synchronized (list) {
+                        // list.addAll(sendRequest);
+                        // }
                     }
                 }
             } catch (Exception e) {
