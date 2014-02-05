@@ -56,6 +56,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private HashMap<String, AtomicInteger> counterMap;
 
+    private long                           sessionStart;
+
     private void log(DownloadLogEntry dl) {
         if (isEnabled()) {
             synchronized (list) {
@@ -81,6 +83,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         thread = new Thread(this);
         thread.setName("StatsSender");
         thread.start();
+        sessionStart = System.currentTimeMillis();
     }
 
     /**
@@ -244,10 +247,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
             dl.setErrorID(result.getErrorID());
             dl.setTimestamp(System.currentTimeMillis());
+            dl.setSessionStart(sessionStart);
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
             // this.
             dl.setLinkID(link.getUniqueID().getID());
-            String id = dl.getErrorID() + "_" + dl.getHost() + "_" + dl.getAccount();
+            String id = dl.getRevision() + "_" + dl.getErrorID() + "_" + dl.getHost() + "_" + dl.getAccount();
             AtomicInteger errorCounter = counterMap.get(id);
             if (errorCounter == null) {
                 counterMap.put(id, errorCounter = new AtomicInteger());

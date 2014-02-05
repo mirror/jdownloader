@@ -25,6 +25,16 @@ public class DownloadLogEntry extends AbstractLogEntry {
         this.timestamp = timestamp;
     }
 
+    private long sessionStart = 0;
+
+    public long getSessionStart() {
+        return sessionStart;
+    }
+
+    public void setSessionStart(long sessionStart) {
+        this.sessionStart = sessionStart;
+    }
+
     public void setIsp(String isp) {
         this.isp = isp;
     }
