@@ -109,6 +109,7 @@ public class ARDMediathek extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
+            br2.getHeaders().put("Accept-Encoding", "");
             con = br2.openGetConnection(downloadLink.getStringProperty("directURL").split("@")[0]);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -161,10 +162,15 @@ public class ARDMediathek extends PluginForHost {
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (dllink.startsWith("mms")) throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
             // Workaround to avoid DOWNLOAD INCOMPLETE errors
+            boolean resume = true;
+            int maxChunks = 0;
             if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+                br.getHeaders().put("Accept-Encoding", "");
                 downloadLink.setDownloadSize(0);
+                resume = false;
+                maxChunks = 1;
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");

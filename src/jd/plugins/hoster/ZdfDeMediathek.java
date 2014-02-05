@@ -105,8 +105,16 @@ public class ZdfDeMediathek extends PluginForHost {
             setupRTMPConnection(dllink, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
+            boolean resume = true;
+            int maxChunks = 0;
+            if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+                br.getHeaders().put("Accept-Encoding", "");
+                downloadLink.setDownloadSize(0);
+                resume = false;
+                maxChunks = 1;
+            }
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
