@@ -787,6 +787,7 @@ public class YoutubeHelper {
 
         String html5_fmt_map;
         String dashFmt;
+        String dashmpd;
         if (getVideoInfoWorkaroundUsed) {
             // age check bypass active
 
@@ -795,6 +796,10 @@ public class YoutubeHelper {
 
             dashFmt = this.br.getRegex("adaptive_fmts=(.*?)(&|$)").getMatch(0);
             dashFmt = Encoding.htmlDecode(dashFmt);
+
+            // just guessing
+            dashmpd = this.br.getRegex("dashmpd=(.*?)(&|$)").getMatch(0);
+            dashmpd = Encoding.htmlDecode(dashmpd);
 
         } else {
             // regular url testlink: http://www.youtube.com/watch?v=4om1rQKPijI
@@ -806,6 +811,9 @@ public class YoutubeHelper {
 
             dashFmt = this.br.getRegex("\"adaptive_fmts\": (\".*?\")").getMatch(0);
             dashFmt = JSonStorage.restoreFromString(dashFmt, new TypeRef<String>() {
+            });
+            dashmpd = this.br.getRegex("\"dashmpd\": (\".*?\")").getMatch(0);
+            dashmpd = JSonStorage.restoreFromString(dashmpd, new TypeRef<String>() {
             });
         }
 
@@ -822,6 +830,53 @@ public class YoutubeHelper {
                     ret.put(match.getItag(), match);
                 }
             }
+        }
+        try {
+            if (dashmpd != null) {
+                Browser clone = br.cloneBrowser();
+                clone.getPage(dashmpd);
+                String[] repres = clone.getRegex("(<Representation.*?</Representation>)").getColumn(0);
+                for (String r : repres) {
+                    System.out.println(r);
+
+                    String url = Encoding.htmlDecode(new Regex(r, "<BaseURL yt:contentLength=\"\\d+\">(.*?)</BaseURL>").getMatch(0));
+                    final LinkedHashMap<String, String> query = Request.parseQuery(url);
+                    String signature = new Regex(url, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
+
+                    if (StringUtils.isEmpty(signature)) {
+                        // verified 7.1.24
+                        // non dash?
+                        signature = query.get("sig");
+                    }
+                    if (StringUtils.isEmpty(signature)) {
+                        signature = query.get("signature");
+                    }
+                    if (StringUtils.isEmpty(signature)) {
+                        // verified 7.1.213
+                        signature = this.descrambleSignature(query.get("s"));
+                    }
+
+                    if (url != null && !url.contains("sig")) {
+
+                        url = url + "&signature=" + signature;
+                    }
+
+                    final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")));
+
+                    logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
+                    if (url != null && itag != null) {
+
+                        ret.put(itag, new YoutubeStreamData(vid, url, itag));
+                    } else {
+
+                        this.logger.info("Unkown Line: " + r);
+                        this.logger.info(query + "");
+                    }
+
+                }
+            }
+        } catch (Throwable e) {
+            logger.log(e);
         }
 
         for (YoutubeStreamData sd : loadThumbnails(vid)) {
