@@ -259,6 +259,12 @@ public class FilesMailRu extends PluginForHost {
         return dllink;
     }
 
+    // Avoid multi-hosters from downloading links from this host because links come from a decrypter
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
     @Override
     public void reset() {
     }

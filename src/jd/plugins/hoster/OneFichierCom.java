@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -289,7 +290,18 @@ public class OneFichierCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
+        // API login workaround for slow servers
+        for (int i = 1; i <= 3; i++) {
+            logger.info("1fichier.com: API login try 1 / " + i);
+            try {
+                br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
+            } catch (final ConnectException e) {
+                logger.info("1fichier.com: API login try 1 / " + i + " FAILED, trying again...");
+                Thread.sleep(3 * 1000l);
+                continue;
+            }
+            break;
+        }
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
         String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         // Use site login/site download if either API is not working or API says that there are no credits available

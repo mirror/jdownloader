@@ -64,7 +64,12 @@ public class BcVc extends PluginForDecrypt {
         data.put(Encoding.urlEncode("args[lid]"), matches[1]);
         data.put(Encoding.urlEncode("args[oid]"), matches[2]);
         data.put(Encoding.urlEncode("args[ref]"), "");
+        br.postPage("http://bc.vc/fly/ajax.fly.php", data);
 
+        data.put("opt", "checks_log");
+        br.postPage("http://bc.vc/fly/ajax.fly.php", data);
+
+        data.put("opt", "check_log");
         br.postPage("http://bc.vc/fly/ajax.fly.php", data);
         // waittime is 5 seconds. but somehow this often results in an error.
         // we use 5.5 seconds to avoid them

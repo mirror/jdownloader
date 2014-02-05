@@ -52,7 +52,7 @@ public class DeviantArtCom extends PluginForHost {
     private final String        INVALIDLINKS               = "https?://(www\\.)?forum\\.deviantart\\.com/art/general";
     private final String        MATURECONTENTFILTER        = ">Mature Content Filter<";
     private static Object       LOCK                       = new Object();
-    private static final String FASTLINKCHECK              = "FASTLINKCHECK";
+    private static final String FASTLINKCHECK_2            = "FASTLINKCHECK_2";
     private static final String FORCEHTMLDOWNLOAD          = "FORCEHTMLDOWNLOAD";
 
     private static final String GENERALFILENAMEREGEX       = "<title>([^<>\"]*?) on deviantART</title>";
@@ -354,7 +354,7 @@ public class DeviantArtCom extends PluginForHost {
     }
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK, JDL.L("plugins.hoster.deviantartcom.fastLinkcheck", "Enable fast linkcheck (filesize and correct filename won't be shown in linkgrabber)?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FASTLINKCHECK_2, JDL.L("plugins.hoster.deviantartcom.fastLinkcheck", "Enable fast linkcheck (filesize and correct filename won't be shown in linkgrabber)?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FORCEHTMLDOWNLOAD, JDL.L("plugins.hoster.deviantartcom.forceHTMLDownload", "Download html code instead of the media (files/pictures)?")).setDefaultValue(false));
     }
 

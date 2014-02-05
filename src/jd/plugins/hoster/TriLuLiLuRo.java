@@ -100,10 +100,10 @@ public class TriLuLiLuRo extends PluginForHost {
             if (DLLINK != null) DLLINK += "?size=original";
             filename = Encoding.htmlDecode(filename.trim()) + ".jpg";
             downloadLink.setFinalFileName(filename);
-        } else if (downloadLink.getDownloadURL().matches(TYPE_MUSIC)) {
+        } else if (isTypeMusic(downloadLink)) {
             filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Muzică.*? \\- Trilulilu\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         } else {
             filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
@@ -125,6 +125,10 @@ public class TriLuLiLuRo extends PluginForHost {
                 downloadLink.setFinalFileName(filename + ".mp3");
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean isTypeMusic(final DownloadLink dl) {
+        return (dl.getDownloadURL().matches(TYPE_MUSIC) || br.containsHTML("\"isMP3\":\"true\""));
     }
 
     @Override

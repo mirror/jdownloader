@@ -53,18 +53,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lajusangat.net" }, urls = { "https?://(www\\.)?lajusangat\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class LajusangatNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4sharing.com" }, urls = { "https?://(www\\.)?file4sharing\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class File4SharingCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://lajusangat.net";
+    private static final String  COOKIE_HOST                  = "http://file4sharing.com";
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(lajusangat\\.net)";
+    private static final String  DOMAINS                      = "(file4sharing\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -95,7 +95,7 @@ public class LajusangatNet extends PluginForHost {
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: null
     // other:
 
     @Override
@@ -113,7 +113,7 @@ public class LajusangatNet extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public LajusangatNet(PluginWrapper wrapper) {
+    public File4SharingCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }

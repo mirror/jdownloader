@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -56,10 +55,10 @@ public class DevArtCm extends PluginForDecrypt {
     // much, content as they wish. Hopefully this wont create any
     // issues.
 
-    private static final String FASTLINKCHECK = "FASTLINKCHECK";
+    private static final String FASTLINKCHECK_2 = "FASTLINKCHECK_2";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.setCookiesExclusive(true);
@@ -89,40 +88,71 @@ public class DevArtCm extends PluginForDecrypt {
                 fpName = username + " - " + pagetype;
             else if ((pagetype != null) && (pagename != null)) fpName = pagetype + " - " + pagename;
 
-            // now we find and crawl!
-            parsePage(decryptedLinks, parameter);
-
+            int currentOffset = 0;
+            int maxOffset = 0;
+            final int offsetIncrease = 24;
+            int counter = 1;
+            if (parameter.contains("?offset=")) {
+                final int offsetLink = Integer.parseInt(new Regex(parameter, "(\\d+)$").getMatch(0));
+                currentOffset = offsetLink;
+                maxOffset = offsetLink;
+            } else {
+                final String[] offsets = br.getRegex("data\\-offset=\"(\\d+)\" name=\"gmi\\-GPageButton\"").getColumn(0);
+                if (offsets != null && offsets.length != 0) {
+                    for (final String offset : offsets) {
+                        final int offs = Integer.parseInt(offset);
+                        if (offs > maxOffset) maxOffset = offs;
+                    }
+                }
+            }
+            FilePackage fp = null;
             if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
+                fp = FilePackage.getInstance();
                 fp.setName(fpName);
                 fp.setProperty("ALLOW_MERGE", true);
+            }
+            do {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
+                    }
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
+                logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
+                if (counter > 1) {
+                    br.getPage(parameter + "?offset=" + currentOffset);
+                }
+                final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
+                final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
+                String[] artlinks = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(0);
+                if (artlinks == null || artlinks.length == 0) {
+                    logger.warning("Possible Plugin error, with finding /art/ links: " + parameter);
+                    return null;
+                }
+                if (artlinks != null && artlinks.length != 0) {
+                    for (final String al : artlinks) {
+                        final DownloadLink fina = createDownloadlink(al);
+                        if (fastcheck) fina.setAvailable(true);
+                        if (fp != null) fina._setFilePackage(fp);
+                        try {
+                            distribute(fina);
+                        } catch (final Throwable e) {
+                            // Not available in old 0.9.581 Stable
+                        }
+                        decryptedLinks.add(fina);
+                    }
+                }
+
+                currentOffset += offsetIncrease;
+                counter++;
+            } while (currentOffset <= maxOffset);
+            if (fpName != null) {
                 fp.addLinks(decryptedLinks);
             }
         }
         return decryptedLinks;
-    }
-
-    private void parsePage(ArrayList<DownloadLink> ret, String parameter) throws Exception {
-        final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK, false);
-        final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
-        String[] artlinks = new Regex(grab, "\"(https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+)\"").getColumn(0);
-        // href="/gallery/?set=46236989&amp;offset=24">Next</a></li><
-        String nextPage = br.getRegex("href=\"(/(gallery|favourites)/[^<>\"]*?((\\?|&amp;|&)offset=\\d+))\">Next</a>").getMatch(0);
-        if (artlinks == null || artlinks.length == 0) {
-            logger.warning("Possible Plugin error, with finding /art/ links: " + parameter);
-            return;
-        }
-        if (artlinks != null && artlinks.length != 0) {
-            for (final String al : artlinks) {
-                final DownloadLink fina = createDownloadlink(al);
-                if (fastcheck) fina.setAvailable(true);
-                ret.add(fina);
-            }
-        }
-        if (nextPage != null && !parameter.contains("offset=")) {
-            br.getPage(HTMLEntities.unhtmlentities(nextPage));
-            parsePage(ret, parameter);
-        }
     }
 
     /* NO OVERRIDE!! */

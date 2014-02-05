@@ -139,10 +139,18 @@ public class UlozTo extends PluginForHost {
         this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
         requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
-        if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_FATAL, "This link is password protected");
+        br.setFollowRedirects(true);
+        String passCode = downloadLink.getStringProperty("pass", null);
+        if (br.containsHTML(PASSWORDPROTECTED)) {
+            if (passCode == null) {
+                passCode = getUserInput("Password?", downloadLink);
+            }
+            br.postPage(br.getURL() + "?do=passwordProtectedForm-submit", "password_send=Odeslat&password=" + Encoding.urlEncode(passCode));
+            if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            downloadLink.setProperty("pass", passCode);
+        }
         String dllink = null;
         final Browser br2 = br.cloneBrowser();
-        br2.setFollowRedirects(true);
         boolean failed = true;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (int i = 0; i <= 5; i++) {
@@ -246,8 +254,6 @@ public class UlozTo extends PluginForHost {
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
         requestFileInformation(parameter);
-        // Those links aren't supported yet
-        if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_FATAL, "This link is password protected");
         login(account);
         br.setFollowRedirects(false);
         String dllink = null;
@@ -255,6 +261,18 @@ public class UlozTo extends PluginForHost {
             dllink = parameter.getDownloadURL();
         } else {
             br.getPage(parameter.getDownloadURL());
+            // Copied from the FREE handling - not sure if this works
+            if (br.containsHTML(PASSWORDPROTECTED)) {
+                String passCode = parameter.getStringProperty("pass", null);
+                if (br.containsHTML(PASSWORDPROTECTED)) {
+                    if (passCode == null) {
+                        passCode = getUserInput("Password?", parameter);
+                    }
+                    br.postPage(br.getURL() + "?do=passwordProtectedForm-submit", "password_send=Odeslat&password=" + Encoding.urlEncode(passCode));
+                    if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    parameter.setProperty("pass", passCode);
+                }
+            }
             dllink = br.getRedirectLocation();
             if (dllink == null) {
                 if (br.containsHTML("No htmlCode read")) {
