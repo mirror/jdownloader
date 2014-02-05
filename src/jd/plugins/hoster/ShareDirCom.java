@@ -40,7 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sharedir.com" }, urls = { "http://dl\\.sharedir\\.com/\\d+/" }, flags = { 2 })
@@ -128,7 +127,7 @@ public class ShareDirCom extends PluginForHost {
             acctype = "Premium Account";
         }
         safeAPIRequest("http://sharedir.com/sdapi.php?get_traffic_left", account, null);
-        ac.setTrafficLeft(SizeFormatter.getSize(Long.parseLong(br.toString().trim()) + "MB"));
+        ac.setTrafficLeft(Long.parseLong(br.toString().trim()) * 1024);
         safeAPIRequest("http://sharedir.com/sdapi.php?get_expire_date", account, null);
         if (!br.toString().trim().equals("0")) ac.setValidUntil(TimeFormatter.getMilliSeconds(br.toString(), "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
 
