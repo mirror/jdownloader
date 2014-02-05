@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil|artist|grup|[^<>\"/]+/(fisiere|profil).+)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class TriLuLiLuRo extends PluginForHost {
 
     private String              DLLINK                     = null;
@@ -58,7 +58,8 @@ public class TriLuLiLuRo extends PluginForHost {
     private static final String ONLYFORREGISTEREDUSERSTEXT = JDL.L("plugins.hoster.triluliluro.user", "This file is only downloadable for registered users!");
     private String              NONSTANDARDMD5             = null;
 
-    private static final String INVALIDLINKS               = "http://(www\\.)?trilulilu\\.ro/((video|canal|profil|artist|grup).+|[^<>\"/]/(fisiere|profil).+)";
+    // private static final String INVALIDLINKS =
+    // "http://(www\\.)?trilulilu\\.ro/((video|canal|profil|artist|grup).+|[^<>\"/]+/(fisiere|profil).+)";
     private static final String TYPE_IMAGE                 = "http://(www\\.)?trilulilu\\.ro/imagini\\-.+";
     private static final String TYPE_MUSIC                 = "http://(www\\.)?trilulilu\\.ro/muzica\\-.+";
 
@@ -72,7 +73,8 @@ public class TriLuLiLuRo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // THIS TYPE OF FUNCTION WITHIN A HOSTER PLUGIN, PREVENTS DEEP ANALYSE FROM WORKING! BEST NOT TO USE IT!
+        // if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // Link offline
