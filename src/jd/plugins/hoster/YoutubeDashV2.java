@@ -1033,6 +1033,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                 if (!ffmpeg.isAvailable()) {
                     FFMpegInstallProgress progress = new FFMpegInstallProgress();
+                    progress.setProgressSource(this);
                     PluginProgress old = null;
                     try {
                         old = downloadLink.setPluginProgress(progress);
@@ -1105,8 +1106,10 @@ public class YoutubeDashV2 extends PluginForHost {
                     /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
                     if (videoStreamPath != null && new File(videoStreamPath).exists()) {
                         FFMpegProgress progress = new FFMpegProgress();
-                        downloadLink.setPluginProgress(progress);
+                        progress.setProgressSource(this);
+                        PluginProgress old = null;
                         try {
+                            old = downloadLink.setPluginProgress(progress);
                             if (ffmpeg.merge(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
                                 downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                 new File(videoStreamPath).delete();
@@ -1116,13 +1119,15 @@ public class YoutubeDashV2 extends PluginForHost {
 
                             }
                         } finally {
-                            downloadLink.setPluginProgress(null);
+                            downloadLink.compareAndSetPluginProgress(progress, old);
                         }
                     } else {
                         /* Just renaming the temp-file didn't work */
                         FFMpegProgress progress = new FFMpegProgress();
-                        downloadLink.setPluginProgress(progress);
+                        progress.setProgressSource(this);
+                        PluginProgress old = null;
                         try {
+                            old = downloadLink.setPluginProgress(progress);
                             if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
                                 downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                 new File(getAudioStreamPath(downloadLink)).delete();
@@ -1131,7 +1136,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                             }
                         } finally {
-                            downloadLink.setPluginProgress(null);
+                            downloadLink.compareAndSetPluginProgress(progress, old);
                         }
 
                     }

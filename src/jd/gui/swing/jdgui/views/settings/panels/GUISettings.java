@@ -42,6 +42,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -103,21 +104,32 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
         lng = new ComboBox<String>(TranslationFactory.getDesiredLanguage()) {
 
-            private boolean blockActionEvents = false;
-
             @Override
             protected void renderComponent(Component lbl, JList list, String value, int index, boolean isSelected, boolean cellHasFocus) {
                 Locale loc = TranslationFactory.stringToLocale(value);
-                ((JLabel) lbl).setText(loc.getDisplayName(Locale.ENGLISH));
-
+                String set = loc.getDisplayName(Locale.ENGLISH);
+                if (StringUtils.isEmpty(set)) {
+                    int tmpIndex = value.indexOf("_");
+                    if (tmpIndex >= 0) {
+                        String tmp = value.substring(0, tmpIndex);
+                        Locale tmpLoc = TranslationFactory.stringToLocale(tmp);
+                        if (tmpLoc != null) set = tmpLoc.getDisplayName(Locale.ENGLISH);
+                    }
+                    if (StringUtils.isEmpty(set)) {
+                        set = value;
+                    } else {
+                        set = set + "(" + value + ")";
+                    }
+                }
+                ((JLabel) lbl).setText(set);
             }
 
         };
-
         lng.addPopupMenuListener(new PopupMenuListener() {
 
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                lng.setMaximumRowCount(8);
             }
 
             @Override
@@ -439,8 +451,12 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                             public int compare(String o1, String o2) {
                                 Locale lc1 = TranslationFactory.stringToLocale(o1);
                                 Locale lc2 = TranslationFactory.stringToLocale(o2);
-
-                                return lc1.getDisplayName(Locale.ENGLISH).compareToIgnoreCase(lc2.getDisplayName(Locale.ENGLISH));
+                                String v1 = lc1.getDisplayName(Locale.ENGLISH);
+                                String v2 = lc2.getDisplayName(Locale.ENGLISH);
+                                if (StringUtils.isEmpty(v1) && StringUtils.isEmpty(v2)) return 0;
+                                if (StringUtils.isEmpty(v1) && !StringUtils.isEmpty(v2)) return 1;
+                                if (StringUtils.isEmpty(v2) && !StringUtils.isEmpty(v1)) return -11;
+                                return v1.compareToIgnoreCase(v2);
                             }
                         });
                         languages = list.toArray(new String[] {});

@@ -154,8 +154,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer
-     * DownloadLink.getName() verwendet werden
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet
+     * werden
      * 
      * @return Datename des Downloads.
      */
@@ -260,6 +260,7 @@ public abstract class Plugin implements ActionListener {
      */
     public static String getUserInput(final String message, final DownloadLink link) throws PluginException {
         UserIOProgress prg = new UserIOProgress(message);
+        prg.setProgressSource(getCurrentActivePlugin());
         PluginProgress old = null;
         try {
             old = link.setPluginProgress(prg);
@@ -294,8 +295,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
-     * Patterns vorhanden ist.
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
      * 
      * @param data
      *            der zu prüfende Text

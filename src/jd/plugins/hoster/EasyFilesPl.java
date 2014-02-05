@@ -230,8 +230,9 @@ public class EasyFilesPl extends PluginForHost {
             };
             waitProgress.setIcon(NewTheme.I().getIcon("wait", 16));
             waitProgress.setProgressSource(this);
+            PluginProgress old = null;
             try {
-                link.setPluginProgress(waitProgress);
+                old = link.setPluginProgress(waitProgress);
                 for (int i = 1; i <= 120; i++) {
                     apiRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
                     String progress = br.toString().trim();
@@ -253,7 +254,7 @@ public class EasyFilesPl extends PluginForHost {
             } catch (InterruptedException e) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } finally {
-                link.setPluginProgress(null);
+                link.compareAndSetPluginProgress(waitProgress, old);
             }
             if (!success) {
                 handleAPIErrors(this.br, acc, link);
