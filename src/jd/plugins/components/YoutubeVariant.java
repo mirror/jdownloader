@@ -16,6 +16,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     IMAGE_MQ(null, YoutubeVariantInterface.VariantGroup.IMAGE, YoutubeVariantInterface.DownloadType.IMAGE, "Medium Quality Image", "MQ", "jpg", null, null, YoutubeITAG.IMAGE_MQ, null, null),
     IMAGE_LQ(null, YoutubeVariantInterface.VariantGroup.IMAGE, YoutubeVariantInterface.DownloadType.IMAGE, "Low Quality Image", "LQ", "jpg", null, null, YoutubeITAG.IMAGE_LQ, null, null),
     AAC_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "128kbit/s AAC-Audio", "128kbit", "aac", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null),
+
     AAC_256(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "256kbit/s AAC-Audio", "256kbit", "aac", null, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null),
     AAC_48(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "48kbit/s AAC-Audio", "48kbit", "aac", null, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null),
 

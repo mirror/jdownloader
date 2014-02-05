@@ -2,9 +2,16 @@ package org.jdownloader.statistics;
 
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
 
-public class DownloadLogEntry extends AbstractLogEntry {
-    DownloadLogEntry() {
+import org.appwork.storage.JSonStorage;
 
+public class DownloadLogEntry extends AbstractLogEntry {
+    protected DownloadLogEntry() {
+
+    }
+
+    @Override
+    public String toString() {
+        return JSonStorage.toString(this);
     }
 
     private int    chunks  = 0;
