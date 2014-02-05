@@ -65,7 +65,7 @@ public class DevArtCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
             // checkFeatureDialog();
-            showFeatureDialogAll();
+            checkFeatureDialog();
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
