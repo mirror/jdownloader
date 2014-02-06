@@ -34,7 +34,6 @@ import org.appwork.utils.swing.dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.MessageDialogImpl;
 import org.jdownloader.container.D;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -81,7 +80,6 @@ public class DLCFactory extends D {
 
     public ArrayList<DownloadLink> getContainerLinks(final File file) {
         LinkCrawler lc = new LinkCrawler();
-        lc.setFilter(LinkFilterController.getInstance());
         lc.crawl("file://" + file.getAbsolutePath());
         lc.waitForCrawling();
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();

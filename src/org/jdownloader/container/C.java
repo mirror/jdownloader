@@ -40,7 +40,6 @@ import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
 
-import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.logging.LogController;
 
 public class C extends PluginsC {
@@ -140,9 +139,7 @@ public class C extends PluginsC {
             if (dlc != null) {
                 lc = new File(lc.getAbsolutePath().substring(0, lc.getAbsolutePath().length() - 3) + "dlc");
                 JDIO.writeLocalFile(lc, dlc);
-
                 LinkCrawler lcr = new LinkCrawler();
-                lcr.setFilter(LinkFilterController.getInstance());
                 lcr.crawl("file://" + lc.getAbsolutePath());
                 lcr.waitForCrawling();
                 cls = new ArrayList<CrawledLink>();

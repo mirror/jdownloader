@@ -52,8 +52,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private boolean                                      testInstance = false;
 
     /**
-     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     public LinkFilterController(boolean testInstance) {
         eventSender = new ChangeEventSender();
@@ -250,11 +249,11 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 } catch (NoDownloadLinkException e) {
                     continue;
                 }
-                if (!lgr.checkOrigin(link)) continue;
+                if (!isTestInstance() && !lgr.checkOrigin(link)) continue;
                 if (!lgr.checkSource(link)) continue;
                 matches = true;
                 matchingFilter = lgr.getRule();
-
+                break;
             }
 
         }
@@ -335,7 +334,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
-                if (!lgr.checkOrigin(link)) continue;
+                if (!isTestInstance() && !lgr.checkOrigin(link)) continue;
                 if (!lgr.checkSource(link)) continue;
                 if (!lgr.checkOnlineStatus(link)) continue;
 
@@ -364,7 +363,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     if (!lgr.checkSource(link)) continue;
                     matches = true;
                     matchedFilter = lgr.getRule();
-
+                    break;
                 }
             }
         }

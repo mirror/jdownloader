@@ -141,9 +141,9 @@ public class LogController extends LogSourceProvider {
 
             @Override
             public synchronized Logger getParent() {
-                if (log != null) return log;
+                if (log != null) return log.getParent();
                 log = LogController.getInstance().getLogger(getName());
-                return log;
+                return log.getParent();
             }
 
             @Override

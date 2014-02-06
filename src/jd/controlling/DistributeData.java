@@ -24,11 +24,9 @@ import jd.controlling.linkcrawler.LinkCrawler;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 
-import org.jdownloader.controlling.filter.LinkFilterController;
-
 /**
- * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen
- * Treffer werden ausgeschnitten.
+ * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen Treffer werden
+ * ausgeschnitten.
  * 
  * @author astaldo
  */
@@ -67,7 +65,6 @@ public class DistributeData {
     public ArrayList<DownloadLink> findLinks() {
         foundPasswords.addAll(HTMLParser.findPasswords(data));
         LinkCrawler lf = new LinkCrawler();
-        lf.setFilter(LinkFilterController.getInstance());
         lf.crawl(data);
         lf.waitForCrawling();
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lf.getCrawledLinks().size());

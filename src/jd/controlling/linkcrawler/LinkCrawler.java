@@ -161,7 +161,6 @@ public class LinkCrawler {
     }
 
     public LinkCrawler(boolean connectParentCrawler, boolean avoidDuplicates) {
-        setHandler(defaulHandlerFactory());
         setFilter(defaultFilterFactory());
         if (connectParentCrawler && Thread.currentThread() instanceof LinkCrawlerThread) {
             /* forward crawlerGeneration from parent to this child */
@@ -172,7 +171,9 @@ public class LinkCrawler {
             this.directHTTP = parentCrawler.directHTTP;
             this.ftp = parentCrawler.ftp;
             this.directHttpEnabled = parentCrawler.directHttpEnabled;
+            setHandler(parentCrawler.getHandler());
         } else {
+            setHandler(defaulHandlerFactory());
             parentCrawler = null;
             classLoader = PluginClassLoader.getInstance().getChild();
             pHosts = new ArrayList<LazyHostPlugin>(HostPluginController.getInstance().list());

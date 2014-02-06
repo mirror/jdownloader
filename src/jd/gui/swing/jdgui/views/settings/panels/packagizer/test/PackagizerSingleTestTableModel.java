@@ -4,12 +4,14 @@ import javax.swing.Icon;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.PackagizerFilterRuleDialog.RuleMatcher;
+import jd.http.Browser;
 
 import org.appwork.swing.components.CheckBoxIcon;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Files;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRuleWrapper;
 import org.jdownloader.gui.translate._GUI;
@@ -223,13 +225,18 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             }
 
             protected Icon getIcon(final CrawledLink value) {
-                return value.getDomainInfo().getFavIcon();
+                DomainInfo domain = value.getDomainInfo();
+                if (domain == null) domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
+                if (domain == null) return null;
+                return domain.getFavIcon();
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
-
-                return value.getDomainInfo().getTld();
+                DomainInfo domain = value.getDomainInfo();
+                if (domain == null) domain = DomainInfo.getInstance(Browser.getHost(value.getURL()));
+                if (domain == null) return null;
+                return domain.getTld();
             }
         });
 

@@ -218,7 +218,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             return PackagizerController.replaceDynamicTags(lname, packageName);
         }
         if (dlLink != null) return dlLink.getName();
-        return "DUMMY";
+        return "RAWURL:" + getURL();
     }
 
     public int getChunks() {
@@ -494,7 +494,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         synchronized (this) {
             if (archiveInfo != null) return archiveInfo;
             archiveInfo = new ArchiveInfo();
-
         }
         return archiveInfo;
     }
