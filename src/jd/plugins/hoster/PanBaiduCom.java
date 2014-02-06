@@ -85,8 +85,6 @@ public class PanBaiduCom extends PluginForHost {
         String passCode = downloadLink.getStringProperty("pass", null);
         DLLINK = checkDirectLink(downloadLink, "panbaidudirectlink");
         if (DLLINK == null) {
-            final boolean pluginBroken = false;
-            if (pluginBroken) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final String original_url = downloadLink.getStringProperty("mainLink", null);
             final String shareid = downloadLink.getStringProperty("origurl_shareid", null);
             final String uk = downloadLink.getStringProperty("origurl_uk", null);

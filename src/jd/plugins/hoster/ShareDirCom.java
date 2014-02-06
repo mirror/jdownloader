@@ -358,7 +358,7 @@ public class ShareDirCom extends PluginForHost {
                 statusMessage = "Error 500";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 666:
-                /* File too big for free accounts -> show errormessage */
+                /* File too big for free accounts -> show errormessage / try without account (or use other available account(s)) */
                 statusMessage = "Error: This file is only downloadable via premium account (filesize > 150 MB)";
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);

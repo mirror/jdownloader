@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "http://(www\\.)?archive\\.org/details/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(www\\.)?archive\\.org/details/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+" }, flags = { 0 })
 public class ArchieveOrg extends PluginForDecrypt {
 
     public ArchieveOrg(PluginWrapper wrapper) {

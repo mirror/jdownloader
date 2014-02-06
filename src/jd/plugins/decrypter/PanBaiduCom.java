@@ -50,7 +50,6 @@ public class PanBaiduCom extends PluginForDecrypt {
     private String              link_password                              = null;
     private String              link_password_cookie                       = null;
 
-    // TODO: TYPE_FOLDER_LINK_SHORT and normal links can also be single files
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String uk = null, shareid = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -152,7 +151,6 @@ public class PanBaiduCom extends PluginForDecrypt {
                 if (singleFolder != null && !singleFolder.equals(dir)) continue;// only selected folder
                 if (ret.containsKey("md5") && !"".equals(ret.get("md5"))) {// file in root
                     final DownloadLink dl = generateDownloadLink(ret, parameter, dir);
-                    dl.setProperty("important_fsid", fsid);
                     decryptedLinks.add(dl);
                 } else {
                     getDownloadLinks(decryptedLinks, parameter, ret.get("path"), dir);// folder in root
@@ -251,6 +249,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
         final String shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
         final String uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
+        final String fsid = ret.get("fs_id");
         if (ret != null) {
             for (Entry<String, String> next : ret.entrySet()) {
                 dl.setProperty(next.getKey(), next.getValue());
@@ -264,6 +263,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         dl.setProperty("origurl_uk", uk);
         dl.setProperty("important_link_password", link_password);
         dl.setProperty("important_link_password_cookie", link_password_cookie);
+        dl.setProperty("important_fsid", fsid);
         dl.setAvailable(true);
         return dl;
     }

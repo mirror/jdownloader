@@ -64,7 +64,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
-        final String ID = new Regex(parameter, "vimeo\\.com/(.+)").getMatch(0);
+        final String ID = new Regex(parameter, "(\\d+)$").getMatch(0);
         parameter = "http://vimeo.com/" + ID;
 
         final Browser br = new Browser();
