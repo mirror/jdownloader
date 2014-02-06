@@ -770,6 +770,7 @@ public abstract class PluginForHost extends Plugin {
             long waitQueuePosition = -1;
             long waitMax = 0;
             long waitCur = 0;
+            old = downloadLink.setPluginProgress(progress);
             while ((waitQueuePosition = queueItem.indexOf(downloadLink)) >= 0) {
                 if (waitQueuePosition != lastQueuePosition) {
                     waitMax = (queueItem.lastStartTimestamp.get() - System.currentTimeMillis()) + ((waitQueuePosition + 1) * wait);
@@ -779,7 +780,6 @@ public abstract class PluginForHost extends Plugin {
                 if (waitCur <= 0) {
                     break;
                 }
-                old = downloadLink.setPluginProgress(progress);
                 progress.updateValues(waitCur, waitMax);
                 long wTimeout = Math.min(1000, Math.max(0, waitCur));
                 synchronized (this) {
