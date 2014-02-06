@@ -87,6 +87,7 @@ public class FourSharedCom extends PluginForHost {
             agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         prepBr.getHeaders().put("User-Agent", agent.string);
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.setCookie("http://www.4shared.com", "4langcookie", "en");
         return prepBr;
     }
@@ -368,7 +369,6 @@ public class FourSharedCom extends PluginForHost {
                 br.forceDebug(true);
                 br.setReadTimeout(3 * 60 * 1000);
                 br.getPage("http://www.4shared.com/");
-                br.setCookie("http://www.4shared.com", "4langcookie", "en");
                 // stable does not send this header with post request!!!!!
                 String protocol = "https://";
                 if (isJava7nJDStable()) {
@@ -387,7 +387,7 @@ public class FourSharedCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPage(protocol + "www.4shared.com/web/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=true&returnTo=https%253A%252F%252Fwww.4shared.com%252Faccount%252Fhome.jsp");
+                br.postPage(protocol + "www.4shared.com/web/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_remember=on&returnTo=https%253A%252F%252Fwww.4shared.com%252Faccount%252Fhome.jsp");
                 br.getHeaders().put("Content-Type", null);
                 if (br.getCookie("http://www.4shared.com", "ulin") == null || !br.getCookie("http://www.4shared.com", "ulin").equals("true")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
@@ -415,9 +415,18 @@ public class FourSharedCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        if (true) {
+            // they are not respecting the english cookie, they revert to account preferences once logged in!. plugin will fail if not
+            // English!
+            Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br2.postPage("/web/user/language", "code=en");
+            br2.getHeaders().put("X-Requested-With", null);
+        }
         br.getPage("/web/account/settings/overview");
         final String expire = br.getRegex(">Expires in:</div>[\t\n\r ]+<div[^>]+>(\\d+) days</div>").getMatch(0);
-        final String accType = br.getRegex(">Account type:</div>[\t\n\r ]+<div[^>]+>(.*?)</div").getMatch(0);
+        String accType = br.getRegex(">Account type:</div>[\t\n\r ]+<div[^>]+>(.*?)</div").getMatch(0);
+        if (accType == null) accType = br.getRegex("accountType : \"AccType = (\\w+)\"").getMatch(0);
         final String usedSpace = br.getRegex(">Used space:</div>[\t\n\r ]+<div[^>]+>([0-9\\.]+(KB|MB|GB|TB)) of").getMatch(0);
         final String[] traffic = br.getRegex(">Premium traffic:</div>[\t\n\r ]+<div[^>]+>([0-9\\.]+(KB|MB|GB|TB)) of ([0-9\\.]+(KB|MB|GB|TB))").getRow(0);
         if (expire == null || accType == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
