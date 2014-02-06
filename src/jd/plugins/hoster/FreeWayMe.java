@@ -132,10 +132,10 @@ public class FreeWayMe extends PluginForHost {
                                                       put("ERROR_UNKNOWN", "Unbekannter Fehler");
                                                       put("ERROR_UNKNOWN_FULL", "Unbekannter Accountstatus (deaktiviert)!");
                                                       put("CHECK_ZERO_HOSTERS", "Account gültig: 0 Hosts via free-way.me verfügbar");
-                                                      put("SUPPORTED_HOSTS_1", "Account valid: ");
-                                                      put("SUPPORTED_HOSTS_2", " Hosts via free-way.me available");
+                                                      put("SUPPORTED_HOSTS_1", "Account gültig: ");
+                                                      put("SUPPORTED_HOSTS_2", " Hoster über free-way.me verfügbar");
                                                       put("ERROR_INVALID_URL", "Ungültige URL");
-                                                      put("ERROR_RETRY_SECONDS", "Fehler: Erneuter in wenigen sek.");
+                                                      put("ERROR_RETRY_SECONDS", "Fehler: Erneuter Versuch in wenigen sek.");
                                                       put("ERROR_SERVER", "Server Fehler");
                                                       put("ERROR_UNKNWON_CODE", "Unbekannter Fehlercode!");
                                                       put("ERROR_HOST_TMP_DISABLED", "Hoster temporär deaktiviert!");
