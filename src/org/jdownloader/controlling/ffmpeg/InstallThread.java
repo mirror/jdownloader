@@ -49,7 +49,21 @@ public class InstallThread extends Thread {
             if (res.getCloseReason() == CloseReason.OK) {
                 UpdateController.getInstance().setGuiVisible(true);
                 try {
-                    UpdateController.getInstance().runExtensionInstallation("ffmpeg");
+                    switch (CrossSystem.getOSFamily()) {
+
+                    case MAC:
+                        if (CrossSystem.getMacOSVersion() < 10600000) {
+                            UpdateController.getInstance().runExtensionInstallation("ffmpeg_10.5.x-");
+                        } else {
+                            UpdateController.getInstance().runExtensionInstallation("ffmpeg_10.6+");
+                        }
+
+                        break;
+
+                    default:
+                        UpdateController.getInstance().runExtensionInstallation("ffmpeg");
+                    }
+
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
