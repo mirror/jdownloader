@@ -49,10 +49,10 @@ public class LinknameCleaner {
     }
 
     public static String cleanFileName(String name, boolean splitUpperLowerCase) {
-        return cleanFileName(name, splitUpperLowerCase, false);
+        return cleanFileName(name, splitUpperLowerCase, false, true, true);
     }
 
-    public static String cleanFileName(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters) {
+    public static String cleanFileName(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, boolean removeExtension, boolean cleanup) {
         boolean extensionStilExists = true;
         String before = name;
         if (!ignoreArchiveFilters) {
@@ -116,7 +116,7 @@ public class LinknameCleaner {
         if (tmpname.length() > 3) name = tmpname;
 
         /* remove extension */
-        if (extensionStilExists) {
+        if (extensionStilExists && removeExtension) {
             int lastPoint = name.lastIndexOf(".");
             if (lastPoint <= 0) lastPoint = name.lastIndexOf("_");
             if (lastPoint > 0) {
@@ -133,7 +133,7 @@ public class LinknameCleaner {
 
         /* if enabled, replace dots and _ with spaces and do further clean ups */
 
-        if (org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_FILENAMES.isEnabled()) {
+        if (cleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_FILENAMES.isEnabled()) {
 
             StringBuilder sb = new StringBuilder();
             char[] cs = name.toCharArray();

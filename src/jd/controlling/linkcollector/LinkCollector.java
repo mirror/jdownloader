@@ -571,7 +571,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         if (isMultiArchive) {
                             packageID = lArchiver.createArchiveID(clf);
                             if (packageID != null) {
-                                packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true));
+                                packageName = _JDT._.LinkCollector_archiv(LinknameCleaner.cleanFileName(lArchiver.getArchiveName(clf), false, true, true, true));
                             }
                         }
                     }

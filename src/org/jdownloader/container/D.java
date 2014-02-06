@@ -687,7 +687,7 @@ public class D extends PluginsC {
             String oos = ps.item(pgs).getAttributes().getNamedItem("passwords") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("passwords").getNodeValue());
             String cs2 = ps.item(pgs).getAttributes().getNamedItem("comment") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("comment").getNodeValue());
             String ca3 = ps.item(pgs).getAttributes().getNamedItem("category") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("category").getNodeValue());
-            dpi.setName(LinknameCleaner.cleanFileName(pn));
+            dpi.setName(LinknameCleaner.cleanFileName(pn, false, true, false, false));
 
             if (ca3 != null && ca3.trim().length() > 0) {
                 dpi.setComment("[" + ca3 + "] " + cs2);
