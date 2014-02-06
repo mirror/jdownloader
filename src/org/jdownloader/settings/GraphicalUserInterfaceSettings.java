@@ -1007,4 +1007,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setConfirmIncompleteArchiveAction(ConfirmIncompleteArchiveAction action);
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If Enabled, Variants will get a more detailed, technical name.")
+    boolean isExtendedVariantNamesEnabled();
+
+    void setExtendedVariantNamesEnabled(boolean b);
 }

@@ -308,8 +308,103 @@ public class FFmpeg {
 
     }
 
+    public boolean generateM4a(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException {
+        logger.info("Generating " + audioIn + " = " + out);
+        long lastModifiedAudio = new File(audioIn).lastModified();
+        ArrayList<String> commandLine = new ArrayList<String>();
+        commandLine.addAll(Arrays.asList(getFullPath(), "-i", audioIn, "-f", "mp4", "-c:a", "copy", out, "-y"));
+        logger.info("FFmpeg command: " + commandLine);
+        final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
+
+        final StringBuilder sb = new StringBuilder();
+        final StringBuilder sb2 = new StringBuilder();
+        final Process process = pb.start();
+
+        final Thread reader1 = new Thread("ffmpegReader") {
+            public void run() {
+                try {
+                    readInputStreamToString(sb, process.getInputStream());
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        final Thread reader2 = new Thread("ffmpegReader") {
+            public void run() {
+                try {
+                    readInputStreamToString(sb2, process.getErrorStream());
+
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        reader1.start();
+        reader2.start();
+        try {
+            long start = System.currentTimeMillis();
+            long lastUpdate = System.currentTimeMillis();
+            long lastLength = 0;
+            while (true) {
+                synchronized (sb2) {
+
+                    String duration = new Regex(sb2.toString(), "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
+                    if (duration != null) {
+                        long ms = formatStringToMilliseconds(duration);
+
+                        String[] times = new Regex(sb2.toString(), "time=(.*?).?\\d*? ").getColumn(0);
+                        if (times != null && times.length > 0) {
+                            long msDone = formatStringToMilliseconds(times[times.length - 1]);
+
+                            System.out.println(msDone + "/" + ms);
+                            if (progress != null) progress.updateValues(msDone, ms);
+                        }
+                    }
+                }
+                try {
+                    int exitCode = process.exitValue();
+                    reader1.join();
+                    reader2.join();
+
+                    logger.info(sb.toString());
+                    logger.info(sb2.toString());
+                    try {
+
+                        if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
+                            new File(out).setLastModified(lastModifiedAudio);
+                        }
+                    } catch (final Throwable e) {
+                        LogSource.exception(logger, e);
+                    }
+                    return exitCode == 0;
+                } catch (IllegalThreadStateException e) {
+                    // still running;
+                }
+                if (lastLength != sb2.length()) {
+                    lastUpdate = System.currentTimeMillis();
+                }
+                lastLength = sb2.length();
+
+                if (System.currentTimeMillis() - lastUpdate > 60000) {
+                    // 60 seconds without any ffmpeg update. interrupt
+                    process.destroy();
+                    throw new InterruptedException("FFMPeg does not answer");
+                }
+            }
+        } catch (InterruptedException e) {
+            process.destroy();
+            logger.log(e);
+            throw e;
+
+        }
+    }
+
     public boolean generateAac(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
-        /* Sorry for not respecting DRY. I didn't want to change such a method without coalados permisson. TheCrap */
         logger.info("Generating " + audioIn + " = " + out);
         long lastModifiedAudio = new File(audioIn).lastModified();
         ArrayList<String> commandLine = new ArrayList<String>();
@@ -415,4 +510,5 @@ public class FFmpeg {
 
         return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
     }
+
 }

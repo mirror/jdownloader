@@ -10,4 +10,6 @@ public interface LinkVariant {
 
     Icon getIcon();
 
+    String getExtendedName();
+
 }

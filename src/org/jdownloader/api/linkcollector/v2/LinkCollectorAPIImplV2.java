@@ -29,6 +29,7 @@ import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     public LinkCollectorAPIImplV2() {
@@ -474,7 +475,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         ArrayList<LinkVariantStorableV2> ret = new ArrayList<LinkVariantStorableV2>();
         CrawledLink cl = getLinkById(linkid);
         for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
-            ret.add(new LinkVariantStorableV2(lv.getUniqueId(), lv.getName()));
+            ret.add(new LinkVariantStorableV2(lv.getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv.getExtendedName() : lv.getName()));
         }
         return ret;
     }

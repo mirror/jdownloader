@@ -3967,4 +3967,377 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Plugin" })
     String lit_plugin();
+
+    @Default(lngs = { "en" }, values = { "SubRip Subtitle File" })
+    String YoutubeVariant_name_SUBTITLES();
+
+    @Default(lngs = { "en" }, values = { "Best Quality Image" })
+    String YoutubeVariant_name_IMAGE_MAX();
+
+    @Default(lngs = { "en" }, values = { "High Quality Image" })
+    String YoutubeVariant_name_IMAGE_HQ();
+
+    @Default(lngs = { "en" }, values = { "Medium Quality Image" })
+    String YoutubeVariant_name_IMAGE_MQ();
+
+    @Default(lngs = { "en" }, values = { "Low Quality Image" })
+    String YoutubeVariant_name_IMAGE_LQ();
+
+    @Default(lngs = { "en" }, values = { "128kbit/s M4A-Audio" })
+    String YoutubeVariant_name_M4A_128();
+
+    @Default(lngs = { "en" }, values = { "256kbit/s M4A-Audio" })
+    String YoutubeVariant_name_M4A_256();
+
+    @Default(lngs = { "en" }, values = { "48kbit/s M4A-Audio" })
+    String YoutubeVariant_name_M4A_48();
+
+    @Default(lngs = { "en" }, values = { "128kbit/s AAC-Audio" })
+    String YoutubeVariant_name_AAC_128();
+
+    @Default(lngs = { "en" }, values = { "256kbit/s AAC-Audio" })
+    String YoutubeVariant_name_AAC_256();
+
+    @Default(lngs = { "en" }, values = { "48kbit/s AAC-Audio" })
+    String YoutubeVariant_name_AAC_48();
+
+    @Default(lngs = { "en" }, values = { "240p FLV-Video(high)" })
+    String YoutubeVariant_name_FLV_240_HIGH();
+
+    @Default(lngs = { "en" }, values = { "240p FLV-Video(low)" })
+    String YoutubeVariant_name_FLV_240_LOW();
+
+    @Default(lngs = { "en" }, values = { "360p FLV-Video" })
+    String YoutubeVariant_name_FLV_360();
+
+    @Default(lngs = { "en" }, values = { "480p FLV-Video" })
+    String YoutubeVariant_name_FLV_480();
+
+    @Default(lngs = { "en" }, values = { "64kbit/s Mp3-Audio" })
+    String YoutubeVariant_name_MP3_1();
+
+    @Default(lngs = { "en" }, values = { "64kbit/s Mp3-Audio" })
+    String YoutubeVariant_name_MP3_2();
+
+    @Default(lngs = { "en" }, values = { "1080p MP4-Video" })
+    String YoutubeVariant_name_MP4_1080();
+
+    @Default(lngs = { "en" }, values = { "360p MP4-Video" })
+    String YoutubeVariant_name_MP4_360();
+
+    @Default(lngs = { "en" }, values = { "240p MP4-3D-Video" })
+    String YoutubeVariant_name_MP4_3D_240();
+
+    @Default(lngs = { "en" }, values = { "360p MP4-3D-Video" })
+    String YoutubeVariant_name_MP4_3D_360();
+
+    @Default(lngs = { "en" }, values = { "520p MP4-3D-Video" })
+    String YoutubeVariant_name_MP4_3D_520();
+
+    @Default(lngs = { "en" }, values = { "720p MP4-3D-Video" })
+    String YoutubeVariant_name_MP4_3D_720();
+
+    @Default(lngs = { "en" }, values = { "720p MP4-Video" })
+    String YoutubeVariant_name_MP4_720();
+
+    @Default(lngs = { "en" }, values = { "1080p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_1080_AAC128();
+
+    @Default(lngs = { "en" }, values = { "1080p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_1080_AAC256();
+
+    @Default(lngs = { "en" }, values = { "1080p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_1080_AAC48();
+
+    @Default(lngs = { "en" }, values = { "144p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_144_AAC128();
+
+    @Default(lngs = { "en" }, values = { "144p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_144_AAC256();
+
+    @Default(lngs = { "en" }, values = { "144p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_144_AAC48();
+
+    @Default(lngs = { "en" }, values = { "1440p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_1440_AAC128();
+
+    @Default(lngs = { "en" }, values = { "1440p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_1440_AAC256();
+
+    @Default(lngs = { "en" }, values = { "1440p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_1440_AAC48();
+
+    @Default(lngs = { "en" }, values = { "240p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_240_AAC128();
+
+    @Default(lngs = { "en" }, values = { "240p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_240_AAC256();
+
+    @Default(lngs = { "en" }, values = { "240p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_240_AAC48();
+
+    @Default(lngs = { "en" }, values = { "360p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_360_AAC128();
+
+    @Default(lngs = { "en" }, values = { "360p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_360_AAC256();
+
+    @Default(lngs = { "en" }, values = { "360p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_360_AAC48();
+
+    @Default(lngs = { "en" }, values = { "480p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_480_AAC128();
+
+    @Default(lngs = { "en" }, values = { "480p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_480_AAC256();
+
+    @Default(lngs = { "en" }, values = { "480p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_480_AAC48();
+
+    @Default(lngs = { "en" }, values = { "720p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_720_AAC128();
+
+    @Default(lngs = { "en" }, values = { "720p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_720_AAC256();
+
+    @Default(lngs = { "en" }, values = { "720p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_720_AAC48();
+
+    @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC128();
+
+    @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC256();
+
+    @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
+    String YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC48();
+
+    @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
+    String YoutubeVariant_name_MP4_ORIGINAL();
+
+    @Default(lngs = { "en" }, values = { "144p 3GP Video" })
+    String YoutubeVariant_name_THREEGP_144();
+
+    @Default(lngs = { "en" }, values = { "240p 3GP Video(high)" })
+    String YoutubeVariant_name_THREEGP_240_HIGH();
+
+    @Default(lngs = { "en" }, values = { "240p 3GP Video(low)" })
+    String YoutubeVariant_name_THREEGP_240_LOW();
+
+    @Default(lngs = { "en" }, values = { "1080p WebM-Video" })
+    String YoutubeVariant_name_WEBM_1080();
+
+    @Default(lngs = { "en" }, values = { "360p WebM-Video" })
+    String YoutubeVariant_name_WEBM_360();
+
+    @Default(lngs = { "en" }, values = { "360p WebM-3D-Video(128Kbit/s Audio)" })
+    String YoutubeVariant_name_WEBM_3D_360_128();
+
+    @Default(lngs = { "en" }, values = { "360p WebM-3D-Video(192Kbit/s Audio)" })
+    String YoutubeVariant_name_WEBM_3D_360_192();
+
+    @Default(lngs = { "en" }, values = { "720p WebM-3D-Video" })
+    String YoutubeVariant_name_WEBM_3D_720();
+
+    @Default(lngs = { "en" }, values = { "480p WebM-Video" })
+    String YoutubeVariant_name_WEBM_480();
+
+    @Default(lngs = { "en" }, values = { "720p WebM-Video" })
+    String YoutubeVariant_name_WEBM_720();
+
+    @Default(lngs = { "en" }, values = { "Subtitles" })
+    String YoutubeVariant_filenametag_SUBTITLES();
+
+    @Default(lngs = { "en" }, values = { "BQ" })
+    String YoutubeVariant_filenametag_IMAGE_MAX();
+
+    @Default(lngs = { "en" }, values = { "HQ" })
+    String YoutubeVariant_filenametag_IMAGE_HQ();
+
+    @Default(lngs = { "en" }, values = { "MQ" })
+    String YoutubeVariant_filenametag_IMAGE_MQ();
+
+    @Default(lngs = { "en" }, values = { "LQ" })
+    String YoutubeVariant_filenametag_IMAGE_LQ();
+
+    @Default(lngs = { "en" }, values = { "128kbit" })
+    String YoutubeVariant_filenametag_M4A_128();
+
+    @Default(lngs = { "en" }, values = { "256kbit" })
+    String YoutubeVariant_filenametag_M4A_256();
+
+    @Default(lngs = { "en" }, values = { "48kbit" })
+    String YoutubeVariant_filenametag_M4A_48();
+
+    @Default(lngs = { "en" }, values = { "128kbit" })
+    String YoutubeVariant_filenametag_AAC_128();
+
+    @Default(lngs = { "en" }, values = { "256kbit" })
+    String YoutubeVariant_filenametag_AAC_256();
+
+    @Default(lngs = { "en" }, values = { "48kbit" })
+    String YoutubeVariant_filenametag_AAC_48();
+
+    @Default(lngs = { "en" }, values = { "240p[HQ]" })
+    String YoutubeVariant_filenametag_FLV_240_HIGH();
+
+    @Default(lngs = { "en" }, values = { "240p[LQ]" })
+    String YoutubeVariant_filenametag_FLV_240_LOW();
+
+    @Default(lngs = { "en" }, values = { "360p" })
+    String YoutubeVariant_filenametag_FLV_360();
+
+    @Default(lngs = { "en" }, values = { "480p" })
+    String YoutubeVariant_filenametag_FLV_480();
+
+    @Default(lngs = { "en" }, values = { "64kbit" })
+    String YoutubeVariant_filenametag_MP3_1();
+
+    @Default(lngs = { "en" }, values = { "64kbit" })
+    String YoutubeVariant_filenametag_MP3_2();
+
+    @Default(lngs = { "en" }, values = { "1080p" })
+    String YoutubeVariant_filenametag_MP4_1080();
+
+    @Default(lngs = { "en" }, values = { "360p" })
+    String YoutubeVariant_filenametag_MP4_360();
+
+    @Default(lngs = { "en" }, values = { "240p 3D" })
+    String YoutubeVariant_filenametag_MP4_3D_240();
+
+    @Default(lngs = { "en" }, values = { "360p 3D" })
+    String YoutubeVariant_filenametag_MP4_3D_360();
+
+    @Default(lngs = { "en" }, values = { "520p 3D" })
+    String YoutubeVariant_filenametag_MP4_3D_520();
+
+    @Default(lngs = { "en" }, values = { "720p 3D" })
+    String YoutubeVariant_filenametag_MP4_3D_720();
+
+    @Default(lngs = { "en" }, values = { "720p" })
+    String YoutubeVariant_filenametag_MP4_720();
+
+    @Default(lngs = { "en" }, values = { "1080p" })
+    String YoutubeVariant_filenametag_MP4_DASH_1080_AAC128();
+
+    @Default(lngs = { "en" }, values = { "1080p" })
+    String YoutubeVariant_filenametag_MP4_DASH_1080_AAC256();
+
+    @Default(lngs = { "en" }, values = { "1080p" })
+    String YoutubeVariant_filenametag_MP4_DASH_1080_AAC48();
+
+    @Default(lngs = { "en" }, values = { "144p" })
+    String YoutubeVariant_filenametag_MP4_DASH_144_AAC128();
+
+    @Default(lngs = { "en" }, values = { "144p" })
+    String YoutubeVariant_filenametag_MP4_DASH_144_AAC256();
+
+    @Default(lngs = { "en" }, values = { "144p" })
+    String YoutubeVariant_filenametag_MP4_DASH_144_AAC48();
+
+    @Default(lngs = { "en" }, values = { "1440p" })
+    String YoutubeVariant_filenametag_MP4_DASH_1440_AAC128();
+
+    @Default(lngs = { "en" }, values = { "1440p" })
+    String YoutubeVariant_filenametag_MP4_DASH_1440_AAC256();
+
+    @Default(lngs = { "en" }, values = { "1440p" })
+    String YoutubeVariant_filenametag_MP4_DASH_1440_AAC48();
+
+    @Default(lngs = { "en" }, values = { "240p" })
+    String YoutubeVariant_filenametag_MP4_DASH_240_AAC128();
+
+    @Default(lngs = { "en" }, values = { "240p" })
+    String YoutubeVariant_filenametag_MP4_DASH_240_AAC256();
+
+    @Default(lngs = { "en" }, values = { "240p" })
+    String YoutubeVariant_filenametag_MP4_DASH_240_AAC48();
+
+    @Default(lngs = { "en" }, values = { "360p" })
+    String YoutubeVariant_filenametag_MP4_DASH_360_AAC128();
+
+    @Default(lngs = { "en" }, values = { "360p" })
+    String YoutubeVariant_filenametag_MP4_DASH_360_AAC256();
+
+    @Default(lngs = { "en" }, values = { "360p" })
+    String YoutubeVariant_filenametag_MP4_DASH_360_AAC48();
+
+    @Default(lngs = { "en" }, values = { "480p" })
+    String YoutubeVariant_filenametag_MP4_DASH_480_AAC128();
+
+    @Default(lngs = { "en" }, values = { "480p" })
+    String YoutubeVariant_filenametag_MP4_DASH_480_AAC256();
+
+    @Default(lngs = { "en" }, values = { "480p" })
+    String YoutubeVariant_filenametag_MP4_DASH_480_AAC48();
+
+    @Default(lngs = { "en" }, values = { "720p" })
+    String YoutubeVariant_filenametag_MP4_DASH_720_AAC128();
+
+    @Default(lngs = { "en" }, values = { "720p" })
+    String YoutubeVariant_filenametag_MP4_DASH_720_AAC256();
+
+    @Default(lngs = { "en" }, values = { "720p" })
+    String YoutubeVariant_filenametag_MP4_DASH_720_AAC48();
+
+    @Default(lngs = { "en" }, values = { "2160p" })
+    String YoutubeVariant_filenametag_MP4_DASH_ORIGINAL_AAC128();
+
+    @Default(lngs = { "en" }, values = { "2160p" })
+    String YoutubeVariant_filenametag_MP4_DASH_ORIGINAL_AAC256();
+
+    @Default(lngs = { "en" }, values = { "2160p" })
+    String YoutubeVariant_filenametag_MP4_DASH_ORIGINAL_AAC48();
+
+    @Default(lngs = { "en" }, values = { "2160p" })
+    String YoutubeVariant_filenametag_MP4_ORIGINAL();
+
+    @Default(lngs = { "en" }, values = { "144p" })
+    String YoutubeVariant_filenametag_THREEGP_144();
+
+    @Default(lngs = { "en" }, values = { "240p[HQ]" })
+    String YoutubeVariant_filenametag_THREEGP_240_HIGH();
+
+    @Default(lngs = { "en" }, values = { "240p[LQ]" })
+    String YoutubeVariant_filenametag_THREEGP_240_LOW();
+
+    @Default(lngs = { "en" }, values = { "1080p" })
+    String YoutubeVariant_filenametag_WEBM_1080();
+
+    @Default(lngs = { "en" }, values = { "360p" })
+    String YoutubeVariant_filenametag_WEBM_360();
+
+    @Default(lngs = { "en" }, values = { "360p 3D [128kbit Audio]" })
+    String YoutubeVariant_filenametag_WEBM_3D_360_128();
+
+    @Default(lngs = { "en" }, values = { "360p 3D [192kbit Audio]" })
+    String YoutubeVariant_filenametag_WEBM_3D_360_192();
+
+    @Default(lngs = { "en" }, values = { "720p 3D" })
+    String YoutubeVariant_filenametag_WEBM_3D_720();
+
+    @Default(lngs = { "en" }, values = { "480p" })
+    String YoutubeVariant_filenametag_WEBM_480();
+
+    @Default(lngs = { "en" }, values = { "720p" })
+    String YoutubeVariant_filenametag_WEBM_720();
+
+    @Default(lngs = { "en" }, values = { "Video Files" })
+    String YoutubeDashConfigPanel_getType_videos();
+
+    @Default(lngs = { "en" }, values = { "Video File" })
+    String YoutubeDashConfigPanel_getType_video();
+
+    @Default(lngs = { "en" }, values = { "Audio Files" })
+    String YoutubeDashConfigPanel_getType_audios();
+
+    @Default(lngs = { "en" }, values = { "Audio File" })
+    String YoutubeDashConfigPanel_getType_audio();
+
+    @Default(lngs = { "en" }, values = { "Image Files" })
+    String YoutubeDashConfigPanel_getType_images();
+
+    @Default(lngs = { "en" }, values = { "Image File" })
+    String YoutubeDashConfigPanel_getType_image();
+
 }

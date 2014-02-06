@@ -155,4 +155,9 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
         return ret;
     }
 
+    @Override
+    public String getExtendedName() {
+        return name;
+    }
+
 }

@@ -102,6 +102,7 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.UpdateController;
 
@@ -431,7 +432,8 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeVariantInterface variant = getVariant(downloadLink);
         URLConnectionAdapter con;
         long totalSize = -1;
-
+        // youtube uses redirects - maybe for loadbalancing
+        br.setFollowRedirects(true);
         switch (variant.getType()) {
         case SUBTITLES:
             for (int i = 0; i < 2; i++) {
@@ -997,6 +999,17 @@ public class YoutubeDashV2 extends PluginForHost {
 
     }
 
+    public static void main(String[] args) {
+        for (YoutubeVariant v : YoutubeVariant.values()) {
+
+            // @Default(lngs = { "en" }, values = { "240p MP4-Video" })
+            // String YoutubeVariant_name_MP4_DASH_240_AAC128();
+            System.out.println("@Default(lngs = { \"en\" }, values = { \"" + v.getQualityExtension() + "\" })");
+            ;
+            System.out.println("String YoutubeVariant_qualityExtension_" + v.name() + "();");
+        }
+    }
+
     private int getChunksPerStream() {
         YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
         if (!cfg.isCustomChunkValueEnabled()) return 0;
@@ -1122,21 +1135,51 @@ public class YoutubeDashV2 extends PluginForHost {
                             downloadLink.compareAndSetPluginProgress(progress, old);
                         }
                     } else {
-                        /* Just renaming the temp-file didn't work */
-                        FFMpegProgress progress = new FFMpegProgress();
-                        progress.setProgressSource(this);
-                        PluginProgress old = null;
-                        try {
-                            old = downloadLink.setPluginProgress(progress);
-                            if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
-                                downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                new File(getAudioStreamPath(downloadLink)).delete();
-                            } else {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+                        if (variant instanceof YoutubeVariant) {
+                            YoutubeVariant ytVariant = (YoutubeVariant) variant;
 
+                            if (ytVariant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("aac")) {
+
+                                FFMpegProgress progress = new FFMpegProgress();
+                                progress.setProgressSource(this);
+                                PluginProgress old = null;
+                                try {
+                                    old = downloadLink.setPluginProgress(progress);
+
+                                    if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        new File(getAudioStreamPath(downloadLink)).delete();
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+
+                                    }
+                                } finally {
+                                    downloadLink.compareAndSetPluginProgress(progress, old);
+                                }
+                            } else if (ytVariant.getFileExtension().toLowerCase(Locale.ENGLISH).equals("m4a")) {
+
+                                FFMpegProgress progress = new FFMpegProgress();
+                                progress.setProgressSource(this);
+                                PluginProgress old = null;
+                                try {
+                                    old = downloadLink.setPluginProgress(progress);
+
+                                    if (ffmpeg.generateM4a(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
+                                        downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                                        new File(getAudioStreamPath(downloadLink)).delete();
+                                    } else {
+                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
+
+                                    }
+                                } finally {
+                                    downloadLink.compareAndSetPluginProgress(progress, old);
+                                }
+
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
-                        } finally {
-                            downloadLink.compareAndSetPluginProgress(progress, old);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
 
                     }
@@ -1514,6 +1557,11 @@ public class YoutubeDashV2 extends PluginForHost {
             return null;
         }
 
+        @Override
+        public String getExtendedName() {
+            return _GUI._.YoutubeDash_getName_subtitles_(locale.getDisplayName());
+        }
+
     }
 
     @Override
@@ -1767,7 +1815,9 @@ public class YoutubeDashV2 extends PluginForHost {
                         for (final YoutubeVariantInterface v : list) {
                             groupMenu.add(new JMenuItem(new BasicAction() {
                                 {
-                                    setName(v.getName());
+
+                                    setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v.getExtendedName() : v.getName());
+
                                 }
 
                                 @Override
@@ -1880,7 +1930,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         for (final YoutubeVariantInterface v : list) {
                             groupMenu.add(new JMenuItem(new BasicAction() {
                                 {
-                                    setName(v.getName());
+                                    setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? v.getExtendedName() : v.getName());
                                 }
 
                                 @Override

@@ -36,6 +36,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
 
@@ -107,7 +108,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
                         dllink.setProperties(link.getDownloadLink().getProperties());
                         cl = new CrawledLink(dllink);
                         setSmallIcon(o.getIcon());
-                        setName(o.getName());
+                        setName(CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? o.getExtendedName() : o.getName());
 
                         cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
 
@@ -177,7 +178,7 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
     @Override
     protected String modelItemToString(LinkVariant selectedItem) {
         if (selectedItem == null) { return null; }
-        return selectedItem.getName();
+        return CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? selectedItem.getExtendedName() : selectedItem.getName();
     }
 
     @Override

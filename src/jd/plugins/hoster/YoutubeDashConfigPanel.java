@@ -108,12 +108,17 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             sb.append(" ");
             sb.append(list.get(0).getFileExtension());
             sb.append("-");
-            if (list.size() > 1) {
-                sb.append("Videos");
-            } else {
-                sb.append("Video");
-            }
+            sb.append(getType(list.size() > 1));
+
             return "(" + list.size() + "/" + getValues().size() + ") " + sb.toString();
+        }
+
+        protected String getType(boolean plural) {
+            if (plural) {
+                return _GUI._.YoutubeDashConfigPanel_getType_videos();
+            } else {
+                return _GUI._.YoutubeDashConfigPanel_getType_video();
+            }
         }
 
     }
@@ -200,8 +205,26 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         videoFlv = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_flv(), null, null, new MultiVariantBox(this, videoFLV));
         videoGp3 = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_gp3(), null, null, new MultiVariantBox(this, videoGP3));
         this.video3D = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_3D(), null, null, new MultiVariantBox(this, video3D));
-        audioPair = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, new MultiVariantBox(this, audio));
-        videoPair = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, new MultiVariantBox(this, image));
+        MultiVariantBox box = new MultiVariantBox(this, audio) {
+            protected String getType(boolean plural) {
+                if (plural) {
+                    return _GUI._.YoutubeDashConfigPanel_getType_audios();
+                } else {
+                    return _GUI._.YoutubeDashConfigPanel_getType_audio();
+                }
+            }
+        };
+        audioPair = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_audio(), null, null, box);
+        box = new MultiVariantBox(this, image) {
+            protected String getType(boolean plural) {
+                if (plural) {
+                    return _GUI._.YoutubeDashConfigPanel_getType_images();
+                } else {
+                    return _GUI._.YoutubeDashConfigPanel_getType_image();
+                }
+            }
+        };
+        videoPair = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_image(), null, null, box);
         subtitles = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_subtitles(), null, null, new Checkbox(cf._getStorageHandler().getKeyHandler("SubtitlesEnabled", BooleanKeyHandler.class), null));
 
         addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
