@@ -82,9 +82,12 @@ public class FFmpeg {
             timouter.interrupt();
             if (interrupted[0]) { throw new InterruptedException("Timeout!"); }
             return new String[] { sb.toString(), sb2.toString() };
+        } else {
+            process.waitFor();
+            reader1.join();
+            reader2.join();
+            return new String[] { sb.toString(), sb2.toString() };
         }
-        System.out.println(process.waitFor());
-        return new String[] { sb.toString(), sb2.toString() };
 
     }
 
@@ -152,15 +155,17 @@ public class FFmpeg {
         String fp = getFullPath();
         logger.info("Validate FFmpeg Binary: " + fp);
         if (StringUtils.isEmpty(fp)) {
-            logger.info("Binary is ok: " + false);
+            logger.info("Binary does not exist");
             return false;
         }
         for (int i = 0; i < 5; i++) {
             try {
-
+                logger.info("Start ");
+                long t = System.currentTimeMillis();
                 String[] result = execute(-1, null, null, fp, "-version");
                 logger.info(result[0]);
                 logger.info(result[1]);
+                logger.info("Done in" + (System.currentTimeMillis() - t));
                 boolean ret = result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
                 if (ret) {
                     logger.info("Binary is ok: " + ret);

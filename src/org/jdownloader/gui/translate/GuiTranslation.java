@@ -3939,6 +3939,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Best %s1 available" })
     String YoutubeDashV2_add_best(String label);
 
+    @Default(lngs = { "en" }, values = { "Worst %s1 available" })
     String YoutubeDashV2_add_worst(String label);
 
     @Default(lngs = { "en" }, values = { "%s1 Server Error. Try again later" })

@@ -1058,7 +1058,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     if (!ffmpeg.isAvailable()) {
                         //
                         List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                        if (requestedInstalls != null && requestedInstalls.contains("ffmpeg")) {
+                        if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
                             throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
 
                         } else {

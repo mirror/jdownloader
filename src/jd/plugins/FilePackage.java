@@ -283,7 +283,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      */
     @Override
     public int hashCode() {
-        return uniqueID.hashCode();
+        return getUniqueID().hashCode();
     }
 
     /*

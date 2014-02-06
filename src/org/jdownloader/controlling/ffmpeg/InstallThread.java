@@ -15,14 +15,20 @@ import org.jdownloader.updatev2.UpdateController;
 
 public class InstallThread extends Thread {
 
+    public static final String   FFMPEG        = "ffmpeg";
+
+    public static final String   FFMPEG_10_6   = "ffmpeg_10.6+";
+
+    public static final String   FFMPEG_10_5_X = "ffmpeg_10.5.x-";
+
     /**
      * 
      */
     private final FFmpegProvider fFmpegProvider;
 
-    private long                 progress = -1;
+    private long                 progress      = -1;
 
-    private boolean              success  = false;
+    private boolean              success       = false;
 
     private String               task;
 
@@ -49,20 +55,8 @@ public class InstallThread extends Thread {
             if (res.getCloseReason() == CloseReason.OK) {
                 UpdateController.getInstance().setGuiVisible(true);
                 try {
-                    switch (CrossSystem.getOSFamily()) {
 
-                    case MAC:
-                        if (CrossSystem.getMacOSVersion() < 10600000) {
-                            UpdateController.getInstance().runExtensionInstallation("ffmpeg_10.5.x-");
-                        } else {
-                            UpdateController.getInstance().runExtensionInstallation("ffmpeg_10.6+");
-                        }
-
-                        break;
-
-                    default:
-                        UpdateController.getInstance().runExtensionInstallation("ffmpeg");
-                    }
+                    UpdateController.getInstance().runExtensionInstallation(getFFmpegExtensionName());
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -80,6 +74,22 @@ public class InstallThread extends Thread {
             synchronized (this.fFmpegProvider) {
                 this.fFmpegProvider.installThread = null;
             }
+        }
+
+    }
+
+    public static String getFFmpegExtensionName() {
+        switch (CrossSystem.getOSFamily()) {
+
+        case MAC:
+            if (CrossSystem.getMacOSVersion() < 10600000) {
+                return FFMPEG_10_5_X;
+            } else {
+                return FFMPEG_10_6;
+            }
+
+        default:
+            return FFMPEG;
         }
 
     }
