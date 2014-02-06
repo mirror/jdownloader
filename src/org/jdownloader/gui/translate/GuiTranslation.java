@@ -2381,6 +2381,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Silent Mode" })
     String SilentModeToggleAction_getNameWhenEnabled_();
 
+    @Default(lngs = { "en" }, values = { "Captcha Chance To Skip Bubble Timeout" })
+    String CaptchaExchangeSpinnerAction_skipbubbletimeout_();
+
     @Default(lngs = { "en" }, values = { "More..." })
     String premiumaccounttablemodel_column_info();
 
@@ -2485,6 +2488,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "My Account" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_();
+
+    @Default(lngs = { "en" }, values = { "Black-/Whitelist" })
+    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_blackwhitelist_();
 
     @Default(lngs = { "en" }, values = { "Username/Email" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_username_();

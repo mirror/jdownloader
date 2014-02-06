@@ -280,8 +280,9 @@ public class NinekwService implements CESService {
                 // addPair(_GUI._.NinekwService_createPanel_threadsizepool(), null, new Spinner(CFG_9KWCAPTCHA.THREADPOOL));
                 // addPair(_GUI._.NinekwService_createPanel_9kwtimeout(), null, new Spinner(CFG_9KWCAPTCHA.Timeout9kw));
 
+                this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_blackwhitelist_(), NewTheme.I().getIcon(IconKey.ICON_SELECT, 32));
+
                 MigPanel toolbar10 = new MigPanel("ins 0", "[][][][]", "[]");
-                toolbar10.add(label(_GUI._.NinekwService_createPanel_blacklistcheck()), "width 135!");
                 toolbar10.add(new Checkbox(CFG_9KWCAPTCHA.BLACKLISTCHECK));
                 toolbar10.add(label(_GUI._.NinekwService_createPanel_blacklist()));
                 toolbar10.add(blacklist, "pushx,growx");
@@ -290,7 +291,6 @@ public class NinekwService implements CESService {
                 // addPair(_GUI._.NinekwService_createPanel_blacklist(), null, blacklist);
 
                 MigPanel toolbar11 = new MigPanel("ins 0", "[][][][]", "[]");
-                toolbar11.add(label(_GUI._.NinekwService_createPanel_whitelistcheck()), "width 135!");
                 toolbar11.add(new Checkbox(CFG_9KWCAPTCHA.WHITELISTCHECK));
                 toolbar11.add(label(_GUI._.NinekwService_createPanel_whitelist()));
                 toolbar11.add(whitelist, "pushx,growx");
@@ -299,7 +299,6 @@ public class NinekwService implements CESService {
                 // addPair(_GUI._.NinekwService_createPanel_whitelist(), null, whitelist);
 
                 MigPanel toolbar12 = new MigPanel("ins 0", "[][][][]", "[]");
-                toolbar12.add(label(_GUI._.NinekwService_createPanel_blacklistpriocheck()), "width 135!");
                 toolbar12.add(new Checkbox(CFG_9KWCAPTCHA.BLACKLISTPRIOCHECK));
                 toolbar12.add(label(_GUI._.NinekwService_createPanel_blacklistprio()));
                 toolbar12.add(blacklistprio, "pushx,growx");
@@ -308,7 +307,6 @@ public class NinekwService implements CESService {
                 // addPair(_GUI._.NinekwService_createPanel_blacklistprio(), null, blacklistprio);
 
                 MigPanel toolbar13 = new MigPanel("ins 0", "[][][][]", "[]");
-                toolbar13.add(label(_GUI._.NinekwService_createPanel_whitelistpriocheck()), "width 135!");
                 toolbar13.add(new Checkbox(CFG_9KWCAPTCHA.WHITELISTPRIOCHECK));
                 toolbar13.add(label(_GUI._.NinekwService_createPanel_whitelistprio()));
                 toolbar13.add(whitelistprio, "pushx,growx");

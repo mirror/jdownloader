@@ -3,6 +3,10 @@ package org.jdownloader.captcha.v2.solver.captchabrotherhood;
 import java.io.IOException;
 import java.net.URL;
 import java.util.LinkedList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Icon;
@@ -18,9 +22,10 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
+import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
-import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
@@ -28,14 +33,16 @@ import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_CBH;
 
-public class CBSolver extends CESChallengeSolver<String> {
+public class CBSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
     private CaptchaBrotherHoodSettings config;
     private String                     accountStatusString;
-    private static final CBSolver      INSTANCE = new CBSolver();
+    private static final CBSolver      INSTANCE   = new CBSolver();
+    private ThreadPoolExecutor         threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
 
     public static CBSolver getInstance() {
         return INSTANCE;
@@ -174,7 +181,7 @@ public class CBSolver extends CESChallengeSolver<String> {
                 if (ret.startsWith("OK-answered-")) {
                     counterSolved.incrementAndGet();
 
-                    job.setAnswer(new CaptchaResponse(challenge, this, ret.substring("OK-answered-".length()), 100));
+                    job.setAnswer(new CaptchaCBHResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
                     return;
                 }
                 checkInterruption();
@@ -194,7 +201,6 @@ public class CBSolver extends CESChallengeSolver<String> {
     }
 
     public CBHAccount loadAccount() {
-
         CBHAccount ret = new CBHAccount();
         ret.setRequests(counter.get());
         ret.setSkipped(counterInterrupted.get());
@@ -214,7 +220,31 @@ public class CBSolver extends CESChallengeSolver<String> {
             ret.setError(e.getMessage());
         }
         return ret;
+    }
 
+    @Override
+    public void setValid(final AbstractResponse<?> response) {
+    }
+
+    @Override
+    public void setUnused(final AbstractResponse<?> response) {
+    }
+
+    @Override
+    public void setInvalid(final AbstractResponse<?> response) {
+        threadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String captchaID = ((CaptchaCBHResponse) response).getCaptchaCBHID();
+                    Browser br = new Browser();
+                    String ret = "";
+                    ret = br.getPage(new URL("http://www.captchabrotherhood.com/complainCaptcha.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&captchaID=" + Encoding.urlEncode(captchaID) + "&version=1.1.8"));
+                } catch (final Throwable e) {
+                    LogController.CL(true).log(e);
+                }
+            }
+        });
     }
 
     @Override
