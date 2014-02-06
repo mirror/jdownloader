@@ -182,10 +182,12 @@ public class DLCFactory extends D {
                     FileCreationManager.getInstance().delete(file, null);
                 }
                 IO.writeStringToFile(file, cipher);
-                if (new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DLCFactory_writeDLC_success_ok(), _GUI._.DLCFactory_createDLC_created_(file.getAbsolutePath()), NewTheme.I().getIcon(IconKey.ICON_DLC, 32), _GUI._.DLCFactory_writeDLC_showpath(), _GUI._.lit_close()).show().getCloseReason() == CloseReason.OK) {
-
+                if (new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DLCFactory_writeDLC_success_ok(), _GUI._.DLCFactory_createDLC_created_(file.getAbsolutePath()), NewTheme.I().getIcon(IconKey.ICON_DLC, 32), _GUI._.DLCFactory_writeDLC_showpath(), _GUI._.lit_close()) {
+                    public String getDontShowAgainKey() {
+                        return "createDLC";
+                    };
+                }.show().getCloseReason() == CloseReason.OK) {
                     CrossSystem.showInExplorer(file);
-
                 }
                 return true;
             }
