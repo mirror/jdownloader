@@ -100,8 +100,19 @@ public class FilestoreTo extends PluginForHost {
         String id = bjs.getRegex("data:\\s*'(\\w+=\\w+)'").getMatch(0);
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String jcount = bjs.getRegex("var countdown = \"(\\d+)\";").getMatch(0);
-        String[] pwnage = bjs.getRegex("\\$\\.ajax\\(\\s*\\{.*?data: '([^']+)'\\+\\$\\('\\.(\\w+)'\\)\\.attr\\(\"(\\w+)\"\\)").getRow(0);
-        if (pwnage == null || pwnage.length != 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String pwnage[] = new String[3];
+        String[] z = bjs.getRegex("\\$\\.ajax\\(\\s*\\{.*?data: '([^']+)'\\+\\$\\('\\.(\\w+)'\\)\\.attr\\(\"(\\w+)\"\\)").getRow(0);
+        if (z == null || z.length != 3) {
+            String startDl = bjs.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
+            String t = new Regex(startDl, "data:\\s*'(\\w+=)").getMatch(0);
+            String[] p = new Regex(startDl, "var\\s*[A-Z]+\\s*=\\s*\\$\\('\\.(\\w+)'\\)\\.attr\\(\"(\\w+)\"\\)").getRow(0);
+            if (t == null || (p == null || p.length != 2)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            pwnage[0] = t.toString();
+            pwnage[1] = p[0];
+            pwnage[2] = p[1];
+        } else {
+            pwnage = z;
+        }
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         final String ajax = "http://filestore.to/ajax/download.php?";
         int wait = 10;
