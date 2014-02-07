@@ -507,7 +507,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-        showFreeDialog("uploaded.to");
+
         if (account == null) {
             logger.info("Free, WEB download method in use!");
         } else {
