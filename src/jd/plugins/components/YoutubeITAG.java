@@ -1,5 +1,7 @@
 package jd.plugins.components;
 
+import java.util.Date;
+
 public enum YoutubeITAG {
 
     // fake id
@@ -47,13 +49,18 @@ public enum YoutubeITAG {
     // not sure
     MP4_VIDEO_240P_H264_AUDIO_AAC_3D(83, 240.4 + YoutubeITAG.AAC_64),
     MP4_VIDEO_360P_H264_AUDIO_AAC(18, 360.4 + YoutubeITAG.AAC_128),
-    MP4_VIDEO_360P_H264_AUDIO_AAC_3D(82, 360.4 + YoutubeITAG.AAC_128),
+    MP4_VIDEO_360P_H264_AUDIO_AAC_V1(18, 360.4 + YoutubeITAG.AAC_96),
 
+    MP4_VIDEO_360P_H264_AUDIO_AAC_3D(82, 360.4 + YoutubeITAG.AAC_128),
+    MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1(82, 360.4 + YoutubeITAG.AAC_96),
     MP4_VIDEO_520P_H264_AUDIO_AAC_3D(856, 520.4 + YoutubeITAG.AAC_128),
     // 192 kbits aac
     MP4_VIDEO_720P_H264_AUDIO_AAC(22, 720.4 + YoutubeITAG.AAC_192),
+    MP4_VIDEO_720P_H264_AUDIO_AAC_V1(22, 720.4 + YoutubeITAG.AAC_128),
+    MP4_VIDEO_720P_H264_AUDIO_AAC_V3(22, 720.4 + YoutubeITAG.AAC_152),
     MP4_VIDEO_720P_H264_AUDIO_AAC_3D(84, 720.4 + YoutubeITAG.AAC_192),
-
+    MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3(84, 720.4 + YoutubeITAG.AAC_152),
+    MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1(84, 720.4 + YoutubeITAG.AAC_128),
     // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
     MP4_VIDEO_AUDIO_ORIGINAL(38, 2160.4 + YoutubeITAG.AAC_192),
     // very different audio bitrates!!!
@@ -73,12 +80,131 @@ public enum YoutubeITAG {
     WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D(102, 720.3 + YoutubeITAG.VORBIS_192),
     // not sure - did not find testvideos
     WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, 720.3 + YoutubeITAG.VORBIS_192);
+    public static enum YoutubeITAGVersion {
+        // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
+        // Before March 2011, YouTube used these audio qualities for several years:
+        //
+        // Resolution Audio Bit Rate Compression
+        // 1080p 128 kbps AAC
+        // 720p 128 kbps AAC
+        // 480p 96 kbps AAC
+        // 360p 96 kbps AAC
+        // 240p 64 kbps MP3
+        V1(0, new Date(2011 - 1900, 2, 1, 23, 59, 59).getTime()),
+        // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
+        // Videos uploaded March 2011 to May 2011 had these audio qualities, as long as the originally uploaded video had a high enough
+        // audio bit rate or was lossless:
+        //
+        // Resolution Audio Bit Rate Compression
+        // 1080p 128 kbps AAC
+        // 720p 128 kbps AAC
+        // 480p 128 kbps AAC
+        // 360p 128 kbps AAC
+        // 240p 64 kbps MP3
+        V2(new Date(2011 - 1900, 2, 1, 0, 0, 0).getTime(), new Date(2011 - 1900, 4, 1, 23, 59, 59).getTime()),
+        // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
+        // Videos uploaded May 2011 to July 2012 had these audio qualities, as long as the originally uploaded video had a high enough audio
+        // bit rate or was lossless:
+        //
+        // Resolution Audio Bit Rate Compression
+        // Original 152 kbps AAC
+        // 1080p 152 kbps AAC
+        // 720p 152 kbps AAC
+        // 480p 128 kbps AAC
+        // 360p 128 kbps AAC
+        // 240p 64 kbps MP3
+        V3(new Date(2011 - 1900, 4, 1, 0, 0, 0).getTime(), new Date(2012 - 1900, 6, 1, 23, 59, 59).getTime()),
+        // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
+        // Videos uploaded July 2012 to date should have these audio qualities, as long as the originally uploaded video had a high enough
+        // audio bit rate or was lossless:
+        //
+        // Resolution Audio Bit Rate Compression
+        // Original 192 kbps AAC
+        // 1080p 192 kbps AAC
+        // 720p 192 kbps AAC
+        // 480p 128 kbps AAC
+        // 360p 128 kbps AAC
+        // 240p 64 kbps MP3
+        //
+        // Occasionally you can find a 240p-only video that has 96 kbps audio bit rate, like this one. I'm not sure why.
+        // "Original" resolution is any video size that is larger than 1920x1080. For example, if you upload a 1920x1200 or 2560x1600 video,
+        // it should show the "Original" option. The audio quality is currently the same as 720p and 1080p.
+        // YouTube will often update older videos to play better audio quality, if that higher quality audio was saved when it was
+        // originally uploaded.
+        V4(new Date(2012 - 1900, 6, 1, 0, 0, 0).getTime(), Long.MAX_VALUE);
+        private long from;
+        private long to;
 
-    public static YoutubeITAG get(final int itag) {
+        YoutubeITAGVersion(long from, long to) {
+            this.from = from;
+            this.to = to;
+        }
+
+        public boolean matches(long uploadDate) {
+            return uploadDate >= from && uploadDate < to;
+
+        }
+
+    }
+
+    public static YoutubeITAG get(int itag) {
         for (final YoutubeITAG tag : YoutubeITAG.values()) {
-            if (tag.getITAG() == itag) { return tag; }
+            if (tag.getITAG() == itag) {
+
+            return tag;
+
+            }
         }
         return null;
+    }
+
+    public static YoutubeITAG get(final int itag, long uploadDate) {
+        YoutubeITAGVersion version = YoutubeITAGVersion.V4;
+        ;
+        for (YoutubeITAGVersion v : YoutubeITAGVersion.values()) {
+            if (v.matches(uploadDate)) {
+                version = v;
+                break;
+            }
+        }
+        switch (itag) {
+        case 18:
+            switch (version) {
+            case V1:
+                return MP4_VIDEO_360P_H264_AUDIO_AAC_V1;
+            default:
+                return MP4_VIDEO_360P_H264_AUDIO_AAC;
+            }
+        case 22:
+            switch (version) {
+            case V1:
+            case V2:
+                return MP4_VIDEO_720P_H264_AUDIO_AAC_V1;
+            case V3:
+                return MP4_VIDEO_720P_H264_AUDIO_AAC_V3;
+            default:
+                return MP4_VIDEO_720P_H264_AUDIO_AAC;
+            }
+        case 82:
+            switch (version) {
+            case V1:
+                return MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1;
+            default:
+                return MP4_VIDEO_360P_H264_AUDIO_AAC_3D;
+            }
+        case 84:
+            switch (version) {
+            case V1:
+            case V2:
+                return MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1;
+            case V3:
+                return MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3;
+            default:
+                return MP4_VIDEO_720P_H264_AUDIO_AAC_3D;
+            }
+        }
+
+        return get(itag);
     }
 
     private final int          itag;
@@ -107,6 +233,8 @@ public enum YoutubeITAG {
     public static final double AAC_192         = 0.1924;
 
     public static final double AAC_128         = 0.1284;
+    public static final double AAC_152         = 0.1524;
+    public static final double AAC_96          = 0.0964;
 
     private YoutubeITAG(final int itag, final double quality) {
         this.itag = itag;

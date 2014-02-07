@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -628,10 +629,12 @@ public class YoutubeHelper {
         if (vid.date <= 0) {
             final Locale locale = Locale.ENGLISH;
             SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yyyy", locale);
+            formatter.setTimeZone(TimeZone.getDefault());
             String date = this.br.getRegex("class=\"watch-video-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
 
             if (date == null) {
                 formatter = new SimpleDateFormat("dd MMM yyyy", locale);
+                formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<strong>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(1);
             }
 
@@ -861,7 +864,7 @@ public class YoutubeHelper {
                         url = url + "&signature=" + signature;
                     }
 
-                    final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")));
+                    final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), vid.date);
 
                     logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
                     if (url != null && itag != null) {
@@ -1266,7 +1269,7 @@ public class YoutubeHelper {
         if (StringUtils.isNotEmpty(bitrateString)) {
             bitrate = Integer.parseInt(bitrateString);
         }
-        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")));
+        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), vid.date);
 
         final String quality = Encoding.urlDecode(query.get("quality"), false);
         logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));

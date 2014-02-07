@@ -1025,7 +1025,7 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     public void handleDash(final DownloadLink downloadLink, final YoutubeProperties data, Account account) throws Exception {
-        FFmpeg ffmpeg = new FFmpeg();
+
         DownloadLinkView oldView = downloadLink.getView();
         try {
             downloadLink.setView(new DefaultDownloadLinkViewImpl() {
@@ -1041,40 +1041,7 @@ public class YoutubeDashV2 extends PluginForHost {
                 }
 
             });
-
-            synchronized (DownloadWatchDog.getInstance()) {
-
-                if (!ffmpeg.isAvailable()) {
-                    if (UpdateController.getInstance().getHandler() == null) {
-                        getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
-                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
-                    }
-                    FFMpegInstallProgress progress = new FFMpegInstallProgress();
-                    progress.setProgressSource(this);
-                    PluginProgress old = null;
-                    try {
-                        old = downloadLink.setPluginProgress(progress);
-                        FFmpegProvider.getInstance().install(progress, _GUI._.YoutubeDash_handleDownload_youtube_dash());
-                    } finally {
-                        downloadLink.compareAndSetPluginProgress(progress, old);
-                    }
-                    ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
-                    if (!ffmpeg.isAvailable()) {
-                        //
-
-                        List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
-                        if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
-                            throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
-
-                        } else {
-                            throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
-                        }
-
-                        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-                        // _GUI._.YoutubeDash_handleFree_ffmpegmissing());
-                    }
-                }
-            }
+            FFmpeg ffmpeg = new FFmpeg();
 
             // debug
 
@@ -1254,6 +1221,12 @@ public class YoutubeDashV2 extends PluginForHost {
             break;
         case VIDEO:
 
+            if (variant instanceof YoutubeVariant) {
+                if (((YoutubeVariant) variant).name().contains("DEMUX") || ((YoutubeVariant) variant).name().contains("MP3")) {
+                    checkFFmpeg(downloadLink, _GUI._.YoutubeDash_handleDownload_youtube_demux());
+                }
+            }
+
             this.setBrowserExclusive();
 
             this.requestFileInformation(downloadLink);
@@ -1271,6 +1244,7 @@ public class YoutubeDashV2 extends PluginForHost {
             break;
         case DASH_AUDIO:
         case DASH_VIDEO:
+            checkFFmpeg(downloadLink, _GUI._.YoutubeDash_handleDownload_youtube_dash());
             handleDash(downloadLink, data, null);
             break;
 
@@ -1350,6 +1324,43 @@ public class YoutubeDashV2 extends PluginForHost {
             break;
         }
 
+    }
+
+    private void checkFFmpeg(DownloadLink downloadLink, String reason) throws SkipReasonException, InterruptedException {
+        FFmpeg ffmpeg = new FFmpeg();
+        synchronized (DownloadWatchDog.getInstance()) {
+
+            if (!ffmpeg.isAvailable()) {
+                if (UpdateController.getInstance().getHandler() == null) {
+                    getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
+                    throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                }
+                FFMpegInstallProgress progress = new FFMpegInstallProgress();
+                progress.setProgressSource(this);
+                PluginProgress old = null;
+                try {
+                    old = downloadLink.setPluginProgress(progress);
+                    FFmpegProvider.getInstance().install(progress, reason);
+                } finally {
+                    downloadLink.compareAndSetPluginProgress(progress, old);
+                }
+                ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
+                if (!ffmpeg.isAvailable()) {
+                    //
+
+                    List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
+                    if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
+                        throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
+
+                    } else {
+                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                    }
+
+                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
+                    // _GUI._.YoutubeDash_handleFree_ffmpegmissing());
+                }
+            }
+        }
     }
 
     @Override

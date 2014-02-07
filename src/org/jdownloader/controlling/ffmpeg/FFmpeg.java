@@ -436,6 +436,22 @@ public class FFmpeg {
         return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
     }
 
+    public boolean demuxAAC(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
+        ArrayList<String> commandLine = new ArrayList<String>();
+        commandLine.addAll(Arrays.asList(getFullPath(), "-i", audioIn, "-vn", "-f", "adts", "-c:a", "copy", out, "-y"));
+        logger.info("FFmpeg command: " + commandLine);
+
+        return runCommand(progress, out, audioIn, commandLine);
+    }
+
+    public boolean demuxMp3(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
+        ArrayList<String> commandLine = new ArrayList<String>();
+        commandLine.addAll(Arrays.asList(getFullPath(), "-i", audioIn, "-vn", "-f", "mp3", "-c:a", "copy", out, "-y"));
+        logger.info("FFmpeg command: " + commandLine);
+
+        return runCommand(progress, out, audioIn, commandLine);
+    }
+
     public boolean demuxMp4(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
         ArrayList<String> commandLine = new ArrayList<String>();
         commandLine.addAll(Arrays.asList(getFullPath(), "-i", audioIn, "-vn", "-f", "mp4", "-c:a", "copy", out, "-y"));

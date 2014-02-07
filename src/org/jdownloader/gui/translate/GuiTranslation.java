@@ -3659,6 +3659,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "merge YouTube® Audio & Video streams" })
     String YoutubeDash_handleDownload_youtube_dash();
 
+    @Default(lngs = { "en" }, values = { "split YouTube® Audio from a Video stream" })
+    String YoutubeDash_handleDownload_youtube_demux();
+
     @Default(lngs = { "en" }, values = { "Same choice for all affected archives" })
     String ConfirmLinksContextAction_getDontShowAgainLabelText_object_();
 
@@ -4358,5 +4361,29 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "192kbit" })
     String YoutubeVariant_filenametag_AAC_192();
+
+    @Default(lngs = { "en" }, values = { "96kbit/s M4A-Audio" })
+    String YoutubeVariant_name_M4A_96();
+
+    @Default(lngs = { "en" }, values = { "96kbit" })
+    String YoutubeVariant_filenametag_M4A_96();
+
+    @Default(lngs = { "en" }, values = { "96kbit/s AAC-Audio" })
+    String YoutubeVariant_name_AAC_96();
+
+    @Default(lngs = { "en" }, values = { "96kbit" })
+    String YoutubeVariant_filenametag_AAC_96();
+
+    @Default(lngs = { "en" }, values = { "152kbit/s AAC-Audio" })
+    String YoutubeVariant_name_AAC_152();
+
+    @Default(lngs = { "en" }, values = { "152kbit" })
+    String YoutubeVariant_filenametag_AAC_152();
+
+    @Default(lngs = { "en" }, values = { "152kbit/s M4A-Audio" })
+    String YoutubeVariant_name_M4A_152();
+
+    @Default(lngs = { "en" }, values = { "152kbit" })
+    String YoutubeVariant_filenametag_M4A_152();
 
 }

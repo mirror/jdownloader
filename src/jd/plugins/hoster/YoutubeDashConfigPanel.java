@@ -152,7 +152,20 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         ArrayList<YoutubeVariant> audio = new ArrayList<YoutubeVariant>();
         ArrayList<YoutubeVariant> image = new ArrayList<YoutubeVariant>();
-        for (YoutubeVariant ytv : YoutubeVariant.values()) {
+        YoutubeVariant[] variants = YoutubeVariant.values();
+        Comparator<YoutubeVariant> comp = new Comparator<YoutubeVariant>() {
+
+            @Override
+            public int compare(YoutubeVariant o1, YoutubeVariant o2) {
+                return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
+            }
+        };
+        ArrayList<YoutubeVariant> sorted = new ArrayList<YoutubeVariant>();
+        for (YoutubeVariant ytv : variants) {
+            sorted.add(ytv);
+        }
+        Collections.sort(sorted, comp);
+        for (YoutubeVariant ytv : sorted) {
             if (!dupe.add(ytv.getTypeId())) continue;
             switch (ytv.getGroup()) {
             case AUDIO:
@@ -183,21 +196,15 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
             }
         }
-        Comparator<YoutubeVariant> comp = new Comparator<YoutubeVariant>() {
 
-            @Override
-            public int compare(YoutubeVariant o1, YoutubeVariant o2) {
-                return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
-            }
-        };
-        Collections.sort(videoMP4, comp);
-        Collections.sort(video3D, comp);
-        Collections.sort(videoFLV, comp);
-        Collections.sort(videoGP3, comp);
-        Collections.sort(videoMP4, comp);
-        Collections.sort(videoWEBM, comp);
-        Collections.sort(audio, comp);
-        Collections.sort(image, comp);
+        // Collections.sort(videoMP4, comp);
+        // Collections.sort(video3D, comp);
+        // Collections.sort(videoFLV, comp);
+        // Collections.sort(videoGP3, comp);
+        // Collections.sort(videoMP4, comp);
+        // Collections.sort(videoWEBM, comp);
+        // Collections.sort(audio, comp);
+        // Collections.sort(image, comp);
         // Collections.sort(videoWEBM,comp );
         addHeader(_GUI._.YoutubeDashConfigPanel_allowedtypoes(), NewTheme.I().getIcon(IconKey.ICON_MEDIAPLAYER, 18));
         videoMp4 = addPair(_GUI._.YoutubeDashConfigPanel_allowedtypoes_mp4(), null, null, new MultiVariantBox(this, videoMP4));
