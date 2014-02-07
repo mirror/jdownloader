@@ -134,7 +134,7 @@ public class YoutubeCustomConvertVariant implements YoutubeVariantInterface {
     }
 
     @Override
-    public void convert(DownloadLink downloadLink) {
+    public void convert(DownloadLink downloadLink) throws Exception {
         if (converter != null) converter.run(downloadLink);
     }
 

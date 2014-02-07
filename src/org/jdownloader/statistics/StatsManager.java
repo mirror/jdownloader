@@ -26,7 +26,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -249,7 +248,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setRevision(candidate.getCachedAccount().getPlugin().getVersion());
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-            dl.setErrorID(Hash.getMD5(result.getErrorID()));
+            dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(result.getErrorID()));
             dl.setTimestamp(System.currentTimeMillis());
             dl.setSessionStart(sessionStart);
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
@@ -370,7 +369,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         }
                         if (sendTo.size() > 0) {
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
-                            if (Application.isJared(null)) {
+                            if (true) {
                                 br.postPageRaw("http://stats.appwork.org/jcgi/plugins/push", JSonStorage.serializeToJson(sendTo));
                             } else {
                                 br.postPageRaw("http://nas:81/thomas/fcgi/plugins/push", JSonStorage.serializeToJson(sendTo));

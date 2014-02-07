@@ -4347,4 +4347,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You are using the %s1 Free Mode.\r\nJDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n                           However, if you want to download multiple files\r\n                        - possibly at fullspeed and without any wait times - \r\n                        you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?" })
     String PluginForHost_showFreeDialog_message(String domain);
 
+    @Default(lngs = { "en" }, values = { "192kbit/s M4A-Audio" })
+    String YoutubeVariant_name_M4A_192();
+
+    @Default(lngs = { "en" }, values = { "192kbit" })
+    String YoutubeVariant_filenametag_M4A_192();
+
+    @Default(lngs = { "en" }, values = { "192kbit/s AAC-Audio" })
+    String YoutubeVariant_name_AAC_192();
+
+    @Default(lngs = { "en" }, values = { "192kbit" })
+    String YoutubeVariant_filenametag_AAC_192();
+
 }

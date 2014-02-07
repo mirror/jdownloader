@@ -76,7 +76,7 @@ public interface YoutubeVariantInterface extends LinkVariant {
 
     VariantGroup getGroup();
 
-    void convert(DownloadLink downloadLink);
+    void convert(DownloadLink downloadLink) throws Exception;
 
     String getQualityExtension();
 

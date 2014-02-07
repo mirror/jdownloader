@@ -102,6 +102,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return _GUI._.YoutubeVariant_filenametag_AAC_48();
         }
     },
+
     M4A_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "m4a", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
         public String getName() {
@@ -323,6 +324,38 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return _GUI._.YoutubeVariant_filenametag_MP4_3D_720();
         }
     },
+    M4A_192_DEMUX_2("M4A_192_DEMUX", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
+        @Override
+        public String getName() {
+            return _GUI._.YoutubeVariant_name_M4A_192();
+        }
+
+        @Override
+        public double getQualityRating() {
+            return YoutubeITAG.AAC_192 - 0.002 + 0.001;
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_filenametag_M4A_192();
+        }
+    },
+    AAC_192_DEMUX_2("AAC_192_DEMUX", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
+        @Override
+        public String getName() {
+            return _GUI._.YoutubeVariant_name_AAC_192();
+        }
+
+        @Override
+        public double getQualityRating() {
+            return YoutubeITAG.AAC_192 - 0.002;
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_filenametag_AAC_192();
+        }
+    },
     MP4_720("MP4_720", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "mp4", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
         public String getName() {
@@ -334,6 +367,41 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return _GUI._.YoutubeVariant_filenametag_MP4_720();
         }
     },
+
+    M4A_192_DEMUX_1("M4A_192_DEMUX", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
+        @Override
+        public String getName() {
+            return _GUI._.YoutubeVariant_name_M4A_192();
+        }
+
+        @Override
+        public double getQualityRating() {
+            return YoutubeITAG.AAC_192 - 0.002 + 0.001;
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_filenametag_M4A_192();
+        }
+    },
+
+    AAC_192_DEMUX_1("AAC_192_DEMUX", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
+        @Override
+        public String getName() {
+            return _GUI._.YoutubeVariant_name_AAC_192();
+        }
+
+        @Override
+        public double getQualityRating() {
+            return YoutubeITAG.AAC_192 - 0.002;
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_filenametag_AAC_192();
+        }
+    },
+
     MP4_DASH_1080_AAC128("MP4_1080", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_1080P_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
         public String getName() {
@@ -805,7 +873,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         return this.type;
     }
 
-    public void convert(DownloadLink downloadLink) {
+    public void convert(DownloadLink downloadLink) throws Exception {
         if (converter != null) converter.run(downloadLink);
     }
 
