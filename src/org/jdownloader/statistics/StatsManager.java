@@ -20,17 +20,20 @@ import jd.plugins.download.raf.HashResult;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.tasks.PluginSubTask;
 
@@ -97,7 +100,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
-        return false;
+        return true;
         // return (config.isEnabled() && !DISABLED);
     }
 
@@ -246,7 +249,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setRevision(candidate.getCachedAccount().getPlugin().getVersion());
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-            dl.setErrorID(result.getErrorID());
+            dl.setErrorID(Hash.getMD5(result.getErrorID()));
             dl.setTimestamp(System.currentTimeMillis());
             dl.setSessionStart(sessionStart);
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
@@ -267,11 +270,78 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
-    public static enum Response {
+    public static enum ActionID {
+
+        REQUEST_LOG,
+        REQUEST_ERROR_DETAILS;
+    }
+
+    public static enum ResponseCode {
         OK,
-        WAIT_5,
-        KILL,
-        WAIT_30;
+        FAILED,
+        KILL;
+    }
+
+    public static class PostAction extends AbstractJsonData implements Storable {
+        public PostAction(/* storable */) {
+
+        }
+
+        public PostAction(ActionID id, String data) {
+            this.id = id;
+            this.data = data;
+        }
+
+        private String   data = null;
+        private ActionID id   = null;
+
+        public String getData() {
+            return data;
+        }
+
+        public void setData(String data) {
+            this.data = data;
+        }
+
+        public ActionID getId() {
+            return id;
+        }
+
+        public void setId(ActionID id) {
+            this.id = id;
+        }
+
+    }
+
+    public static class Response extends AbstractJsonData implements Storable {
+        public Response(ResponseCode code) {
+            this.code = code;
+        }
+
+        public ResponseCode getCode() {
+            return code;
+        }
+
+        public void setCode(ResponseCode code) {
+            this.code = code;
+        }
+
+        public Response(/* storable */) {
+
+        }
+
+        private PostAction[] actions = null;
+
+        public PostAction[] getActions() {
+            return actions;
+        }
+
+        public void setActions(PostAction[] actions) {
+            this.actions = actions;
+        }
+
+        private ResponseCode code = ResponseCode.OK;
+
     }
 
     @Override
@@ -310,21 +380,31 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                             Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<Response>() {
                             });
-                            if (response != null) {
-                                switch (response) {
-                                case OK:
+                            switch (response.getCode()) {
+                            case OK:
+                                PostAction[] actions = response.getActions();
+                                if (actions != null) {
+                                    for (PostAction action : actions) {
+                                        if (action != null) {
+                                            switch (action.getId()) {
+                                            case REQUEST_ERROR_DETAILS:
+                                                break;
 
-                                    break retry;
-                                case WAIT_5:
-                                    Thread.sleep(5 * 60 * 1000l);
-                                case WAIT_30:
-                                    Thread.sleep(30 * 60 * 1000l);
-                                    break;
-                                case KILL:
-                                    return;
+                                            case REQUEST_LOG:
 
+                                                break;
+
+                                            }
+                                        }
+                                    }
                                 }
+                                break retry;
+                            case FAILED:
+                                break retry;
+                            case KILL:
+                                return;
                             }
+
                         } else {
                             break retry;
                         }
