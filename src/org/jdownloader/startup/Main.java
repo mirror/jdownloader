@@ -28,7 +28,6 @@ import java.util.logging.Logger;
 
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 import jd.gui.swing.laf.LookAndFeelController;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonSerializer;
@@ -62,11 +61,9 @@ public class Main {
          * we have to make sure that this property gets set before any network stuff gets loaded!!
          */
         System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty("org.jdownloader.revision", JDUtilities.getRevisionNumber() + "");
         try {
             /*
-             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache
-             * timeout
+             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache timeout
              */
             java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
         } catch (final Throwable e) {
