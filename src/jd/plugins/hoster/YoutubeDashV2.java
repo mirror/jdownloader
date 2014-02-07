@@ -1045,6 +1045,10 @@ public class YoutubeDashV2 extends PluginForHost {
             synchronized (DownloadWatchDog.getInstance()) {
 
                 if (!ffmpeg.isAvailable()) {
+                    if (UpdateController.getInstance().getHandler() == null) {
+                        getLogger().warning("Please set FFMPEG: BinaryPath in advanced options");
+                        throw new SkipReasonException(SkipReason.FFMPEG_MISSING);
+                    }
                     FFMpegInstallProgress progress = new FFMpegInstallProgress();
                     progress.setProgressSource(this);
                     PluginProgress old = null;
@@ -1057,6 +1061,7 @@ public class YoutubeDashV2 extends PluginForHost {
                     ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
                     if (!ffmpeg.isAvailable()) {
                         //
+
                         List<String> requestedInstalls = UpdateController.getInstance().getHandler().getRequestedInstalls();
                         if (requestedInstalls != null && requestedInstalls.contains(org.jdownloader.controlling.ffmpeg.InstallThread.getFFmpegExtensionName())) {
                             throw new SkipReasonException(SkipReason.UPDATE_RESTART_REQUIRED);
