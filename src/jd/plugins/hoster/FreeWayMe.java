@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -31,9 +30,7 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.table.JTableHeader;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -52,16 +49,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
-import org.appwork.swing.exttable.columns.ExtCheckColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.ContainerDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
@@ -80,7 +74,7 @@ public class FreeWayMe extends PluginForHost {
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(1 * 1000l);
+        setStartIntervall(2 * 1000l);
         setConfigElements();
         this.enablePremium("https://www.free-way.me/premium");
     }
@@ -385,8 +379,11 @@ public class FreeWayMe extends PluginForHost {
             } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
                 tempUnavailableHoster(acc, link, 10 * 60 * 1000l, getPhrase("ERROR_TRAFFIC_LIMIT"));
             } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
-                acc.setUpdateTime(30 * 1000); // 30s
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_CONNECTIONS"), 1 * 60 * 1000l);
+                int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
+                // first attempt -> update acc information
+                if (attempts == 0) acc.setUpdateTime(-1); // force update acc next try (to get new information about simultan connections)
+                link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_CONNECTIONS"), (12 + 20 * attempts) * 1000l);
             } else if (error.contains("ltiger Hoster")) { // Ungü...
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
             } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
@@ -586,12 +583,6 @@ public class FreeWayMe extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private ArrayList<String> getDisabledHosts(Account account) {
-        final Object disabledHostsObject = account.getAccountInfo().getProperty("disabledHosts", Property.NULL);
-        if (disabledHostsObject.equals(Property.NULL)) return new ArrayList<String>();
-        return (ArrayList<String>) disabledHostsObject;
-    }
-
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout, String msg) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("ERROR_UNKNWON_CODE"));
         synchronized (hostUnavailableMap) {
@@ -612,7 +603,6 @@ public class FreeWayMe extends PluginForHost {
         // we stop if the user won't lose sprit
         if (prevetSpritUsage(account)) return false;
 
-        if (getDisabledHosts(account).contains(downloadLink.getHost())) return false;
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -657,60 +647,6 @@ public class FreeWayMe extends PluginForHost {
 
         @Override
         protected void initColumns() {
-
-            this.addColumn(new ExtCheckColumn<MultihostContainer>(_GUI._.premiumaccounttablemodel_column_enabled()) {
-
-                private static final long serialVersionUID = 1515656228974789237L;
-
-                public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
-
-                    final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-
-                        private static final long serialVersionUID = 3224931991570756349L;
-
-                        @Override
-                        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                            setIcon(NewTheme.I().getIcon("ok", 14));
-                            setHorizontalAlignment(CENTER);
-                            setText(null);
-                            return this;
-                        }
-
-                    };
-
-                    return ret;
-                }
-
-                @Override
-                public int getMaxWidth() {
-                    return 30;
-                }
-
-                @Override
-                public boolean isHidable() {
-                    return false;
-                }
-
-                @Override
-                protected boolean getBooleanValue(MultihostContainer value) {
-                    return value.isEnabled();
-                }
-
-                @Override
-                public boolean isEditable(MultihostContainer obj) {
-                    return true;
-                }
-
-                @Override
-                protected void setBooleanValue(boolean value, final MultihostContainer container) {
-                    if (value) {
-                        container.enable();
-                    } else {
-                        container.disable();
-                    }
-                }
-            });
 
             this.addColumn(new ExtTextColumn<MultihostContainer>("Host") {
 
@@ -798,33 +734,6 @@ public class FreeWayMe extends PluginForHost {
         public MultihostContainer(String host, Account account) {
             this.host = host;
             this.account = account;
-        }
-
-        public void enable() {
-            ArrayList<String> disabledHosts = getDisabledHosts();
-            if (disabledHosts.contains(host)) {
-                disabledHosts.remove(host);
-                account.getAccountInfo().setProperty("disabledHosts", disabledHosts);
-            }
-        }
-
-        public void disable() {
-            ArrayList<String> disabledHosts = getDisabledHosts();
-            if (!disabledHosts.contains(host)) {
-                disabledHosts.add(host);
-                account.getAccountInfo().setProperty("disabledHosts", disabledHosts);
-            }
-        }
-
-        public boolean isEnabled() {
-            return !getDisabledHosts().contains(host);
-        }
-
-        private ArrayList<String> getDisabledHosts() {
-            final Object disabledHostsObject = account.getAccountInfo().getProperty("disabledHosts", Property.NULL);
-            ArrayList<String> disabledHosts;
-            if (disabledHostsObject.equals(Property.NULL)) return new ArrayList<String>();
-            return (ArrayList<String>) disabledHostsObject;
         }
 
         public void setIsWorking(boolean working) {
