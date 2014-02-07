@@ -202,7 +202,11 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    private static void showFreeDialog() {
+    protected void showFreeDialog(final String domain) {
+        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
+            super.showFreeDialog(domain);
+            return;
+        }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -503,6 +507,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        showFreeDialog("uploaded.to");
         if (account == null) {
             logger.info("Free, WEB download method in use!");
         } else {
@@ -517,7 +522,7 @@ public class Uploadedto extends PluginForHost {
                 config = getPluginConfig();
                 if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
                     if (config.getProperty("premAdShown2") == null) {
-                        showFreeDialog();
+                        showFreeDialog("uploaded.to");
                     } else {
                         config = null;
                     }

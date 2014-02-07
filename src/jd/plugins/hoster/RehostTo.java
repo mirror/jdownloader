@@ -232,25 +232,25 @@ public class RehostTo extends PluginForHost {
         try {
             if (error.equals("low_prem_credits")) {
                 /*
-                 * 'low_prem_credits': this code tells you that the login information posted to process_download.php is invalid (cross check with
-                 * get_premum_credits) or that the user ran out of premium traffic. If the premium credits are low and downloads are already running this error
-                 * might occur even if get_premium_credits shows otherwise.
+                 * 'low_prem_credits': this code tells you that the login information posted to process_download.php is invalid (cross check
+                 * with get_premum_credits) or that the user ran out of premium traffic. If the premium credits are low and downloads are
+                 * already running this error might occur even if get_premium_credits shows otherwise.
                  */
                 statusMessage = "You are out of premium credits.";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (error.equals("download_failed")) {
                 /*
-                 * 'download_failed': file download failed. file might not exist anymore or download failed for an unknown reason (i.e. hosting server ran into
-                 * a timeout or our premium login information has become invalid. Please let JD wait 15 min and try again. Repeat that for 3 times until
-                 * download is marked as failed.
+                 * 'download_failed': file download failed. file might not exist anymore or download failed for an unknown reason (i.e.
+                 * hosting server ran into a timeout or our premium login information has become invalid. Please let JD wait 15 min and try
+                 * again. Repeat that for 3 times until download is marked as failed.
                  */
                 statusMessage = "Download Failed! Temporarily unavailable.";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 15 * 60 * 1000);
                 // tempUnavailableHoster(account, downloadLink, 15 * 60 * 1000);
             } else if (error.equals("no_prem_available")) {
                 /*
-                 * 'no_prem_available': there is currently no premium account available in our system to process this download. Please update
-                 * get_supported_och_dl.
+                 * 'no_prem_available': there is currently no premium account available in our system to process this download. Please
+                 * update get_supported_och_dl.
                  */
                 if (error.equals("no_prem_available"))
                     statusMessage = "Download not currently possible. " + mName + " is out of hoster data";

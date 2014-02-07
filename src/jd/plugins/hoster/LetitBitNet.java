@@ -95,7 +95,11 @@ public class LetitBitNet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download").replaceAll("\\?", "%3F").replace("www.", "").replaceAll("http://s\\d+.", "http://"));
     }
 
-    private static void showFreeDialog(final String domain) {
+    protected void showFreeDialog(final String domain) {
+        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
+            super.showFreeDialog(domain);
+            return;
+        }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 

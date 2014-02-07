@@ -573,7 +573,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     protected JButton createOkButton() {
         return new ExtButton(new AppAction() {
             {
-                setName(okOption);
+                setName(okButtonText);
             }
 
             @Override

@@ -80,8 +80,7 @@ public class TomWansCom extends PluginForHost {
             /* unpacked js */
             result = engine.eval(s);
             /*
-             * make a function and return jwplayer("mediaspace").setup({'file':
-             * value,...})
+             * make a function and return jwplayer("mediaspace").setup({'file': value,...})
              */
             engine.eval("function jwplayer(name) { var newObj = new Object(); function setup(array) { return array.file; } newObj.setup = setup; return newObj; }");
             /* splitting with delimiters and execute jwplayer().setup() function */

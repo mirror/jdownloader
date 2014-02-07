@@ -194,8 +194,7 @@ public class U115Com extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setValid(true);
         /**
-         * Doesn't have a premium login, plugin is only designed for free
-         * accounts!
+         * Doesn't have a premium login, plugin is only designed for free accounts!
          */
         ai.setStatus("Registered (free) User");
         return ai;

@@ -23,6 +23,7 @@ public class DialogTest extends Test {
             DialogStorable info = dialogs.get(list[0], true, true);
             DialogTypeStorable typeInfo = dialogs.getTypeInfo(info.getType());
             //
+            DialogTypeStorable t = dialogs.getTypeInfo("org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface");
             dialogs.answer(list[0], JSonStorage.restoreFromString(Dialog.getInstance().showInputDialog(info.getType()), new TypeRef<HashMap<String, Object>>() {
             }));
 

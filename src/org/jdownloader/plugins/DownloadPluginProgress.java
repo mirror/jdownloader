@@ -45,19 +45,26 @@ public class DownloadPluginProgress extends PluginProgress {
     }
 
     @Override
-    public String getMessage(Object requestor) {
-        if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR || requestor instanceof FilePackageView || requestor instanceof PluginProgressTask) { return normal; }
-        long total = getTotal();
-
-        if (total < 0) { return unknownFileSize; }
+    public long getETA() {
         long speed = getSpeed();
         if (speed > 0) {
             long remainingBytes = (getTotal() - getCurrent());
             if (remainingBytes > 0) {
                 long eta = remainingBytes / speed;
-                return Formatter.formatSeconds(eta);
+                return eta;
             }
         }
+        return -1;
+    }
+
+    @Override
+    public String getMessage(Object requestor) {
+        if (requestor instanceof TaskColumn || requestor == Helper.REQUESTOR || requestor instanceof FilePackageView || requestor instanceof PluginProgressTask) { return normal; }
+        long total = getTotal();
+
+        if (total < 0) { return unknownFileSize; }
+        long eta = getETA();
+        if (eta > 0) { return Formatter.formatSeconds(eta); }
         return null;
     }
 

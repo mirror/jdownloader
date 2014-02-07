@@ -252,7 +252,11 @@ public class Netloadin extends PluginForHost {
         return 800;
     }
 
-    private static void showFreeDialog(final String domain) {
+    protected void showFreeDialog(final String domain) {
+        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
+            super.showFreeDialog(domain);
+            return;
+        }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 

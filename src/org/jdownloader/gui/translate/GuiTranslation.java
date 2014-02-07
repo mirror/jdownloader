@@ -4341,4 +4341,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Image File" })
     String YoutubeDashConfigPanel_getType_image();
 
+    @Default(lngs = { "en" }, values = { "%s1 Free Download" })
+    String PluginForHost_showFreeDialog_title(String domain);
+
+    @Default(lngs = { "en" }, values = { "You are using the %s1 Free Mode.\r\nJDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n                           However, if you want to download multiple files\r\n                        - possibly at fullspeed and without any wait times - \r\n                        you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?" })
+    String PluginForHost_showFreeDialog_message(String domain);
+
 }

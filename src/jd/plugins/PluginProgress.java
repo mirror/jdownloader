@@ -26,11 +26,12 @@ import org.jdownloader.plugins.PluginTaskID;
 public abstract class PluginProgress {
     protected long   total;
     protected long   current;
-    protected long   ETA            = -1;
+    protected long   eta            = -1;
 
     protected Color  color;
     protected Icon   icon           = null;
     protected Object progressSource = null;
+    private long     started;
 
     public abstract String getMessage(Object requestor);
 
@@ -40,6 +41,7 @@ public abstract class PluginProgress {
         this.total = total;
         this.current = current;
         this.color = color;
+        started = System.currentTimeMillis();
     }
 
     public Color getColor() {
@@ -73,6 +75,16 @@ public abstract class PluginProgress {
     public void updateValues(final long current, final long total) {
         this.current = current;
         this.total = total;
+        // try to calculate the eta
+        long runtime = System.currentTimeMillis() - started;
+        if (runtime > 0) {
+            double speed = current / (double) runtime;
+            if (speed > 0) {
+                setETA((long) ((total - current) / speed));
+            } else {
+                setETA(-1);
+            }
+        }
     }
 
     public Icon getIcon(Object requestor) {
@@ -96,7 +108,7 @@ public abstract class PluginProgress {
      * @return the eTA
      */
     public long getETA() {
-        return ETA;
+        return eta;
     }
 
     /**
@@ -104,7 +116,7 @@ public abstract class PluginProgress {
      *            the eTA to set
      */
     public void setETA(long eTA) {
-        ETA = eTA;
+        eta = eTA;
     }
 
     public void abort() {

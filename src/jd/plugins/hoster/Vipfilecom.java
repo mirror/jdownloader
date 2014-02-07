@@ -65,7 +65,8 @@ public class Vipfilecom extends PluginForHost {
     }
 
     /**
-     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per minute
+     * Important: Always sync this code with the vip-file.com, shareflare.net and letitbit.net plugins Limits: 20 * 50 = 1000 links per
+     * minute
      * */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {

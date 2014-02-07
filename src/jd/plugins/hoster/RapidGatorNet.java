@@ -225,7 +225,11 @@ public class RapidGatorNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private static void showFreeDialog(final String domain) {
+    protected void showFreeDialog(final String domain) {
+        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
+            super.showFreeDialog(domain);
+            return;
+        }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
@@ -518,7 +522,8 @@ public class RapidGatorNet extends PluginForHost {
                     String reset_in = getJSonValueByKey("reset_in");
                     if (expire_date != null && traffic_left != null) {
                         /*
-                         * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from expiring too early
+                         * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from
+                         * expiring too early
                          */
                         ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
                         ai.setTrafficLeft(Long.parseLong(traffic_left));
