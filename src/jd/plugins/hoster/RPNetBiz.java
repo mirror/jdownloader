@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import jd.PluginWrapper;
@@ -44,9 +45,11 @@ import org.appwork.storage.simplejson.JSonObject;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" }, flags = { 0 })
 public class RPNetBiz extends PluginForHost {
 
-    private static final String mName    = "rpnet.biz";
-    private static final String mProt    = "http://";
-    private static final String mPremium = "https://premium.rpnet.biz/";
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            mName              = "rpnet.biz";
+    private static final String                            mProt              = "http://";
+    private static final String                            mPremium           = "https://premium.rpnet.biz/";
+    private static final String                            FAIL_STRING        = "rpnetbiz";
 
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -178,11 +181,39 @@ public class RPNetBiz extends PluginForHost {
             /* without account its not possible to download the link */
             return false;
         }
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    return false;
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(downloadLink.getHost());
+                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                }
+            }
+        }
         return true;
     }
 
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
+        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        // This should never happen
+        if (downloadLink.getHost().contains("rpnet")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "FATAL server error", 5 * 60 * 1000l);
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, Long>();
+                hostUnavailableMap.put(account, unavailableMap);
+            }
+            /* wait 30 mins to retry this host */
+            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+        }
+        throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         // Temporary workaround for bitshare. Can be removed when rpnet accepts bitshare shorthand links.
         String downloadURL = null;
         if (link.getDownloadURL().contains("bitshare.com/?f=")) {
@@ -255,10 +286,24 @@ public class RPNetBiz extends PluginForHost {
             try {
                 handleDL(link, generatedLink);
                 return;
-            } catch (PluginException e1) {
+            } catch (final PluginException e1) {
+                if (e1.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                    logger.info("rpnet.biz: ERROR_DOWNLOAD_INCOMPLETE --> Quitting loop");
+                }
             }
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Link generation failed.");
+        int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_dlfailedunknown", 1);
+        link.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= 20) {
+            logger.info(this.getHost() + ": download failed -> Retrying");
+            timesFailed++;
+            link.setProperty("timesfailed" + FAIL_STRING + "_dlfailedunknown", timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
+        } else {
+            link.setProperty("timesfailed" + FAIL_STRING + "_dlfailedunknown", Property.NULL);
+            logger.info(this.getHost() + ": Download failed for unknown reasons -> Disabling current host");
+            tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+        }
     }
 
     private void handleDL(DownloadLink link, String dllink) throws Exception {

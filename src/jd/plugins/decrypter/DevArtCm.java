@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+|\\?catpath=[^\r\n\t ]+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+|\\?catpath=(/|%2F)(\\&offset=\\d+)?)?)" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
 
     /**
@@ -61,6 +61,7 @@ public class DevArtCm extends PluginForDecrypt {
     private static Object       LOCK            = new Object();
 
     private static final String FASTLINKCHECK_2 = "FASTLINKCHECK_2";
+    private static final String TYPE_CATPATH    = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=(/|%2F)(\\&offset=\\d+)?";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -101,7 +102,7 @@ public class DevArtCm extends PluginForDecrypt {
             int maxOffset = 0;
             final int offsetIncrease = 24;
             int counter = 1;
-            if (parameter.contains("?offset=")) {
+            if (parameter.contains("offset=")) {
                 final int offsetLink = Integer.parseInt(new Regex(parameter, "(\\d+)$").getMatch(0));
                 currentOffset = offsetLink;
                 maxOffset = offsetLink;
@@ -131,7 +132,14 @@ public class DevArtCm extends PluginForDecrypt {
                 }
                 logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
                 if (counter > 1) {
-                    br.getPage(parameter + "?offset=" + currentOffset);
+                    // maxOffset of catPath links is unknown
+                    if (parameter.matches(TYPE_CATPATH) && !parameter.contains("offset=")) {
+                        br.getPage(parameter + "&offset=" + currentOffset);
+                        final String nextOffset = br.getRegex("\\?catpath=%2F\\&amp;offset=(\\d+)\"><span>Next</span></a>").getMatch(0);
+                        if (nextOffset != null) maxOffset = Integer.parseInt(nextOffset);
+                    } else {
+                        br.getPage(parameter + "?offset=" + currentOffset);
+                    }
                 }
                 final boolean fastcheck = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
                 final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);

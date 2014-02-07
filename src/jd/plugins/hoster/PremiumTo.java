@@ -46,6 +46,8 @@ public class PremiumTo extends PluginForHost {
 
     private static AtomicBoolean                           shareOnlineLocked  = new AtomicBoolean(false);
 
+    private static final String                            NOCHUNKS           = "NOCHUNKS";
+
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2 * 1000L);
@@ -219,8 +221,11 @@ public class PremiumTo extends PluginForHost {
             showMessage(link, "Phase 1/3: Login...");
             login(br, acc);
             showMessage(link, "Phase 2/3: Get link");
+
             int connections = getConnections(link.getHost());
             if (link.getChunks() != -1) connections = link.getChunks();
+            if (link.getBooleanProperty(PremiumTo.NOCHUNKS, false)) connections = 1;
+
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium.to/getfile.php?link=" + url, true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
@@ -247,11 +252,12 @@ public class PremiumTo extends PluginForHost {
             showMessage(link, "Phase 3/3: Download...");
             try {
                 dl.startDownload();
-            } catch (PluginException ex) {
-                if (connections == 1) throw ex;
-                // Limit chunks to 1
-                link.setChunks(1);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } catch (final PluginException ex) {
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(PremiumTo.NOCHUNKS, false) == false) {
+                    link.setProperty(PremiumTo.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
         } finally {
             br.setFollowRedirects(dofollow);

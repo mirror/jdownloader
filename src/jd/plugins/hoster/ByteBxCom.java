@@ -100,6 +100,40 @@ public class ByteBxCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered/premium users");
     }
 
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        int chunks = -5;
+        if (downloadLink.getBooleanProperty(ByteBxCom.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, chunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(ByteBxCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(ByteBxCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(ByteBxCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(ByteBxCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
+    }
+
     private static final String MAINPAGE = "http://bytebx.com";
     private static Object       LOCK     = new Object();
 
@@ -157,43 +191,58 @@ public class ByteBxCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        ai.setUnlimitedTraffic();
         br.getPage("http://bytebx.com/profile");
 
         final String expire = br.getRegex("<span>\\( till ([^<>\"]*?)\\)[\t\n\r ]+</span>").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            account.setProperty("freeacc", true);
+            ai.setStatus("Registered (free) user");
+        } else {
+            account.setProperty("freeacc", false);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", Locale.ENGLISH));
+            ai.setStatus("Premium User");
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", Locale.ENGLISH));
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium User");
+
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        int chunks = -5;
-        if (link.getBooleanProperty(ByteBxCom.NOCHUNKS, false)) {
-            chunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, chunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!this.dl.startDownload()) {
-            try {
-                if (dl.externalDownloadStop()) return;
-            } catch (final Throwable e) {
+        if (account.getBooleanProperty("freeacc", false)) {
+            doFree(link);
+        } else {
+            int chunks = -5;
+            if (link.getBooleanProperty(ByteBxCom.NOCHUNKS, false)) {
+                chunks = 1;
             }
-            /* unknown error, we disable multiple chunks */
-            if (link.getBooleanProperty(ByteBxCom.NOCHUNKS, false) == false) {
-                link.setProperty(ByteBxCom.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, chunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            try {
+                if (!this.dl.startDownload()) {
+                    try {
+                        if (dl.externalDownloadStop()) return;
+                    } catch (final Throwable e) {
+                    }
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(ByteBxCom.NOCHUNKS, false) == false) {
+                        link.setProperty(ByteBxCom.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            } catch (final PluginException e) {
+                // New V2 errorhandling
+                /* unknown error, we disable multiple chunks */
+                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(ByteBxCom.NOCHUNKS, false) == false) {
+                    link.setProperty(ByteBxCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
         }
     }

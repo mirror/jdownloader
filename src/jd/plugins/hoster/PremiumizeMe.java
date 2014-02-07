@@ -350,7 +350,7 @@ public class PremiumizeMe extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);

@@ -50,8 +50,9 @@ public class ImgBoxCom extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            final String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
-            final String[] links = br.getRegex("\"(/[A-Za-z0-9]+)\" class=\"gallery_img\"").getColumn(0);
+            String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<h1>([^<>\"]*?)\\- \\d+ images images</h1>").getMatch(0);
+            final String[] links = br.getRegex("alt=\"[A-Za-z0-9]+\" src=\"(http://s\\.imgbox.com/[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -65,13 +66,8 @@ public class ImgBoxCom extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                singleLink = "http://imgbox.com" + singleLink;
-                br.getPage(singleLink);
-                if (br.containsHTML(PICTUREOFFLINE)) {
-                    logger.info("Link offline: " + singleLink);
-                    continue;
-                }
-                final DownloadLink dl = decryptSingle();
+                singleLink = singleLink.replace("s.imgbox.com/", "i.imgbox.com/");
+                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
                 if (dl == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     logger.warning("Failed on singleLink: " + singleLink);

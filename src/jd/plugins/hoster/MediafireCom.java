@@ -799,7 +799,7 @@ public class MediafireCom extends PluginForHost {
                 if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 lbr.setFollowRedirects(false);
                 lbr.getPage("https://www.mediafire.com/myaccount/download_options.php");
-                if (lbr.getRedirectLocation() != null && lbr.getRedirectLocation().contains("upgrade?utm_source=myaccount")) {
+                if (lbr.getRedirectLocation() != null && lbr.getRedirectLocation().contains("mediafire.com/upgrade")) {
                     account.setProperty("free", true);
                 } else {
                     account.setProperty("free", false);

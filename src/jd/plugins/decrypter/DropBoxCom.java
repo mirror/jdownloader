@@ -101,27 +101,28 @@ public class DropBoxCom extends PluginForDecrypt {
                 fileNameMap.put(fileName[0], unescape(fileName[1]));
             }
         }
-        final String[][] fileLinks = br.getRegex("class=\"filename\"><a href=\"(https?://(www\\.)?dropbox\\.com/[^<>\"]*?)\".*?id=\"emsnippet-([0-9a-zA-Z]+)\">.*?class=\"filesize\\-col\"><span class=\"size\">([^<>\"]*?)</span>").getMatches();
-        String sharingModel = br.getRegex("SharingModel\\.init_folder\\(.*?'(.*?)'").getMatch(0);
-        sharingModel = unescape(sharingModel);
-        if (fileLinks != null && fileLinks.length != 0) {
-            /* old file links */
-            // Set filenames, sizes and availablestatus for super fast adding
-            for (String fileInfo[] : fileLinks) {
-                DownloadLink dl = null;
-                if ("--".equalsIgnoreCase(fileInfo[3])) {
-                    dl = createDownloadlink(fileInfo[0]);
-                } else {
-                    dl = createDownloadlink(fileInfo[0].replace("dropbox.com/", "dropboxdecrypted.com/"));
-                    String name = fileNameMap.get(fileInfo[2]);
-                    if (name != null) dl.setName(name);
-                    dl.setDownloadSize(SizeFormatter.getSize(fileInfo[3].replace(",", ".")));
+        final String listHTML = br.getRegex("id=\"list\\-view\\-container\" class=\"gallery\\-view\\-section\">(.*?)id=\"modal\\-progress\\-content\">").getMatch(0);
+        if (listHTML != null) {
+            final String[] entries = new Regex(listHTML, "(class=\"filename\\-col\"><a.*?</span></div>)").getColumn(0);
+            if (entries != null && entries.length != 0) {
+                for (final String entry : entries) {
+                    final String size = new Regex(entry, "class=\"size\">([^<>\"]*?)</span>").getMatch(0);
+                    final String link = new Regex(entry, "<a href=\"(https?://(www\\.)?dropbox\\.com/[^<>\"]*?)\"").getMatch(0);
+                    if (link == null || size == null) {
+                        continue;
+                    }
+                    final String filename = new Regex(link, "/([^<>\"/]*?)$").getMatch(0);
+                    final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
+                    if (filename != null) dl.setName(filename);
+                    dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
                     dl.setProperty("decrypted", true);
                     dl.setAvailable(true);
+                    decryptedLinks.add(dl);
                 }
-                decryptedLinks.add(dl);
             }
         }
+        String sharingModel = br.getRegex("SharingModel\\.init_folder\\(.*?'(.*?)'").getMatch(0);
+        sharingModel = unescape(sharingModel);
         if (sharingModel != null && decryptedLinks.size() == 0) {
             /* new js links */
             String links[][] = new Regex(sharingModel, "orig_url\":\\s*\"(http.*?)\".*?\"filename\":\\s*\"(.*?)\"").getMatches();
