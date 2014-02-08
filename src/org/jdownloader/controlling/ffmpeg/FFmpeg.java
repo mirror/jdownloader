@@ -243,7 +243,11 @@ public class FFmpeg {
         ArrayList<String> commandLine = new ArrayList<String>();
         commandLine.add(getFullPath());
         for (int i = 0; i < mc.length; i++) {
-            commandLine.add(mc[i].replace("%video", videoIn).replace("%audio", audioIn).replace("%out", out));
+            String param = mc[i];
+            param = param.replace("%video", videoIn == null ? "" : videoIn);
+            param = param.replace("%audio", audioIn == null ? "" : audioIn);
+            param = param.replace("%out", out);
+            commandLine.add(param);
         }
 
         return commandLine;
