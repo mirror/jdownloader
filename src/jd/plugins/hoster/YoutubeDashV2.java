@@ -1095,7 +1095,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         PluginProgress old = null;
                         try {
                             old = downloadLink.setPluginProgress(progress);
-                            if (ffmpeg.merge(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
+                            if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
                                 downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                 new File(videoStreamPath).delete();
                                 new File(getAudioStreamPath(downloadLink)).delete();
