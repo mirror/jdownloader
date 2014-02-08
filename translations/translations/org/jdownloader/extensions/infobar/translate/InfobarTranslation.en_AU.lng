@@ -1,0 +1,13 @@
+EnableInfoBarGuiAction=Show Infobar
+InfoBarGuiToggleAction_deselected=Open InfoBar
+InfoBarGuiToggleAction_deselected_tt=Open the InfoBar
+InfoBarGuiToggleAction_selected=Close InfoBar
+InfoBarGuiToggleAction_selected_tt=Close the InfoBar
+jd_plugins_optional_infobar_InfoDialog_help=Drag'N'Drop Zone
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Drop URLs, Hyperlinks or DLC files here!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Hide InfoBar
+jd_plugins_optional_infobar_docking=Enable Docking to the edges
+jd_plugins_optional_infobar_dropLocation2=Enable Drop Location
+jd_plugins_optional_infobar_jdinfobar=Info Bar
+jd_plugins_optional_infobar_jdinfobar_description=Small floating panel with information on Downloads in realtime, and Drag'N'Drop Zone where you can add links, URLs or DLC files.
+jd_plugins_optional_infobar_opacity=GUI Opacity [%]

@@ -1,0 +1,10 @@
+LogAction_actionPerformed_wait_=Please wait...
+LogAction_actionPerformed_zip_title_=Creating Log Package
+LogAction_getString_uploading_=Preparing your logs
+LogModel_getStringValue_between_=Between %s1 and %s2
+LogModel_initColumns_time_=Time
+LogModel_initColumns_x_=Check
+LogTable_onContextMenu_disable_=Unselect
+LogTable_onContextMenu_enable_=Select
+SendLogDialog_SendLogDialog_title_=Send a Bugreport
+SendLogDialog_layoutDialogContent_desc_=When did the Problem occure? Please check all entries that may be worth considering!

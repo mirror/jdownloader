@@ -1,0 +1,4 @@
+interaction_externreconnect_command=Command (use absolute directory paths)
+interaction_externreconnect_dummybat=Use special executer for windows
+interaction_externreconnect_parameter=Parameter (1 parameter per line)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=External Tool Reconnect

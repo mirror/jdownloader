@@ -1,0 +1,4 @@
+interaction_batchreconnect_batch=Batch Script
+interaction_batchreconnect_executein=Start in (application folder)
+interaction_batchreconnect_terminal=Interpreter
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=External Batch Reconnect

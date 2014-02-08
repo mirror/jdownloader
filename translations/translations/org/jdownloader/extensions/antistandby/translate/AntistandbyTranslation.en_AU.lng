@@ -1,0 +1,5 @@
+gui_config_antistandby_whiledl2=Download is in progress
+gui_config_antistandby_whilejd2=JDownloader is running
+jd_plugins_optional_antistandby_jdantistandby=AntiStandBy
+jd_plugins_optional_antistandby_jdantistandby_description=Simply prevents your computer from going into Stand By or Sleep Mode to keep downloads active.
+mode=Prevent standby/sleep when
