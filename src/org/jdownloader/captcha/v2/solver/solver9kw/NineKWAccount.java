@@ -4,8 +4,56 @@ import org.appwork.utils.StringUtils;
 
 public class NineKWAccount {
     private int solved;
+    private int solved9kw;
     private int requests;
     private int skipped;
+    private int answered;
+    private int answered9kw;
+    private int Send;
+    private int SendError;
+    private int OK;
+    private int NotOK;
+    private int Unused;
+
+    public int getSend() {
+        return Send;
+    }
+
+    public void setSend(int Send) {
+        this.Send = Send;
+    }
+
+    public int getSendError() {
+        return SendError;
+    }
+
+    public void setSendError(int SendError) {
+        this.SendError = SendError;
+    }
+
+    public int getOK() {
+        return OK;
+    }
+
+    public void setOK(int OK) {
+        this.OK = OK;
+    }
+
+    public int getNotOK() {
+        return NotOK;
+    }
+
+    public void setNotOK(int NotOK) {
+        this.NotOK = NotOK;
+    }
+
+    public int getUnused() {
+        return Unused;
+    }
+
+    public void setUnused(int Unused) {
+        this.Unused = Unused;
+    }
 
     public int getSolved() {
         return solved;
@@ -13,6 +61,14 @@ public class NineKWAccount {
 
     public void setSolved(int solved) {
         this.solved = solved;
+    }
+
+    public int getSolved9kw() {
+        return solved9kw;
+    }
+
+    public void setSolved9kw(int solved) {
+        this.solved9kw = solved;
     }
 
     public int getAnswered() {
@@ -23,7 +79,14 @@ public class NineKWAccount {
         this.answered = answered;
     }
 
-    private int    answered;
+    public int getAnswered9kw() {
+        return answered9kw;
+    }
+
+    public void setAnswered9kw(int answered) {
+        this.answered9kw = answered;
+    }
+
     private int    creditBalance;
     private String error;
     private int    worker;

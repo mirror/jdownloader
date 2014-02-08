@@ -2795,11 +2795,26 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Whitelistcheck (Prio)" })
     String NinekwService_createPanel_whitelistpriocheck();
 
+    @Default(lngs = { "en" }, values = { "Blacklist (Timeout)" })
+    String NinekwService_createPanel_blacklisttimeout();
+
+    @Default(lngs = { "en" }, values = { "Blacklistcheck (Timeout)" })
+    String NinekwService_createPanel_blacklisttimeoutcheck();
+
+    @Default(lngs = { "en" }, values = { "Whitelist (Timeout)" })
+    String NinekwService_createPanel_whitelisttimeout();
+
+    @Default(lngs = { "en" }, values = { "Whitelistcheck (Timeout)" })
+    String NinekwService_createPanel_whitelisttimeoutcheck();
+
     @Default(lngs = { "en" }, values = { "With Mouse" })
     String NinekwService_createPanel_mouse();
 
     @Default(lngs = { "en" }, values = { "Feedback" })
     String NinekwService_createPanel_feedback();
+
+    @Default(lngs = { "en" }, values = { "Warn on low credits" })
+    String NinekwService_createPanel_lowcredits();
 
     @Default(lngs = { "en" }, values = { "Https" })
     String NinekwService_createPanel_https();
@@ -2809,6 +2824,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Mouse Confirm (Cost +6)" })
     String NinekwService_createPanel_mouseconfirm();
+
+    @Default(lngs = { "en" }, values = { "Debug" })
+    String NinekwService_createPanel_debug();
 
     @Default(lngs = { "en" }, values = { "Selfsolve" })
     String NinekwService_createPanel_selfsolve();
@@ -2822,8 +2840,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Max. Captchas Parallel" })
     String NinekwService_createPanel_threadsizepool();
 
-    @Default(lngs = { "en" }, values = { "ms - Max. Timeout (60-999s)" })
+    @Default(lngs = { "en" }, values = { "ms - Max. Timeout (60-3999s)" })
     String NinekwService_createPanel_9kwtimeout();
+
+    @Default(lngs = { "en" }, values = { "New Timeout (60-3999s)" })
+    String NinekwService_createPanel_9kwtimeoutother();
 
     @Default(lngs = { "en" }, values = { "Enter your Captcha Brotherhood Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String captchabrotherhoodService_createPanel_logins_();

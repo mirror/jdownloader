@@ -67,13 +67,12 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
 
                         @Override
                         protected void runInEDT() {
-                            if (!isShowing()) {
-
-                            return; }
+                            if (!isShowing()) { return; }
                             panel.removeAll();
                             // panel.setPreferredSize(null);
+                            panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
                             if (!account.isValid()) {
-                                panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
+                                // panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]"));
                                 JLabel header = new JLabel("9kw Captcha Solver", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
                                 header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                                 SwingUtils.toBold(header);
@@ -82,37 +81,56 @@ public class ServicePanel9kwTooltip extends PanelToolTip {
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_error2(""), NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getError()), "gapleft 22");
                             } else {
-                                panel.setLayout(new MigLayout("ins 0,wrap 2", "[][grow,align right]", "[]0"));
                                 JLabel header = new JLabel("9kw Captcha Solver", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
                                 header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
                                 SwingUtils.toBold(header);
                                 header.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                                 panel.add(header, "spanx,gapbottom 5,pushx,growx");
+
+                                panel.add(lbl("Requested/Send:", NewTheme.I().getIcon(IconKey.ICON_QUESTION, 18), JLabel.LEFT));
+                                panel.add(lbl(account.getRequests() + "/" + account.getSend() + " Captcha(s)"));
+                                panel.add(lbl("Solved:", NewTheme.I().getIcon(IconKey.ICON_OK, 18), JLabel.LEFT));
+                                panel.add(lbl(account.getSolved() + " Captcha(s)"));
+                                panel.add(lbl("Error/Send:", NewTheme.I().getIcon(IconKey.ICON_ERROR, 18), JLabel.LEFT));
+                                panel.add(lbl(account.getSkipped() + "/" + account.getSendError() + " Captcha(s)"));
+
+                                panel.add(lbl("Feedback: ", NewTheme.I().getIcon(IconKey.ICON_LOGIN, 18), JLabel.LEFT));
+                                panel.add(lbl("OK:" + account.getOK() + " - NotOK:" + account.getNotOK()));
+
+                                JLabel header2 = new JLabel("Account", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
+                                header2.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
+                                SwingUtils.toBold(header2);
+                                header2.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
+                                panel.add(header2, "spanx,gapbottom 5,pushx,growx");
+
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_credits_(), NewTheme.I().getIcon(IconKey.ICON_MONEY, 18), JLabel.LEFT));
                                 panel.add(lbl(account.getCreditBalance() + ""));
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_solved(), NewTheme.I().getIcon(IconKey.ICON_LOGIN, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getSolved() + " (" + account.getRequests() + ")"));
+                                panel.add(lbl(account.getSolved9kw() + ""));
                                 panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_answered(), NewTheme.I().getIcon(IconKey.ICON_LOGOUT, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getAnswered() + ""));
-
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_avgsolvetime(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getAvgSolvtime() + "s"));
-
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_queue(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getQueue() + "|" + account.getQueue1() + "|" + account.getQueue2()));
-
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getWorker()));
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_mouse(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getWorkerMouse()));
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_confirm(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getWorkerConfirm()));
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_text(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getWorkerText()));
-
-                                panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_inwork(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
-                                panel.add(lbl(account.getInWork()));
+                                panel.add(lbl(account.getAnswered9kw() + ""));
                             }
+
+                            JLabel header3 = new JLabel("Server", DomainInfo.getInstance("9kw.eu").getFavIcon(), JLabel.LEFT);
+                            header3.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, LAFOptions.getInstance().getColorForTooltipForeground()));
+                            SwingUtils.toBold(header3);
+                            header3.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
+                            panel.add(header3, "spanx,gapbottom 5,pushx,growx");
+
+                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_avgsolvetime(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(account.getAvgSolvtime() + "s"));
+                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_queue(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(account.getQueue() + "|" + account.getQueue1() + "|" + account.getQueue2()));
+                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(account.getWorker()));
+                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_mouse(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(account.getWorkerMouse()));
+                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_confirm(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(account.getWorkerConfirm()));
+                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_worker_text(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(account.getWorkerText()));
+                            panel.add(lbl(_GUI._.ServicePanel9kwTooltip_runInEDT_inwork(), NewTheme.I().getIcon(IconKey.ICON_TRUE, 18), JLabel.LEFT));
+                            panel.add(lbl(account.getInWork()));
                             // panel.revalidate();
                             // revalidate();
                             // repaint();

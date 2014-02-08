@@ -42,8 +42,18 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class Captcha9kwSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
     private Captcha9kwSettings            config;
-    private static final Captcha9kwSolver INSTANCE   = new Captcha9kwSolver();
-    private ThreadPoolExecutor            threadPool = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
+    private static final Captcha9kwSolver INSTANCE           = new Captcha9kwSolver();
+    private ThreadPoolExecutor            threadPool         = new ThreadPoolExecutor(0, 1, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>(), Executors.defaultThreadFactory());
+
+    private AtomicInteger                 counterSolved      = new AtomicInteger();
+    private AtomicInteger                 counterInterrupted = new AtomicInteger();
+    private AtomicInteger                 counter            = new AtomicInteger();
+    private AtomicInteger                 counterSend        = new AtomicInteger();
+    private AtomicInteger                 counterSendError   = new AtomicInteger();
+    private AtomicInteger                 counterOK          = new AtomicInteger();
+    private AtomicInteger                 counterNotOK       = new AtomicInteger();
+    private AtomicInteger                 counterUnused      = new AtomicInteger();
+    private String                        long_debuglog      = "";
 
     public static Captcha9kwSolver getInstance() {
         return INSTANCE;
@@ -110,6 +120,18 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         return c instanceof BasicCaptchaChallenge && CFG_CAPTCHA.CAPTCHA_EXCHANGE_SERVICES_ENABLED.isEnabled() && config.isEnabled() && super.canHandle(c);
     }
 
+    public synchronized void setlong_debuglog(String long_debuglog) {
+        this.long_debuglog += long_debuglog + "\n";
+    }
+
+    public synchronized void dellong_debuglog() {
+        this.long_debuglog = "";
+    }
+
+    public synchronized String getlong_debuglog() {
+        return this.long_debuglog;
+    }
+
     public String getAPIROOT() {
         if (config.ishttps()) {
             return "https://www.9kw.eu/";
@@ -120,8 +142,20 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
 
     @Override
     public Icon getIcon(int size) {
-
         return new AbstractIcon(IconKey.ICON_9KW, size);
+    }
+
+    public void setdebug_short(String logdata) {
+        if (config.isDebug() && logdata != null) {
+            setlong_debuglog(logdata);
+        }
+    }
+
+    public void setdebug(CESSolverJob<String> job, String logdata) {
+        if (config.isDebug() && logdata != null) {
+            setlong_debuglog(logdata);
+        }
+        job.getLogger().info(logdata);
     }
 
     @Override
@@ -130,15 +164,16 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
 
         int priothing = config.getprio();
+        int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000);
 
-        job.getLogger().info("Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + challenge.getTypeID());
+        setdebug(job, "Start Captcha to 9kw.eu. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
         if (config.getwhitelistcheck()) {
             if (config.getwhitelist() != null) {
                 if (config.getwhitelist().length() > 5) {
                     if (config.getwhitelist().contains(challenge.getTypeID())) {
-                        job.getLogger().info("Hoster on whitelist for 9kw.eu. - " + challenge.getTypeID());
+                        setdebug(job, "Hoster on whitelist for 9kw.eu. - " + challenge.getTypeID());
                     } else {
-                        job.getLogger().info("Hoster not on whitelist for 9kw.eu. - " + challenge.getTypeID());
+                        setdebug(job, "Hoster not on whitelist for 9kw.eu. - " + challenge.getTypeID());
                         return;
                     }
                 }
@@ -149,10 +184,10 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             if (config.getblacklist() != null) {
                 if (config.getblacklist().length() > 5) {
                     if (config.getblacklist().contains(challenge.getTypeID())) {
-                        job.getLogger().info("Hoster on blacklist for 9kw.eu. - " + challenge.getTypeID());
+                        setdebug(job, "Hoster on blacklist for 9kw.eu. - " + challenge.getTypeID());
                         return;
                     } else {
-                        job.getLogger().info("Hoster not on blacklist for 9kw.eu. - " + challenge.getTypeID());
+                        setdebug(job, "Hoster not on blacklist for 9kw.eu. - " + challenge.getTypeID());
                     }
                 }
             }
@@ -162,9 +197,9 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             if (config.getwhitelistprio() != null) {
                 if (config.getwhitelistprio().length() > 5) {
                     if (config.getwhitelistprio().contains(challenge.getTypeID())) {
-                        job.getLogger().info("Hoster on whitelist with prio for 9kw.eu. - " + challenge.getTypeID());
+                        setdebug(job, "Hoster on whitelist with prio for 9kw.eu. - " + challenge.getTypeID());
                     } else {
-                        job.getLogger().info("Hoster not on whitelist with prio for 9kw.eu. - " + challenge.getTypeID());
+                        setdebug(job, "Hoster not on whitelist with prio for 9kw.eu. - " + challenge.getTypeID());
                         priothing = 0;
                     }
                 }
@@ -176,9 +211,35 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                 if (config.getblacklistprio().length() > 5) {
                     if (config.getblacklistprio().contains(challenge.getTypeID())) {
                         priothing = 0;
-                        job.getLogger().info("Hoster on blacklist with prio for 9kw.eu. - " + challenge.getTypeID());
+                        setdebug(job, "Hoster on blacklist with prio for 9kw.eu. - " + challenge.getTypeID());
                     } else {
-                        job.getLogger().info("Hoster not on blacklist with prio for 9kw.eu. - " + challenge.getTypeID());
+                        setdebug(job, "Hoster not on blacklist with prio for 9kw.eu. - " + challenge.getTypeID());
+                    }
+                }
+            }
+        }
+
+        if (config.getwhitelisttimeoutcheck()) {
+            if (config.getwhitelisttimeout() != null) {
+                if (config.getwhitelisttimeout().length() > 5) {
+                    if (config.getwhitelisttimeout().contains(challenge.getTypeID())) {
+                        setdebug(job, "Hoster on whitelist with other 9kw timeout for 9kw.eu. - " + challenge.getTypeID());
+                        timeoutthing = (config.getCaptchaOther9kwTimeout() / 1000);
+                    } else {
+                        setdebug(job, "Hoster not on whitelist with other 9kw timeout for 9kw.eu. - " + challenge.getTypeID());
+                    }
+                }
+            }
+        }
+
+        if (config.getblacklisttimeoutcheck()) {
+            if (config.getblacklisttimeout() != null) {
+                if (config.getblacklisttimeout().length() > 5) {
+                    if (config.getblacklisttimeout().contains(challenge.getTypeID())) {
+                        setdebug(job, "Hoster on blacklist with other 9kw timeout for 9kw.eu. - " + challenge.getTypeID());
+                    } else {
+                        timeoutthing = (config.getCaptchaOther9kwTimeout() / 1000);
+                        setdebug(job, "Hoster not on blacklist with other 9kw timeout for 9kw.eu. - " + challenge.getTypeID());
                     }
                 }
             }
@@ -195,8 +256,9 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             String ret = "";
             job.setStatus(SolverStatus.UPLOADING);
             for (int i = 0; i <= 5; i++) {
-                ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + priothing + "&selfsolve=" + config.isSelfsolve() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000) + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&prio=" + priothing + "&selfsolve=" + config.isSelfsolve() + "&confirm=" + config.isconfirm() + "&oldsource=" + Encoding.urlEncode(challenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
                 if (ret.startsWith("OK-")) {
+                    counterSend.incrementAndGet();
                     break;
                 } else {
                     Thread.sleep(3000);
@@ -204,23 +266,27 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                 }
             }
             job.setStatus(SolverStatus.SOLVING);
-            job.getLogger().info("Send Captcha to 9kw.eu. - Answer: " + ret);
-            if (!ret.startsWith("OK-")) throw new SolverException(ret);
+            setdebug(job, "Send Captcha to 9kw.eu. - Answer: " + ret);
+            if (!ret.startsWith("OK-")) {
+                if (ret.contains("0011 Guthaben ist nicht ausreichend") && config.getlowcredits()) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "0011 Not enough credits.\n" + ret);
+                }
+                counterSendError.incrementAndGet();
+                throw new SolverException(ret);
+            }
             // Error-No Credits
             String captchaID = ret.substring(3);
             data = null;
             long startTime = System.currentTimeMillis();
 
             Thread.sleep(5000);
-
             while (true) {
-
-                job.getLogger().info("9kw.eu Ask " + captchaID);
+                setdebug(job, "9kw.eu Ask " + captchaID);
                 ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
                 if (StringUtils.isEmpty(ret)) {
-                    job.getLogger().info("9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                    setdebug(job, "9kw.eu NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
                 } else {
-                    job.getLogger().info("9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
+                    setdebug(job, "9kw.eu Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
                 }
                 if (ret.startsWith("OK-answered-")) {
                     counterSolved.incrementAndGet();
@@ -233,6 +299,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             }
 
         } catch (IOException e) {
+            setdebug_short("9kw.eu Interrupted: " + e);
             counterInterrupted.incrementAndGet();
             job.getLogger().log(e);
         }
@@ -254,6 +321,8 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                         for (int i = 0; i <= 3; i++) {
                             ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=1&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
+                                setdebug_short("9kw.eu CaptchaID " + captchaID + ": OK (Feedback)");
+                                counterOK.incrementAndGet();
                                 break;
                             } else {
                                 Thread.sleep(2000);
@@ -282,6 +351,8 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                         for (int i = 0; i <= 3; i++) {
                             ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=3&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
+                                setdebug_short("9kw.eu CaptchaID " + captchaID + ": Unused (Feedback)");
+                                counterUnused.incrementAndGet();
                                 break;
                             } else {
                                 Thread.sleep(2000);
@@ -311,6 +382,8 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                         for (int i = 0; i <= 3; i++) {
                             ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectback&source=jd2&correct=2&id=" + captchaID + "&apikey=" + Encoding.urlEncode(config.getApiKey()));
                             if (ret.startsWith("OK")) {
+                                setdebug_short("9kw.eu CaptchaID " + captchaID + ": NotOK (Feedback)");
+                                counterNotOK.incrementAndGet();
                                 break;
                             } else {
                                 Thread.sleep(2000);
@@ -334,6 +407,11 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
     public void extendServicePabel(LinkedList<ServiceCollection<?>> services) {
         if (StringUtils.isNotEmpty(config.getApiKey())) {
             services.add(new ServiceCollection<Captcha9kwSolver>() {
+
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = 5569965026755271172L;
 
                 @Override
                 public Icon getIcon() {
@@ -364,32 +442,21 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         }
     }
 
-    private AtomicInteger counterSolved      = new AtomicInteger();
-    private AtomicInteger counterInterrupted = new AtomicInteger();
-    private AtomicInteger counter            = new AtomicInteger();
-
     public NineKWAccount loadAccount() throws IOException {
         Browser br = new Browser();
         NineKWAccount ret = new NineKWAccount();
         String credits;
 
-        ret.setRequests(counter.get());
-        ret.setSkipped(counterInterrupted.get());
-        ret.setSolved(counterSolved.get());
+        ret.setRequests(counter.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counter.get());
+        ret.setSkipped(counterInterrupted.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterInterrupted.get());
+        ret.setSolved(counterSolved.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterSolved.get());
 
-        credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
+        ret.setSend(counterSend.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterSend.get());
+        ret.setSendError(counterSendError.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterSendError.get());
+        ret.setOK(counterOK.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterOK.get());
+        ret.setNotOK(counterNotOK.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterNotOK.get());
+        ret.setUnused(counterUnused.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterUnused.get());
 
-        try {
-            ret.setCreditBalance(Integer.parseInt(credits.trim()));
-            String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
-            String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
-
-            ret.setAnswered(Integer.parseInt(Regex.getLines(userhistory2)[0]));
-            ret.setSolved(Integer.parseInt(Regex.getLines(userhistory1)[0]));
-
-        } catch (NumberFormatException e) {
-            ret.setError(credits);
-        }
         try {
             String servercheck = br.getPage(getAPIROOT() + "index.cgi?action=userservercheck");
             ret.setWorker(Integer.parseInt(new Regex(servercheck, "worker=(\\d+)").getMatch(0)));
@@ -401,9 +468,21 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             ret.setWorkerMouse(Integer.parseInt(new Regex(servercheck, "workermouse=(\\d+)").getMatch(0)));
             ret.setWorkerConfirm(Integer.parseInt(new Regex(servercheck, "workerconfirm=(\\d+)").getMatch(0)));
             ret.setWorkerText(Integer.parseInt(new Regex(servercheck, "workertext=(\\d+)").getMatch(0)));
-
         } catch (NumberFormatException e) {
             ret.setError("API Error!");
+        }
+
+        credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
+
+        try {
+            ret.setCreditBalance(Integer.parseInt(credits.trim()));
+            String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
+            String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
+
+            ret.setAnswered9kw(Integer.parseInt(Regex.getLines(userhistory2)[0]));
+            ret.setSolved9kw(Integer.parseInt(Regex.getLines(userhistory1)[0]));
+        } catch (NumberFormatException e) {
+            ret.setError(credits);
         }
         return ret;
 

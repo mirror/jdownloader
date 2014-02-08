@@ -24,6 +24,13 @@ public interface Captcha9kwSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the debugmode for 9kw.eu service")
+    boolean isDebug();
+
+    void setDebug(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Activate the Mouse Captchas")
     boolean ismouse();
 
@@ -140,4 +147,45 @@ public interface Captcha9kwSettings extends ConfigInterface {
     int getThreadpoolSize();
 
     void setThreadpoolSize(int size);
+
+    @AboutConfig
+    @DefaultIntValue(600000)
+    @SpinnerValidator(min = 60000, max = Integer.MAX_VALUE)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Other max. timeout only for 9kw Service")
+    int getCaptchaOther9kwTimeout();
+
+    void setCaptchaOther9kwTimeout(int ms);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Captcha whitelist for hoster with timeout")
+    String getwhitelisttimeout();
+
+    void setwhitelisttimeout(String jser);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Captcha blacklist for hoster with timeout")
+    String getblacklisttimeout();
+
+    void setblacklisttimeout(String jser);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the blacklist with timeout")
+    boolean getblacklisttimeoutcheck();
+
+    void setblacklisttimeoutcheck(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the whitelist with timeout")
+    boolean getwhitelisttimeoutcheck();
+
+    void setwhitelisttimeoutcheck(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the lowcredits dialog")
+    boolean getlowcredits();
+
+    void setlowcredits(boolean b);
 }
