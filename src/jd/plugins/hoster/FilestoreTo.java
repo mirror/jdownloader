@@ -94,6 +94,7 @@ public class FilestoreTo extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String js = br.getRegex("(script/\\d+\\.js)").getMatch(0);
+        if (js == null) js = br.getRegex("(script/main\\.js)").getMatch(0);
         if (js == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser bjs = br.cloneBrowser();
         bjs.getPage("/" + js);
@@ -101,18 +102,16 @@ public class FilestoreTo extends PluginForHost {
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String jcount = bjs.getRegex("var countdown = \"(\\d+)\";").getMatch(0);
         String pwnage[] = new String[3];
-        String[] z = bjs.getRegex("\\$\\.ajax\\(\\s*\\{.*?data: '([^']+)'\\+\\$\\('\\.(\\w+)'\\)\\.attr\\(\"(\\w+)\"\\)").getRow(0);
-        if (z == null || z.length != 3) {
-            String startDl = bjs.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
-            String t = new Regex(startDl, "data:\\s*'(\\w+=)").getMatch(0);
-            String[] p = new Regex(startDl, "var\\s*[A-Z]+\\s*=\\s*\\$\\('\\.(\\w+)'\\)\\.attr\\(\"(\\w+)\"\\)").getRow(0);
-            if (t == null || (p == null || p.length != 2)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            pwnage[0] = t.toString();
-            pwnage[1] = p[0];
-            pwnage[2] = p[1];
-        } else {
-            pwnage = z;
-        }
+        // find startDownload, usually within primary controlling js
+        String startDl = bjs.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
+        // at times he places in base html source
+        if (startDl == null) startDl = br.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
+        // find the value' we need
+        String[] tp = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+\\$\\((\"|')\\.(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)").getRow(0);
+        if (tp == null || tp.length != 6) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        pwnage[0] = tp[1];
+        pwnage[1] = tp[3];
+        pwnage[2] = tp[5];
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         final String ajax = "http://filestore.to/ajax/download.php?";
         int wait = 10;
@@ -152,8 +151,8 @@ public class FilestoreTo extends PluginForHost {
 
     public void haveFun() throws Exception {
         aBrowser = br.toString();
-        aBrowser = aBrowser.replaceAll("(<(p|div)[^>]+(display:none|top:-\\d+)[^>]+>.*?(<\\s*(/(\\2)\\s*|(\\2)\\s*/\\s*)>){2})", "");
-        aBrowser = aBrowser.replaceAll("(<(table).*?class=\"hide\".*?<\\s*(/(\\2)\\s*|(\\2)\\s*/\\s*)>)", "");
+        aBrowser = aBrowser.replaceAll("(<(p|div)[^>]+(display:none|top:-\\d+)[^>]+>.*?(<\\s*(/\\2\\s*|\\2\\s*/\\s*)>){2})", "");
+        aBrowser = aBrowser.replaceAll("(<(table).*?class=\"hide\".*?<\\s*(/\\2\\s*|\\2\\s*/\\s*)>)", "");
         aBrowser = aBrowser.replaceAll("[\r\n\t]+", " ");
         aBrowser = aBrowser.replaceAll("&nbsp;", " ");
         aBrowser = aBrowser.replaceAll("(<[^>]+>)", " ");
