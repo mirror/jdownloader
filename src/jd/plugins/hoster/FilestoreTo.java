@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -26,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -55,12 +58,25 @@ public class FilestoreTo extends PluginForHost {
         return 2000;
     }
 
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+
+    private Browser prepBrowser(Browser prepBr) {
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            while (agent.get() == null || !agent.get().contains("Chrome/")) {
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            }
+        }
+        prepBr.getHeaders().put("User-Agent", agent.get());
+        prepBr.setCustomCharset("utf-8");
+        return prepBr;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        // Many other browsers seem to be blocked
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:9.0.1) Gecko/20100101 Firefox/9.0.1");
-        br.setCustomCharset("utf-8");
+        prepBrowser(br);
         final String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
@@ -107,7 +123,7 @@ public class FilestoreTo extends PluginForHost {
         // at times he places in base html source
         if (startDl == null) startDl = br.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
         // find the value' we need
-        String[] tp = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+\\$\\((\"|')\\.(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)").getRow(0);
+        String[] tp = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)").getRow(0);
         if (tp == null || tp.length != 6) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         pwnage[0] = tp[1];
         pwnage[1] = tp[3];
