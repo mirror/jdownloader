@@ -1331,30 +1331,41 @@ public class YoutubeHelper {
         }
         getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" + vid.videoID, br);
 
-        ttsUrl = ttsUrl.replaceFirst("v=[a-zA-Z0-9\\-_]+", "");
-
+        ttsUrl = ttsUrl.replace("&v=" + vid.videoID, "");
+        ttsUrl = ttsUrl.replace("?v=" + vid.videoID, "");
         String[] matches = br.getRegex("<track id=\"(.*?)\".*?/>").getColumn(0);
         HashSet<String> duplicate = new HashSet<String>();
 
         for (String trackID : matches) {
-            String lang = br.getRegex("<track id=\"" + trackID + "\".*?lang_code=\"(.*?)\".*?/>").getMatch(0);
-            String name = br.getRegex("<track id=\"" + trackID + "\".*?name=\"(.*?)\".*?/>").getMatch(0);
-            String kind = br.getRegex("<track id=\"" + trackID + "\".*?kind=\"(.*?)\".*?/>").getMatch(0);
-            String langOrg = br.getRegex("<track id=\"" + trackID + "\".*?lang_original=\"(.*?)\".*?/>").getMatch(0);
-            String langTrans = br.getRegex("<track id=\"" + trackID + "\".*?lang_translated=\"(.*?)\".*?/>").getMatch(0);
-            if (name == null) name = "";
-            if (kind == null) kind = "";
-            if (duplicate.add(lang) == false) continue;
-            if (StringUtils.isNotEmpty(langTrans)) {
-                langOrg = langTrans;
-            }
-            if (StringUtils.isEmpty("langOrg")) {
-                langOrg = new Locale("lang").getDisplayLanguage(Locale.ENGLISH);
-            }
-            urls.add(new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
+            parseSubtitleTrack(urls, ttsUrl, duplicate, trackID);
 
         }
         return urls;
+    }
+
+    /**
+     * @param urls
+     * @param ttsUrl
+     * @param duplicate
+     * @param trackID
+     */
+    public void parseSubtitleTrack(ArrayList<YoutubeSubtitleInfo> urls, String ttsUrl, HashSet<String> duplicate, String trackID) {
+        String track = br.getRegex("<track id=\"" + trackID + "\".*?/>").getMatch(-1);
+        String lang = new Regex(track, "lang_code=\"(.*?)\".*?/>").getMatch(0);
+        String name = new Regex(track, "name=\"(.*?)\".*?/>").getMatch(0);
+        String kind = new Regex(track, "kind=\"(.*?)\".*?/>").getMatch(0);
+        String langOrg = new Regex(track, "lang_original=\"(.*?)\".*?/>").getMatch(0);
+        String langTrans = new Regex(track, "lang_translated=\"(.*?)\".*?/>").getMatch(0);
+        if (name == null) name = "";
+        if (kind == null) kind = "";
+        if (duplicate.add(lang) == false) return;
+        if (StringUtils.isNotEmpty(langTrans)) {
+            langOrg = langTrans;
+        }
+        if (StringUtils.isEmpty("langOrg")) {
+            langOrg = new Locale("lang").getDisplayLanguage(Locale.ENGLISH);
+        }
+        urls.add(new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
     }
 
     public YoutubeVariantInterface getVariantById(String ytv) {

@@ -58,7 +58,8 @@ public class YoutubeSubtitleInfo {
     }
 
     public String _getUrl(String videoId) throws UnsupportedEncodingException {
-        return _base + "&kind=" + URLEncoder.encode(kind, "UTF-8") + "&format=1&ts=" + System.currentTimeMillis() + "&type=track&lang=" + URLEncoder.encode(lang, "UTF-8") + "&name=" + URLEncoder.encode(name, "UTF-8") + "&v=" + URLEncoder.encode(videoId, "UTF-8");
+        String ret = _base + "&kind=" + URLEncoder.encode(kind, "UTF-8") + "&format=1&ts=" + System.currentTimeMillis() + "&type=track&lang=" + URLEncoder.encode(lang, "UTF-8") + "&name=" + URLEncoder.encode(name, "UTF-8") + "&v=" + URLEncoder.encode(videoId, "UTF-8");
+        return ret;
     }
 
 }
