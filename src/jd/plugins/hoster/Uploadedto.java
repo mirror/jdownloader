@@ -825,7 +825,10 @@ public class Uploadedto extends PluginForHost {
                 // JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH))
                 br.postPage(getProtocol() + "api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + getLoginSHA1Hash(account.getPass()) + "&ishash=1&app=JDownloader");
                 token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
-                if (token == null) handleErrorCode(br, account, token, true);
+                if (token == null) {
+                    //
+                    handleErrorCode(br, account, token, true);
+                }
                 account.setProperty("token", token);
                 return token;
             } catch (final PluginException e) {
@@ -856,7 +859,24 @@ public class Uploadedto extends PluginForHost {
                 if (tokenType != null && liveToken == false) return tokenType;
                 br.getPage(getProtocol() + "api.uploaded.net/api/user/jdownloader?access_token=" + token);
                 tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
-                if (tokenType == null) handleErrorCode(br, account, token, true);
+                int retry = 0;
+                while (tokenType == null) {
+                    retry++;
+                    if (retry > 20) {
+                        logger.info("Retry Limit reached");
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
+                    }
+                    String redirect = br.getRedirectLocation();
+                    if (redirect != null) {
+                        // avoid ddos
+                        Thread.sleep(1000);
+                        br.getPage(redirect);
+                        tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
+                    } else {
+
+                        handleErrorCode(br, account, token, true);
+                    }
+                }
                 account.setProperty("tokenType", tokenType);
                 if ("premium".equals(tokenType)) {
                     try {
