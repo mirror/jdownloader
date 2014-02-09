@@ -680,15 +680,13 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.user)) {
-            final String match = this.br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]*?)\"").getMatch(1);
+            final String match = this.br.getRegex("temprop=\"url\" href=\"http://(www\\.)?youtube\\.com/user/([^<>\"]+)\"").getMatch(1);
             if (match != null) {
                 vid.user = Encoding.htmlDecode(match.trim());
-
+            } else if (vid.channel != null) {
+                vid.user = vid.channel;
             }
         }
-
-        //
-
     }
 
     public String getAbsolute(final String absolute, String id, Browser clone) throws IOException {
@@ -1261,7 +1259,6 @@ public class YoutubeHelper {
         }
 
         if (url != null && !url.contains("sig")) {
-
             url = url + "&signature=" + signature;
         }
         int bitrate = -1;
@@ -1274,10 +1271,8 @@ public class YoutubeHelper {
         final String quality = Encoding.urlDecode(query.get("quality"), false);
         logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
         if (url != null && itag != null) {
-
             return new YoutubeStreamData(vid, url, itag);
         } else {
-
             this.logger.info("Unkown Line: " + line);
             this.logger.info(query + "");
         }
@@ -1324,7 +1319,6 @@ public class YoutubeHelper {
         String ttsUrl = br.getRegex("\"ttsurl\": (\"http.*?\")").getMatch(0);
         if (ttsUrl != null) {
             ttsUrl = JSonStorage.restoreFromString(ttsUrl, new TypeRef<String>() {
-
             });
         } else {
             return urls;
