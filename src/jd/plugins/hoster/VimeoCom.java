@@ -339,7 +339,7 @@ public class VimeoCom extends PluginForHost {
         }
         for (String quality[] : qualities) {
             String url = quality[0];
-            if (name.equals(Encoding.htmlDecode(quality[2]))) {
+            if (name.equals(Encoding.htmlDecode(quality[1]))) {
                 if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
                 newURL = url;
                 break;

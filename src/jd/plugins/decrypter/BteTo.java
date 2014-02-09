@@ -44,13 +44,14 @@ public class BteTo extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<title>Byte\\.to \\-([^<>\"]*?)</title>").getMatch(0);
-        final String[] links = br.getRegex("<P STYLE=\"overflow: hidden; width: 583px;\"><A HREF=\"(http[^<>\"]*?)\"").getColumn(0);
+        final String[] links = br.getRegex("<A HREF=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links)
-            decryptedLinks.add(createDownloadlink(singleLink));
+        for (final String singleLink : links) {
+            if (!singleLink.matches("http://(www\\.)?byte\\.to/category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html")) decryptedLinks.add(createDownloadlink(singleLink));
+        }
 
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
