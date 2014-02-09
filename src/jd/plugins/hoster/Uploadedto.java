@@ -149,13 +149,7 @@ public class Uploadedto extends PluginForHost {
             if (redirect != null) {
                 Thread.sleep(100);
                 String lastUrl = br.getURL();
-                if (!lastUrl.equals(redirect)) {
-                    if (exceptionOnrealRedirect) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        return ret;
-                    }
-                }
+                if (!lastUrl.equals(redirect)) { return ret; }
                 ret = br.getPage(redirect);
             } else {
                 return ret;
@@ -504,12 +498,8 @@ public class Uploadedto extends PluginForHost {
                 Thread.sleep(100);
 
                 String lastUrl = br.getURL();
-                if (!lastUrl.equals(redirect)) {
-                    if (exceptionOnRealRedirect) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        return ret;
-                    }
+                if (!lastUrl.equals(redirect)) { return ret;
+
                 }
                 ret = br.postPage(redirect, data);
             } else {
