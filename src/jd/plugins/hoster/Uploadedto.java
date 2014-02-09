@@ -1195,7 +1195,7 @@ public class Uploadedto extends PluginForHost {
         boolean red = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(false);
-            getPage(br, getProtocol() + "uploaded.net/language/en", true);
+            getPage(br, getProtocol() + "uploaded.net/language/en", false);
         } finally {
             br.setFollowRedirects(red);
         }
