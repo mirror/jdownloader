@@ -416,9 +416,9 @@ public class DownloadSession extends Property {
             /* user wants to set a random stopmark */
             Iterator<SingleDownloadController> it = controllers.iterator();
             if (it.hasNext()) {
-                entry = it.next();
+                entry = it.next().getDownloadLink();
             } else {
-                entry = STOPMARK.NONE;
+                entry = STOPMARK.HIDDEN;
             }
         }
         stopMark.set(entry);
