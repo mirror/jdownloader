@@ -528,6 +528,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private String getUser() {
         String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
         if (user == null) user = br.getRegex("detect_broken_proxy_cache\\(\"(\\d+)\", \"c_user\"\\)").getMatch(0);
+        // regex verified: 10.2.2014
+        if (user == null) user = br.getRegex("\\[(\\d+)\\,\"c_user\"").getMatch(0);
         return user;
     }
 
