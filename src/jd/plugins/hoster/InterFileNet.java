@@ -105,7 +105,7 @@ public class InterFileNet extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha **some times and not others..
     // other: no redirects
-    // mods: traffic left and used space
+    // mods: traffic left and used space, login [added workaround for login captcha failures]
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -797,29 +797,45 @@ public class InterFileNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
-                Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(language)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                loginform = cleanForm(loginform);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
                 // check form for login captcha crap.
-                DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
-                loginform = captchaForm(dummyLink, loginform);
-                // end of check form for login captcha crap.
-                sendForm(loginform);
+                final DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
+                for (int i = 1; i <= 3; i++) {
+                    getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
+                    Form loginform = br.getFormbyProperty("name", "FL");
+                    if (loginform == null) {
+                        if ("de".equalsIgnoreCase(language)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    loginform = cleanForm(loginform);
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
+                    loginform = captchaForm(dummyLink, loginform);
+                    Thread.sleep(3 * 1000l);
+                    // end of check form for login captcha crap.
+                    sendForm(loginform);
+                    if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null && br.containsHTML("class=\\'err\\'>Wrong captcha code</b>")) {
+                        logger.info("interfile.net login: wrong captcha");
+                        continue;
+                    }
+                    break;
+                }
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    if ("de".equalsIgnoreCase(language)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (br.containsHTML("class=\\'err\\'>Wrong captcha code</b>")) {
+                        if ("de".equalsIgnoreCase(language)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Login Captcha!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid login captcha!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if ("de".equalsIgnoreCase(language)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 /** Save cookies */

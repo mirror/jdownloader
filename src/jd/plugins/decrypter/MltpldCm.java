@@ -36,7 +36,7 @@ public class MltpldCm extends PluginForDecrypt {
     // DEV NOTES:
     // - port support for blocked Indians.
 
-    private static final String INVALIDLINKS = "http://(www\\.)?multiupload\\.com/(privacy|contact)";
+    private static final String INVALIDLINKS = "http://(www\\.)?multiupload\\.(com|nl)/(privacy|contact)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

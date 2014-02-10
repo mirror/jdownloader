@@ -52,15 +52,19 @@ public class MultiUploadNlDirect extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("multiuploaddecrypted.nl", "multiupload.nl"));
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?multiupload\\.nl/(extreme|reportabuse|download|terms|contact)";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML(">UNKNOWN ERROR<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML("<title>Index of")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML(">Please select file")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">UNKNOWN ERROR<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>Index of")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Please select file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileInfo = br.getRegex("color:#000000;\">([^<>\"]*?)<font style=\"color:#666666;\">\\((\\d+(\\.\\d+)? [A-Za-z]{2,10})\\)</font>");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);

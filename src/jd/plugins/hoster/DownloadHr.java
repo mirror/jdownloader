@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -64,9 +63,10 @@ public class DownloadHr extends PluginForHost {
         if ("http://www.download.hr/".equals(br.getRedirectLocation()) || br.containsHTML("<title>Download\\.hr \\- Free Software Downloads</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"TableRightRow pozadina_Bijela uvuci10\">([^<>\"]*?)</a>").getMatch(0);
         if (filename == null) {
-            final Regex nameStuff = br.getRegex("class=\"font20 bold\">([^<>\"]*?)</span> <span id=\"version\" class=\"font18 bold\">([^<>\"]*?)</span>");
-            if (nameStuff.getMatches().length != 0) {
-                filename = Encoding.htmlDecode(nameStuff.getMatch(0).trim()) + " " + Encoding.htmlDecode(nameStuff.getMatch(1).trim());
+            final String name = br.getRegex("class=\"font20 bold\">([^<>\"]*?)</span>").getMatch(0);
+            final String version = br.getRegex("itemprop=\"version\" class=\"font18 bold\">([^<>\"]*?)</span>").getMatch(0);
+            if (name != null && version != null) {
+                filename = Encoding.htmlDecode(name) + " " + Encoding.htmlDecode(version);
             }
         }
         String filesize = br.getRegex(">Download</a>[\t\n\r ]+<b class=\"font\\d+\">\\((.*?)\\)</b>").getMatch(0);
@@ -89,6 +89,7 @@ public class DownloadHr extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 

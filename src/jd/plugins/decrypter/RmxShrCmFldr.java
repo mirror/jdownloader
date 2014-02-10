@@ -20,12 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "remixshare.com" }, urls = { "http://[\\w\\.]*?remixshare\\.com/container/\\?id=[a-z0-9].+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "remixshare.com" }, urls = { "http://(www\\.)?remixshare\\.com/container/[a-z0-9]+" }, flags = { 0 })
 public class RmxShrCmFldr extends PluginForDecrypt {
 
     public RmxShrCmFldr(PluginWrapper wrapper) {
@@ -34,18 +36,27 @@ public class RmxShrCmFldr extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-
+        final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        String links[] = br.getRegex("href='(http://remixshare\\.com/get\\.php\\?file=.*?)'").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
-            progress.increase(1);
+        if (br.containsHTML(">Dieser Container \\(ID\\) existiert nicht")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
-
+        final String fpName = br.getRegex("<h5><span title=\"([^<>\"]*?)\"").getMatch(0);
+        final String links[] = br.getRegex("\\'(/download/[A-Za-z0-9]+)\'").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (String link : links) {
+            decryptedLinks.add(createDownloadlink("http://remixshare.com" + link));
+        }
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 

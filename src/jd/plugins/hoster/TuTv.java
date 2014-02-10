@@ -50,7 +50,7 @@ public class TuTv extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -64,6 +64,7 @@ public class TuTv extends PluginForHost {
         }
         String vid = br.getRegex(">var codVideo=(\\d+);").getMatch(0);
         if (vid == null) vid = br.getRegex("\\&xtp=(\\d+)\"").getMatch(0);
+        if (vid == null) vid = br.getRegex("votoPlus\\((\\d+)\\);\"").getMatch(0);
         if (filename == null || vid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://tu.tv/flvurl.php?codVideo=" + vid + "&v=WIN%2010,3,181,34&fm=1");
         DLLINK = br.getRegex("\\&kpt=([^<>\"]*?)\\&").getMatch(0);
@@ -71,7 +72,7 @@ public class TuTv extends PluginForHost {
         DLLINK = Encoding.Base64Decode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -91,7 +92,7 @@ public class TuTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

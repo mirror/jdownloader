@@ -209,45 +209,7 @@ public class SaveTv extends PluginForHost {
             if (filenameReplace != null) site_title = apifilename.replace(filenameReplace, "");
 
             date = fName.getMatch(1);
-            // if (date != null) {
-            // datemilliseconds = TimeFormatter.getMilliSeconds(date, "yyyy-MM-dd", Locale.ENGLISH);
-            // final Regex originalDatePart = new Regex(apifilename, "(\\d{4}\\-\\d{2}\\-\\d{2}_(\\d{4}))_\\d+\\.mp4");
-            // broadcastTime = originalDatePart.getMatch(1);
-            // if (broadcastTime != null) {
-            // // Add time to date
-            // if (broadcastTime != null) {
-            // DateFormat readFormat = new SimpleDateFormat("hhmm");
-            // DateFormat writeFormat = new SimpleDateFormat("HH:mm");
-            // Date date2 = null;
-            // try {
-            // date2 = readFormat.parse(broadcastTime);
-            // } catch (ParseException e) {
-            // e.printStackTrace();
-            // }
-            // String formattedDate = null;
-            // if (date2 != null) {
-            // formattedDate = writeFormat.format(date2);
-            // }
-            //
-            // // Add missing time - Also add one hour because otherwise one is missing
-            // datemilliseconds += TimeFormatter.getMilliSeconds(broadcastTime, "hhmm", Locale.ENGLISH) + (60 * 60 * 1000l);
-            // }
-            // }
-            // String newDateString = null;
-            // final String userDefinedDateFormat = "yyyy-MM-dd_HH_mm";
-            // SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
-            // Date theDate = new Date(datemilliseconds);
-            // if (userDefinedDateFormat != null) {
-            // try {
-            // newDateString = formatter.format(theDate);
-            // final String originalDateString = originalDatePart.getMatch(0);
-            // apifilename = apifilename.replace(originalDateString, newDateString);
-            // } catch (Exception e) {
-            // // prevent user error killing plugin.
-            // newDateString = "";
-            // }
-            // }
-            // }
+            // Test code to correct the date here - not possible (yet) because AM/PM is not given: http://pastebin.com/SZJFYn1W
             link.setProperty("apiplainfilename", apifilename);
             filesize += " KB";
         } else {
@@ -375,18 +337,6 @@ public class SaveTv extends PluginForHost {
                 link.setProperty("category", 0);
             }
 
-            final Browser adsCheck = br.cloneBrowser();
-            final DecimalFormat df = new DecimalFormat("0000");
-            postPageSafe(adsCheck, "https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(link) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
-            if (adsCheck.containsHTML("= \\'3\\';")) {
-                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", NOCUTAVAILABLETEXT));
-            } else if (adsCheck.containsHTML("= \\'1\\';")) {
-                link.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
-                ISADSFREEAVAILABLE = true;
-            } else {
-                link.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
-                ISADSFREEAVAILABLE = false;
-            }
             // Add time to date
             if (broadcastTime != null) {
                 // Add missing time - Also add one hour because otherwise one is missing
@@ -482,6 +432,37 @@ public class SaveTv extends PluginForHost {
         FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
         login(this.br, account, false);
+
+        // Check if ads-free version is available
+        if (SESSIONID != null || this.getPluginConfig().getBooleanProperty(USEAPI, false)) {
+            if (SESSIONID == null) login(this.br, account, true);
+            // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
+            // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
+            br.getHeaders().put("SOAPAction", "http://tempuri.org/IVideoArchive/GetAdFreeState");
+            br.getHeaders().put("Content-Type", "text/xml");
+            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetAdFreeState xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
+            if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
+                downloadLink.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
+                ISADSFREEAVAILABLE = false;
+            } else {
+                downloadLink.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
+                ISADSFREEAVAILABLE = true;
+            }
+        } else {
+            final DecimalFormat df = new DecimalFormat("0000");
+            final Browser adsCheck = br.cloneBrowser();
+            postPageSafe(adsCheck, "https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(downloadLink) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
+            if (adsCheck.containsHTML("= \\'3\\';")) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", NOCUTAVAILABLETEXT));
+            } else if (adsCheck.containsHTML("= \\'1\\';")) {
+                downloadLink.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
+                ISADSFREEAVAILABLE = true;
+            } else {
+                downloadLink.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
+                ISADSFREEAVAILABLE = false;
+            }
+        }
+
         String dllink = null;
         // User wants ads-free but it's not available -> Wait 12 hours, status can still change but probably won't -> If defined by user,
         // force version with ads after a user defined amount of retries

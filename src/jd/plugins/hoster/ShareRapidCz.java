@@ -277,6 +277,7 @@ public class ShareRapidCz extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
+            if (dl.getConnection().getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 400", 5 * 60 * 1000l);
             br.followConnection();
             if (br.containsHTML("(was not found on this server|No htmlCode read)")) {
                 /** Show other errormessage if free account was used */

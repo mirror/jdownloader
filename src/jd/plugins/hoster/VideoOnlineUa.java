@@ -59,13 +59,19 @@ public class VideoOnlineUa extends PluginForHost {
         if (externLink == null) externLink = br.getRegex("\"(http://(www\\.)?rutube\\.ru/video/embed/\\d+)\"").getMatch(0);
         // External sites - not supported
         if (externLink != null || br.containsHTML("ictv\\.ua/public/swfobject/zl_player\\.swf\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.getPage("http://video.online.ua/embed/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        br.getPage("http://video.online.ua/embed/" + fid);
         if (br.containsHTML(">Страница по данному адресу отсутствует<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // External sites - their videos don't even play via browser
         if (br.containsHTML("stb\\.ua/embed/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);
+        final String hash = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
+        if (hash != null) {
+            DLLINK = "http://video.online.ua/playlist/" + fid + ".xml?o=t&" + hash;
+        } else {
+            DLLINK = br.getRegex("file: \\'(http://video\\.online\\.ua/playlist/\\d+\\.xml[^<>\"]*?)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(Encoding.htmlDecode(DLLINK));
         if (br.containsHTML(">Страница по данному адресу отсутствует<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
