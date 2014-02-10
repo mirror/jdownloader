@@ -1,6 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.basicauthentication;
 
 import java.awt.Component;
+import java.util.ArrayList;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
@@ -241,6 +242,6 @@ public class AuthTableModel extends ExtTableModel<AuthenticationInfo> implements
     }
 
     public void onChangeEvent(ChangeEvent event) {
-        this._fireTableStructureChanged(AuthenticationController.getInstance().list(), false);
+        this._fireTableStructureChanged(new ArrayList<AuthenticationInfo>(AuthenticationController.getInstance().list()), false);
     }
 }

@@ -67,7 +67,7 @@ public class WindowsAntiStandby extends Thread implements Runnable {
                 }
                 sleep(sleep);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.log(e);
         } finally {
             try {
@@ -81,7 +81,6 @@ public class WindowsAntiStandby extends Thread implements Runnable {
     }
 
     private void enableAntiStandby(boolean enabled) {
-
         Kernel32 kernel32 = (Kernel32) com.sun.jna.Native.loadLibrary("kernel32", Kernel32.class);
         if (enabled) {
             if (jdAntiStandby.getSettings().isDisplayRequired()) {
