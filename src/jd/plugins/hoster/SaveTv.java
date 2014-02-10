@@ -440,11 +440,10 @@ public class SaveTv extends PluginForHost {
             }
         } else {
             final DecimalFormat df = new DecimalFormat("0000");
-            final Browser adsCheck = br.cloneBrowser();
-            postPageSafe(adsCheck, "https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(downloadLink) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
-            if (adsCheck.containsHTML("= \\'3\\';")) {
+            postPageSafe(this.br, "https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(downloadLink) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
+            if (this.br.containsHTML("= \\'3\\';")) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SaveTv.NoCutListAvailable", NOCUTAVAILABLETEXT));
-            } else if (adsCheck.containsHTML("= \\'1\\';")) {
+            } else if (this.br.containsHTML("= \\'1\\';")) {
                 downloadLink.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
                 ISADSFREEAVAILABLE = true;
             } else {
