@@ -9,5 +9,4 @@ public interface AskCrawlerPasswordDialogInterface extends InputDialogInterface 
 
     @Out
     public String getUrl();
-
 }

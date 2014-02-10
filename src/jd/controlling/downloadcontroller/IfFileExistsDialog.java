@@ -180,4 +180,8 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
     public void focusLost(FocusEvent e) {
     }
 
+    @Override
+    public String getHost() {
+        return downloadLink.getHost();
+    }
 }

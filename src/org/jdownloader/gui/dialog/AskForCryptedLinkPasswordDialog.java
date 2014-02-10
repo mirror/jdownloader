@@ -67,7 +67,6 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
             // inout dialog can become too large(height) if we do not limit the
             // prefered textFIled size here.
             textField.setPreferredSize(textField.getPreferredSize());
-
         }
 
         p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_url())), "split 2,sizegroup left,alignx left");
@@ -98,7 +97,6 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
 
     @Override
     public ModalityType getModalityType() {
-
         return ModalityType.MODELESS;
     }
 
@@ -111,5 +109,4 @@ public class AskForCryptedLinkPasswordDialog extends InputDialog implements AskC
     public String getUrl() {
         return link.getCryptedUrl();
     }
-
 }

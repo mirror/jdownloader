@@ -18,4 +18,7 @@ public interface IfFileExistsDialogInterface extends OKCancelCloseUserIODefiniti
     @Out
     public String getPackageID();
 
+    @Out
+    public String getHost();
+
 }

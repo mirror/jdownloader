@@ -238,4 +238,8 @@ public class IfFileExistsDialog extends AbstractDialog<IfFileExistsAction> imple
         return null;
     }
 
+    @Override
+    public String getHost() {
+        return downloadLink.getHost();
+    }
 }

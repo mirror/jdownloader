@@ -136,4 +136,18 @@ public class AskForPasswordDialog extends InputDialog implements AskDownloadPass
         return downloadLink.getUniqueID().getID();
     }
 
+    @Override
+    public String getLinkName() {
+        return downloadLink.getName();
+    }
+
+    @Override
+    public String getLinkHost() {
+        return downloadLink.getHost();
+    }
+
+    @Override
+    public String getPackageName() {
+        return downloadLink.getParentNode().getName();
+    }
 }
