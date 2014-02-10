@@ -186,16 +186,6 @@ public class SaveTv extends PluginForHost {
             if (SESSIONID == null) login(this.br, aa, true);
             // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
             // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
-            br.getHeaders().put("SOAPAction", "http://tempuri.org/IVideoArchive/GetAdFreeState");
-            br.getHeaders().put("Content-Type", "text/xml");
-            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetAdFreeState xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
-            if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
-                link.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
-                ISADSFREEAVAILABLE = false;
-            } else {
-                link.getLinkStatus().setStatusText(ADSFREEAVAILABLETEXT);
-                ISADSFREEAVAILABLE = true;
-            }
             String preferMobileVideosString = "5";
             if (preferMobileVids) preferMobileVideosString = "4";
             br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
