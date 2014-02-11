@@ -585,7 +585,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     private String getBase() {
-        if (true) return "http://192.168.2.250:81/thomas/fcgi/";
+        if (false) return "http://192.168.2.250:81/thomas/fcgi/";
         return "http://stats.appwork.org/jcgi/";
     }
 
