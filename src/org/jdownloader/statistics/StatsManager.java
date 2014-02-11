@@ -288,12 +288,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
             dl.setCounter(errorCounter.incrementAndGet());
             ;
-
-            ErrorDetails error = errors.get(dl.getErrorID());
-            if (error == null) {
-                ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID(), result));
-                if (error2 != null) {
-                    error = error2;
+            if (dl.getErrorID() != null) {
+                ErrorDetails error = errors.get(dl.getErrorID());
+                if (error == null) {
+                    ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID(), result));
+                    if (error2 != null) {
+                        error = error2;
+                    }
                 }
             }
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
