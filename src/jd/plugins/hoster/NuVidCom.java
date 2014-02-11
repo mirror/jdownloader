@@ -81,7 +81,7 @@ public class NuVidCom extends PluginForHost {
         if (br.containsHTML("(This page cannot be found|Are you sure you typed in the correct url|<title>Most Recent Videos \\- Free Sex Adult Videos \\- NuVid\\.com</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // Offline2
         if (br.containsHTML("This video was deleted\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) - Free Porn \\& Sex Video").getMatch(0);
         }
