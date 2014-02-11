@@ -226,4 +226,8 @@ public class DownloadLogEntry extends AbstractLogEntry {
     public void setLinkID(long id) {
         this.linkID = id;
     }
+
+    private Object _getErrorDetails() {
+        return null;
+    }
 }

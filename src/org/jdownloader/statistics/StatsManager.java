@@ -1,13 +1,22 @@
 package org.jdownloader.statistics;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ConnectException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -18,18 +27,32 @@ import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.download.raf.HashResult;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
+import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.zip.ZipIOException;
+import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
+import org.jdownloader.jdserv.UploadInterface;
 import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
@@ -140,14 +163,18 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public void onDownloadControllerStart(SingleDownloadController downloadController, DownloadLinkCandidate candidate) {
     }
 
+    private ConcurrentHashMap<String, ErrorDetails> errors                = new ConcurrentHashMap<String, ErrorDetails>(10, 0.9f, 1);
+    private HashSet<String>                         requestedErrorDetails = new HashSet<String>();
+
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         try {
-            DownloadLogEntry dl = new DownloadLogEntry();
 
             HashResult hashResult = downloadController.getHashResult();
             long startedAt = downloadController.getStartTimestamp();
             DownloadLink link = downloadController.getDownloadLink();
+            DownloadLogEntry dl = new DownloadLogEntry();
+
             long downloadTime = link.getView().getDownloadTime();
             List<PluginSubTask> tasks = downloadController.getTasks();
             PluginSubTask plugintask = tasks.get(0);
@@ -261,6 +288,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
             dl.setCounter(errorCounter.incrementAndGet());
             ;
+
+            ErrorDetails error = errors.get(dl.getErrorID());
+            if (error == null) {
+                ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID(), result));
+                if (error2 != null) {
+                    error = error2;
+                }
+            }
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
             log(dl);
         } catch (Throwable e) {
@@ -369,11 +404,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         }
                         if (sendTo.size() > 0) {
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
-                            if (true) {
-                                br.postPageRaw("http://stats.appwork.org/jcgi/plugins/push", JSonStorage.serializeToJson(sendTo));
-                            } else {
-                                br.postPageRaw("http://nas:81/thomas/fcgi/plugins/push", JSonStorage.serializeToJson(sendTo));
-                            }
+
+                            br.postPageRaw(getBase() + "plugins/push", JSonStorage.serializeToJson(sendTo));
 
                             // br.postPageRaw("http://localhost:8888/plugins/push", JSonStorage.serializeToJson(sendTo));
 
@@ -383,17 +415,121 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             case OK:
                                 PostAction[] actions = response.getActions();
                                 if (actions != null) {
-                                    for (PostAction action : actions) {
+                                    for (final PostAction action : actions) {
                                         if (action != null) {
                                             switch (action.getId()) {
+
                                             case REQUEST_ERROR_DETAILS:
+                                                ErrorDetails error = errors.get(action.getData());
+                                                if (error != null) {
+                                                    sendErrorDetails(error);
+                                                } else {
+                                                    requestedErrorDetails.add(action.getData());
+                                                }
+
                                                 break;
 
                                             case REQUEST_LOG:
 
+                                                for (AbstractLogEntry s : sendRequest) {
+                                                    if (s instanceof DownloadLogEntry) {
+                                                        if (StringUtils.equals(((DownloadLogEntry) s).getErrorID(), action.getData())) {
+                                                            final DownloadLink downloadLink = DownloadController.getInstance().getLinkByID(((DownloadLogEntry) s).getLinkID());
+                                                            if (downloadLink != null) {
+                                                                new Thread("Log Requestor") {
+                                                                    @Override
+                                                                    public void run() {
+                                                                        UploadSessionLogDialogInterface d = UIOManager.I().show(UploadSessionLogDialogInterface.class, new UploadSessionLogDialog(downloadLink));
+                                                                        if (d.getCloseReason() == CloseReason.OK) {
+
+                                                                            final File[] logs = Application.getResource("logs").listFiles();
+
+                                                                            LogFolder latestLog = null;
+                                                                            LogFolder currentLog = null;
+
+                                                                            if (logs != null) {
+                                                                                for (final File f : logs) {
+                                                                                    final String timestampString = new Regex(f.getName(), "(\\d+)_\\d\\d\\.\\d\\d").getMatch(0);
+                                                                                    if (timestampString != null) {
+                                                                                        final long timestamp = Long.parseLong(timestampString);
+                                                                                        LogFolder lf;
+                                                                                        lf = new LogFolder(f, timestamp);
+                                                                                        if (LogController.getInstance().getInitTime() == timestamp) {
+                                                                                            /*
+                                                                                             * this is our current logfolder, flush it
+                                                                                             * before we can upload it
+                                                                                             */
+
+                                                                                            SimpleDateFormat df = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
+                                                                                            // return .format(date);
+                                                                                            lf.setNeedsFlush(true);
+                                                                                            currentLog = lf;
+                                                                                            final File zip = Application.getTempResource("logs/logPackage_" + System.currentTimeMillis() + ".zip");
+                                                                                            zip.delete();
+                                                                                            zip.getParentFile().mkdirs();
+                                                                                            ZipIOWriter writer = null;
+
+                                                                                            final String name = lf.getFolder().getName() + "-" + df.format(new Date(lf.getCreated())) + " to " + df.format(new Date(lf.getLastModified()));
+                                                                                            final File folder = Application.getTempResource("logs/" + name);
+                                                                                            try {
+                                                                                                try {
+                                                                                                    LogController.getInstance().flushSinks(true, false);
+                                                                                                    writer = new ZipIOWriter(zip) {
+                                                                                                        @Override
+                                                                                                        public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
+                                                                                                            if (addFile.getName().endsWith(".lck") || addFile.isFile() && addFile.length() == 0) { return; }
+                                                                                                            if (Thread.currentThread().isInterrupted()) { throw new WTFException("INterrupted"); }
+                                                                                                            super.addFile(addFile, compress, fullPath);
+                                                                                                        }
+                                                                                                    };
+
+                                                                                                    if (folder.exists()) {
+                                                                                                        Files.deleteRecursiv(folder);
+                                                                                                    }
+                                                                                                    IO.copyFolderRecursive(lf.getFolder(), folder, true);
+                                                                                                    writer.addDirectory(folder, true, null);
+
+                                                                                                } finally {
+                                                                                                    try {
+                                                                                                        writer.close();
+                                                                                                    } catch (final Throwable e) {
+                                                                                                    }
+                                                                                                }
+
+                                                                                                if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+                                                                                                String id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
+
+                                                                                                zip.delete();
+                                                                                                sendLogDetails(new LogDetails(id, action.getData()));
+                                                                                                if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+
+                                                                                            } catch (Exception e) {
+                                                                                                logger.log(e);
+
+                                                                                            }
+                                                                                            return;
+                                                                                        }
+
+                                                                                    }
+                                                                                }
+                                                                            }
+
+                                                                        }
+                                                                    }
+                                                                }.start();
+                                                            }
+                                                        }
+                                                    }
+
+                                                }
+                                                // if (StringUtils.equals(getErrorID(), action.getData())) {
+                                                // StatsManager.I().sendLogs(getErrorID(),);
+                                                // }
+
                                                 break;
 
                                             }
+
                                         }
                                     }
                                 }
@@ -434,6 +570,23 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 // }
             }
         }
+    }
+
+    private void sendLogDetails(LogDetails log) throws StorageException, IOException {
+        Browser br = new Browser();
+        br.postPageRaw(getBase() + "plugins/sendLog", JSonStorage.serializeToJson(log));
+
+    }
+
+    private void sendErrorDetails(ErrorDetails error) throws StorageException, IOException {
+        Browser br = new Browser();
+        br.postPageRaw(getBase() + "plugins/sendError", JSonStorage.serializeToJson(error));
+
+    }
+
+    private String getBase() {
+        if (true) return "http://192.168.2.250:81/thomas/fcgi/";
+        return "http://stats.appwork.org/jcgi/";
     }
 
     @Override

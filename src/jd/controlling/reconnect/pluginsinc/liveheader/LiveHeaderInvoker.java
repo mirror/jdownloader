@@ -2,7 +2,9 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -601,16 +603,36 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         final Pattern pattern = Pattern.compile(patStr, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
         // logger.info(requestInfo.getHtmlCode());
-        final Matcher matcher = pattern.matcher(br + "");
+        Matcher matcher = pattern.matcher(br + "");
         logger.info("Matches: " + matcher.groupCount());
         if (matcher.find() && matcher.groupCount() > 0) {
+
             for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
                 this.variables.put(keys[i], matcher.group(i + 1));
 
                 logger.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
             }
+
             if (feedback != null) feedback.onVariablesUpdated(variables);
+            return;
         } else {
+
+            for (Entry<String, List<String>> e : br.getRequest().getResponseHeaders().entrySet()) {
+                for (String s : e.getValue()) {
+                    String txtx = e.getKey() + ": " + s;
+                    matcher = pattern.matcher(txtx);
+                    logger.info("Matches: " + matcher.groupCount());
+                    if (matcher.find() && matcher.groupCount() > 0) {
+                        for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
+                            this.variables.put(keys[i], matcher.group(i + 1));
+
+                            logger.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
+                        }
+                        if (feedback != null) feedback.onVariablesUpdated(variables);
+                        return;
+                    }
+                }
+            }
             logger.severe("Regular Expression without matches: " + patStr);
             if (feedback != null) feedback.onVariableParserFailed(patStr, br.getRequest());
         }

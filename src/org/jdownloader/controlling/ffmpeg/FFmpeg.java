@@ -209,7 +209,7 @@ public class FFmpeg {
         return validateBinary();
     }
 
-    public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException {
+    public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
         logger.info("Merging " + videoIn + " + " + audioIn + " = " + out);
 
         long lastModifiedVideo = new File(videoIn).lastModified();
@@ -253,7 +253,7 @@ public class FFmpeg {
         return commandLine;
     }
 
-    public boolean generateM4a(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException {
+    public boolean generateM4a(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
 
         long lastModifiedAudio = new File(audioIn).lastModified();
 
@@ -274,7 +274,7 @@ public class FFmpeg {
 
     }
 
-    public boolean runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException {
+    public boolean runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
 
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
 
@@ -336,7 +336,8 @@ public class FFmpeg {
                     logger.info(sb.toString());
                     logger.info(sb2.toString());
 
-                    return exitCode == 0;
+                    boolean ret = exitCode == 0;
+                    if (!ret) { throw new FFMpegException(sb.toString() + "\r\n" + sb2.toString()); }
                 } catch (IllegalThreadStateException e) {
                     // still running;
                 }
@@ -359,7 +360,7 @@ public class FFmpeg {
         }
     }
 
-    public boolean generateAac(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
+    public boolean generateAac(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
 
         long lastModifiedAudio = new File(audioIn).lastModified();
 
@@ -390,7 +391,7 @@ public class FFmpeg {
         return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
     }
 
-    public boolean demuxAAC(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
+    public boolean demuxAAC(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
 
         long lastModifiedAudio = new File(audioIn).lastModified();
 
@@ -410,7 +411,7 @@ public class FFmpeg {
         return false;
     }
 
-    public boolean demuxMp3(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
+    public boolean demuxMp3(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
         long lastModifiedAudio = new File(audioIn).lastModified();
 
         ArrayList<String> commandLine = fillCommand(out, null, audioIn, config.getDemux2Mp3Command());
@@ -429,7 +430,7 @@ public class FFmpeg {
         return false;
     }
 
-    public boolean demuxMp4(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException {
+    public boolean demuxMp4(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
         long lastModifiedAudio = new File(audioIn).lastModified();
 
         ArrayList<String> commandLine = fillCommand(out, null, audioIn, config.getDemux2M4aCommand());

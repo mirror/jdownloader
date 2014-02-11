@@ -4407,4 +4407,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "152kbit" })
     String YoutubeVariant_filenametag_M4A_152();
 
+    @Default(lngs = { "en" }, values = { "A Download Error occured" })
+    String UploadSessionLogDialog_UploadSessionLogDialog_object_title();
+
+    @Default(lngs = { "en" }, values = { "A unknown error occured while downloading a file. To solve this problem, we kindly ask you to upload the current error log. This usually only takes a few seconds, and helps to avoid problems like this in the future. Your errorlog will only be available to our developing team. \r\nContinue with the Log Upload?" })
+    String UploadSessionLogDialog_UploadSessionLogDialog_object_msg();
+
 }

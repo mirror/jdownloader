@@ -20,7 +20,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class DataCompareDialog extends AbstractDialog<Object> implements DataCompareDialogInterface, GetLoginsInterface {
+public class DataCompareDialog extends AbstractDialog<Object> {
 
     private static final int ICONSIZE = 32;
     private String           hostName;

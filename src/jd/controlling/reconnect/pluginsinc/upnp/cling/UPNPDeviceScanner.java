@@ -92,7 +92,7 @@ public class UPNPDeviceScanner {
         try {
             // Let's wait 10 seconds for them to respond
             System.out.println("Waiting 10 seconds before shutting down...");
-            Thread.sleep(5000);
+            Thread.sleep(15000);
             HashSet<UpnpRouterDevice> ret = new HashSet<UpnpRouterDevice>();
             UDAServiceType serviceType = new UDAServiceType("WANIPConnection", 1);
             for (Device device : upnpService.getRegistry().getDevices(serviceType)) {

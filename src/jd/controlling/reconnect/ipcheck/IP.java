@@ -100,7 +100,7 @@ public class IP {
             try {
                 localip = isLocalIP(InetAddress.getByName(gatewayIP).getHostAddress());
             } catch (UnknownHostException e) {
-
+                e.printStackTrace();
             }
         }
         if (!localip) return false;

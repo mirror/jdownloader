@@ -360,26 +360,28 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         if (keyHandler.isChildOf(settings)) {
 
             updateGUI();
-            if (!keyHandler.getKey().equalsIgnoreCase("AlreadySendToCollectServer")) {
+            if (!keyHandler.getKey().equalsIgnoreCase("AlreadySendToCollectServer2")) {
                 settings.setAlreadySendToCollectServer2(false);
             }
         } else {
             LogController.CL().info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
-            if (!settings.isAlreadySendToCollectServer2() && ReconnectPluginController.getInstance().getActivePlugin() == this) {
-                if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
-                    if (CloseReason.OK == UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null) {
+            synchronized (this) {
 
-                        {
-                            setTimeout(5 * 60 * 1000);
+                if (!settings.isAlreadySendToCollectServer2() && ReconnectPluginController.getInstance().getActivePlugin() == this) {
+                    if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
+                        if (CloseReason.OK == UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null) {
+
+                            {
+                                setTimeout(5 * 60 * 1000);
+                            }
+
+                        }).getCloseReason()) {
+
+                            new RouterSendAction(this).actionPerformed(null);
+
                         }
-
-                    }).getCloseReason()) {
-
-                        new RouterSendAction(this).actionPerformed(null);
-
                         settings.setAlreadySendToCollectServer2(true);
                     }
-
                 }
             }
         }

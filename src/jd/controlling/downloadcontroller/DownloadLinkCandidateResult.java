@@ -111,6 +111,7 @@ public class DownloadLinkCandidateResult {
 
     private void updateErrorID(Throwable throwable) {
         errorID = null;
+
         if (throwable != null) {
             StackTraceElement[] st = throwable.getStackTrace();
             if (st != null && st.length > 0) {
