@@ -151,7 +151,7 @@ public class BitShareCom extends PluginForHost {
         doFree(downloadLink);
     }
 
-    private void doFree(DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML("Only Premium members can access this file\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitsharecom.premiumonly", "Only downloadable for premium users!"));
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
@@ -174,8 +174,10 @@ public class BitShareCom extends PluginForHost {
         /** Try to find stream links */
         String dllink = br.getRegex("scaling: \\'fit\\',[\t\n\r ]+url: \\'(http://[^<>\"\\']+)\\'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\\'(http://s\\d+\\.bitshare\\.com/stream/[^<>\"\\']+)\\'").getMatch(0);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        br2.getHeaders().put("Accept", "text/html, */*");
         br2.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
         String regexedWait = null;
         regexedWait = br2.getRegex("\\w+:(\\d+):").getMatch(0);
@@ -208,8 +210,8 @@ public class BitShareCom extends PluginForHost {
                 rc.setForm(reCaptchaForm);
                 rc.setId(id);
                 rc.load();
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, downloadLink);
                 rc.getForm().put("recaptcha_response_field", c);
                 rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
                 br2.submitForm(rc.getForm());
@@ -261,7 +263,7 @@ public class BitShareCom extends PluginForHost {
 
     }
 
-    private void errorHandling(DownloadLink link, Browser br) throws PluginException {
+    private void errorHandling(final DownloadLink link, final Browser br) throws PluginException {
         if (br.getURL().contains("filenotfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>|bad try)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         if (br.containsHTML("No input file specified|Connection to main server failed")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
@@ -269,7 +271,7 @@ public class BitShareCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
@@ -319,7 +321,7 @@ public class BitShareCom extends PluginForHost {
     // TODO: Implement API: http://bitshare.com/openAPI.html and maybe use
     // downloadhandling from their tool: http://bitshare.com/tool.html
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
@@ -375,15 +377,7 @@ public class BitShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setReadTimeout(3 * 60 * 1000);
-        br.setCookie(MAINPAGE, "language_selection", "EN");
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        br.getHeaders().put("User-Agent", agent);
-        // Using API: http://bitshare.com/openAPI.html
+        prepBR();
         br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML("#offline#")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fileInfo = br.getRegex("#online#[a-z0-9]{8}#([^<>\"]*?)#(\\d+)");
@@ -404,6 +398,19 @@ public class BitShareCom extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize));
 
         return AvailableStatus.TRUE;
+    }
+
+    private void prepBR() {
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setCookie(MAINPAGE, "language_selection", "EN");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
     }
 
     @Override

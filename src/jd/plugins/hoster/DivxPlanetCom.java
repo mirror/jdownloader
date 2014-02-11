@@ -43,21 +43,21 @@ public class DivxPlanetCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://divxplanet.com/404.html") || br.containsHTML("The page can not be found which you wanted to reach|location\\.href=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>([^<>\r\n]+)</h1></td>").getMatch(0);
-        String filesize = br.getRegex("<td><b>Dosya</b></td>[\t\n\r ]+<td width=\"1\">:</td>[\t\n\r ]+<td>([^<>\"]*?)<br>").getMatch(0);
+        if (br.getURL().equals("http://divxplanet.com/404.html") || br.containsHTML("The page can not be found which you wanted to reach")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("<h1>([^<>\r\n]+)</h1></td>").getMatch(0);
+        final String filesize = br.getRegex("<td><b>Dosya</b></td>[\t\n\r ]+<td width=\"1\">:</td>[\t\n\r ]+<td>([^<>\"]*?)<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".rar");
+        link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim()) + ".rar"));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final Form dlform = br.getFormbyProperty("name", "dlform");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -69,6 +69,21 @@ public class DivxPlanetCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
