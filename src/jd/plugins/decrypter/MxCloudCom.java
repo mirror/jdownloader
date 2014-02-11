@@ -16,62 +16,32 @@
 
 package jd.plugins.decrypter;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.decrypter.AniLinkzCom.StringContainer;
 import jd.utils.JDHexUtils;
-
-import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-_%]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
-
-    private String MAINPAGE = "http://www.mixcloud.com";
 
     public MxCloudCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)";
-
-    private byte[] AESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
-        final KeyParameter keyParam = new KeyParameter(key);
-        final CipherParameters cipherParams = new ParametersWithIV(keyParam, iv);
-
-        // Prepare the cipher (AES, CBC, no padding)
-        final BufferedBlockCipher cipher = new BufferedBlockCipher(new CBCBlockCipher(new AESEngine()));
-        cipher.reset();
-        cipher.init(false, cipherParams);
-
-        // Perform the decryption
-        final byte[] decrypted = new byte[cipher.getOutputSize(plain.length)];
-        int decLength = cipher.processBytes(plain, 0, plain.length, decrypted, 0);
-        cipher.doFinal(decrypted, decLength);
-
-        return decrypted;
-    }
+    private static final String    INVALIDLINKS = "http://(www\\.)?mixcloud\\.com/((developers|categories|media|competitions|tag)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)";
+    private static StringContainer agent        = new StringContainer();
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -82,6 +52,13 @@ public class MxCloudCom extends PluginForDecrypt {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
+
+        if (agent.string == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent.string);
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
             logger.info("Unsupported or offline link: " + parameter);
@@ -91,87 +68,29 @@ public class MxCloudCom extends PluginForDecrypt {
             logger.info("Offline link: " + parameter);
             return decryptedLinks;
         }
+
         String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (theName == null) theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
         if (theName == null) theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (theName == null) { return null; }
+        if (theName == null) return null;
 
-        final String playResource = parameter.replace(MAINPAGE, "");
-        String playerUrl = br.getRegex("playerUrl:\'(.*?)\'").getMatch(0);
-        playerUrl = playerUrl == null ? MAINPAGE + "/player/" : MAINPAGE + playerUrl;
-        br.setCookie(MAINPAGE, "play-uri", Encoding.urlEncode(playResource));
-        br.getPage(playerUrl);
-        String playInfoUrl = br.getRegex("playinfo: ?\'(.*?)\'").getMatch(0);
-        String playModuleSwfUrl = br.getRegex("playerModuleSwfUrl: ?\'(.*?)\'").getMatch(0);
-        if (playInfoUrl == null || playModuleSwfUrl == null) return null;
-        if (!playModuleSwfUrl.startsWith("http:")) playModuleSwfUrl = "http:" + playModuleSwfUrl;
-        if (!playInfoUrl.startsWith("http:")) playInfoUrl = "http:" + playInfoUrl;
+        final String playInfo = br.getRegex("m\\-play\\-info=\"([^\"]+)\"").getMatch(0);
+        if (playInfo == null) return null;
 
-        playInfoUrl += "?key=" + playResource + "&module=" + playModuleSwfUrl + "&page=" + playerUrl;
-
-        // TODO: Check this
-        // String playInfoUrl = "http://www.mixcloud.com/player/play_info/?key="
-        // + playResource + "&module=" + playModuleSwfUrl + "&page=" + parameter
-        // + "&v=2";
-
-        byte[] enc = null;
-        try {
-            br.setKeepResponseContentBytes(true);
-            br.getPage(playInfoUrl);
-            /* will throw Exception in stable <=9581 */
-            if (br.getRequest().isContentDecoded()) {
-                enc = br.getRequest().getResponseBytes();
-            } else {
-                throw new Exception("use fallback");
-            }
-        } catch (final Throwable e) {
-            /* fallback */
-            String encryptedContent = "";
-            try {
-                final URL url = new URL(playInfoUrl);
-                final InputStream page = url.openStream();
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(page));
-                try {
-                    String line = "";
-                    while ((line = reader.readLine()) != null) {
-                        encryptedContent = line;
-                    }
-                } finally {
-                    try {
-                        page.close();
-                    } catch (final Throwable e3) {
-                    }
-                    try {
-                        reader.close();
-                    } catch (final Throwable e2) {
-                    }
-                }
-            } catch (final Throwable e3) {
-                return null;
-            }
-            enc = jd.crypt.Base64.decode(encryptedContent);
-        }
-        final byte[] key = JDHexUtils.getByteArray(Encoding.Base64Decode("NjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MTYxNjE2MQ=="));
-        final byte[] iv = new byte[16];
-        System.arraycopy(enc, 0, iv, 0, 16);
         String result = null;
         try {
             /*
              * CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8
              */
-            result = new String(AESdecrypt(enc, key, iv)).substring(16);
-        } catch (final InvalidKeyException e) {
-            if (e.getMessage().contains("Illegal key size")) {
-                getPolicyFiles();
-                return null;
-            }
+            result = decrypt(playInfo);
         } catch (final Throwable e) {
+            return null;
         }
 
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         final String[] links = new Regex(result, "\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) { return null; }
+        if (links == null || links.length == 0) return null;
         HashMap<String, Long> alreadyFound = new HashMap<String, Long>();
         for (final String dl : links) {
             if (!dl.endsWith(".mp3") && !dl.endsWith(".m4a")) {
@@ -211,17 +130,20 @@ public class MxCloudCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void getPolicyFiles() throws Exception {
-        int ret = -100;
-        UserIO.setCountdownTime(120);
-        ret = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_LARGE, "Java Cryptography Extension (JCE) Error: 32 Byte keylength is not supported!", "At the moment your Java version only supports a maximum keylength of 16 Bytes but the veoh plugin needs support for 32 byte keys.\r\nFor such a case Java offers so called \"Policy Files\" which increase the keylength to 32 bytes. You have to copy them to your Java-Home-Directory to do this!\r\nExample path: \"jre6\\lib\\security\\\". The path is different for older Java versions so you might have to adapt it.\r\n\r\nBy clicking on CONFIRM a browser instance will open which leads to the downloadpage of the file.\r\n\r\nThanks for your understanding.", null, "CONFIRM", "Cancel");
-        if (ret != -100) {
-            if (UserIO.isOK(ret)) {
-                LocalBrowser.openDefaultURL(new URL("http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html"));
-            } else {
-                return;
-            }
+    private String decrypt(String e) {
+        final byte[] key = JDHexUtils.getByteArray(JDHexUtils.getHexString(Encoding.Base64Decode("cGxlYXNlZG9udGRvd25sb2Fkb3VybXVzaWN0aGVhcnRpc3Rzd29udGdldHBhaWQ=")));
+        final byte[] enc = jd.crypt.Base64.decode(e);
+        byte[] plain = new byte[enc.length];
+        int count = enc.length;
+        int i = 0;
+        int j = 0;
+        while (i < count) {
+            if (j > key.length - 1) j = 0;
+            plain[i] = (byte) (0xff & (enc[i] ^ key[j]));
+            i++;
+            j++;
         }
+        return new String(plain);
     }
 
     /* NO OVERRIDE!! */
