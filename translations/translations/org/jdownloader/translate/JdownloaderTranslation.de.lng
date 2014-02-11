@@ -16,6 +16,7 @@ DownloadLink_setSkipped_statusmessage_disk_full=Übersprungen - Festplatte ist v
 DownloadLink_setSkipped_statusmessage_file_exists=Übersprungen - Datei existiert bereits
 DownloadLink_setSkipped_statusmessage_invalid_path=Ungültiger Downloadpfad
 DownloadLink_setSkipped_statusmessage_toomanyretries=Übersprungen - zu viele Einträge
+DownloadLink_setSkipped_statusmessage_update_restart=Übersprungen - Neustart erforderlich
 DownloadWatchDog_onShutdownRequest_=Downloads sind in Arbeit!
 DownloadWatchDog_onShutdownRequest_msg=Möchtest du die laufenden Downloads wirklich abbrechen, um JDownloader zu beenden?
 DownloadWatchDog_onShutdownRequest_nonresumable=Nicht-fortsetzbare Downloads werden geladen!
