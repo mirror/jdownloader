@@ -746,7 +746,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
     }
 
-    private boolean downloadDashStream(final DownloadLink downloadLink, final YoutubeProperties data, final boolean isVideoStream) throws Exception {
+    private Boolean downloadDashStream(final DownloadLink downloadLink, final YoutubeProperties data, final boolean isVideoStream) throws Exception {
         final long totalSize = downloadLink.getDownloadSize();
 
         UrlCollection urls = getUrlPair(downloadLink);
@@ -990,7 +990,9 @@ public class YoutubeDashV2 extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return dl.startDownload();
+        boolean ret = dl.startDownload();
+        if (dl.externalDownloadStop()) return null;
+        return ret;
     }
 
     @Override
@@ -1072,7 +1074,9 @@ public class YoutubeDashV2 extends PluginForHost {
 
                 if (loadVideo) {
                     /* videoStream not finished yet, resume/download it */
-                    if (!downloadDashStream(downloadLink, data, true)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    Boolean ret = downloadDashStream(downloadLink, data, true);
+                    if (ret == null) return;
+                    if (!ret) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (new File(getAudioStreamPath(downloadLink)).exists()) {
                     data.setDashAudioFinished(true);
@@ -1082,9 +1086,9 @@ public class YoutubeDashV2 extends PluginForHost {
                 loadAudio |= !new File(getAudioStreamPath(downloadLink)).exists();
                 if (loadAudio) {
                     /* audioStream not finished yet, resume/download it */
-                    if (!downloadDashStream(downloadLink, data, false)) {
-
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    Boolean ret = downloadDashStream(downloadLink, data, false);
+                    if (ret == null) return;
+                    if (!ret) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (new File(getAudioStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
                     /* audioStream also finished */
