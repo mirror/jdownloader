@@ -803,7 +803,7 @@ public class LinkCrawler {
         /*
          * we dont need memory optimization here as downloadlink, crypted link itself take care of this
          */
-        String[] hits = new Regex(possibleCryptedLink.getURL(), pattern).setMemoryOptimized(false).getColumn(-1);
+        String[] hits = new Regex(possibleCryptedLink.getURL(), pattern).getColumn(-1);
         java.util.List<CrawledLink> chits = null;
         if (hits != null && hits.length > 0) {
             chits = new ArrayList<CrawledLink>(hits.length);

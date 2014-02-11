@@ -39,7 +39,7 @@ public class UPNPDeviceScanner {
             }
 
             public void remoteDeviceDiscoveryFailed(Registry registry, RemoteDevice device, Exception ex) {
-                System.out.println("Discovery failed: " + device.getDisplayString() + " => " + ex);
+                System.out.println("Discovery failed: " + device.getDisplayString() + " => " + ((org.fourthline.cling.model.ValidationException) ex).getErrors());
             }
 
             public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
@@ -60,9 +60,7 @@ public class UPNPDeviceScanner {
             }
 
             public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
-
                 System.out.println("Remote device updated: " + device.getDisplayString() + " - " + device.getType());
-
             }
 
             public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
@@ -83,7 +81,6 @@ public class UPNPDeviceScanner {
 
             public void afterShutdown() {
                 System.out.println("Shutdown of registry complete!");
-
             }
 
         });
