@@ -120,7 +120,7 @@ public class FileHippoCom extends PluginForHost {
             }
             if (dllink == null) continue;
             dllink = MAINPAGE + dllink;
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (!br.getURL().contains("filehippo.com")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download links to external site");

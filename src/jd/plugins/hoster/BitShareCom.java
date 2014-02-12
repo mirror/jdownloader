@@ -155,6 +155,7 @@ public class BitShareCom extends PluginForHost {
         if (br.containsHTML("Only Premium members can access this file\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitsharecom.premiumonly", "Only downloadable for premium users!"));
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        br.cloneBrowser().getPage("http://bitshare.com/getads.html");
         String fileID = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         if (br.containsHTML("You reached your hourly traffic limit")) {
             String wait = br.getRegex("id=\"blocktimecounter\">(\\d+) Seconds</span>").getMatch(0);
@@ -179,6 +180,7 @@ public class BitShareCom extends PluginForHost {
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         br2.getHeaders().put("Accept", "text/html, */*");
         br2.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
+        br.cloneBrowser().getPage("http://bitshare.com/getiframepopup_download.html?anticache=" + System.currentTimeMillis());
         String regexedWait = null;
         regexedWait = br2.getRegex("\\w+:(\\d+):").getMatch(0);
         int wait = 45;

@@ -114,7 +114,9 @@ public class EightTracksCom extends PluginForDecrypt {
             return null;
         }
 
-        long count = 8;
+        final String countsongs = br.getRegex("\\((\\d+) songs\\)").getMatch(0);
+        int count = 8;
+        if (countsongs != null) count = Integer.parseInt(countsongs);
         progress.setRange(count);
         /* Start playlist */
         br.setFollowRedirects(false);
@@ -144,32 +146,6 @@ public class EightTracksCom extends PluginForDecrypt {
             start = System.currentTimeMillis();
             /* ATEND=true --> end of playlist */
             ATEND = Boolean.parseBoolean(getClipData("at_end"));
-            if (dllink != null && filename != null) {
-                sameLink = dllink;
-                ext = dllink.substring(dllink.lastIndexOf(".") + 1);
-                ext = ext.equals("m4a") || ext.length() > 5 ? "m4a" : ext;
-                if (!dllink.startsWith("http://([0-9a-z]+\\.)?8tracks")) {
-                    dllink = "directhttp://" + dllink;
-                }
-                final DownloadLink dl = createDownloadlink(dllink);
-                dl.setFinalFileName(filename + "." + ext);
-                if (bigPlayList) dl.setAvailable(true);
-                fp.add(dl);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                }
-                decryptedLinks.add(dl);
-                try {
-                    if (this.isAbort()) return decryptedLinks;
-                } catch (Throwable e) {
-                    /* does not exist in 09581 */
-                }
-                progress.increase(1);
-                /* Anzahl der Titel unbestimmt. Siehe ATEND! */
-                progress.setRange(count++);
-            }
             if (call == 1) {
                 currenttrackid = mixId;
             } else {
@@ -203,6 +179,29 @@ public class EightTracksCom extends PluginForDecrypt {
 
             if ((!ATEND && dllink == null) || (!ATEND && dllink != null && dllink.equals(sameLink))) {
                 ATEND = true;
+            } else if (dllink != null && filename != null) {
+                sameLink = dllink;
+                ext = dllink.substring(dllink.lastIndexOf(".") + 1);
+                ext = ext.equals("m4a") || ext.length() > 5 ? "m4a" : ext;
+                if (!dllink.startsWith("http://([0-9a-z]+\\.)?8tracks")) {
+                    dllink = "directhttp://" + dllink;
+                }
+                final DownloadLink dl = createDownloadlink(dllink);
+                dl.setFinalFileName(filename + "." + ext);
+                if (bigPlayList) dl.setAvailable(true);
+                fp.add(dl);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dl);
+                try {
+                    if (this.isAbort()) return decryptedLinks;
+                } catch (Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                progress.increase(1);
             }
             a += (System.currentTimeMillis() - start);
             call++;
