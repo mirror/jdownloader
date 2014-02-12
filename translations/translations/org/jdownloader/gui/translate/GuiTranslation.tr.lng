@@ -930,6 +930,7 @@ UpdateAction_runInEDT_no_updates_pendings=Yeni güncellemeleri aramak için bura
 UpdateAction_runInEDT_updates_pendings=Bekleyen güncellemeleri yüklemek için buraya tıklayın!
 UploadSessionLogDialog_UploadSessionLogDialog_no=Hayır, Teşekkürler
 UploadSessionLogDialog_UploadSessionLogDialog_object_more=(daha fazla...)
+UploadSessionLogDialog_UploadSessionLogDialog_object_msg2=Dosya indirilirken bilinmeyen bir hata meydana geldi. Bu sorunu çözmek için nedenle ilgili daha fazla ayrıntıya ihtiyacımız var. JDownloader hata ile ilgili tüm gereken bilgileri otomatik olarak toplayabilir. Bu bilgileri bir an önce bize göndererek lütfen bu sorunu düzeltmemize yardım edin.
 UploadSessionLogDialog_UploadSessionLogDialog_object_title2=Yardımınıza ihtiyacımız var!
 UploadSessionLogDialog_UploadSessionLogDialog_yes=Yardım etmek istiyorum! Devam et.
 UploadSessionLogDialog_layoutDialogContent_errorid=Hata Kodu
