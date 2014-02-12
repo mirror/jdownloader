@@ -399,47 +399,46 @@ public class RapidGatorNet extends PluginForHost {
                     break;
                 }
             } else {
-                Form captcha = br.getFormbyProperty("id", "captchaform");
-                if (captcha == null) {
-                    logger.info(br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-
-                captcha.put("DownloadCaptchaForm[captcha]", "");
-                String code = null, challenge = null;
-                Browser capt = br.cloneBrowser();
-
-                if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    code = getCaptchaCode(cf, downloadLink);
-                    final String chid = sm.getChallenge(code);
-                    captcha.put("adcopy_challenge", chid);
-                    captcha.put("adcopy_response", code);
-
-                } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
-                    String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
-                    String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
-                    if (captchaAdress == null || captchaType == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-                    if (!"3017".equals(captchaType)) {
-                        logger.warning("ADSCaptcha: Captcha type not supported!");
+                if (br.containsHTML("//api\\.solvemedia\\.com/papi|//api\\.adscapchta\\.com/")) {
+                    final Form captcha = br.getFormbyProperty("id", "captchaform");
+                    if (captcha == null) {
+                        logger.info(br.toString());
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    capt.getPage(captchaAdress);
-                    challenge = capt.getRegex("<img src=\"(http://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
-                    code = capt.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
 
-                    if (challenge == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    challenge = getCaptchaCode(challenge, downloadLink);
-                    captcha.put("adscaptcha_response_field", challenge);
-                    captcha.put("adscaptcha_challenge_field", code);
-                } else {
-                    logger.info(br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    captcha.put("DownloadCaptchaForm[captcha]", "");
+                    String code = null, challenge = null;
+                    Browser capt = br.cloneBrowser();
+
+                    if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                        final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        code = getCaptchaCode(cf, downloadLink);
+                        final String chid = sm.getChallenge(code);
+                        captcha.put("adcopy_challenge", chid);
+                        captcha.put("adcopy_response", code);
+
+                    } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
+                        String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
+                        String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
+                        if (captchaAdress == null || captchaType == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+                        if (!"3017".equals(captchaType)) {
+                            logger.warning("ADSCaptcha: Captcha type not supported!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        capt.getPage(captchaAdress);
+                        challenge = capt.getRegex("<img src=\"(http://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
+                        code = capt.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
+
+                        if (challenge == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        challenge = getCaptchaCode(challenge, downloadLink);
+                        captcha.put("adscaptcha_response_field", challenge);
+                        captcha.put("adscaptcha_challenge_field", code);
+                    }
+                    br.submitForm(captcha);
                 }
-                br.submitForm(captcha);
             }
             if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) {
                 try {

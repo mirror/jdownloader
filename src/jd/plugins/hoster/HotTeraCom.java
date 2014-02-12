@@ -45,18 +45,18 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "idup.in" }, urls = { "https?://(www\\.)?idup\\.in/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class IdupIn extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hottera.com" }, urls = { "https?://(www\\.)?hottera\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class HotTeraCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://idup.in";
+    private static final String  COOKIE_HOST                  = "http://hottera.com";
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(idup\\.in)";
+    private static final String  DOMAINS                      = "(hottera\\.com)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -87,7 +87,7 @@ public class IdupIn extends PluginForHost {
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: null
     // other:
 
     @Override
@@ -105,7 +105,7 @@ public class IdupIn extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public IdupIn(PluginWrapper wrapper) {
+    public HotTeraCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -273,7 +273,7 @@ public class IdupIn extends PluginForHost {
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
                 /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
+                if (correctedBR.contains(";background:#000;text-align:left;direction:ltr;")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /** Captcha method by ManiacMansion */
                     final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
@@ -362,12 +362,6 @@ public class IdupIn extends PluginForHost {
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
-                final String adslink = new Regex(correctedBR, "\"(http://download\\.idup\\.in/[A-Za-z0-9]+)\"").getMatch(0);
-                if (adslink != null) {
-                    // Not implemented yet
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    // getPage(adslink);
-                }
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -507,13 +501,7 @@ public class IdupIn extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-                }
-            }
+            finallink = new Regex(decoded, "file:\"(.*?)\"").getMatch(0);
         }
         return finallink;
     }

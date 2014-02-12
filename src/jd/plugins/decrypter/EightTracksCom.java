@@ -81,10 +81,13 @@ public class EightTracksCom extends PluginForDecrypt {
             logger.info("Link offline (this is a private link): " + parameter);
             return decryptedLinks;
         }
-
         String mixId = br.getRegex("mix_id=(\\d+)\"").getMatch(0);
         if (mixId == null) {
             mixId = br.getRegex("/mixes/(\\d+)/").getMatch(0);
+        }
+        if (mixId == null) {
+            logger.warning("Decrypter out of date for link: " + parameter);
+            return null;
         }
 
         String fpName = br.getRegex("<meta content=\"([^\"]+)\" property=\"og:title\"").getMatch(0);
@@ -105,7 +108,7 @@ public class EightTracksCom extends PluginForDecrypt {
         // Wechsel zur json Variante.
         clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
 
-        final String playToken = getClipData("play_token");
+        String playToken = getClipData("play_token");
         if (playToken == null || mixId == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -126,8 +129,18 @@ public class EightTracksCom extends PluginForDecrypt {
         /* limit to 100 API calls per minute */
         int call = 1;
         long a = 0, start = 0;
-
+        String currenttrackid = null;
+        // It's 3
+        final int skip_limit = 4;
         while (!ATEND) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
             start = System.currentTimeMillis();
             /* ATEND=true --> end of playlist */
             ATEND = Boolean.parseBoolean(getClipData("at_end"));
@@ -157,11 +170,33 @@ public class EightTracksCom extends PluginForDecrypt {
                 /* Anzahl der Titel unbestimmt. Siehe ATEND! */
                 progress.setRange(count++);
             }
-            clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/next?mix_id=" + mixId + "&format=jsonh");
+            if (call == 1) {
+                currenttrackid = mixId;
+            } else {
+                currenttrackid = getClipData("id");
+            }
+            if (currenttrackid == null) {
+                logger.warning("Decrypter out of date for link: " + parameter);
+                return null;
+            }
+            if (call >= skip_limit) {
+                // Pretend to play the song
+                this.sleep(32 * 1000l, param);
+                br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixId + "&track_id=" + currenttrackid + "&format=jsonh");
+                // Wait till "the song is over"
+                this.sleep(270 * 1000l, param);
+            }
+            clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixId + "&track_id=" + currenttrackid + "&format=jsonh");
 
             if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                br.clearCookies(MAINPAGE);
+                br.getPage(parameter);
+                clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
+                playToken = getClipData("play_token");
+                clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/next?mix_id=" + mixId + "&format=jsonh");
                 // you can not do anymore than 3 requests in succession without the following happening
-                System.out.print("BBBBBBBBBBBBBBBBBAD");
+                logger.info("Can only decrypt 3 tracks, stopping");
+                break;
             }
             dllink = getClipData("track_file_stream_url");
             filename = createFilename();
