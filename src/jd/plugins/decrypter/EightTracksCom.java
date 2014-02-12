@@ -94,7 +94,7 @@ public class EightTracksCom extends PluginForDecrypt {
         fpName = Encoding.htmlDecode(fpName.trim());
 
         /* tracks in mix */
-        String tracksInMix = br.getRegex("<span class=\"gray\">\\((\\d+) tracks?\\)</span>").getMatch(0);
+        String tracksInMix = br.getRegex("<span[^>]+class=\"gray\">\\((\\d+) tracks?\\)</span>").getMatch(0);
         boolean bigPlayList = tracksInMix != null && Integer.parseInt(tracksInMix) > 100;
 
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -158,10 +158,15 @@ public class EightTracksCom extends PluginForDecrypt {
                 progress.setRange(count++);
             }
             clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/next?mix_id=" + mixId + "&format=jsonh");
+
+            if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                // you can not do anymore than 3 requests in succession without the following happening
+                System.out.print("BBBBBBBBBBBBBBBBBAD");
+            }
             dllink = getClipData("track_file_stream_url");
             filename = createFilename();
 
-            if (!ATEND && dllink == null || !ATEND && dllink != null && dllink.equals(sameLink)) {
+            if ((!ATEND && dllink == null) || (!ATEND && dllink != null && dllink.equals(sameLink))) {
                 ATEND = true;
             }
             a += (System.currentTimeMillis() - start);
