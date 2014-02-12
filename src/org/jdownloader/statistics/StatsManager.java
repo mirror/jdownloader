@@ -488,7 +488,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         if (sendTo.size() > 0) {
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
 
-                            br.postPageRaw(getBase() + "plugins/push", JSonStorage.serializeToJson(sendTo));
+                            br.postPageRaw(getBase() + "plugins/push", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));
 
                             // br.postPageRaw("http://localhost:8888/plugins/push", JSonStorage.serializeToJson(sendTo));
 
