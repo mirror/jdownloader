@@ -468,6 +468,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
             ArrayList<AbstractLogEntry> sendRequest = new ArrayList<AbstractLogEntry>();
             Browser br = new Browser();
+            final int[] codes = new int[999];
+            for (int i = 0; i < codes.length; i++) {
+                codes[i] = i;
+            }
+            br.setAllowedResponseCodes(codes);
             try {
                 while (list.size() == 0) {
                     synchronized (list) {
@@ -488,7 +493,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         }
                         if (sendTo.size() > 0) {
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
-
+                            if (!config.isEnabled()) return;
                             br.postPageRaw(getBase() + "plugins/push2", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));
 
                             // br.postPageRaw("http://localhost:8888/plugins/push", JSonStorage.serializeToJson(sendTo));
@@ -611,17 +616,28 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private void sendLogDetails(LogDetails log) throws StorageException, IOException {
         Browser br = new Browser();
+        final int[] codes = new int[999];
+        for (int i = 0; i < codes.length; i++) {
+            codes[i] = i;
+        }
+        br.setAllowedResponseCodes(codes);
         br.postPageRaw(getBase() + "plugins/sendLog", JSonStorage.serializeToJson(log));
 
     }
 
     private void sendErrorDetails(ErrorDetails error) throws StorageException, IOException {
         Browser br = new Browser();
+        final int[] codes = new int[999];
+        for (int i = 0; i < codes.length; i++) {
+            codes[i] = i;
+        }
+        br.setAllowedResponseCodes(codes);
         br.postPageRaw(getBase() + "plugins/sendError", JSonStorage.serializeToJson(error));
 
     }
 
     private String getBase() {
+        if (false) return "http://localhost:8888/";
         if (false) return "http://192.168.2.250:81/thomas/fcgi/";
         return "http://stats.appwork.org/jcgi/";
     }
