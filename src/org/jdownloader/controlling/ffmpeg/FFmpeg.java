@@ -337,7 +337,9 @@ public class FFmpeg {
                     logger.info(sb2.toString());
 
                     boolean ret = exitCode == 0;
-                    if (!ret) { throw new FFMpegException(sb.toString() + "\r\n" + sb2.toString()); }
+                    if (!ret) { throw new FFMpegException("FFmpeg Failed"); }
+
+                    return true;
                 } catch (IllegalThreadStateException e) {
                     // still running;
                 }
