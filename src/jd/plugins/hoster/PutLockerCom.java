@@ -37,7 +37,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -48,10 +47,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
 /** Works exactly like sockshare.com */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/((file|embed)|mobile/file)/[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "http://(www\\.)?(putlocker|firedrive)\\.com/((file|embed)|mobile/file)/[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
 public class PutLockerCom extends PluginForHost {
 
-    private final String        MAINPAGE = "http://www.putlocker.com";
+    // TODO: fix premium, it's broken because of domainchange
+    private final String        MAINPAGE = "http://www.firedrive.com";
     private static Object       LOCK     = new Object();
     private String              agent    = null;
     private static final String NOCHUNKS = "NOCHUNKS";
@@ -61,29 +61,25 @@ public class PutLockerCom extends PluginForHost {
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.putlocker.com/gopro.php");
+        this.enablePremium("https://auth.firedrive.com/signup");
         setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.putlocker.com/file/" + new Regex(link.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
+        link.setUrlDownload("http://www.firedrive.com/file/" + new Regex(link.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser();
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">This file doesn\\'t exist, or has been removed \\.<") || br.getURL().contains("?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("hd_marker\".*?span>(.*?)<strong").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\|").getMatch(0);
-        if (filename == null) filename = br.getRegex("site\\-content.*?<h1>(.*?)<strong").getMatch(0);
-        String filesize = br.getRegex("site-content.*?<h1>.*?<strong>\\((.*?)\\)").getMatch(0);
-        if (filename == null || filesize == null) {
-            //
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        if (br.containsHTML("class=\"sad_face_image\"|This file might have been moved, replaced or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)<br>").getMatch(0);
+        final String filesize = br.getRegex("<b>Size:</b>([^<>\"]*?)<br>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // User sometimes adds random stuff to filenames when downloading so we
         // better set the final name here
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -119,7 +115,7 @@ public class PutLockerCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.putlocker.com/page.php?terms";
+        return "http://www.firedrive.com/page/terms";
     }
 
     @Override
@@ -133,54 +129,31 @@ public class PutLockerCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        final Form freeform = getFormByHTML("value=\"Continue as Free User\"");
+        final Form freeform = br.getForm(1);
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        freeform.put("confirm", "Continue+as+Free+User");
-        if (freeform.containsHTML("/include/captcha")) {
-            final String captchaIMG = getCaptchaIMG();
-            if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), downloadLink);
-            if (captcha != null) freeform.put("captcha_code", Encoding.urlEncode(captcha));
-        }
-        /** Can still be skipped */
-        // final String waittime =
-        // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
-        // int wait = 5;
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // sleep(wait * 1001l, downloadLink);
         br.submitForm(freeform);
-        if (br.containsHTML("This file failed to convert")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with an account", PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
-                /* not existing in old stable */
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
-        }
-        if (br.containsHTML(">You have exceeded the daily")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached");
 
         checkForErrors();
         ERROR_COUNTER.set(0);
 
         String passCode = downloadLink.getStringProperty("pass");
-        if (br.containsHTML("This file requires a password\\. Please enter it")) {
-            br.setFollowRedirects(true);
-            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
-            br.postPage(br.getURL(), "file_password=" + Encoding.urlEncode(passCode));
-            if (br.containsHTML(">This password is not correct")) {
-                downloadLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
-            }
-            br.setFollowRedirects(false);
-        }
+        // if (br.containsHTML("This file requires a password\\. Please enter it")) {
+        // br.setFollowRedirects(true);
+        // if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+        // br.postPage(br.getURL(), "file_password=" + Encoding.urlEncode(passCode));
+        // if (br.containsHTML(">This password is not correct")) {
+        // downloadLink.setProperty("pass", Property.NULL);
+        // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+        // }
+        // br.setFollowRedirects(false);
+        // }
         final String dllink = getDllink(downloadLink);
         int chunks = 0;
         if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false)) {
             chunks = 1;
         }
         br.setFollowRedirects(true);
-        logger.info("putlocker.com: Download will start soon");
+        logger.info("firedrive.com: Download will start soon");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
@@ -191,13 +164,8 @@ public class PutLockerCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error 416", calculateDynamicWaittime(10));
             }
-            logger.warning("putlocker.com: final link leads to html code...");
+            logger.warning("firedrive.com: final link leads to html code...");
             br.followConnection();
-            // My experience was that such files just don't work, i wasn't able
-            // to download a link with this error in 3 days!
-            if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.MAINPAGEer.putlockercom.servererrorfilebroken", "Server error - file offline?"));
-            if (br.containsHTML(">This link has expired\\. Please try again") || br.containsHTML("This content server is down for maintenance\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", calculateDynamicWaittime(5));
-            if (br.containsHTML("<title>Store Files Easily on PutLocker</title>|404 - Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", calculateDynamicWaittime(15));
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fixFilename(downloadLink);
@@ -213,16 +181,16 @@ public class PutLockerCom extends PluginForHost {
                     downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                logger.warning("putlocker.com: Unknown error1");
-                int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown1", 0);
+                logger.warning("firedrive.com: Unknown error1");
+                int timesFailed = downloadLink.getIntegerProperty("timesfailedfiredrivecom_unknown1", 0);
                 downloadLink.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 2) {
                     timesFailed++;
-                    downloadLink.setProperty("timesfailedputlockercom_unknown1", timesFailed);
+                    downloadLink.setProperty("timesfailedfiredrivecom_unknown1", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error1");
                 } else {
-                    downloadLink.setProperty("timesfailedputlockercom_unknown1", Property.NULL);
-                    logger.info("putlocker.com: Unknown error1 - plugin broken!");
+                    downloadLink.setProperty("timesfailedfiredrivecom_unknown1", Property.NULL);
+                    logger.info("firedrive.com: Unknown error1 - plugin broken!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -234,71 +202,41 @@ public class PutLockerCom extends PluginForHost {
                 downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            logger.warning("putlocker.com: Unknown error2");
-            int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown2", 0);
+            logger.warning("firedrive.com: Unknown error2");
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedfiredrivecom_unknown2", 0);
             downloadLink.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                downloadLink.setProperty("timesfailedputlockercom_unknown2", timesFailed);
+                downloadLink.setProperty("timesfailedfiredrivecom_unknown2", timesFailed);
                 /* unknown error, we disable multiple chunks */
                 if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) == false) {
-                    logger.warning("putlocker.com: Unknown error2 -> Retrying without chunkload");
+                    logger.warning("firedrive.com: Unknown error2 -> Retrying without chunkload");
                     downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error2");
             } else {
-                downloadLink.setProperty("timesfailedputlockercom_unknown2", Property.NULL);
-                logger.info("putlocker.com: Unknown error2 - plugin broken!");
+                downloadLink.setProperty("timesfailedfiredrivecom_unknown2", Property.NULL);
+                logger.info("firedrive.com: Unknown error2 - plugin broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
         } catch (final InterruptedException e) {
-            logger.warning("putlocker.com: Unknown error3");
-            int timesFailed = downloadLink.getIntegerProperty("timesfailedputlockercom_unknown3", 0);
+            logger.warning("firedrive.com: Unknown error3");
+            int timesFailed = downloadLink.getIntegerProperty("timesfailedfiredrivecom_unknown3", 0);
             downloadLink.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                downloadLink.setProperty("timesfailedputlockercom_unknown3", timesFailed);
+                downloadLink.setProperty("timesfailedfiredrivecom_unknown3", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error3");
             } else {
-                downloadLink.setProperty("timesfailedputlockercom_unknown3", Property.NULL);
+                downloadLink.setProperty("timesfailedfiredrivecom_unknown3", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error3", calculateDynamicWaittime(30));
             }
         }
     }
 
     protected void checkForErrors() throws PluginException {
-        if (br.containsHTML(">This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<")) {
-
-            // very old: http://svn.jdownloader.org/issues/4031
-            // not sure if this is still a valid regex. please try to verify
-
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", calculateDynamicWaittime(20));
-        }
-        // verified on 29. January 2014
-        // <title>Request could not be processed :(</title>
-        // </head>
-        // <body>
-        // <div id="error_container">
-        // <h1>Server is Overloaded</h1>
-        // <img src="../images/error.png"><br>
-        // <div class="twitter">
-        if (br.containsHTML("Request could not be processed :\\(")) {
-            // uups
-
-            String errorMessage = br.getRegex("<div id=\"error_container\">.*?<h1>(.*?)</h1>").getMatch(0);
-            if (errorMessage == null || errorMessage.trim().length() == 0) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", calculateDynamicWaittime(20));
-            } else {
-                if ("Server is Overloaded".equals(errorMessage)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, calculateDynamicWaittime(20));
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, calculateDynamicWaittime(20));
-                }
-            }
-        }
-        // no error - reset
-
+        // Add firedrive errorhandling here
     }
 
     protected long calculateDynamicWaittime(int maxMinutes) {
@@ -317,7 +255,7 @@ public class PutLockerCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             checkForErrors();
-            if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", calculateDynamicWaittime(10));
+            if (br.getURL().equals("http://www.firedrive.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", calculateDynamicWaittime(10));
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         ERROR_COUNTER.set(0);
@@ -362,7 +300,7 @@ public class PutLockerCom extends PluginForHost {
                 if (!fetchInfo && cookiesSet) return;
                 String proActive = null;
                 if (cookiesSet) {
-                    br.getPage("http://www.putlocker.com/profile.php?pro");
+                    br.getPage("http://www.firedrive.com/profile.php?pro");
                     proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
                     if (proActive == null) {
                         logger.severe("No longer Pro-Status, try to fetch new cookie!\r\n" + br.toString());
@@ -371,13 +309,13 @@ public class PutLockerCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.putlocker.com/authenticate.php?login");
+                br.getPage("http://www.firedrive.com/authenticate.php?login");
                 Form login = br.getForm(0);
                 if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 if (br.containsHTML("captcha.php\\?")) {
                     final String captchaIMG = getCaptchaIMG();
                     if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "putlocker.com", "http://putlocker.com", true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "firedrive.com", "http://firedrive.com", true);
                     final String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), dummyLink);
                     if (captcha != null) login.put("captcha_code", Encoding.urlEncode(captcha));
                 }
@@ -399,7 +337,7 @@ public class PutLockerCom extends PluginForHost {
                     }
                 }
                 // finish off more code here
-                br.getPage("http://www.putlocker.com/profile.php?pro");
+                br.getPage("http://www.firedrive.com/profile.php?pro");
                 proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
                 if (br.containsHTML("<td>Free Account \\- <strong><a href=\"/gopro\\.php\\?upgrade\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported for this host!\r\nFree Accounts werden für diesen Hoster nicht unterstützt!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 if (proActive == null) {
@@ -438,26 +376,22 @@ public class PutLockerCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, servers, JDL.L("plugins.host.putlockerandsocksharecom.preferredformats", "Format selection - select your prefered format:\r\nBy default, JDownloader will download the original format if possible.\r\nIf the desired format isn't available, JDownloader will download the other one.\r\n\rPremium users can only download the original format.")).setDefaultValue(0));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, servers, JDL.L("plugins.host.firedrivecom.preferredformats", "Format selection - select your prefered format:\r\nBy default, JDownloader will download the original format if possible.\r\nIf the desired format isn't available, JDownloader will download the other one.\r\n\rPremium users can only download the original format.")).setDefaultValue(0).setEnabled(false));
     }
 
     private String getDllink(DownloadLink downloadLink) throws IOException, PluginException {
         String dllink = null;
-        final int selectedFormat = getConfiguredServer();
-        if (selectedFormat == 0) {
-            dllink = getOriginalFormatLink();
-            if (dllink == null) {
-                logger.info("Failed to find chosen format");
-                dllink = getStreamLink();
-            }
+        // check if there is a video stream
+        final String stream_dl = br.getRegex("(\\'|\")(http://dl\\.firedrive\\.com/\\?stream=[^<>\"]*?)(\\'|\")").getMatch(1);
+        if (stream_dl != null) {
+            br.postPage(stream_dl, "");
+            dllink = br.toString();
         } else {
-            dllink = getStreamLink();
-            if (dllink == null) {
-                logger.info("Failed to find chosen format");
-                dllink = getOriginalFormatLink();
-            }
+            // get file_dllink
+            dllink = br.getRegex("\"(https?://dl\\.firedrive\\.com/[^<>\"]*?)\"").getMatch(0);
+
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return dllink.replace("&amp;", "&");
     }
 
@@ -506,8 +440,6 @@ public class PutLockerCom extends PluginForHost {
                 downloadLink.setFinalFileName(oldName + newExtension);
         }
     }
-
-    /** Same code for putlocker.com and sockshare.com END */
 
     @Override
     public void reset() {

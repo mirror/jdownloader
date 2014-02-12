@@ -71,7 +71,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livecloudz.com" }, urls = { "https?://(www\\.)?livecloudz\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livecloudz.com" }, urls = { "https?://(www\\.)?livecloudz\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class LiveCloudzCom extends PluginForHost {
 
@@ -116,7 +116,7 @@ public class LiveCloudzCom extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0;
+            chunks = 1;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -166,7 +166,7 @@ public class LiveCloudzCom extends PluginForHost {
     public LiveCloudzCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     /**
@@ -734,7 +734,7 @@ public class LiveCloudzCom extends PluginForHost {
         }
         if (account.getBooleanProperty("free")) {
             ai.setStatus("Registered (free) User");
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 1);
         } else {
             long expire = 0, expireD = 0, expireS = 0;
             final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
@@ -770,7 +770,7 @@ public class LiveCloudzCom extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 10);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }
