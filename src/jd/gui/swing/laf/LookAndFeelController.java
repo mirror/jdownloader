@@ -33,6 +33,7 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.synthetica.SyntheticaHelper;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -102,6 +103,15 @@ public class LookAndFeelController implements LAFManagerInterface {
 
                 laf = theme.getClazz();
 
+                String customLookAndFeel = config.getCustomLookAndFeelClass();
+                if (StringUtils.isNotEmpty(customLookAndFeel)) {
+                    try {
+                        Class.forName(customLookAndFeel);
+                        laf = customLookAndFeel;
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                }
             } catch (Throwable e) {
                 logger.log(e);
             }

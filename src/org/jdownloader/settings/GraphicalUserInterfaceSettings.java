@@ -1013,4 +1013,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isExtendedVariantNamesEnabled();
 
     void setExtendedVariantNamesEnabled(boolean b);
+
+    @AboutConfig
+    @RequiresRestart("Restart is Required")
+    String getCustomLookAndFeelClass();
+
+    void setCustomLookAndFeelClass(String clazz);
 }
