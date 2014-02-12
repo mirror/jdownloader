@@ -4,9 +4,9 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 
-public interface StatsManagerConfig extends ConfigInterface {
+public interface StatsManagerConfigV2 extends ConfigInterface {
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @AboutConfig
     boolean isEnabled();
 

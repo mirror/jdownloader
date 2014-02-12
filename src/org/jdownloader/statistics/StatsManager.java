@@ -1,5 +1,6 @@
 package org.jdownloader.statistics;
 
+import java.awt.Dialog.ModalityType;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -49,11 +50,17 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.appwork.utils.swing.dialog.ProgressInterface;
 import org.appwork.utils.zip.ZipIOException;
 import org.appwork.utils.zip.ZipIOWriter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
 import org.jdownloader.jdserv.UploadInterface;
-import org.jdownloader.jdserv.stats.StatsManagerConfig;
+import org.jdownloader.jdserv.stats.StatsManagerConfigV2;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 import org.jdownloader.plugins.PluginTaskID;
@@ -73,7 +80,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         return StatsManager.INSTANCE;
     }
 
-    private StatsManagerConfig             config;
+    private StatsManagerConfigV2           config;
 
     private long                           startTime;
     private LogSource                      logger;
@@ -101,7 +108,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     private StatsManager() {
         list = new ArrayList<AbstractLogEntry>();
         counterMap = new HashMap<String, AtomicInteger>();
-        config = JsonConfig.create(StatsManagerConfig.class);
+        config = JsonConfig.create(StatsManagerConfigV2.class);
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
 
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
@@ -122,8 +129,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
-        return true;
-        // return (config.isEnabled() && !DISABLED);
+        return config.isEnabled();
+
     }
 
     @Override
@@ -149,6 +156,81 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     @Override
     public void onDownloadWatchdogStateIsRunning() {
+    }
+
+    private void createAndUploadLog(PostAction action) {
+
+        final File[] logs = Application.getResource("logs").listFiles();
+
+        LogFolder latestLog = null;
+        LogFolder currentLog = null;
+
+        if (logs != null) {
+            for (final File f : logs) {
+                final String timestampString = new Regex(f.getName(), "(\\d+)_\\d\\d\\.\\d\\d").getMatch(0);
+                if (timestampString != null) {
+                    final long timestamp = Long.parseLong(timestampString);
+                    LogFolder lf;
+                    lf = new LogFolder(f, timestamp);
+                    if (LogController.getInstance().getInitTime() == timestamp) {
+                        /*
+                         * this is our current logfolder, flush it before we can upload it
+                         */
+
+                        SimpleDateFormat df = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
+                        // return .format(date);
+                        lf.setNeedsFlush(true);
+                        currentLog = lf;
+                        final File zip = Application.getTempResource("logs/logPackage_" + System.currentTimeMillis() + ".zip");
+                        zip.delete();
+                        zip.getParentFile().mkdirs();
+                        ZipIOWriter writer = null;
+
+                        final String name = lf.getFolder().getName() + "-" + df.format(new Date(lf.getCreated())) + " to " + df.format(new Date(lf.getLastModified()));
+                        final File folder = Application.getTempResource("logs/" + name);
+                        try {
+                            try {
+                                LogController.getInstance().flushSinks(true, false);
+                                writer = new ZipIOWriter(zip) {
+                                    @Override
+                                    public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
+                                        if (addFile.getName().endsWith(".lck") || addFile.isFile() && addFile.length() == 0) { return; }
+                                        if (Thread.currentThread().isInterrupted()) { throw new WTFException("INterrupted"); }
+                                        super.addFile(addFile, compress, fullPath);
+                                    }
+                                };
+
+                                if (folder.exists()) {
+                                    Files.deleteRecursiv(folder);
+                                }
+                                IO.copyFolderRecursive(lf.getFolder(), folder, true);
+                                writer.addDirectory(folder, true, null);
+
+                            } finally {
+                                try {
+                                    writer.close();
+                                } catch (final Throwable e) {
+                                }
+                            }
+
+                            if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+                            String id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
+
+                            zip.delete();
+                            sendLogDetails(new LogDetails(id, action.getData()));
+                            UIOManager.I().showMessageDialog(_GUI._.StatsManager_createAndUploadLog_thanks_(action.getData()));
+
+                        } catch (Exception e) {
+                            logger.log(e);
+
+                        }
+                        return;
+                    }
+
+                }
+            }
+        }
+
     }
 
     @Override
@@ -440,81 +522,34 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                                 new Thread("Log Requestor") {
                                                                     @Override
                                                                     public void run() {
-                                                                        UploadSessionLogDialogInterface d = UIOManager.I().show(UploadSessionLogDialogInterface.class, new UploadSessionLogDialog(downloadLink));
+                                                                        UploadSessionLogDialogInterface d = UIOManager.I().show(UploadSessionLogDialogInterface.class, new UploadSessionLogDialog(action.getData(), downloadLink));
                                                                         if (d.getCloseReason() == CloseReason.OK) {
+                                                                            UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
 
-                                                                            final File[] logs = Application.getResource("logs").listFiles();
-
-                                                                            LogFolder latestLog = null;
-                                                                            LogFolder currentLog = null;
-
-                                                                            if (logs != null) {
-                                                                                for (final File f : logs) {
-                                                                                    final String timestampString = new Regex(f.getName(), "(\\d+)_\\d\\d\\.\\d\\d").getMatch(0);
-                                                                                    if (timestampString != null) {
-                                                                                        final long timestamp = Long.parseLong(timestampString);
-                                                                                        LogFolder lf;
-                                                                                        lf = new LogFolder(f, timestamp);
-                                                                                        if (LogController.getInstance().getInitTime() == timestamp) {
-                                                                                            /*
-                                                                                             * this is our current logfolder, flush it
-                                                                                             * before we can upload it
-                                                                                             */
-
-                                                                                            SimpleDateFormat df = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
-                                                                                            // return .format(date);
-                                                                                            lf.setNeedsFlush(true);
-                                                                                            currentLog = lf;
-                                                                                            final File zip = Application.getTempResource("logs/logPackage_" + System.currentTimeMillis() + ".zip");
-                                                                                            zip.delete();
-                                                                                            zip.getParentFile().mkdirs();
-                                                                                            ZipIOWriter writer = null;
-
-                                                                                            final String name = lf.getFolder().getName() + "-" + df.format(new Date(lf.getCreated())) + " to " + df.format(new Date(lf.getLastModified()));
-                                                                                            final File folder = Application.getTempResource("logs/" + name);
-                                                                                            try {
-                                                                                                try {
-                                                                                                    LogController.getInstance().flushSinks(true, false);
-                                                                                                    writer = new ZipIOWriter(zip) {
-                                                                                                        @Override
-                                                                                                        public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
-                                                                                                            if (addFile.getName().endsWith(".lck") || addFile.isFile() && addFile.length() == 0) { return; }
-                                                                                                            if (Thread.currentThread().isInterrupted()) { throw new WTFException("INterrupted"); }
-                                                                                                            super.addFile(addFile, compress, fullPath);
-                                                                                                        }
-                                                                                                    };
-
-                                                                                                    if (folder.exists()) {
-                                                                                                        Files.deleteRecursiv(folder);
-                                                                                                    }
-                                                                                                    IO.copyFolderRecursive(lf.getFolder(), folder, true);
-                                                                                                    writer.addDirectory(folder, true, null);
-
-                                                                                                } finally {
-                                                                                                    try {
-                                                                                                        writer.close();
-                                                                                                    } catch (final Throwable e) {
-                                                                                                    }
-                                                                                                }
-
-                                                                                                if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
-                                                                                                String id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
-
-                                                                                                zip.delete();
-                                                                                                sendLogDetails(new LogDetails(id, action.getData()));
-                                                                                                if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
-
-                                                                                            } catch (Exception e) {
-                                                                                                logger.log(e);
-
-                                                                                            }
-                                                                                            return;
-                                                                                        }
-
-                                                                                    }
+                                                                                @Override
+                                                                                public void run() throws Exception {
+                                                                                    createAndUploadLog(action);
                                                                                 }
-                                                                            }
 
+                                                                                @Override
+                                                                                public String getString() {
+                                                                                    return null;
+                                                                                }
+
+                                                                                @Override
+                                                                                public int getProgress() {
+                                                                                    return -1;
+                                                                                }
+
+                                                                                @Override
+                                                                                public String getLabelString() {
+                                                                                    return null;
+                                                                                }
+                                                                            }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
+                                                                                public java.awt.Dialog.ModalityType getModalityType() {
+                                                                                    return ModalityType.MODELESS;
+                                                                                };
+                                                                            });
                                                                         }
                                                                     }
                                                                 }.start();

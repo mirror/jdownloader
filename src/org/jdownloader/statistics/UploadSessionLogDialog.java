@@ -2,6 +2,8 @@ package org.jdownloader.statistics;
 
 import java.awt.Component;
 import java.awt.Dialog.ModalityType;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
@@ -9,7 +11,7 @@ import java.util.ArrayList;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextPane;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -18,10 +20,9 @@ import jd.plugins.FilePackage;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.BinaryLogic;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -33,11 +34,14 @@ import org.jdownloader.images.AbstractIcon;
 public class UploadSessionLogDialog extends AbstractDialog<Object> implements UploadSessionLogDialogInterface {
 
     private DownloadLink downloadLink;
+    private String       errorID;
+    private int          desiredWidh = 0;
 
-    public UploadSessionLogDialog(DownloadLink downloadLink) {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_title(), new AbstractIcon(IconKey.ICON_ERROR, 32), _GUI._.lit_yes(), _GUI._.lit_no());
+    public UploadSessionLogDialog(String errorID, DownloadLink downloadLink) {
+        super(UIOManager.LOGIC_COUNTDOWN, _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_title2(), new AbstractIcon(IconKey.ICON_BOTTY_STOP, -1), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_yes(), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_no());
         setTimeout(5 * 60 * 1000);
         this.downloadLink = downloadLink;
+        this.errorID = errorID;
     }
 
     @Override
@@ -47,40 +51,42 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
 
     @Override
     protected int getPreferredWidth() {
-        return 550;
+        return Math.max(600, desiredWidh);
     }
 
     @Override
     public JComponent layoutDialogContent() {
         final JPanel p = new MigPanel("ins 0,wrap 1", "[]", "[][]");
 
-        JTextPane textField = new JTextPane() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public boolean getScrollableTracksViewportWidth() {
-
-                return !BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE);
-            }
-
-            public boolean getScrollableTracksViewportHeight() {
-                return true;
-            }
-        };
-
-        textField.setContentType("text/plain");
-
-        textField.setText(_GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_msg());
-        textField.setEditable(false);
-        textField.setBackground(null);
-        textField.setOpaque(false);
-        textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        textField.setCaretPosition(0);
-
-        // inout dialog can become too large(height) if we do not limit the
-        // prefered textFIled size here.
-        textField.setPreferredSize(textField.getPreferredSize());
-
+        // JTextPane textField = new JTextPane() {
+        // private static final long serialVersionUID = 1L;
+        //
+        // @Override
+        // public boolean getScrollableTracksViewportWidth() {
+        //
+        // return !BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE);
+        // }
+        //
+        // public boolean getScrollableTracksViewportHeight() {
+        // return true;
+        // }
+        // };
+        //
+        // textField.setContentType("text/plain");
+        //
+        // textField.setText(_GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_msg2());
+        // textField.setEditable(false);
+        // textField.setBackground(null);
+        // textField.setOpaque(false);
+        // textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
+        // textField.setCaretPosition(0);
+        //
+        // // inout dialog can become too large(height) if we do not limit the
+        // // prefered textFIled size here.
+        // textField.setPreferredSize(textField.getPreferredSize());
+        //
+        //
+        //
         String packagename = downloadLink.getParentNode().getName();
         p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(downloadLink.getName()));
@@ -92,7 +98,41 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
         ret.setHorizontalAlignment(SwingConstants.LEFT);
         ret.setIcon(di.getFavIcon());
         p.add(ret);
-        p.add(textField, "pushx, growx");
+
+        p.add(SwingUtils.toBold(new JLabel(_GUI._.UploadSessionLogDialog_layoutDialogContent_errorid())), "split 2,sizegroup left,alignx left");
+        JTextField txt;
+        p.add(txt = new JTextField(errorID));
+        txt.setBorder(null);
+        txt.setOpaque(false);
+        SwingUtils.setOpaque(txt, false);
+        txt.setEditable(false);
+
+        JLabel lbl;
+        desiredWidh = getDialog().getRawPreferredSize().width;
+        p.add(lbl = new JLabel("<html>" + _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_msg2() + "<b><u>" + _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_more() + "</b></u>" + "</html>"), "pushx, growx,gapbottom 5");
+        lbl.addMouseListener(new MouseListener() {
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                CrossSystem.openURLOrShowMessage("http://board.jdownloader.org/showthread.php?p=287444");
+            }
+        });
         getDialog().addWindowFocusListener(new WindowFocusListener() {
 
             @Override
@@ -127,9 +167,16 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
     }
 
     private Component leftLabel(String name) {
-        JLabel ret = new JLabel(name);
-        ret.setHorizontalAlignment(SwingConstants.LEFT);
-        return ret;
+
+        JTextField txt;
+        txt = new JTextField(name);
+        txt.setBorder(null);
+        txt.setOpaque(false);
+        SwingUtils.setOpaque(txt, false);
+        txt.setEditable(false);
+
+        txt.setHorizontalAlignment(SwingConstants.LEFT);
+        return txt;
     }
 
     @Override

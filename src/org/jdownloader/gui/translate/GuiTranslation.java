@@ -4431,4 +4431,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Audio Bitrate  (e.g. 128kbit)" })
     String YoutubeHelper_getDescription_audioQuality();
 
+    @Default(lngs = { "en" }, values = { "Error Code" })
+    String UploadSessionLogDialog_layoutDialogContent_errorid();
+
+    @Default(lngs = { "en" }, values = { "No, Thanks" })
+    String UploadSessionLogDialog_UploadSessionLogDialog_no();
+
+    @Default(lngs = { "en" }, values = { "Collect & Upload Bug Information" })
+    String StatsManager_run_upload_error_title();
+
+    @Default(lngs = { "en" }, values = { "Please wait.\r\nJDownloader is collecting information about the download problem." })
+    String StatsManager_run_upload_error_message();
+
+    @Default(lngs = { "en" }, values = { "Thank you for contributing. Your Error-Code is %s1" })
+    String StatsManager_createAndUploadLog_thanks_(String id);
+
 }

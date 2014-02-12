@@ -19,7 +19,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
-import org.jdownloader.jdserv.stats.StatsManagerConfig;
+import org.jdownloader.jdserv.stats.StatsManagerConfigV2;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -77,7 +77,7 @@ public class AdvancedConfigManager {
         register(CFG_API.CFG);
         register(CFG_PACKAGIZER.CFG);
         register(JsonConfig.create(FFmpegSetup.class));
-        register(JsonConfig.create(StatsManagerConfig.class));
+        register(JsonConfig.create(StatsManagerConfigV2.class));
         register(JsonConfig.create(LogConfig.class));
         register(JsonConfig.create(ShortcutSettings.class));
         register(JsonConfig.create(RtmpdumpSettings.class));
