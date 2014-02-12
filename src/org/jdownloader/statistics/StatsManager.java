@@ -217,6 +217,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             String id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "ErrorID: " + action.getData(), null);
 
                             zip.delete();
+                            if (zip.length() > 1024 * 1024 * 10) throw new Exception("Filesize: " + zip.length());
                             sendLogDetails(new LogDetails(id, action.getData()));
                             UIOManager.I().showMessageDialog(_GUI._.StatsManager_createAndUploadLog_thanks_(action.getData()));
 
