@@ -124,10 +124,20 @@ public class FilestoreTo extends PluginForHost {
         if (startDl == null) startDl = br.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
         // find the value' we need
         String[] tp = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)").getRow(0);
-        if (tp == null || tp.length != 6) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        pwnage[0] = tp[1];
-        pwnage[1] = tp[3];
-        pwnage[2] = tp[5];
+        if (tp == null || tp.length != 6) {
+            // and then he might switch it up (as in the past) with additional data + var
+            String[] data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+),").getRow(0);
+            if (data == null || data.length != 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String[] var = new Regex(startDl, "var\\s*" + data[2] + "\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
+            if (var == null || var.length != 4) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            pwnage[0] = data[1];
+            pwnage[1] = var[1];
+            pwnage[2] = var[3];
+        } else {
+            pwnage[0] = tp[1];
+            pwnage[1] = tp[3];
+            pwnage[2] = tp[5];
+        }
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         final String ajax = "http://filestore.to/ajax/download.php?";
         int wait = 10;
@@ -143,6 +153,7 @@ public class FilestoreTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String code = br.getRegex("=\"" + pwnage[1] + "\"\\s*" + pwnage[2] + "=\"([A-Z0-9]+)\"").getMatch(0);
+        if (code == null) code = br.getRegex(pwnage[2] + "=\"([A-Z0-9]+)\"\\s*").getMatch(0);
         if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser brd = br.cloneBrowser();
         prepAjax(brd);
