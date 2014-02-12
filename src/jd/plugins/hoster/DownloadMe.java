@@ -175,14 +175,15 @@ public class DownloadMe extends PluginForHost {
         }
 
         String dllink = null;
-        showMessage(link, "Phase 2/3: Generating downloadlink");
         long lastProgress = 0;
         long currentProgress = 0;
         long filesize = 0;
         long lastProgressChange = System.currentTimeMillis();
         // Try to get downloadlink for up to 10 minutes
-        for (int i = 1; i <= 120; i++) {
-            logger.info("Trying to find link, try " + i + " / 120");
+        int retryLimit = 5;
+        for (int i = 0; i <= retryLimit; i++) {
+            showMessage(link, "Phase 2/3: Generating downloadlink");
+            logger.info("Trying to find link, try " + i + " / " + retryLimit);
             br.getPage("https://www.download.me/dlapi/file?id=" + id);
             final String data = br.getRegex("\"data\":\\{(.*?)\\}\\}").getMatch(0);
             // Account expired
@@ -193,7 +194,10 @@ public class DownloadMe extends PluginForHost {
             if ("0".equals(status)) {
                 logger.info("Received status 0, link generation failed!");
                 if (link.getLinkStatus().getRetryCount() == 2) throw new PluginException(LinkStatus.ERROR_FATAL, "Downloadlink generation failed");
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadlink generation failed");
+                if (i <= retryLimit) throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadlink generation failed");
+                i++;
+                sleep(10000, link, "Retry on Generating Link (" + i + " / " + retryLimit);
+                continue;
             }
 
             // Try to detect if download is stuck serverside
