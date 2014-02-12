@@ -23,6 +23,6 @@ interaction_shutdown_dialog_title_standby=Úsporný režim?
 jd_plugins_optional_jdshutdown=JD Shutdown
 jd_plugins_optional_jdshutdown_description=Automaticky vypne nebo uspí Váš počítač nebo zavře JD, když jsou všechna stahování dokončena.
 lit_shutdownn=Vypnutí
-show_admin=Pro nastavení Hibernace nebo Úsporného režimu jsou nutná Administrátorská oprávnění
+show_admin=Pro nastavení Hibernace nebo Úsporného režimu jsou nutná administrátorská oprávnění
 shutdown_toggle_action_disabled2=Vypnout po stahování
 shutdown_toggle_action_enabled2=Vypnout po stahování
