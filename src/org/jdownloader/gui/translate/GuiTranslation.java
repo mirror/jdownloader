@@ -4026,8 +4026,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "48kbit/s AAC-Audio" })
     String YoutubeVariant_name_AAC_48();
 
-    @Default(lngs = { "en" }, values = { "240p FLV-Video(high)" })
-    String YoutubeVariant_name_FLV_240_HIGH();
+    @Default(lngs = { "en" }, values = { "270p FLV-Video(high)" })
+    String YoutubeVariant_name_FLV_270_HIGH();
 
     @Default(lngs = { "en" }, values = { "240p FLV-Video(low)" })
     String YoutubeVariant_name_FLV_240_LOW();
@@ -4056,8 +4056,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "360p MP4-3D-Video" })
     String YoutubeVariant_name_MP4_3D_360();
 
-    @Default(lngs = { "en" }, values = { "520p MP4-3D-Video" })
-    String YoutubeVariant_name_MP4_3D_520();
+    @Default(lngs = { "en" }, values = { "1080p MP4-3D-Video" })
+    String YoutubeVariant_name_MP4_3D_1080();
 
     @Default(lngs = { "en" }, values = { "720p MP4-3D-Video" })
     String YoutubeVariant_name_MP4_3D_720();
@@ -4203,8 +4203,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "48kbit" })
     String YoutubeVariant_filenametag_AAC_48();
 
-    @Default(lngs = { "en" }, values = { "240p[HQ]" })
-    String YoutubeVariant_filenametag_FLV_240_HIGH();
+    @Default(lngs = { "en" }, values = { "270p[HQ]" })
+    String YoutubeVariant_filenametag_FLV_270_HIGH();
 
     @Default(lngs = { "en" }, values = { "240p[LQ]" })
     String YoutubeVariant_filenametag_FLV_240_LOW();
@@ -4233,8 +4233,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "360p 3D" })
     String YoutubeVariant_filenametag_MP4_3D_360();
 
-    @Default(lngs = { "en" }, values = { "520p 3D" })
-    String YoutubeVariant_filenametag_MP4_3D_520();
+    @Default(lngs = { "en" }, values = { "1080p 3D" })
+    String YoutubeVariant_filenametag_MP4_3D_1080();
 
     @Default(lngs = { "en" }, values = { "720p 3D" })
     String YoutubeVariant_filenametag_MP4_3D_720();
@@ -4407,10 +4407,28 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "152kbit" })
     String YoutubeVariant_filenametag_M4A_152();
 
-    @Default(lngs = { "en" }, values = { "A Download Error occured" })
-    String UploadSessionLogDialog_UploadSessionLogDialog_object_title();
+    @Default(lngs = { "en" }, values = { "We need your help!" })
+    String UploadSessionLogDialog_UploadSessionLogDialog_object_title2();
 
-    @Default(lngs = { "en" }, values = { "A unknown error occured while downloading a file. To solve this problem, we kindly ask you to upload the current error log. This usually only takes a few seconds, and helps to avoid problems like this in the future. Your errorlog will only be available to our developing team. \r\nContinue with the Log Upload?" })
-    String UploadSessionLogDialog_UploadSessionLogDialog_object_msg();
+    @Default(lngs = { "en" }, values = { "A unknown problem occured while downloading a file. To solve this problem, we need more details about the reason. JDownloader is able to collect all required informations about the bug automatically. Please help us to fix that problem as soon as possible by sending these informations." })
+    String UploadSessionLogDialog_UploadSessionLogDialog_object_msg2();
+
+    @Default(lngs = { "en" }, values = { "I want to help! Continue." })
+    String UploadSessionLogDialog_UploadSessionLogDialog_yes();
+
+    @Default(lngs = { "en" }, values = { "(more...)" })
+    String UploadSessionLogDialog_UploadSessionLogDialog_object_more();
+
+    @Default(lngs = { "en" }, values = { "Video Codec (e.g. H264)" })
+    String YoutubeHelper_getDescription_videoCodec();
+
+    @Default(lngs = { "en" }, values = { "Resolution  (e.g. 1080p,1440x1080,...)" })
+    String YoutubeHelper_getDescription_resolution();
+
+    @Default(lngs = { "en" }, values = { "Audio Codec (e.g. Mp3,AAC,...)" })
+    String YoutubeHelper_getDescription_audioCodec();
+
+    @Default(lngs = { "en" }, values = { "Audio Bitrate  (e.g. 128kbit)" })
+    String YoutubeHelper_getDescription_audioQuality();
 
 }

@@ -119,7 +119,8 @@ public class YoutubeHelper {
                 if (mod != null) {
                     name = name.replaceAll("\\*" + tag + "(\\[[^\\]]+\\])\\*", getValue(link, helper, mod));
                 }
-                name = name.replace("*" + tag + "*", getValue(link, helper, null));
+                String v = getValue(link, helper, null);
+                name = name.replace("*" + tag + "*", v == null ? "" : v);
 
             }
             return name;
@@ -163,7 +164,7 @@ public class YoutubeHelper {
                 YoutubeVariantInterface variant = helper.getVariantById(var);
                 try {
                     return variant.getGroup().getLabel();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // old variant
                     LOGGER.log(e);
                     return "[INVALID LINK!]";
@@ -201,7 +202,7 @@ public class YoutubeHelper {
                 YoutubeVariantInterface variant = helper.getVariantById(var);
                 try {
                     return variant.getQualityExtension();
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // old variant
                     LOGGER.log(e);
                     return "[INVALID LINK!]";
@@ -353,7 +354,7 @@ public class YoutubeHelper {
                 if (StringUtils.isNotEmpty(mod)) {
                     try {
                         formatter = new SimpleDateFormat(mod);
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         LOGGER.log(e);
 
                     }
@@ -382,7 +383,7 @@ public class YoutubeHelper {
                 if (StringUtils.isNotEmpty(mod)) {
                     try {
                         formatter = new SimpleDateFormat(mod);
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         LOGGER.log(e);
 
                     }
@@ -411,7 +412,7 @@ public class YoutubeHelper {
                 if (StringUtils.isNotEmpty(mod)) {
                     try {
                         formatter = new SimpleDateFormat(mod);
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         LOGGER.log(e);
 
                     }
@@ -421,6 +422,145 @@ public class YoutubeHelper {
             }
 
         });
+        REPLACER.add(new Replacer("videoCodec") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_videoCodec();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+
+                try {
+
+                    YoutubeITAG video = variant.getiTagVideo();
+                    if (video == null) {
+                        YoutubeITAG data = variant.getiTagData();
+                        if (data != null) return data.getCodecVideo();
+                        return "";
+                    }
+                    return video.getCodecVideo();
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+        REPLACER.add(new Replacer("resolution") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_resolution();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+
+                try {
+
+                    YoutubeITAG video = variant.getiTagVideo();
+                    if (video == null) {
+                        YoutubeITAG data = variant.getiTagData();
+                        if (data != null) return data.getQualityVideo();
+                        return "";
+                    }
+                    return video.getQualityVideo();
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+
+        REPLACER.add(new Replacer("audioCodec") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_audioCodec();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+
+                try {
+
+                    YoutubeITAG video = variant.getiTagVideo();
+                    YoutubeITAG audio = variant.getiTagAudio();
+                    if (audio == null) {
+                        if (video == null) return "";
+                        return video.getCodecAudio();
+                    } else {
+                        return audio.getCodecAudio();
+                    }
+
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+
+        REPLACER.add(new Replacer("audioQuality") {
+            @Override
+            public String getDescription() {
+                return _GUI._.YoutubeHelper_getDescription_audioQuality();
+            }
+
+            public DataSource getDataSource() {
+                return DataSource.WEBSITE;
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                // date
+                String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+                YoutubeVariantInterface variant = helper.getVariantById(var);
+
+                try {
+
+                    YoutubeITAG video = variant.getiTagVideo();
+                    YoutubeITAG audio = variant.getiTagAudio();
+                    if (audio == null) {
+                        if (video == null) return "";
+                        return video.getQualityAudio();
+                    } else {
+                        return audio.getQualityAudio();
+                    }
+
+                } catch (Throwable e) {
+                    // old variant
+                    LOGGER.log(e);
+                    return "[INVALID LINK!]";
+                }
+            }
+
+        });
+
         REPLACER.add(new Replacer("videonumber") {
             @Override
             public String getDescription() {
@@ -436,7 +576,7 @@ public class YoutubeHelper {
                 DecimalFormat df;
                 try {
                     df = new DecimalFormat(mod);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     LOGGER.log(e);
                     df = new DecimalFormat("0000");
                 }
@@ -524,7 +664,7 @@ public class YoutubeHelper {
             for (YoutubeCustomVariantStorable v : list) {
                 try {
                     variants.add(YoutubeCustomConvertVariant.parse(v));
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     e.printStackTrace();
 
                 }
@@ -1216,7 +1356,7 @@ public class YoutubeHelper {
         YoutubeVariantInterface variant = getVariantById(var);
         try {
             formattedFilename = variant.modifyFileName(formattedFilename, link);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
 
@@ -1227,7 +1367,7 @@ public class YoutubeHelper {
         }
         try {
             formattedFilename = variant.modifyFileName(formattedFilename, link);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
         return formattedFilename;
