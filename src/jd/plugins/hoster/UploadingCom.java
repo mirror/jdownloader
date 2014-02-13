@@ -433,18 +433,6 @@ public class UploadingCom extends PluginForHost {
         return isPremium;
     }
 
-    /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
-     */
-    @SuppressWarnings("deprecation")
-    @Override
-    public boolean isPremiumDownload() {
-        /* free user accounts are not premium accounts */
-        boolean ret = super.isPremiumDownload();
-        if (ret && free) ret = false;
-        return ret;
-    }
-
     public void login(Account account, boolean forceLogin) throws Exception {
         try {
             synchronized (LOCK) {

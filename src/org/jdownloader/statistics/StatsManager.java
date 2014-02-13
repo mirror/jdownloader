@@ -252,7 +252,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         try {
-
             HashResult hashResult = downloadController.getHashResult();
             long startedAt = downloadController.getStartTimestamp();
             DownloadLink link = downloadController.getDownloadLink();
