@@ -46,23 +46,13 @@ public class ImageVenueCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
-        String finallink = br.getRegex("id=\"thepic\".*?SRC=\"(.*?)\"").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String server = new Regex(downloadLink.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
-        finallink = "http://" + server + finallink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        // Offline links should also have nice filenames
+        link.setName(new Regex(link.getDownloadURL(), "imagevenue\\.com/img\\.php\\?(.+)").getMatch(0));
         br.getPage(link.getDownloadURL());
         /* Error handling */
-        if (br.containsHTML("This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<") || !br.containsHTML("</BODY>[\r\n\t ]+</HTML>")) {
+        if (br.containsHTML("This image does not exist on this server|<title>404 Not Found</title>|>The requested URL /img\\.php was not found on this server\\.<")) {
             logger.warning("File offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -92,6 +82,18 @@ public class ImageVenueCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        String finallink = br.getRegex("id=\"thepic\".*?SRC=\"(.*?)\"").getMatch(0);
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String server = new Regex(downloadLink.getDownloadURL(), "(img[0-9]+\\.imagevenue\\.com/)").getMatch(0);
+        finallink = "http://" + server + finallink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        dl.startDownload();
     }
 
     @Override

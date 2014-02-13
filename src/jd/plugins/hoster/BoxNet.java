@@ -187,7 +187,9 @@ public class BoxNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             if (dl.getConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            logger.info("The final downloadlink seems not to be a file");
             br.followConnection();
+            if (br.containsHTML("error_message_bandwidth")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The uploader of this file doesn't have enough bandwidth left!", 3 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -114,7 +114,8 @@ public class RyuShareCom extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -17;
+            // 4 chunks were also possible but not always
+            chunks = -3;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
