@@ -129,14 +129,27 @@ public class FilestoreTo extends PluginForHost {
             String[] data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+),").getRow(0);
             if (data == null || data.length != 3) {
                 data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+)\\+(\"|')([&a-zA-Z0-9=]+)\\4").getRow(0);
-                if (data == null || data.length != 5) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (data == null || data.length != 5) {
+                    data = new Regex(startDl, "data\\s*:\\s*([a-zA-Z0-9]+),").getRow(0);
+                    if (data == null || data.length != 1) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                }
             }
-            String[] var = new Regex(startDl, "var\\s*" + data[2] + "\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
-            if (var == null || var.length != 4) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            pwnage[0] = data[1];
-            pwnage[1] = var[1];
-            pwnage[2] = var[3];
-            if (data[4] != null) pwnage[3] = data[4];
+            String[] var = null;
+            if (data != null && data.length != 1) var = new Regex(startDl, "var\\s*" + data[2] + "\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
+            if (var != null && var.length == 4) {
+                pwnage[0] = data[1];
+                pwnage[1] = var[1];
+                pwnage[2] = var[3];
+                if (data[4] != null) pwnage[3] = data[4];
+            } else if ((var == null || var.length != 4) && data.length == 1) {
+                var = new Regex(startDl, "var\\s*" + data[0] + "\\s*=\\s*(\"|')(\\w+=)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)\\+(\"|')([\\w&=]+)\\7").getRow(0);
+                if (var != null && var.length == 8) {
+                    pwnage[0] = var[1];
+                    pwnage[1] = var[3];
+                    pwnage[2] = var[3];
+                    pwnage[3] = var[7];
+                }
+            }
         } else {
             pwnage[0] = tp[1];
             pwnage[1] = tp[3];
