@@ -23,7 +23,7 @@ public class CFG_MYJD {
     // api.jdownloader.org
     public static final StringKeyHandler                      CONNECT_IP           = SH.getKeyHandler("ConnectIP", StringKeyHandler.class);
     // true
-    public static final BooleanKeyHandler                     AUTO_CONNECT_ENABLED = SH.getKeyHandler("AutoConnectEnabled", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                     AUTO_CONNECT_ENABLED = SH.getKeyHandler("AutoConnectEnabledV2", BooleanKeyHandler.class);
     // null
     public static final StringKeyHandler                      PASSWORD             = SH.getKeyHandler("Password", StringKeyHandler.class);
     // 80

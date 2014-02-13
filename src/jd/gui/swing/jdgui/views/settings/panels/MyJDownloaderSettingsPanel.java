@@ -23,7 +23,6 @@ import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
 import jd.controlling.TaskQueue;
@@ -201,8 +200,9 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
         MigPanel p = new MigPanel("ins 0 0 0 0", "[grow,fill][][][][]", "[]");
         p.setOpaque(false);
-
-        p.add(Box.createHorizontalGlue());
+        p.add(status, "wmin 10");
+        // add(status, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
+        // p.add(Box.createHorizontalGlue());
         JLabel lbl;
         p.add(lbl = new JLabel(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_()));
         lbl.setToolTipText(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_tt());
@@ -215,16 +215,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         add(Box.createHorizontalGlue(), "gapleft 37");
         add(p, "spanx,pushx,growx");
         add(Box.createHorizontalGlue(), "gapleft 37");
-        add(status, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
-
-        add(new JSeparator(), "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
-
-        // this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_remote(), NewTheme.I().getIcon(IconKey.ICON_SETTINGS,
-        // 32));
-        // this.addDescription(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_remote_description());
-        // this.addPair(_GUI._.gui_config_dialogs(), null, resetDialogs);
-        // this.addHeader(_GUI._.GUISettings_GUISettings_object_accessability(), NewTheme.I().getIcon("barrierfreesettings", 32));
-        // this.addDescription(_JDT._.gui_settings_barrierfree_description());
+        add(error, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
 
     }
 
@@ -258,7 +249,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                     error.setVisible(true);
                     error.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_account_badlogins());
                     break;
-
                 default:
                     error.setVisible(true);
                     error.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_account_unknown(CFG_MYJD.CFG.getLatestError().toString()));
@@ -283,13 +273,13 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
 
             @Override
             protected void runInEDT() {
+                if (!MyJDownloaderSettingsPanel.this.isShowing()) return;
                 boolean connected = connectionStatus != MyJDownloaderConnectionStatus.UNCONNECTED;
                 disconnectAction.setEnabled(connected);
                 connectAction.setEnabled(!connected);
                 reconnectAction.setEnabled(false);
 
                 if (connected) {
-
                     String cUser = MyJDownloaderController.getInstance().getCurrentEmail();
                     String cPass = MyJDownloaderController.getInstance().getCurrentPassword();
                     String cDevice = MyJDownloaderController.getInstance().getCurrentDeviceName();
@@ -302,6 +292,9 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
                     }
                     switch (connectionStatus) {
                     case PENDING:
+                        status.setForeground(Color.GREEN.darker());
+                        status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections));
+                        break;
                     case CONNECTED:
                         status.setForeground(Color.GREEN);
                         status.setText(_GUI._.MyJDownloaderSettingsPanel_runInEDT_connected_2() + "\r\n" + _GUI._.MyJDownloaderSettingsPanel_runInEDT_connections(connections));

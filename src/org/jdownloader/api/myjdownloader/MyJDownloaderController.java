@@ -60,6 +60,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     protected void stop() {
         final MyJDownloaderConnectThread lThread = thread.getAndSet(null);
         if (lThread != null) {
+            ShutdownController.getInstance().removeShutdownVetoListener(this);
             new Thread("MyJDownloaderController:Stop") {
                 public void run() {
                     lThread.disconnect();
@@ -75,21 +76,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             start();
         }
         CFG_MYJD.AUTO_CONNECT_ENABLED.getEventSender().addListener(this);
-
-        GenericConfigEventListener<String> loginsChangedListener = new GenericConfigEventListener<String>() {
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<String> keyHandler, String invalidValue, ValidationException validateException) {
-            }
-
-            @Override
-            public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-
-                // stop();
-            }
-        };
-        CFG_MYJD.EMAIL.getEventSender().addListener(loginsChangedListener);
-        CFG_MYJD.PASSWORD.getEventSender().addListener(loginsChangedListener);
     }
 
     protected void start() {
@@ -104,9 +90,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         lthread.setPassword(password);
         lthread.setDeviceName(CFG_MYJD.CFG.getDeviceName());
         if (thread.compareAndSet(null, lthread)) {
+            ShutdownController.getInstance().addShutdownVetoListener(this);
             lthread.start();
         }
-        ShutdownController.getInstance().addShutdownVetoListener(this);
     }
 
     public String getCurrentDeviceName() {
@@ -165,17 +151,9 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-
         if (CFG_MYJD.AUTO_CONNECT_ENABLED.isEnabled()) {
             start();
         }
-        // if (keyHandler == CFG_MYJD.ENABLED) {
-        // if (newValue) {
-        // start();
-        // } else {
-        // stop();
-        // }
-        // }
     }
 
     public void onError(MyJDownloaderError error) {
@@ -184,24 +162,20 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         case NONE:
             break;
         case ACCOUNT_UNCONFIRMED:
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_account_unconfirmed());
-            CFG_MYJD.CFG.setAutoConnectEnabled(false);
             stop();
+            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_account_unconfirmed());
             break;
         case OUTDATED:
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_outdated());
-            CFG_MYJD.CFG.setAutoConnectEnabled(false);
             stop();
+            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_outdated());
             break;
         case BAD_LOGINS:
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
-            CFG_MYJD.CFG.setAutoConnectEnabled(false);
             stop();
+            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
             break;
         case EMAIL_INVALID:
-            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
-            CFG_MYJD.CFG.setAutoConnectEnabled(false);
             stop();
+            Dialog.getInstance().showMessageDialog(0, "MyJDownloader", _JDT._.MyJDownloaderController_onError_badlogins());
             break;
         case IO:
             break;
@@ -216,7 +190,14 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     public void fireConnectionStatusChanged(MyJDownloaderConnectionStatus status, int connections) {
-        CFG_MYJD.CFG.setLatestError(MyJDownloaderError.NONE);
+        switch (status) {
+        case CONNECTED:
+        case PENDING:
+            CFG_MYJD.CFG.setLatestError(MyJDownloaderError.NONE);
+            break;
+        default:
+            break;
+        }
         eventSender.fireEvent(new MyJDownloaderEvent(this, MyJDownloaderEvent.Type.CONNECTION_STATUS_UPDATE, status, connections));
     }
 
@@ -229,7 +210,6 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     }
 
     public static boolean validateLogins(String email, String password) {
-
         if (!new Regex(email, "..*?@.*?\\..+").matches()) return false;
         if (StringUtils.isEmpty(password)) return false;
         return true;

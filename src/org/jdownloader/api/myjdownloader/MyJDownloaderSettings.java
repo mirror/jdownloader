@@ -62,9 +62,9 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    public void setAutoConnectEnabled(boolean b);
+    public void setAutoConnectEnabledV2(boolean b);
 
-    public boolean isAutoConnectEnabled();
+    public boolean isAutoConnectEnabledV2();
 
     public static enum MyJDownloaderError {
         @EnumLabel("Outdated, please update your JDownloader")
