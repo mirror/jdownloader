@@ -24,6 +24,7 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -31,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+|\\?catpath=(/|%2F|[a-z0-9]+)(\\&offset=\\d+)?)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+|\\?catpath(=(/|%2F|[a-z0-9]+)(\\&offset=\\d+)?)?)?)" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
 
     /**
@@ -61,7 +62,8 @@ public class DevArtCm extends PluginForDecrypt {
     private static Object       LOCK            = new Object();
 
     private static final String FASTLINKCHECK_2 = "FASTLINKCHECK_2";
-    private static final String TYPE_CATPATH    = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=(/|%2F|[a-z0-9]+)(\\&offset=\\d+)?";
+    private static final String TYPE_CATPATH    = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F|[a-z0-9]+)(\\&offset=\\d+)?)?";
+    private static final String TYPE_CATPATH_2  = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]+(\\&offset=\\d+)?";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -81,23 +83,34 @@ public class DevArtCm extends PluginForDecrypt {
         // only non /art/ requires packagename
         if (parameter.contains("/gallery/") || parameter.contains("/favourites/")) {
             // find and set username
-            String username = br.getRegex("name=\"username\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String username = br.getRegex("name=\"username\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (username == null) {
+                logger.warning("Plugin broken for link: " + parameter);
+                return null;
+            }
             // find and set page type
             String pagetype = "";
-            if (parameter.contains("/favourites/")) pagetype = "Favourites";
-            if (parameter.contains("/gallery/")) pagetype = "Gallery";
+            String catpath_addition = null;
+            if (parameter.matches(TYPE_CATPATH_2)) {
+                catpath_addition = new Regex(parameter, "deviantart\\.com/gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
+            }
+            if (parameter.contains("/favourites/"))
+                pagetype = "Favourites";
+            else if (parameter.contains("/gallery/"))
+                pagetype = "Gallery";
+            else
+                pagetype = "Unknown";
             // find and set pagename
-            String pagename = null;
+            String pagename = br.getRegex("class=\"folder\\-title\">([^<>\"]*?)</span>").getMatch(0);
+            if (pagename != null) pagename = Encoding.htmlDecode(pagename.trim());
             // set packagename
             String fpName = "";
-            if (username != null && pagetype != null && pagename != null) {
+            if (pagename != null && catpath_addition != null) {
+                fpName = username + " - " + pagetype + " - " + catpath_addition + " - " + pagename;
+            } else if (pagename != null) {
                 fpName = username + " - " + pagetype + " - " + pagename;
-            } else if (username != null && pagename != null) {
-                fpName = username + " - " + pagename;
-            } else if (username != null && pagetype != null) {
+            } else {
                 fpName = username + " - " + pagetype;
-            } else if (pagetype != null && pagename != null) {
-                fpName = pagetype + " - " + pagename;
             }
 
             int currentOffset = 0;
@@ -135,6 +148,7 @@ public class DevArtCm extends PluginForDecrypt {
                 logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
                 if (parameter.matches(TYPE_CATPATH) && !parameter.contains("offset=")) {
                     if (counter > 1) br.getPage(parameter + "&offset=" + currentOffset);
+                    // catpath links have an unknown end-offset
                     final String nextOffset = br.getRegex("\\?catpath=%2F\\&amp;offset=(\\d+)\"><span>Next</span></a>").getMatch(0);
                     if (nextOffset != null) maxOffset = Integer.parseInt(nextOffset);
                 } else if (counter > 1) {

@@ -47,6 +47,8 @@ public class DivxPlanetCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        final String jsredirect = br.getRegex("location\\.href=\\'(http://[^<>\"]*?)\\'</script>").getMatch(0);
+        if (jsredirect != null) br.getPage(jsredirect);
         if (br.getURL().equals("http://divxplanet.com/404.html") || br.containsHTML("The page can not be found which you wanted to reach")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<h1>([^<>\r\n]+)</h1></td>").getMatch(0);
         final String filesize = br.getRegex("<td><b>Dosya</b></td>[\t\n\r ]+<td width=\"1\">:</td>[\t\n\r ]+<td>([^<>\"]*?)<br>").getMatch(0);

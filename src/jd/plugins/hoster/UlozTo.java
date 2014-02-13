@@ -153,8 +153,10 @@ public class UlozTo extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         boolean failed = true;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final Browser cbr = br.cloneBrowser();
         for (int i = 0; i <= 5; i++) {
-            String captchaUrl = new Regex(br.toString().replace("\\", ""), "captchaContainer\">[\t\n\r ]+<img[\t\n\r ]+src=\"(http:[^<>\"]*?)\"").getMatch(0);
+            cbr.getPage("http://ulozto.net/reloadXapca.php?rnd=" + System.currentTimeMillis());
+            String captchaUrl = cbr.getRegex("\"image\":\"(http:[^<>\"]*?)\"").getMatch(0);
             Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
             if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaUrl = captchaUrl.replace("\\", "");

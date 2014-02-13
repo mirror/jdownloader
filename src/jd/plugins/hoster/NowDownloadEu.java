@@ -87,8 +87,8 @@ public class NowDownloadEu extends PluginForHost {
         }
     }
 
-    private static StringContainer MAINPAGE                = new StringContainer("http://www.nowdownload.eu");
-    private static StringContainer DOMAIN                  = new StringContainer("eu");
+    private static StringContainer MAINPAGE                = new StringContainer("http://www.nowdownload.sx");
+    private static StringContainer DOMAIN                  = new StringContainer("sx");
     private static AtomicBoolean   AVAILABLE_PRECHECK      = new AtomicBoolean(false);
     private static StringContainer ua                      = new StringContainer(RandomUserAgent.generate());
     private static Object          LOCK                    = new Object();

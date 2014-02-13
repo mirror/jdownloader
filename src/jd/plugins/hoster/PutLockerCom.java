@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -44,14 +45,16 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
 /** Works exactly like sockshare.com */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "http://(www\\.)?(putlocker|firedrive)\\.com/((file|embed)|mobile/file)/[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "http://(www\\.)?(putlocker\\.com/((file|embed)|mobile/file)/|firedrive\\.com/file/)[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
 public class PutLockerCom extends PluginForHost {
 
     // TODO: fix premium, it's broken because of domainchange
-    private final String        MAINPAGE = "http://www.firedrive.com";
-    private static Object       LOCK     = new Object();
-    private String              agent    = null;
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private final String        MAINPAGE           = "http://www.firedrive.com";
+    private static Object       LOCK               = new Object();
+    private String              agent              = null;
+    private static final String NOCHUNKS           = "NOCHUNKS";
+
+    private static final String PASSWORD_PROTECTED = "id=\"file_password_container\"";
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -101,6 +104,10 @@ public class PutLockerCom extends PluginForHost {
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("class=\"sad_face_image\"|This file might have been moved, replaced or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(PASSWORD_PROTECTED)) {
+            link.getLinkStatus().setStatusText("This link is password protected");
+            return AvailableStatus.TRUE;
+        }
         final String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)<br>").getMatch(0);
         final String filesize = br.getRegex("<b>Size:</b>([^<>\"]*?)<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -153,6 +160,11 @@ public class PutLockerCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
+        String passCode = null;
+        // 10 MB trash-testfile: http://www.firedrive.com/file/54F8207A5D669183 PW: 12345
+        if (br.containsHTML(PASSWORD_PROTECTED)) {
+            passCode = handlePassword(downloadLink);
+        }
         final Form freeform = br.getForm(1);
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(freeform);
@@ -160,17 +172,6 @@ public class PutLockerCom extends PluginForHost {
         checkForErrors();
         ERROR_COUNTER.set(0);
 
-        String passCode = downloadLink.getStringProperty("pass");
-        // if (br.containsHTML("This file requires a password\\. Please enter it")) {
-        // br.setFollowRedirects(true);
-        // if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
-        // br.postPage(br.getURL(), "file_password=" + Encoding.urlEncode(passCode));
-        // if (br.containsHTML(">This password is not correct")) {
-        // downloadLink.setProperty("pass", Property.NULL);
-        // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
-        // }
-        // br.setFollowRedirects(false);
-        // }
         final String dllink = getDllink(downloadLink);
         int chunks = 0;
         if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false)) {
@@ -259,6 +260,17 @@ public class PutLockerCom extends PluginForHost {
         }
     }
 
+    private String handlePassword(final DownloadLink dl) throws IOException, PluginException {
+        String passCode = dl.getStringProperty("pass");
+        if (passCode == null) passCode = Plugin.getUserInput("Password?", dl);
+        br.postPage(br.getURL(), "item_pass=" + Encoding.urlEncode(passCode));
+        if (br.containsHTML(PASSWORD_PROTECTED)) {
+            dl.setProperty("pass", Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+        }
+        return passCode;
+    }
+
     protected void checkForErrors() throws PluginException {
         // Add firedrive errorhandling here
     }
@@ -290,13 +302,14 @@ public class PutLockerCom extends PluginForHost {
     public void prepBrowser() {
         br.setCookiesExclusive(true);
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept-Charset", null);
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
-        br.getHeaders().put("User-Agent", agent);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0");
     }
 
     private void login(Account account, boolean fetchInfo) throws Exception {
