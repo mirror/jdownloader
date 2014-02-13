@@ -113,7 +113,7 @@ public class Zippysharecom extends PluginForHost {
         try {
             if (!fromFlash) {
                 // document.getElementById('id').href
-                engine.eval("var doc = { getElementById : function(a) { var newObj = new Object(); function href() { return a.href; } newObj.href = href(); return newObj;}};");
+                engine.eval("var doc = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
                 engine.eval(fun);
                 result = engine.get("result");
             } else {
