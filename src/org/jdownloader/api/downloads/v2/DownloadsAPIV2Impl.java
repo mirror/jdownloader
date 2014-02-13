@@ -91,7 +91,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 }
                 if (queryParams.isEta()) {
                     fps.setEta(fpView.getETA());
-
                 }
                 if (queryParams.isBytesLoaded()) {
                     fps.setBytesLoaded(fpView.getDone());
@@ -242,11 +241,12 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     @Override
     @SuppressWarnings("unchecked")
     public void movePackages(long[] packageIds, long afterDestPackageId) {
-
         List<FilePackage> selectedPackages = convertIdsToPackages(packageIds);
-        FilePackage afterDestPackage = convertIdsToPackages(afterDestPackageId).get(0);
+        FilePackage afterDestPackage = null;
+        if (afterDestPackageId != -1l) {
+            afterDestPackage = convertIdsToPackages(afterDestPackageId).get(0);
+        }
         DownloadController.getInstance().move(selectedPackages, afterDestPackage);
-
     }
 
     @Override
@@ -254,7 +254,10 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public void moveLinks(long[] linkIds, long afterLinkID, long destPackageID) {
         DownloadController dlc = DownloadController.getInstance();
         List<DownloadLink> selectedLinks = convertIdsToLinks(linkIds);
-        DownloadLink afterLink = convertIdsToLinks(afterLinkID).get(0);
+        DownloadLink afterLink = null;
+        if (afterLinkID != -1l) {
+            afterLink = convertIdsToLinks(afterLinkID).get(0);
+        }
         FilePackage destpackage = convertIdsToPackages(destPackageID).get(0);
         dlc.move(selectedLinks, destpackage, afterLink);
 
