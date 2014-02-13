@@ -36,6 +36,8 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
 
     void addLinks(AddLinksQueryStorable query);
 
+    void addContainer(String type, String content);
+
     List<LinkVariantStorableV2> getVariants(long linkid) throws BadParameterException;
 
     void setVariant(long linkid, String variantID) throws BadParameterException;

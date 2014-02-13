@@ -1,5 +1,7 @@
 package org.jdownloader.api.linkcollector;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,6 +20,8 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.APIQuery;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -524,8 +528,32 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public List<String> getDownloadFolderHistorySelectionBase() {
-
         return DownloadPathHistoryManager.getInstance().listPathes(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
+    }
 
+    @Override
+    public void addContainer(String type, String content) {
+        String fileName = null;
+        switch (type) {
+        case "DLC":
+            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".dlc";
+            break;
+        case "RSDF":
+            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".rsdf";
+            break;
+        case "CCF":
+            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
+            break;
+        }
+
+        if (fileName != null) {
+            try {
+                File tmp = Application.getTempResource(fileName);
+                IO.writeStringToFile(tmp, content);
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.getAbsolutePath()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

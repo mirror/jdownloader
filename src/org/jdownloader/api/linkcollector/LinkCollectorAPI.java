@@ -119,4 +119,6 @@ public interface LinkCollectorAPI extends RemoteAPIInterface {
      */
 
     int packageCount();
+
+    void addContainer(String type, String content);
 }

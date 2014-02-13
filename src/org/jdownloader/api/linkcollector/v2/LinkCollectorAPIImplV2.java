@@ -1,5 +1,7 @@
 package org.jdownloader.api.linkcollector.v2;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +22,8 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.api.RemoteAPIController;
@@ -535,7 +539,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
                     for (CrawledLink cLink : link.getParentNode().getChildren()) {
                         if (dllink.getLinkID().equals(cLink.getLinkID())) { throw new BadParameterException("Variant is already in this package"); }
-
                     }
                 } finally {
                     link.getParentNode().getModifyLock().readUnlock(readL);
@@ -551,6 +554,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     CrawledPackage destpackage = getPackageByID(destinationPackageID);
                     dlc.move(list, destpackage, afterLink);
                 }
+
                 java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
                 checkableLinks.add(cl);
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
@@ -559,5 +563,30 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             }
         });
 
+    }
+
+    @Override
+    public void addContainer(String type, String content) {
+        String fileName = null;
+        switch (type) {
+        case "DLC":
+            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".dlc";
+            break;
+        case "RSDF":
+            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".rsdf";
+            break;
+        case "CCF":
+            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
+            break;
+        }
+        if (fileName != null) {
+            try {
+                File tmp = Application.getTempResource(fileName);
+                IO.writeStringToFile(tmp, content);
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.getAbsolutePath()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
