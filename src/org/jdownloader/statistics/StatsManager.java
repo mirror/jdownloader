@@ -428,7 +428,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (chunks != null) {
                 dl.setChunks(chunks.length);
             }
-
+            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+            });
+            try {
+                dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
+            } catch (Exception e) {
+            }
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
             dl.setHost(account.getHost());

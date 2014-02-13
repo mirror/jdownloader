@@ -200,6 +200,11 @@ public class DownloadLogEntry extends AbstractLogEntry {
     private boolean proxy   = false;
     private int     counter = 1;
     private long    linkID  = -1;
+    private long    buildTime;
+
+    public long getBuildTime() {
+        return buildTime;
+    }
 
     public long getLinkID() {
         return linkID;
@@ -225,7 +230,7 @@ public class DownloadLogEntry extends AbstractLogEntry {
         this.linkID = id;
     }
 
-    private Object _getErrorDetails() {
-        return null;
+    public void setBuildTime(long parseLong) {
+        this.buildTime = parseLong;
     }
 }
