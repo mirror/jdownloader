@@ -1,6 +1,6 @@
-AutoDetectAction_run_failed=Byly nalezeny UPnP zařízení, ale nešlo provést Reconnect.\nZkuste místo toho Live Header Reconnect!
+AutoDetectAction_run_failed=Byly nalezeny UPnP zařízení, ale nešlo provést znovupřipojení.\nZkuste místo toho Live Header znovupřipojení!
 UPNPReconnectInvoker_getName_=Znovupřipojení UPnP routeru
-UPNPRouterPlugin_run_error=Nelze najít žádné UPnP zařízení. Zkuste místo toho Live Header Reconnect!
+UPNPRouterPlugin_run_error=Nelze najít žádná UPnP zařízení. Zkuste místo toho Live Header znovupřipojení!
 UPNPRouterPlugin_run_mesg=Skenuji všechny síťové adaptéry
 UPNPRouterPlugin_run_wizard_title=Průvodce UPnP routeru
 auto=Automatické nastavení UPnP
