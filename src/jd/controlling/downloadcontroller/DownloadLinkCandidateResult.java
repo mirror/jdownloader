@@ -1,5 +1,10 @@
 package jd.controlling.downloadcontroller;
 
+import java.net.UnknownHostException;
+
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.SkipReason;
 
@@ -117,9 +122,19 @@ public class DownloadLinkCandidateResult {
             if (st != null && st.length > 0) {
                 StringBuilder sb = new StringBuilder();
                 StringBuilder sb2 = new StringBuilder();
-                sb.append(throwable.toString());
-                sb2.append(throwable.toString());
+                if (throwable instanceof PluginException) {
+                    System.out.println(1);
 
+                    sb.append("PluginException: ").append(throwable.getMessage()).append("(" + LinkStatus.toString(((PluginException) throwable).getLinkStatus()) + ")");
+
+                } else if (throwable instanceof UnknownHostException) {
+                    sb.append(UnknownHostException.class.getSimpleName());
+
+                } else {
+                    sb.append(throwable.toString());
+
+                }
+                sb2.append(sb.toString());
                 boolean found = false;
                 boolean found2 = false;
                 for (int i = 0; i < st.length; i++) {

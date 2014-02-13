@@ -17,7 +17,9 @@
 package jd.plugins;
 
 import java.io.Serializable;
+import java.lang.reflect.Field;
 
+import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.formatter.StringFormatter;
 
 public class LinkStatus implements Serializable {
@@ -145,6 +147,26 @@ public class LinkStatus implements Serializable {
         if (statusText != null && statusText.equals(l)) return;
         statusText = l;
         notifyChanges(new LinkStatusProperty(this, LinkStatusProperty.Property.STATUSTEXT, l));
+    }
+
+    public static String toString(int status) {
+        final StringBuilder ret = new StringBuilder();
+        for (Field f : LinkStatus.class.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+
+                try {
+                    if (BinaryLogic.containsAll(status, f.getInt(null))) {
+                        if (ret.length() > 0) ret.append(", ");
+                        ret.append(f.getName());
+                    }
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return ret.toString();
     }
 
     @Override

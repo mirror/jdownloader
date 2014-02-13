@@ -28,6 +28,9 @@ import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
@@ -330,11 +333,29 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     throw browserException;
                 }
             }
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             if (e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
                 validateChallenge = false;
             } else if (e instanceof SkipReasonException && ((SkipReasonException) e).getSkipReason() == SkipReason.CAPTCHA) {
                 validateChallenge = false;
+            } else if (e instanceof PluginException) {
+
+                switch (((PluginException) e).getLinkStatus()) {
+                case LinkStatus.ERROR_RETRY:
+                case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+
+                    // we might be offline
+
+                    BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
+                    try {
+                        onlineCheck.getExternalIP();
+                    } catch (final OfflineException e2) {
+                        e = new NoInternetConnection(e);
+
+                    } catch (final IPCheckException e2) {
+                    }
+
+                }
             }
             downloadLogger.log(e);
             SingleDownloadReturnState ret = new SingleDownloadReturnState(this, e, processingPlugin.getAndSet(null));

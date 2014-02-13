@@ -452,7 +452,7 @@ public class RAFChunk extends Thread {
      */
     private boolean isExternalyAborted() {
 
-        return isInterrupted() || (dl != null && dl.externalDownloadStop()) || downloadable.isInterrupted();
+        return (dl != null && dl.externalDownloadStop()) || downloadable.isInterrupted();
     }
 
     /**
