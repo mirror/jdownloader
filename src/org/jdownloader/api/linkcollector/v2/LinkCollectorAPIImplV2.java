@@ -345,12 +345,10 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     /**
-     * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and
-     * packages.
+     * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and packages.
      * 
      * example: if a package is selected, and non if it's links - all its links will be in the selection info<br>
-     * example2: if a package is selected AND SOME of it's children. The packge will not be considered as fully selected. only the actual
-     * selected links.
+     * example2: if a package is selected AND SOME of it's children. The packge will not be considered as fully selected. only the actual selected links.
      * 
      * @param linkIds
      * @param packageIds
@@ -568,16 +566,12 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public void addContainer(String type, String content) {
         String fileName = null;
-        switch (type) {
-        case "DLC":
+        if ("DLC".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".dlc";
-            break;
-        case "RSDF":
+        } else if ("RSDF".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".rsdf";
-            break;
-        case "CCF":
+        } else if ("CCF".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
-            break;
         }
         if (fileName != null) {
             try {

@@ -534,18 +534,13 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     @Override
     public void addContainer(String type, String content) {
         String fileName = null;
-        switch (type) {
-        case "DLC":
+        if ("DLC".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".dlc";
-            break;
-        case "RSDF":
+        } else if ("RSDF".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".rsdf";
-            break;
-        case "CCF":
+        } else if ("CCF".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
-            break;
         }
-
         if (fileName != null) {
             try {
                 File tmp = Application.getTempResource(fileName);

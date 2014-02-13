@@ -339,22 +339,17 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             } else if (e instanceof SkipReasonException && ((SkipReasonException) e).getSkipReason() == SkipReason.CAPTCHA) {
                 validateChallenge = false;
             } else if (e instanceof PluginException) {
-
                 switch (((PluginException) e).getLinkStatus()) {
                 case LinkStatus.ERROR_RETRY:
                 case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-
                     // we might be offline
-
                     BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) {
                         e = new NoInternetConnection(e);
-
                     } catch (final IPCheckException e2) {
                     }
-
                 }
 
             }
