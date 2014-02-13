@@ -117,7 +117,7 @@ public class FilestoreTo extends PluginForHost {
         String id = bjs.getRegex("data:\\s*'(\\w+=\\w+)'").getMatch(0);
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String jcount = bjs.getRegex("var countdown = \"(\\d+)\";").getMatch(0);
-        String pwnage[] = new String[3];
+        String pwnage[] = new String[4];
         // find startDownload, usually within primary controlling js
         String startDl = bjs.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
         // at times he places in base html source
@@ -127,12 +127,16 @@ public class FilestoreTo extends PluginForHost {
         if (tp == null || tp.length != 6) {
             // and then he might switch it up (as in the past) with additional data + var
             String[] data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+),").getRow(0);
-            if (data == null || data.length != 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (data == null || data.length != 3) {
+                data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+)\\+(\"|')([&a-zA-Z0-9=]+)\\4").getRow(0);
+                if (data == null || data.length != 5) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String[] var = new Regex(startDl, "var\\s*" + data[2] + "\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
             if (var == null || var.length != 4) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             pwnage[0] = data[1];
             pwnage[1] = var[1];
             pwnage[2] = var[3];
+            if (data[4] != null) pwnage[3] = data[4];
         } else {
             pwnage[0] = tp[1];
             pwnage[1] = tp[3];
@@ -157,7 +161,7 @@ public class FilestoreTo extends PluginForHost {
         if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser brd = br.cloneBrowser();
         prepAjax(brd);
-        brd.getPage(ajax + pwnage[0] + code);
+        brd.getPage(ajax + pwnage[0] + code + (pwnage[3] != null ? pwnage[3] : ""));
         br.setFollowRedirects(true);
         final String dllink = brd.toString().replaceAll("%0D%0A", "").trim();
         if (!dllink.startsWith("http://")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
