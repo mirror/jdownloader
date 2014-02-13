@@ -30,6 +30,7 @@ LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Služba není dostupná
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=IP routeru '%s1' je neplatná!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Zdá se, že na http://%s1 není žádné webové rozhraní.\nIP routeru může být neplatná.\n\nPřesto pokračovat?
 LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Znovupřipojení selhalo. Můžete sdílet pouze funkční nastavení znovupřipojení.
+LiveHeaderDetectionWizard_uploadData_sent_failed=Všimli jsme si, že váš skript již je v naší databázi.\nPřesto díky.
 LiveHeaderDetectionWizard_uploadData_sent_ok=Děkujeme!\nPřidali jsme váš skript do naší databáze znovupřipojení routeru.
 LiveHeaderInvoker_getName_=LiveHeader: %s1
 LiveHeaderReconnect_getGUI_help_ip=Zadejte IP routeru nebo klikněte na [Získat IP routeru]...
