@@ -62,6 +62,7 @@ update_dialog_cancel=Przerwij
 update_dialog_later=Zapytaj później
 update_dialog_msg_x_updates_available=Aktualizacje są gotowe do instalacji. Czy chcesz uruchomić teraz aktualizację?
 update_dialog_news_button=Otwarcie Dziennika Zmian
+update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Aktualizacja(-e) dostępne
 update_dialog_yes=Tak (rekomendowane)
 update_in_next_session=Zrezygnuj i nie pytaj więcej aż do następnego restartu.
