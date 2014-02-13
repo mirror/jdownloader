@@ -26,7 +26,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
-import jd.plugins.download.raf.HashResult;
+import jd.plugins.PluginException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonMapperException;
@@ -252,12 +252,98 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         try {
-            HashResult hashResult = downloadController.getHashResult();
-            long startedAt = downloadController.getStartTimestamp();
+            // HashResult hashResult = downloadController.getHashResult();
+            // long startedAt = downloadController.getStartTimestamp();
             DownloadLink link = downloadController.getDownloadLink();
             DownloadLogEntry dl = new DownloadLogEntry();
 
-            long downloadTime = link.getView().getDownloadTime();
+            if (result.getResult() != null) {
+                switch (result.getResult()) {
+                case ACCOUNT_INVALID:
+                    dl.setResult(DownloadResult.ACCOUNT_INVALID);
+                    break;
+                case ACCOUNT_REQUIRED:
+                    dl.setResult(DownloadResult.ACCOUNT_REQUIRED);
+                    break;
+                case ACCOUNT_UNAVAILABLE:
+                    dl.setResult(DownloadResult.ACCOUNT_UNAVAILABLE);
+                    break;
+                case CAPTCHA:
+                    dl.setResult(DownloadResult.CAPTCHA);
+                    break;
+                case CONDITIONAL_SKIPPED:
+                    dl.setResult(DownloadResult.CONDITIONAL_SKIPPED);
+                    break;
+                case CONNECTION_ISSUES:
+                    dl.setResult(DownloadResult.CONNECTION_ISSUES);
+                    break;
+                case CONNECTION_UNAVAILABLE:
+                    dl.setResult(DownloadResult.CONNECTION_UNAVAILABLE);
+                    break;
+                case FAILED:
+                    dl.setResult(DownloadResult.FAILED);
+                    break;
+
+                case FAILED_INCOMPLETE:
+                    dl.setResult(DownloadResult.FAILED_INCOMPLETE);
+                    break;
+                case FATAL_ERROR:
+                    dl.setResult(DownloadResult.FATAL_ERROR);
+                    break;
+                case FILE_UNAVAILABLE:
+                    dl.setResult(DownloadResult.FILE_UNAVAILABLE);
+                    break;
+                case FINISHED:
+                    dl.setResult(DownloadResult.FINISHED);
+                    break;
+                case FINISHED_EXISTS:
+                    dl.setResult(DownloadResult.FINISHED_EXISTS);
+                    break;
+                case HOSTER_UNAVAILABLE:
+                    dl.setResult(DownloadResult.HOSTER_UNAVAILABLE);
+                    Throwable th = result.getThrowable();
+                    if (th != null) {
+                        if (th instanceof PluginException) {
+                            System.out.println(1);
+                            String error = ((PluginException) th).getErrorMessage();
+                            if (error != null && (error.contains("Reconnection") || error.contains("Waiting till new downloads can be started"))) {
+                                dl.setResult(DownloadResult.IP_BLOCKED);
+                            }
+
+                        }
+                    }
+                    break;
+                case IP_BLOCKED:
+                    dl.setResult(DownloadResult.IP_BLOCKED);
+                    break;
+                case OFFLINE_TRUSTED:
+                    dl.setResult(DownloadResult.OFFLINE_TRUSTED);
+                    break;
+                case OFFLINE_UNTRUSTED:
+                    dl.setResult(DownloadResult.OFFLINE_UNTRUSTED);
+                    break;
+                case PLUGIN_DEFECT:
+                    dl.setResult(DownloadResult.PLUGIN_DEFECT);
+                    break;
+                case PROXY_UNAVAILABLE:
+                    dl.setResult(DownloadResult.PROXY_UNAVAILABLE);
+                    break;
+                case SKIPPED:
+                    dl.setResult(DownloadResult.SKIPPED);
+                    break;
+
+                case FAILED_EXISTS:
+                case RETRY:
+                case STOPPED:
+                    // no reason to log them
+                    return;
+                default:
+                    dl.setResult(DownloadResult.UNKNOWN);
+                }
+            } else {
+                dl.setResult(DownloadResult.UNKNOWN);
+            }
+            // long downloadTime = link.getView().getDownloadTime();
             List<PluginSubTask> tasks = downloadController.getTasks();
             PluginSubTask plugintask = tasks.get(0);
             PluginSubTask downloadTask = null;
@@ -351,7 +437,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
             dl.setPluginRuntime(pluginRuntime);
             dl.setProxy(usedProxy != null && !usedProxy.isDirect() && !usedProxy.isNone());
-            dl.setResult(result.getResult());
+
             dl.setSpeed(speed);
             dl.setWaittime(waittime);
             dl.setRevision(candidate.getCachedAccount().getPlugin().getVersion());

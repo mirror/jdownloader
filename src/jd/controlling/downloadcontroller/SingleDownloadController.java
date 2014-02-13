@@ -356,7 +356,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     }
 
                 }
+
             }
+
             downloadLogger.log(e);
             SingleDownloadReturnState ret = new SingleDownloadReturnState(this, e, processingPlugin.getAndSet(null));
             return ret;

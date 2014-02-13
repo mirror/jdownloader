@@ -1866,36 +1866,44 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     DownloadLinkCandidateResult result = null;
                     try {
-                        result = handleReturnState(logger, singleDownloadController, returnState);
-
-                        result.setStartTime(singleDownloadController.getStartTimestamp());
-                        result.setFinishTime(returnState.getTimeStamp());
-                        setFinalLinkStatus(candidate, result, singleDownloadController);
-                        DownloadLinkCandidateHistory existingHistory = currentSession.getHistory(link);
-                        if (existingHistory != null && !existingHistory.dettach(candidate, result)) {
-                            logger.severe("Could not detach from History: " + candidate);
-                        }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                    currentSession.getControllers().remove(singleDownloadController);
-                    for (DownloadWatchDogJob job : singleDownloadController.getJobsAfterDetach()) {
                         try {
-                            job.execute(currentSession);
-                        } catch (Throwable e) {
+                            result = handleReturnState(logger, singleDownloadController, returnState);
+
+                            result.setStartTime(singleDownloadController.getStartTimestamp());
+                            result.setFinishTime(returnState.getTimeStamp());
+                            setFinalLinkStatus(candidate, result, singleDownloadController);
+                            DownloadLinkCandidateHistory existingHistory = currentSession.getHistory(link);
+                            if (existingHistory != null && !existingHistory.dettach(candidate, result)) {
+                                logger.severe("Could not detach from History: " + candidate);
+                            }
+                        } catch (final Throwable e) {
                             logger.log(e);
                         }
+                        currentSession.getControllers().remove(singleDownloadController);
+                        for (DownloadWatchDogJob job : singleDownloadController.getJobsAfterDetach()) {
+                            try {
+                                job.execute(currentSession);
+                            } catch (Throwable e) {
+                                logger.log(e);
+                            }
+                        }
+                        HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(currentSession);
+                        /* after each download, the order/position of next downloadCandidate could have changed */
+                        currentSession.refreshCandidates();
+                        try {
+                            singleDownloadController.getDownloadLink().getFilePackage().getView().requestUpdate();
+                        } catch (final Throwable e) {
+                            /* link can already be removed->nullpointer exception */
+                        }
+                        eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController, candidate, result));
+
+                        handleFinalLinkStates(finalLinkStateLinks, currentSession, logger, singleDownloadController);
+                    } finally {
+                        if (result != null) {
+                            // cleanup
+                            result.setThrowable(null);
+                        }
                     }
-                    HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(currentSession);
-                    /* after each download, the order/position of next downloadCandidate could have changed */
-                    currentSession.refreshCandidates();
-                    try {
-                        singleDownloadController.getDownloadLink().getFilePackage().getView().requestUpdate();
-                    } catch (final Throwable e) {
-                        /* link can already be removed->nullpointer exception */
-                    }
-                    eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController, candidate, result));
-                    handleFinalLinkStates(finalLinkStateLinks, currentSession, logger, singleDownloadController);
                 } catch (final Throwable e) {
                     logger.log(e);
                 } finally {

@@ -93,6 +93,7 @@ public class DownloadLinkCandidateResult {
     private final ConditionalSkipReason conditionalSkip;
 
     private String                      errorID;
+    private Throwable                   throwable;
 
     public String getErrorID() {
         return errorID;
@@ -116,7 +117,7 @@ public class DownloadLinkCandidateResult {
 
     private void updateErrorID(Throwable throwable) {
         errorID = null;
-
+        this.throwable = throwable;
         if (throwable != null) {
             StackTraceElement[] st = throwable.getStackTrace();
             if (st != null && st.length > 0) {
@@ -168,6 +169,14 @@ public class DownloadLinkCandidateResult {
             }
 
         }
+    }
+
+    public Throwable getThrowable() {
+        return throwable;
+    }
+
+    public void setThrowable(Throwable throwable) {
+        this.throwable = throwable;
     }
 
     public DownloadLinkCandidateResult(ConditionalSkipReason conditionalSkip, Throwable throwable) {

@@ -1,7 +1,5 @@
 package org.jdownloader.statistics;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
-
 import org.appwork.storage.JSonStorage;
 
 public class DownloadLogEntry extends AbstractLogEntry {
@@ -179,17 +177,17 @@ public class DownloadLogEntry extends AbstractLogEntry {
         this.filesize = filesize;
     }
 
-    public RESULT getResult() {
+    public DownloadResult getResult() {
         return result;
     }
 
-    public void setResult(RESULT result) {
+    public void setResult(DownloadResult result) {
         this.result = result;
     }
 
-    private long   speed    = 0;
-    private long   filesize = 0;
-    private RESULT result   = null;
+    private long           speed    = 0;
+    private long           filesize = 0;
+    private DownloadResult result   = null;
 
     public long getPluginRuntime() {
         return pluginRuntime;

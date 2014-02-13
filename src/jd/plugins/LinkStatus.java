@@ -152,7 +152,7 @@ public class LinkStatus implements Serializable {
     public static String toString(int status) {
         final StringBuilder ret = new StringBuilder();
         for (Field f : LinkStatus.class.getDeclaredFields()) {
-            if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+            if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) && f.getType() == int.class) {
 
                 try {
                     if (BinaryLogic.containsAll(status, f.getInt(null))) {
