@@ -45,7 +45,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
 /** Works exactly like sockshare.com */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "http://(www\\.)?(putlocker\\.com/((file|embed)|mobile/file)/|firedrive\\.com/file/)[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "http://(www\\.)?(putlocker|firedrive)\\.com/(file|embed)|mobile/file)/[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
 public class PutLockerCom extends PluginForHost {
 
     // TODO: fix premium, it's broken because of domainchange
@@ -91,9 +91,8 @@ public class PutLockerCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        if (link.getDownloadURL().contains("putlocker.com")) {
-            link.setUrlDownload("http://www.firedrive.com/file/" + new Regex(link.getDownloadURL(), "/([A-Z0-9]+)$").getMatch(0));
-        }
+        // Correct all because firedrive doesn't have the embed links though users use them anyways
+        link.setUrlDownload("http://www.firedrive.com/file/" + new Regex(link.getDownloadURL(), "/([A-Z0-9]+)$").getMatch(0));
     }
 
     @Override
