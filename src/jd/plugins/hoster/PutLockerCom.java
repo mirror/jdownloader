@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -40,7 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -55,18 +52,45 @@ public class PutLockerCom extends PluginForHost {
     private static Object       LOCK     = new Object();
     private String              agent    = null;
     private static final String NOCHUNKS = "NOCHUNKS";
-    /** The list of quality values displayed to the user */
-    private final String[]      servers  = new String[] { "Prefer Original format (bigger size, better quality)", "Prefer Stream format [.flv] (smaller size, less quality)" };
-    private final String        formats  = "formats";
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://auth.firedrive.com/signup");
-        setConfigElements();
+    }
+
+    @Override
+    public boolean isPremiumEnabled() {
+        return "firedrive.com".equalsIgnoreCase(getHost());
+    }
+
+    @Override
+    public Boolean rewriteHost(Account acc) {
+        if ("putlocker.com".equals(getHost())) {
+            if (acc != null && "putlocker.com".equals(acc.getHoster())) {
+                acc.setHoster("firedrive.com");
+                return true;
+            }
+            return false;
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean rewriteHost(DownloadLink link) {
+        if ("putlocker.com".equals(getHost())) {
+            if (link != null && "putlocker.com".equals(link.getHost())) {
+                link.setHost("firedrive.com");
+                return true;
+            }
+            return false;
+        }
+        return null;
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.firedrive.com/file/" + new Regex(link.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
+        if (link.getDownloadURL().contains("putlocker.com")) {
+            link.setUrlDownload("http://www.firedrive.com/file/" + new Regex(link.getDownloadURL(), "/([A-Z0-9]+)$").getMatch(0));
+        }
     }
 
     @Override
@@ -360,25 +384,6 @@ public class PutLockerCom extends PluginForHost {
         }
     }
 
-    /** Same code for putlocker.com and sockshare.com START */
-    private int getConfiguredServer() {
-        switch (getPluginConfig().getIntegerProperty(formats, -1)) {
-        case 0:
-            logger.fine("Original format is configured");
-            return 0;
-        case 1:
-            logger.fine("Stream format is configured");
-            return 1;
-        default:
-            logger.fine("No format is cunfigured, returning default format (original format)");
-            return 0;
-        }
-    }
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, servers, JDL.L("plugins.host.firedrivecom.preferredformats", "Format selection - select your prefered format:\r\nBy default, JDownloader will download the original format if possible.\r\nIf the desired format isn't available, JDownloader will download the other one.\r\n\rPremium users can only download the original format.")).setDefaultValue(0).setEnabled(false));
-    }
-
     private String getDllink(DownloadLink downloadLink) throws IOException, PluginException {
         String dllink = null;
         // check if there is a video stream
@@ -393,26 +398,6 @@ public class PutLockerCom extends PluginForHost {
         }
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return dllink.replace("&amp;", "&");
-    }
-
-    private String getStreamLink() throws IOException, PluginException {
-        String dllink = br.getRegex("\\'(/get_file\\.php\\?stream=[^<>\"/]*?)\\'").getMatch(0);
-        if (dllink != null) {
-            br.getPage("http://www." + this.getHost() + dllink);
-            dllink = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return dllink;
-    }
-
-    private String getOriginalFormatLink() throws IOException, PluginException {
-        String dllink = br.getRegex("\"(/get_file\\.php\\?id=[^<>\"/]*?)\"").getMatch(0);
-        if (dllink != null) {
-            br.getPage("http://www." + this.getHost() + dllink);
-            dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return dllink;
     }
 
     private String getCaptchaIMG() {
@@ -447,16 +432,6 @@ public class PutLockerCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private Form getFormByHTML(final String regex) {
-        Form[] workaround = br.getForms();
-        if (workaround != null) {
-            for (Form f : workaround) {
-                if (f.containsHTML(regex)) return f;
-            }
-        }
-        return null;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
