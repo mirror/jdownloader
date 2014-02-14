@@ -26,6 +26,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 import org.appwork.exceptions.WTFException;
@@ -256,7 +257,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             // long startedAt = downloadController.getStartTimestamp();
             DownloadLink link = downloadController.getDownloadLink();
             DownloadLogEntry dl = new DownloadLogEntry();
-
+            Throwable th = null;
             if (result.getResult() != null) {
                 switch (result.getResult()) {
                 case ACCOUNT_INVALID:
@@ -276,6 +277,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     break;
                 case CONNECTION_ISSUES:
                     dl.setResult(DownloadResult.CONNECTION_ISSUES);
+
                     break;
                 case CONNECTION_UNAVAILABLE:
                     dl.setResult(DownloadResult.CONNECTION_UNAVAILABLE);
@@ -286,6 +288,19 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                 case FAILED_INCOMPLETE:
                     dl.setResult(DownloadResult.FAILED_INCOMPLETE);
+                    th = result.getThrowable();
+                    if (th != null) {
+
+                        if (th instanceof PluginException) {
+
+                            // String error = ((PluginException) th).getErrorMessage();
+                            if (((PluginException) th).getValue() == LinkStatus.VALUE_TIMEOUT_REACHED) {
+                                dl.setResult(DownloadResult.CONNECTION_ISSUES);
+                            } else if (((PluginException) th).getValue() == LinkStatus.VALUE_LOCAL_IO_ERROR) { return; }
+
+                        }
+
+                    }
                     break;
                 case FATAL_ERROR:
                     dl.setResult(DownloadResult.FATAL_ERROR);
@@ -301,7 +316,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     break;
                 case HOSTER_UNAVAILABLE:
                     dl.setResult(DownloadResult.HOSTER_UNAVAILABLE);
-                    Throwable th = result.getThrowable();
+                    th = result.getThrowable();
                     if (th != null) {
                         if (th instanceof PluginException) {
                             System.out.println(1);

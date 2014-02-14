@@ -21,6 +21,6 @@ public enum DownloadResult {
     OFFLINE_UNTRUSTED,
     PLUGIN_DEFECT,
     PROXY_UNAVAILABLE,
-    SKIPPED
+    SKIPPED;
 
 }
