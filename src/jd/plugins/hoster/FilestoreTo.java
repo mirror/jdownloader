@@ -123,37 +123,46 @@ public class FilestoreTo extends PluginForHost {
         // at times he places in base html source
         if (startDl == null) startDl = br.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
         // find the value' we need
-        String[] tp = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)").getRow(0);
-        if (tp == null || tp.length != 6) {
-            // and then he might switch it up (as in the past) with additional data + var
-            String[] data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+),").getRow(0);
-            if (data == null || data.length != 3) {
-                data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+)\\+(\"|')([&a-zA-Z0-9=]+)\\4").getRow(0);
-                if (data == null || data.length != 5) {
-                    data = new Regex(startDl, "data\\s*:\\s*([a-zA-Z0-9]+),").getRow(0);
-                    if (data == null || data.length != 1) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                }
-            }
-            String[] var = null;
-            if (data != null && data.length != 1) var = new Regex(startDl, "var\\s*" + data[2] + "\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
-            if (var != null && var.length == 4) {
-                pwnage[0] = data[1];
-                pwnage[1] = var[1];
-                pwnage[2] = var[3];
-                if (data[4] != null) pwnage[3] = data[4];
-            } else if ((var == null || var.length != 4) && data.length == 1) {
-                var = new Regex(startDl, "var\\s*" + data[0] + "\\s*=\\s*(\"|')(\\w+=)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)\\+(\"|')([\\w&=]+)\\7").getRow(0);
-                if (var != null && var.length == 8) {
-                    pwnage[0] = var[1];
-                    pwnage[1] = var[3];
-                    pwnage[2] = var[3];
-                    pwnage[3] = var[7];
-                }
-            }
+        String[] data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\),").getRow(0);
+        if (data != null && data.length == 6) {
+            pwnage[0] = data[1];
+            pwnage[1] = data[3];
+            pwnage[2] = data[5];
         } else {
-            pwnage[0] = tp[1];
-            pwnage[1] = tp[3];
-            pwnage[2] = tp[5];
+            // still within main data
+            data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)\\+(\"|')([\\w&=]+)\\7,").getRow(0);
+            if (data != null && data.length == 8) {
+                pwnage[0] = data[1];
+                pwnage[1] = data[3];
+                pwnage[2] = data[5];
+                pwnage[3] = data[7];
+            } else {
+                // and then he might switch it up (as in the past) with additional data + var
+                data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+),").getRow(0);
+                if (data == null || data.length != 3) {
+                    data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+)\\+(\"|')([&a-zA-Z0-9=]+)\\4").getRow(0);
+                    if (data == null || data.length != 5) {
+                        data = new Regex(startDl, "data\\s*:\\s*([a-zA-Z0-9]+),").getRow(0);
+                        if (data == null || data.length != 1) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    }
+                }
+                String[] var = null;
+                if (data != null && data.length != 1) var = new Regex(startDl, "var\\s*" + data[2] + "\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
+                if (var != null && var.length == 4) {
+                    pwnage[0] = data[1];
+                    pwnage[1] = var[1];
+                    pwnage[2] = var[3];
+                    if (data[4] != null) pwnage[3] = data[4];
+                } else if ((var == null || var.length != 4) && data.length == 1) {
+                    var = new Regex(startDl, "var\\s*" + data[0] + "\\s*=\\s*(\"|')(\\w+=)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)\\+(\"|')([\\w&=]+)\\7,").getRow(0);
+                    if (var != null && var.length == 8) {
+                        pwnage[0] = var[1];
+                        pwnage[1] = var[3];
+                        pwnage[2] = var[3];
+                        pwnage[3] = var[7];
+                    }
+                }
+            }
         }
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         final String ajax = "http://filestore.to/ajax/download.php?";
