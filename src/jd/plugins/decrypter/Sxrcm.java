@@ -29,14 +29,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/(v1/)?dl_links_\\d+_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexuria.com" }, urls = { "http://(www\\.)?sexuria\\.com/(v1/)?Pornos_Kostenlos_.+?_(\\d+)\\.html|http://(www\\.)?sexuria\\.com/(v1/)?dl_links_\\d+_\\d+\\.html|http://(www\\.)?sexuria\\.com/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+" }, flags = { 0 })
 public class Sxrcm extends PluginForDecrypt {
 
-    private static final Pattern PATTEREN_SUPPORTED_MAIN    = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_SUPPORTED_CRYPT    = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/(v1/)?dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_SUPPORTED_REDIRECT = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTEREN_SUPPORTED_MAIN    = Pattern.compile("http://(www\\.)?sexuria\\.com/(v1/)?Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_CRYPT    = Pattern.compile("http://(www\\.)?sexuria\\.com/(v1/)?dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_REDIRECT = Pattern.compile("http://(www\\.)?sexuria\\.com/out\\.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_PASSWORD           = Pattern.compile("<strong>Passwort: </strong></div></td>.*?bgcolor=\"#EFEFEF\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    private static final Pattern PATTERN_DL_LINK_PAGE       = Pattern.compile("disabled\\'\" href=\"(http[^<>\"]*?)\"", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_DL_LINK_PAGE       = Pattern.compile("\"(dl_links_\\d+_\\d+\\.html)\"", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_REDIRECT_LINKS     = Pattern.compile("value=\"(http://sexuria\\.com/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE);
     private static Object        LOCK                       = new Object();
 
@@ -58,12 +58,12 @@ public class Sxrcm extends PluginForDecrypt {
                 br.getPage(parameter);
                 String links[] = br.getRegex(PATTERN_DL_LINK_PAGE).getColumn(0);
                 for (String link : links) {
-                    decryptedLinks.add(createDownloadlink("http://sexuria.com/dl_links_" + link));
+                    decryptedLinks.add(createDownloadlink("http://sexuria.com/v1/" + link));
                 }
                 return decryptedLinks;
             } else if (new Regex(parameter, PATTERN_SUPPORTED_CRYPT).matches()) {
-                downloadId = new Regex(parameter, PATTERN_SUPPORTED_CRYPT).getMatch(1);
-                br.getPage("http://sexuria.com/Pornos_Kostenlos_info_" + downloadId + ".html");
+                downloadId = new Regex(parameter, PATTERN_SUPPORTED_CRYPT).getMatch(2);
+                br.getPage("http://sexuria.com/v1/Pornos_Kostenlos_info_" + downloadId + ".html");
                 password = br.getRegex(PATTERN_PASSWORD).getMatch(0);
                 ArrayList<String> pwList = null;
                 if (password != null) {
@@ -71,13 +71,36 @@ public class Sxrcm extends PluginForDecrypt {
                 }
                 Thread.sleep(1000);
                 br.getPage(parameter);
-                String links[] = br.getRegex(PATTERN_REDIRECT_LINKS).getColumn(0);
+                final String links[] = br.getRegex(PATTERN_REDIRECT_LINKS).getColumn(0);
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 for (String link : links) {
+                    try {
+                        if (this.isAbort()) {
+                            logger.info("Decryption aborted by user: " + parameter);
+                            return decryptedLinks;
+                        }
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
+                    link = link.replace("http://sexuria.com/", "http://www.sexuria.com/");
                     Thread.sleep(1000);
                     br.getPage(link);
-                    DownloadLink dlLink = createDownloadlink(br.getRedirectLocation());
+                    final String finallink = br.getRedirectLocation();
+                    if (finallink == null || finallink.contains("sexuria.com/")) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    final DownloadLink dlLink = createDownloadlink(finallink);
                     if (pwList != null) dlLink.setSourcePluginPasswordList(pwList);
                     decryptedLinks.add(dlLink);
+                    try {
+                        distribute(dlLink);
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
                 }
                 return decryptedLinks;
             } else if (new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).matches()) {

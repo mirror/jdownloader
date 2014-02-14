@@ -626,20 +626,19 @@ public class SendMyWayCom extends PluginForHost {
                 }
             }
             br.setCookie(COOKIE_HOST, "lang", "english");
-            br.getPage(COOKIE_HOST + "/login.html");
+            br.getPage("http://www.sendmyway.com/login.html");
             Form loginform = br.getForm(0);
             if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             loginform.put("login", Encoding.urlEncode(account.getUser()));
             loginform.put("password", Encoding.urlEncode(account.getPass()));
             br.submitForm(loginform);
             if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            br.getPage(COOKIE_HOST + "/?op=my_account");
+            br.getPage("http://www.sendmyway.com/?op=my_account");
             correctBR();
-            if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
-                account.setProperty("nopremium", true);
-            } else {
+            if (new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
                 account.setProperty("nopremium", false);
+            } else {
+                account.setProperty("nopremium", true);
             }
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();

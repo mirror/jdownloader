@@ -25,6 +25,7 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -104,32 +105,33 @@ public class JumboFilesOrg extends PluginForHost {
             final String reconnectWait = br.getRegex(">Delay between downloads must be not less than (\\d+) min").getMatch(0);
             if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
             br.setFollowRedirects(false);
-            // Waittime is skippable
-            // final long timebefore = System.currentTimeMillis();
-            for (int i = 1; i <= 3; i++) {
-                final String server = br.getRegex("\"(http://[a-z0-9]+\\.jumbofiles\\.org/file\\.php)\"").getMatch(0);
-                if (server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                // if (i == 1) {
-                // waitTime(timebefore, downloadLink);
-                // }
-                File cf = null;
-                try {
-                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                } catch (final Exception e) {
-                    if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                    throw e;
-                }
-                final String code = getCaptchaCode(cf, downloadLink);
-                final String chid = sm.getChallenge(code);
-                br.postPage(br.getURL(), "adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid) + "&server=" + Encoding.urlEncode(server) + "&n=dl&method_free=SLOW+DOWNLOAD");
-                if (br.containsHTML("solvemedia\\.com/papi/")) continue;
-                break;
+            br.postPage(br.getURL(), "next=1&method_premium0=Low+SPEED+DOWNLOAD");
+            br.postPage(br.getURL(), "next=2&method_premium=Slow+DOWNLOAD");
+            final long timeBefore = System.currentTimeMillis();
+            final String server = br.getRegex("\"(http://[a-z0-9]+\\.(jumbofiles\\.org|jumbofilebox\\.com|putcker\\.com|mediafile\\.co|10shared\\.com)/file\\.php)\"").getMatch(0);
+            if (server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+            final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+            // if (i == 1) {
+            // waitTime(timebefore, downloadLink);
+            // }
+            File cf = null;
+            try {
+                cf = sm.downloadCaptcha(getLocalCaptchaFile());
+            } catch (final Exception e) {
+                if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                throw e;
             }
-            if (br.containsHTML("solvemedia\\.com/papi/") && dllink == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            final String code = getCaptchaCode(cf, downloadLink);
+            final String chid = sm.getChallenge(code);
+            waitTime(timeBefore, downloadLink);
+            try {
+                br.postPage(br.getURL(), "adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid) + "&server=" + Encoding.urlEncode(server) + "&n=dl&method_free=SLOW+DOWNLOAD");
+            } catch (final BrowserException e) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
+            }
             dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("solvemedia\\.com/papi/") || dllink == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -159,17 +161,15 @@ public class JumboFilesOrg extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings("unused")
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
+        int wait = 30;
         final String ttt = br.getRegex("x939=(\\d+);").getMatch(0);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
-        }
+        if (ttt != null) wait = Integer.parseInt(ttt);
+        wait -= passedTime;
+        logger.info("Waittime detected, waiting " + wait + " - " + passedTime + " seconds from now on...");
+        if (wait > 0) sleep(wait * 1000l, downloadLink);
     }
 
     private static final String MAINPAGE = "http://jumbofiles.org";

@@ -109,7 +109,7 @@ public class UploadedHdCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         // English language, some reason you can't set this via cookie.
-        br.getPage(MAINPAGE + "/index.php?_t=English+%28en%29");
+        br.getPage(MAINPAGE + "/index.html?_t=English+%28en%29");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().matches(".+/register\\.(php|html).*?") || br.containsHTML(premiumFile)) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
@@ -221,7 +221,7 @@ public class UploadedHdCom extends PluginForHost {
             dl.startDownload();
         } else {
             // Happens if the user isn't logged in
-            if (br.getURL().equals("http://www.uploadedhd.com/register.php")) {
+            if (br.getURL().equals("http://www.uploadedhd.com/register.php") || br.getURL().equals("http://www.uploadedhd.com/register.html")) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
@@ -301,9 +301,9 @@ public class UploadedHdCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage(MAINPAGE + "/login.php", "loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&submitme=1");
+                br.postPage(MAINPAGE + "/login.html", "loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&submitme=1");
                 // English language, some reason you can't set this via cookie and it switches after login again.. stupid site.
-                if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains("/account_home.php")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains("/account_home.html")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -329,7 +329,7 @@ public class UploadedHdCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("/upgrade.php");
+        br.getPage("/upgrade.html");
         ai.setUnlimitedTraffic(); // jdownloader
         final String expire = br.getRegex("(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire != null) {
@@ -353,20 +353,21 @@ public class UploadedHdCom extends PluginForHost {
         if (account.getBooleanProperty("free")) {
             br.getPage(link.getDownloadURL());
             doFree(link);
+        } else {
+            String dllink = link.getDownloadURL();
+            if (!isDownloadable) {
+                dllink = br.getRegex("(m4v|mp3): \"(http://[^<>\"]*?)\"").getMatch(1);
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                handleErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        String dllink = link.getDownloadURL();
-        if (!isDownloadable) {
-            dllink = br.getRegex("(m4v|mp3): \"(http://[^<>\"]*?)\"").getMatch(1);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, chunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            handleErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     private void handleErrors() throws PluginException {

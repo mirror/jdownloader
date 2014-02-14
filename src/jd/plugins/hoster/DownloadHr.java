@@ -63,7 +63,7 @@ public class DownloadHr extends PluginForHost {
         if ("http://www.download.hr/".equals(br.getRedirectLocation()) || br.containsHTML("<title>Download\\.hr \\- Free Software Downloads</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"TableRightRow pozadina_Bijela uvuci10\">([^<>\"]*?)</a>").getMatch(0);
         if (filename == null) {
-            final String name = br.getRegex("class=\"font20 bold\">([^<>\"]*?)</span>").getMatch(0);
+            final String name = br.getRegex("class=\"font20 bold\">([^<>\"]*?)</").getMatch(0);
             final String version = br.getRegex("itemprop=\"version\" class=\"font18 bold\">([^<>\"]*?)</span>").getMatch(0);
             if (name != null && version != null) {
                 filename = Encoding.htmlDecode(name) + " " + Encoding.htmlDecode(version);
@@ -86,6 +86,7 @@ public class DownloadHr extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

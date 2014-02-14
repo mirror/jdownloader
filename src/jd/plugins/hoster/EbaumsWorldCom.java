@@ -45,7 +45,7 @@ public class EbaumsWorldCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("ebaumsworld\\.com/img/errorPage404\\.jpg\\)|<h2>Looks like Pepper Peanut ate that page\\.\\.\\.</h2>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("ebaumsworld\\.com/img/errorPage404\\.jpg\\)|<h2>Looks like Pepper Peanut ate that page\\.\\.\\.</h2>") || br.getURL().equals("http://www.ebaumsworld.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<a class=\"pw_title\" style=\"display:none\">([^<>\"]*?)</a>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

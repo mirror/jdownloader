@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,8 +46,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadhero.co", "uploadhero.com" }, urls = { "http://(www\\.)?uploadhero\\.com?/(dl|v)/[A-Za-z0-9]+", "http://NULL_REGEX_BLAAAH12312321" }, flags = { 2, 0 })
 public class UploadHeroCom extends PluginForHost {
 
-    private static final String MAINPAGE = "http://uploadhero.co";
-    private static Object       LOCK     = new Object();
+    private static final String  MAINPAGE = "http://uploadhero.co";
+    private static Object        LOCK     = new Object();
+    private static AtomicInteger maxPrem  = new AtomicInteger(1);
 
     public UploadHeroCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,8 +82,12 @@ public class UploadHeroCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         final Regex blockRegex = br.getRegex("/lightbox_block_download\\.php\\?min=(\\d+)\\&sec=(\\d+)\"");
         final String blockmin = blockRegex.getMatch(0);
         final String blocksec = blockRegex.getMatch(1);
@@ -152,8 +158,9 @@ public class UploadHeroCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        maxPrem.set(1);
+        final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -161,66 +168,87 @@ public class UploadHeroCom extends PluginForHost {
             return ai;
         }
         br.getPage(MAINPAGE + "/my-account");
-        Regex otherStuff = br.getRegex("\">Used storage</div><div class=\"champdeux\">([^<>\"]*?) \\- (\\d+) Files</div></div>");
+        final Regex otherStuff = br.getRegex("\">Used storage</div><div class=\"champdeux\">([^<>\"]*?) \\- (\\d+) Files</div></div>");
         String space = otherStuff.getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
         String filesNum = otherStuff.getMatch(1);
         if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<td><b>Days:</b></td>[\t\n\r ]+<td>(\\d+) days</td>").getMatch(0);
+        final String expire = br.getRegex("<td><b>Days:</b></td>[\t\n\r ]+<td>(\\d+) days</td>").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            account.setProperty("nopremium", true);
+            ai.setStatus("Registered (free) user");
         } else {
             ai.setValidUntil(System.currentTimeMillis() + (Integer.parseInt(expire) + 1) * 24 * 60 * 60 * 1000l);
+            try {
+                maxPrem.set(20);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            account.setProperty("nopremium", false);
+            ai.setStatus("Premium User");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) dllink = getDllink();
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-            /* check if cookie is outdated */
-            synchronized (LOCK) {
-                Object ret = account.getProperty("cookies", null);
-                if (ret == null) {
-                    /* cookie already got deleted */
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                Browser brc = br.cloneBrowser();
-                brc.getPage(MAINPAGE + "/my-account");
-                String expire = brc.getRegex("<td><b>Days:</b></td>[\t\n\r ]+<td>(\\d+) days</td>").getMatch(0);
-                if (expire == null) {
-                    logger.info("try to refresh cookie, as it seems to be invalid!");
-                    account.setProperty("cookies", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+        if (account.getBooleanProperty("nopremium", false)) {
+            doFree(link);
+        } else {
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) dllink = getDllink();
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.containsHTML("404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+                /* check if cookie is outdated */
+                synchronized (LOCK) {
+                    Object ret = account.getProperty("cookies", null);
+                    if (ret == null) {
+                        /* cookie already got deleted */
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    Browser brc = br.cloneBrowser();
+                    brc.getPage(MAINPAGE + "/my-account");
+                    String expire = brc.getRegex("<td><b>Days:</b></td>[\t\n\r ]+<td>(\\d+) days</td>").getMatch(0);
+                    if (expire == null) {
+                        logger.info("try to refresh cookie, as it seems to be invalid!");
+                        account.setProperty("cookies", Property.NULL);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override

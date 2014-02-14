@@ -122,24 +122,22 @@ public class PutLockerCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
-        } catch (PluginException e) {
-            if (br.containsHTML("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>Free Account")) {
-                logger.warning("Free Accounts are not currently supported");
-                ai.setStatus("Free Accounts are not currently supported");
-            }
+        } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        String validUntil = br.getRegex("Expiring </td>.*?>(.*?)<").getMatch(0);
+        br.getPage("http://www.firedrive.com/my_settings?_=" + System.currentTimeMillis());
+        final String validUntil = br.getRegex("Pro features end on: ([^<>\"]*?)</span>").getMatch(0);
         if (validUntil != null) {
-            validUntil = validUntil.replaceFirst(" at ", " ");
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MMMM dd, yyyy HH:mm", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "MMMM dd, yyyy", Locale.ENGLISH));
+            account.setProperty("freeacc", false);
             ai.setStatus("Premium User");
-            ai.setUnlimitedTraffic();
-            account.setValid(true);
         } else {
-            account.setValid(false);
+            account.setProperty("freeacc", true);
+            ai.setStatus("Registered (free) user");
         }
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
         return ai;
     }
 
@@ -158,6 +156,11 @@ public class PutLockerCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         String passCode = null;
         // 10 MB trash-testfile: http://www.firedrive.com/file/54F8207A5D669183 PW: 12345
@@ -169,7 +172,6 @@ public class PutLockerCom extends PluginForHost {
         br.submitForm(freeform);
 
         checkForErrors();
-        ERROR_COUNTER.set(0);
 
         final String dllink = getDllink(downloadLink);
         int chunks = 0;
@@ -283,19 +285,27 @@ public class PutLockerCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
-        br.setFollowRedirects(false);
-        String dlURL = getDllink(link);
-        if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            checkForErrors();
-            if (br.getURL().equals("http://www.firedrive.com/")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", calculateDynamicWaittime(10));
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("freeacc", false)) {
+            doFree(link);
+        } else {
+            String passCode = null;
+            // 10 MB trash-testfile: http://www.firedrive.com/file/54F8207A5D669183 PW: 12345
+            if (br.containsHTML(PASSWORD_PROTECTED)) {
+                passCode = handlePassword(link);
+            }
+            br.setFollowRedirects(true);
+            final String dlURL = getFileDllink();
+            if (dlURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlURL, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                checkForErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty("pass", passCode);
+            fixFilename(link);
+            dl.startDownload();
         }
-        ERROR_COUNTER.set(0);
-        fixFilename(link);
-        dl.startDownload();
     }
 
     public void prepBrowser() {
@@ -308,10 +318,10 @@ public class PutLockerCom extends PluginForHost {
             JDUtilities.getPluginForHost("mediafire.com");
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0");
+        br.getHeaders().put("User-Agent", agent);
     }
 
-    private void login(Account account, boolean fetchInfo) throws Exception {
+    private void login(final Account account, final boolean fetchInfo) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
@@ -334,52 +344,10 @@ public class PutLockerCom extends PluginForHost {
                     }
                 }
                 if (!fetchInfo && cookiesSet) return;
-                String proActive = null;
-                if (cookiesSet) {
-                    br.getPage("http://www.firedrive.com/profile.php?pro");
-                    proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
-                    if (proActive == null) {
-                        logger.severe("No longer Pro-Status, try to fetch new cookie!\r\n" + br.toString());
-                    } else {
-                        return;
-                    }
-                }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.firedrive.com/authenticate.php?login");
-                Form login = br.getForm(0);
-                if (login == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (br.containsHTML("captcha.php\\?")) {
-                    final String captchaIMG = getCaptchaIMG();
-                    if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "firedrive.com", "http://firedrive.com", true);
-                    final String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), dummyLink);
-                    if (captcha != null) login.put("captcha_code", Encoding.urlEncode(captcha));
-                }
-                login.put("user", Encoding.urlEncode(account.getUser()));
-                login.put("pass", Encoding.urlEncode(account.getPass()));
-                login.put("remember", "1");
-                br.submitForm(login);
+                br.postPage("https://auth.firedrive.com/", "remember=1&json=1&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 // no auth = not logged / invalid account.
-                if (br.getCookie(MAINPAGE, "auth") == null) {
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha wrong!\r\nUngültiger Benutzername oder ungültiges Passwort oder ungültiges login Captcha!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
-                }
-                // finish off more code here
-                br.getPage("http://www.firedrive.com/profile.php?pro");
-                proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
-                if (br.containsHTML("<td>Free Account \\- <strong><a href=\"/gopro\\.php\\?upgrade\"")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported for this host!\r\nFree Accounts werden für diesen Hoster nicht unterstützt!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
-                if (proActive == null) {
-                    logger.severe(br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown accounttype!\r\nUnbekannter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                if (br.getCookie(MAINPAGE, "auth") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password wrong!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -405,15 +373,14 @@ public class PutLockerCom extends PluginForHost {
             dllink = br.toString();
         } else {
             // get file_dllink
-            dllink = br.getRegex("\"(https?://dl\\.firedrive\\.com/[^<>\"]*?)\"").getMatch(0);
-
+            dllink = getFileDllink();
         }
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return dllink.replace("&amp;", "&");
     }
 
-    private String getCaptchaIMG() {
-        return br.getRegex("<img src=\"(/include/captcha\\.php\\?[^<>\"]+)\".*?/>").getMatch(0);
+    private String getFileDllink() {
+        return br.getRegex("\"(https?://dl\\.firedrive\\.com/[^<>\"]*?)\"").getMatch(0);
     }
 
     private void fixFilename(final DownloadLink downloadLink) {
@@ -452,7 +419,7 @@ public class PutLockerCom extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("freeacc"))) {
             /* free accounts also have captchas */
             return true;
         }

@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import java.net.URLDecoder;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -12,7 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://(www\\.)?metacafe\\.com/(watch|fplayer)/(sy\\-)?\\d+/.{1}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metacafe.com" }, urls = { "http://(www\\.)?metacafedecrypted\\.com/watch/(sy\\-)?\\d+/.{1}" }, flags = { 0 })
 public class MetacafeCom extends PluginForHost {
     private String dlink = null;
 
@@ -21,7 +22,7 @@ public class MetacafeCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/fplayer/", "/watch/"));
+        link.setUrlDownload(link.getDownloadURL().replace("metacafedecrypted.com/", "metacafe.com/"));
     }
 
     @Override
@@ -35,28 +36,22 @@ public class MetacafeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        // Offline links should also have nice filenames
+        link.setName(new Regex(link.getDownloadURL(), "(\\d+)/.{1}$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en-us,en;q=0.5");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("20mature%20")) {
-            br.getPage("http://www.metacafe.com/f/index.php?inputType=filter&controllerGroup=user&filters=0");
+        try {
             br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (br.getURL().contains("/?pageNotFound") || br.containsHTML("<title>Metacafe \\- Best Videos \\&amp; Funny Movies</title>") || br.getURL().contains("metacafe.com/?m=removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("metacafe.com/family_filter/")) {
+            br.postPage("http://www.metacafe.com/f/index.php?inputType=filter&controllerGroup=user", "filters=0");
         }
         String fileName = br.getRegex("name=\"title\" content=\"(.*?) \\- Video\"").getMatch(0);
         if (fileName == null) fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
@@ -78,6 +73,18 @@ public class MetacafeCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

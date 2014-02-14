@@ -69,6 +69,7 @@ public class AnimeTheHyliaCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (br.getURL().contains("anime.thehylia.com/downloads/series/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">No such episode")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = br.getRedirectLocation();
         if (DLLINK == null) {
             if (br.containsHTML("issues|network capacity|problems"))

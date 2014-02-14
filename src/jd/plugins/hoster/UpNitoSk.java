@@ -67,7 +67,7 @@ public class UpNitoSk extends PluginForHost {
         }
         br.getPage("http://upnito.sk/account.php");
         account.setValid(true);
-        final String files = br.getRegex("Poèet súborov:</strong>.*?(\\d+)<br>").getMatch(0);
+        final String files = br.getRegex("<strong>Počet súborov:</strong> (\\d+)<br>").getMatch(0);
         if (files != null) ai.setFilesNum(Integer.parseInt(files.trim()));
         String trafficLeft = br.getRegex(">Aktuálny kredit:</strong>(.*?)\\(").getMatch(0);
         if (trafficLeft != null) {

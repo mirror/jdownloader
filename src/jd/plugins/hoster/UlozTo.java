@@ -156,9 +156,12 @@ public class UlozTo extends PluginForHost {
         final Browser cbr = br.cloneBrowser();
         for (int i = 0; i <= 5; i++) {
             cbr.getPage("http://ulozto.net/reloadXapca.php?rnd=" + System.currentTimeMillis());
+            final String hash = cbr.getRegex("\"hash\":\"([a-f0-9]+)\"").getMatch(0);
+            final String timestamp = cbr.getRegex("\"timestamp\":(\\d+)").getMatch(0);
+            final String salt = cbr.getRegex("\"salt\":(\\d+)").getMatch(0);
             String captchaUrl = cbr.getRegex("\"image\":\"(http:[^<>\"]*?)\"").getMatch(0);
             Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
-            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             captchaUrl = captchaUrl.replace("\\", "");
 
             String code = null, ts = null, sign = null, cid = null;
@@ -192,6 +195,9 @@ public class UlozTo extends PluginForHost {
             if (ts != null) captchaForm.put("ts", ts);
             if (cid != null) captchaForm.put("cid", cid);
             if (sign != null) captchaForm.put("sign", sign);
+            captchaForm.put("timestamp", timestamp);
+            captchaForm.put("salt", salt);
+            captchaForm.put("hash", hash);
             br.submitForm(captchaForm);
 
             // If captcha fails, throrotws exception
