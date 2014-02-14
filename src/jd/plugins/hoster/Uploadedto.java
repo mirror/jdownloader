@@ -144,10 +144,10 @@ public class Uploadedto extends PluginForHost {
     private String getPage(Browser br, String url, boolean exceptionOnrealRedirect) throws IOException, PluginException, InterruptedException {
 
         String ret = br.getPage(url);
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < 50; i++) {
             String redirect = br.getRedirectLocation();
             if (redirect != null) {
-                Thread.sleep(100);
+                Thread.sleep(100 + (i / 10) * 200);
                 String lastUrl = br.getURL();
                 if (!lastUrl.equals(redirect)) { return ret; }
                 ret = br.getPage(redirect);
