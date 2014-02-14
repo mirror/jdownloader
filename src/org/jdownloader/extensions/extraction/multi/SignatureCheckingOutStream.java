@@ -20,6 +20,7 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
     private String                              itemName;
     private long                                itemSize           = -1;
     private boolean                             optimized;
+    private boolean                             ignoreWrite        = false;
 
     public SignatureCheckingOutStream(AtomicBoolean passwordfound, FileSignatures filesignatures, ReusableByteArrayOutputStream buffer, long maxPWCheckSize, boolean optimized) {
         this.passwordfound = passwordfound;
@@ -30,26 +31,30 @@ public class SignatureCheckingOutStream implements ISequentialOutStream {
     }
 
     public int write(byte[] data) throws SevenZipException {
-        int toWrite = Math.min(buffer.free(), data.length);
-        if (toWrite > 0) {
-            /* we still have enough buffer left to write the data */
-            buffer.write(data, 0, toWrite);
-        }
-        if (buffer.size() >= signatureMinLength) {
-            /* we have enough data available for a signature check */
-            StringBuilder sigger = new StringBuilder();
-            for (int i = 0; i < buffer.size() - 1; i++) {
-                String s = Integer.toHexString(buffer.getInternalBuffer()[i]);
-                s = (s.length() < 2 ? "0" + s : s);
-                s = s.substring(s.length() - 2);
-                sigger.append(s);
+        if (ignoreWrite == false) {
+            int toWrite = Math.min(buffer.free(), data.length);
+            if (toWrite > 0) {
+                /* we still have enough buffer left to write the data */
+                buffer.write(data, 0, toWrite);
+            } else {
+                ignoreWrite = true;
             }
-            Signature signature = filesignatures.getSignature(sigger.toString());
-            if (signature != null) {
-                if (signature.getExtensionSure() != null && (itemName == null || signature.getExtensionSure().matcher(itemName).matches())) {
-                    /* signature matches, lets abort PWFinding now */
-                    passwordfound.set(true);
-                    return 0;
+            if (buffer.size() >= signatureMinLength) {
+                /* we have enough data available for a signature check */
+                StringBuilder sigger = new StringBuilder();
+                for (int i = 0; i < buffer.size() - 1; i++) {
+                    String s = Integer.toHexString(buffer.getInternalBuffer()[i]);
+                    s = (s.length() < 2 ? "0" + s : s);
+                    s = s.substring(s.length() - 2);
+                    sigger.append(s);
+                }
+                Signature signature = filesignatures.getSignature(sigger.toString());
+                if (signature != null) {
+                    if (signature.getExtensionSure() != null && (itemName == null || signature.getExtensionSure().matcher(itemName).matches())) {
+                        /* signature matches, lets abort PWFinding now */
+                        passwordfound.set(true);
+                        return 0;
+                    }
                 }
             }
         }
