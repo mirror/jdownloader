@@ -499,7 +499,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         REQUEST_ERROR_DETAILS;
     }
 
-    public static enum ResponseCode {
+    public static enum PushResponseCode {
         OK,
         FAILED,
         KILL;
@@ -537,15 +537,15 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public static class Response extends AbstractJsonData implements Storable {
-        public Response(ResponseCode code) {
+        public Response(PushResponseCode code) {
             this.code = code;
         }
 
-        public ResponseCode getCode() {
+        public PushResponseCode getCode() {
             return code;
         }
 
-        public void setCode(ResponseCode code) {
+        public void setCode(PushResponseCode code) {
             this.code = code;
         }
 
@@ -563,7 +563,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             this.actions = actions;
         }
 
-        private ResponseCode code = ResponseCode.OK;
+        private PushResponseCode code = PushResponseCode.OK;
 
     }
 

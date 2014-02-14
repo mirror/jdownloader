@@ -832,7 +832,7 @@ public class YoutubeHelper {
     public String getAbsolute(final String absolute, String id, Browser clone) throws IOException {
         if (clone == null) clone = br;
         if (id == null) id = absolute;
-        PluginCache pluginCache = Plugin.getCache("youtube.com");
+        PluginCache pluginCache = Plugin.getCache("youtube.com-" + br.getProxy());
         Object page = pluginCache.getCache(id, null);
         if (page != null && page instanceof MinTimeWeakReference) {
             String content = ((MinTimeWeakReference<String>) page).get();

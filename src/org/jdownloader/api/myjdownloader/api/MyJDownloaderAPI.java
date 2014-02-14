@@ -20,7 +20,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
 import org.appwork.utils.net.BasicHTTP.BasicHTTP;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
@@ -104,10 +103,8 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         }
     }
 
-    protected AtomicLong            TIMESTAMP    = new AtomicLong(System.currentTimeMillis() + 2);
-    protected volatile String       connectToken = null;
-
-    private MyJDownloaderController extension;
+    protected AtomicLong      TIMESTAMP    = new AtomicLong(System.currentTimeMillis() + 2);
+    protected volatile String connectToken = null;
 
     public static String getRevision() {
         try {
@@ -122,11 +119,11 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
         return "api_" + revision;
     }
 
-    public MyJDownloaderAPI(MyJDownloaderController myJDownloaderExtension) {
+    public MyJDownloaderAPI() {
         super("JD_" + getRevision());
-        extension = myJDownloaderExtension;
+
         setServerRoot("http://" + CFG_MYJD.CONNECT_IP.getValue() + ":" + CFG_MYJD.CLIENT_CONNECT_PORT.getValue());
-        logger = extension.getLogger();
+
         br = new BasicHTTP();
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
         br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
@@ -135,6 +132,10 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     public LogSource getLogger() {
         return logger;
+    }
+
+    public void setLogger(LogSource logger) {
+        this.logger = logger;
     }
 
 }
