@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|dl\\.nhachot\\.info)/[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
@@ -47,8 +47,8 @@ public class AdfLy extends PluginForDecrypt {
 
     private final boolean supportsHTTPS = true;
     private String        protocol      = null;
-    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|dl\\.nhachot\\.info)";
-    private final String  INVALIDLINKS  = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|dl\\.nhachot\\.info)/(link\\-deleted\\.php|index|login|static).+";
+    private final String  HOSTS         = "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co)";
+    private final String  INVALIDLINKS  = HOSTS + "/(link-deleted\\.php|index|login|static).+";
     private static Object LOCK          = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
