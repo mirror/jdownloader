@@ -124,7 +124,7 @@ public class NicoVideoJp extends PluginForHost {
         // Important, without accessing the link we cannot get the downloadurl!
         br.getPage(link.getDownloadURL());
         if (Encoding.htmlDecode(br.toString()).contains("closed=1\\&done=true")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        String vid = new Regex(link.getDownloadURL(), "nicovideo\\.jp/watch/((sm|nm)\\d+)").getMatch(0);
+        String vid = new Regex(link.getDownloadURL(), "nicovideo\\.jp/watch/((sm|so|nm)\\d+)").getMatch(0);
         br.postPage("http://flapi.nicovideo.jp/api/getflv", "eco=4&as3=1&v=" + vid);
         String dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
         if (dllink == null) dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
