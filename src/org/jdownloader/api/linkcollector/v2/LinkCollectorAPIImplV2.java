@@ -1,5 +1,6 @@
 package org.jdownloader.api.linkcollector.v2;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -345,10 +347,12 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     /**
-     * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and packages.
+     * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and
+     * packages.
      * 
      * example: if a package is selected, and non if it's links - all its links will be in the selection info<br>
-     * example2: if a package is selected AND SOME of it's children. The packge will not be considered as fully selected. only the actual selected links.
+     * example2: if a package is selected AND SOME of it's children. The packge will not be considered as fully selected. only the actual
+     * selected links.
      * 
      * @param linkIds
      * @param packageIds
@@ -576,7 +580,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         if (fileName != null) {
             try {
                 File tmp = Application.getTempResource(fileName);
-                IO.writeStringToFile(tmp, content);
+                byte[] write = IO.readStream(-1, new Base64InputStream(new ByteArrayInputStream(content.substring(13).getBytes("UTF-8"))));
+                IO.writeToFile(tmp, write);
                 LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.getAbsolutePath()));
             } catch (IOException e) {
                 e.printStackTrace();
