@@ -336,6 +336,16 @@ public class YoutubeDashV2 extends PluginForHost {
         void setFilenamePattern(String name);
 
         @AboutConfig
+        String getSubtitleFilenamePattern();
+
+        void setSubtitleFilenamePattern(String name);
+
+        @AboutConfig
+        String getAudioFilenamePattern();
+
+        void setAudioFilenamePattern(String name);
+
+        @AboutConfig
         @DefaultIntValue(15)
         int getChunksCount();
 
@@ -355,6 +365,16 @@ public class YoutubeDashV2 extends PluginForHost {
         ArrayList<String> getExtraSubtitles();
 
         void setExtraSubtitles(ArrayList<String> list);
+
+        @AboutConfig
+        String getVideoFilenamePattern();
+
+        void setVideoFilenamePattern(String name);
+
+        @AboutConfig
+        String getImageFilenamePattern();
+
+        void setImageFilenamePattern(String name);
 
         @AboutConfig
         @DefaultBooleanValue(true)

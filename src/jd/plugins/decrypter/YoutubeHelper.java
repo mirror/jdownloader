@@ -46,6 +46,7 @@ import jd.plugins.components.YoutubeSubtitleInfo;
 import jd.plugins.components.YoutubeVariant;
 import jd.plugins.components.YoutubeVariantInterface;
 import jd.plugins.decrypter.YoutubeHelper.Replacer.DataSource;
+import jd.plugins.hoster.YoutubeDashV2.SubtitleVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.utils.locale.JDL;
 
@@ -59,6 +60,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -1028,7 +1030,8 @@ public class YoutubeHelper {
     }
 
     private void doUserAPIScan(YoutubeClipData vid) throws IOException {
-        String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern();
+        String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern() + cfg.getVideoFilenamePattern() + cfg.getAudioFilenamePattern() + cfg.getSubtitleFilenamePattern() + cfg.getImageFilenamePattern();
+
         boolean extended = false;
         // only load extra page, if we need the properties
         for (Replacer r : REPLACER) {
@@ -1059,7 +1062,7 @@ public class YoutubeHelper {
     }
 
     private void doFeedScan(YoutubeClipData vid) throws IOException {
-        String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern();
+        String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern() + cfg.getVideoFilenamePattern() + cfg.getAudioFilenamePattern() + cfg.getSubtitleFilenamePattern() + cfg.getImageFilenamePattern();
         boolean extended = false;
         // only load extra page, if we need the properties
         for (Replacer r : REPLACER) {
@@ -1341,7 +1344,28 @@ public class YoutubeHelper {
 
         YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
-        String formattedFilename = cfg.getFilenamePattern();
+        String formattedFilename = null;
+
+        LinkVariant v = link.getDefaultPlugin().getActiveVariantByLink(link);
+        if (v instanceof SubtitleVariant) {
+            formattedFilename = cfg.getSubtitleFilenamePattern();
+        } else if (v instanceof YoutubeVariant) {
+            switch (((YoutubeVariant) v).getGroup()) {
+            case AUDIO:
+                formattedFilename = cfg.getAudioFilenamePattern();
+                break;
+            case IMAGE:
+                formattedFilename = cfg.getImageFilenamePattern();
+                break;
+            case SUBTITLES:
+                formattedFilename = cfg.getSubtitleFilenamePattern();
+                break;
+            case VIDEO:
+            case VIDEO_3D:
+                formattedFilename = cfg.getVideoFilenamePattern();
+            }
+        }
+        if (StringUtils.isEmpty(formattedFilename)) formattedFilename = cfg.getFilenamePattern();
         // validate the pattern
         if ((!formattedFilename.contains("*videoname*") && !formattedFilename.contains("*videoid*")) || !formattedFilename.contains("*ext*")) formattedFilename = jd.plugins.hoster.Youtube.defaultCustomFilename;
         if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = "*videoname**quality**ext*";
