@@ -366,21 +366,22 @@ public class PutLockerCom extends PluginForHost {
 
     private String getDllink(DownloadLink downloadLink) throws IOException, PluginException {
         String dllink = null;
-        // check if there is a video stream
-        final String stream_dl = br.getRegex("(\\'|\")(http://dl\\.firedrive\\.com/\\?stream=[^<>\"]*?)(\\'|\")").getMatch(1);
-        if (stream_dl != null) {
-            br.postPage(stream_dl, "");
-            dllink = br.toString();
-        } else {
-            // get file_dllink
-            dllink = getFileDllink();
+        // get file_dllink
+        dllink = getFileDllink();
+        if (dllink == null) {
+            // check if there is a video stream... this is generally of lesser quality!
+            final String stream_dl = br.getRegex("('|\")(http://dl\\.firedrive\\.com/\\?stream=[^<>\"]+)\\1").getMatch(1);
+            if (stream_dl != null) {
+                br.postPage(stream_dl, "");
+                dllink = br.toString();
+            }
         }
         if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return dllink.replace("&amp;", "&");
     }
 
     private String getFileDllink() {
-        return br.getRegex("\"(https?://dl\\.firedrive\\.com/[^<>\"]*?)\"").getMatch(0);
+        return br.getRegex("\"(https?://dl\\.firedrive\\.com/[^<>\"]+)\"").getMatch(0);
     }
 
     private void fixFilename(final DownloadLink downloadLink) {
