@@ -1,2 +1,6 @@
 Translator=翻譯
+TranslatorExtensionGuiToggleAction_deselected=開啟翻譯
+TranslatorExtensionGuiToggleAction_deselected_tt=開啟翻譯頁籤
+TranslatorExtensionGuiToggleAction_selected=關閉翻譯
+TranslatorExtensionGuiToggleAction_selected_tt=關閉翻譯頁籤
 description=這個附加元件可以用來編輯 JDownloader 翻譯。要使用這個附加元件，您需要一個開發者帳號

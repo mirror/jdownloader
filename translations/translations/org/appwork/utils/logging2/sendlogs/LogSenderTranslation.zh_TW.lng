@@ -1,0 +1,10 @@
+LogAction_actionPerformed_wait_=請稍後...
+LogAction_actionPerformed_zip_title_=建立日誌包
+LogAction_getString_uploading_=正在準備您的日誌
+LogModel_getStringValue_between_=介於 %s1 與 %s2 之間
+LogModel_initColumns_time_=時間
+LogModel_initColumns_x_=選取
+LogTable_onContextMenu_disable_=未選取
+LogTable_onContextMenu_enable_=選取
+SendLogDialog_SendLogDialog_title_=傳送 Bug 報告
+SendLogDialog_layoutDialogContent_desc_=問題什麼時候發生？請檢查所有值得考慮的項目！
