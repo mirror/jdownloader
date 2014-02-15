@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://(www\\.)?zippyshare\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+/dir\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://(www\\.)?zippyshare\\.com/[a-z0-9\\-_%]+/[a-z0-9\\-_%]+/dir\\.html" }, flags = { 0 })
 public class ZippyShareComFolder extends PluginForDecrypt {
 
     public ZippyShareComFolder(PluginWrapper wrapper) {

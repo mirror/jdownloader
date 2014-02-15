@@ -57,6 +57,8 @@ public class XTubeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        // Offline links should also have nice filenames
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_\\-]+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "cookie_warning", "deleted");
         br.setCookie(MAINPAGE, "cookie_warning", "S");
@@ -68,6 +70,8 @@ public class XTubeCom extends PluginForHost {
             filename = br.getRegex("class=\"sectionNoStyleHeader\">([^<>\"]*?)</div>").getMatch(0);
         } else {
             filename = br.getRegex("<div class=\"font_b_12px\">(.*?)</div><div").getMatch(0);
+            // For DVD preview links
+            if (filename == null) filename = br.getRegex("id=\"videoDetails\">[\t\n\r ]+<p class=\"title\">([^<>\"]*?)</p>").getMatch(0);
         }
         String fileID = new Regex(downloadLink.getDownloadURL(), "xtube\\.com/watch\\.php\\?v=(.+)").getMatch(0);
         String ownerName = br.getRegex("\\?field_subscribe_user_id=([^<>\"]*?)\"").getMatch(0);
