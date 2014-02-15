@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.RandomUserAgent;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -36,6 +37,7 @@ public class ZippyShareComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         if (!br.containsHTML("class=\"filerow even\">")) {
             logger.info("Link offline: " + parameter);
@@ -48,9 +50,10 @@ public class ZippyShareComFolder extends PluginForDecrypt {
         }
         // Over 50 links? Maybe there is more...
         if (links.length == 50) {
+            final String user = new Regex(parameter, "zippyshare\\.com/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/").getMatch(0);
             final String dir = new Regex(parameter, "zippyshare\\.com/[a-z0-9\\-_]+/([a-z0-9\\-_]+)/").getMatch(0);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://www.zippyshare.com/fragments/publicDir/filetable.jsp", "page=0&user=Boost&dir=" + dir + "&sort=nameasc&pageSize=250&search=&viewType=default");
+            br.postPage("http://www.zippyshare.com/fragments/publicDir/filetable.jsp", "page=0&user=" + user + "&dir=" + dir + "&sort=nameasc&pageSize=250&search=&viewType=default");
             links = br.getRegex("\"(http://www\\d+\\.zippyshare\\.com/v/\\d+/file\\.html)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
