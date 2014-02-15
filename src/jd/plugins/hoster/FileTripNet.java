@@ -50,11 +50,13 @@ public class FileTripNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        // Offline links should also have nice filenames
+        link.setName(new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">You might want to check that URL<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex("<h3><b>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]{1,5})\\)</b></h3>");
+        if (br.containsHTML(">You might want to check that URL<|>Sorry, this file has been temporarily disabled")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Regex fileInfo = br.getRegex(">([^<>\"]*?)</a><span style=\\'color: #888; font\\-size: 22px; padding\\-left: 20px;\\'>([^<>\"]*?)</span>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -69,9 +71,10 @@ public class FileTripNet extends PluginForHost {
         final Form[] allforms = br.getForms();
         final Form dlform = allforms[allforms.length - 1];
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(">Error 404")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -83,7 +86,7 @@ public class FileTripNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 4;
     }
 
     @Override

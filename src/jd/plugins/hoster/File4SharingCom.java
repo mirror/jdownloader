@@ -144,6 +144,8 @@ public class File4SharingCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        // Host is down
+        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         prepBrowser(br);
         setFUID(link);

@@ -247,6 +247,7 @@ public class DateiTo extends PluginForHost {
         final String dlid = br.getRegex("<button id=\"([AS-Za-z0-9]+)\"").getMatch(0);
         if (dlid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage("http://datei.to/response/download", "Step=1&ID=" + dlid);
+        if (br.containsHTML(">Ansonsten musst du warten, bis der aktuelle Download beendet ist")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many free downloads are active, please wait before starting new ones", 5 * 60 * 1000l);
 
         final Regex reconWait = br.getRegex("Du musst noch <strong>(\\d+):(\\d+) min</strong> warten");
         final String reconMin = reconWait.getMatch(0);
@@ -320,7 +321,7 @@ public class DateiTo extends PluginForHost {
 
     private void generalFreeAPIErrorhandling() throws NumberFormatException, PluginException {
         if (br.containsHTML("limit reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(br.getRegex("limit reached;(\\d+)").getMatch(0)));
-        if (br.containsHTML("download active")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Another free download is already active, please wait before starting new ones.", 5 * 60 * 1000l);
+        if (br.containsHTML("download active")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many free downloads are active, please wait before starting new ones", 5 * 60 * 1000l);
     }
 
     private void handleServerErrors() throws PluginException {
