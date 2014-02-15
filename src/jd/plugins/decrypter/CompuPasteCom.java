@@ -45,22 +45,24 @@ public class CompuPasteCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.findID();
-        rc.load();
-        for (int i = 1; i <= 5; i++) {
-            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, param);
-            br.postPage(br.getURL(), "captcha=Soy+Humano&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                rc.reload();
-                continue;
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.findID();
+            rc.load();
+            for (int i = 1; i <= 5; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, param);
+                br.postPage(br.getURL(), "captcha=Soy+Humano&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
             }
-            break;
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        final String[] links = br.getRegex("\"(http[^<>\"]*?)\" target=\"_blank\"").getColumn(0);
+        final String[] links = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

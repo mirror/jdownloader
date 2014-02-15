@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
@@ -53,9 +54,10 @@ public class ExtMatrixCom extends PluginForHost {
         return MAINPAGE + "/help/terms.php";
     }
 
-    private static final String MAINPAGE            = "http://www.extmatrix.com";
-    private static final String PREMIUMONLYTEXT     = "(>Premium Only\\!|you have requested require a premium account for download\\.<)";
-    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.extmatrixcom.errors.premiumonly", "Only downloadable via premium account");
+    private static final String  MAINPAGE            = "http://www.extmatrix.com";
+    private static final String  PREMIUMONLYTEXT     = "(>Premium Only\\!|you have requested require a premium account for download\\.<)";
+    private static final String  PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.extmatrixcom.errors.premiumonly", "Only downloadable via premium account");
+    private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // private static final String APIKEY = "4LYl9hFH1Xapzycg4fuFtUSPVvWsr";
 
@@ -77,10 +79,21 @@ public class ExtMatrixCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
-        String getLink = getLink();
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML(PREMIUMONLYTEXT)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        }
+        final String getLink = getLink();
         if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
         String ttt = br.getRegex("var time = (\\d+);").getMatch(0);
@@ -139,7 +152,7 @@ public class ExtMatrixCom extends PluginForHost {
     private static Object       LOCK         = new Object();
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             /** Load cookies */
             br.setCookiesExclusive(false);
@@ -159,9 +172,21 @@ public class ExtMatrixCom extends PluginForHost {
             }
             br.setFollowRedirects(true);
             br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&captcha=&submit=Login&task=dologin&return=.%2Fmembers%2Fmyfiles.php");
+            if (!br.containsHTML("title=\"Logout\">Logout</a>")) {
+                final String lang = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             if (!br.containsHTML(PREMIUMTEXT)) {
                 br.getPage(MAINPAGE + "/members/myfiles.php");
-                if (!br.containsHTML(PREMIUMLIMIT)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML(PREMIUMLIMIT)) {
+                    account.setProperty("freeacc", true);
+                } else {
+                    account.setProperty("freeacc", false);
+                }
             }
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -176,8 +201,10 @@ public class ExtMatrixCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -190,39 +217,62 @@ public class ExtMatrixCom extends PluginForHost {
         if (space != null) ai.setUsedSpace(space.trim());
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        ai.setStatus("Premium User");
+        if (account.getBooleanProperty("freeacc", false)) {
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            ai.setStatus("Registered (free) user");
+        } else {
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            ai.setStatus("Premium User");
+        }
         return ai;
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        // Little help from their admin^^
-        String getLink = br.getRedirectLocation();
-        if (getLink != null && getLink.matches("http://(www\\.)?extmatrix\\.com/get/.*?")) {
-            br.getPage(getLink);
-            getLink = br.getRedirectLocation();
+        if (account.getBooleanProperty("freeacc", false)) {
+            doFree(link);
+        } else {
+            // Little help from their admin^^
+            String getLink = br.getRedirectLocation();
+            if (getLink != null && getLink.matches("http://(www\\.)?extmatrix\\.com/get/.*?")) {
+                br.getPage(getLink);
+                getLink = br.getRedirectLocation();
+            }
+            if (getLink == null) getLink = br.getRegex("<a id=\\'jd_support\\' href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (getLink == null) getLink = getLink();
+            if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int maxChunks = -2;
+            if (oldStyle()) {
+                /*
+                 * stable has bug with openDownload and postData, cookies are not forwared to chunks
+                 */
+                maxChunks = 1;
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", true, maxChunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        if (getLink == null) getLink = br.getRegex("<a id=\\'jd_support\\' href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (getLink == null) getLink = getLink();
-        if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int maxChunks = -2;
-        if (oldStyle()) {
-            /*
-             * stable has bug with openDownload and postData, cookies are not forwared to chunks
-             */
-            maxChunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     private boolean oldStyle() {
@@ -247,7 +297,7 @@ public class ExtMatrixCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override

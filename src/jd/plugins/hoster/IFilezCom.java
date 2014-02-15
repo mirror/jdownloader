@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,11 +43,12 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "UNUSED_REGEX_BHAHAHHAHAHAHA", "https?://(www\\.)?depfiledecrypted\\.com/(downloads/i/\\d+/f/.+|[a-zA-Z0-9]+)" }, flags = { 0, 2 })
 public class IFilezCom extends PluginForHost {
 
-    private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
-    private static final String MAINPAGE             = "http://depfile.com/";
-    private static Object       LOCK                 = new Object();
-    private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
-    private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
+    private static final String  CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
+    private static final String  MAINPAGE             = "http://depfile.com/";
+    private static Object        LOCK                 = new Object();
+    private static final String  ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
+    private static final String  ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
+    private static AtomicInteger maxPrem              = new AtomicInteger(1);
 
     public IFilezCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,14 +97,24 @@ public class IFilezCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        // Max 8 connections at all, 4 per file
-        return 2;
+        return maxPrem.get();
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML(ONLY4PREMIUM)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+        }
         String verifycode = br.getRegex("name=\"vvcid\" value=\"(\\d+)\"").getMatch(0);
         if (verifycode == null) verifycode = br.getRegex("\\?vvcid=(\\d+)\"").getMatch(0);
         if (!br.containsHTML(CAPTCHATEXT) || verifycode == null) {
@@ -147,7 +159,7 @@ public class IFilezCom extends PluginForHost {
         return true;
     }
 
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -177,7 +189,12 @@ public class IFilezCom extends PluginForHost {
                     br.getPage("https://depfile.com/");
                 }
 
-                if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null || !br.containsHTML("class=\\'user_info\\'>Premium:")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML("class=\\'user_info\\'>Premium:")) {
+                    account.setProperty("freeacc", true);
+                } else {
+                    account.setProperty("freeacc", false);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -195,8 +212,10 @@ public class IFilezCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -205,42 +224,65 @@ public class IFilezCom extends PluginForHost {
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        // href='/myspace/space/premium'>12.03.13 19:46</a></div><div
-        String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})</a></div").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
+        if (account.getBooleanProperty("freeacc", false)) {
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            ai.setStatus("Registered (free) user");
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yy hh:mm", null));
+            String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})</a></div").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yy hh:mm", null));
+            }
+            try {
+                // Max 8 connections at all, 4 per file
+                maxPrem.set(2);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
         }
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\\'notice\\'>You spent limit on links per day")) {
-            logger.info("Daily limit reached, temp disabling premium");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        if (account.getBooleanProperty("freeacc", false)) {
+            br.getPage(link.getDownloadURL());
+            doFree(link);
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(link.getDownloadURL());
+            if (br.containsHTML("class=\\'notice\\'>You spent limit on links per day")) {
+                logger.info("Daily limit reached, temp disabling premium");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -4);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -4);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     public void handleErrors() throws PluginException {

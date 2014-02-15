@@ -56,7 +56,7 @@ public class XTubeCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "cookie_warning", "deleted");
         br.setCookie(MAINPAGE, "cookie_warning", "S");
@@ -100,7 +100,7 @@ public class XTubeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -108,6 +108,11 @@ public class XTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override

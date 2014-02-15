@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -61,6 +62,7 @@ public class LuckyShareNet extends PluginForHost {
     private static StringContainer AGENT         = new StringContainer(null);
     private static AtomicBoolean   FAILED409     = new AtomicBoolean(false);
     private final String           ONLYBETAERROR = "Downloading from luckyshare.net is only possible with the JDownloader 2 BETA";
+    private static AtomicInteger   maxPrem       = new AtomicInteger(1);
 
     public static class StringContainer {
         public String string = null;
@@ -135,15 +137,19 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (oldStyle() && FAILED409.get()) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
+        if (oldStyle() && FAILED409.get()) throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         String dllink = downloadLink.getDownloadURL();
         final String filesizelimit = br.getRegex(">Files with filesize over ([^<>\"\\'/]+) are available only for Premium Users").getMatch(0);
         if (filesizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
-        if (br.containsHTML("This file is Premium only. Only Premium Users can download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium Users can download this file");
+        if (br.containsHTML("This file is Premium only\\. Only Premium Users can download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium Users can download this file");
         String reconnectWait = br.getRegex("id=\"waitingtime\">(\\d+)</span>").getMatch(0);
-        if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
+        if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(reconnectWait) * 1001l);
         final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"/]+)\"").getMatch(0);
         if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
@@ -278,13 +284,12 @@ public class LuckyShareNet extends PluginForHost {
                         return cookies;
                     }
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 br.getPage("http://luckyshare.net/auth/login");
                 final String token = br.getRegex("type=\"hidden\" name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (token == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.postPage("http://luckyshare.net/auth/login", "token=" + Encoding.urlEncode(token) + "&remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                br.getPage("http://luckyshare.net/account/");
-                if (!br.containsHTML(">Account Type:</strong><br /><span>Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML(">Logout</a>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -304,8 +309,10 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account, true, null);
         } catch (PluginException e) {
@@ -313,54 +320,83 @@ public class LuckyShareNet extends PluginForHost {
             return ai;
         }
         br.getPage("http://luckyshare.net/account/");
-        String filesNum = br.getRegex("<strong>Number of files:</strong><br /><span>(\\d+)</span>").getMatch(0);
+        final String filesNum = br.getRegex("<strong>Number of files:</strong><br /><span>(\\d+)</span>").getMatch(0);
         if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
         String space = br.getRegex("<strong>Storage Used:</strong><br /><span>([^<>\"]*?)</span></td>").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<strong>Pro Membership Valid Until:</strong><br /><span>[A-Za-z]+, (\\d{2} [A-Za-z]+ \\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        final String expire = br.getRegex("<strong>Pro Membership Valid Until:</strong><br /><span>[A-Za-z]+, (\\d{2} [A-Za-z]+ \\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            account.setProperty("freeacc", true);
+            ai.setStatus("Registered (free) user");
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy hh:mm:ss", null));
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            account.setProperty("freeacc", false);
+            ai.setStatus("Premium user");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         if (oldStyle() && FAILED409.get()) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
-        AtomicBoolean fresh = new AtomicBoolean(false);
+        final AtomicBoolean fresh = new AtomicBoolean(false);
         HashMap<String, String> cookies = login(account, false, fresh);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            synchronized (LOCK) {
-                final Object ret = account.getProperty("cookies", null);
-                if (fresh.get()) {
-                    account.setProperty("cookies", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (cookies == ret || ret == null) {
-                    account.setProperty("cookies", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
-                }
+        if (account.getBooleanProperty("freeacc", false)) {
+            if (!br.containsHTML(">Logout</a>")) {
+                refreshCookies(fresh, cookies, account);
+                br.getPage(link.getDownloadURL());
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        } else {
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                refreshCookies(fresh, cookies, account);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private void refreshCookies(final AtomicBoolean fresh, final HashMap<String, String> cookies, final Account account) throws PluginException {
+        logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+        synchronized (LOCK) {
+            final Object ret = account.getProperty("cookies", null);
+            if (fresh.get()) {
+                account.setProperty("cookies", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (cookies == ret || ret == null) {
+                account.setProperty("cookies", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+            }
         }
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private boolean oldStyle() {
@@ -379,7 +415,7 @@ public class LuckyShareNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override

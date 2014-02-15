@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(?!facebook_channel|main|mailto|user|promoter\\-promotion|fan\\-promotion|venue\\-promotion|label\\-promotion|javascript:|signup|appending|head|css|images|data:|band\\-promotion|static|https|press_releases|widgets|controller|yourboitc)(artist/artist_songs/\\d+|playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }, flags = { 0 })
 public class ReverBnationCom extends PluginForDecrypt {
 
     public ReverBnationCom(final PluginWrapper wrapper) {
@@ -37,10 +37,15 @@ public class ReverBnationCom extends PluginForDecrypt {
     }
 
     private static final String PLAYLISTLINK = "http://(www\\.)?reverbnation\\.com/playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+";
+    private static final String INVALIDLINKS = "http://(www\\.)?reverbnation\\.com/(facebook_channel|main|mailto|user|promoter\\-promotion|fan\\-promotion|venue\\-promotion|label\\-promotion|javascript:|signup|appending|head|css|images|data:|band\\-promotion|static|https|press_releases|widgets|controller|yourboitc)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(false);
         if (parameter.matches("http://(www\\.)?reverbnation\\.com/page_object/page_object_photos/artist_\\d+")) {
             br.getPage(parameter);
@@ -68,7 +73,7 @@ public class ReverBnationCom extends PluginForDecrypt {
             br.getPage(parameter);
             String artistID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
             if (artistID == null) {
-                artistID = br.getRegex("\\(\\'all_artist_songs_(\\d+)\\')").getMatch(0);
+                artistID = br.getRegex("\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
                 if (artistID == null) artistID = br.getRegex("artist/artist_songs/(\\d+)\\?").getMatch(0);
             }
             String filename = br.getRegex("data\\-song\\-id=\"" + fileID + "\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatch(0);
@@ -111,7 +116,7 @@ public class ReverBnationCom extends PluginForDecrypt {
                 if (showAllSongs != null) {
                     br.getPage("http://www.reverbnation.com" + showAllSongs);
                 }
-                artistID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
+                artistID = br.getRegex("CURRENT_PAGE_OBJECT = \\'artist_(\\d+)\\';").getMatch(0);
                 if (artistID == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;

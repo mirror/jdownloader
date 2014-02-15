@@ -88,9 +88,11 @@ public class CloudStorEs extends PluginForHost {
             if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.postPage("http://cloudstor.es/submit/_dl_isozone.php", "id=" + dlInfo.getMatch(0) + "&part=" + dlInfo.getMatch(1) + "&token=" + dlInfo.getMatch(2));
         } else {
+            final String postLink = br.getRegex("url: \\'(/submit/[A-Za-z0-9\\-_]+\\.php)\\'").getMatch(0);
+            if (postLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             final Regex dlInfo = br.getRegex("hash: \\'([A-Za-z0-9_]+)\\', token: \\'([a-z0-9]+)\\'");
             if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.postPage("http://cloudstor.es/submit/_dl.php", "hash=" + dlInfo.getMatch(0) + "&token=" + dlInfo.getMatch(1));
+            br.postPage("http://cloudstor.es" + postLink, "hash=" + dlInfo.getMatch(0) + "&token=" + dlInfo.getMatch(1));
         }
         br.getHeaders().put("Content-Type", null);
         String dllink = br.toString();

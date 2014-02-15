@@ -37,6 +37,8 @@ public class ImageVenueComGallery extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        final String format = new Regex(parameter, "(format=[A-Za-z0-9]+)").getMatch(0);
+        if (format != null) parameter = parameter.replace(format, "format=show");
         br.getPage(parameter);
         final String[] links = br.getRegex("<a href=\"(http://img\\d+\\.imagevenue\\.com/img\\.php\\?image=[^<>\"]*?)\" target=\"_blank\"><img src=\"").getColumn(0);
         if (links == null || links.length == 0) {

@@ -20,6 +20,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -56,10 +57,12 @@ public class PlayFourtyFourNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        // Offline links should also have nice filenames
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "play44\\.net/embed\\.php\\?(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        dllink = br.getRegex("url: '(http[^']+play44\\.net%2Fvideos[^']+)").getMatch(0);
+        dllink = br.getRegex("playlist:.*?url: \\'(http[^']+play44\\.net[^']+)\\'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();

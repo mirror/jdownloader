@@ -43,12 +43,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filekom.com", "filemac.com" }, urls = { "https?://(www\\.)?(filemac|filekom)\\.com/[a-z0-9]{12}", "redhgz58opjgfr9cnfmj8gfvDELETEMEfvcjehgonvdqsxwdczjli8" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemac.com", "filekom.com" }, urls = { "https?://(www\\.)?(filemac|filekom)\\.com/[a-z0-9]{12}", "redhgz58opjgfr9cnfmj8gfvDELETEMEfvcjehgonvdqsxwdczjli8" }, flags = { 0, 0 })
 public class FileMakCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://filekom.com";
+    private static final String COOKIE_HOST         = "http://filemac.com";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -75,12 +75,13 @@ public class FileMakCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("filemac.com/", "filekom.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("filekom.com/", "filemac.com/"));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());

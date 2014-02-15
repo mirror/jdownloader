@@ -49,7 +49,7 @@ public class XxxKinKyCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // More connections are possible but not for all of their servers
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
@@ -61,7 +61,7 @@ public class XxxKinKyCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         /* hoster has broken gzip */
         br.getHeaders().put("Accept-Encoding", null);
@@ -94,6 +94,11 @@ public class XxxKinKyCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override

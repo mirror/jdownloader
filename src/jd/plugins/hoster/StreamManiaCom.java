@@ -153,7 +153,7 @@ public class StreamManiaCom extends PluginForHost {
         String maxChunksString = br.getRequest().getResponseHeader("X-MaxChunks");
         // Tested with share-online.biz: max 4 chunks possible
         int maxChunks = 1;
-        if (link.getBooleanProperty(NOCHUNKS, false) && !true) {
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         } else if (maxChunksString != null) {
             try {

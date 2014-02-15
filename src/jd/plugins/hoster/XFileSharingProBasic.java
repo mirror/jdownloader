@@ -782,7 +782,6 @@ public class XFileSharingProBasic extends PluginForHost {
         long expiretime = 0;
         if (expire != null) expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
-            ai.setStatus("Registered (free) user");
             try {
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 // free accounts can still have captcha.
@@ -792,6 +791,7 @@ public class XFileSharingProBasic extends PluginForHost {
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
+            ai.setStatus("Registered (free) user");
         } else {
             ai.setValidUntil(expiretime);
             try {

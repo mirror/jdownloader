@@ -162,8 +162,8 @@ public class MotherLessCom extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", ua);
-        br.postPage("http://motherless.com/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=1&__remember_me=0");
-        if (br.getCookie("http://motherless.com/", "motherless_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("https://motherless.com/login", "remember_me=1&__remember_me=0&botcheck=no+bots%21&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://motherless.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {

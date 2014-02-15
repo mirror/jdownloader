@@ -144,6 +144,7 @@ public class FilEarningCom extends PluginForHost {
             }
             br.setFollowRedirects(true);
             br.postPage(MAINPAGE + "/account/login", "task=dologin&return=http%3A%2F%2Fwww.filearning.com%2Fmembers%2Fmyfiles&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+
             if (!br.containsHTML(PREMIUMTEXT)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();

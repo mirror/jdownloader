@@ -20,6 +20,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -49,17 +50,12 @@ public class VidZurCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        // Offline links should also have nice filenames
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "vidzur\\.com/embed\\.php\\?(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        dllink = br.getRegex("url: '(http[^']+vidzur\\.com%2Fvideos[^']+)").getMatch(0);
+        dllink = br.getRegex("playlist:.*?url: \\'(http[^']+(vidzur\\.com|play44\\.net)[^']+)\\'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
@@ -81,6 +77,13 @@ public class VidZurCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
     }
 
     @Override

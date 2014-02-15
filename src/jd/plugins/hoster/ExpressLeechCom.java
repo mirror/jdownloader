@@ -105,7 +105,7 @@ public class ExpressLeechCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: 4dignum
     // other: no redirects
-    // mods: linkcheck, they don't publish filenames. but filesize is possible by checklinks
+    // mods: linkcheck, they don't publish filenames. but filesize is possible by checklinks, do NOT upgrade!
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -296,6 +296,9 @@ public class ExpressLeechCom extends PluginForHost {
                                 fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)</a></textarea>").getMatch(0);
                                 if (inValidate(fileInfo[0])) {
                                     fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        fileInfo[0] = cbr.getRegex("\\&tag=([^<>\"]*?)\"").getMatch(0);
+                                    }
                                 }
                             }
                         }
@@ -391,8 +394,12 @@ public class ExpressLeechCom extends PluginForHost {
                 download1 = cleanForm(download1);
                 // end of backward compatibility
                 download1.remove("method_premium");
+                if (cbr.containsHTML(PASSWORDTEXT)) {
+                    logger.info("The downloadlink seems to be password protected.");
+                    download1 = handlePassword(download1, downloadLink);
+                }
                 sendForm(download1);
-                checkErrors(downloadLink, account, false);
+                checkErrors(downloadLink, account, true);
                 getDllink();
             }
         }

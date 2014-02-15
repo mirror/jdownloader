@@ -59,6 +59,7 @@ public class ImageVenueCom extends PluginForHost {
         String filename = null;
         String finallink = br.getRegex("id=\"thepic\".*?SRC=\"(.*?)\"").getMatch(0);
         if (finallink == null) {
+            if (br.containsHTML("tempval\\.focus\\(\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             logger.warning("Could not find finallink reference");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

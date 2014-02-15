@@ -66,11 +66,27 @@ public class TwitterCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String[] youtubeVideos = br.getRegex("\"(https?://(www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"").getColumn(0);
+            int addedlinks_all = 0;
+            final String[] embedurl_regexes = new String[] { "\"(https?://(www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://vine\\.co/v/[A-Za-z0-9]+)\"" };
+            for (final String regex : embedurl_regexes) {
+                final String[] embed_links = br.getRegex(regex).getColumn(0);
+                if (embed_links != null && embed_links.length != 0) {
+                    for (final String single_embed_ink : embed_links) {
+                        final DownloadLink dl = createDownloadlink(single_embed_ink);
+                        dl._setFilePackage(fp);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            // Not available in 0.9.581
+                        }
+                        decryptedLinks.add(dl);
+                        addedlinks_all++;
+                    }
+                }
+            }
 
-            int addedpicsall = 0;
-            final String[] regexes = new String[] { "data\\-url=\\&quot;(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)\\&", "data\\-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
-            for (final String regex : regexes) {
+            final String[] directlink_regexes = new String[] { "data\\-url=\\&quot;(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)\\&", "data\\-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
+            for (final String regex : directlink_regexes) {
                 final String[] piclinks = br.getRegex(regex).getColumn(0);
                 if (piclinks != null && piclinks.length != 0) {
                     for (final String singleLink : piclinks) {
@@ -83,25 +99,13 @@ public class TwitterCom extends PluginForDecrypt {
                             // Not available in 0.9.581
                         }
                         decryptedLinks.add(dl);
-                        addedpicsall++;
+                        addedlinks_all++;
                     }
                 }
             }
-            if (addedpicsall == 0 && (youtubeVideos == null || youtubeVideos.length == 0)) {
+            if (addedlinks_all == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
-            }
-            if (youtubeVideos != null && youtubeVideos.length != 0) {
-                for (final String ytvideo : youtubeVideos) {
-                    final DownloadLink dl = createDownloadlink(ytvideo);
-                    dl._setFilePackage(fp);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not available in 0.9.581
-                    }
-                    decryptedLinks.add(dl);
-                }
             }
             br.getPage("https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_id=" + maxid);
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
