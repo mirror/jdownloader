@@ -19,7 +19,7 @@ public enum YoutubeITAG {
     DASH_AUDIO_192K_WEBM(172, null, null, "Vorbis", "192kbit", YoutubeITAG.VORBIS_192),
     DASH_AUDIO_256K_AAC(141, null, null, "AAC", "256kbit", YoutubeITAG.AAC_256),
     DASH_AUDIO_48K_AAC(139, null, null, "AAC", "48kbit", YoutubeITAG.AAC_48),
-    DASH_VIDEO_1080P_H264(137, null, null, "H264", "1080p", 1080.4),
+    DASH_VIDEO_1080P_H264(137, "H264", "1080p", null, null, 1080.4),
     // http://www.youtube.com/watch?v=gBabKoHSErI
     DASH_VIDEO_1440P_H264(264, "H264", "1440p", null, null, 1440.4),
     DASH_VIDEO_144P_H264(160, "H264", "144p", null, null, 144.4),

@@ -23,4 +23,5 @@ public interface PluginStatsInterface extends RemoteAPIInterface {
 
     // old
     Response push(ArrayList<LogEntryWrapper> timeWrapper, RemoteAPIRequest request) throws BadParameterException;
+
 }

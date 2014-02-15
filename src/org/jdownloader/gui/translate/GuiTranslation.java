@@ -4446,4 +4446,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Thank you for contributing. Your Error-Code is %s1" })
     String StatsManager_createAndUploadLog_thanks_(String id);
 
+    @Default(lngs = { "en" }, values = { "3D-Video" })
+    String lit_3d_video();
+
+    @Default(lngs = { "en" }, values = { "Video" })
+    String lit_video();
+
+    @Default(lngs = { "en" }, values = { "Audio" })
+    String lit_audio();
+
+    @Default(lngs = { "en" }, values = { "Image" })
+    String lit_image();
+
 }

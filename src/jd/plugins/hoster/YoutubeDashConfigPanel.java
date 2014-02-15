@@ -32,6 +32,7 @@ import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
@@ -77,10 +78,14 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         @Override
         protected String getLabel(int i, YoutubeVariant sc) {
+            String name = sc.getName();
+            if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) name = sc.getExtendedName();
             if (i == 0) {
-                return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(sc.getName()) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_best() + ")";
-            } else if (i == getValues().size() - 1) { return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(sc.getName()) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_worst() + ")"; }
-            return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(sc.getName());
+                return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_best() + ")";
+            } else if (i == getValues().size() - 1) {
+
+            return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name) + " (" + _GUI._.YoutubeDashConfigPanel_getLabel_worst() + ")"; }
+            return _GUI._.YoutubeDashConfigPanel_MultiVariantBox_getLabel_(name);
         }
 
         @Override

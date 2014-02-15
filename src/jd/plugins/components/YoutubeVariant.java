@@ -3,12 +3,14 @@ package jd.plugins.components;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.Icon;
 
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public enum YoutubeVariant implements YoutubeVariantInterface {
     AAC_128(null, YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.DASH_AUDIO, "aac", null, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
@@ -1129,7 +1131,27 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     @Override
     public String getExtendedName() {
-        return getName() + " (" + name() + ")";
+        switch (getGroup()) {
+        case AUDIO:
+            if (getiTagVideo() != null) {
+                return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_audio() + " [" + getAudioQuality() + "-" + getAudioCodec() + "-DEMUX]";
+
+            } else {
+                return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_audio() + " [" + getAudioQuality() + "-" + getAudioCodec() + "]";
+
+            }
+
+        case IMAGE:
+            return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_image() + " [" + getResolution() + "]";
+        case SUBTITLES:
+            return getName();
+        case VIDEO:
+            return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_3d_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
+        case VIDEO_3D:
+            return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
+
+        }
+        return null;
     }
 
     public String getFileExtension() {
@@ -1173,6 +1195,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     }
 
     public String getTypeId() {
+        if (CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled()) return name();
         if (this.id == null) { return this.name(); }
         return this.id;
     }
@@ -1196,6 +1219,36 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     public String modifyFileName(String formattedFilename, DownloadLink link) {
         if (filenameModifier != null) return filenameModifier.run(formattedFilename, link);
         return formattedFilename;
+    }
+
+    public String getAudioCodec() {
+        if (getiTagAudio() != null) { return getiTagAudio().getCodecAudio(); }
+        if (getiTagVideo() != null) { return getiTagVideo().getCodecAudio(); }
+        return null;
+    }
+
+    public String getAudioQuality() {
+        if (getiTagAudio() != null) { return getiTagAudio().getQualityAudio(); }
+        if (getiTagVideo() != null) { return getiTagVideo().getQualityAudio(); }
+        return null;
+    }
+
+    public String getResolution() {
+        String ret = null;
+        if (getiTagData() != null) {
+
+            ret = getiTagData().getQualityVideo();
+        }
+        if (getiTagVideo() != null) {
+            ret = getiTagVideo().getQualityVideo();
+        }
+        return ret;
+    }
+
+    public String getVideoCodec() {
+        if (getiTagData() != null) { return getiTagData().getCodecVideo(); }
+        if (getiTagVideo() != null) { return getiTagVideo().getCodecVideo(); }
+        return null;
     }
 
 }
