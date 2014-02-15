@@ -60,7 +60,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -1346,7 +1345,8 @@ public class YoutubeHelper {
 
         String formattedFilename = null;
 
-        LinkVariant v = link.getDefaultPlugin().getActiveVariantByLink(link);
+        String var = link.getStringProperty(YoutubeHelper.YT_VARIANT, "");
+        YoutubeVariantInterface v = getVariantById(var);
         if (v instanceof SubtitleVariant) {
             formattedFilename = cfg.getSubtitleFilenamePattern();
         } else if (v instanceof YoutubeVariant) {
