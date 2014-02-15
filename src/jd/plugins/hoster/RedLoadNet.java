@@ -711,8 +711,8 @@ public class RedLoadNet extends PluginForHost {
         } else {
             account.setProperty("free", false);
         }
-        String space[] = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if (space == null || space.length == 0) space = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
+        String space[] = cbr.getRegex(">Used space.*?([0-9\\.]+) ?(KB|MB|GB|TB)?\\s*<").getRow(0);
+        if (space == null || space.length == 0) space = cbr.getRegex("Used space.*?([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?\\s*</").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -721,7 +721,7 @@ public class RedLoadNet extends PluginForHost {
             ai.setUsedSpace(space[0] + "Mb");
         }
         account.setValid(true);
-        String availabletraffic = cbr.getRegex("Traffic available.*?<b>([^<>\"']+)</b>").getMatch(0);
+        String availabletraffic = cbr.getRegex("Traffic available today: ([^<>\"']+)</").getMatch(0);
         if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic = availabletraffic.trim();
             // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
