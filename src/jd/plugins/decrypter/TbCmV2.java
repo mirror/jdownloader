@@ -348,6 +348,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
 
             }
+
             List<VariantInfo> allSubtitles = new ArrayList<VariantInfo>();
             if (cfg.isSubtitlesEnabled()) {
                 ArrayList<YoutubeSubtitleInfo> subtitles = helper.loadSubtitles(vid);
@@ -436,48 +437,49 @@ public class TbCmV2 extends PluginForDecrypt {
                 Collections.sort(e.getValue());
 
                 if (e.getKey().equals(YoutubeVariantInterface.VariantGroup.SUBTITLES.name()) || e.getKey().equalsIgnoreCase("srt")) {
+                    if (cfg.isCreateBestSubtitleVariantLinkEnabled()) {
+                        // special handling for subtitles
 
-                    // special handling for subtitles
-
-                    String[] keys = cfg.getPreferedSubtitleLanguages();
-                    // first try the users prefered list
-                    if (keys != null) {
-                        for (String locale : keys) {
-                            try {
-                                for (VariantInfo vi : e.getValue()) {
-                                    if (vi.getIdentifier().toLowerCase().startsWith(locale)) {
-                                        decryptedLinks.add(createLink(vi, e.getValue()));
-                                        continue main;
+                        String[] keys = cfg.getPreferedSubtitleLanguages();
+                        // first try the users prefered list
+                        if (keys != null) {
+                            for (String locale : keys) {
+                                try {
+                                    for (VariantInfo vi : e.getValue()) {
+                                        if (vi.getIdentifier().toLowerCase().startsWith(locale)) {
+                                            decryptedLinks.add(createLink(vi, e.getValue()));
+                                            continue main;
+                                        }
                                     }
+                                } catch (Exception e1) {
+                                    getLogger().log(e1);
                                 }
-                            } catch (Exception e1) {
-                                getLogger().log(e1);
-                            }
-                        }
-                    }
-
-                    try {
-                        // try to find the users locale
-                        String desiredLocale = TranslationFactory.getDesiredLanguage();
-                        for (VariantInfo vi : e.getValue()) {
-                            if (vi.getIdentifier().toLowerCase().startsWith(desiredLocale.toLowerCase())) {
-                                decryptedLinks.add(createLink(vi, e.getValue()));
-                                continue main;
-                            }
-                        }
-                    } catch (Exception e1) {
-                        // try english
-                        getLogger().log(e1);
-                        for (VariantInfo vi : e.getValue()) {
-                            if (vi.getIdentifier().toLowerCase().startsWith("en")) {
-                                decryptedLinks.add(createLink(vi, e.getValue()));
-                                continue main;
                             }
                         }
 
+                        try {
+                            // try to find the users locale
+                            String desiredLocale = TranslationFactory.getDesiredLanguage();
+                            for (VariantInfo vi : e.getValue()) {
+                                if (vi.getIdentifier().toLowerCase().startsWith(desiredLocale.toLowerCase())) {
+                                    decryptedLinks.add(createLink(vi, e.getValue()));
+                                    continue main;
+                                }
+                            }
+                        } catch (Exception e1) {
+                            // try english
+                            getLogger().log(e1);
+                            for (VariantInfo vi : e.getValue()) {
+                                if (vi.getIdentifier().toLowerCase().startsWith("en")) {
+                                    decryptedLinks.add(createLink(vi, e.getValue()));
+                                    continue main;
+                                }
+                            }
+
+                        }
+                        // fallback: use the first
+                        decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                     }
-                    // fallback: use the first
-                    decryptedLinks.add(createLink(e.getValue().get(0), e.getValue()));
                 } else {
                     if (cfg.getGroupLogic() != GroupLogic.NO_GROUP) {
 
