@@ -1,5 +1,7 @@
 AddContainerAction_delete_container_title=Izbrisati Kontejner Dokumente?
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=Pristup Captcha Podešenjima
+DeleteOption_final_delete=Izbriši dokumente sa Diska
+DeleteOption_no_delete=Ne briši dokumente
 DownloadLink_setSkipped_statusmessage=Preskočeno
 DownloadLink_setSkipped_statusmessage_account=Preskočeno - Nedostaje nalog
 DownloadLink_setSkipped_statusmessage_captcha=Preskočeno - Potreban je captcha
@@ -18,7 +20,9 @@ LinkCollector_addCrawledLink_variouspackage=Razni Dokumenti
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=Sakupljač Linkova još uvijek radi!
 LinkCollector_onShutdownRequest_msg=Želite li da zaustavite SakupljčLinkova?
+LinkFilterSettings_DefaultFilterList_directhttp=Direktni HTTP
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Offline dokumenti
+LinkSource_CLIPBOARD=Clipboard
 LinkgrabberFilterRule_duplicate=%s1 (kopija)
 Main_run_autostart_=Pokretanje Download-a
 Main_run_autostart_msg=Download-i će startati za nekoliko sekundi...
