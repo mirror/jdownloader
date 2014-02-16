@@ -190,7 +190,7 @@ public class UpDownBz extends PluginForHost {
         HashMap<String, String> prvdl_data = api_privatedownload(getsid_data.get("sessionid"));
         if (prvdl_data == null) throw new PluginException(LinkStatus.ERROR_RETRY, "requesting download failed", 60 * 1000);
 
-        // TODO: verfiy download file
+        // TODO: verify download file
 
         // is enough traffic available
         if (downloadLink.getDownloadSize() > Long.parseLong(prvdl_data.get("traffic_left"))) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "traffic limit reached");
@@ -245,7 +245,7 @@ public class UpDownBz extends PluginForHost {
         // per file. only found files will be available.
         HashMap<String, HashMap<String, Object>> data = null;
 
-        // create comma seperated file ids
+        // create comma separated file ids
         StringBuilder sb = new StringBuilder();
         for (String id : ids)
             sb.append("\"" + id + "\",");

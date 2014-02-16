@@ -101,7 +101,7 @@ public class TbCm extends PluginForDecrypt {
         UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" }),
         VIDEO_DASH_MP4("Video (MP4)", new String[] { ".mp4" }),
-        AUDIO_DASH_AAC("Audio (ACC)", new String[] { ".aac" });
+        AUDIO_DASH_AAC("Audio (AAC)", new String[] { ".aac" });
 
         private String   text;
         private String[] ext;
@@ -1003,8 +1003,8 @@ public class TbCm extends PluginForDecrypt {
                 String ytID = getVideoID(currentVideoUrl);
 
                 /*
-                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will return multiple results
-                 * if they are in the same quality rating
+                 * We match against users resolution and file encoding type. This allows us to use their upper and lower limits. It will
+                 * return multiple results if they are in the same quality rating
                  */
                 HashMap<ITAG, String[]> useTags = new HashMap<ITAG, String[]>(availableItags);
                 if (best) {
@@ -1901,7 +1901,6 @@ public class TbCm extends PluginForDecrypt {
                 return false;
             }
         } catch (final PluginException e) {
-
             account.setValid(false);
             return false;
         }
