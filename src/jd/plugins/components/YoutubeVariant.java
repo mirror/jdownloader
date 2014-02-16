@@ -1146,9 +1146,10 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         case SUBTITLES:
             return getName();
         case VIDEO:
-            return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_3d_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
-        case VIDEO_3D:
             return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
+
+        case VIDEO_3D:
+            return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_3d_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
 
         }
         return null;
