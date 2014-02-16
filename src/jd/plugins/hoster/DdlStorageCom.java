@@ -314,7 +314,7 @@ public class DdlStorageCom extends PluginForHost {
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = cbr.getRegex("\\(([^<>\"'/]+)\\)</p>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
                     fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                     if (inValidate(fileInfo[1])) {
