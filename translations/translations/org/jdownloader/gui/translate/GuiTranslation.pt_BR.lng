@@ -1001,6 +1001,7 @@ YoutubeHelper_getDescription_group=Tipo de mídia: Vídeo, vídeo em 3D, áudio.
 YoutubeHelper_getDescription_id=ID de vídeo único
 YoutubeHelper_getDescription_quality=Tag variante. ex.: '1080p'
 YoutubeHelper_getDescription_resolution=Resolução (ex.: 1080p, 1440x1080, ...)
+YoutubeHelper_getDescription_resolution_best=Melhor resolução de vídeo disponível (ex.: 360p, se não houver qualidade melhor)
 YoutubeHelper_getDescription_title=Título do vídeo
 YoutubeHelper_getDescription_updatedate_accurate=Data precisa de postagem (incl. horas, minutos). *date_time* ou ex.: *date_time[AAAA/MM/DD]*
 YoutubeHelper_getDescription_user=Nome do uploader
