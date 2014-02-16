@@ -4458,4 +4458,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Image" })
     String lit_image();
 
+    @Default(lngs = { "en" }, values = { "Best Video Resolution available (e.g. 360p, if there is no better video quality)" })
+    String YoutubeHelper_getDescription_resolution_best();
+
 }

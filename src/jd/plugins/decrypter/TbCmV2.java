@@ -275,7 +275,16 @@ public class TbCmV2 extends PluginForDecrypt {
                 getLogger().info("Error on " + vid.videoID + " (" + vid.title + "): " + vid.error);
             }
             if (vc == null) continue;
+            YoutubeITAG bestVideoResolution = null;
+            for (Entry<YoutubeITAG, YoutubeStreamData> es : vc.entrySet()) {
+                if (es.getKey().getQualityVideo() != null) {
+                    if (bestVideoResolution == null || bestVideoResolution.getQualityRating() < es.getKey().getQualityRating()) {
+                        bestVideoResolution = es.getKey();
+                    }
+                }
 
+            }
+            vid.bestVideoItag = bestVideoResolution;
             for (YoutubeVariantInterface v : helper.getVariants()) {
                 System.out.println("test for " + v);
                 String groupID = getGroupID(v);
@@ -651,6 +660,7 @@ public class TbCmV2 extends PluginForDecrypt {
             thislink.setProperty(YoutubeHelper.YT_AGE_GATE, clip.ageCheck);
             thislink.setProperty(YoutubeHelper.YT_CHANNEL, clip.channel);
             thislink.setProperty(YoutubeHelper.YT_USER, clip.user);
+            thislink.setProperty(YoutubeHelper.YT_BEST_VIDEO, clip.bestVideoItag == null ? null : clip.bestVideoItag.name());
             thislink.setProperty(YoutubeHelper.YT_DATE, clip.date);
             thislink.setProperty(YoutubeHelper.YT_LENGTH_SECONDS, clip.length);
             thislink.setProperty(YoutubeHelper.YT_GOOGLE_PLUS_ID, clip.userGooglePlusID);
