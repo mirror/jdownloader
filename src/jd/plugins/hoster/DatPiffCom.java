@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -102,9 +103,10 @@ public class DatPiffCom extends PluginForHost {
         } else {
             if (br.containsHTML(CURRENTLYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, CURRENTLYUNAVAILABLETEXT, 3 * 60 * 60 * 1000l);
             // whole mixtape
-            final String fileID = new Regex(downloadLink.getDownloadURL(), "\\.php\\?id=(.+)").getMatch(0);
-            if (fileID == null || !br.containsHTML("download\\-mixtape")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.postPage("http://www.datpiff.com/download-mixtape", "id=" + fileID + "&x=84&y=11");
+            String id = br.getRegex("name=\"id\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (id == null) id = new Regex(downloadLink.getDownloadURL(), "\\.php\\?id=(.+)").getMatch(0);
+            if (id == null || !br.containsHTML("download\\-mixtape")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage("http://www.datpiff.com/download-mixtape", "id=" + id + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
             dllink = br.getRedirectLocation();
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

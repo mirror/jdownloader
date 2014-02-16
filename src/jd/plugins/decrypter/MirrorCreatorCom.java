@@ -46,8 +46,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             userAgent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", userAgent);
-        final String importhost = new Regex(param.toString(), "(https?://[^/]+)").getMatch(0);
-        final String parameter = importhost + "/download.php?uid=" + uid;
+        final String parameter = "http://www.mirrorcreator.com/download.php?uid=" + uid;
         param.setCryptedUrl(parameter);
 
         br.setFollowRedirects(true);

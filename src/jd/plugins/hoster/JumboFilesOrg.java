@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -64,7 +65,8 @@ public class JumboFilesOrg extends PluginForHost {
         link.setUrlDownload("http://" + DESIREDHOST + "/" + new Regex(link.getDownloadURL(), "(newfile\\?.+)").getMatch(0));
     }
 
-    private static final String PREMIUMONLYLINK = "http://(www\\.)?jumbofiles\\.org/linkfile\\?n=\\d+";
+    private static final String  PREMIUMONLYLINK = "http://(www\\.)?jumbofiles\\.org/linkfile\\?n=\\d+";
+    private static AtomicInteger maxPrem         = new AtomicInteger(1);
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -91,6 +93,10 @@ public class JumboFilesOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (downloadLink.getDownloadURL().matches(PREMIUMONLYLINK)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -198,7 +204,19 @@ public class JumboFilesOrg extends PluginForHost {
                 br.setFollowRedirects(true);
                 /** Login captcha is needed via site but admin gave us a bypass parameter, do NOT implement the login captcha!! */
                 br.postPage("http://jumbofiles.org/login", "sukey=yes&id=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("Account type:<br> <h3>Premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML("href=\"logout\">Logout</a>")) {
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (!br.containsHTML("Account type:<br> <h3>Premium<")) {
+                    account.setProperty("freeacc", true);
+                } else {
+                    account.setProperty("freeacc", false);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -226,18 +244,37 @@ public class JumboFilesOrg extends PluginForHost {
         }
         br.getPage("/my_account");
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<\\!\\-\\-Premium exp: ([^<>\"]*?)\\-\\->").getMatch(0);
-        if (expire == null) {
-            // picks up the first date in the /my_account 'Account Log' table.
-            expire = br.getRegex("Expiration date:(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-            if (expire == null) {
-                account.setValid(false);
-                return ai;
+        if (account.getBooleanProperty("freeacc", false)) {
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
             }
+            ai.setStatus("Registered (free) user");
+        } else {
+            String expire = br.getRegex("<\\!\\-\\-Premium exp: ([^<>\"]*?)\\-\\->").getMatch(0);
+            if (expire == null) {
+                // picks up the first date in the /my_account 'Account Log' table.
+                expire = br.getRegex("Expiration date:(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+                if (expire == null) {
+                    account.setValid(false);
+                    return ai;
+                }
+            }
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            ai.setStatus("Premium user");
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -245,20 +282,25 @@ public class JumboFilesOrg extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            if (br.containsHTML("HTTP/1\\.1 404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("freeacc", false)) {
+            br.getPage(link.getDownloadURL());
+            doFree(link);
+        } else {
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                if (br.containsHTML("HTTP/1\\.1 404 Not Found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,9 +43,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filearning.com" }, urls = { "http://(www\\.)?filearning\\.com/(files|get)/[A-Za-z0-9]+\\.html" }, flags = { 2 })
 public class FilEarningCom extends PluginForHost {
 
-    // DEV NOTES
-    // Using FreakshareScript 1.2
-
     private static final String MAINPAGE = "http://www.filearning.com";
 
     @Override
@@ -62,6 +60,8 @@ public class FilEarningCom extends PluginForHost {
         return MAINPAGE + "/help/terms.php";
     }
 
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -78,12 +78,16 @@ public class FilEarningCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         br.getPage(downloadLink.getDownloadURL().replace("/files/", "/get/"));
         Browser br2 = br.cloneBrowser();
         br2.getPage(br.getRegex("src=\"\\.(/[\\w/]+/core\\.js)").getMatch(0));
-        String ttt = br.getRegex("var waitSecs = (\\d+);").getMatch(0);
+        final String ttt = br.getRegex("var waitSecs = (\\d+);").getMatch(0);
         String fileid = br.getRegex("var file_id = '([^\\']+)\\';").getMatch(0);
         if (fileid == null) fileid = new Regex(downloadLink.getDownloadURL(), "/(.+)\\.html").getMatch(0);
         int tt = 60;
@@ -97,7 +101,7 @@ public class FilEarningCom extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form = form.replace("' + base + '", "").replace("' + file_id + '", fileid).replace("' + timestamp + '", "" + System.currentTimeMillis());
         Form dlForm = new Form(form);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             handleErrors();
@@ -124,7 +128,7 @@ public class FilEarningCom extends PluginForHost {
     private static final Object LOCK        = new Object();
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             /** Load cookies */
             br.setCookiesExclusive(false);
@@ -145,7 +149,20 @@ public class FilEarningCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.postPage(MAINPAGE + "/account/login", "task=dologin&return=http%3A%2F%2Fwww.filearning.com%2Fmembers%2Fmyfiles&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
 
-            if (!br.containsHTML(PREMIUMTEXT)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (!br.containsHTML(">Sign out</a></li>")) {
+                final String lang = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+
+            if (!br.containsHTML(PREMIUMTEXT)) {
+                account.setProperty("freeacc", true);
+            } else {
+                account.setProperty("freeacc", false);
+            }
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
@@ -159,7 +176,7 @@ public class FilEarningCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -169,30 +186,54 @@ public class FilEarningCom extends PluginForHost {
         }
         final String hostedFiles = br.getRegex(">Total Files: (\\d+)</a>").getMatch(0);
         if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));
-        final Regex expDate = br.getRegex(">Premium Expires:\\&nbsp;([^<>\"]*?) @ ([^<>\"]*?)</a>");
-        if (expDate.getMatches().length != 1) {
-            account.setValid(false);
+        if (account.getBooleanProperty("freeacc", false)) {
+            try {
+                maxPrem.set(20);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            ai.setStatus("Registered (free) user");
+        } else {
+            final Regex expDate = br.getRegex(">Premium Expires:\\&nbsp;([^<>\"]*?) @ ([^<>\"]*?)</a>");
+            if (expDate.getMatches().length != 1) {
+                account.setValid(false);
+            }
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expDate.getMatch(0) + " " + expDate.getMatch(1), "dd-MM-yyyy hh:mm:ss", Locale.ENGLISH));
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            ai.setStatus("Premium user");
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expDate.getMatch(0) + " " + expDate.getMatch(1), "dd-MM-yyyy hh:mm:ss", Locale.ENGLISH));
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        ai.setStatus("Premium User");
         return ai;
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(true);
-        final String getLink = link.getDownloadURL().replace(".com/files/", ".com/get/");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download&time=" + System.currentTimeMillis(), true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("freeacc", false)) {
+            br.getPage(link.getDownloadURL());
+            doFree(link);
+        } else {
+            br.setFollowRedirects(true);
+            final String getLink = link.getDownloadURL().replace(".com/files/", ".com/get/");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download&time=" + System.currentTimeMillis(), true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     private String getLink() {
@@ -203,7 +244,7 @@ public class FilEarningCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override
