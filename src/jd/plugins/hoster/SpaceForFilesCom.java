@@ -63,11 +63,12 @@ public class SpaceForFilesCom extends PluginForHost {
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean TRY_SPECIAL_WAY              = true;
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
@@ -84,10 +85,10 @@ public class SpaceForFilesCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.1
-    // mods:
+    // mods: TRY_SPECIAL_WAY
     // limit-info:
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: solvemedia
     // other:
 
     @Override
@@ -233,6 +234,21 @@ public class SpaceForFilesCom extends PluginForHost {
                 if (dllink == null) logger.info("Failed to get link via vidembed");
             } catch (final Throwable e) {
                 logger.info("Failed to get link via vidembed");
+            }
+        }
+        // Possibility to skip captcha & (reconnect) waittimes
+        if (dllink == null && TRY_SPECIAL_WAY) {
+            try {
+                final Browser brad = br.cloneBrowser();
+                final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+                final String postDataF1 = "op=download1&usr_login=&id=" + fid + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&lck=1&method_free=Free+Download";
+                brad.postPage(br.getURL(), postDataF1);
+                final String rand = brad.getRegex("name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
+                if (rand == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String postData = "op=download2&id=" + fid + "&rand=" + rand + "&referer=" + Encoding.urlEncode(br.getURL()) + "&method_free=Free+Download&method_premium=&method_highspeed=1&lck=1&down_script=1";
+                brad.postPage(brad.getURL(), postData);
+                dllink = brad.getRedirectLocation();
+            } catch (final Throwable e) {
             }
         }
         // Fourth, continue like normal.
