@@ -76,6 +76,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             panel.save();
         }
 
+        //
         @Override
         protected String getLabel(int i, YoutubeVariant sc) {
             String name = sc.getName();
