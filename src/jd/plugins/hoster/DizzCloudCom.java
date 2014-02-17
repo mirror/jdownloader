@@ -167,8 +167,7 @@ public class DizzCloudCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
-            final String waittime = br.getRegex(">Next free download from your ip will be available in <b>(\\d+) minutes</p>").getMatch(0);
-            if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+            handleErrors();
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -307,6 +306,7 @@ public class DizzCloudCom extends PluginForHost {
                 logger.info("daily limit reached, temp disabling premium");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
+            handleErrors();
             String dllink = br.getRedirectLocation();
             if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.cloudstoreservice\\.net/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://[^<>\"]*?)\" class=\"orange\\-btn\">DOWNLOAD</a>").getMatch(0);
@@ -331,6 +331,11 @@ public class DizzCloudCom extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private void handleErrors() throws NumberFormatException, PluginException {
+        final String waittime = br.getRegex(">Next free download from your ip will be available in <b>(\\d+) minutes</p>").getMatch(0);
+        if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
     }
 
     @Override

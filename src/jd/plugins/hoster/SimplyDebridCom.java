@@ -139,9 +139,6 @@ public class SimplyDebridCom extends PluginForHost {
     public void handleMultiHost(DownloadLink link, Account account) throws Exception {
         prepareBrowser(br);
         String url = link.getDownloadURL();
-        if (url.contains("clz.to/")) {
-            url = "http://cloudzer.net/file/" + new Regex(url, "([A-Za-z0-9]+)/?$").getMatch(0);
-        }
         url = Encoding.urlEncode(url);
         String page = "";
         showMessage(link, "Phase 1/3: Get a valid session");

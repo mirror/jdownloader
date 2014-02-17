@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -24,6 +25,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -38,6 +40,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadizer.net" }, urls = { "http://(www\\.)?uploadizer\\.net/\\?d=[A-Z0-9]+" }, flags = { 2 })
 public class UploadizerNet extends PluginForHost {
@@ -53,7 +58,7 @@ public class UploadizerNet extends PluginForHost {
     }
 
     private static final String COOKIE_HOST     = "http://uploadizer.net";
-    private static final int    DEFAULTWAITTIME = 0;
+    private static final int    DEFAULTWAITTIME = 60;
 
     // MhfScriptBasic 2.0
     // FREE limits: Chunks * Maxdls
@@ -70,28 +75,21 @@ public class UploadizerNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         // Offline links should also have recognizable filenames
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        parameter.setName(new Regex(parameter.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                // Set name and remove hosters tags
-                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).replace("[UZ]", ""));
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.getPage(parameter.getDownloadURL());
+        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("style=\"width:522px\">[\t\n\r ]+<h5 class=\"float\\-left\">([^<>\"]*?)</h5>").getMatch(0);
+        final String filesize = getData("File size");
+        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        parameter.setFinalFileName(filename.trim());
+        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -101,7 +99,42 @@ public class UploadizerNet extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
+        if (br.containsHTML("value=\"Free Users\""))
+            br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
+        else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
+        final Browser ajaxBR = br.cloneBrowser();
+        ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+        final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+        if (rcID != null) {
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
+            if (ajaxBR.containsHTML("incorrect\\-captcha\\-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else if (br.containsHTML(this.getHost() + "/captcha\\.php\"")) {
+            final File cf = downloadCaptcha(getLocalCaptchaFile(), COOKIE_HOST + "/captcha.php");
+            final String code = getCaptchaCode("mhfstandard", cf, downloadLink);
+            ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&captchacode=" + code);
+            if (ajaxBR.containsHTML("Captcha number error or expired")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
+        }
+        final String reconnectWaittime = ajaxBR.getRegex("You must wait (\\d+) mins\\. for next download.").getMatch(0);
+        if (reconnectWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 60 * 1001l);
+        if (ajaxBR.containsHTML(">You have got max allowed download sessions from the same")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        final String finalLink = findLink(ajaxBR);
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int wait = DEFAULTWAITTIME;
+        String waittime = ajaxBR.getRegex("countdown\\((\\d+)\\);").getMatch(0);
+        // Fol older versions it's usually skippable
+        if (waittime == null) waittime = ajaxBR.getRegex("var timeout=\\'(\\d+)\\';").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
@@ -109,6 +142,27 @@ public class UploadizerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private File downloadCaptcha(final File captchaFile, final String captchaAdress) throws Exception {
+        final Browser br2 = br.cloneBrowser();
+        URLConnectionAdapter con = null;
+        try {
+            Browser.download(captchaFile, con = br2.openGetConnection(captchaAdress));
+        } catch (IOException e) {
+            captchaFile.delete();
+            throw e;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return captchaFile;
+    }
+
+    private String findLink(final Browser br) throws Exception {
+        return br.getRegex("(http://[a-z0-9\\-\\.]{5,30}/getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
     }
 
     private String getData(final String data) {
@@ -163,7 +217,6 @@ public class UploadizerNet extends PluginForHost {
                 form.put("autologin", "0");
                 br.submitForm(form);
                 br.getPage(COOKIE_HOST + "/members.php");
-                final String premium = br.getRegex("return overlay\\(this, \\'package_details\\',\\'width=\\d+px,height=\\d+px,center=1,resize=1,scrolling=1\\'\\)\">(Premium)</a>").getMatch(0);
                 if (br.getCookie(COOKIE_HOST, "mfh_passhash") == null || "0".equals(br.getCookie(COOKIE_HOST, "mfh_uid"))) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -171,7 +224,7 @@ public class UploadizerNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (premium == null) {
+                if (!br.containsHTML("<li class=\"col\\-w50\">Premium")) {
                     account.setProperty("freeacc", true);
                 } else {
                     account.setProperty("freeacc", false);
