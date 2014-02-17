@@ -8,7 +8,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1264,6 +1263,7 @@ public class YoutubeHelper {
                 throw new WTFException("Not Implemented");
 
             } else {
+                if (this.br.getRedirectLocation() == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "The login verification is broken. Please contact our support."); }
                 this.br.setFollowRedirects(true);
                 this.br.getPage(this.br.getRedirectLocation());
 
@@ -1484,26 +1484,25 @@ public class YoutubeHelper {
     }
 
     public ArrayList<YoutubeSubtitleInfo> loadSubtitles(YoutubeClipData vid) throws IOException {
-        ArrayList<YoutubeSubtitleInfo> urls = new ArrayList<YoutubeSubtitleInfo>();
+        HashMap<String, YoutubeSubtitleInfo> urls = new HashMap<String, YoutubeSubtitleInfo>();
         String ttsUrl = br.getRegex("\"ttsurl\": (\"http.*?\")").getMatch(0);
         if (ttsUrl != null) {
             ttsUrl = JSonStorage.restoreFromString(ttsUrl, new TypeRef<String>() {
             });
         } else {
-            return urls;
+            return new ArrayList<YoutubeSubtitleInfo>();
         }
         getAbsolute(replaceHttps(ttsUrl + "&asrs=1&fmts=1&tlangs=1&ts=" + System.currentTimeMillis() + "&type=list"), "subtitle-" + vid.videoID, br);
 
         ttsUrl = ttsUrl.replace("&v=" + vid.videoID, "");
         ttsUrl = ttsUrl.replace("?v=" + vid.videoID, "");
         String[] matches = br.getRegex("<track id=\"(.*?)\".*?/>").getColumn(0);
-        HashSet<String> duplicate = new HashSet<String>();
 
         for (String trackID : matches) {
-            parseSubtitleTrack(urls, ttsUrl, duplicate, trackID);
+            parseSubtitleTrack(urls, ttsUrl, trackID);
 
         }
-        return urls;
+        return new ArrayList<YoutubeSubtitleInfo>(urls.values());
     }
 
     /**
@@ -1512,7 +1511,8 @@ public class YoutubeHelper {
      * @param duplicate
      * @param trackID
      */
-    public void parseSubtitleTrack(ArrayList<YoutubeSubtitleInfo> urls, String ttsUrl, HashSet<String> duplicate, String trackID) {
+    private void parseSubtitleTrack(HashMap<String, YoutubeSubtitleInfo> urls, String ttsUrl, String trackID) {
+
         String track = br.getRegex("<track id=\"" + trackID + "\".*?/>").getMatch(-1);
         String lang = new Regex(track, "lang_code=\"(.*?)\".*?/>").getMatch(0);
         String name = new Regex(track, "name=\"(.*?)\".*?/>").getMatch(0);
@@ -1521,14 +1521,25 @@ public class YoutubeHelper {
         String langTrans = new Regex(track, "lang_translated=\"(.*?)\".*?/>").getMatch(0);
         if (name == null) name = "";
         if (kind == null) kind = "";
-        if (duplicate.add(lang) == false) return;
+
         if (StringUtils.isNotEmpty(langTrans)) {
             langOrg = langTrans;
         }
         if (StringUtils.isEmpty("langOrg")) {
-            langOrg = new Locale("lang").getDisplayLanguage(Locale.ENGLISH);
+
+            langOrg = TranslationFactory.stringToLocale(lang).getDisplayLanguage(Locale.ENGLISH);
         }
-        urls.add(new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
+        YoutubeSubtitleInfo old = urls.get(lang);
+        if (old != null) {
+            // speech recognition
+            if ("asr".equalsIgnoreCase(old.getKind())) {
+                urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
+                return;
+            } else {
+
+            }
+        }
+        urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
     }
 
     public YoutubeVariantInterface getVariantById(String ytv) {
