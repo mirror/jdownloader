@@ -148,6 +148,7 @@ public class YoutubeDashV2 extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        //
         ai.setStatus(JDL.L("plugins.hoster.youtube.accountok", "Account is OK."));
         ai.setValidUntil(-1);
         account.setValid(true);
