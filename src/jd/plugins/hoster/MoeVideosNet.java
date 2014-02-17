@@ -84,7 +84,7 @@ public class MoeVideosNet extends PluginForHost {
         }
         if (uid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /* finallink */
-        br.postPage("http://api.moevideo.net/", "r=[\"tVL0gjqo5\",[\"preview/flv_image\",{\"uid\":\"" + uid + "\"}],[\"preview/flv_link\",{\"uid\":\"" + uid + "\"}]]");
+        br.postPage("http://api.letitbit.net/", "r=[\"tVL0gjqo5\",[\"preview/flv_image\",{\"uid\":\"" + uid + "\"}],[\"preview/flv_link\",{\"uid\":\"" + uid + "\"}]]");
 
         boolean status = br.getRegex("\"status\":\"OK\"").matches() ? true : false;
 

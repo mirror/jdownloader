@@ -73,7 +73,7 @@ public class JumboFilesOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://jumbofiles.org/index")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/index")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null;
         if (link.getDownloadURL().matches(PREMIUMONLYLINK)) {
             filename = br.getRegex("<h2>Download File ([^<>\"]*?)</h2>").getMatch(0);

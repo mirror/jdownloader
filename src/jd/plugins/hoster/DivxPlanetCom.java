@@ -48,7 +48,7 @@ public class DivxPlanetCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         String jsredirect = br.getRegex("location\\.href=(\\'|\")((http://|/)[^<>\"]*?)(\\'|\")").getMatch(1);
-        if (jsredirect != null) {
+        if (jsredirect != null && !jsredirect.contains("/index.php")) {
             if (!jsredirect.startsWith("http://")) jsredirect = "http://divxplanet.com" + jsredirect;
             br.getPage(jsredirect);
         }

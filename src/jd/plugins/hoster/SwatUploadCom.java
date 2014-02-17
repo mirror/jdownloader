@@ -140,7 +140,7 @@ public class SwatUploadCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|>invalid license_key<|>Mod license violation<)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;

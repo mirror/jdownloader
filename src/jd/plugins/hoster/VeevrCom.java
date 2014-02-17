@@ -113,9 +113,13 @@ public class VeevrCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML(">This video is still being processed")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can't download: This video is still being processed", 30 * 60 * 1000l);//
-        if (HDS) throw new PluginException(LinkStatus.ERROR_FATAL, "HDS streaming isn't supported by JD yet");
+        hdsCheck();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         dl.startDownload();
+    }
+
+    private void hdsCheck() throws PluginException {
+        if (HDS) throw new PluginException(LinkStatus.ERROR_FATAL, "HDS streaming isn't supported by JD yet");
     }
 
     @Override

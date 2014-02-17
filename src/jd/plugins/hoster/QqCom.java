@@ -28,9 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(qqdecrypted\\.com/\\d+|(www\\.)?fenxiang\\.qq\\.com/filedownload\\.php\\?code=[^<>\"#]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://qqdecrypted\\.com/\\d+" }, flags = { 0 })
 public class QqCom extends PluginForHost {
 
     public QqCom(final PluginWrapper wrapper) {
@@ -55,66 +53,27 @@ public class QqCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        if (link.getDownloadURL().matches(DECRYPTEDLINK)) {
-            br.getPage(link.getStringProperty("mainlink", null));
-            if (br.containsHTML(">很抱歉，此资源已被删除或包含敏感信息不能查看啦<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            final String[][] linkInfo = br.getRegex("qhref=\"(" + link.getStringProperty("qhref", null) + ")\"").getMatches();
-            if (linkInfo == null || linkInfo.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            return AvailableStatus.TRUE;
-        } else {
-            br.getPage(link.getDownloadURL());
-            if (link.getDownloadURL().matches("https?://urlxf\\.qq\\.com/\\?\\w+")) {
-                final String redirect = br.getRegex("window\\.location=\"(http[^\"]+)").getMatch(0);
-                if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                br.getPage(redirect);
-            } else {
-                // Offline links should also get nice filenames
-                link.setName(new Regex(link.getDownloadURL(), "filedownload\\.php\\?code=(.+)").getMatch(0));
-            }
-            if (br.containsHTML("(>分享文件已过期或者链接错误，请确认后重试。<|>想了解更多有关QQ旋风资源分享的信息，请访问 <a href=|>很抱歉，此资源已被删除或包含敏感信息不能查看啦<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filename = br.getRegex("filename:\"([^<>\"]+)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"a_filename\" href=\"###\" title=\"([^<>\"]+)\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("filename=\"([^<>\"]+)\"").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<td id=\"inform_filename\" title=\"([^<>\"]+)\"").getMatch(0);
-                        if (filename == null) {
-                            filename = br.getRegex("class=\"inform_wrap_box_important\" >([^<>\"]+)</td>").getMatch(0);
-                        }
-                    }
-                }
-            }
-            String filesize = br.getRegex("filesize:\"(\\d+)\"").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("<li>大小：([^<>\"]+)</li>").getMatch(0);
-            }
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
+        br.getPage(link.getStringProperty("mainlink", null));
+        if (br.containsHTML(">很抱歉，此资源已被删除或包含敏感信息不能查看啦<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String[][] linkInfo = br.getRegex("qhref=\"(" + link.getStringProperty("qhref", null) + ")\"").getMatches();
+        if (linkInfo == null || linkInfo.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        String dllink = null;
         requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(DECRYPTEDLINK)) throw new PluginException(LinkStatus.ERROR_FATAL, "Not yet implemented!");
-        String[] dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" dllink=\"(.*?)\" (.*?)=\"(.*?)\" filename=\"(.*?)\"></a>").getRow(0);
-        if (dlValues == null) dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" filename=\"(.*?)\"></a>").getRow(0);
-        if (dlValues == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (dlValues.length == 3) {
-            br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
-            dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[2]);
-        } else if (dlValues[0] != null && dlValues[1] != null && dlValues[5] != null) {
-            br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
-            dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[5]);
-        } else {
-            br.setCookie(br.getHost(), dlValues[3].toUpperCase(), dlValues[4]);
-            dllink = dlValues[2] + "/" + Encoding.Base64Encode(dlValues[5]);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        final String hash = downloadLink.getStringProperty("filehash", null);
+        // This should never happen
+        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.11; Windows NT 6.1; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)");
+        br.postPage("http://fenxiang.qq.com/upload/index.php/share/handler_c/getComUrl", "filename=" + Encoding.urlEncode(downloadLink.getName()) + "&filehash=" + hash);
+        final String finallink = br.getRegex("\"com_url\":\"(htt[^<>\"]*?)\"").getMatch(0);
+        final String cookie = br.getRegex("\"com_cookie\":\"([^<>\"]*?)\"").getMatch(0);
+        if (finallink == null || cookie == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String finalhost = new Regex(finallink, "(https?://[A-Za-z0-9\\-\\.]+)(:|/)").getMatch(0);
+        br.setCookie(finalhost, "FTN5K", cookie);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
 
         if (dl.getConnection().getResponseCode() == 503) {
             if (dl.getConnection().getResponseMessage().equals("Service Unavailable")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, " Service Unavailable!");

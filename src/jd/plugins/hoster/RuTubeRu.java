@@ -51,8 +51,11 @@ public class RuTubeRu extends PluginForHost {
         return -1;
     }
 
+    private static final boolean HDS = true;
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        hdsCheck();
         download(downloadLink);
     }
 
@@ -85,10 +88,18 @@ public class RuTubeRu extends PluginForHost {
         String nextId = new Regex(dllink, regId).getMatch(0);
         br.setCustomCharset("utf-8");
         br.getPage("http://rutube.ru/api/play/trackinfo/" + nextId + "?format=xml&referer=" + Encoding.urlEncode(dllink));
+        if (br.containsHTML("<title>Видео удалено администрацией как нарушающее условия Пользовательского соглашения</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<name>(.*?)</name>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
+        if (HDS) {
+            downloadLink.getLinkStatus().setStatusText("HDS streaming isn't supported by JD yet");
+            downloadLink.setFinalFileName(filename);
+            return AvailableStatus.TRUE;
+        }
         String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
         String videoBalancer = br.getRegex("<video_balancer>(http://.*?)</video_balancer>").getMatch(0);
-        if (videoBalancer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (videoBalancer == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         br.getPage(videoBalancer + "?referer=" + dllink);
         String baseUrl = br.getRegex("<baseURL>(rtmp.?://.*?)</baseURL>").getMatch(0);
@@ -104,10 +115,14 @@ public class RuTubeRu extends PluginForHost {
             DLLINK = baseUrl + "@" + app + "@" + Encoding.htmlDecode(mediaUrl);
         }
 
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename);
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    private void hdsCheck() throws PluginException {
+        if (HDS) throw new PluginException(LinkStatus.ERROR_FATAL, "HDS streaming isn't supported by JD yet");
     }
 
     @Override

@@ -53,10 +53,12 @@ public class FileToLinkCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        // Offline links should also have nice filenames
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "filetolink\\.com/(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Sorry, this file does not exist\\.<") || br.getURL().contains("filetolink.com/d/notfound.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Sorry, this file does not exist\\.<") || br.getURL().contains("filetolink.com/d/notfound.html") || br.getURL().equals("http://www.filetolink.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // For invalid links
         if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(LOGINNEEDED)) {

@@ -31,10 +31,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adcrun.ch" }, urls = { "http://(www\\.)?adcrun\\.ch/[A-Za-z0-9]+" }, flags = { 0 })
-public class AdcrunCh extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adli.pw" }, urls = { "http://(www\\.)?adli\\.pw/[A-Za-z0-9]+" }, flags = { 0 })
+public class AdliPw extends PluginForDecrypt {
 
-    public AdcrunCh(PluginWrapper wrapper) {
+    public AdliPw(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -47,11 +47,11 @@ public class AdcrunCh extends PluginForDecrypt {
         br.getPage(parameter);
         String finallink = br.getRedirectLocation();
         if (finallink != null) {
-            if (finallink.equals("http://adcrun.ch/")) {
+            if (finallink.equals("http://adli.pw/")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            if (finallink.matches("http://(www\\.)?adcrun\\.ch/(image|slider).+")) {
+            if (finallink.matches("http://(www\\.)?adli\\.pw/(image|slider).+")) {
                 logger.info("Link invalid: " + parameter);
                 return decryptedLinks;
             }
@@ -85,7 +85,7 @@ public class AdcrunCh extends PluginForDecrypt {
                     wait = Integer.parseInt(waittime);
                 }
 
-                final String nextUrl = "adcrun.ch/links";
+                final String nextUrl = "adli.pw/links";
                 /* variable JS-Arrays in "Form" bringen */
                 HashMap<String, String> ret = new HashMap<String, String>();
                 final String[] res = new Regex(result, "opt:(.*?\\})").getColumn(0);
@@ -122,7 +122,7 @@ public class AdcrunCh extends PluginForDecrypt {
                         sleep(1000 * wait, param);
                     }
                     br.postPage("http://" + nextUrl + "/ajax.fly.php", post);
-                    br.postPage("http://" + nextUrl + "/ajax.fly.php", "opt=make_log&args%5Baid%5D=" + new Random().nextInt(1000) + "&args%5Blid%5D=" + ret.get("args[lid]") + "&args%5Boid%5D=0&args%5Bref%5D=");
+                    br.postPage("http://" + nextUrl + "/ajax.fly.php", "opt=make_log&args%5Baid%5D=" + new Random().nextInt(1000) + "&args%5Blid%5D=" + ret.get("args[lid]") + "&args%5Boid%5D=" + ret.get("args[oid]") + "&args%5Bref%5D=");
                     if (br.containsHTML("\\{\"error\":false,\"message\":false\\}")) {
                         finallink = previousFinallink;
                         break;

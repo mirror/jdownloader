@@ -66,7 +66,7 @@ public class StiahniSi extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage("http://www.stiahni.si/download.php?lg=en&id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
-        if (br.containsHTML(">Súbor nebol nájdený<|>Súbor nikto nestiahol viac ako|The file you are trying to download has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Súbor nebol nájdený<|>Súbor nikto nestiahol viac ako|The file you are trying to download has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Download ([^<>\"]*?) \\- Stiahni\\.si</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"file_download_name\">([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex("Size: ([^<>\"]*?)<br/>").getMatch(0);

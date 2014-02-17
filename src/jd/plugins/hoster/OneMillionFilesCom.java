@@ -42,10 +42,14 @@ public class OneMillionFilesCom extends PluginForHost {
 
     // XtraUpload v2 Version 0.1
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(File Link Error<|Your file could not be found\\. Please check the download link\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            link.getLinkStatus().setStatusText("Host is under maintenance");
+            return AvailableStatus.UNCHECKABLE;
+        }
         String filename = br.getRegex("<span id=\"name\">[\t\n\r ]+<nobr>([^<>\"]*?) <img").getMatch(0);
         String filesize = br.getRegex("<span id=\"size\">([^<>\"]*?)</span><br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -59,6 +63,7 @@ public class OneMillionFilesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Host is under maintenance"); }
         br.setFollowRedirects(false);
         br.postPage(downloadLink.getDownloadURL().replace("/get/", "/gen/"), "pass=&waited=1");
         String dllink = br.getRedirectLocation();

@@ -58,7 +58,7 @@ public class UploadMbCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>The file you are requesting to download is not available<br>|Reasons for this \\(Invalid link, Violation of <a)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>The file you are requesting to download is not available<br>|Reasons for this \\(Invalid link, Violation of <a|The file you are requesting to download is not available)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex name2AndSize = br.getRegex("\\&#100;\\&#58;</font></b> (.*?)\\((.*?)\\)<br>");
         String filename = br.getRegex("addthis_title  = \\'(.*?)\\';").getMatch(0);
         if (filename == null) filename = name2AndSize.getMatch(0);

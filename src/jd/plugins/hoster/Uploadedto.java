@@ -1262,7 +1262,9 @@ public class Uploadedto extends PluginForHost {
         boolean red = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(false);
-            getPage(br, getProtocol() + "uploaded.net/language/en", false);
+            // do NOT use the getPage method here as it will follow redirects -> redirectloop in free account handling can happen
+            // getPage(br, getProtocol() + "uploaded.net/language/en", false);
+            br.getPage(getProtocol() + "uploaded.net/language/en");
         } finally {
             br.setFollowRedirects(red);
         }

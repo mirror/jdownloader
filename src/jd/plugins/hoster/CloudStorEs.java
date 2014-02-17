@@ -64,6 +64,10 @@ public class CloudStorEs extends PluginForHost {
             // could be a temp issue??
             return AvailableStatus.UNCHECKABLE;
         }
+        if (br.containsHTML("Free Download Limit Reached")) {
+            link.getLinkStatus().setStatusText("Free download limit reached -> Cannot get filename & filesize");
+            return AvailableStatus.TRUE;
+        }
         final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>[^<>\"]*? \\| (\\d+(\\.\\d+)? [A-Za-z]{1,5})[ ]+</div>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
@@ -79,6 +83,11 @@ public class CloudStorEs extends PluginForHost {
         if (br.containsHTML(veryBusy)) {
             // could be a temp issue?? but we can't download...
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000);
+        }
+        if (br.containsHTML("Free Download Limit Reached")) {
+            final String minutes = br.getRegex("for lightning fast, unlimited downloading or wait another <strong>(\\d+) minutes\\.</strong>").getMatch(0);
+            if (minutes != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001l);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // jd0.9 doesn't set this following header with postPage or submitform. JD2 does!
