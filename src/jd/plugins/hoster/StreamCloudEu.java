@@ -124,6 +124,7 @@ public class StreamCloudEu extends PluginForHost {
         String passCode = null;
 
         String dllink = downloadLink.getStringProperty("freelink");
+
         if (dllink != null) {
             try {
                 Browser br2 = br.cloneBrowser();
