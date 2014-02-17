@@ -429,7 +429,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     public void movePackages(long[] packageIds, long afterDestPackageId) throws BadParameterException {
 
         List<CrawledPackage> selectedPackages = getPackagesByID(packageIds);
-        CrawledPackage afterDestPackage = getPackageByID(afterDestPackageId);
+        CrawledPackage afterDestPackage = afterDestPackageId <= 0 ? null : getPackageByID(afterDestPackageId);
         LinkCollector.getInstance().move(selectedPackages, afterDestPackage);
 
     }

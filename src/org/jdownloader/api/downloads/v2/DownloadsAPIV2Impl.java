@@ -242,10 +242,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     @SuppressWarnings("unchecked")
     public void movePackages(long[] packageIds, long afterDestPackageId) {
         List<FilePackage> selectedPackages = convertIdsToPackages(packageIds);
-        FilePackage afterDestPackage = null;
-        if (afterDestPackageId != -1l) {
-            afterDestPackage = convertIdsToPackages(afterDestPackageId).get(0);
-        }
+        FilePackage afterDestPackage = afterDestPackageId <= 0 ? null : convertIdsToPackages(afterDestPackageId).get(0);
         DownloadController.getInstance().move(selectedPackages, afterDestPackage);
     }
 
@@ -254,10 +251,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public void moveLinks(long[] linkIds, long afterLinkID, long destPackageID) {
         DownloadController dlc = DownloadController.getInstance();
         List<DownloadLink> selectedLinks = convertIdsToLinks(linkIds);
-        DownloadLink afterLink = null;
-        if (afterLinkID != -1l) {
-            afterLink = convertIdsToLinks(afterLinkID).get(0);
-        }
+        DownloadLink afterLink = afterLinkID <= 0 ? null : convertIdsToLinks(afterLinkID).get(0);
         FilePackage destpackage = convertIdsToPackages(destPackageID).get(0);
         dlc.move(selectedLinks, destpackage, afterLink);
 
