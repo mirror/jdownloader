@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "http://(www\\.)?nicovideo\\.jp/watch/(sm|so|nm)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "http://(www\\.)?nicovideo\\.jp/watch/(sm|so|nm)?\\d+" }, flags = { 2 })
 public class NicoVideoJp extends PluginForHost {
 
     private static final String MAINPAGE               = "http://www.nicovideo.jp/";
@@ -45,6 +45,10 @@ public class NicoVideoJp extends PluginForHost {
     private static final String ONLYREGISTEREDUSERTEXT = "Only downloadable for registered users";
     private static final String CUSTOM_DATE            = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME        = "CUSTOM_FILENAME";
+    private static final String TYPE_SO                = "http://(www\\.)?nicovideo\\.jp/watch/so\\d+";
+    private static final String TYPE_WATCH             = "http://(www\\.)?nicovideo\\.jp/watch/\\d+";
+
+    private static final String NOCHUNKS               = "NOCHUNKS";
 
     public NicoVideoJp(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,7 +81,7 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account);
@@ -103,45 +107,74 @@ public class NicoVideoJp extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         // More simultan downloads are possible but cause errors!
-        return 4;
+        return 2;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.nicovideojp.only4registered", ONLYREGISTEREDUSERTEXT));
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, ONLYREGISTEREDUSERTEXT);
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        // if
-        // (link.getDownloadURL().matches("http://(www\\.)?nicovideo\\.jp/watch/nm\\d+"))
-        // throw new PluginException(LinkStatus.ERROR_FATAL,
-        // "This linktype isn't supported yet!");
         login(account);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         // Important, without accessing the link we cannot get the downloadurl!
         br.getPage(link.getDownloadURL());
         if (Encoding.htmlDecode(br.toString()).contains("closed=1\\&done=true")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        String vid = new Regex(link.getDownloadURL(), "nicovideo\\.jp/watch/((sm|so|nm)\\d+)").getMatch(0);
-        br.postPage("http://flapi.nicovideo.jp/api/getflv", "eco=4&as3=1&v=" + vid);
+        if (link.getDownloadURL().matches(TYPE_SO) || link.getDownloadURL().matches(TYPE_WATCH)) {
+            final String linkid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
+            br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + linkid);
+        } else {
+            final String vid = new Regex(br.getURL(), "((sm|nm)\\d+)$").getMatch(0);
+            br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
+        }
         String dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
         if (dllink == null) dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+
+        int maxChunks = 0;
+        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(NicoVideoJp.NOCHUNKS, false) == false) {
+                    link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(NicoVideoJp.NOCHUNKS, false) == false) {
+                link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
-    private void login(Account account) throws Exception {
+    private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.postPage("https://secure.nicovideo.jp/secure/login?site=niconico", "next_url=&mail=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
