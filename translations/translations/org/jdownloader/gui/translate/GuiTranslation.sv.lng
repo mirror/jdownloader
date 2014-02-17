@@ -1001,6 +1001,7 @@ YoutubeHelper_getDescription_group=Mediatyp: Video, 3DVideo, Ljud, Undertexter..
 YoutubeHelper_getDescription_id=Unikt VideoID
 YoutubeHelper_getDescription_quality=Variant tag: t ex '1080p'
 YoutubeHelper_getDescription_resolution=Upplösning ( t ex 1440x1080,...)
+YoutubeHelper_getDescription_resolution_best=Bästa tillgängliga upplösning (360p om det inte finns någon bättre videokvalitet)
 YoutubeHelper_getDescription_title=Video titel
 YoutubeHelper_getDescription_updatedate_accurate=Uppdaterat publiceringsdatum (inkl timmar, minuter) *date_time* eller *date_time[YYYY-MM-DD hh:mm]*
 YoutubeHelper_getDescription_user=Uppladdare
