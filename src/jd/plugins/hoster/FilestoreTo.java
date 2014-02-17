@@ -154,12 +154,12 @@ public class FilestoreTo extends PluginForHost {
                     pwnage[2] = var[3];
                     if (data[4] != null) pwnage[3] = data[4];
                 } else if ((var == null || var.length != 4) && data.length == 1) {
-                    var = new Regex(startDl, "var\\s*(?-i)" + data[0] + "(?i)\\s*=\\s*(\"|')(\\w+=)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)\\+(\"|')([\\w&=]+)\\7(,|;)").getRow(0);
-                    if (var != null && var.length >= 8) {
+                    var = new Regex(startDl, "var\\s*(?-i)" + data[0] + "(?i)\\s*=\\s*(\"|')(\\w+=)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)(\\+(\"|')([\\w&=]+)\\8(,|;))?").getRow(0);
+                    if (var != null && var.length >= 5) {
                         pwnage[0] = var[1];
                         pwnage[1] = var[3];
-                        pwnage[2] = var[3];
-                        pwnage[3] = var[7];
+                        pwnage[2] = var[5];
+                        if (var[8] != null) pwnage[3] = var[8];
                     }
                 }
             }
