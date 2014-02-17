@@ -198,7 +198,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             if (extractor.prepare()) {
                 extractToFolder = extension.getFinalExtractToFolder(archive);
                 crashLog.write("Extract To: " + extractToFolder);
-                archive.getSettings().setFinalPassword(null);
                 if (archive.isProtected()) {
                     crashLog.write("Archive is Protected");
                     if (!StringUtils.isEmpty(archive.getFinalPassword()) && !checkPassword(archive.getFinalPassword(), false)) {
