@@ -44,6 +44,7 @@ public class PanBaiduCom extends PluginForHost {
 
     private String              DLLINK                                     = null;
     private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
+    private static final String NOCHUNKS                                   = "NOCHUNKS";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -126,7 +127,11 @@ public class PanBaiduCom extends PluginForHost {
             DLLINK = getJson("dlink");
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -134,7 +139,26 @@ public class PanBaiduCom extends PluginForHost {
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         downloadLink.setProperty("panbaidudirectlink", DLLINK);
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(PanBaiduCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(PanBaiduCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(PanBaiduCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(PanBaiduCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     private String getJson(final String parameter) {

@@ -58,6 +58,32 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        String url = downloadLink.getDownloadURL();
+        setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCustomCharset("UTF-8");
+        br.setFollowRedirects(true);
+        br.getPage(url);
+        if (br.getRedirectLocation() == null) {
+            final String iframe = url = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+            br.getPage(iframe);
+            if (br.containsHTML("Your requested file is not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            final String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0);
+            String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
+            }
+            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            downloadLink.setFinalFileName(filename.trim());
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            return AvailableStatus.TRUE;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = null;
@@ -86,30 +112,9 @@ public class Shareplacecom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        String url = downloadLink.getDownloadURL();
-        setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(true);
-        br.getPage(url);
-        if (br.getRedirectLocation() == null) {
-            final String iframe = url = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-            br.getPage(iframe);
-            if (br.containsHTML("Your requested file is not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            final String filename = br.getRegex("Filename:</font></b>(.*?)<b><br>").getMatch(0);
-            String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
-            }
-            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            downloadLink.setFinalFileName(filename.trim());
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-            return AvailableStatus.TRUE;
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override
