@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2014  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -17,9 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,16 +43,40 @@ public class ShorteSt extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String finallink = br.getRegex("class=\"skip\\-btn\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        final String timer = getJs(br, "seconds");
+        final String cb = getJs(br, "callbackUrl");
+        final String sid = getJs(br, "sessionId");
+        if (cb == null || sid == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        int t = 5;
+        if (timer != null) t = Integer.parseInt(timer);
+        sleep(t * 1001, param);
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("Accept", "application/json, text/javascript");
+        br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.postPage(cb, "sessionId=" + sid + "&browserToken=" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
+        String finallink = getJs(br2, "destinationUrl");
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
-            // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            // br.postPage("http://sh.st/adSession/callback", "sessionId=&browserToken=");
         }
+        finallink = finallink.replaceAll("\\\\/", "/");
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
+    }
+
+    private String getJs(Browser ibr, String s) {
+        // js
+        String test = ibr.getRegex(s + ":\\s*(\"|')(.*?)\\1").getMatch(1);
+        // json(finallink)
+        if (test == null) test = ibr.getRegex("\"" + s + "\":\"(.*?)\"").getMatch(0);
+        // int/long/boolean
+        if (test == null) test = ibr.getRegex(s + ":\\s*(\\d+|true|false)").getMatch(0);
+        return test;
     }
 
 }
