@@ -81,7 +81,7 @@ public class LetitBitNet extends PluginForHost {
     private String               agent                             = null;
     private static final boolean PLUGIN_BROKEN                     = false;
     private static Object        PREMIUMLOCK                       = new Object();
-    private static final int     MAXSIMULTAN_FREE                  = 10;
+    private static final int     MAXSIMULTAN_FREE                  = 1;
     // Max 10 requests per minute limited by API
     private static final int     MAXSIMULTAN_PREMIUM               = 10;
 
