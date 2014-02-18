@@ -205,7 +205,7 @@ public class TestClient {
         register(new StorageGetValueTest());
         register(new StoragePutValueTest());
         register(new TerminateSessionTest());
-        
+        register(new RequestAccessTokenTest());
         register(new CancelRegistrationTest());
         JacksonMapper jm;
         JSonStorage.setMapper(jm = new JacksonMapper());
@@ -341,7 +341,7 @@ public class TestClient {
         
         api.setServerRoot("http://api.jdownloader.org");
         
-        // api.setServerRoot("http://192.168.2.110:10101");
+        api.setServerRoot("http://192.168.2.110:10101");
         
         if (false) {
             api.connect(config.get("email", ""), config.get("password", ""));
