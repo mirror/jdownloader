@@ -87,15 +87,20 @@ public class CtDiskCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(DownloadLink downloadLink, boolean premium, int maxchunks) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, final boolean premium, final int maxchunks) throws Exception, PluginException {
         String uid = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
         if (uid == null) {
             logger.warning("Could not find file UID");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String dllink = checkDirectLink(downloadLink, "directlink");
-        Form free = br.getFormbyProperty("name", "user_form");
-        if (free != null && dllink == null) {
+        if (dllink == null) {
+            dllink = findDllink();
+            if (dllink != null) dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
+        }
+        if (dllink == null) {
+            final Form free = br.getFormbyProperty("name", "user_form");
+            if (free == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2(_login)?\\.php\\?fid=" + uid + "&rand=)").getMatch(0);
             if (captcha != null) {
                 captcha = captcha + new Random().nextInt(999999999);
@@ -113,20 +118,16 @@ public class CtDiskCom extends PluginForHost {
                 br.getPage(continueLink);
             }
             if (dllink == null) {
-                dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\"").getMatch(0);
-                    if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                dllink = findDllink();
+                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
-                if (!dllink.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-
+        if (dllink == null || !dllink.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Check if link is working. If not try mirror. Limits can be extended/skipped using this method :D
         boolean failed = false;
         URLConnectionAdapter con = null;
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         try {
             con = br2.openGetConnection(dllink);
         } catch (Exception e) {
@@ -148,6 +149,14 @@ public class CtDiskCom extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private String findDllink() {
+        String dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\"").getMatch(0);
+        }
+        return dllink;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

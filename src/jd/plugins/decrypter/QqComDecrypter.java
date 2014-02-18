@@ -29,20 +29,23 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(www\\.)?(fenxiang\\.qq\\.com/(share/index\\.php/share/share_c/index/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(www\\.)?(fenxiang\\.qq\\.com/((share|upload)/index\\.php/share/share_c/index(_v2)?/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)" }, flags = { 0 })
 public class QqComDecrypter extends PluginForDecrypt {
 
     public QqComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_SHORT = "http://(www\\.)?urlxf\\.qq\\.com/\\?[A-Za-z0-9]+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
         br.getPage(parameter);
 
-        if (parameter.matches("http://(www\\.)?urlxf\\.qq\\.com/\\?[A-Za-z0-9]+")) {
+        if (parameter.matches(TYPE_SHORT)) {
             final String redirect = br.getRegex("window.location=\"(http[^\"]+)").getMatch(0);
             if (redirect == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

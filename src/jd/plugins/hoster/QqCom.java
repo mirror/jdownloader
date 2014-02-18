@@ -55,8 +55,17 @@ public class QqCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(link.getStringProperty("mainlink", null));
         if (br.containsHTML(">很抱歉，此资源已被删除或包含敏感信息不能查看啦<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String[][] linkInfo = br.getRegex("qhref=\"(" + link.getStringProperty("qhref", null) + ")\"").getMatches();
-        if (linkInfo == null || linkInfo.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        final String originalqhref = link.getStringProperty("qhref", null);
+        final String[] qhrefs = br.getRegex("qhref=\"(qqdl://[^<>\"]+)\"").getColumn(0);
+        if (qhrefs == null || qhrefs.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        boolean failed = true;
+        for (final String currentqhref : qhrefs) {
+            if (currentqhref.equals(originalqhref)) {
+                failed = false;
+                break;
+            }
+        }
+        if (failed) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return AvailableStatus.TRUE;
     }
 

@@ -43,7 +43,7 @@ public class PrnHstComFldr extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("(moviecontainer|flashmovie|play this movie|createPlayer|>The movie needs to be converted first)") || br.getURL().contains(".com/embed/")) {
+        if (br.containsHTML("(moviecontainer|flashmovie|play this movie|createPlayer|>The movie needs to be converted first|jwplayer\\(\"div_video\"\\)\\.setup\\(\\{)") || br.getURL().contains(".com/embed/")) {
             String finallink = br.getURL();
             decryptedLinks.add(createDownloadlink(finallink.replace("pornhost.com/", "pornhostdecrypted.com/")));
         } else {

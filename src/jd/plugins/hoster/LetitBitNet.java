@@ -81,6 +81,9 @@ public class LetitBitNet extends PluginForHost {
     private String               agent                             = null;
     private static final boolean PLUGIN_BROKEN                     = false;
     private static Object        PREMIUMLOCK                       = new Object();
+    private static final int     MAXSIMULTAN_FREE                  = 10;
+    // Max 10 requests per minute limited by API
+    private static final int     MAXSIMULTAN_PREMIUM               = 10;
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -302,8 +305,8 @@ public class LetitBitNet extends PluginForHost {
         } catch (Throwable e) {
             /* only available after 0.9xx version */
         }
-        maxFree.set(1);
-        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(-1);
+        maxFree.set(MAXSIMULTAN_FREE);
+        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(20);
         requestFileInformation(downloadLink);
         String url = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
         if (url == null) {
@@ -927,6 +930,11 @@ public class LetitBitNet extends PluginForHost {
         prepBr.setCustomCharset("UTF-8");
         prepBr.setCookie(COOKIE_HOST, "lang", "en");
         return prepBr;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return MAXSIMULTAN_PREMIUM;
     }
 
     @Override
