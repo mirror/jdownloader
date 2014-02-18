@@ -67,16 +67,21 @@ public class XHamsterCom extends PluginForHost {
      * NOTE: They also have .mp4 version of the videos in the html code -> For mobile devices Those are a bit smaller in size
      * */
     public String getDllink() throws IOException, PluginException {
-        String dllink = null;
-        String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
-        String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
-        if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (file.startsWith("http")) {
-            // Examplelink (ID): 968106
-            dllink = file;
-        } else {
-            // Examplelink (ID): 986043
-            dllink = server + "/key=" + file;
+        String dllink = br.getRegex("\"(http://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            final Regex secondway = br.getRegex("\\&srv=(http%3A%2F%2F3\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
+            String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
+            if (server == null) server = secondway.getMatch(0);
+            String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
+            if (file == null) file = secondway.getMatch(1);
+            if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (file.startsWith("http")) {
+                // Examplelink (ID): 968106
+                dllink = file;
+            } else {
+                // Examplelink (ID): 986043
+                dllink = server + "/key=" + file;
+            }
         }
         return Encoding.htmlDecode(dllink);
     }
