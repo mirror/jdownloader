@@ -13,7 +13,6 @@ import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.Storable;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.NullsafeAtomicReference;
@@ -24,8 +23,9 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
-public class MenuItemData implements Storable, MinTimeWeakReferenceCleanup {
+public class MenuItemData extends AbstractJsonData implements MinTimeWeakReferenceCleanup {
 
     public static final String      EMPTY      = "<EMPTY>";
     /* needed for old values */

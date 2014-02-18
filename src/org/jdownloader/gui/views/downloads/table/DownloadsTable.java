@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.table;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.LayoutManager;
+import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,20 +20,27 @@ import javax.swing.ActionMap;
 import javax.swing.DropMode;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.DirectFeedback;
+import jd.gui.swing.jdgui.DirectFeedbackInterface;
+import jd.gui.swing.jdgui.DownloadFeedBack;
+import jd.gui.swing.jdgui.VoteFinderWindow;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
@@ -40,7 +48,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuContainer;
@@ -58,7 +68,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
+public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> implements DirectFeedbackInterface {
 
     private static final long          serialVersionUID = 8843600834248098174L;
     private HashMap<KeyStroke, Action> shortCutActions;
@@ -422,6 +432,51 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     public static DownloadsTable getInstance() {
         return INSTANCE;
+    }
+
+    private Component leftLabel(String name) {
+        JLabel ret = new JLabel(name);
+        ret.setHorizontalAlignment(SwingConstants.LEFT);
+        return ret;
+    }
+
+    @Override
+    public DirectFeedback layoutDirectFeedback(Point mouse, boolean positive, MigPanel content, VoteFinderWindow window) {
+
+        final int row = this.rowAtPoint(mouse);
+        final AbstractNode obj = this.getModel().getObjectbyRow(row);
+        final ExtColumn<AbstractNode> col = this.getExtColumnAtPoint(mouse);
+        window.setIconVisible(true);
+        if (obj == null || row == -1 || obj instanceof FilePackage) {
+            /* no object under mouse, lets clear the selection */
+            return null;
+
+        } else {
+            /* check if we need to select object */
+            content.removeAll();
+            content.setLayout(new MigLayout("ins 0,wrap 2", "[][]", "[]3[20!]0[20!]0[20!]"));
+            if (positive) {
+                content.add(new JLabel(_GUI._.DownloadsTable_layoutDirectFeedback_direct_feedback_line1_positive()), "spanx");
+            } else {
+                content.add(new JLabel(_GUI._.DownloadsTable_layoutDirectFeedback_direct_feedback_line1_negative()), "spanx");
+            }
+
+            DownloadLink downloadLink = (DownloadLink) obj;
+            String packagename = downloadLink.getParentNode().getName();
+            content.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "sizegroup left,alignx left");
+            content.add(leftLabel(downloadLink.getName()));
+            content.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "sizegroup left,alignx left");
+            content.add(leftLabel(packagename));
+            content.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "sizegroup left,alignx left");
+            DomainInfo di = downloadLink.getDomainInfo();
+            JLabel ret = new JLabel(di.getTld());
+            ret.setHorizontalAlignment(SwingConstants.LEFT);
+            ret.setIcon(di.getFavIcon());
+            content.add(ret);
+            return new DownloadFeedBack(positive, downloadLink);
+
+        }
+
     }
 
 }

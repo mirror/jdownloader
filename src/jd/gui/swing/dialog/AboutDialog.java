@@ -239,6 +239,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(disable("Mimi Glyphs Set (http://salleedesign.com)"), "skip");
         stats.add(disable("Bright Mix Set (http://www.brightmix.com)"), "skip");
         stats.add(disable("Picol Icon Set (http://www.picol.org)"), "skip");
+        stats.add(disable("Aha Soft Icon Set (www.aha-soft.com)"), "skip");
         stats.add(disable("further icons by AppWork GmbH"), "skip");
         stats.add(disable("& the JDownloader Community"), "skip");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");

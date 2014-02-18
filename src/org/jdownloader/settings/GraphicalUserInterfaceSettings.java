@@ -853,11 +853,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setPropertiesPanelHeightNormalized(boolean b);
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isOSRSurveyEnabled();
-
-    void setOSRSurveyEnabled(boolean b);
+    // @AboutConfig
+    // @DefaultBooleanValue(true)
+    // boolean isOSRSurveyEnabled();
+    //
+    // void setOSRSurveyEnabled(boolean b);
 
     //
     @AboutConfig

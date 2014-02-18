@@ -45,30 +45,34 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
-import org.appwork.storage.config.ValidationException;
-import org.appwork.storage.config.events.GenericConfigEventListener;
-import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
-    private static final long     serialVersionUID = -1531827591735215594L;
-    private static final boolean  OSR_ENABLED      = true;
+    private static final long     serialVersionUID  = -1531827591735215594L;
+
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
-    private AbstractIcon          osrIcon;
+
     private String                osrText;
     private Font                  osrFont;
     private Color                 osrColor;
-    private Rectangle             osrBounds;
-    private boolean               osrMouseOver     = false;
+
+    private boolean               voteDownMouseOver = false;
+    private AbstractIcon          voteUp;
+    private AbstractIcon          voteDown;
+    private Rectangle             voteDownBounds;
+    private Rectangle             voteUpBounds;
+    private boolean               voteUpMouseOver;
+
+    private VoteFinderWindow      voteWindow;
 
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) INSTANCE = new MainTabbedPane();
@@ -124,23 +128,15 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         this.setMinimumSize(new Dimension(300, 100));
         this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         this.setOpaque(false);
-        osrIcon = new AbstractIcon("osrlogo", 18);
-        osrText = _GUI._.osr_label();
+        voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
+        voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
+
+        osrText = _GUI._.vote_label();
         JLabel dummyLbl = new JLabel();
         osrFont = dummyLbl.getFont();
-        CFG_GUI.OSRSURVEY_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
-            @Override
-            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                repaint();
-            }
-
-            @Override
-            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-            }
-        });
         Map<TextAttribute, Integer> fontAttributes = new HashMap<TextAttribute, Integer>();
-        fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+        // fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
         osrFont = (osrFont.deriveFont(osrFont.getStyle() ^ Font.BOLD).deriveFont(fontAttributes));
         addMouseMotionListener(this);
         addMouseListener(this);
@@ -184,22 +180,25 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     public void paint(Graphics g) {
         super.paint(g);
         if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(false);
-        if (CFG_GUI.CFG.isOSRSurveyEnabled() && OSR_ENABLED) {
-            int height = 22;
-            osrIcon = new AbstractIcon("osrlogo2", height);
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setFont(osrFont);
-            g2.setColor(Color.GRAY);
 
-            Rectangle2D bounds = g2.getFontMetrics().getStringBounds(osrText, g2);
-            int width = (int) (osrIcon.getIconWidth() + 5 + bounds.getWidth()) + 5;
-            // g2.setColor(Color.RED);
-            // g2.drawRect(getWidth() - width, 2, width, height);
+        Graphics2D g2 = (Graphics2D) g;
+        int height = 22;
 
-            g2.drawString(osrText, getWidth() - width, (int) (2 + (height - bounds.getHeight()) / 2) + (int) bounds.getHeight());
-            osrIcon.paintIcon(this, g2, getWidth() - osrIcon.getIconWidth() - 2, 2 + (height - osrIcon.getIconHeight()) / 2);
-            osrBounds = new Rectangle(getWidth() - width, 2, width, height);
-        }
+        g2.setFont(osrFont);
+        g2.setColor(Color.GRAY);
+
+        Rectangle2D bounds = g2.getFontMetrics().getStringBounds(osrText, g2);
+        int width = (int) (voteDown.getIconWidth() * 2 + 5 + bounds.getWidth()) + 5;
+        // g2.setColor(Color.RED);
+        // g2.drawRect(getWidth() - width, 2, width, height);
+
+        g2.drawString(osrText, getWidth() - width, (int) (2 + (height - bounds.getHeight()) / 2) + (int) bounds.getHeight());
+
+        voteDown.paintIcon(this, g2, getWidth() - voteDown.getIconWidth() - 2 - 24 - 2, 3 + (height - voteDown.getIconHeight()) / 2);
+        voteUp.paintIcon(this, g2, getWidth() - voteUp.getIconWidth() - 2 - 2, 3 + (height - voteDown.getIconHeight()) / 2);
+
+        voteDownBounds = new Rectangle(getWidth() - voteDown.getIconWidth() - 2 - 24 - 2, 3 + (height - voteDown.getIconHeight()) / 2, voteDown.getIconWidth(), voteDown.getIconHeight());
+        voteUpBounds = new Rectangle(getWidth() - voteUp.getIconWidth() - 2 - 2, 3 + (height - voteDown.getIconHeight()) / 2, voteUp.getIconWidth(), voteUp.getIconHeight());
     }
 
     /**
@@ -264,29 +263,71 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     @Override
     public void mouseMoved(MouseEvent e) {
 
-        if (osrBounds != null && osrBounds.contains(e.getPoint()) && !osrMouseOver && CFG_GUI.CFG.isOSRSurveyEnabled() && OSR_ENABLED) {
-            osrMouseOver = true;
+        if (voteDownBounds.contains(e.getPoint()) && !voteDownMouseOver) {
+            voteDownMouseOver = true;
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        } else if (osrMouseOver && (osrBounds == null || !osrBounds.contains(e.getPoint()))) {
-            osrMouseOver = false;
+        } else if (voteDownMouseOver && (!voteDownBounds.contains(e.getPoint()))) {
+            voteDownMouseOver = false;
+            setCursor(null);
+
+        }
+
+        if (voteUpBounds.contains(e.getPoint()) && !voteUpMouseOver) {
+            voteUpMouseOver = true;
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        } else if (voteUpMouseOver && (!voteUpBounds.contains(e.getPoint()))) {
+            voteUpMouseOver = false;
             setCursor(null);
 
         }
 
     }
 
+    public void onDisposedVoteWindow(VoteFinderWindow voteFinderWindow) {
+        voteWindow = null;
+        voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
+        voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
+        repaint();
+    }
+
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (osrMouseOver && CFG_GUI.CFG.isOSRSurveyEnabled() && OSR_ENABLED) {
-            new Thread("OSR") {
-                public void run() {
-                    OSRSurvey.getInstance().start();
+        if (voteDownMouseOver) {
+            if (voteWindow != null && voteWindow.isVisible()) {
+                boolean positive = voteWindow.isPositive();
+                voteWindow.setVisible(false);
+                voteWindow.dispose();
+                if (!positive) {
 
-                }
-            }.start();
+                return; }
+                voteWindow = null;
+            }
+            voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
+            voteWindow = new VoteFinderWindow(false);
 
+            voteDown = new AbstractIcon(IconKey.ICON_CANCEL, 20);
+            repaint();
+        } else if (voteUpMouseOver) {
+            if (voteWindow != null && voteWindow.isVisible()) {
+                voteWindow.setVisible(false);
+                boolean positive = voteWindow.isPositive();
+                voteWindow.dispose();
+                if (positive) {
+
+                return; }
+                voteWindow = null;
+            }
+            voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
+            voteWindow = new VoteFinderWindow(true);
+
+            voteUp = new AbstractIcon(IconKey.ICON_CANCEL, 20);
+            // voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
+            // voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
+            repaint();
         }
+
     }
 
     @Override

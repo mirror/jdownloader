@@ -135,6 +135,7 @@ public class IconKey {
     public static final String ICON_EXTTABLE_WIDTHLOCKED         = "exttable/widthLocked";
     public static final String ICON_FALSE_ORANGE                 = "false-orange";
     public static final String ICON_FALSE                        = "false";
+    public static final String ICON_FAU_OSR_HEADER               = "fau_osr_header";
     public static final String ICON_FAV_BIG_NETLOAD_IN           = "fav/big.netload.in";
     public static final String ICON_FAV_BIG_SHARE_ONLINE_BIZ     = "fav/big.share-online.biz";
     public static final String ICON_FAV_BIG_UPLOADED_TO          = "fav/big.uploaded.to";
@@ -142,6 +143,7 @@ public class IconKey {
     public static final String ICON_FAV_LARGE_NETLOAD_IN         = "fav/large.netload.in";
     public static final String ICON_FAV_LARGE_SHARE_ONLINE_BIZ   = "fav/large.share-online.biz";
     public static final String ICON_FAV_LARGE_UPLOADED_TO        = "fav/large.uploaded.to";
+    public static final String ICON_FFMPEG                       = "ffmpeg";
     public static final String ICON_FILE                         = "file";
     public static final String ICON_FILEICON                     = "fileIcon";
     public static final String ICON_FILE_ERROR                   = "file_error";
@@ -220,6 +222,8 @@ public class IconKey {
     public static final String ICON_OPEN                         = "open";
     public static final String ICON_OPTIONS                      = "options";
     public static final String ICON_ORDER                        = "order";
+    public static final String ICON_OSRLOGO                      = "osrlogo";
+    public static final String ICON_OSRLOGO2                     = "osrlogo2";
     public static final String ICON_PACKAGE_CLOSED               = "package_closed";
     public static final String ICON_PACKAGE_CLOSED_ERROR         = "package_closed_error";
     public static final String ICON_PACKAGE_NEW                  = "package_new";
@@ -231,10 +235,10 @@ public class IconKey {
     public static final String ICON_PASTE                        = "paste";
     public static final String ICON_PLAY                         = "play";
     public static final String ICON_PLUGIN                       = "plugin";
+    public static final String ICON_POPDOWNLARGE                 = "popDownLarge";
     public static final String ICON_POPDOWNSMALL                 = "popDownSmall";
     public static final String ICON_POPUPLARGE                   = "popUpLarge";
     public static final String ICON_POPUPSMALL                   = "popUpSmall";
-    public static final String ICON_POPDOWNLARGE                 = "popDownLarge";
     public static final String ICON_PREMIUM                      = "premium";
     public static final String ICON_PREMIUMZONE                  = "premiumzone";
     public static final String ICON_PRIO__1                      = "prio_-1";
@@ -299,6 +303,8 @@ public class IconKey {
     public static final String ICON_TERMS                        = "terms";
     public static final String ICON_TEST                         = "test";
     public static final String ICON_TEXT                         = "text";
+    public static final String ICON_THUMBS_DOWN                  = "thumbs-down";
+    public static final String ICON_THUMBS_UP                    = "thumbs-up";
     public static final String ICON_TOGGLE                       = "toggle";
     public static final String ICON_TOOLBAR                      = "toolbar";
     public static final String ICON_TOOLBARSS                    = "toolbarss";

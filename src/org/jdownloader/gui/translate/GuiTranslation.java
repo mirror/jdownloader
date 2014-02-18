@@ -4461,4 +4461,31 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Best Video Resolution available (e.g. 360p, if there is no better video quality)" })
     String YoutubeHelper_getDescription_resolution_best();
 
+    @Default(lngs = { "en" }, values = { "Direct Feedback: " })
+    String vote_label();
+
+    @Default(lngs = { "en" }, values = { "Direct Feedback" })
+    String VoteFinderWindow_VoteFinderWindow_title_();
+
+    @Default(lngs = { "en" }, values = { "Press [CTRL] & Click here if you like:" })
+    String VoteFinderWindow_VoteFinderWindow_msg_positive();
+
+    @Default(lngs = { "en" }, values = { "Press [CTRL] & Click here if you do not like:" })
+    String VoteFinderWindow_VoteFinderWindow_msg_negative();
+
+    @Default(lngs = { "en" }, values = { "<html>Please move the mouse over <br>any component to give feedback!</html>" })
+    String VoteFinderWindow_VoteFinderWindow_explain();
+
+    @Default(lngs = { "en" }, values = { "Click here to report a problem with the Download." })
+    String DownloadsTable_layoutDirectFeedback_direct_feedback_line1_negative();
+
+    @Default(lngs = { "en" }, values = { "Click here if the Download worked fine." })
+    String DownloadsTable_layoutDirectFeedback_direct_feedback_line1_positive();
+
+    @Default(lngs = { "en" }, values = { "<html>Click here if the <br>'%s1'-Button<br> worked fine.</html>" })
+    String VoteFinderWindow_VoteFinderWindow_action_positive(String name);
+
+    @Default(lngs = { "en" }, values = { "<html>Click here if the <br>'%s1'-Button<br> does NOT work as intended.</html>" })
+    String VoteFinderWindow_VoteFinderWindow_action_negative(String name);
+
 }

@@ -24,6 +24,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.gui.swing.jdgui.DirectFeedback;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -749,5 +750,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     @Override
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
+    }
+
+    public void feedback(DirectFeedback feedback) {
     }
 }

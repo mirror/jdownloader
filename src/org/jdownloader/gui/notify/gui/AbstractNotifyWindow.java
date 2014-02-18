@@ -226,6 +226,7 @@ public abstract class AbstractNotifyWindow<T extends AbstractBubbleContentPanel>
         try {
             com.sun.awt.AWTUtilities.setWindowOpaque(owner, false);
             setWindowOpaqueSupported = Boolean.TRUE;
+            return true;
         } catch (Throwable e) {
             e.printStackTrace();
         }

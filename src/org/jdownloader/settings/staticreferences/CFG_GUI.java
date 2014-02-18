@@ -168,8 +168,6 @@ public class CFG_GUI {
 
     public static final EnumKeyHandler                                 SELECTED_LINKGRABBER_SEARCH_CATEGORY                    = SH.getKeyHandler("SelectedLinkgrabberSearchCategory", EnumKeyHandler.class);
 
-    public static final BooleanKeyHandler                              OSRSURVEY_ENABLED                                       = SH.getKeyHandler("OSRSurveyEnabled", BooleanKeyHandler.class);
-
     public static final BooleanKeyHandler                              DOWNLOADS_PROPERTIES_PANEL_DOWNLOAD_FROM_VISIBLE        = SH.getKeyHandler("DownloadsPropertiesPanelDownloadFromVisible", BooleanKeyHandler.class);
 
     public static final BooleanKeyHandler                              SKIP_CLIPBOARD_MONITOR_FIRST_ROUND                      = SH.getKeyHandler("SkipClipboardMonitorFirstRound", BooleanKeyHandler.class);

@@ -3,12 +3,12 @@ package org.jdownloader.controlling.contextmenu;
 import java.util.Locale;
 import java.util.TreeMap;
 
-import org.appwork.storage.Storable;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
+import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
-public class ActionData implements Storable {
+public class ActionData extends AbstractJsonData {
 
     private String              jsonData;
 

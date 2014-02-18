@@ -22,7 +22,12 @@ import org.jdownloader.gui.views.downloads.action.Modifier;
 import org.jdownloader.images.NewTheme;
 
 public abstract class CustomizableAppAction extends AppAction {
-    private MenuItemData           menuItemData;
+    private MenuItemData menuItemData;
+
+    public MenuItemData getMenuItemData() {
+        return menuItemData;
+    }
+
     private HashSet<ActionContext> setupObjects;
 
     public List<ActionContext> getSetupObjects() {
