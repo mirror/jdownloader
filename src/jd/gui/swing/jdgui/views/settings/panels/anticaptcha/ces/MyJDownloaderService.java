@@ -32,6 +32,11 @@ public class MyJDownloaderService implements CESService {
     @Override
     public CESGenericConfigPanel createPanel() {
         CESGenericConfigPanel ret = new CESGenericConfigPanel(this) {
+            @Override
+            public String getPanelID() {
+                return "CES_" + getDisplayName();
+            }
+
             {
                 addHeader(getDisplayName(), NewTheme.I().getIcon("myjdownloader", 32));
                 addDescription(_GUI._.MyJDownloaderService_createPanel_description_());

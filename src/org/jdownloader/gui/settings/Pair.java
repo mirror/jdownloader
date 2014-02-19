@@ -8,6 +8,8 @@ import javax.swing.JLabel;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 
+import org.appwork.swing.components.ExtCheckBox;
+
 public class Pair<T extends SettingsComponent> {
 
     private JLabel label;
@@ -22,15 +24,21 @@ public class Pair<T extends SettingsComponent> {
 
     private T              component;
     private Pair<Checkbox> conditionPair;
+    private ExtCheckBox    condition;
+
+    public ExtCheckBox getCondition() {
+        return condition;
+    }
 
     public void setEnabled(boolean b) {
         label.setEnabled(b);
         component.setEnabled(b);
     }
 
-    public Pair(JLabel lbl, T comp) {
+    public Pair(JLabel lbl, T comp, ExtCheckBox condition) {
         this.label = lbl;
         this.component = comp;
+        this.condition = condition;
     }
 
     public void setToolTipText(String text) {

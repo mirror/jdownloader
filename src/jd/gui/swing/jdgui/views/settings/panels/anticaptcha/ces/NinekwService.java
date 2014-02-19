@@ -100,6 +100,12 @@ public class NinekwService implements CESService {
             private TextInput         whitelistprio;
             private TextInput         blacklisttimeout;
             private TextInput         whitelisttimeout;
+
+            @Override
+            public String getPanelID() {
+                return "CES_" + getDisplayName();
+            }
+
             {
                 addHeader(getDisplayName(), NewTheme.I().getIcon(IconKey.ICON_9KW, 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());

@@ -370,4 +370,5 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
         s.setUseOriginalFileDate(toggleUseOriginalFileDate.getComponent().isSelected());
     }
+
 }

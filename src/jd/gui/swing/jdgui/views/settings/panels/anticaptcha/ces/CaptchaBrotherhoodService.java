@@ -39,6 +39,11 @@ public class CaptchaBrotherhoodService implements CESService {
             private TextInput     blacklist;
             private TextInput     whitelist;
 
+            @Override
+            public String getPanelID() {
+                return "CES_" + getDisplayName();
+            }
+
             {
                 addHeader(getDisplayName(), NewTheme.I().getIcon("cbh", 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());

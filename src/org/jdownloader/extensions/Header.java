@@ -42,6 +42,10 @@ public class Header extends JPanel {
         setOpaque(false);
     }
 
+    public JLabel getIconLabel() {
+        return iconLabel;
+    }
+
     public Header(String name, ImageIcon icon, BooleanKeyHandler listener) {
         this(name, icon, listener, -1);
     }

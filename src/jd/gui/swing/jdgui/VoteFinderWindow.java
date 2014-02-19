@@ -5,6 +5,7 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
@@ -34,19 +35,18 @@ import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.swing.ExtJWindow;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.utils.Application;
 import org.appwork.utils.ColorUtils;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
@@ -143,6 +143,8 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
         timer.start();
         setVisible(false);
         Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
+
+        JDGui.getInstance().getMainFrame().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }
 
     // @Override
@@ -192,9 +194,11 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
 
         DirectFeedback feedback = null;
         ArrayList<Component> allComponents = new ArrayList<Component>();
-
-        main: for (Window w : Window.getWindows()) {
+        Window[] windows = Window.getWindows();
+        main: for (int i = windows.length - 1; i >= 0; i--) {
+            Window w = windows[i];
             try {
+
                 if (w.isVisible() && !(w instanceof VoteFinderWindow)) {
                     if (w.isActive()) {
                         Point local = new Point(mouse.x, mouse.y);
@@ -212,49 +216,51 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
                         boolean found = false;
                         for (Component c : ret) {
 
-                            System.out.println(c);
                             if (c instanceof JMenu) {
+
+                                feedback = null;
                                 break main;
                             } else if (c instanceof AbstractButton) {
                                 Action action = ((AbstractButton) c).getAction();
                                 if (action != null && action instanceof CustomizableAppAction) {
-                                    MenuItemData menuItemData = ((CustomizableAppAction) action).getMenuItemData();
 
-                                    System.out.println(JSonStorage.toString(menuItemData));
-                                    feedback = new MenuItemFeedback(isPositive(), menuItemData);
-
-                                    actualContent.removeAll();
-                                    actualContent.setLayout(new MigLayout("ins 0", "[]", "[][]"));
-                                    // if (positive) {
-                                    // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_positive()));
-                                    // } else {
-                                    // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_negative()));
-                                    // }
-                                    icon.setVisible(false);
+                                    String text = ((CustomizableAppAction) action).getName();
+                                    if (StringUtils.isEmpty(text)) text = ((CustomizableAppAction) action).getTooltipText();
                                     String iconKey = ((CustomizableAppAction) action).getIconKey();
-                                    if (isPositive()) {
-                                        JLabel lbl = new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_action_positive(((CustomizableAppAction) action).getName()));
-                                        if (iconKey != null) {
-                                            lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 24), 0, 0).add(new AbstractIcon(iconKey, 24), 10, 10));
-                                        } else {
-                                            lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0, 0).add(IconIO.getScaledInstance(((CustomizableAppAction) action).getSmallIcon(), 22, 22), 10, 10));
-                                        }
+                                    if (StringUtils.isNotEmpty(text)) {
 
-                                        actualContent.add(lbl, "");
+                                        MenuItemData menuItemData = ((CustomizableAppAction) action).getMenuItemData();
+                                        feedback = new MenuItemFeedback(isPositive(), menuItemData);
 
-                                    } else {
-                                        JLabel lbl = new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_action_negative(((CustomizableAppAction) action).getName()));
-                                        if (iconKey != null) {
-                                            lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0, 0).add(new AbstractIcon(iconKey, 24), 10, 10));
+                                        actualContent.removeAll();
+                                        actualContent.setLayout(new MigLayout("ins 0", "[]", "[][]"));
+                                        // if (positive) {
+                                        // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_positive()));
+                                        // } else {
+                                        // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_negative()));
+                                        // }
+                                        icon.setVisible(false);
+                                        if (isPositive()) {
+                                            JLabel lbl = new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_action_positive(text));
+                                            if (iconKey != null) {
+                                                lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 24), 0, 0).add(new AbstractIcon(iconKey, 24), 10, 10));
+                                            } else {
+                                                lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 24), 0, 0).add(IconIO.getScaledInstance(((CustomizableAppAction) action).getSmallIcon(), 22, 22), 10, 10));
+                                            }
+
+                                            actualContent.add(lbl, "");
+
                                         } else {
-                                            lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0, 0).add(IconIO.getScaledInstance(((CustomizableAppAction) action).getSmallIcon(), 22, 22), 10, 10));
+                                            JLabel lbl = new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_action_negative(text));
+                                            if (iconKey != null) {
+                                                lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0, 0).add(new AbstractIcon(iconKey, 24), 10, 10));
+                                            } else {
+                                                lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0, 0).add(IconIO.getScaledInstance(((CustomizableAppAction) action).getSmallIcon(), 22, 22), 10, 10));
+                                            }
+                                            actualContent.add(lbl, "");
                                         }
-                                        actualContent.add(lbl, "");
                                     }
                                 }
-
-                            } else if (c instanceof JMenuItem) {
-                                System.out.println(c);
 
                             }
 
@@ -312,7 +318,7 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
                     ret.addAll(find((Container) c, newPoint));
 
                 } else {
-                    System.out.println(1);
+
                 }
             }
         }
@@ -323,6 +329,7 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
     @Override
     public void dispose() {
         super.dispose();
+        JDGui.getInstance().getMainFrame().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         Toolkit.getDefaultToolkit().removeAWTEventListener(this);
         if (timer != null) {
             timer.stop();

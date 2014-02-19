@@ -72,6 +72,7 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.txtresource.TranslationFactory;
@@ -203,6 +204,13 @@ public class YoutubeDashV2 extends PluginForHost {
         boolean isCustomChunkValueEnabled();
 
         void setCustomChunkValueEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @DescriptionForConfigEntry("Disable this if you do not want to use the new DASH Format. This will disable AUDIO only Downloads, and High Quality Video Downloads")
+        @AboutConfig
+        boolean isExternMultimediaToolUsageEnabled();
+
+        void setExternMultimediaToolUsageEnabled(boolean b);
 
         @DefaultBooleanValue(true)
         @AboutConfig

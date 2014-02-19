@@ -25,6 +25,11 @@ public abstract class ExtensionConfigPanel<T extends AbstractExtension> extends 
     public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
     }
 
+    @Override
+    public String getPanelID() {
+        return getExtension().getClass().getSimpleName();
+    }
+
     public ExtensionConfigPanel(T plg, boolean clean) {
         super();
         this.extension = plg;

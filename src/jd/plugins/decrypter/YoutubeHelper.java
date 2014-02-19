@@ -964,6 +964,7 @@ public class YoutubeHelper {
         for (final String line : html5_fmt_map.split("\\,")) {
             final YoutubeStreamData match = this.parseLine(vid, line);
             if (match != null) {
+                if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) continue;
                 ret.put(match.getItag(), match);
             }
         }
@@ -971,12 +972,13 @@ public class YoutubeHelper {
             for (final String line : dashFmt.split("\\,")) {
                 final YoutubeStreamData match = this.parseLine(vid, line);
                 if (match != null) {
+                    if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) continue;
                     ret.put(match.getItag(), match);
                 }
             }
         }
         try {
-            if (dashmpd != null) {
+            if (dashmpd != null && cfg.isExternMultimediaToolUsageEnabled()) {
                 Browser clone = br.cloneBrowser();
                 clone.getPage(dashmpd);
                 String[] repres = clone.getRegex("(<Representation.*?</Representation>)").getColumn(0);

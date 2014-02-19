@@ -285,7 +285,15 @@ public class TbCmV2 extends PluginForDecrypt {
 
             }
             vid.bestVideoItag = bestVideoResolution;
+            if (!cfg.isExternMultimediaToolUsageEnabled()) {
+                getLogger().info("isDashEnabledEnabled=false");
+            }
             for (YoutubeVariantInterface v : helper.getVariants()) {
+
+                if (!cfg.isExternMultimediaToolUsageEnabled() && v instanceof YoutubeVariant && ((YoutubeVariant) v).isVideoToolRequired()) {
+
+                    continue;
+                }
                 System.out.println("test for " + v);
                 String groupID = getGroupID(v);
 

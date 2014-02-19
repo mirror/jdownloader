@@ -114,6 +114,10 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
 
     }
 
+    public KeyHandler<ContentType> getKeyHandler() {
+        return keyHandler;
+    }
+
     public String getConstraints() {
         return "height 26!";
     }

@@ -38,6 +38,11 @@ public class DeathByCaptchaConfigPanel implements CESService {
             private TextInput     whitelist;
             private PasswordInput password;
 
+            @Override
+            public String getPanelID() {
+                return "CES_" + getDisplayName();
+            }
+
             {
                 addHeader(getDisplayName(), NewTheme.I().getIcon("dbc", 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());

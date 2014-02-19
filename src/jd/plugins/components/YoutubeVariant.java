@@ -1129,6 +1129,25 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         if (converter != null) converter.run(downloadLink);
     }
 
+    /**
+     * returns true if this variant requires a video tool like ffmpge for muxing, demuxing or container converting
+     * 
+     * @return
+     */
+    public boolean isVideoToolRequired() {
+        if (iTagVideo != null && iTagAudio != null) return true;
+        if (iTagVideo != null && iTagVideo.name().contains("DASH")) return true;
+        if (iTagAudio != null && iTagAudio.name().contains("DASH")) return true;
+        if (converter != null) {
+            if (converter instanceof YoutubeMp4ToAACAudio) return true;
+            if (converter instanceof YoutubeMp4ToM4aAudio) return true;
+            if (converter instanceof YoutubeFlvToMp3Audio) return true;
+            if (converter instanceof YoutubeExternConverter) return true;
+
+        }
+        return false;
+    }
+
     @Override
     public String getExtendedName() {
         switch (getGroup()) {

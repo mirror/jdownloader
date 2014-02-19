@@ -77,6 +77,10 @@ public class TextInput extends ExtTextField implements SettingsComponent, Generi
         keyhandler.getEventSender().addListener(this, true);
     }
 
+    public StringKeyHandler getKeyhandler() {
+        return keyhandler;
+    }
+
     public String getConstraints() {
         return null;
     }

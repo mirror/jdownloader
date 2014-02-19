@@ -4488,4 +4488,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "<html>Click here if the <br>'%s1'-Button<br> does NOT work as intended.</html>" })
     String VoteFinderWindow_VoteFinderWindow_action_negative(String name);
 
+    @Default(lngs = { "en" }, values = { "<html>Click here if you like this option:<br>\"<b>%s1</b>\"</html>" })
+    String AbstractConfigPanel_layoutDirectFeedback_vote_positive(String text);
+
+    @Default(lngs = { "en" }, values = { "<html>Click here if there is a problem with this option:<br>\"<b>%s1</b>\"</html>" })
+    String AbstractConfigPanel_layoutDirectFeedback_vote_negative(String text);
+
 }
