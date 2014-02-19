@@ -116,7 +116,7 @@ public class RapidsPl extends PluginForHost {
             account.setValid(false);
             return ac;
         } else {
-            ac.setTrafficLeft(SizeFormatter.getSize(availableTraffic));
+            ac.setTrafficLeft(SizeFormatter.getSize(availableTraffic.replaceAll("\\s*", "")));
         }
         // now let's get a list of all supported hosts:
         final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -132,9 +132,9 @@ public class RapidsPl extends PluginForHost {
         }
 
         if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via " + NICE_HOST + " available");
+            ac.setStatus("Account valid: 0 Hosts available");
         } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
+            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts available");
             ac.setProperty("multiHostSupport", supportedHosts);
         }
         return ac;
