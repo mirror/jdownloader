@@ -253,7 +253,7 @@ public class Zippysharecom extends PluginForHost {
         try {
             dl.startDownload();
         } catch (final PluginException e) {
-            if (downloadLink.getVerifiedFileSize() >= 0 && downloadLink.getDownloadCurrent() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server sends empty file)");
+            if (e.getLinkStatus() != LinkStatus.ERROR_ALREADYEXISTS && downloadLink.getVerifiedFileSize() >= 0 && downloadLink.getDownloadCurrent() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server sends empty file)");
             LogSource.exception(logger, e);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         }

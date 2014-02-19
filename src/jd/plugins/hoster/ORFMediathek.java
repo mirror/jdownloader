@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "decrypted://(www\\.)?tvthek\\.orf\\.at/(programs?/.+\\&quality=\\w+\\&hash=\\w+|subtitles/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "decrypted://(www\\.)?tvthek\\.orf\\.at/((programs?|topic)/.+\\&quality=\\w+\\&hash=\\w+|subtitles/\\d+)" }, flags = { 0 })
 public class ORFMediathek extends PluginForHost {
 
     private static final String Q_SUBTITLES = "Q_SUBTITLES";

@@ -46,16 +46,19 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 // http://tvthek,orf.at/live/... --> HDS
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orfmediathek.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/programs?/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orfmediathek.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(programs?|topic)/.+" }, flags = { 0 })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_LOW       = "Q_LOW";
-    private static final String Q_MEDIUM    = "Q_MEDIUM";
-    private static final String Q_HIGH      = "Q_HIGH";
-    private static final String HTTP_STREAM = "HTTP_STREAM";
-    private boolean             BEST        = false;
+    private static final String Q_SUBTITLES   = "Q_SUBTITLES";
+    private static final String Q_BEST        = "Q_BEST";
+    private static final String Q_LOW         = "Q_LOW";
+    private static final String Q_MEDIUM      = "Q_MEDIUM";
+    private static final String Q_HIGH        = "Q_HIGH";
+    private static final String HTTP_STREAM   = "HTTP_STREAM";
+    private boolean             BEST          = false;
+
+    private static final String TYPE_TOPIC    = "http://(www\\.)?tvthek\\.orf\\.at/topic/.+";
+    private static final String TYPE_PROGRAMM = "http://(www\\.)?tvthek\\.orf\\.at/programs?/.+";
 
     public ORFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -98,7 +101,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         decryptedLinks.addAll(getDownloadLinks(parameter, cfg));
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.warning("Decrypter out of date for link: " + parameter);
+            if (parameter.matches(TYPE_TOPIC)) {
+                logger.warning("MAYBE Decrypter out of date for link: " + parameter);
+            } else {
+                logger.warning("Decrypter out of date for link: " + parameter);
+            }
             return null;
         }
         return decryptedLinks;
