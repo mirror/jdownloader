@@ -295,7 +295,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
         if (voteDownMouseOver) {
             if (voteWindow != null && voteWindow.isVisible()) {
                 boolean positive = voteWindow.isPositive();
@@ -306,6 +305,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                 return; }
                 voteWindow = null;
             }
+            Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
+
             voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
             voteWindow = new VoteFinderWindow(false);
 
@@ -321,6 +322,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                 return; }
                 voteWindow = null;
             }
+            Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
+
             voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
             voteWindow = new VoteFinderWindow(true);
 
