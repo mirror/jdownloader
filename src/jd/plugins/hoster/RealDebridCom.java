@@ -48,7 +48,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 
@@ -60,6 +59,7 @@ public class RealDebridCom extends PluginForHost {
 
     private final String                                   mName                 = "real-debrid.com";
     private final String                                   mProt                 = "https://";
+    private int                                            maxChunks             = 0;
     private static Object                                  LOCK                  = new Object();
     private static AtomicInteger                           RUNNING_DOWNLOADS     = new AtomicInteger(0);
     private static AtomicInteger                           MAX_DOWNLOADS         = new AtomicInteger(Integer.MAX_VALUE);
@@ -165,8 +165,6 @@ public class RealDebridCom extends PluginForHost {
     private void handleDL(final Account acc, final DownloadLink link, final String dllink) throws Exception {
         // real debrid connections are flakey at times! Do this instead of repeating download steps.
         int repeat = 3;
-        int maxChunks = 0;
-        if ("tusfiles.net".equals(link.getHost())) maxChunks = 4;
         for (int i = 0; i <= repeat; i++) {
             Browser br2 = br.cloneBrowser();
             try {
@@ -271,9 +269,16 @@ public class RealDebridCom extends PluginForHost {
                 if (retry == 2) throw e;
             }
         }
-        String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
-        String genLnks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
-        if (genLnks == null || genLnks.length == 0) {
+        // we only ever generate one link at a time, we don't need String[]
+        String genLnk = getJson("main_link", br);
+        final String chunks = getJson("max_chunks", br);
+        if (chunks != null) {
+            if ("-1".equals(chunks))
+                maxChunks = 0;
+            else
+                maxChunks = -Integer.parseInt(chunks);
+        }
+        if (genLnk == null) {
             if (br.containsHTML("\"error\":1,")) {
                 // from rd
                 // 1: Happy hours activated BUT the concerned hoster is not included => Upgrade to Premium to use it
@@ -356,40 +361,22 @@ public class RealDebridCom extends PluginForHost {
                 }
             }
         }
+        if (!genLnk.startsWith("http")) throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
         showMessage(link, "Task 2: Download begins!");
-        int counter = 0;
-        for (String generatedLink : genLnks) {
-            counter++;
-            if (StringUtils.isEmpty(generatedLink) || !generatedLink.startsWith("http")) continue;
-            generatedLink = generatedLink.replaceAll("\\\\/", "/");
+        genLnk = genLnk.replaceAll("\\\\/", "/");
+        try {
+            handleDL(acc, link, genLnk);
+            return;
+        } catch (PluginException e1) {
             try {
-                handleDL(acc, link, generatedLink);
-                return;
-            } catch (PluginException e1) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (final Throwable e) {
-                }
-                if (br.containsHTML("An error occured while generating a premium link, please contact an Administrator")) {
-                    logger.info("Error while generating premium link, removing host from supported list");
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
-                }
-                if (br.containsHTML("An error occured while attempting to download the file.")) {
-                    if (counter == genLnks.length) { throw new PluginException(LinkStatus.ERROR_RETRY); }
-                }
+                dl.getConnection().disconnect();
+            } catch (final Throwable e) {
             }
-        }
-        logger.info(this.getHost() + "Unknown Error2");
-        int timesFailed = link.getIntegerProperty("timesfailedrealdebridcom_unknown2", 0);
-        link.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= UNKNOWN_ERROR_RETRY_2) {
-            timesFailed++;
-            link.setProperty("timesfailedrealdebridcom_unknown2", timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error2");
-        } else {
-            link.setProperty("timesfailedrealdebridcom_unknown2", Property.NULL);
-            logger.info(this.getHost() + ": Unknown error2 - disabling current host!");
-            tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+            if (br.containsHTML("An error occured while generating a premium link, please contact an Administrator")) {
+                logger.info("Error while generating premium link, removing host from supported list");
+                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+            }
+            if (br.containsHTML("An error occured while attempting to download the file.")) { throw new PluginException(LinkStatus.ERROR_RETRY); }
         }
     }
 
@@ -624,6 +611,16 @@ public class RealDebridCom extends PluginForHost {
             return false;
         }
         return false;
+    }
+
+    private String getJson(final String key, final Browser ibr) {
+        return getJson(key, ibr.toString());
+    }
+
+    private String getJson(final String key, final String source) {
+        String result = new Regex(source, "\"" + key + "\":\"([^\r\n\"]+)\"").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + key + "\":([^\r\n]+)").getMatch(0);
+        return result;
     }
 
 }
