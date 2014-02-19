@@ -16,15 +16,20 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jd.controlling.downloadcontroller.AccountCache;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
+import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
+import jd.gui.swing.jdgui.BasicIDFeedback;
 import jd.gui.swing.jdgui.DirectFeedback;
+import jd.gui.swing.jdgui.DownloadFeedBack;
+import jd.gui.swing.jdgui.MenuItemFeedback;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -93,7 +98,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private long                           sessionStart;
 
-    private void log(DownloadLogEntry dl) {
+    private void log(AbstractLogEntry dl) {
         if (isEnabled()) {
             synchronized (list) {
                 if (list.size() > 20) list.clear();
@@ -452,8 +457,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
-            dl.setHost(account.getHost());
-            dl.setAccount(account.getAccount() == null ? null : account.getPlugin().getHost());
+            dl.setHost(link.getHost());
+            dl.setCandidate(Candidate.create(account));
             dl.setCaptchaRuntime(captcha);
             dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
             dl.setPluginRuntime(pluginRuntime);
@@ -461,7 +466,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             dl.setSpeed(speed);
             dl.setWaittime(waittime);
-            dl.setRevision(candidate.getCachedAccount().getPlugin().getVersion());
+
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
             dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(result.getErrorID()));
@@ -470,7 +475,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
             // this.
             dl.setLinkID(link.getUniqueID().getID());
-            String id = dl.getRevision() + "_" + dl.getErrorID() + "_" + dl.getHost() + "_" + dl.getAccount();
+            String id = dl.getCandidate().getRevision() + "_" + dl.getErrorID() + "_" + dl.getCandidate().getPlugin() + "_" + dl.getCandidate().getType();
             AtomicInteger errorCounter = counterMap.get(id);
             if (errorCounter == null) {
                 counterMap.put(id, errorCounter = new AtomicInteger());
@@ -743,8 +748,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     private String getBase() {
-        if (false) return "http://localhost:8888/";
-        if (false) return "http://192.168.2.250:81/thomas/fcgi/";
+        if (!Application.isJared(null) && false) return "http://localhost:8888/";
+        if (!Application.isJared(null) && true) return "http://192.168.2.250:81/thomas/fcgi/";
         return "http://stats.appwork.org/jcgi/";
     }
 
@@ -753,5 +758,47 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public void feedback(DirectFeedback feedback) {
+
+        if (feedback instanceof DownloadFeedBack) {
+            DownloadLink link = ((DownloadFeedBack) feedback).getDownloadLink();
+
+            ArrayList<Candidate> possibleAccounts = new ArrayList<Candidate>();
+            AccountCache accountCache = new DownloadSession().getAccountCache(link);
+            for (CachedAccount s : accountCache) {
+                possibleAccounts.add(Candidate.create(s));
+            }
+
+            DownloadFeedbackLogEntry dl = new DownloadFeedbackLogEntry(feedback.isPositive());
+            dl.setHost(link.getHost());
+            dl.setCandidates(possibleAccounts);
+            dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
+            try {
+                HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+                });
+
+                dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
+            } catch (Exception e) {
+            }
+
+            dl.setOs(CrossSystem.getOSFamily().name());
+            dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
+            dl.setTimestamp(System.currentTimeMillis());
+            dl.setSessionStart(sessionStart);
+            // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
+            // this.
+            dl.setLinkID(link.getUniqueID().getID());
+            String id = dl.getLinkID() + "";
+            AtomicInteger errorCounter = counterMap.get(id);
+            if (errorCounter == null) {
+                counterMap.put(id, errorCounter = new AtomicInteger());
+            }
+            dl.setCounter(errorCounter.incrementAndGet());
+            log(dl);
+        } else if (feedback instanceof BasicIDFeedback) {
+
+        } else if (feedback instanceof MenuItemFeedback) {
+
+        }
+
     }
 }

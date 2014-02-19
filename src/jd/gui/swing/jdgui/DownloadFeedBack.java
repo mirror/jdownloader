@@ -11,4 +11,12 @@ public class DownloadFeedBack extends DirectFeedback {
         this.downloadLink = downloadLink;
     }
 
+    public DownloadLink getDownloadLink() {
+        return downloadLink;
+    }
+
+    public void setDownloadLink(DownloadLink downloadLink) {
+        this.downloadLink = downloadLink;
+    }
+
 }

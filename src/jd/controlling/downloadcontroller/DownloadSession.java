@@ -269,7 +269,7 @@ public class DownloadSession extends Property {
         }
     }
 
-    protected DownloadSession() {
+    public DownloadSession() {
         this(null);
     }
 

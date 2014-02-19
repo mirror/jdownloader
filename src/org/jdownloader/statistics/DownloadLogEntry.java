@@ -96,24 +96,15 @@ public class DownloadLogEntry extends AbstractLogEntry {
         return waittime;
     }
 
-    private String host = null;
+    private Candidate candidate = null;
 
-    public String getHost() {
-        return host;
+    public Candidate getCandidate() {
+
+        return candidate;
     }
 
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    private String account = null;
-
-    public String getAccount() {
-        return account;
-    }
-
-    public void setAccount(String account) {
-        this.account = account;
+    public void setCandidate(Candidate candidate) {
+        this.candidate = candidate;
     }
 
     public void setWaittime(long waittime) {
@@ -145,16 +136,6 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     public void setUtcOffset(int utcOffset) {
         this.utcOffset = utcOffset;
-    }
-
-    private long revision = 0;
-
-    public long getRevision() {
-        return revision;
-    }
-
-    public void setRevision(long revision) {
-        this.revision = revision;
     }
 
     public void setCaptchaRuntime(long captchaRuntime) {
@@ -201,6 +182,7 @@ public class DownloadLogEntry extends AbstractLogEntry {
     private int     counter = 1;
     private long    linkID  = -1;
     private long    buildTime;
+    private String  host;
 
     public long getBuildTime() {
         return buildTime;
@@ -232,5 +214,13 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     public void setBuildTime(long parseLong) {
         this.buildTime = parseLong;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    public String getHost() {
+        return host;
     }
 }

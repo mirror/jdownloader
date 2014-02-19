@@ -46,6 +46,7 @@ import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -294,6 +295,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     @Override
     public void mouseClicked(MouseEvent e) {
+        Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
         if (voteDownMouseOver) {
             if (voteWindow != null && voteWindow.isVisible()) {
                 boolean positive = voteWindow.isPositive();
