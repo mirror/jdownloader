@@ -49,7 +49,6 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 
@@ -425,10 +424,9 @@ public class RealDebridCom extends PluginForHost {
                 Thread.sleep(1000);
             }
         }
-        String expire = br.getRegex("<expiration-txt>([^<]+)").getMatch(0);
+        String expire = br.getRegex("<premium-left>-?(\\d+)</premium-left>").getMatch(0);
         if (expire != null) {
-            // Add one day to make sure it doesn't expire too early
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null) + (24 * 60 * 60 * 1000l));
+            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expire) * 1000));
         }
         String acctype = br.getRegex("<type>(\\w+)</type>").getMatch(0).toLowerCase();
         if (acctype.equals("premium")) {
