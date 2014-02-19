@@ -603,6 +603,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             list.clear();
                         }
                         if (sendTo.size() > 0) {
+                            Thread.sleep(2 * 60 * 1000l);
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
                             if (!config.isEnabled()) return;
                             br.postPageRaw(getBase() + "plugins/push2", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));
