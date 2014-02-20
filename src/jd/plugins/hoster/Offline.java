@@ -80,7 +80,7 @@ urls = { "https?://(www\\.)?edoc\\.com/[a-z0-9]{12}", "http://(www\\.)?download\
         "http://(www\\.)?profitupload\\.com/files/[A-Za-z0-9]+\\.html", "http://[\\w\\.]*?quickload\\.to/\\?Go=Player\\&HashID=FILE[A-Z0-9]+", "http://[\\w\\.]*?quickyshare\\.com/[a-z0-9]{12}", "http://[\\w\\.]*?share\\.cx/(files/)?\\d+", "http://[\\w\\.]*?sharehoster\\.(de|com|net)/(dl|wait|vid)/[a-z0-9]+", "http://[\\w\\.]*?shareua.com/get_file/.*?/\\d+", "http://[\\w\\.]*?speedload\\.to/FILE[A-Z0-9]+", "http://(www\\.)?upfile\\.in/[a-z0-9]{12}", "http://[\\w\\.]*?ugotfile.com/file/\\d+/.+", "http://[\\w\\.]*?upload\\.ge/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)", "http://[\\w\\.]*?uploadmachine\\.com/(download\\.php\\?id=[0-9]+&type=[0-9]{1}|file/[0-9]+/)", "http://[\\w\\.]*?uploady\\.to/dl/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)", "http://(www\\.)?uploadstore\\.net/[a-z0-9]{12}",
         "http://[\\w\\.]*?vspace\\.cc/file/[A-Z0-9]+\\.html", "http://[\\w\\.]*?web-share\\.net/download/file/item/.*?_[0-9]+", "http://(www\\.)?yvh\\.cc/video\\.php\\?file=[a-z0-9_]+", "http://[\\w\\.]*?x-files\\.kz/[a-z0-9]+", "https?://(www\\.)?oteupload\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class Offline extends PluginForHost {
-
+    
     /**
      * fullbuild help comment
      * 
@@ -89,7 +89,7 @@ public class Offline extends PluginForHost {
     public Offline(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls != null) {
@@ -99,15 +99,15 @@ public class Offline extends PluginForHost {
         }
         return true;
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        ai.setStatus("Permanently Offline: Host provider no longer exists!");
+        ai.setStatus("Permanently Offline: Host provider no longer exists");
         account.setValid(false);
         return ai;
     }
-
+    
     public Boolean rewriteHost(Account acc) {
         /* please also update this for alternative hosts */
         if ("filemade.com".equals(getHost())) {
@@ -119,30 +119,30 @@ public class Offline extends PluginForHost {
         }
         return null;
     }
-
+    
     @Override
     public String getAGBLink() {
         return null;
     }
-
+    
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permanently Offline: Host provider no longer exists");
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permanently Offline: Host provider no longer exists");
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
