@@ -369,13 +369,13 @@ public class CatShareNet extends PluginForHost {
         }
 
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, getMaxChunksPremiumDownload());
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             doSomething();
             checkServerErrors();
-            if (br.containsHTML("Twój dzienny limit transferu został przekroczony")) {
+            if (br.containsHTML("Twój dzienny limit transferu")) {
                 UserIO.getInstance().requestMessageDialog(0, "CatShare.net Premium Error", "Daily Limit exceeded!" + "\r\nPremium disabled, will continue downloads as Free User");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else
@@ -388,6 +388,11 @@ public class CatShareNet extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    // limit for number of chunks, more cause "service temporarily unavailable"
+    public int getMaxChunksPremiumDownload() {
+        return 4;
     }
 
     @Override
