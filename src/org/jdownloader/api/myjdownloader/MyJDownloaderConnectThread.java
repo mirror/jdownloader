@@ -168,14 +168,18 @@ public class MyJDownloaderConnectThread extends Thread {
         setName("MyJDownloaderConnectThread");
         this.setDaemon(true);
         this.myJDownloaderExtension = myJDownloaderExtension;
+        logger = myJDownloaderExtension.getLogger();
         api = new MyJDownloaderAPI() {
             @Override
             protected SessionInfo createSessionInfo(byte[] deviceSecret, byte[] serverEncryptionToken, byte[] deviceEncryptionToken, String sessionToken, String regainToken) {
                 return new SessionInfoWrapper(deviceSecret, serverEncryptionToken, deviceEncryptionToken, sessionToken, regainToken);
             }
+            
+            @Override
+            public LogSource getLogger() {
+                return MyJDownloaderConnectThread.this.getLogger();
+            }
         };
-        api.setLogger(getLogger());
-        logger = myJDownloaderExtension.getLogger();
         ArrayList<DeviceConnectionHelper> helper = new ArrayList<DeviceConnectionHelper>();
         for (int port : CFG_MYJD.CFG.getDeviceConnectPorts()) {
             helper.add(new DeviceConnectionHelper(port, CFG_MYJD.CFG.getConnectIP()));
