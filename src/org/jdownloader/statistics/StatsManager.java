@@ -606,9 +606,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             Thread.sleep(2 * 60 * 1000l);
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
                             if (!config.isEnabled()) return;
-                            br.postPageRaw(getBase() + "plugins/push2", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));
+                            br.postPageRaw(getBase() + "stats/push", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));
 
-                            // br.postPageRaw("http://localhost:8888/plugins/push", JSonStorage.serializeToJson(sendTo));
+                            // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
 
                             Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<Response>() {
                             });
@@ -733,7 +733,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             codes[i] = i;
         }
         br.setAllowedResponseCodes(codes);
-        br.postPageRaw(getBase() + "plugins/sendLog", JSonStorage.serializeToJson(log));
+        br.postPageRaw(getBase() + "stats/sendLog", JSonStorage.serializeToJson(log));
 
     }
 
@@ -744,7 +744,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             codes[i] = i;
         }
         br.setAllowedResponseCodes(codes);
-        br.postPageRaw(getBase() + "plugins/sendError", JSonStorage.serializeToJson(error));
+        br.postPageRaw(getBase() + "stats/sendError", JSonStorage.serializeToJson(error));
 
     }
 

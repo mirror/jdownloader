@@ -8,13 +8,13 @@ import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
 public class Candidate extends AbstractJsonData implements Storable {
 
-    public static final String  ACCOUNT_MULTI_PREMIUM = "account.multi.premium";
-    public static final String  ACCOUNT_MULTI_FREE    = "account.multi.free";
-    public static final String  ACCOUNT_PREMIUM       = "account.premium";
-    public static final String  ACCOUNT_FREE          = "account.free";
+    public static final String ACCOUNT_MULTI_PREMIUM = "account.multi.premium";
+    public static final String ACCOUNT_MULTI_FREE    = "account.multi.free";
+    public static final String ACCOUNT_PREMIUM       = "account.premium";
+    public static final String ACCOUNT_FREE          = "account.free";
 
-    private static final String FREE                  = "free";
-    private String              plugin;
+    public static final String FREE                  = "free";
+    private String             plugin;
 
     public String getPlugin() {
         return plugin;
