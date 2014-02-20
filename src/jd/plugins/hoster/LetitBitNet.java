@@ -83,13 +83,15 @@ public class LetitBitNet extends PluginForHost {
     private static Object        PREMIUMLOCK                       = new Object();
     private static final int     MAXSIMULTAN_FREE                  = 1;
     // Max 10 requests per minute limited by API
-    private static final int     MAXSIMULTAN_PREMIUM               = 10;
+    private static final int     MAXSIMULTAN_PREMIUM               = 20;
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         setAccountwithoutUsername(true);
         enablePremium("http://letitbit.net/page/premium.php");
+        // Premium downloads via API = max 10 GET requests per minute
+        this.setStartIntervall(10 * 1000l);
     }
 
     @Override

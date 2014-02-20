@@ -190,9 +190,8 @@ public class UploadHeroCom extends PluginForHost {
             ai.setValidUntil(System.currentTimeMillis() + (Integer.parseInt(expire) + 1) * 24 * 60 * 60 * 1000l);
             try {
                 maxPrem.set(20);
-                // free accounts can still have captcha.
                 account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }

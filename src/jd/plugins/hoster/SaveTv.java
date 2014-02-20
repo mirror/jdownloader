@@ -309,15 +309,15 @@ public class SaveTv extends PluginForHost {
                         genre = dataArray[0];
                         // Maybe the media was produced over multiple years
                         produceyear = new Regex(moviesdata, "(\\d{4} / \\d{4})").getMatch(0);
-                        producecountry = new Regex(moviesdata + genre, " ([A-Za-z/]+)").getMatch(0);
-                        if (dataArray != null) {
-                            if (dataArray.length >= 3) {
-                                if (producecountry == null) producecountry = dataArray[1];
-                                if (produceyear == null) produceyear = dataArray[2];
-                            } else if (dataArray.length == 2) {
-                                if (producecountry == null) producecountry = dataArray[1];
-                            }
+                        if (produceyear == null) produceyear = new Regex(moviesdata, "(\\d{4})").getMatch(0);
+                        if (produceyear != null) {
+                            producecountry = new Regex(moviesdata, genre + "(.+)" + produceyear).getMatch(0);
+                        } else {
+                            producecountry = new Regex(moviesdata, genre + "(.+)").getMatch(0);
                         }
+                        // A little errorhandling but this should never happen
+                        if (producecountry != null) producecountry = Encoding.htmlDecode(producecountry).trim();
+                        if (producecountry != null && producecountry.equals("")) producecountry = null;
 
                     }
                 }
