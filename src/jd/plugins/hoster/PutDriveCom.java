@@ -214,6 +214,21 @@ public class PutDriveCom extends PluginForHost {
             }
             dllink = br.getRedirectLocation();
             if (dllink == null) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 302) {
+                    logger.info(NICE_HOST + ": 302 but no downloadlink");
+                    int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull_302", 0);
+                    link.getLinkStatus().setRetryCount(0);
+                    if (timesFailed <= 2) {
+                        timesFailed++;
+                        link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_302", timesFailed);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+                    } else {
+                        link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_302", Property.NULL);
+                        logger.info(NICE_HOST + ": 302 but no downloadlink --> Disabling current host");
+                        tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                    }
+                }
+
                 logger.info(NICE_HOST + ": Final link is null");
                 int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknull", 0);
                 link.getLinkStatus().setRetryCount(0);
@@ -314,7 +329,7 @@ public class PutDriveCom extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
