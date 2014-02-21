@@ -88,7 +88,7 @@ public class UploadableCh extends PluginForHost {
             if (waittime != null) wait = Integer.parseInt(waittime);
             sleep(wait * 1001l, downloadLink);
             br.postPage(postLink, "checkDownload=check");
-            if (br.containsHTML("\"fail\":\"timeLimit\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+            if (br.containsHTML("\"fail\":\"timeLimit\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1001l);
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId("6LdlJuwSAAAAAPJbPIoUhyqOJd7-yrah5Nhim5S3");
