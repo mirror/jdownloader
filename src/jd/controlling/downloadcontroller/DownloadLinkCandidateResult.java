@@ -116,6 +116,7 @@ public class DownloadLinkCandidateResult {
     }
 
     private void updateErrorID(Throwable throwable) {
+
         errorID = null;
         this.throwable = throwable;
         if (throwable != null) {
@@ -124,6 +125,7 @@ public class DownloadLinkCandidateResult {
                 StringBuilder sb = new StringBuilder();
                 StringBuilder sb2 = new StringBuilder();
                 if (throwable instanceof PluginException) {
+                    System.out.println(1);
 
                     sb.append("PluginException: ").append(throwable.getMessage()).append("(" + LinkStatus.toString(((PluginException) throwable).getLinkStatus()) + ")");
 
@@ -167,6 +169,17 @@ public class DownloadLinkCandidateResult {
                 errorID = throwable.toString();
             }
 
+        } else if (result != null) {
+            switch (result) {
+            case FAILED:
+            case FAILED_INCOMPLETE:
+            case FATAL_ERROR:
+            case FILE_UNAVAILABLE:
+            case HOSTER_UNAVAILABLE:
+            case PLUGIN_DEFECT:
+                errorID = result.name();
+                break;
+            }
         }
     }
 

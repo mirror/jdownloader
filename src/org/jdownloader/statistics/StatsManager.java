@@ -484,7 +484,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             //
             dl.setCounter(errorCounter.incrementAndGet());
             ;
-            if (dl.getErrorID() == null && dl.getResult() != DownloadResult.FINISHED) dl.setErrorID(id + "_" + dl.getResult());
+
             if (dl.getErrorID() != null) {
                 ErrorDetails error = errors.get(dl.getErrorID());
                 if (error == null) {
@@ -606,7 +606,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             list.clear();
                         }
                         if (sendTo.size() > 0) {
-                            Thread.sleep(2 * 60 * 1000l);
+                            Thread.sleep(1 * 60 * 1000l);
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
                             if (!config.isEnabled()) return;
                             br.postPageRaw(getBase() + "stats/push", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));

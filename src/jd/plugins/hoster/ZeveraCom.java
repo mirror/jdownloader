@@ -268,6 +268,8 @@ public class ZeveraCom extends PluginForHost {
                 if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(ZeveraCom.NOCHUNKS, false) == false) {
                     link.setProperty(ZeveraCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    throw e;
                 }
             }
             return;
