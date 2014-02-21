@@ -202,6 +202,9 @@ public class SoundcloudCom extends PluginForHost {
             if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
         } else {
             url = getXML("stream-url", source);
+            if (url != null && !url.matches("https?://api\\.soundcloud\\.com/tracks/\\d+/stream\\?client_id=[a-z0-9]+") && url.matches("https?://api\\.soundcloud\\.com/tracks/\\d+/stream")) {
+                url += "?client_id=" + SoundcloudCom.CLIENTID;
+            }
             type = "mp3";
             if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
         }

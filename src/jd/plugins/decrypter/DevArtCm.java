@@ -149,7 +149,7 @@ public class DevArtCm extends PluginForDecrypt {
                 if (parameter.matches(TYPE_CATPATH) && !parameter.contains("offset=")) {
                     if (counter > 1) br.getPage(parameter + "&offset=" + currentOffset);
                     // catpath links have an unknown end-offset
-                    final String nextOffset = br.getRegex("\\?catpath=%2F\\&amp;offset=(\\d+)\"><span>Next</span></a>").getMatch(0);
+                    final String nextOffset = br.getRegex("\\?catpath=[A-Za-z0-9%]+\\&amp;offset=(\\d+)\"><span>Next</span></a>").getMatch(0);
                     if (nextOffset != null) maxOffset = Integer.parseInt(nextOffset);
                 } else if (counter > 1) {
                     br.getPage(parameter + "?offset=" + currentOffset);

@@ -266,6 +266,18 @@ public class PutDriveCom extends PluginForHost {
             }
         }
         link.setProperty(NICE_HOSTproperty + "finallink", dllink);
+        boolean charge_ok = true;
+        try {
+            api_chargetraffic(acc, link);
+        } catch (final Throwable charge_error) {
+            charge_ok = false;
+        }
+        if (charge_ok && !br.containsHTML("<ErrorCode>None</ErrorCode>")) charge_ok = false;
+        if (charge_ok) {
+            logger.info(NICE_HOST + ": Traffic charged successfully");
+        } else {
+            logger.warning(NICE_HOST + ": There was a problem with the traffic charge though the download worked fine");
+        }
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -276,19 +288,6 @@ public class PutDriveCom extends PluginForHost {
                 if (link.getBooleanProperty(PutDriveCom.NOCHUNKS, false) == false) {
                     link.setProperty(PutDriveCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            } else {
-                boolean charge_ok = true;
-                try {
-                    api_chargetraffic(acc, link);
-                } catch (final Throwable charge_error) {
-                    charge_ok = false;
-                }
-                if (charge_ok && !br.containsHTML("<ErrorCode>None</ErrorCode>")) charge_ok = false;
-                if (charge_ok) {
-                    logger.info(NICE_HOST + ": Traffic charged successfully");
-                } else {
-                    logger.warning(NICE_HOST + ": There was a problem with the traffic charge though the download worked fine");
                 }
             }
         } catch (final PluginException e) {
