@@ -480,6 +480,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (errorCounter == null) {
                 counterMap.put(id, errorCounter = new AtomicInteger());
             }
+
+            //
             dl.setCounter(errorCounter.incrementAndGet());
             ;
             if (dl.getErrorID() == null) dl.setErrorID(id + "/" + dl.getResult());
