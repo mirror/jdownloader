@@ -124,7 +124,6 @@ public class DownloadLinkCandidateResult {
                 StringBuilder sb = new StringBuilder();
                 StringBuilder sb2 = new StringBuilder();
                 if (throwable instanceof PluginException) {
-                    System.out.println(1);
 
                     sb.append("PluginException: ").append(throwable.getMessage()).append("(" + LinkStatus.toString(((PluginException) throwable).getLinkStatus()) + ")");
 

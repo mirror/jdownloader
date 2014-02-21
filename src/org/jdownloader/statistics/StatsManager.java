@@ -482,6 +482,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
             dl.setCounter(errorCounter.incrementAndGet());
             ;
+            if (dl.getErrorID() == null) dl.setErrorID(id + "/" + dl.getResult());
             if (dl.getErrorID() != null) {
                 ErrorDetails error = errors.get(dl.getErrorID());
                 if (error == null) {

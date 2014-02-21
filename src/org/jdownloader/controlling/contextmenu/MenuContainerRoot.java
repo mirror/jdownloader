@@ -28,7 +28,8 @@ public class MenuContainerRoot extends MenuContainer implements Storable {
 
     @Override
     public MenuContainerRoot clone() {
-        final MenuContainerRoot menuContainerRoot2 = JSonStorage.restoreFromString(JSonStorage.serializeToJson(this), new TypeRef<MenuContainerRoot>() {
+        String str = JSonStorage.serializeToJson(this);
+        final MenuContainerRoot menuContainerRoot2 = JSonStorage.restoreFromString(str, new TypeRef<MenuContainerRoot>() {
         });
         menuContainerRoot2.validateFull();
         return menuContainerRoot2;
