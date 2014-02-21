@@ -59,7 +59,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     public final static String  CLIENTID                      = "b45b1aa10f1ac2941910a7f0d10f8e28";
-    private static final String APP_VERSION                   = "5367f3cb";
+    public final static String  APP_VERSION                   = "87a698ff";
     private static final String CUSTOM_DATE                   = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME_2             = "CUSTOM_FILENAME_2";
     private static final String GRAB500THUMB                  = "GRAB500THUMB";
@@ -102,7 +102,7 @@ public class SoundcloudCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         }
-        br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID);
+        br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
         final String sid = br.getRegex("<id type=\"integer\">(\\d+)</id>").getMatch(0);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final AvailableStatus status = checkStatus(parameter, this.br.toString(), true);

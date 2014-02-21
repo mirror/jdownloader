@@ -889,7 +889,7 @@ public class RapidGatorNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
-            if (dl.getConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is issues", 60 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
             br.followConnection();
             if (br.containsHTML("<h2>Error 500</h2>[\r\n ]+<div class=\"error\">"))
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is issues", 60 * 60 * 1000l);

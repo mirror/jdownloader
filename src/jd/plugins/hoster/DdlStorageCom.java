@@ -97,6 +97,8 @@ public class DdlStorageCom extends PluginForHost {
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
 
+    private static final String        NOCHUNKS                     = "NOCHUNKS";
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -1126,6 +1128,7 @@ public class DdlStorageCom extends PluginForHost {
         if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
         // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
         controlHost(account, downloadLink, true);
+        if (downloadLink.getBooleanProperty(DdlStorageCom.NOCHUNKS, false)) chunks = 1;
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
         try {
@@ -1681,7 +1684,21 @@ public class DdlStorageCom extends PluginForHost {
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
                 Integer usedSlots = getHashedHashedValue(account);
-                if (usedSlots == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l); }
+                if (usedSlots == null) {
+                    if (account != null) {
+                        // Workarounds for bug: http://svn.jdownloader.org/issues/11331
+                        logger.info("XFS3 bug happened in account mode -> Retrying with 1 chunk");
+                        if (downloadLink.getBooleanProperty(DdlStorageCom.NOCHUNKS, false)) {
+                            logger.info("Handling without chunks failed also!");
+                        } else {
+                            logger.info("Trying handling without chunks for the first time...");
+                        }
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+                    } else {
+                        logger.info("XFS3 bug happened in non account mode -> Waiting");
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                    }
+                }
                 setHashedHashKeyValue(account, -1);
                 if (usedSlots.equals(1)) {
                     logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");

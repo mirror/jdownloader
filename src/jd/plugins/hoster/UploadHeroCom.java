@@ -135,8 +135,8 @@ public class UploadHeroCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                // br.getPage("");
                 br.setCookie(MAINPAGE, "lang", "en");
+                br.getPage("http://uploadhero.co/home");
                 br.postPage(MAINPAGE + "/lib/connexion.php", "pseudo_login=" + Encoding.urlEncode(account.getUser()) + "&password_login=" + Encoding.urlEncode(account.getPass()));
                 final String cookie = br.getRegex("id=\"cookietransitload\" style=\"display:none;\">([^<>\"]*?)</div>").getMatch(0);
                 if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

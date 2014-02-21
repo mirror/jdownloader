@@ -64,9 +64,8 @@ public class PrimeMusicRu extends PluginForHost {
 
         br.getPage(downloadLink.getDownloadURL().replace("/Media-page-", "/Media-download-"));
         String finallink = br.getRegex("<a class=\"download\" href=(http://[^<>\"]*?\\.mp3)\"").getMatch(0);
-        if (finallink == null) {
-            finallink = br.getRegex("\"(http://mp3\\.primemusic\\.ru/dl\\d+/[^<>\"]*?)\"").getMatch(0);
-        }
+        if (finallink == null) finallink = br.getRegex("class=\"download_link\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("\"(http://[a-z0-9]+\\.primemusic\\.ru/dl\\d+/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

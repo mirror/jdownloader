@@ -63,7 +63,9 @@ public class MultiShareCz extends PluginForHost {
         }
         final String trafficleft = getJson("credit");
         if (trafficleft != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft + " MB"));
+            final double traffic = Double.parseDouble(trafficleft);
+            // 1 credit = 1 MB
+            ai.setTrafficLeft((long) traffic * 1024 * 1024);
         }
         ai.setStatus("Premium User");
         if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
@@ -192,9 +194,11 @@ public class MultiShareCz extends PluginForHost {
             if (timesFailed <= 2) {
                 timesFailed++;
                 link.setProperty("timesfailedmultisharecz_unknown", timesFailed);
+                logger.info("multishare.cz: Download failed -> Retrying");
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
                 link.setProperty("timesfailedmultisharecz_unknown", Property.NULL);
+                logger.info("multishare.cz: Download failed -> Plugin broken");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -209,6 +213,12 @@ public class MultiShareCz extends PluginForHost {
              * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
+            if (br.getURL().contains("typ=nedostatecny-kredit")) {
+                logger.info("No traffic available -> Temporarily disabling account");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            logger.warning("Received html code instead of file -> Plugin broken");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -224,7 +234,7 @@ public class MultiShareCz extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-        } else if (br.containsHTML("ERR: Invalid password")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid Password", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        } else if (br.containsHTML("ERR: Invalid password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override

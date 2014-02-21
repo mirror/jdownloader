@@ -231,10 +231,12 @@ public class DataFileCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                String protocol = "http://";
+                // https is forced here anyways
+                String protocol = "https://";
                 if (isJava7nJDStable()) {
                     if (!stableSucks.get()) showSSLWarning(this.getHost());
-                    protocol = "http://";
+                    // https is forced here anyways
+                    protocol = "https://";
                 }
                 br.postPage(protocol + "www.datafile.com/login.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=0&remember_me=1&btn=");
                 if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);

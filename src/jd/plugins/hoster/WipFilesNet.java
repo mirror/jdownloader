@@ -1,18 +1,18 @@
-//jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -61,6 +61,8 @@ public class WipFilesNet extends PluginForHost {
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
     private static final String  COOKIE_HOST                  = "http://wipfiles.net";
+    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
     private static final String  DOMAINS                      = "(wipfiles\\.net)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
@@ -70,21 +72,30 @@ public class WipFilesNet extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
+    // Connection stuff
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
+    private String               fuid                         = null;
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.2.5
-    // mods:checkErrors [added new premiumonly regex]
-    // non account: 1 * 1
-    // free account: untested, set FREE limits
-    // premium account: 1 * 10
+    // XfileSharingProBasic Version 2.6.4.4
+    // mods:
+    // limit-info:
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: 4dignum
     // other:
 
     @Override
@@ -93,12 +104,8 @@ public class WipFilesNet extends PluginForHost {
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
         }
-        // strip video hosting url's to reduce possible duped links.
-        link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
-        // output the hostmask as we wish based on COOKIE_HOST url!
-        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
-        String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
-        link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
+        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        link.setUrlDownload(COOKIE_HOST + "/" + fid);
     }
 
     @Override
@@ -139,11 +146,12 @@ public class WipFilesNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
+        setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
-            return AvailableStatus.TRUE;
+            return AvailableStatus.UNCHECKABLE;
         }
         if (br.getURL().contains("/?op=login&redirect=")) {
             link.getLinkStatus().setStatusText(PREMIUMONLY2);
@@ -169,7 +177,7 @@ public class WipFilesNet extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(2);
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
@@ -184,7 +192,7 @@ public class WipFilesNet extends PluginForHost {
                                 fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
                                 if (fileInfo[0] == null) {
                                     // Link of the box without filesize
-                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/[a-z0-9]{12}/([^<>\"]*?)</textarea").getMatch(2);
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
                                 }
                             }
                         }
@@ -208,7 +216,7 @@ public class WipFilesNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -221,9 +229,15 @@ public class WipFilesNet extends PluginForHost {
         if (dllink == null) dllink = getDllink();
         // Third, do they provide video hosting?
         if (dllink == null && VIDEOHOSTER) {
-            final Browser brv = br.cloneBrowser();
-            brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-            dllink = brv.getRedirectLocation();
+            try {
+                logger.info("Trying to get link via vidembed");
+                final Browser brv = br.cloneBrowser();
+                brv.getPage("/vidembed-" + fuid);
+                dllink = brv.getRedirectLocation();
+                if (dllink == null) logger.info("Failed to get link via vidembed");
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via vidembed");
+            }
         }
         // Fourth, continue like normal.
         if (dllink == null) {
@@ -323,7 +337,13 @@ public class WipFilesNet extends PluginForHost {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    File cf = null;
+                    try {
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    } catch (final Exception e) {
+                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        throw e;
+                    }
                     final String code = getCaptchaCode(cf, downloadLink);
                     final String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
@@ -378,7 +398,18 @@ public class WipFilesNet extends PluginForHost {
             br.followConnection();
             correctBR();
             checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                logger.info(NICE_HOST + ": Final link is no file -> Retrying");
+                timesFailed++;
+                downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+            } else {
+                downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", Property.NULL);
+                logger.info(NICE_HOST + ": Final link is no file -> Plugin is broken");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         fixFilename(downloadLink);
@@ -500,7 +531,7 @@ public class WipFilesNet extends PluginForHost {
                     dllink = null;
                 }
                 con.disconnect();
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             }
@@ -560,32 +591,61 @@ public class WipFilesNet extends PluginForHost {
     }
 
     /**
-     * @param downloadLink
-     */
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     * 
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+            return true;
+        else
+            return false;
+    }
+
+    /**
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
+     * which is based on fuid.
+     * 
+     * @version 0.2
+     * @author raztoki
+     * */
     private void fixFilename(final DownloadLink downloadLink) {
-        String oldName = downloadLink.getFinalFileName();
-        if (oldName == null) oldName = downloadLink.getName();
-        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        String newExtension = null;
-        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
-        if (serverFilename == null) {
-            logger.info("Server filename is null, keeping filename: " + oldName);
-        } else {
-            if (serverFilename.contains(".")) {
-                newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-            } else {
-                logger.info("HTTP headers don't contain filename.extension information");
-            }
-        }
-        if (newExtension != null && !oldName.endsWith(newExtension)) {
-            String oldExtension = null;
-            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            if (oldExtension != null && oldExtension.length() <= 5) {
-                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            } else {
-                downloadLink.setFinalFileName(oldName + newExtension);
-            }
-        }
+        String orgName = null;
+        String orgExt = null;
+        String servName = null;
+        String servExt = null;
+        String orgNameExt = downloadLink.getFinalFileName();
+        if (orgNameExt == null) orgNameExt = downloadLink.getName();
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        if (!inValidate(orgExt))
+            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+        else
+            orgName = orgNameExt;
+        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
+        String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
+            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+        } else
+            servName = servNameExt;
+        String FFN = null;
+        if (orgName.equalsIgnoreCase(fuid.toLowerCase()))
+            FFN = servNameExt;
+        else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+            // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
+            FFN = servNameExt;
+        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+            FFN = orgName + servExt;
+        else
+            FFN = orgNameExt;
+        downloadLink.setFinalFileName(FFN);
+    }
+
+    private void setFUID(final DownloadLink dl) {
+        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
@@ -651,7 +711,7 @@ public class WipFilesNet extends PluginForHost {
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>Upgrade your premium account to download this file<)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -680,8 +740,9 @@ public class WipFilesNet extends PluginForHost {
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'no file'", 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, Pattern.compile("Wrong IP", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
     }
 
     @Override
@@ -716,10 +777,13 @@ public class WipFilesNet extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
+        // If the account is expired we'll accept it as a free account
+        final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        long expiretime = 0;
+        if (expire != null) expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+        if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0) {
             try {
-                maxPrem.set(1);
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -727,23 +791,17 @@ public class WipFilesNet extends PluginForHost {
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
+            ai.setStatus("Registered (free) user");
         } else {
-            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-                try {
-                    maxPrem.set(20);
-                    account.setMaxSimultanDownloads(maxPrem.get());
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                    // not available in old Stable 0.9.581
-                }
+            ai.setValidUntil(expiretime);
+            try {
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
             }
-            ai.setStatus("Premium User");
+            ai.setStatus("Premium user");
         }
         return ai;
     }
@@ -770,7 +828,7 @@ public class WipFilesNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/?op=login");
+                getPage(COOKIE_HOST + "/?op=login2");
                 final String lang = System.getProperty("user.language");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
@@ -821,7 +879,7 @@ public class WipFilesNet extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 1, "freelink2");
+            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
@@ -843,14 +901,25 @@ public class WipFilesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();
                 checkServerErrors();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    logger.info(NICE_HOST + ": Final link is no file -> Retrying");
+                    timesFailed++;
+                    downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+                } else {
+                    downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", Property.NULL);
+                    logger.info(NICE_HOST + ": Final link is no file -> Plugin is broken");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             fixFilename(downloadLink);
             downloadLink.setProperty("premlink", dllink);

@@ -244,8 +244,10 @@ public class FlickrCom extends PluginForHost {
         if (picInfo == null) return null;
         final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String finallink = null;
-        for (String size : sizes) {
-            finallink = new Regex(picInfo, "\"id\":\"" + id + "\"[^\t\n\r]+" + size + "\":\\{\"label\":\"[^\t\n\r]+\",\"file\":\"[^\t\n\r]+\",\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        for (final String size : sizes) {
+            // Maybe remove old regex with next update
+            finallink = new Regex(picInfo, "\"id\":\"" + id + "\"[^\t\n\r]+" + size + "\":\\{\"label\":\"[^\t\n\r]+\",\"file\":\"[^\t\n\r]+\",\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) finallink = new Regex(picInfo, "\"" + size + "\":\\{\"label\":\"[A-Za-z0-9% \\-_\\.]+\",\"file\":\"" + id + "[A-Za-z0-9\\.\\-_]+\",\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (finallink != null) break;
         }
         if (finallink != null) finallink = finallink.replace("\\", "");

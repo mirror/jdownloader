@@ -44,7 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+|videolink/\\d+)|vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(vkontaktedecrypted\\.ru/(picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?|audiolink/\\d+|videolink/\\d+)|vk\\.com/doc\\d+_\\d+(\\?hash=[a-z0-9]+)?)" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                     = "http://vk.com";
@@ -52,7 +52,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private String              FINALLINK                  = null;
     private static final String AUDIOLINK                  = "http://vkontaktedecrypted\\.ru/audiolink/\\d+";
     private static final String VIDEOLINK                  = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
-    private static final String DOCLINK                    = "http://vk\\.com/doc\\d+_\\d+\\?hash=[a-z0-9]+";
+    private static final String DOCLINK                    = "http://vk\\.com/doc\\d+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                  = 1;
     private static final String TEMPORARILYBLOCKED         = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     /** Settings stuff */

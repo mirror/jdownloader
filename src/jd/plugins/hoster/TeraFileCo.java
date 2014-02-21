@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "terafile.co" }, urls = { "https?://(www\\.)?terafile\\.co/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "terafile.co", "lumfile.com" }, urls = { "https?://(www\\.)?(terafile\\.co|lumfile\\.(com|se|eu))/((vid)?embed\\-)?[a-z0-9]{12}", "z77iojtjftjrDELETE_MEfh65iiubfrei5754dfrghrghrhijnfdwihjdwiojn" }, flags = { 2, 0 })
 public class TeraFileCo extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -92,7 +92,7 @@ public class TeraFileCo extends PluginForHost {
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: null
     // other:
 
     @Override

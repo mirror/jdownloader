@@ -71,15 +71,16 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lumfile.com" }, urls = { "https?://(www\\.)?lumfile\\.(com|se|eu)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lumfile.com" }, urls = { "z77iojtjftjrDELETE_MEfh65iiubf_MOVED_TO_TeraFileCo_PLUGINrei5754dfrghrghrhijnfdwihjdwiojn" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class LumFileCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://lumfile.com";
+    // Changed domains so existing downloads can be finished
+    private final String               COOKIE_HOST                  = "http://terafile.co";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(lumfile\\.(com|se|eu))";
+    private final String               DOMAINS                      = "(terafile\\.co)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
