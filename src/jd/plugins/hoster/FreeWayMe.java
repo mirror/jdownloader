@@ -124,9 +124,9 @@ public class FreeWayMe extends PluginForHost {
                                                       put("CLOSE", "Close");
                                                       put("ERROR_PREVENT_SPRIT_USAGE", "Sprit usage prevented!");
                                                       put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeedlimit");
-                                                      put("FULLSPEED_TRAFFIC_NOTIFICATION_MSG", "You used your todays free-way.me fullspeed traffic. Your speed is limited until midnight.");
-                                                      put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Enable <u>bubble notification</u> if fullspeed limit is reached");
-                                                      put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Enable <u>dialog notification</u> if fullspeed limit is reached");
+                                                      put("FULLSPEED_TRAFFIC_NOTIFICATION_MSG", "You used your todays free-way.me fullspeed traffic.\r\nYour speed is limited until midnight.");
+                                                      put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Show bubble notification if fullspeed limit is reached");
+                                                      put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Show dialog notification if fullspeed limit is reached");
                                                   }
                                               };
 
@@ -165,9 +165,9 @@ public class FreeWayMe extends PluginForHost {
                                                       put("CLOSE", "Schließen");
                                                       put("ERROR_PREVENT_SPRIT_USAGE", "Spritverbrauch verhindert!");
                                                       put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeed-Limit");
-                                                      put("FULLSPEED_TRAFFIC_NOTIFICATION_MSG", "Das heutige Fullspeedvolumen für free-way.me wurde aufgebraucht. Die Geschwindigkeit ist bis Mitternacht gedrosselt.");
-                                                      put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Aktiviere <u>Bubble-Benachrichtigung</u> wenn das Fullspeedlimit ausgeschöpft ist");
-                                                      put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Aktiviere <u>Dialog-Benachrichtigung</u> wenn das Fullspeedlimit ausgeschöpft ist");
+                                                      put("FULLSPEED_TRAFFIC_NOTIFICATION_MSG", "Dein free-way.me Account wurde gemäß der AGB auf zwei parallele Downloads und unter 500kb/s gedrosselt.\r\nDiese Beschränkungen werden um 24 Uhr automatisch aufgehoben.\r\n\r\nDiese Benachrichtigung kann in den Plugin-Einstellungen deaktiviert werden.");
+                                                      put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Zeige Bubble-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
+                                                      put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Zeige Dialog-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
                                                   }
                                               };
 
@@ -188,13 +188,11 @@ public class FreeWayMe extends PluginForHost {
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOWRESUME, getPhrase("SETTING_RESUME")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREVENTSPRITUSAGE, getPhrase("SETTING_SPRITUSAGE")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BETAUSER, getPhrase("SETTING_BETA")).setDefaultValue(false));
+        // settings for notification on empty fullspeed traffic
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE, getPhrase("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NOTIFY_ON_FULLSPEED_LIMIT_DIALOG, getPhrase("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG")).setDefaultValue(true));
 
-        boolean isBeta = this.getPluginConfig().getBooleanProperty(BETAUSER, false);
-        if (isBeta) {
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE, getPhrase("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE")).setDefaultValue(false));
-            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NOTIFY_ON_FULLSPEED_LIMIT_DIALOG, getPhrase("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG")).setDefaultValue(false));
-        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BETAUSER, getPhrase("SETTING_BETA")).setDefaultValue(false));
     }
 
     @Override
@@ -213,8 +211,8 @@ public class FreeWayMe extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        br.setConnectTimeout(40 * 1000);
-        br.setReadTimeout(40 * 1000);
+        br.setConnectTimeout(45 * 1000);
+        br.setReadTimeout(45 * 1000);
         String username = Encoding.urlTotalEncode(account.getUser());
         String pass = Encoding.urlTotalEncode(account.getPass());
         String hosts[] = null;
@@ -260,7 +258,7 @@ public class FreeWayMe extends PluginForHost {
 
             if (trafficPerc > 95) {
                 // todays traffic limit reached...
-                String lastNotification = account.getStringProperty("LAST_SPEEDLIMIT_NOTIFICATION", null);
+                String lastNotification = account.getStringProperty("LAST_SPEEDLIMIT_NOTIFICATION", "default");
                 if (lastNotification != null) {
                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
                     String today = dateFormat.format(new Date());
@@ -275,13 +273,18 @@ public class FreeWayMe extends PluginForHost {
                             BubbleNotify.getInstance().show(no);
                         }
                         // search whether we have to notify by dialog
-                        boolean dialogNotify = this.getPluginConfig().getBooleanProperty(NOTIFY_ON_FULLSPEED_LIMIT_DIALOG, false);
+                        boolean dialogNotify = this.getPluginConfig().getBooleanProperty(NOTIFY_ON_FULLSPEED_LIMIT_DIALOG, true);
                         if (dialogNotify) {
-                            MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, getPhrase("FULLSPEED_TRAFFIC_NOTIFICATION_MSG"));
-                            try {
-                                Dialog.getInstance().showDialog(dialog);
-                            } catch (DialogNoAnswerException e) {
-                            }
+                            Thread t = new Thread(new Runnable() {
+                                public void run() {
+                                    MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, getPhrase("FULLSPEED_TRAFFIC_NOTIFICATION_MSG"));
+                                    try {
+                                        Dialog.getInstance().showDialog(dialog);
+                                    } catch (DialogNoAnswerException e) {
+                                    }
+                                }
+                            });
+                            t.start();
                         }
                     }
                 }
@@ -388,8 +391,8 @@ public class FreeWayMe extends PluginForHost {
         String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + "&encoded";
 
         // set timeout
-        br.setConnectTimeout(40 * 1000);
-        br.setReadTimeout(40 * 1000);
+        br.setConnectTimeout(45 * 1000);
+        br.setReadTimeout(45 * 1000);
 
         /* Begin workaround for wrong encoding while redirect */
         br.setFollowRedirects(false);
@@ -444,12 +447,11 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
-            } else if (error.equalsIgnoreCase("Unbekannter Fehler #3") || error.equalsIgnoreCase("Unbekannter Fehler #2") || error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
-                /*
-                 * "Unbekannter Fehler #3" -> free-way has internal routing problem "Es ist ein unbekannter Fehler aufgetreten (#1)" ->
-                 * free-way has internally no traffic for host
-                 */
-
+            } else if (error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)") // free-way has no traffic
+                    || error.equalsIgnoreCase("Unbekannter Fehler #2") // ???
+                    || error.equalsIgnoreCase("Unbekannter Fehler #3") // internal routing problem?
+                    || error.equalsIgnoreCase("Unbekannter Fehler #5") // internal interface down
+            ) {
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
