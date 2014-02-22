@@ -10,4 +10,7 @@ OnMinimizeAction_totaskbar=Минимизировать в панель зада
 OnMinimizeAction_totray=Спрятать в трей
 getName=Иконка в трее
 plugins_optional_JDLightTray_startMinimized=Запускать свернуто
+plugins_optional_trayIcon_dl_finished=Завершено:
+plugins_optional_trayIcon_dl_total=Всего:
 popup_exit=Выйти из JDownloader
+popup_update=Проверить обновления
