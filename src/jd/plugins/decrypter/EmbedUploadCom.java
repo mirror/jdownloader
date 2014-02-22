@@ -53,7 +53,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.76 Safari/537.36");
             br.setFollowRedirects(false);
             br.getPage(parameter);
-            if (br.containsHTML("Copyright Abuse <br>") || br.containsHTML("Invalid file name <") || br.getURL().equals("http://" + CURRENT_DOMAIN + "/?d=")) {
+            if (br.containsHTML("Copyright Abuse <br>|Invalid file name <|>Unfortunately, the file you are looking for is not available\\.\\s*<|Removed for copyright infringement or Invalid file name\\s*<") || br.getURL().equals("http://" + CURRENT_DOMAIN + "/?d=")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
