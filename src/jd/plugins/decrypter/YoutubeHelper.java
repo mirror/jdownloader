@@ -779,7 +779,7 @@ public class YoutubeHelper {
             if (date == null) {
                 formatter = new SimpleDateFormat("dd MMM yyyy", locale);
                 formatter.setTimeZone(TimeZone.getDefault());
-                date = this.br.getRegex("<strong>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(1);
+                date = this.br.getRegex("<strong>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(0);
             }
 
             if (date != null) {
