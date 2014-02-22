@@ -473,7 +473,8 @@ public class FreeWayMe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_BAN"));
             } else if (br.containsHTML(">Interner Fehler bei Findung eines stabilen Accounts<")) {
                 /*
-                 * after x retries we disable this host and retry with normal plugin
+                 * after x retries we disable this host and retry with normal plugin --> This error means that the free-way system cannot
+                 * find any working accounts for the current host at the moment
                  */
                 if (link.getLinkStatus().getRetryCount() >= 2) {
                     /* reset retrycounter */
