@@ -98,6 +98,7 @@ public class FreeWayMe extends PluginForHost {
                                                       put("ERROR_BAN", "Account banned");
                                                       put("ERROR_UNKNOWN", "Unknown error");
                                                       put("ERROR_UNKNOWN_FULL", "Unknown account status (deactivated)!");
+                                                      put("ERROR_NO_STABLE_ACCOUNTS", "Found no stable accounts");
                                                       put("CHECK_ZERO_HOSTERS", "Account valid: 0 Hosts via free-way.me available");
                                                       put("SUPPORTED_HOSTS_1", "Account valid: ");
                                                       put("SUPPORTED_HOSTS_2", " Hosts via free-way.me available");
@@ -139,6 +140,7 @@ public class FreeWayMe extends PluginForHost {
                                                       put("ERROR_BAN", "Account gesperrt!");
                                                       put("ERROR_UNKNOWN", "Unbekannter Fehler");
                                                       put("ERROR_UNKNOWN_FULL", "Unbekannter Accountstatus (deaktiviert)!");
+                                                      put("ERROR_NO_STABLE_ACCOUNTS", "Keine stabilen Accounts verfügbar");
                                                       put("CHECK_ZERO_HOSTERS", "Account gültig: 0 Hosts via free-way.me verfügbar");
                                                       put("SUPPORTED_HOSTS_1", "Account gültig: ");
                                                       put("SUPPORTED_HOSTS_2", " Hoster über free-way.me verfügbar");
@@ -332,7 +334,7 @@ public class FreeWayMe extends PluginForHost {
         // now let's get a list of all supported hosts:
         br.getPage(hostsUrl);
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
-        ArrayList<String> supportedHosts = new ArrayList<String>();
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
             if (!host.isEmpty()) {
                 supportedHosts.add(host.trim());
@@ -469,6 +471,18 @@ public class FreeWayMe extends PluginForHost {
                 logger.info("{handleMultiHost} free-way ip ban");
                 acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_BAN"));
                 throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_BAN"));
+            } else if (br.containsHTML(">Interner Fehler bei Findung eines stabilen Accounts<")) {
+                /*
+                 * after x retries we disable this host and retry with normal plugin
+                 */
+                if (link.getLinkStatus().getRetryCount() >= 2) {
+                    /* reset retrycounter */
+                    link.getLinkStatus().setRetryCount(0);
+                    logger.info(getPhrase("ERROR_NO_STABLE_ACCOUNTS") + " --> Disabling current host for 15 minutes");
+                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l, error);
+                }
+                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+                throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
             }
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
             int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
