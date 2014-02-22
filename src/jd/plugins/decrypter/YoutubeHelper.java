@@ -856,6 +856,26 @@ public class YoutubeHelper {
     }
 
     protected void handleContentWarning(final Browser br) throws Exception {
+        // not necessarily age related but violence/disturbing content?
+        // https://www.youtube.com/watch?v=Wx9GxXYKx_8 gets you
+        // <script>window.location = "http:\/\/www.youtube.com\/verify_controversy?next_url=\/watch%3Fv%3DWx9GxXYKx_8"</script>
+        // then from verify_controversy page
+        // <form action="/verify_controversy?action_confirm=1" method="POST">
+        // <p>
+        // <input type="hidden" name="session_token" value="UYIQVFoBkQKGHKCionXaE-OXh4Z8MTM5MzE2NTcyNUAxMzkzMDc5MzI1"/>
+        // <input type="hidden" name="referrer" value="">
+        // <input type="hidden" name="next_url" value="/watch?v=Wx9GxXYKx_8">
+        // <button onclick=";return true;" type="submit" class=" yt-uix-button yt-uix-button-primary yt-uix-button-size-default"
+        // role="button"><span class="yt-uix-button-content">Continue </span></button>
+        // or <a href="/">Cancel</a>
+        // </p>
+        // </form>
+        String vc = this.br.getRegex("\"([^\"]+verify_controversy\\?next_url[^\"]+)\"").getMatch(0);
+        if (vc != null) {
+            vc = vc.replaceAll("\\\\/", "/");
+            this.br.getPage(vc);
+        }
+
         // nsfw testlink https://www.youtube.com/watch?v=p7S_u5TzI-I
         // youtube shows an extra screen the first time a user wants to see a age-protected video.
         // <div class="content">
@@ -888,6 +908,11 @@ public class YoutubeHelper {
                     br.submitForm(form);
                     break;
                 }
+                if (form.getAction() != null && form.getAction().contains("verify_controversy")) {
+                    this.logger.info("Verify Controversy");
+                    br.submitForm(form);
+                    break;
+                }
             }
         }
 
@@ -916,7 +941,7 @@ public class YoutubeHelper {
         doFeedScan(vid);
         doUserAPIScan(vid);
         boolean getVideoInfoWorkaroundUsed = false;
-        if (this.br.containsHTML("age-gate")) {
+        if (this.br.containsHTML("age-gate|verify_controversy\\?next_url=")) {
             vid.ageCheck = true;
 
             this.handleContentWarning(this.br);
