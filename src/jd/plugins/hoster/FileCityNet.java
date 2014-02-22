@@ -53,18 +53,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4downfiles.com" }, urls = { "https?://(www\\.)?4downfiles\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class FourDownFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecity.net" }, urls = { "https?://(www\\.)?filecity\\.net/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class FileCityNet extends PluginForHost {
 
     private String               correctedBR                  = "";
     private String               passCode                     = null;
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://4downfiles.com";
+    private static final String  COOKIE_HOST                  = "http://filecity.net";
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(4downfiles\\.com)";
+    private static final String  DOMAINS                      = "(filecity\\.net)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -74,14 +74,14 @@ public class FourDownFilesCom extends PluginForHost {
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = -5;
-    private static final int     FREE_MAXDOWNLOADS            = 2;
+    private static final int     FREE_MAXCHUNKS               = -2;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 2;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 2;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
@@ -93,9 +93,9 @@ public class FourDownFilesCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.4
     // mods:
-    // limit-info: premium untested, set free account limits
+    // limit-info: premium untested
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: solvemedia
     // other:
 
     @Override
@@ -113,7 +113,7 @@ public class FourDownFilesCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public FourDownFilesCom(PluginWrapper wrapper) {
+    public FileCityNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }

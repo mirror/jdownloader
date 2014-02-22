@@ -76,6 +76,12 @@ public class TropicShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Waiting time: ")) {
+                final String minutes = br.getRegex("<span id=\"min\">(\\d+)</span>").getMatch(0);
+                final String seconds = br.getRegex("<span id=\"sec\">(\\d+)</span>").getMatch(0);
+                if (minutes != null && seconds != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001 + Integer.parseInt(seconds) * 1001l); }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -155,10 +161,8 @@ public class TropicShareCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         // br.getPage(link.getDownloadURL());
-        int maxChunks = 0;
-        if (link.getBooleanProperty(TropicShareCom.NOCHUNKS, false)) maxChunks = 1;
         final String dllink = "http://tropicshare.com/files/download/premium/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -188,7 +192,7 @@ public class TropicShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

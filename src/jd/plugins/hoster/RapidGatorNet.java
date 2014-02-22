@@ -92,6 +92,8 @@ public class RapidGatorNet extends PluginForHost {
     private static StringContainer lastIP               = new StringContainer();
     private final Pattern          IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private final String           EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
+    private final String           DISABLE_API_PREMIUM  = "DISABLE_API_PREMIUM";
+    // Used to switch to web if there are problems with the API - has no effect since the setting to prefer web method has been added
     private static AtomicBoolean   useAPI               = new AtomicBoolean(true);
     private final String           apiURL               = "https://rapidgator.net/api/";
 
@@ -493,18 +495,13 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         synchronized (LOCK) {
-            if (useAPI.get()) {
-                ai = fetchAccountInfo_api(account, ai);
-                if (!useAPI.get()) {
-                    br = new Browser();
-                    ai = new AccountInfo();
-                } else {
-                    return ai;
-                }
+            if (this.getPluginConfig().getBooleanProperty(DISABLE_API_PREMIUM, false)) {
+                return fetchAccountInfo_web(account, ai);
+            } else {
+                return fetchAccountInfo_api(account, ai);
             }
-            return fetchAccountInfo_web(account, ai);
         }
     }
 
@@ -608,7 +605,7 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, String> login_web(Account account, boolean force) throws Exception {
+    private Map<String, String> login_web(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -719,11 +716,11 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         correctDownloadLink(link);
-        if (useAPI.get()) {
-            handlePremium_api(link, account);
-        } else {
+        if (this.getPluginConfig().getBooleanProperty(this.DISABLE_API_PREMIUM, false)) {
             requestFileInformation(link);
             handlePremium_web(link, account);
+        } else {
+            handlePremium_api(link, account);
         }
     }
 
@@ -1043,8 +1040,9 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.rapidgatornet.useExperimentalWaittimeHandling", "Activate experimental waittime handling")).setDefaultValue(false);
-        getConfig().addEntry(cond);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.rapidgatornet.useExperimentalWaittimeHandling", "Activate experimental waittime handling?")).setDefaultValue(false));
+        // Some users always get server error 500 via API
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLE_API_PREMIUM, JDL.L("plugins.hoster.rapidgatornet.disableAPIPremium", "Disable API for premium downloads (use web download)?")).setDefaultValue(false));
     }
 
     @Override

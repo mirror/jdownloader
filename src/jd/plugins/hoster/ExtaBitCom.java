@@ -31,6 +31,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -87,7 +88,7 @@ public class ExtaBitCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         /*
          * They got a Mass-Linkchecker, but it's only available for registered users and doesn't show the filesize:
@@ -104,6 +105,12 @@ public class ExtaBitCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (final ConnectException ec) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (final BrowserException ebr) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
+                downloadLink.getLinkStatus().setStatusText("Host is currently in maintenance mode");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (br.containsHTML("(File not found|Such file doesn\\'t exsist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)download Extabit.com \\- file hosting</title>").getMatch(0);
@@ -254,6 +261,7 @@ public class ExtaBitCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.ExtaBitCom.errors.inMaintenance", "Host is currently in maintenance mode"), 2 * 60 * 60 * 1000l); }
         checkShowFreeDialog();
         int maxChunks = 1;
         boolean resume = false;

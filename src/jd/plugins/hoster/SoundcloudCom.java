@@ -59,6 +59,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     public final static String  CLIENTID                      = "b45b1aa10f1ac2941910a7f0d10f8e28";
+    public final static String  CLIENTID_8TRACKS              = "3904229f42df3999df223f6ebf39a8fe";
     public final static String  APP_VERSION                   = "87a698ff";
     private static final String CUSTOM_DATE                   = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME_2             = "CUSTOM_FILENAME_2";

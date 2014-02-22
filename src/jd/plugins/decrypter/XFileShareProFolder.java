@@ -68,7 +68,10 @@ public class XFileShareProFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("No such user exist")) {
             logger.warning("Incorrect URL or Invalid user : " + parameter);
-            return null;
+            return decryptedLinks;
+        } else if (parameter.contains("henchfile.com/") && br.containsHTML(">Free Download <span id=\"countdown_str\"")) {
+            logger.warning("Incorrect URL or Invalid user : " + parameter);
+            return decryptedLinks;
         }
         // name isn't needed, other than than text output for fpName.
         String fpName = new Regex(parameter, "folder/\\d+/.+/(.+)").getMatch(0); // name

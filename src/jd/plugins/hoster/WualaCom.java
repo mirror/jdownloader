@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wuala.com" }, urls = { "https://www\\.wuala\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]+/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wuala.com" }, urls = { "https://www\\.wualadecrypted\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]+/[^<>\"/]+(\\?key=[A-Za-z0-9]+)?" }, flags = { 0 })
 public class WualaCom extends PluginForHost {
 
     public WualaCom(PluginWrapper wrapper) {
@@ -40,21 +40,40 @@ public class WualaCom extends PluginForHost {
         return "https://www.wuala.com/de/about/legal";
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("wualadecrypted.com/", "wuala.com/"));
+    }
+
+    private String KEY = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage("https://www.wuala.com/sharing/wuala-server-list");
+        final String api_server = br.getRegex("\"apiservers\":\\[\"([a-z0-9]+)\"\\]\\}").getMatch(0);
+        if (api_server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.getPage("https://api2.wuala.com/previewSorted/" + getLinkpart(link) + "?il=0&ff=1");
+        br.getHeaders().put("X-Requested-With", null);
+        String parameters = "?il=0&ff=1";
+        final String link_part = getLinkpart(link);
+        if (KEY != null) {
+            parameters += "&key=" + KEY;
+        }
+        br.getPage("https://" + api_server + ".wuala.com/previewSorted/" + link_part + parameters);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<name>([^<>\"]*?)</name>").getMatch(0);
         if (filename == null) filename = getJson("basename");
+        filename = Encoding.deepHtmlDecode(filename);
         final String ext = getJson("ext");
         String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
         if (filesize == null) filesize = getJson("bytes");
         if (filename == null || filesize == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()) + "." + ext);
+        link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim()) + "." + ext));
         link.setDownloadSize(Long.parseLong(filesize));
         // final String md5 = br.getRegex("<hash>([A-F0-9]+)</hash>").getMatch(0);
         // if (md5 != null) link.setMD5Hash(md5);
@@ -64,7 +83,9 @@ public class WualaCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = "https://content.wuala.com/contents/" + getLinkpart(downloadLink) + "/?dl=1";
+        String parameters = "?dl=1";
+        if (KEY != null) parameters += "&key=" + KEY;
+        final String dllink = "https://content.wuala.com/contents/" + getLinkpart(downloadLink) + "/" + parameters;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -80,8 +101,27 @@ public class WualaCom extends PluginForHost {
     }
 
     private String getLinkpart(final DownloadLink dl) {
-        final String addedlink = Encoding.htmlDecode(dl.getDownloadURL());
-        return Encoding.urlEncode(new Regex(addedlink, "wuala\\.com/(.+)").getMatch(0));
+        String url_part = new Regex(dl.getDownloadURL(), "wuala\\.com/(.+)").getMatch(0);
+        KEY = new Regex(url_part, "\\?key=([A-Za-z0-9]+)").getMatch(0);
+        if (KEY != null) {
+            url_part = url_part.replace("?key=" + KEY, "");
+        }
+        return url_part;
+    }
+
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override
