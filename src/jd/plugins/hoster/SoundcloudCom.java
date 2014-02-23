@@ -100,7 +100,6 @@ public class SoundcloudCom extends PluginForHost {
             }
         }
         DLLINK = parameter.getStringProperty("directlink");
-        DLLINK = null;
         if (DLLINK != null) {
             checkDirectLink(parameter);
             if (DLLINK != null) {
