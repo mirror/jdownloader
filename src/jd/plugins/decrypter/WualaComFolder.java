@@ -29,51 +29,64 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wuala.com" }, urls = { "https://(www\\.)?www\\.wuala\\.com/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wuala.com" }, urls = { "https://(www\\.)?www\\.wuala\\.com/[^<>\"/]+/[^<>\"]+" }, flags = { 0 })
 public class WualaComFolder extends PluginForDecrypt {
 
     public WualaComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_SINGLE = "https?://(www\\.)?www\\.wuala\\.com/[^<>\"/]+/[^<>\"/]+/(?!\\?key=)[^<>\"/]+";
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches(TYPE_SINGLE)) {
-            decryptedLinks.add(createDownloadlink(parameter.replace("wuala.com/", "wualadecrypted.com/")));
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage("https://www.wuala.com/sharing/wuala-server-list");
+        final String api_server = br.getRegex("\"apiservers\":\\[\"([a-z0-9]+)\"\\]\\}").getMatch(0);
+        if (api_server == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        String parameters = "?il=0&ff=1";
+        String link_part = new Regex(parameter, "wuala\\.com/(.+)").getMatch(0);
+        final String key = new Regex(parameter, "\\?key=([A-Za-z0-9]+)").getMatch(0);
+        if (key != null) {
+            link_part = link_part.replace("?key=" + key, "");
+            parameters += "&key=" + key;
+        }
+        br.getPage("https://" + api_server + ".wuala.com/previewSorted/" + link_part + parameters);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = createDownloadlink("https://www.wualadecrypted.com/linkdown/linkdown/linkdown" + System.currentTimeMillis() + new Random().nextInt(10000000));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            offline.setName(new Regex(parameter, "wuala\\.com/(.+)").getMatch(0));
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
+        final String fpName = br.getRegex("<name>([^<>\"]*?)</name>").getMatch(0);
+        final String[] items = br.getRegex("(<item contentType.*?</item>)").getColumn(0);
+        if (items == null || items.length == 0) {
+            String filename = br.getRegex("<name>([^<>\"]*?)</name>").getMatch(0);
+            if (filename == null) filename = getJson("basename");
+            filename = Encoding.deepHtmlDecode(filename);
+            final String ext = getJson("ext");
+            String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
+            if (filesize == null) filesize = getJson("bytes");
+            final DownloadLink main = createDownloadlink(parameter.replace("http://", "https://").replace("wuala.com/", "wualadecrypted.com/"));
+            if (filename != null && filesize != null) {
+                filename = encodeUnicode(Encoding.htmlDecode(filename.trim()));
+                if (ext != null) filename += "." + ext;
+                main.setName(filename);
+                main.setDownloadSize(Long.parseLong(filesize));
+                main.setAvailable(true);
+            } else {
+                /* this should never happen */
+                main.setAvailable(false);
+            }
+            final String md5 = br.getRegex("<hash>([A-F0-9]+)</hash>").getMatch(0);
+            if (md5 != null) main.setMD5Hash(md5);
+            decryptedLinks.add(main);
         } else {
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("https://www.wuala.com/sharing/wuala-server-list");
-            final String api_server = br.getRegex("\"apiservers\":\\[\"([a-z0-9]+)\"\\]\\}").getMatch(0);
-            if (api_server == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            String parameters = "?il=0&ff=1";
-            String link_part = new Regex(parameter, "wuala\\.com/(.+)").getMatch(0);
-            final String key = new Regex(parameter, "\\?key=([A-Za-z0-9]+)").getMatch(0);
-            if (key != null) {
-                link_part = link_part.replace("?key=" + key, "");
-                parameters += "&key=" + key;
-            }
-            br.getPage("https://" + api_server + ".wuala.com/previewSorted/" + link_part + parameters);
-            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-                final DownloadLink offline = createDownloadlink("https://www.wualadecrypted.com/linkdown/linkdown/linkdown" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                offline.setName(new Regex(parameter, "wuala\\.com/(.+)").getMatch(0));
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            final String fpName = br.getRegex("<name>([^<>\"]*?)</name>").getMatch(0);
-            final String[] items = br.getRegex("(<item contentType.*?</item>)").getColumn(0);
-            if (items == null || items.length == 0 || fpName == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
             for (final String item : items) {
                 final String name = new Regex(item, "name=\"([^<>]*?)\"").getMatch(0);
                 final String filesize = new Regex(item, "size=\"(\\d+)\"").getMatch(0);
@@ -90,11 +103,19 @@ public class WualaComFolder extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
+    }
+
+    private String getJson(final String parameter) {
+        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
     }
 
     private String encodeUnicode(final String input) {

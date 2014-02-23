@@ -166,7 +166,7 @@ public class RealDebridCom extends PluginForHost {
         // real debrid connections are flakey at times! Do this instead of repeating download steps.
         int repeat = 3;
         for (int i = 0; i <= repeat; i++) {
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, true, maxChunks);
                 if (dl.getConnection().isContentDisposition()) {
@@ -203,9 +203,10 @@ public class RealDebridCom extends PluginForHost {
                         tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
                     }
                 }
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
                 if (e instanceof PluginException) throw (PluginException) e;
                 if (e instanceof InterruptedException) throw (InterruptedException) e;
+                logger.info("Download failed " + i + " of " + repeat);
                 sleep(3000, link);
                 LogSource.exception(logger, e);
                 continue;

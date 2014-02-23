@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wuala.com" }, urls = { "https://www\\.wualadecrypted\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]+/[^<>\"/]+(\\?key=[A-Za-z0-9]+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wuala.com" }, urls = { "https://www\\.wualadecrypted\\.com/[A-Za-z0-9\\-_]+/[^<>\"/]+/[^<>\"]+(\\?key=[A-Za-z0-9]+)?$" }, flags = { 0 })
 public class WualaCom extends PluginForHost {
 
     public WualaCom(PluginWrapper wrapper) {
@@ -72,11 +72,13 @@ public class WualaCom extends PluginForHost {
         final String ext = getJson("ext");
         String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
         if (filesize == null) filesize = getJson("bytes");
-        if (filename == null || filesize == null || ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(encodeUnicode(Encoding.htmlDecode(filename.trim()) + "." + ext));
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = encodeUnicode(Encoding.htmlDecode(filename.trim()));
+        if (ext != null) filename += "." + ext;
+        link.setName(filename);
         link.setDownloadSize(Long.parseLong(filesize));
-        // final String md5 = br.getRegex("<hash>([A-F0-9]+)</hash>").getMatch(0);
-        // if (md5 != null) link.setMD5Hash(md5);
+        final String md5 = br.getRegex("<hash>([A-F0-9]+)</hash>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
 

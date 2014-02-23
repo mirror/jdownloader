@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -37,9 +36,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/(de/)?file/[A-Za-z0-9]+(/.{1})?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/((de|en|hu|pl|sk)/)?file/[A-Za-z0-9]+(/.{1})?" }, flags = { 2 })
 public class StiahniSi extends PluginForHost {
 
     public StiahniSi(PluginWrapper wrapper) {
@@ -54,17 +52,23 @@ public class StiahniSi extends PluginForHost {
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("stahni.si/", "stiahni.si/"));
+        if (link.getDownloadURL().matches(TYPE_NEW)) {
+            link.setUrlDownload("http://www.stiahni.si/en/file/" + new Regex(link.getDownloadURL(), "file/(.+)").getMatch(0));
+        }
     }
 
     private static final boolean SKIPWAIT = false;
+    private static final String  TYPE_NEW = "http://(www\\.)?stiahni\\.si/((de|en|hu|pl|sk)/)?file/[A-Za-z0-9]+/.{1}";
+    private static final String  TYPE_OLD = "http://(www\\.)?stiahni\\.si/file/\\d+";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         // Offline links should also have nice filenames
-        link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        link.setName(new Regex(link.getDownloadURL(), "/file/(.+)").getMatch(0));
         this.setBrowserExclusive();
+        prepBr();
         br.setFollowRedirects(true);
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Stiahni\\.si \\-([^<>\"]*?)\\- Damn good file\\-hosting</title>").getMatch(0);
@@ -89,8 +93,7 @@ public class StiahniSi extends PluginForHost {
             sleep(wait * 1001l, downloadLink);
         }
         br.setFollowRedirects(false);
-        br.getPage("http://www.stiahni.si/fetch.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        final String dllink = "http://www.stiahni.si/de/freedownload?hash=" + new Regex(br.getURL(), "stiahni\\.si/(de/)?file/([A-Za-z0-9]+)").getMatch(0);
+        final String dllink = "http://www.stiahni.si/en/freedownload?hash=" + getFID();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Finish running downloads to start more", 2 * 60 * 1000l);
@@ -111,6 +114,7 @@ public class StiahniSi extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBr();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -125,10 +129,9 @@ public class StiahniSi extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
-                br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-                br.postPage("http://www.stiahni.si/user/login.php?r=reg", "remember=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML("name=\\'unsuccessful\\' value=\\'1\\'/>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("http://www.stiahni.si/en/login", "rememberMe=1&yt0=Sign+in&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5BoldPassword%5D=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("http://www.stiahni.si/en/index");
+                if (!br.containsHTML(">Log out</span>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -154,15 +157,19 @@ public class StiahniSi extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://www.stiahni.si/user/dashboard.php");
-        final String expire = br.getRegex("type=\\'hidden\\' name=\\'premiumUntil\\' value=\\'([^<>\"]*?)\\'/>").getMatch(0);
+        final String expire = br.getRegex("class=\"btn btn\\-info btn\\-sm\">(\\d+) Days</a>").getMatch(0);
         if (expire == null) {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", Locale.ENGLISH));
+            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire) * 24 * 60 * 60 * 1001l);
         }
-        ai.setUnlimitedTraffic();
+        final String traffic = br.getRegex("class=\"btn btn\\-success btn\\-sm\" >([^<>\"]*?)</a>").getMatch(0);
+        if (traffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(traffic));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
@@ -171,17 +178,29 @@ public class StiahniSi extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
+        /* Force login because they have no (working) cookies */
+        login(account, true);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        final String dllink = "http://www.stiahni.si/fetch.php?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), false, 1);
+        final String hash = br.getRegex("hash=([A-Za-z0-9\\-_]+)\\'").getMatch(0);
+        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink = "http://www.stiahni.si/en/download?hash=" + hash;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getFID() {
+        return new Regex(br.getURL(), "stiahni\\.si/([a-z]{2}/)?file/([A-Za-z0-9]+)").getMatch(1);
+    }
+
+    private void prepBr() {
+        br.setFollowRedirects(false);
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
     }
 
     @Override
