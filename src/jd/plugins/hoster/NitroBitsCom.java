@@ -150,10 +150,20 @@ public class NitroBitsCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("http://nitrobits.com/login.php", "submit=Sign+In&remember=on&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "nitrobits_user") == null || br.getCookie(MAINPAGE, "nitrobits_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String lang = System.getProperty("user.language");
+                if (br.getCookie(MAINPAGE, "nitrobits_user") == null || br.getCookie(MAINPAGE, "nitrobits_pass") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 if (!br.containsHTML("class=\"statusdet\">Premium</span></div>")) {
-                    logger.info("Login handling broken or invalid account type!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Account-Typ!\r\nSchnellhilfe: \r\nKostenlose Accounts werden für diesen Hoster nicht unterstützt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account-type!\r\nFree accounts are not supported for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -176,9 +186,9 @@ public class NitroBitsCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         br.getPage("http://nitrobits.com/account.php");
         ai.setUnlimitedTraffic();

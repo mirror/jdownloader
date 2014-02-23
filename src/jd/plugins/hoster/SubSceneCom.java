@@ -49,6 +49,19 @@ public class SubSceneCom extends PluginForHost {
         String filename = br.getRegex("<strong>Release info[^<>\"]+</strong>([^\"]*?)</li>").getMatch(0);
         if (filename == null) filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String rlses[] = filename.split("\r\n\t\t\t\t\t\t\t<div>");
+        if (rlses != null && rlses.length != 0) {
+            for (String release : rlses) {
+                release = release.trim();
+                if (!release.equals("")) {
+                    filename = release;
+                    break;
+                }
+            }
+        }
+        filename = filename.replace("\r", "");
+        filename = filename.replace("\t", "");
+        filename = filename.replace("\n", "");
         filename = filename.replace("<div>", "").replace("</div>", "");
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".zip");
         return AvailableStatus.TRUE;

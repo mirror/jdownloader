@@ -168,8 +168,7 @@ public class PutLockerCom extends PluginForHost {
             passCode = handlePassword(downloadLink);
         }
         final Form freeform = br.getForm(1);
-        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(freeform);
+        if (freeform != null) br.submitForm(freeform);
 
         checkForErrors();
 

@@ -68,6 +68,35 @@ public class FileRioCom extends PluginForHost {
     }
 
     @Override
+    public boolean isPremiumEnabled() {
+        return ("filerio.com".equalsIgnoreCase(getHost()) || "filekeen.com".equalsIgnoreCase(getHost()) || "filerio.in".equalsIgnoreCase(getHost()));
+    }
+
+    @Override
+    public Boolean rewriteHost(final Account acc) {
+        if ("filerio.com".equals(getHost()) || "filekeen.com".equalsIgnoreCase(getHost())) {
+            if (acc != null && ("filekeen".equals(acc.getHoster()) || "filerio.com".equalsIgnoreCase(getHost()))) {
+                acc.setHoster("filerio.in");
+                return true;
+            }
+            return false;
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean rewriteHost(final DownloadLink link) {
+        if ("filerio.com".equals(getHost()) || "filekeen.com".equalsIgnoreCase(getHost())) {
+            if (link != null && ("filerio.com".equals(getHost()) || "filekeen.com".equalsIgnoreCase(getHost()))) {
+                link.setHost("filerio.in");
+                return true;
+            }
+            return false;
+        }
+        return null;
+    }
+
+    @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
@@ -481,6 +510,7 @@ public class FileRioCom extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
+            account.setConcurrentUsePossible(false);
         } else {
             String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
@@ -491,6 +521,7 @@ public class FileRioCom extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium User");
         }
         return ai;
@@ -567,11 +598,11 @@ public class FileRioCom extends PluginForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("redirect", "http://filerio.in/");
+                loginform.remove(null);
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(Upgrade to premium|\"Extend Premium Account\")").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "\"Extend Premium Account\"").matches()) {
+                if (!correctedBR.contains("\"Extend Premium Account\"")) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);

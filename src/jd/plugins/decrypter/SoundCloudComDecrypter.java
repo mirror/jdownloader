@@ -46,7 +46,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String CLIENTID           = "b45b1aa10f1ac2941910a7f0d10f8e28";
     private static final String INVALIDLINKS       = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
     private static final String PLAYLISTAPILINK    = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
 
@@ -99,15 +98,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
             parameter = newparameter;
         } else if (parameter.matches("https?://api\\.soundcloud\\.com/tracks/\\d+")) {
-            br.getPage("https://api.soundcloud.com/tracks/" + new Regex(parameter, "(\\d+)$").getMatch(0) + "?client_id=" + SoundCloudComDecrypter.CLIENTID + "&format=json");
-            if (br.containsHTML("\"error_message\":\"404 \\- Not Found\"")) {
-                final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                dl.setAvailable(false);
-                dl.setProperty("offline", true);
-                dl.setName(parameter);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
             String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[a-z0-9\\-_]+)?)\"").getMatch(0);
             if (newparameter == null) {
                 logger.warning("Decrypter failed on redirect link: " + parameter);
@@ -117,7 +107,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             parameter = newparameter;
         } else if (parameter.matches(PLAYLISTAPILINK)) {
             final Regex info = new Regex(parameter, "api\\.soundcloud\\.com/playlists/(\\d+)\\?secret_token=([A-Za-z0-9\\-_]+)");
-            br.getPage("https://api.sndcdn.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + SoundCloudComDecrypter.CLIENTID + "&format=json");
+            br.getPage("https://api.sndcdn.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&format=json");
             String newparameter = br.getRegex("\"permalink_url\":\"(http://(www\\.)?soundcloud\\.com/[^<>\"/]*?/sets/[^<>\"]*?)\"").getMatch(0);
             if (newparameter == null) {
                 logger.warning("Decrypter failed on redirect link: " + parameter);
@@ -155,7 +145,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             if (parameter.contains("/sets/")) {
                 playlistname = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
                 if (playlistname == null) playlistname = new Regex(parameter, "/sets/(.+)$").getMatch(0);
-                username = (((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("username", br.toString()));
+                username = jd.plugins.hoster.SoundcloudCom.getXML("username", br.toString());
                 final String[] items = br.getRegex("<track>(.*?)</track>").getColumn(0);
                 final String usernameOfSet = new Regex(parameter, "soundcloud\\.com/(.*?)/sets/").getMatch(0);
                 if (items == null || items.length == 0 || usernameOfSet == null) {
@@ -164,7 +154,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
                 int counter = 1;
                 for (final String item : items) {
-                    final String permalink = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("permalink", item);
+                    final String permalink = jd.plugins.hoster.SoundcloudCom.getXML("permalink", item);
                     if (permalink == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
@@ -173,7 +163,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     if (song_username == null) song_username = usernameOfSet;
                     final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + song_username + "/" + permalink);
                     dl.setProperty("setsposition", counter + ".");
-                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item, false);
+                    final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, item, false);
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);
                     if (decrypt500Thumb) {
@@ -198,7 +188,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
             } else {
                 // Decrypt all tracks of a user
-                username = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("username", br.toString());
+                username = jd.plugins.hoster.SoundcloudCom.getXML("username", br.toString());
                 if (username == null) username = getJson("username");
                 if (username == null) username = new Regex(parameter, "soundcloud\\.com/(.+)").getMatch(0);
                 String userID = br.getRegex("<uri>https://api\\.soundcloud\\.com/users/(\\d+)").getMatch(0);
@@ -231,7 +221,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     for (final String item : items) {
-                        final String url = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getXML("permalink", item);
+                        final String url = jd.plugins.hoster.SoundcloudCom.getXML("permalink", item);
                         if (url == null) {
                             logger.warning("Decrypter broken for link: " + parameter);
                             return null;
@@ -242,7 +232,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         } else {
                             dl = createDownloadlink(parameter.replace("soundcloud.com/", "soundclouddecrypted.com/") + "/" + url);
                         }
-                        final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, item, false);
+                        final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, item, false);
                         dl.setAvailableStatus(status);
                         if (decrypt500Thumb) {
                             try {
@@ -293,10 +283,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                         return decryptedLinks;
                     }
-                    br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID);
+                    br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
                     // Add soundcloud link
                     final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
-                    final AvailableStatus status = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).checkStatus(dl, this.br.toString(), false);
+                    final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, this.br.toString(), false);
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);
 
@@ -340,7 +330,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             thumb.setProperty("plainfilename", audiolink.getStringProperty("plainfilename", null) + "_500x500");
             thumb.setProperty("channel", audiolink.getStringProperty("channel", null));
             thumb.setProperty("type", "jpg");
-            final String formattedFilename = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getFormattedFilename(thumb);
+            final String formattedFilename = jd.plugins.hoster.SoundcloudCom.getFormattedFilename(thumb);
             thumb.setFinalFileName(formattedFilename);
             thumb.setAvailable(true);
         }
@@ -358,7 +348,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             thumb.setProperty("plainfilename", audiolink.getStringProperty("plainfilename", null) + "_original");
             thumb.setProperty("channel", audiolink.getStringProperty("channel", null));
             thumb.setProperty("type", "jpg");
-            final String formattedFilename = ((jd.plugins.hoster.SoundcloudCom) HOSTPLUGIN).getFormattedFilename(thumb);
+            final String formattedFilename = jd.plugins.hoster.SoundcloudCom.getFormattedFilename(thumb);
             thumb.setFinalFileName(formattedFilename);
             thumb.setAvailable(true);
         }

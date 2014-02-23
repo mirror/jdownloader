@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/(download\\.php\\?id=|file/)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahni.si" }, urls = { "http://(www\\.)?(stiahni|stahni)\\.si/(de/)?file/[A-Za-z0-9]+(/.{1})?" }, flags = { 2 })
 public class StiahniSi extends PluginForHost {
 
     public StiahniSi(PluginWrapper wrapper) {
@@ -52,8 +52,8 @@ public class StiahniSi extends PluginForHost {
         return "http://www.stiahni.si/contact.php";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://www.stiahni.si/download.php?id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("stahni.si/", "stiahni.si/"));
     }
 
     private static final boolean SKIPWAIT = false;
@@ -65,16 +65,14 @@ public class StiahniSi extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        br.getPage("http://www.stiahni.si/download.php?lg=en&id=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Súbor nebol nájdený<|>Súbor nikto nestiahol viac ako|The file you are trying to download has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Download ([^<>\"]*?) \\- Stiahni\\.si</title>").getMatch(0);
+        br.getPage(link.getDownloadURL());
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>Stiahni\\.si \\-([^<>\"]*?)\\- Damn good file\\-hosting</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"file_download_name\">([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex("Size: ([^<>\"]*?)<br/>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
-        final String ext = br.getRegex("tiahni\\.si/showicon\\.php\\?id=([a-z0-9]+)\\&").getMatch(0);
-        if (ext != null && !filename.endsWith("." + ext)) filename += "." + ext;
-        link.setName(filename);
+        link.setFinalFileName(filename);
         if (br.containsHTML("has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -83,24 +81,22 @@ public class StiahniSi extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("You cannot download more than one file at once")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Finish running downloads to start more", 2 * 60 * 1000l);
+        if (br.containsHTML(">You cannot download more than one file at once<")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Finish running downloads to start more", 2 * 60 * 1000l);
         if (!SKIPWAIT) {
-            if (br.containsHTML("All free slots are currently occupied")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment", 10 * 60 * 1000l);
-            final String waittime = br.getRegex("var limit='(\\d+):00'").getMatch(0);
+            final String waittime = br.getRegex("var parselimit = (\\d+);").getMatch(0);
             int wait = 60;
-            if (waittime != null) wait = Integer.parseInt(waittime) * 60;
+            if (waittime != null) wait = Integer.parseInt(waittime);
             sleep(wait * 1001l, downloadLink);
         }
         br.setFollowRedirects(false);
         br.getPage("http://www.stiahni.si/fetch.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink = "http://www.stiahni.si/de/freedownload?hash=" + new Regex(br.getURL(), "stiahni\\.si/(de/)?file/([A-Za-z0-9]+)").getMatch(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Finish running downloads to start more", 2 * 60 * 1000l);
             br.followConnection();
-            if (br.containsHTML("Error: all free slots are currently occupied")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment", 10 * 60 * 1000l);
             // too many concurrent connections?? or something else not sure.
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000);
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Finish running downloads to start more", 2 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
