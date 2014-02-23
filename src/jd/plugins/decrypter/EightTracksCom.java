@@ -120,14 +120,14 @@ public class EightTracksCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            // Get token
+            /* Get token */
             clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
             final String playToken = getClipData("play_token");
             if (playToken == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            // Play one track, then skip one track so we can re-use the token later for all links which really speeds up this whole process
+            /* Play one track, then skip one track so we can re-use the token later for all links which really speeds up this whole */
             clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
             final String trackid = updateTrackID();
             if (trackid == null) {
