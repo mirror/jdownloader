@@ -930,17 +930,16 @@ public class YoutubeHelper {
 
         getAbsolute(base + "/watch?v=" + vid.videoID, null, br);
 
+        handleRentalVideos(vid);
         // check if video is private
         final String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
         if (unavailableReason != null) {
             String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
-            if (subError == null || subError.matches("\\s*")) {
-                handleRentalVideos(vid);
-                subError = unavailableReason.trim();
+            if (subError != null && !subError.matches("\\s*")) {
+                logger.warning(subError);
+                vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
+                return null;
             }
-            logger.warning(subError);
-            vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
-            return null;
         }
         this.extractData(vid);
         doFeedScan(vid);
