@@ -58,35 +58,6 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
     public JComponent layoutDialogContent() {
         final JPanel p = new MigPanel("ins 0,wrap 1", "[]", "[][]");
 
-        // JTextPane textField = new JTextPane() {
-        // private static final long serialVersionUID = 1L;
-        //
-        // @Override
-        // public boolean getScrollableTracksViewportWidth() {
-        //
-        // return !BinaryLogic.containsAll(flagMask, Dialog.STYLE_LARGE);
-        // }
-        //
-        // public boolean getScrollableTracksViewportHeight() {
-        // return true;
-        // }
-        // };
-        //
-        // textField.setContentType("text/plain");
-        //
-        // textField.setText(_GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_msg2());
-        // textField.setEditable(false);
-        // textField.setBackground(null);
-        // textField.setOpaque(false);
-        // textField.putClientProperty("Synthetica.opaque", Boolean.FALSE);
-        // textField.setCaretPosition(0);
-        //
-        // // inout dialog can become too large(height) if we do not limit the
-        // // prefered textFIled size here.
-        // textField.setPreferredSize(textField.getPreferredSize());
-        //
-        //
-        //
         String packagename = downloadLink.getParentNode().getName();
         p.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "split 2,sizegroup left,alignx left");
         p.add(leftLabel(downloadLink.getName()));
