@@ -61,7 +61,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+" }, flags = { 0, 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
     public TbCmV2(PluginWrapper wrapper) {
@@ -176,10 +176,15 @@ public class TbCmV2 extends PluginForDecrypt {
         cleanedurl = cleanedurl.replace("youtube.jd", "youtube.com");
         String videoID = getVideoIDByUrl(cleanedurl);
 
+        // for watch_videos, found within youtube.com music
+        String watch_videos = new Regex(cleanedurl, "video_ids=([a-zA-Z0-9\\-_,]+)").getMatch(0);
+        if (watch_videos != null) {
+            // first uid in array is the video the user copy url on.
+            videoID = new Regex(watch_videos, "([a-zA-Z0-9\\-_]+)").getMatch(0);
+        }
         String playlistID = getListIDByUrls(cleanedurl);
         String userID = new Regex(cleanedurl, "/user/([A-Za-z0-9\\-_]+)").getMatch(0);
         String channelID = new Regex(cleanedurl, "/channel/([A-Za-z0-9\\-_]+)").getMatch(0);
-        // Some Stable errorhandling
 
         ArrayList<String[]> linkstodecrypt = new ArrayList<String[]>();
         YoutubeHelper helper = getCachedHelper();
@@ -189,7 +194,7 @@ public class TbCmV2 extends PluginForDecrypt {
         // Check if link contains a video and a playlist
 
         IfUrlisAVideoAndPlaylistAction action = cfg.getLinkIsVideoAndPlaylistUrlAction();
-        if (StringUtils.isNotEmpty(playlistID) && StringUtils.isNotEmpty(videoID)) {
+        if ((StringUtils.isNotEmpty(playlistID) || StringUtils.isNotEmpty(watch_videos)) && StringUtils.isNotEmpty(videoID)) {
 
             if (action == IfUrlisAVideoAndPlaylistAction.ASK) {
                 ConfirmDialog confirm = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, cleanedurl, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video and a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist")) {
@@ -215,6 +220,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 break;
             case VIDEO_ONLY:
                 playlistID = null;
+                watch_videos = null;
                 break;
             default:
                 return decryptedLinks;
@@ -229,6 +235,7 @@ public class TbCmV2 extends PluginForDecrypt {
             if (videoIdsToAdd.size() == 0 && StringUtils.isNotEmpty(playlistID)) {
                 videoIdsToAdd.addAll(parseGeneric(cleanedurl));
             }
+            videoIdsToAdd.addAll(parseVideoIds(watch_videos));
             videoIdsToAdd.addAll(parseUsergrid(userID));
             videoIdsToAdd.addAll(parseChannelgrid(channelID));
             if (StringUtils.isNotEmpty(videoID) && dupeCheckSet.add(videoID)) {
@@ -874,6 +881,26 @@ public class TbCmV2 extends PluginForDecrypt {
                 }
             }
 
+        }
+        return ret;
+    }
+
+    /**
+     * parses 'video_ids=' array, primarily used with watch_videos link
+     */
+    public ArrayList<YoutubeClipData> parseVideoIds(String video_ids) throws IOException, InterruptedException {
+        // /watch_videos?title=Trending&video_ids=0KSOMA3QBU0,uT3SBzmDxGk,X7Xf8DsTWgs,72WhEqeS6AQ,Qc9c12q3mrc,6l7J1i1OkKs,zeu2tI-tqvs,o3mP3mJDL2k,jYdaQJzcAcw&feature=c4-overview&type=0&more_url=
+        ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
+        int counter = 1;
+        if (StringUtils.isNotEmpty(video_ids)) {
+            String[] videos = new Regex(video_ids, "([A-Za-z0-9\\-_]+)").getColumn(0);
+            if (videos != null) {
+                for (String vid : videos) {
+                    if (dupeCheckSet.add(vid)) {
+                        ret.add(new YoutubeClipData(vid, counter++));
+                    }
+                }
+            }
         }
         return ret;
     }
