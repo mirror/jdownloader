@@ -1,5 +1,6 @@
 RestartController_confirmToExit_=Segur que voleu sortir?
 RestartController_confirmToExit_msg=Segur que voleu sortir del JDownloader?
+RestartController_confirmTorestart_msg=Segur que voleu reiniciar el JDownloader?
 TranslationProxyDialogAuthRequired=El JDownloader no s'ha pogut connectar a %s1! El vostre Servidor Proxy requereix autentificació.\nComproveu les vostres credencials...
 TranslationProxyDialogNoConnection=El JDownloader no s'ha pogut connectar a %s1! Si us plau, comproveu la configuració de la connexió...
 confirmdialog_new_update_available_answer_later=Més tard
@@ -19,7 +20,6 @@ error_last_chance_message=El JDownloader no ha pogut instal·lar l'última actua
 error_last_chance_title=Error d'actualització!
 errordialog_frametitle=Ha succeït un error
 errordialog_noconnection=El JDownloader no s'ha pogut connectar al servidor d'actualitzacions.\nSi us plau, comproveu la connexió a Internet.
-errordialog_server_locked=El servidor d'actualitzacions està ocupat. Si us plau, torneu-ho a intentar al cap d'uns minuts.
 guiless_you_are_up2date=Ja teniu l'última versió
 installframe_frametitle=Actualitzador del JDownloader
 installframe_statusmsg_checkselfupdate=Contactant amb el servidor...
