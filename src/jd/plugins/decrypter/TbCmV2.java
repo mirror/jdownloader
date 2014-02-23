@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -107,15 +106,14 @@ public class TbCmV2 extends PluginForDecrypt {
         return vuid;
     }
 
-    private final String                playListRegex   = "(\\?|&)(play)?list=[A-Za-z0-9\\-_]+";
-    private final String                courseListRegex = "/course\\?list=[A-Za-z0-9\\-_]+";
-    private final String                userListRegex   = "/user/[A-Za-z0-9\\-_]+";
+    private final String    playListRegex   = "(\\?|&)(play)?list=[A-Za-z0-9\\-_]+";
+    private final String    courseListRegex = "/course\\?list=[A-Za-z0-9\\-_]+";
+    private final String    userListRegex   = "/user/[A-Za-z0-9\\-_]+";
 
-    private final LinkedHashSet<String> dupeList        = new LinkedHashSet<String>();
-    private HashSet<String>             dupeCheckSet;
+    private HashSet<String> dupeCheckSet;
 
-    private YoutubeConfig               cfg;
-    private YoutubeHelper               cachedHelper;
+    private YoutubeConfig   cfg;
+    private YoutubeHelper   cachedHelper;
 
     public class VariantInfo implements Comparable<VariantInfo> {
 

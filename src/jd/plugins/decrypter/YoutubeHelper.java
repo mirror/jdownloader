@@ -931,12 +931,17 @@ public class YoutubeHelper {
         getAbsolute(base + "/watch?v=" + vid.videoID, null, br);
 
         // check if video is private
-        final String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"  player-width player-height    player-unavailable \">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
+        final String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
         if (unavailableReason != null) {
+            String subError = br.getRegex("<div id=\"unavailable-submessage\" class=\"[^\"]*\">(.*?)</div>").getMatch(0);
+            if (subError == null || subError.matches("\\s*")) {
+                handleRentalVideos(vid);
+                subError = unavailableReason.trim();
+            }
+            logger.warning(subError);
             vid.error = Encoding.htmlDecode(unavailableReason.replaceAll("\\+", " ").trim());
             return null;
         }
-        if (this.br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
         this.extractData(vid);
         doFeedScan(vid);
         doUserAPIScan(vid);
@@ -1055,6 +1060,14 @@ public class YoutubeHelper {
         }
 
         return ret;
+    }
+
+    private void handleRentalVideos(YoutubeClipData vid) throws Exception {
+        String rentalText = br.getRegex("\"ypc_video_rental_bar_text\"\\s*\\:\\s*\"([^\"]+)").getMatch(0);
+        if (StringUtils.isNotEmpty(rentalText)) {
+            logger.warning("Download not possible: " + rentalText);
+            throw new Exception("Rental Video: " + rentalText);
+        }
     }
 
     private void doUserAPIScan(YoutubeClipData vid) throws IOException {
