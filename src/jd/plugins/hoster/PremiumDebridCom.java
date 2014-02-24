@@ -360,8 +360,7 @@ public class PremiumDebridCom extends PluginForHost {
 
     private String generatedllink_generator(final DownloadLink dl, final Account acc) throws IOException, PluginException {
         final String url = Encoding.urlEncode(dl.getDownloadURL());
-        br.getPage("http://premiumdebrid.com/generator.php");
-        br.getPage("http://www.premiumdebrid.com/link_generator/");
+        br.getPage("http://www.premiumdebrid.com/dl.php");
         if (br.containsHTML(PASSNEEDED)) {
             synchronized (LOCK) {
                 br.setFollowRedirects(false);
@@ -400,7 +399,7 @@ public class PremiumDebridCom extends PluginForHost {
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "*/*");
-        br.postPage("http://www.premiumdebrid.com/link_generator/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url);
+        br.postPage("http://www.premiumdebrid.com/dl.php?rand=0." + System.currentTimeMillis(), "urllist=" + url);
         if (br.containsHTML("Hoster could not be parsed from link, the link was invalid or the hoster is not supported")) {
             logger.info("premiumdebrid.com: Disabling current host because server says 'Hoster could not be parsed from link, the link was invalid or the hoster is not supported'");
             tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
@@ -409,7 +408,7 @@ public class PremiumDebridCom extends PluginForHost {
             tempUnavailableHoster(acc, dl, 2 * 60 * 60 * 1000l);
         }
         String dllink = br.getRegex("here to download\\' href=\\'(https?[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\\'|\")(https?://(www\\.)?premiumdebrid\\.com/link_generator/\\?file=[A-Za-z0-9]+)(\\'|\")").getMatch(1);
+        if (dllink == null) dllink = br.getRegex("(\\'|\")(https?://(www\\.)?premiumdebrid\\.com/dl\\.php\\?file=[A-Za-z0-9]+)(\\'|\")").getMatch(1);
         return dllink;
     }
 
