@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.in", "filerio.com", "filekeen.com" }, urls = { "http://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior", "vSGzhkIKEfRUhbUNUSED_REGEXfdgdadadrtjRET36fdfjhtwe85t7459zghwghior" }, flags = { 2, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.in", "filerio.com", "filekeen.com" }, urls = { "http://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior", "vSGzhkIKEfRUhbUNUSED_REGEXfdgdadadrtjRET36fdfjhtwe85t7459zghwghior1" }, flags = { 2, 0, 0 })
 public class FileRioCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -67,12 +67,14 @@ public class FileRioCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replaceAll("(filerio|filekeen)\\.com/", "filerio.in/"));
     }
 
-    @Override
     public boolean isPremiumEnabled() {
-        return ("filerio.com".equalsIgnoreCase(getHost()) || "filekeen.com".equalsIgnoreCase(getHost()) || "filerio.in".equalsIgnoreCase(getHost()));
+        /*
+         * we only want to show filerio.in,so controller sees filerio.com and filekeen.com accounts but plugin no longer exists/supports
+         * account, then the rewriteHost stuff takes over
+         */
+        return "filerio.in".equalsIgnoreCase(getHost());
     }
 
-    @Override
     public Boolean rewriteHost(final Account acc) {
         if ("filerio.com".equals(getHost()) || "filekeen.com".equalsIgnoreCase(getHost())) {
             if (acc != null && ("filekeen".equals(acc.getHoster()) || "filerio.com".equalsIgnoreCase(getHost()))) {
@@ -84,7 +86,6 @@ public class FileRioCom extends PluginForHost {
         return null;
     }
 
-    @Override
     public Boolean rewriteHost(final DownloadLink link) {
         if ("filerio.com".equals(getHost()) || "filekeen.com".equalsIgnoreCase(getHost())) {
             if (link != null && ("filerio.com".equals(getHost()) || "filekeen.com".equalsIgnoreCase(getHost()))) {
@@ -510,7 +511,10 @@ public class FileRioCom extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
-            account.setConcurrentUsePossible(false);
+            try {
+                account.setConcurrentUsePossible(false);
+            } catch (Throwable e) {
+            }
         } else {
             String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
@@ -521,7 +525,10 @@ public class FileRioCom extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
-            account.setConcurrentUsePossible(true);
+            try {
+                account.setConcurrentUsePossible(true);
+            } catch (Throwable e) {
+            }
             ai.setStatus("Premium User");
         }
         return ai;
@@ -654,7 +661,7 @@ public class FileRioCom extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
             /* free accounts also have captchas */
             return true;
         }
