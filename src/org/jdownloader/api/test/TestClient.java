@@ -207,6 +207,7 @@ public class TestClient {
         register(new TerminateSessionTest());
         register(new RequestAccessTokenTest());
         register(new CancelRegistrationTest());
+        register(new CallAccessTokenURL());
         JacksonMapper jm;
         JSonStorage.setMapper(jm = new JacksonMapper());
         
@@ -293,7 +294,14 @@ public class TestClient {
                         final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
                         final HashMap<String, String> header = new HashMap<String, String>();
                         header.put(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "" + sendBytes.length);
-                        final String url = getServerRoot() + query;
+                        final String url;
+                        if (query == null) {
+                            url = getServerRoot();
+                        } else if (query.startsWith("http")) {
+                            url = query;
+                        } else {
+                            url = getServerRoot() + query;
+                        }
                         con = br.openPostConnection(new URL(url), null, new ByteArrayInputStream(sendBytes), header);
                         final String content_Encoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
                         if (con.getResponseCode() == 200) {
@@ -314,7 +322,15 @@ public class TestClient {
                         }
                     } else {
                         br.putRequestHeader("Accept-Encoding", null);
-                        ret = br.postPage(new URL(getServerRoot() + query), object == null ? "" : object).getBytes("UTF-8");
+                        final String url;
+                        if (query == null) {
+                            url = getServerRoot();
+                        } else if (query.startsWith("http")) {
+                            url = query;
+                        } else {
+                            url = getServerRoot() + query;
+                        }
+                        ret = br.postPage(new URL(url), object == null ? "" : object).getBytes("UTF-8");
                         con = br.getConnection();
                     }
                     
@@ -341,7 +357,7 @@ public class TestClient {
         
         api.setServerRoot("http://api.jdownloader.org");
         
-        api.setServerRoot("http://192.168.2.110:10101");
+        // api.setServerRoot("http://192.168.2.110:10101");
         
         if (false) {
             api.connect(config.get("email", ""), config.get("password", ""));
