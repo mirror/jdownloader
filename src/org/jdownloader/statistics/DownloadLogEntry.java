@@ -12,45 +12,7 @@ public class DownloadLogEntry extends AbstractLogEntry {
         return JSonStorage.toString(this);
     }
 
-    private int    chunks  = 0;
-    private String country = null;
-    private String isp     = null;
-
-    public String getIsp() {
-        return isp;
-    }
-
-    private long timestamp = 0;
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    private long sessionStart = 0;
-
-    public long getSessionStart() {
-        return sessionStart;
-    }
-
-    public void setSessionStart(long sessionStart) {
-        this.sessionStart = sessionStart;
-    }
-
-    public void setIsp(String isp) {
-        this.isp = isp;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
+    private int chunks = 0;
 
     public int getChunks() {
         return chunks;
@@ -70,16 +32,6 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     public boolean isCanceled() {
         return canceled;
-    }
-
-    private String os = "WINDOWS";
-
-    public String getOs() {
-        return os;
-    }
-
-    public void setOs(String os) {
-        this.os = os;
     }
 
     public void setCanceled(boolean canceled) {
@@ -128,16 +80,6 @@ public class DownloadLogEntry extends AbstractLogEntry {
         this.errorID = errorID;
     }
 
-    private int utcOffset = 0;
-
-    public int getUtcOffset() {
-        return utcOffset;
-    }
-
-    public void setUtcOffset(int utcOffset) {
-        this.utcOffset = utcOffset;
-    }
-
     public void setCaptchaRuntime(long captchaRuntime) {
         this.captchaRuntime = captchaRuntime;
     }
@@ -181,12 +123,8 @@ public class DownloadLogEntry extends AbstractLogEntry {
     private boolean proxy   = false;
     private int     counter = 1;
     private long    linkID  = -1;
-    private long    buildTime;
-    private String  host;
 
-    public long getBuildTime() {
-        return buildTime;
-    }
+    private String  host;
 
     public long getLinkID() {
         return linkID;
@@ -210,10 +148,6 @@ public class DownloadLogEntry extends AbstractLogEntry {
 
     public void setLinkID(long id) {
         this.linkID = id;
-    }
-
-    public void setBuildTime(long parseLong) {
-        this.buildTime = parseLong;
     }
 
     public void setHost(String host) {

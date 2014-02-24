@@ -49,7 +49,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
@@ -345,7 +344,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     return; }
                     voteWindow = null;
                 }
-                Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
+                // Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
 
                 voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
                 voteWindow = new VoteFinderWindow(false);
@@ -362,7 +361,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     return; }
                     voteWindow = null;
                 }
-                Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
+                // Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
 
                 voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
                 voteWindow = new VoteFinderWindow(true);

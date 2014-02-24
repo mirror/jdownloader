@@ -4494,4 +4494,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "<html>Click here if there is a problem with this option:<br>\"<b>%s1</b>\"</html>" })
     String AbstractConfigPanel_layoutDirectFeedback_vote_negative(String text);
 
+    @Default(lngs = { "en" }, values = { "Thank you for your Feedback." })
+    String VoteFinderWindow_runInEDT_thankyou_();
+
+    @Default(lngs = { "en" }, values = { "More Details required!" })
+    String StatsManager_run_requestMessage_title();
+
+    @Default(lngs = { "en" }, values = { "We need some more details about your feedback. Please explain:" })
+    String StatsManager_run_requestMessage_message();
+
+    @Default(lngs = { "en" }, values = { "Send" })
+    String lit_send();
+
 }

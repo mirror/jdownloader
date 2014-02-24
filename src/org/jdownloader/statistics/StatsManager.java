@@ -31,6 +31,7 @@ import jd.gui.swing.jdgui.DirectFeedback;
 import jd.gui.swing.jdgui.DownloadFeedBack;
 import jd.gui.swing.jdgui.MenuItemFeedback;
 import jd.http.Browser;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -46,6 +47,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.CloseReason;
+import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
@@ -57,6 +59,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.logging2.sendlogs.LogFolder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.InputDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.swing.dialog.ProgressInterface;
@@ -506,7 +510,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public static enum ActionID {
 
         REQUEST_LOG,
-        REQUEST_ERROR_DETAILS;
+        REQUEST_ERROR_DETAILS,
+        REQUEST_MESSAGE;
     }
 
     public static enum PushResponseCode {
@@ -582,12 +587,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         while (true) {
             ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
             ArrayList<AbstractLogEntry> sendRequest = new ArrayList<AbstractLogEntry>();
-            Browser br = new Browser();
-            final int[] codes = new int[999];
-            for (int i = 0; i < codes.length; i++) {
-                codes[i] = i;
-            }
-            br.setAllowedResponseCodes(codes);
+            Browser br = createBrowser();
             try {
                 while (list.size() == 0) {
                     synchronized (list) {
@@ -614,8 +614,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                             // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
 
-                            Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<Response>() {
-                            });
+                            Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<RIDWrapper<Response>>() {
+                            }).getData();
                             switch (response.getCode()) {
                             case OK:
                                 PostAction[] actions = response.getActions();
@@ -623,7 +623,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                     for (final PostAction action : actions) {
                                         if (action != null) {
                                             switch (action.getId()) {
-
+                                            case REQUEST_MESSAGE:
+                                                requestMessage(action);
+                                                break;
                                             case REQUEST_ERROR_DETAILS:
                                                 ErrorDetails error = errors.get(action.getData());
                                                 if (error != null) {
@@ -770,31 +772,48 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         }
     }
 
-    private void sendLogDetails(LogDetails log) throws StorageException, IOException {
+    private void requestMessage(final PostAction action) {
+        new Thread("Log Requestor") {
+            @Override
+            public void run() {
+                InputDialogInterface d = UIOManager.I().show(InputDialogInterface.class, new InputDialog(Dialog.STYLE_LARGE, _GUI._.StatsManager_run_requestMessage_title(), _GUI._.StatsManager_run_requestMessage_message(), null, null, _GUI._.lit_send(), null));
+                if (d.getCloseReason() == CloseReason.OK) {
+                    try {
+                        sendMessage(d.getText(), action);
+                    } catch (Exception e) {
+                        logger.log(e);
+                    }
+                }
+            }
+        }.start();
+
+    }
+
+    public Browser createBrowser() {
         Browser br = new Browser();
         final int[] codes = new int[999];
         for (int i = 0; i < codes.length; i++) {
             codes[i] = i;
         }
         br.setAllowedResponseCodes(codes);
+        return br;
+    }
+
+    private void sendLogDetails(LogDetails log) throws StorageException, IOException {
+        Browser br = createBrowser();
         br.postPageRaw(getBase() + "stats/sendLog", JSonStorage.serializeToJson(log));
 
     }
 
     private void sendErrorDetails(ErrorDetails error) throws StorageException, IOException {
-        Browser br = new Browser();
-        final int[] codes = new int[999];
-        for (int i = 0; i < codes.length; i++) {
-            codes[i] = i;
-        }
-        br.setAllowedResponseCodes(codes);
+        Browser br = createBrowser();
         br.postPageRaw(getBase() + "stats/sendError", JSonStorage.serializeToJson(error));
 
     }
 
     private String getBase() {
         if (!Application.isJared(null) && false) return "http://localhost:8888/";
-        if (!Application.isJared(null) && false) return "http://192.168.2.250:81/thomas/fcgi/";
+        if (!Application.isJared(null) && true) return "http://192.168.2.250:81/thomas/fcgi/";
         return "http://stats.appwork.org/jcgi/";
     }
 
@@ -810,6 +829,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             ArrayList<Candidate> possibleAccounts = new ArrayList<Candidate>();
             AccountCache accountCache = new DownloadSession().getAccountCache(link);
             for (CachedAccount s : accountCache) {
+                Account acc = s.getAccount();
+                if (acc != null && !acc.isEnabled()) continue;
                 possibleAccounts.add(Candidate.create(s));
             }
 
@@ -838,12 +859,135 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 counterMap.put(id, errorCounter = new AtomicInteger());
             }
             dl.setCounter(errorCounter.incrementAndGet());
-            log(dl);
+            sendFeedback(dl);
         } else if (feedback instanceof BasicIDFeedback) {
+            BasicIDFeedbackLogEntry dl = new BasicIDFeedbackLogEntry(feedback.isPositive(), ((BasicIDFeedback) feedback).getId());
+            try {
+                HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+                });
 
+                dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
+            } catch (Exception e) {
+            }
+
+            dl.setOs(CrossSystem.getOSFamily().name());
+            dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
+            dl.setTimestamp(System.currentTimeMillis());
+            dl.setSessionStart(sessionStart);
+            log(dl);
         } else if (feedback instanceof MenuItemFeedback) {
+            ActionFeedbackLogEntry dl = new ActionFeedbackLogEntry(feedback.isPositive(), ((MenuItemFeedback) feedback).getMenuItemData());
+            try {
+                HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+                });
 
+                dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
+            } catch (Exception e) {
+            }
+
+            dl.setOs(CrossSystem.getOSFamily().name());
+            dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
+            dl.setTimestamp(System.currentTimeMillis());
+            dl.setSessionStart(sessionStart);
+            log(dl);
         }
+
+    }
+
+    private void sendFeedback(AbstractFeedbackLogEntry dl) {
+        Browser br = createBrowser();
+        ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
+        sendTo.add(new LogEntryWrapper(dl, LogEntryWrapper.VERSION));
+        try {
+            br.postPageRaw(getBase() + "stats/push", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));
+
+            // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
+
+            Response response = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), new TypeRef<RIDWrapper<Response>>() {
+            }).getData();
+            switch (response.getCode()) {
+            case FAILED:
+                break;
+            case KILL:
+                break;
+
+            case OK:
+
+                PostAction[] actions = response.getActions();
+                if (actions != null) {
+                    for (final PostAction action : actions) {
+                        try {
+                            if (action != null) {
+                                switch (action.getId()) {
+                                case REQUEST_MESSAGE:
+                                    requestMessage(action);
+                                    break;
+                                case REQUEST_ERROR_DETAILS:
+                                    break;
+
+                                case REQUEST_LOG:
+
+                                    new Thread("Log Requestor") {
+                                        @Override
+                                        public void run() {
+                                            UploadGeneralSessionLogDialogInterface d = UIOManager.I().show(UploadGeneralSessionLogDialogInterface.class, new UploadGeneralSessionLogDialog());
+                                            if (d.getCloseReason() == CloseReason.OK) {
+                                                UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
+
+                                                    @Override
+                                                    public void run() throws Exception {
+                                                        createAndUploadLog(action);
+                                                    }
+
+                                                    @Override
+                                                    public String getString() {
+                                                        return null;
+                                                    }
+
+                                                    @Override
+                                                    public int getProgress() {
+                                                        return -1;
+                                                    }
+
+                                                    @Override
+                                                    public String getLabelString() {
+                                                        return null;
+                                                    }
+                                                }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
+                                                    public java.awt.Dialog.ModalityType getModalityType() {
+                                                        return ModalityType.MODELESS;
+                                                    };
+                                                });
+                                            }
+                                        }
+                                    }.start();
+                                    // non-error related log request
+                                }
+                                // if (StringUtils.equals(getErrorID(), action.getData())) {
+                                // StatsManager.I().sendLogs(getErrorID(),);
+                                // }
+
+                            }
+                        } catch (Exception e) {
+                            logger.log(e);
+
+                        }
+                    }
+                }
+
+            }
+
+        } catch (StorageException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void sendMessage(String text, PostAction action) throws StorageException, IOException {
+
+        Browser br = createBrowser();
+        br.postPageRaw(getBase() + "stats/sendMessage", JSonStorage.serializeToJson(new MessageData(text, action.getData())));
 
     }
 }

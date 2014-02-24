@@ -44,10 +44,12 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.ExtJWindow;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtMergedIcon;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.ColorUtils;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.controlling.contextmenu.MenuItemData;
@@ -477,6 +479,14 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
                         StatsManager.I().feedback(feedback);
                         setVisible(false);
                         dispose();
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+
+                                UIOManager.I().showMessageDialog(_GUI._.VoteFinderWindow_runInEDT_thankyou_());
+                            }
+                        };
                     }
                 }
             }

@@ -20,55 +20,6 @@ public class DownloadFeedbackLogEntry extends AbstractFeedbackLogEntry implement
         return JSonStorage.toString(this);
     }
 
-    private String country = null;
-    private String isp     = null;
-
-    public String getIsp() {
-        return isp;
-    }
-
-    private long timestamp = 0;
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    private long sessionStart = 0;
-
-    public long getSessionStart() {
-        return sessionStart;
-    }
-
-    public void setSessionStart(long sessionStart) {
-        this.sessionStart = sessionStart;
-    }
-
-    public void setIsp(String isp) {
-        this.isp = isp;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    private String os = "WINDOWS";
-
-    public String getOs() {
-        return os;
-    }
-
-    public void setOs(String os) {
-        this.os = os;
-    }
-
     private ArrayList<Candidate> candidates = null;
 
     public ArrayList<Candidate> getCandidates() {
@@ -77,16 +28,6 @@ public class DownloadFeedbackLogEntry extends AbstractFeedbackLogEntry implement
 
     public void setCandidates(ArrayList<Candidate> candidates) {
         this.candidates = candidates;
-    }
-
-    private int utcOffset = 0;
-
-    public int getUtcOffset() {
-        return utcOffset;
-    }
-
-    public void setUtcOffset(int utcOffset) {
-        this.utcOffset = utcOffset;
     }
 
     public long getFilesize() {
@@ -100,16 +41,12 @@ public class DownloadFeedbackLogEntry extends AbstractFeedbackLogEntry implement
     private long   filesize = 0;
 
     private long   linkID   = -1;
-    private long   buildTime;
+
     private String host;
     private int    counter;
 
     public String getHost() {
         return host;
-    }
-
-    public long getBuildTime() {
-        return buildTime;
     }
 
     public long getLinkID() {
@@ -118,10 +55,6 @@ public class DownloadFeedbackLogEntry extends AbstractFeedbackLogEntry implement
 
     public void setLinkID(long id) {
         this.linkID = id;
-    }
-
-    public void setBuildTime(long parseLong) {
-        this.buildTime = parseLong;
     }
 
     public void setHost(String host) {
