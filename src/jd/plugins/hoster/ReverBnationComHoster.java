@@ -48,6 +48,51 @@ public class ReverBnationComHoster extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("http://", ""));
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        br.setDebug(true);
+        br.setFollowRedirects(false);
+        // alternative Downloadmethode
+        final Regex infoRegex = new Regex(downloadLink.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
+        br.postPage("http://www.reverbnation.com/controller/audio_player/download_song/" + infoRegex.getMatch(0) + "?modal=true", "");
+        String dllink = br.getRegex("location\\.href=\\'(.*?)\\'").getMatch(0);
+        // der harte Weg
+        if (dllink == null) {
+            dllink = getDllink(downloadLink);
+        }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Probably no correct file
+        if (dl.getConnection().getLongContentLength() < 40000) {
+            if (downloadLink.getBooleanProperty("downloadstream")) throw new PluginException(LinkStatus.ERROR_FATAL, "This song is not downloadable");
+            downloadLink.setProperty("downloadstream", true);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        String amzName = dl.getConnection().getHeaderField("x-amz-meta-filename");
+        if (amzName != null) {
+            downloadLink.setFinalFileName(amzName);
+        } else {
+            String name = Plugin.getFileNameFromHeader(dl.getConnection());
+            if ("flash9-en.ocx".equals(name)) {
+                /* workaround for dirty name */
+                String orgName = downloadLink.getStringProperty("orgName", null);
+                if (orgName != null) downloadLink.setFinalFileName(orgName);
+            }
+        }
+        dl.startDownload();
+    }
+
     private String getBps(final String crap, final String sID) throws PluginException {
         /*
          * Ich habe es mit BigInteger versucht!
@@ -112,49 +157,9 @@ public class ReverBnationComHoster extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setDebug(true);
-        br.setFollowRedirects(false);
-        // alternative Downloadmethode
-        final Regex infoRegex = new Regex(downloadLink.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
-        br.postPage("http://www.reverbnation.com/controller/audio_player/download_song/" + infoRegex.getMatch(0) + "?modal=true", "");
-        String dllink = br.getRegex("location\\.href='(.*?)'").getMatch(0);
-        // der harte Weg
-        if (dllink == null) {
-            dllink = getDllink(downloadLink);
-        }
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // Probably no correct file
-        if (dl.getConnection().getLongContentLength() < 40000) {
-            if (downloadLink.getBooleanProperty("downloadstream")) throw new PluginException(LinkStatus.ERROR_FATAL, "This song is not downloadable");
-            downloadLink.setProperty("downloadstream", true);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        String amzName = dl.getConnection().getHeaderField("x-amz-meta-filename");
-        if (amzName != null) {
-            downloadLink.setFinalFileName(amzName);
-        } else {
-            String name = Plugin.getFileNameFromHeader(dl.getConnection());
-            if ("flash9-en.ocx".equals(name)) {
-                /* workaround for dirty name */
-                String orgName = downloadLink.getStringProperty("orgName", null);
-                if (orgName != null) downloadLink.setFinalFileName(orgName);
-            }
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        setBrowserExclusive();
-        return AvailableStatus.TRUE;
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override

@@ -33,13 +33,15 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
 public class EightTracksCom extends PluginForDecrypt {
 
-    private static final String UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage|sets/new)";
-    private static final String TYPE_SINGLE_TRACK = "http://(www\\.)?8tracks\\.com/tracks/\\d+";
+    private static final String  MAINPAGE          = "http://8tracks.com/";
+    private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage|sets/new)";
+    private static final String  TYPE_SINGLE_TRACK = "http://(www\\.)?8tracks\\.com/tracks/\\d+";
 
-    private static final String MAINPAGE          = "http://8tracks.com/";
-    private String              clipData;
+    private String               clipData;
+    private static final String  TEMP_EXT          = ".mp3";
 
-    private static final String TEMP_EXT          = ".mp3";
+    private static final boolean TEST_MODE         = false;
+    private static final String  TEST_MODE_TOKEN   = null;
 
     public EightTracksCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -120,21 +122,26 @@ public class EightTracksCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            /* Get token */
-            clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
-            final String playToken = getClipData("play_token");
-            if (playToken == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            String playToken = null;
+            if (TEST_MODE && TEST_MODE_TOKEN != null) {
+                playToken = "608739506";
+            } else {
+                /* Get token */
+                clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
+                playToken = getClipData("play_token");
+                if (playToken == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                /* Play one track, then skip one track so we can re-use the token later for all links which really speeds up this whole */
+                clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
+                final String trackid = updateTrackID();
+                if (trackid == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + trackid + "&format=jsonh");
             }
-            /* Play one track, then skip one track so we can re-use the token later for all links which really speeds up this whole */
-            clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
-            final String trackid = updateTrackID();
-            if (trackid == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + trackid + "&format=jsonh");
 
             final int tracks_in_mix = Integer.parseInt(tracksInMix);
             for (int i = 1; i <= tracks_in_mix; i++) {

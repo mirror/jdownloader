@@ -264,7 +264,8 @@ public class PremiumDebridCom extends PluginForHost {
         showMessage(link, "Phase 2/2: Download begins!");
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (dl.getConnection().getContentType().contains("html")) {
+        /* It may happen that they send text/html as content type even though they send files */
+        if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getLongContentLength() < br.getLoadLimit()) {
             br.followConnection();
             logger.info("premiumdebrid.com: Unknown download error");
             int timesFailed = link.getIntegerProperty("timesfailedpremiumdebridcom_unknowndlerror", 1);
