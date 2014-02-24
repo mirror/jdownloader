@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
 import jd.PluginWrapper;
@@ -288,10 +289,25 @@ public class AppleTrailer extends PluginForDecrypt {
                         url = url.replace("apple.com/", "appledecrypted.com/");
                         String pSize = new Regex(url, "(\\d+)p?\\.mov").getMatch(0);
                         DownloadLink dlLink = createDownloadlink(url);
-                        dlLink.setFinalFileName(filename + " (" + pSize + "_SD)" + extension);
+                        dlLink.setFinalFileName(filename + " (" + p_q(pSize) + ")" + extension);
                         dlLink.setAvailable(true);
                         dlLink.setProperty("Referer", br1.getURL());
                         decryptedLinks.add(dlLink);
+                        // lets see if we can add the other formats 20140224, generally found links are 480 others are cock blocked.
+                        ArrayList<String> p = new ArrayList<String>(Arrays.asList(new String[] { "480", "720", "1080" }));
+                        // remove what we have already added, maybe they change the default qual from 480
+                        p.remove(pSize);
+                        while (p.size() != 0) {
+                            final String n = p.get(0);
+                            final String u = url.replace(pSize, n);
+                            if (dupe.add(u) == false) continue;
+                            DownloadLink d = createDownloadlink(u);
+                            d.setFinalFileName(filename + " (" + p_q(n) + ")" + extension);
+                            d.setAvailable(true);
+                            d.setProperty("Referer", br1.getURL());
+                            decryptedLinks.add(d);
+                            p.remove(n);
+                        }
                     }
                 } else {
                     String[] vids = new Regex(hit, "<li class=\"hd\">(.*?)</li>").getColumn(0);
@@ -365,7 +381,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     String url = new Regex(sd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.mov)").getMatch(0);
                     if (dupe.add(url) == false) continue;
                     String pSize = new Regex(url, "(\\d+)\\.mov").getMatch(0);
-                    String name = title + " - " + names[h] + " (" + pSize + "_SD).mov";
+                    String name = title + " - " + names[h] + " (" + p_q(pSize) + ").mov";
                     DownloadLink dlLink = createDownloadlink(url.replace(".apple.com", ".appledecrypted.com"));
                     dlLink.setFinalFileName(name);
                     dlLink.setProperty("Referer", br1.getURL());
@@ -380,7 +396,7 @@ public class AppleTrailer extends PluginForDecrypt {
                     String url = new Regex(hd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.mov)").getMatch(0);
                     if (dupe.add(url) == false) continue;
                     String pSize = new Regex(url, "(\\d+)p\\.mov").getMatch(0);
-                    String name = title + " - " + names[h] + " (" + pSize + "_HD).mov";
+                    String name = title + " - " + names[h] + " (" + p_q(pSize) + ").mov";
                     String size = hdSizes[z];
                     DownloadLink dlLink = createDownloadlink(url.replace(".apple.com", ".appledecrypted.com"));
                     if (size != null) dlLink.setDownloadSize(SizeFormatter.getSize(size));
@@ -391,6 +407,14 @@ public class AppleTrailer extends PluginForDecrypt {
                 }
             }
         }
+    }
+
+    private String p_q(final String p) {
+        final int dd = Integer.parseInt(p);
+        if (dd >= 720)
+            return p + "p_HD";
+        else
+            return p + "p_SD";
     }
 
     /* NO OVERRIDE!! */
