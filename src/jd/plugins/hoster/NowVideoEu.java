@@ -44,56 +44,56 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
-
+    
     public NowVideoEu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE.string + "/premium.php");
     }
-
+    
     @Override
     public String getAGBLink() {
         return MAINPAGE.string + "/terms.php";
     }
-
+    
     public static class StringContainer {
         public String string = null;
-
+        
         public StringContainer(String string) {
             this.string = string;
         }
-
+        
         @Override
         public String toString() {
             return string;
         }
     }
-
+    
     public Boolean rewriteHost(DownloadLink link) {
         if ("nowvideo.eu".equals(getHost())) {
-            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.eu".equals(link.getHost()))) {
-                link.setHost("nowvideo.sx");
+            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.sx".equals(link.getHost()))) {
+                link.setHost("nowvideo.eu");
                 return true;
             }
             return false;
         }
         return null;
     }
-
+    
     public Boolean rewriteHost(Account acc) {
         if ("nowvideo.eu".equals(getHost())) {
-            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.eu".equals(acc.getHoster()))) {
-                acc.setHoster("nowvideo.sx");
+            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.sx".equals(acc.getHoster()))) {
+                acc.setHoster("nowvideo.eu");
                 return true;
             }
             return false;
         }
         return null;
     }
-
+    
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(MAINPAGE.string + "/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
-
+    
     private static void workAroundTimeOut(final Browser br) {
         try {
             if (br != null) {
@@ -103,16 +103,15 @@ public class NowVideoEu extends PluginForHost {
         } catch (final Throwable e) {
         }
     }
-
+    
     private void correctCurrentDomain() {
         if (AVAILABLE_PRECHECK.get() == false) {
             synchronized (LOCK) {
                 if (AVAILABLE_PRECHECK.get() == false) {
                     /*
-                     * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before
-                     * proceeding.
+                     * For example .eu domain are blocked from some Italian ISP, and .co from others, so need to test all domains before proceeding.
                      */
-
+                    
                     String CCtld = validateHost();
                     if (CCtld != null) {
                         ccTLD.string = CCtld;
@@ -124,10 +123,10 @@ public class NowVideoEu extends PluginForHost {
             }
         }
     }
-
+    
     private String validateHost() {
         final String[] ccTLDs = { "sx", "eu", "co", "ch" };
-
+        
         for (int i = 0; i < ccTLDs.length; i++) {
             String CCtld = ccTLDs[i];
             try {
@@ -147,14 +146,14 @@ public class NowVideoEu extends PluginForHost {
         }
         return null;
     }
-
+    
     private static Object          LOCK               = new Object();
     private static StringContainer MAINPAGE           = new StringContainer("http://www.nowvideo.sx");
     private static StringContainer ccTLD              = new StringContainer("sx");
     private static final String    ISBEINGCONVERTED   = ">The file is being converted.";
     private static AtomicBoolean   AVAILABLE_PRECHECK = new AtomicBoolean(false);
     private static StringContainer agent              = new StringContainer(null);
-
+    
     private Browser prepBrowser(Browser prepBr) {
         if (agent.string == null) {
             /* we first have to load the plugin, before we can reference it */
@@ -164,7 +163,7 @@ public class NowVideoEu extends PluginForHost {
         prepBr.getHeaders().put("User-Agent", agent.string);
         return prepBr;
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         prepBrowser(br);
@@ -184,13 +183,13 @@ public class NowVideoEu extends PluginForHost {
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
-
+    
     private void doFree(final DownloadLink downloadLink) throws Exception {
         if (br.containsHTML(ISBEINGCONVERTED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
@@ -211,7 +210,7 @@ public class NowVideoEu extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     private String unWise() {
         String result = null;
         String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
@@ -233,19 +232,19 @@ public class NowVideoEu extends PluginForHost {
         }
         return result;
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     /**
-     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original
-     * videos as premiumuser->Senseless!!
+     * Dev note: Never buy premium from them, as freeuser you have no limits, as premium neither and you can't even download the original videos as
+     * premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
@@ -287,7 +286,7 @@ public class NowVideoEu extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -303,7 +302,7 @@ public class NowVideoEu extends PluginForHost {
         ai.setStatus("Valid account");
         return ai;
     }
-
+    
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -324,14 +323,14 @@ public class NowVideoEu extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
 }
