@@ -359,9 +359,9 @@ public class OverLoadMe extends PluginForHost {
                 statusMessage = "\r\nCurrent host is not supported";
                 tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000l);
             case 3:
-                /* Traffic gone */
-                statusMessage = "No traffic left";
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                /* No traffic left for current host */
+                statusMessage = "No traffic left for current host";
+                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
             case 4:
                 /* Database connect error */
                 statusMessage = "Could not connect to database";
