@@ -157,7 +157,7 @@ public class RemoteAPIController {
             }
 
             @Override
-            protected RemoteAPIResponse createRemoteAPIResponseObject(HttpResponse response) {
+            protected RemoteAPIResponse createRemoteAPIResponseObject(RemoteAPIRequest request, HttpResponse response) {
                 return new MyJDRmoteAPIResponse(response, this);
             }
 
