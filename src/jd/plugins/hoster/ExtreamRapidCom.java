@@ -129,7 +129,6 @@ public class ExtreamRapidCom extends PluginForHost {
                 supportedHosts.add("uploaded.to");
             }
         }
-        supportedHosts.remove("youtube.com");
 
         if (supportedHosts.size() == 0) {
             ac.setStatus("Account valid: 0 Hosts via " + NICE_HOST + " available");

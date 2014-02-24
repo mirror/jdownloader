@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ypaste.com" }, urls = { "http://(www\\.)?ypaste\\.com/\\d+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ypaste.com" }, urls = { "http://(www\\.)?ypaste\\.com/\\d+(/\\d+)?" }, flags = { 0 })
 public class YPasteCom extends PluginForDecrypt {
 
     public YPasteCom(PluginWrapper wrapper) {

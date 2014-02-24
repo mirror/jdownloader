@@ -43,6 +43,8 @@ public class OneThousandEbCom extends PluginForHost {
         super(wrapper);
     }
 
+    private static final String NOCHUNKS = "NOCHUNKS";
+
     private String fortyTwo(String s) {
         s = Encoding.Base64Decode(s);
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
@@ -60,20 +62,65 @@ public class OneThousandEbCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("1000eb.com/exception_") || br.containsHTML("你要下载的文件已经不存在</span>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("\" title=\"点击查看 ([^<>\"\\']+) 的访问统计\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\">文件名</div>[\t\n\r ]+<div class=\"infotext singlerow\" title=\"([^<>\"\\']+)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("name=\"dl\" href=\"/[a-z0-9]+\"> ([^<>\"\\']+) 的下载地址：</a>").getMatch(0);
+            }
+        }
+        String filesize = br.getRegex("class=\"infotitle\">文件大小</div>[\t\n\r ]+<div class=\"infotext\">([^<>\"\\']+)</div>").getMatch(0);
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        filesize = filesize.replace("M", "MB");
+        filesize = filesize.replace("K", "KB");
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         // final String js =
         // br.getRegex("src=\"(http://static\\.1000eb\\.com/combo/[^<>]+/file\\.js\\&t=\\d+)\">").getMatch(0);
         final String dllink = requestDownloadLink("http://static.1000eb.com/www/js/file/base.js?2013042501");
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(OneThousandEbCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(OneThousandEbCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(OneThousandEbCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(OneThousandEbCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     private String jsExecute(final String fun, final boolean b) {
@@ -132,28 +179,6 @@ public class OneThousandEbCom extends PluginForHost {
 
         // finalen Link bauen
         return jsExecute(sb.toString(), false);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("1000eb.com/exception_") || br.containsHTML("你要下载的文件已经不存在</span>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("\" title=\"点击查看 ([^<>\"\\']+) 的访问统计\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\">文件名</div>[\t\n\r ]+<div class=\"infotext singlerow\" title=\"([^<>\"\\']+)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("name=\"dl\" href=\"/[a-z0-9]+\"> ([^<>\"\\']+) 的下载地址：</a>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("class=\"infotitle\">文件大小</div>[\t\n\r ]+<div class=\"infotext\">([^<>\"\\']+)</div>").getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        filesize = filesize.replace("M", "MB");
-        filesize = filesize.replace("K", "KB");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

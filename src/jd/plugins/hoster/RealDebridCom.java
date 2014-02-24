@@ -443,7 +443,6 @@ public class RealDebridCom extends PluginForHost {
             }
             String[] hosts = new Regex(hostsSup, "\"([^\"]+)\"").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            // supportedHosts.remove("netload.in");
             if (supportedHosts.contains("freakshare.net")) {
                 supportedHosts.add("freakshare.com");
             }

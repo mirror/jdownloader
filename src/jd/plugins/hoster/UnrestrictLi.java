@@ -395,11 +395,6 @@ public class UnrestrictLi extends PluginForHost {
             String apihosts = br.cloneBrowser().getPage("http://unrestrict.li/api/jdownloader/hosts.php");
             String[] hosts = new Regex(apihosts, "<host>(.*?)</host>").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-            // remove youtube support from this multihoster. Our youtube plugin works from cdn/cached final links and this does not work
-            // with multihosters as it has geolocation issues. To over come this we need to pass the watch link and not decrypted finallink
-            // results...
-            supportedHosts.remove("youtube.com");
-            supportedHosts.remove("youtu.be");
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
             account.setProperty("multiHostSupport", Property.NULL);

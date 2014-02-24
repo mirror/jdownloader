@@ -276,7 +276,6 @@ public class FileniumCom extends PluginForHost {
         String hostsSup = br.cloneBrowser().getPage("http://" + SELECTEDDOMAIN + "/jddomains");
         String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        supportedHosts.remove("vk.com");
         if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
             if (!supportedHosts.contains("uploaded.net")) {
                 supportedHosts.add("uploaded.net");

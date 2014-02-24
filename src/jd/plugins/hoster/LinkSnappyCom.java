@@ -100,7 +100,6 @@ public class LinkSnappyCom extends PluginForHost {
                 supportedHosts.add("uploaded.to");
             }
         }
-        supportedHosts.remove("youtube.com");
         account.setValid(true);
         if (supportedHosts.size() == 0) {
             ac.setStatus("Account valid: 0 Hosts via linksnappy.com available");
