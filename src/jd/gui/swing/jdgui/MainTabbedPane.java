@@ -45,6 +45,9 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.IconKey;
@@ -54,6 +57,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
@@ -74,6 +78,8 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     private boolean               voteUpMouseOver;
 
     private VoteFinderWindow      voteWindow;
+
+    private boolean               paintDirectFeedback;
 
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) INSTANCE = new MainTabbedPane();
@@ -131,6 +137,34 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         this.setOpaque(false);
         voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
         voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
+        paintDirectFeedback = CFG_GUI.DIRECT_FEEDBACK_BUTTONS_ENABLED.isEnabled();
+        CFG_GUI.DIRECT_FEEDBACK_BUTTONS_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                paintDirectFeedback = newValue;
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        if (!paintDirectFeedback) {
+                            if (voteWindow != null && voteWindow.isVisible()) {
+
+                                voteWindow.setVisible(false);
+                                voteWindow.dispose();
+
+                                voteWindow = null;
+                            }
+                        }
+                        repaint();
+                    }
+                };
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
 
         osrText = _GUI._.vote_label();
         JLabel dummyLbl = new JLabel();
@@ -182,24 +216,26 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         super.paint(g);
         if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(false);
 
-        Graphics2D g2 = (Graphics2D) g;
-        int height = 22;
+        if (paintDirectFeedback) {
+            Graphics2D g2 = (Graphics2D) g;
+            int height = 22;
 
-        g2.setFont(osrFont);
-        g2.setColor(Color.GRAY);
+            g2.setFont(osrFont);
+            g2.setColor(Color.GRAY);
 
-        Rectangle2D bounds = g2.getFontMetrics().getStringBounds(osrText, g2);
-        int width = (int) (voteDown.getIconWidth() * 2 + 5 + bounds.getWidth()) + 5;
-        // g2.setColor(Color.RED);
-        // g2.drawRect(getWidth() - width, 2, width, height);
+            Rectangle2D bounds = g2.getFontMetrics().getStringBounds(osrText, g2);
+            int width = (int) (voteDown.getIconWidth() * 2 + 5 + bounds.getWidth()) + 5;
+            // g2.setColor(Color.RED);
+            // g2.drawRect(getWidth() - width, 2, width, height);
 
-        g2.drawString(osrText, getWidth() - width, (int) (2 + (height - bounds.getHeight()) / 2) + (int) bounds.getHeight());
+            g2.drawString(osrText, getWidth() - width, (int) (2 + (height - bounds.getHeight()) / 2) + (int) bounds.getHeight());
 
-        voteDown.paintIcon(this, g2, getWidth() - voteDown.getIconWidth() - 2 - 24 - 2, 3 + (height - voteDown.getIconHeight()) / 2);
-        voteUp.paintIcon(this, g2, getWidth() - voteUp.getIconWidth() - 2 - 2, 3 + (height - voteDown.getIconHeight()) / 2);
+            voteDown.paintIcon(this, g2, getWidth() - voteDown.getIconWidth() - 2 - 24 - 2, 3 + (height - voteDown.getIconHeight()) / 2);
+            voteUp.paintIcon(this, g2, getWidth() - voteUp.getIconWidth() - 2 - 2, 3 + (height - voteDown.getIconHeight()) / 2);
 
-        voteDownBounds = new Rectangle(getWidth() - voteDown.getIconWidth() - 2 - 24 - 2, 3 + (height - voteDown.getIconHeight()) / 2, voteDown.getIconWidth(), voteDown.getIconHeight());
-        voteUpBounds = new Rectangle(getWidth() - voteUp.getIconWidth() - 2 - 2, 3 + (height - voteDown.getIconHeight()) / 2, voteUp.getIconWidth(), voteUp.getIconHeight());
+            voteDownBounds = new Rectangle(getWidth() - voteDown.getIconWidth() - 2 - 24 - 2, 3 + (height - voteDown.getIconHeight()) / 2, voteDown.getIconWidth(), voteDown.getIconHeight());
+            voteUpBounds = new Rectangle(getWidth() - voteUp.getIconWidth() - 2 - 2, 3 + (height - voteDown.getIconHeight()) / 2, voteUp.getIconWidth(), voteUp.getIconHeight());
+        }
     }
 
     /**
@@ -263,74 +299,79 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     @Override
     public void mouseMoved(MouseEvent e) {
+        if (paintDirectFeedback) {
+            if (voteDownBounds.contains(e.getPoint()) && !voteDownMouseOver) {
+                voteDownMouseOver = true;
+                setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        if (voteDownBounds.contains(e.getPoint()) && !voteDownMouseOver) {
-            voteDownMouseOver = true;
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            } else if (voteDownMouseOver && (!voteDownBounds.contains(e.getPoint()))) {
+                voteDownMouseOver = false;
+                setCursor(null);
 
-        } else if (voteDownMouseOver && (!voteDownBounds.contains(e.getPoint()))) {
-            voteDownMouseOver = false;
-            setCursor(null);
+            }
 
-        }
+            if (voteUpBounds.contains(e.getPoint()) && !voteUpMouseOver) {
+                voteUpMouseOver = true;
+                setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        if (voteUpBounds.contains(e.getPoint()) && !voteUpMouseOver) {
-            voteUpMouseOver = true;
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            } else if (voteUpMouseOver && (!voteUpBounds.contains(e.getPoint()))) {
+                voteUpMouseOver = false;
+                setCursor(null);
 
-        } else if (voteUpMouseOver && (!voteUpBounds.contains(e.getPoint()))) {
-            voteUpMouseOver = false;
-            setCursor(null);
-
+            }
         }
 
     }
 
     public void onDisposedVoteWindow(VoteFinderWindow voteFinderWindow) {
-        voteWindow = null;
-        voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
-        voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
-        repaint();
+        if (paintDirectFeedback) {
+            voteWindow = null;
+            voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
+            voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
+            repaint();
+        }
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (voteDownMouseOver) {
-            if (voteWindow != null && voteWindow.isVisible()) {
-                boolean positive = voteWindow.isPositive();
-                voteWindow.setVisible(false);
-                voteWindow.dispose();
-                if (!positive) {
+        if (paintDirectFeedback) {
+            if (voteDownMouseOver) {
+                if (voteWindow != null && voteWindow.isVisible()) {
+                    boolean positive = voteWindow.isPositive();
+                    voteWindow.setVisible(false);
+                    voteWindow.dispose();
+                    if (!positive) {
 
-                return; }
-                voteWindow = null;
+                    return; }
+                    voteWindow = null;
+                }
+                Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
+
+                voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
+                voteWindow = new VoteFinderWindow(false);
+
+                voteDown = new AbstractIcon(IconKey.ICON_CANCEL, 20);
+                repaint();
+            } else if (voteUpMouseOver) {
+                if (voteWindow != null && voteWindow.isVisible()) {
+                    voteWindow.setVisible(false);
+                    boolean positive = voteWindow.isPositive();
+                    voteWindow.dispose();
+                    if (positive) {
+
+                    return; }
+                    voteWindow = null;
+                }
+                Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
+
+                voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
+                voteWindow = new VoteFinderWindow(true);
+
+                voteUp = new AbstractIcon(IconKey.ICON_CANCEL, 20);
+                // voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
+                // voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
+                repaint();
             }
-            Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
-
-            voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
-            voteWindow = new VoteFinderWindow(false);
-
-            voteDown = new AbstractIcon(IconKey.ICON_CANCEL, 20);
-            repaint();
-        } else if (voteUpMouseOver) {
-            if (voteWindow != null && voteWindow.isVisible()) {
-                voteWindow.setVisible(false);
-                boolean positive = voteWindow.isPositive();
-                voteWindow.dispose();
-                if (positive) {
-
-                return; }
-                voteWindow = null;
-            }
-            Dialog.getInstance().showMessageDialog("This feature is NOT finished yet.\r\nYou will be able to vote features, plugins, buttons,.. up or down. Based on your votes, \r\nwe will know an which part of JD we should work next.\r\n");
-
-            voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
-            voteWindow = new VoteFinderWindow(true);
-
-            voteUp = new AbstractIcon(IconKey.ICON_CANCEL, 20);
-            // voteUp = new AbstractIcon(IconKey.ICON_THUMBS_UP, 20);
-            // voteDown = new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 20);
-            repaint();
         }
 
     }

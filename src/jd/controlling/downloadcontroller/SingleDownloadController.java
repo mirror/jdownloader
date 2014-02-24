@@ -319,6 +319,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 livePlugin.init();
 
                 livePlugin.handle(downloadLink, account);
+
                 SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, processingPlugin.getAndSet(null));
                 return ret;
             } catch (BrowserException browserException) {
