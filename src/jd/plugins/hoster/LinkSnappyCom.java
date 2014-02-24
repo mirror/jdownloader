@@ -64,12 +64,26 @@ public class LinkSnappyCom extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         String hosts[] = null;
+        final String lang = System.getProperty("user.language");
         ac.setProperty("multiHostSupport", Property.NULL);
-
-        if (!login(account)) {
-            ac.setStatus("Account is invalid. Wrong username or password?");
-            account.setValid(false);
-            return ac;
+        try {
+            if (!login(account)) {
+                ac.setStatus("Account is invalid. Wrong username or password?");
+                account.setValid(false);
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin Server-Fehler!\r\nBitte versuche es später erneut!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin server-error!\r\nPlease try again later!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+            }
         }
         String accountType = null;
         final String expire = br.getRegex("\"expire\":\"([^<>\"]*?)\"").getMatch(0);
@@ -236,6 +250,8 @@ public class LinkSnappyCom extends PluginForHost {
 
     // Max 10 retries via link, 5 seconds waittime between = max 2 minutes trying -> Then deactivate host
     private void stupidServerError() throws PluginException {
+        // it's only null on login
+        if (currentLink == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 1000l);
         int timesFailed = currentLink.getIntegerProperty("timesfailedlinksnappy", 0);
         if (timesFailed <= 9) {
             timesFailed++;
