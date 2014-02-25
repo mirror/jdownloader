@@ -42,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(ag|sx|eu|co|ch)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(ag|sx|eu|co|ch)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
@@ -70,7 +70,7 @@ public class NowVideoEu extends PluginForHost {
 
     public Boolean rewriteHost(DownloadLink link) {
         if ("nowvideo.eu".equals(getHost())) {
-            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.sx".equals(link.getHost()))) {
+            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.sx".equals(link.getHost()) || "nowvideo.ag".equals(link.getHost()))) {
                 link.setHost("nowvideo.eu");
                 return true;
             }
@@ -81,7 +81,7 @@ public class NowVideoEu extends PluginForHost {
 
     public Boolean rewriteHost(Account acc) {
         if ("nowvideo.eu".equals(getHost())) {
-            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.sx".equals(acc.getHoster()))) {
+            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.sx".equals(acc.getHoster()) || "nowvideo.ag".equals(acc.getHoster()))) {
                 acc.setHoster("nowvideo.eu");
                 return true;
             }
@@ -126,7 +126,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private String validateHost() {
-        final String[] ccTLDs = { "sx", "eu", "co", "ch" };
+        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
             String CCtld = ccTLDs[i];
@@ -138,7 +138,7 @@ public class NowVideoEu extends PluginForHost {
                 String redirect = br.getRedirectLocation();
                 br = null;
                 if (redirect != null)
-                    return new Regex(redirect, "nowvideo\\.(sx|eu|co|ch)").getMatch(0);
+                    return new Regex(redirect, domains).getMatch(0);
                 else
                     return CCtld;
             } catch (Exception e) {
@@ -151,7 +151,8 @@ public class NowVideoEu extends PluginForHost {
     private static Object          LOCK               = new Object();
     private static StringContainer MAINPAGE           = new StringContainer("http://www.nowvideo.sx");
     private static StringContainer ccTLD              = new StringContainer("sx");
-    private static final String    ISBEINGCONVERTED   = ">The file is being converted.";
+    private final String           ISBEINGCONVERTED   = ">The file is being converted.";
+    private final String           domains            = "nowvideo\\.(sx|eu|co|ch|ag)";
     private static AtomicBoolean   AVAILABLE_PRECHECK = new AtomicBoolean(false);
     private static StringContainer agent              = new StringContainer(null);
 
@@ -310,7 +311,7 @@ public class NowVideoEu extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowvideo\\.(sx|eu|co|ch)/dl/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\." + domains + "/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             // Try free mode as we cannot differ between accounttypes (yet)
             doFree(link);

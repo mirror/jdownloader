@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 2 })
 public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
@@ -54,7 +54,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     public Boolean rewriteHost(DownloadLink link) {
-        if (link != null && ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost()))) {
+        if (link != null && ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost()) || "nowdownload.sx".equals(link.getHost()) || "nowdownload.ag".equals(link.getHost()))) {
             link.setHost("nowdownload.eu");
             return true;
         }
@@ -62,7 +62,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     public Boolean rewriteHost(Account acc) {
-        if (acc != null && ("nowdownload.co".equals(acc.getHoster()) || "nowdownload.ch".equals(acc.getHoster()))) {
+        if (acc != null && ("nowdownload.co".equals(acc.getHoster()) || "nowdownload.ch".equals(acc.getHoster()) || "nowdownload.sx".equals(acc.getHoster()) || "nowdownload.ag".equals(acc.getHoster()))) {
             acc.setHoster("nowdownload.eu");
             return true;
         }
@@ -92,8 +92,9 @@ public class NowDownloadEu extends PluginForHost {
     private static AtomicBoolean   AVAILABLE_PRECHECK      = new AtomicBoolean(false);
     private static StringContainer ua                      = new StringContainer(RandomUserAgent.generate());
     private static Object          LOCK                    = new Object();
-    private static final String    TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
-    private static final String    TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
+    private final String           TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
+    private final String           TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
+    private final String           domains                 = "nowdownload\\.(eu|co|ch|sx|ag)";
 
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().contains("likeupload.")) {
@@ -143,7 +144,7 @@ public class NowDownloadEu extends PluginForHost {
         }
 
         final Regex fileInfo = br.getRegex(">Downloading</span> <br> (.*?) ([\\d+\\.]+ (B|KB|MB|GB|TB))");
-        String filename = br.getRegex("nowdownload\\.(eu|co|ch)/nowdownload/[a-z0-9]+/[a-z0-9]+/[^<>]+/([^<>\"]*?)\"").getMatch(1);
+        String filename = br.getRegex(domains + "/nowdownload/[a-z0-9]+/[a-z0-9]+/[^<>]+/([^<>\"]*?)\"").getMatch(1);
         if (filename == null) filename = fileInfo.getMatch(0).replace("<br>", "");
         String filesize = fileInfo.getMatch(1);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -235,10 +236,10 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     private String validateHost() {
-        final String[] domains = { "eu", "co", "ch", };
+        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag" };
 
-        for (int i = 0; i < domains.length; i++) {
-            String domain = domains[i];
+        for (int i = 0; i < ccTLDs.length; i++) {
+            String domain = ccTLDs[i];
             try {
                 Browser br = new Browser();
                 workAroundTimeOut(br);
@@ -247,7 +248,7 @@ public class NowDownloadEu extends PluginForHost {
                 String redirect = br.getRedirectLocation();
                 br = null;
                 if (redirect != null)
-                    return new Regex(redirect, "nowdownload\\.(eu|co|ch)").getMatch(0);
+                    return new Regex(redirect, domains).getMatch(0);
                 else
                     return domain;
             } catch (Exception e) {
@@ -358,7 +359,7 @@ public class NowDownloadEu extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.nowdownload\\.(eu|co|ch)/dl/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://[a-z0-9]+\\." + domains + "/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = getDllink();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
