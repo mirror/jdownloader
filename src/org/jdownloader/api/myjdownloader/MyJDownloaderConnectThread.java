@@ -242,6 +242,7 @@ public class MyJDownloaderConnectThread extends Thread {
                                     sync(syncMark, currentSession);
                                 } catch (final Throwable e) {
                                 } finally {
+                                    logger.info("KeepAlive " + syncMark);
                                     try {
                                         socket.close();
                                     } catch (final Throwable e) {
@@ -252,7 +253,6 @@ public class MyJDownloaderConnectThread extends Thread {
                         keepAlivehandler.setDaemon(true);
                         keepAlivehandler.start();
                         closeSocket = false;
-                        logger.info("KeepAlive " + syncMark);
                         return connectionStatus;
                     case TOKEN:
                         currentHelper.reset();
