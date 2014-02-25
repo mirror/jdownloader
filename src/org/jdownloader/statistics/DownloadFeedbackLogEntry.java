@@ -10,11 +10,6 @@ public class DownloadFeedbackLogEntry extends AbstractFeedbackLogEntry implement
         super();
     }
 
-    protected DownloadFeedbackLogEntry(boolean b) {
-
-        super(b);
-    }
-
     @Override
     public String toString() {
         return JSonStorage.toString(this);

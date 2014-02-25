@@ -318,8 +318,6 @@ public class CFG_GUI {
 
     public static final BooleanKeyHandler                              HATE_CAPTCHAS_TEXT_IN_CAPTCHA_DIALOG_VISIBLE            = SH.getKeyHandler("HateCaptchasTextInCaptchaDialogVisible", BooleanKeyHandler.class);
 
-    public static final BooleanKeyHandler                              DIRECT_FEEDBACK_BUTTONS_ENABLED                         = SH.getKeyHandler("DirectFeedbackButtonsEnabled", BooleanKeyHandler.class);
-
     /**
      * Placeholders: |#TITLE|, | - #SPEED/s|, | - #UPDATENOTIFY|
      **/

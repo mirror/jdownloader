@@ -26,33 +26,22 @@ import java.awt.Window;
 import java.awt.event.AWTEventListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import javax.swing.AbstractButton;
-import javax.swing.Action;
 import javax.swing.JLabel;
-import javax.swing.JMenu;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.ExtJWindow;
 import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtMergedIcon;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.ColorUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.images.IconIO;
-import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
-import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
-import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.jdtrayicon.ScreenStack;
 import org.jdownloader.gui.translate._GUI;
@@ -60,7 +49,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
+public abstract class AbstractBugFinderWindow extends ExtJWindow implements AWTEventListener {
 
     private static final int BOTTOM_MARGIN = 5;
     private static final int TOP_MARGIN    = 20;
@@ -83,11 +72,11 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
     private JLabel         lbl;
     private Timer          timer;
     private MigPanel       actualContent;
-    private boolean        positive;
+
     private DirectFeedback feedback;
     private JLabel         icon;
 
-    public VoteFinderWindow(boolean positive) {
+    public AbstractBugFinderWindow() {
         super();
 
         bounds = new Rectangle();
@@ -112,12 +101,12 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
         };
 
         setContentPane(content);
-        content.add(createHeader(_GUI._.VoteFinderWindow_VoteFinderWindow_title_()));
+        content.add(createHeader(getTitle()));
         MigPanel cp;
         content.add(cp = new MigPanel("ins 0,wrap 2", "10[]10[grow,fill]", "[]"));
         SwingUtils.setOpaque(cp, false);
-        this.positive = positive;
-        cp.add(icon = new JLabel(positive ? new AbstractIcon(IconKey.ICON_THUMBS_UP, 24) : new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24)), "hidemode 3,spany,aligny top");
+
+        cp.add(icon = new JLabel(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24)), "hidemode 3,spany,aligny top");
 
         actualContent = new MigPanel("ins 0", "[]", "[]");
         SwingUtils.setOpaque(actualContent, false);
@@ -144,7 +133,7 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
         });
         timer.start();
         setVisible(false);
-        Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK);
+        Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.MOUSE_EVENT_MASK | AWTEvent.KEY_EVENT_MASK);
 
         JDGui.getInstance().getMainFrame().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }
@@ -165,9 +154,7 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
     // }
     //
 
-    public boolean isPositive() {
-        return positive;
-    }
+    abstract public String getTitle();
 
     private static Boolean setWindowOpaqueSupported = null;
 
@@ -201,7 +188,7 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
             Window w = windows[i];
             try {
 
-                if (w.isVisible() && !(w instanceof VoteFinderWindow)) {
+                if (w.isVisible() && !(w instanceof AbstractBugFinderWindow)) {
                     if (w.isActive()) {
                         Point local = new Point(mouse.x, mouse.y);
                         SwingUtilities.convertPointFromScreen(local, w);
@@ -218,63 +205,60 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
                         boolean found = false;
                         for (Component c : ret) {
 
-                            if (c instanceof JMenu) {
-
-                                feedback = null;
-                                break main;
-                            } else if (c instanceof AbstractButton) {
-                                Action action = ((AbstractButton) c).getAction();
-                                if (action != null && action instanceof CustomizableAppAction) {
-
-                                    String text = ((CustomizableAppAction) action).getName();
-                                    if (StringUtils.isEmpty(text)) text = ((CustomizableAppAction) action).getTooltipText();
-                                    String iconKey = ((CustomizableAppAction) action).getIconKey();
-                                    if (StringUtils.isNotEmpty(text)) {
-
-                                        MenuItemData menuItemData = ((CustomizableAppAction) action).getMenuItemData();
-                                        feedback = new MenuItemFeedback(isPositive(), menuItemData);
-
-                                        actualContent.removeAll();
-                                        actualContent.setLayout(new MigLayout("ins 0", "[]", "[][]"));
-                                        // if (positive) {
-                                        // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_positive()));
-                                        // } else {
-                                        // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_negative()));
-                                        // }
-                                        icon.setVisible(false);
-                                        if (isPositive()) {
-                                            JLabel lbl = new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_action_positive(text));
-                                            if (iconKey != null) {
-                                                lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 24), 0, 0).add(new AbstractIcon(iconKey, 24), 10, 10));
-                                            } else {
-                                                lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 24), 0, 0).add(IconIO.getScaledInstance(((CustomizableAppAction) action).getSmallIcon(), 22, 22), 10, 10));
-                                            }
-
-                                            actualContent.add(lbl, "");
-
-                                        } else {
-                                            JLabel lbl = new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_action_negative(text));
-                                            if (iconKey != null) {
-                                                lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0, 0).add(new AbstractIcon(iconKey, 24), 10, 10));
-                                            } else {
-                                                lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0, 0).add(IconIO.getScaledInstance(((CustomizableAppAction) action).getSmallIcon(), 22, 22), 10, 10));
-                                            }
-                                            actualContent.add(lbl, "");
-                                        }
-                                    }
-                                }
-
-                            }
-
-                            if (c instanceof DirectFeedbackInterface) {
-                                Point p = new Point(mouse.x, mouse.y);
-                                SwingUtilities.convertPointFromScreen(p, c);
-                                feedback = ((DirectFeedbackInterface) c).layoutDirectFeedback(p, isPositive(), actualContent, this);
-                                if (feedback != null) {
-
-                                    break main;
-                                }
-
+                            // if (c instanceof JMenu) {
+                            //
+                            // feedback = null;
+                            // break main;
+                            // } else if (c instanceof AbstractButton) {
+                            // Action action = ((AbstractButton) c).getAction();
+                            // if (action != null && action instanceof CustomizableAppAction) {
+                            //
+                            // String text = ((CustomizableAppAction) action).getName();
+                            // if (StringUtils.isEmpty(text)) text = ((CustomizableAppAction) action).getTooltipText();
+                            // String iconKey = ((CustomizableAppAction) action).getIconKey();
+                            // if (StringUtils.isNotEmpty(text)) {
+                            //
+                            // MenuItemData menuItemData = ((CustomizableAppAction) action).getMenuItemData();
+                            // feedback = new MenuItemFeedback(isPositive(), menuItemData);
+                            //
+                            // actualContent.removeAll();
+                            // actualContent.setLayout(new MigLayout("ins 0", "[]", "[][]"));
+                            // // if (positive) {
+                            // // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_positive()));
+                            // // } else {
+                            // // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_negative()));
+                            // // }
+                            // icon.setVisible(false);
+                            // if (isPositive()) {
+                            // JLabel lbl = new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_action_positive(text));
+                            // if (iconKey != null) {
+                            // lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 24), 0, 0).add(new
+                            // AbstractIcon(iconKey, 24), 10, 10));
+                            // } else {
+                            // lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 24), 0,
+                            // 0).add(IconIO.getScaledInstance(((CustomizableAppAction) action).getSmallIcon(), 22, 22), 10, 10));
+                            // }
+                            //
+                            // actualContent.add(lbl, "");
+                            //
+                            // } else {
+                            // JLabel lbl = new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_action_negative(text));
+                            // if (iconKey != null) {
+                            // lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0, 0).add(new
+                            // AbstractIcon(iconKey, 24), 10, 10));
+                            // } else {
+                            // lbl.setIcon(new ExtMergedIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 24), 0,
+                            // 0).add(IconIO.getScaledInstance(((CustomizableAppAction) action).getSmallIcon(), 22, 22), 10, 10));
+                            // }
+                            // actualContent.add(lbl, "");
+                            // }
+                            // }
+                            // }
+                            //
+                            // }
+                            feedback = handleComponent(c, mouse, actualContent);
+                            if (feedback != null) {
+                                break;
                             }
                         }
 
@@ -287,28 +271,27 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
 
         this.feedback = feedback;
         if (feedback == null) {
-            fallback: if (allComponents.size() > 0) {
-
-                for (Component c : allComponents) {
-
-                }
-            }
+            // fallback: if (allComponents.size() > 0) {
+            //
+            // for (Component c : allComponents) {
+            //
+            // }
+            // }
         }
         if (feedback == null) {
-            actualContent.removeAll();
-            icon.setVisible(true);
-            actualContent.setLayout(new MigLayout("ins 0", "[]", "[]"));
-            // if (positive) {
-            // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_positive()));
-            // } else {
-            // actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_msg_negative()));
-            // }
-            actualContent.add(new JLabel(_GUI._.VoteFinderWindow_VoteFinderWindow_explain()), "");
+            layoutDefaultPanel(actualContent);
         }
         pack();
         Point loc = correct(mouse, this.getPreferredSize());
         setLocation(loc.x, loc.y);
     }
+
+    /**
+     * 
+     */
+    abstract public void layoutDefaultPanel(MigPanel actualContent);
+
+    abstract public DirectFeedback handleComponent(Component c, Point mouse, MigPanel actualContent);
 
     private ArrayList<Component> find(Container container, Point point) {
         ArrayList<Component> ret = new ArrayList<Component>();
@@ -337,7 +320,7 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
             timer.stop();
             timer = null;
         }
-        MainTabbedPane.getInstance().onDisposedVoteWindow(this);
+
     }
 
     private static Boolean getWindowOpacitySupported = null;
@@ -363,15 +346,18 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
     private static Boolean setWindowOpacitySupported = null;
 
     private Component createHeader(String caption) {
-        MigPanel ret = new MigPanel("ins 0", "[grow,fill]", "[]");
+        MigPanel ret = new MigPanel("ins 0", "[grow,fill][]", "[]");
         headerLbl = new JLabel(caption);
         headerLbl.setForeground(ColorUtils.getAlphaInstance(headerLbl.getForeground(), 160));
         headerLbl.setHorizontalAlignment(SwingConstants.LEFT);
         ret.add(SwingUtils.toBold(headerLbl));
 
-        SwingUtils.setOpaque(ret, false);
-        SwingUtils.setOpaque(headerLbl, false);
+        JLabel esc = new JLabel(_GUI._.AbstractBugFinderWindow_createHeader_esc());
+        esc.setForeground(ColorUtils.getAlphaInstance(esc.getForeground(), 160));
+        esc.setHorizontalAlignment(SwingConstants.LEFT);
 
+        ret.add(SwingUtils.toBold(esc), "gapleft 15");
+        SwingUtils.setOpaque(esc, false);
         SwingUtils.setOpaque(ret, false);
         SwingUtils.setOpaque(headerLbl, false);
 
@@ -466,27 +452,35 @@ public class VoteFinderWindow extends ExtJWindow implements AWTEventListener {
 
     @Override
     public void eventDispatched(AWTEvent event) {
+        if (event instanceof KeyEvent) {
+            if (((KeyEvent) event).getKeyCode() == KeyEvent.VK_ESCAPE) {
+                setVisible(false);
+                dispose();
+            }
 
+        }
         if (feedback != null) {
             if (event instanceof MouseEvent) {
                 if (((MouseEvent) event).getButton() == MouseEvent.BUTTON1) {
+
                     switch (((MouseEvent) event).getID()) {
                     case MouseEvent.MOUSE_PRESSED:
                     case MouseEvent.MOUSE_RELEASED:
                         ((MouseEvent) event).consume();
                         return;
                     case MouseEvent.MOUSE_CLICKED:
-                        StatsManager.I().feedback(feedback);
-                        setVisible(false);
-                        dispose();
-                        new EDTRunner() {
+                        try {
+                            new Thread("FeedBack Sender") {
+                                public void run() {
+                                    StatsManager.I().feedback(feedback);
+                                };
+                            }.start();
 
-                            @Override
-                            protected void runInEDT() {
+                        } finally {
+                            setVisible(false);
+                            dispose();
+                        }
 
-                                UIOManager.I().showMessageDialog(_GUI._.VoteFinderWindow_runInEDT_thankyou_());
-                            }
-                        };
                     }
                 }
             }

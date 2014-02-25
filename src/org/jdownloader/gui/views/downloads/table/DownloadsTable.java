@@ -32,10 +32,10 @@ import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.AbstractBugFinderWindow;
 import jd.gui.swing.jdgui.DirectFeedback;
 import jd.gui.swing.jdgui.DirectFeedbackInterface;
 import jd.gui.swing.jdgui.DownloadFeedBack;
-import jd.gui.swing.jdgui.VoteFinderWindow;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
@@ -441,7 +441,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     @Override
-    public DirectFeedback layoutDirectFeedback(Point mouse, boolean positive, MigPanel content, VoteFinderWindow window) {
+    public DirectFeedback layoutDirectFeedback(Point mouse, MigPanel content, AbstractBugFinderWindow window) {
 
         final int row = this.rowAtPoint(mouse);
         final AbstractNode obj = this.getModel().getObjectbyRow(row);
@@ -455,11 +455,8 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             /* check if we need to select object */
             content.removeAll();
             content.setLayout(new MigLayout("ins 0,wrap 2", "[][]", "[]3[20!]0[20!]0[20!]"));
-            if (positive) {
-                content.add(new JLabel(_GUI._.DownloadsTable_layoutDirectFeedback_direct_feedback_line1_positive()), "spanx");
-            } else {
-                content.add(new JLabel(_GUI._.DownloadsTable_layoutDirectFeedback_direct_feedback_line1_negative()), "spanx");
-            }
+
+            content.add(new JLabel(_GUI._.DownloadsTable_layoutDirectFeedback_direct_feedback_line1_negative()), "spanx");
 
             DownloadLink downloadLink = (DownloadLink) obj;
             String packagename = downloadLink.getParentNode().getName();
@@ -473,7 +470,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             ret.setHorizontalAlignment(SwingConstants.LEFT);
             ret.setIcon(di.getFavIcon());
             content.add(ret);
-            return new DownloadFeedBack(positive, downloadLink);
+            return new DownloadFeedBack(downloadLink);
 
         }
 

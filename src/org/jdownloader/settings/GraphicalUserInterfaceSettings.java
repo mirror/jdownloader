@@ -1020,9 +1020,4 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setCustomLookAndFeelClass(String clazz);
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    boolean isDirectFeedbackButtonsEnabled();
-
-    void setDirectFeedbackButtonsEnabled(boolean b);
 }

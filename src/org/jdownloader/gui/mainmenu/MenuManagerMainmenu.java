@@ -22,12 +22,14 @@ import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.gui.mainmenu.action.AddLinksMenuAction;
 import org.jdownloader.gui.mainmenu.action.LogSendAction;
+import org.jdownloader.gui.mainmenu.action.ReportADownloadErrorAction;
 import org.jdownloader.gui.mainmenu.container.AboutMenuContainer;
 import org.jdownloader.gui.mainmenu.container.CaptchaQuickSettingsContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuContainer;
 import org.jdownloader.gui.mainmenu.container.ExtensionsMenuWindowContainer;
 import org.jdownloader.gui.mainmenu.container.FileMenuContainer;
 import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.mainmenu.container.ReportErrorContainer;
 import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaDialogsToogleAction;
 import org.jdownloader.gui.toolbar.action.CaptchaExchangeToogleAction;
@@ -37,6 +39,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
+import org.jdownloader.gui.views.downloads.bottombar.HorizontalBoxItem;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
 public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, DownloadLink> {
@@ -103,8 +106,22 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         // add(new SettingsMenu());
         // add(AddonsMenu.getInstance());
         //
+        HorizontalBoxItem h = new HorizontalBoxItem();
+        h.setVisible(true);
+        mr.add(h);
+        mr.add(createReportMenu());
 
         return mr;
+    }
+
+    public ReportErrorContainer createReportMenu() {
+        ReportErrorContainer ret = new ReportErrorContainer();
+
+        ret.add(ReportADownloadErrorAction.class);
+
+        ret.add(new SeperatorData());
+        ret.add(LogSendAction.class);
+        return ret;
     }
 
     public AboutMenuContainer createAboutMenu() {

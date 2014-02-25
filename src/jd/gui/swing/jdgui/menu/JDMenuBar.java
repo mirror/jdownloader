@@ -6,6 +6,7 @@ import java.awt.event.MouseListener;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.AbstractButton;
+import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
@@ -20,6 +21,7 @@ import org.jdownloader.controlling.contextmenu.MenuItemData;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
 import org.jdownloader.extensions.ExtensionNotLoadedException;
 import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
+import org.jdownloader.gui.views.downloads.bottombar.HorizontalBoxItem;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
@@ -76,7 +78,16 @@ public class JDMenuBar extends JMenuBar implements MouseListener {
 
             @Override
             protected void addAction(JComponent root, MenuItemData inst) throws InstantiationException, IllegalAccessException, InvocationTargetException, ClassNotFoundException, NoSuchMethodException, ExtensionNotLoadedException {
+
                 if (!inst.isVisible()) return;
+                try {
+                    if (root instanceof JDMenuBar && inst instanceof HorizontalBoxItem) {
+                        ((JDMenuBar) root).add(Box.createHorizontalGlue());
+                        return;
+                    }
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
                 if (root instanceof JMenu) {
                     JComponent comp = inst.addTo(root);
                     if (comp == null) return;

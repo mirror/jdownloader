@@ -26,10 +26,8 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogProperty;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
-import jd.gui.swing.jdgui.BasicIDFeedback;
 import jd.gui.swing.jdgui.DirectFeedback;
 import jd.gui.swing.jdgui.DownloadFeedBack;
-import jd.gui.swing.jdgui.MenuItemFeedback;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -828,13 +826,17 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             ArrayList<Candidate> possibleAccounts = new ArrayList<Candidate>();
             AccountCache accountCache = new DownloadSession().getAccountCache(link);
+            HashSet<String> dupe = new HashSet<String>();
             for (CachedAccount s : accountCache) {
                 Account acc = s.getAccount();
                 if (acc != null && !acc.isEnabled()) continue;
-                possibleAccounts.add(Candidate.create(s));
+                Candidate candidate = Candidate.create(s);
+                if (dupe.add(candidate.toID())) {
+                    possibleAccounts.add(candidate);
+                }
             }
 
-            DownloadFeedbackLogEntry dl = new DownloadFeedbackLogEntry(feedback.isPositive());
+            DownloadFeedbackLogEntry dl = new DownloadFeedbackLogEntry();
             dl.setHost(link.getHost());
             dl.setCandidates(possibleAccounts);
             dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
@@ -860,36 +862,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
             dl.setCounter(errorCounter.incrementAndGet());
             sendFeedback(dl);
-        } else if (feedback instanceof BasicIDFeedback) {
-            BasicIDFeedbackLogEntry dl = new BasicIDFeedbackLogEntry(feedback.isPositive(), ((BasicIDFeedback) feedback).getId());
-            try {
-                HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
-                });
 
-                dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
-            } catch (Exception e) {
-            }
-
-            dl.setOs(CrossSystem.getOSFamily().name());
-            dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-            dl.setTimestamp(System.currentTimeMillis());
-            dl.setSessionStart(sessionStart);
-            log(dl);
-        } else if (feedback instanceof MenuItemFeedback) {
-            ActionFeedbackLogEntry dl = new ActionFeedbackLogEntry(feedback.isPositive(), ((MenuItemFeedback) feedback).getMenuItemData());
-            try {
-                HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
-                });
-
-                dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
-            } catch (Exception e) {
-            }
-
-            dl.setOs(CrossSystem.getOSFamily().name());
-            dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-            dl.setTimestamp(System.currentTimeMillis());
-            dl.setSessionStart(sessionStart);
-            log(dl);
+            UIOManager.I().showMessageDialog(_GUI._.VoteFinderWindow_runInEDT_thankyou_());
         }
 
     }

@@ -6,8 +6,8 @@ public class DownloadFeedBack extends DirectFeedback {
 
     private DownloadLink downloadLink;
 
-    public DownloadFeedBack(boolean positive, DownloadLink downloadLink) {
-        super(positive);
+    public DownloadFeedBack(DownloadLink downloadLink) {
+        super();
         this.downloadLink = downloadLink;
     }
 

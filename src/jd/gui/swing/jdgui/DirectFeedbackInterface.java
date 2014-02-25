@@ -6,6 +6,6 @@ import org.appwork.swing.MigPanel;
 
 public interface DirectFeedbackInterface {
 
-    DirectFeedback layoutDirectFeedback(Point mouse, boolean positive, MigPanel actualContent, VoteFinderWindow window);
+    DirectFeedback layoutDirectFeedback(Point mouse, MigPanel actualContent, AbstractBugFinderWindow window);
 
 }
