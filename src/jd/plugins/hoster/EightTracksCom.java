@@ -123,7 +123,6 @@ public class EightTracksCom extends PluginForHost {
             String sameLink = "";
             String playToken = downloadLink.getStringProperty("playtoken", null);
             if (TEST_MODE && TEST_MODE_TOKEN != null) playToken = TEST_MODE_TOKEN;
-            playToken = null;
             final String mixid = downloadLink.getStringProperty("mixid", null);
             final int last_track_number = (int) getLongProperty(downloadLink, "lasttracknumber", 0);
             int start_position = 1;
