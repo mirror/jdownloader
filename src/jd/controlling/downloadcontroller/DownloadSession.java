@@ -32,7 +32,7 @@ import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.settings.IfFileExistsAction;
 
 public class DownloadSession extends Property {
-
+    
     public static enum STOPMARK {
         /* no stopmark is set */
         NONE,
@@ -43,21 +43,21 @@ public class DownloadSession extends Property {
         /* to set a random stopmark */
         RANDOM;
     }
-
+    
     public static enum SessionState {
         NORMAL,
         RECONNECT_REQUESTED,
         RECONNECT_RUNNING;
     }
-
+    
     /* non shared between DownloadSessions */
     private static final FileAccessManager FILE_ACCESS_MANAGER = new FileAccessManager();
     private static final DiskSpaceManager  DISK_SPACE_MANAGER  = new DiskSpaceManager();
-
+    
     public DiskSpaceManager getDiskSpaceManager() {
         return DISK_SPACE_MANAGER;
     }
-
+    
     private final NullsafeAtomicReference<SessionState>               sessionState            = new NullsafeAtomicReference<SessionState>(SessionState.NORMAL);
     private final HashMap<String, AccountCache>                       accountCache            = new HashMap<String, AccountCache>();
     private final HashMap<DownloadLink, DownloadLinkCandidateHistory> candidateHistory        = new HashMap<DownloadLink, DownloadLinkCandidateHistory>();
@@ -72,46 +72,46 @@ public class DownloadSession extends Property {
     private final AtomicBoolean                                       refreshCandidates       = new AtomicBoolean(false);
     private final AtomicBoolean                                       activateForcedOnly      = new AtomicBoolean(false);
     private AtomicLong                                                activatorRebuildRequest = new AtomicLong(1);
-
+    
     public long getActivatorRebuildRequest() {
         return activatorRebuildRequest.get();
     }
-
+    
     public void incrementActivatorRebuildRequest() {
         activatorRebuildRequest.incrementAndGet();
     }
-
+    
     /* shared between DownloadSessions */
     private final ProxyInfoHistory                proxyInfoHistory;
     private final AtomicInteger                   maxConcurrentDownloadsPerHost = new AtomicInteger(Integer.MAX_VALUE);
     private final NullsafeAtomicReference<Object> stopMark                      = new NullsafeAtomicReference<Object>(STOPMARK.NONE);
     private final AtomicBoolean                   useAccounts                   = new AtomicBoolean(true);
     private final AtomicBoolean                   mirrorManagement              = new AtomicBoolean(true);
-
+    
     public boolean isCandidatesRefreshRequired() {
         return refreshCandidates.get();
     }
-
+    
     public boolean isUseAccountsEnabled() {
         return useAccounts.get();
     }
-
+    
     public void setUseAccountsEnabled(boolean b) {
         useAccounts.set(b);
     }
-
+    
     public boolean isMirrorManagementEnabled() {
         return mirrorManagement.get();
     }
-
+    
     public void setMirrorManagementEnabled(boolean b) {
         mirrorManagement.set(b);
     }
-
+    
     public int getMaxConcurrentDownloadsPerHost() {
         return maxConcurrentDownloadsPerHost.get();
     }
-
+    
     public void setMaxConcurrentDownloadsPerHost(int max) {
         if (max < 0) {
             maxConcurrentDownloadsPerHost.set(Integer.MAX_VALUE);
@@ -119,25 +119,25 @@ public class DownloadSession extends Property {
             maxConcurrentDownloadsPerHost.set(max);
         }
     }
-
+    
     public boolean isForcedOnlyModeEnabled() {
         return activateForcedOnly.get();
     }
-
+    
     public int getSkipCounter() {
         return skipCounter.get();
     }
-
+    
     public int getSpeedLimitBeforePause() {
         Integer ret = speedLimitBeforePause.get();
         if (ret == null) return -1;
         return Math.max(-1, ret);
     }
-
+    
     public Boolean isSpeedWasLimitedBeforePauseEnabled() {
         return speedLimitedBeforePause.get();
     }
-
+    
     public void setActivationRequests(List<DownloadLink> activationRequests) {
         if (isCandidatesRefreshRequired() == false) {
             if (!activationRequests.equals(this.activationRequests)) {
@@ -146,11 +146,11 @@ public class DownloadSession extends Property {
         }
         this.activationRequests = activationRequests;
     }
-
+    
     public void refreshCandidates() {
         refreshCandidates.set(true);
     }
-
+    
     public void setForcedLinks(CopyOnWriteArrayList<DownloadLink> forcedLinks) {
         if (isCandidatesRefreshRequired() == false) {
             if (!forcedLinks.equals(this.forcedLinks)) {
@@ -159,7 +159,7 @@ public class DownloadSession extends Property {
         }
         this.forcedLinks = forcedLinks;
     }
-
+    
     public boolean removeActivationRequest(DownloadLink link) {
         if (link == null) return false;
         boolean removed = activationRequests.remove(link);
@@ -167,7 +167,7 @@ public class DownloadSession extends Property {
         if (removed) refreshCandidates();
         return removed;
     }
-
+    
     public boolean removeActivationRequests(List<DownloadLink> links) {
         if (links == null) return false;
         boolean removed = activationRequests.remove(links);
@@ -175,23 +175,23 @@ public class DownloadSession extends Property {
         if (removed) refreshCandidates();
         return removed;
     }
-
+    
     public HashMap<String, PluginForHost> getActivationPluginCache() {
         return activationPluginCache;
     }
-
+    
     private final CopyOnWriteArraySet<SingleDownloadController> controllers = new CopyOnWriteArraySet<SingleDownloadController>() {
                                                                                 /**
          * 
          */
                                                                                 private static final long serialVersionUID = -3897088297641777499L;
-
+                                                                                
                                                                                 public boolean add(SingleDownloadController e) {
                                                                                     downloadsStarted.incrementAndGet();
                                                                                     e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
                                                                                     return super.add(e);
                                                                                 };
-
+                                                                                
                                                                                 @Override
                                                                                 public boolean remove(Object e) {
                                                                                     boolean ret = super.remove(e);
@@ -211,7 +211,7 @@ public class DownloadSession extends Property {
                                                                                     return ret;
                                                                                 };
                                                                             };
-
+    
     public int getActiveDownloadsFromHost(String host) {
         if (host == null) return 0;
         int ret = 0;
@@ -224,11 +224,11 @@ public class DownloadSession extends Property {
         }
         return ret;
     }
-
+    
     public ProxyInfoHistory getProxyInfoHistory() {
         return proxyInfoHistory;
     }
-
+    
     public PluginForHost getPlugin(String host) {
         if (StringUtils.isEmpty(host)) return null;
         host = host.toLowerCase(Locale.ENGLISH);
@@ -239,11 +239,11 @@ public class DownloadSession extends Property {
         }
         return plugin;
     }
-
+    
     public List<DownloadLink> getForcedLinks() {
         return forcedLinks;
     }
-
+    
     public void toggleStopMark(Object entry) {
         if (entry == STOPMARK.RANDOM) {
             if (getStopMark() != STOPMARK.NONE) entry = null;
@@ -256,11 +256,11 @@ public class DownloadSession extends Property {
             setStopMark(entry);
         }
     }
-
+    
     public boolean isForcedLinksWaiting() {
         return forcedLinks.size() > 0;
     }
-
+    
     public boolean isActivationRequestsWaiting() {
         if (activateForcedOnly.get()) {
             return forcedLinks.size() > 0;
@@ -268,11 +268,11 @@ public class DownloadSession extends Property {
             return forcedLinks.size() > 0 || activationRequests.size() > 0;
         }
     }
-
+    
     public DownloadSession() {
         this(null);
     }
-
+    
     protected DownloadSession(DownloadSession previousSession) {
         if (previousSession == null) {
             proxyInfoHistory = new ProxyInfoHistory();
@@ -287,11 +287,11 @@ public class DownloadSession extends Property {
             setMirrorManagementEnabled(previousSession.isMirrorManagementEnabled());
         }
     }
-
+    
     public DownloadLinkCandidateHistory getHistory(DownloadLink downloadLink) {
         return candidateHistory.get(downloadLink);
     }
-
+    
     public DownloadLinkCandidateHistory buildHistory(DownloadLink downloadLink) {
         DownloadLinkCandidateHistory ret = candidateHistory.get(downloadLink);
         if (ret == null) {
@@ -300,7 +300,7 @@ public class DownloadSession extends Property {
         }
         return ret;
     }
-
+    
     public DownloadLinkCandidateHistory removeHistory(DownloadLink downloadLink) {
         if (downloadLink == null) {
             candidateHistory.clear();
@@ -309,7 +309,7 @@ public class DownloadSession extends Property {
             return candidateHistory.remove(downloadLink);
         }
     }
-
+    
     public void removeAccountCache(String host) {
         refreshCandidates.set(true);
         if (StringUtils.isEmpty(host)) {
@@ -318,7 +318,7 @@ public class DownloadSession extends Property {
             accountCache.remove(host.toLowerCase(Locale.ENGLISH));
         }
     }
-
+    
     public AccountCache getAccountCache(final DownloadLink link) {
         String host = link.getHost();
         if (StringUtils.isEmpty(host)) return AccountCache.NA;
@@ -345,11 +345,11 @@ public class DownloadSession extends Property {
             }
             newCache.add(new CachedAccount(host, null, ACCOUNTTYPE.NONE, getPlugin(host)));
             Collections.sort(newCache, new Comparator<CachedAccount>() {
-
+                
                 private int compare(boolean x, boolean y) {
                     return (x == y) ? 0 : (x ? 1 : -1);
                 }
-
+                
                 @Override
                 public int compare(CachedAccount o1, CachedAccount o2) {
                     /* 1ST SORT: ORIGINAL;MULTI;NONE */
@@ -374,15 +374,20 @@ public class DownloadSession extends Property {
             }
         }
     }
-
+    
     public boolean isStopMark(final Object item) {
-        return stopMark.get() == item;
+        Object stopMark = this.stopMark.get();
+        if (stopMark instanceof DownloadLink) {
+            //
+            return stopMark == item || item == ((DownloadLink) stopMark).getFilePackage();
+        }
+        return stopMark == item;
     }
-
+    
     public boolean isStopMarkSet() {
         return stopMark.get() != STOPMARK.NONE;
     }
-
+    
     protected boolean isStopMarkReached() {
         Object stop = stopMark.get();
         if (stop == STOPMARK.NONE) return false;
@@ -406,7 +411,7 @@ public class DownloadSession extends Property {
         }
         return false;
     }
-
+    
     public void setStopMark(final Object stopEntry) {
         Object entry = stopEntry;
         if (entry == null || entry == STOPMARK.NONE) {
@@ -424,11 +429,11 @@ public class DownloadSession extends Property {
         stopMark.set(entry);
         DownloadWatchDog.getInstance().getEventSender().fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.PROPERTY_CHANGE, new DownloadWatchDogProperty(DownloadWatchDogProperty.Property.STOPSIGN, entry)));
     }
-
+    
     public IfFileExistsAction getOnFileExistsAction(FilePackage filePackage) {
         return fileExistsActions.get(filePackage.getUniqueID());
     }
-
+    
     public void setOnFileExistsAction(FilePackage filePackage, IfFileExistsAction doAction) {
         if (doAction == null) {
             fileExistsActions.remove(filePackage.getUniqueID());
@@ -436,69 +441,69 @@ public class DownloadSession extends Property {
             fileExistsActions.put(filePackage.getUniqueID(), doAction);
         }
     }
-
+    
     public FileAccessManager getFileAccessManager() {
         return FILE_ACCESS_MANAGER;
     }
-
+    
     public Object getStopMark() {
         return stopMark.get();
     }
-
+    
     /**
      * @return the downloadsStarted
      */
     public int getDownloadsStarted() {
         return downloadsStarted.get();
     }
-
+    
     /**
      * @return the controllers
      */
     public Set<SingleDownloadController> getControllers() {
         return controllers;
     }
-
+    
     /**
      * @return the activationLinks
      */
     public List<DownloadLink> getActivationRequests() {
         return activationRequests;
     }
-
+    
     /**
      * @return the sessionState
      */
     public SessionState getSessionState() {
         return sessionState.get();
     }
-
+    
     public void setForcedOnlyModeEnabled(boolean b) {
         activateForcedOnly.set(b);
     }
-
+    
     public boolean setCandidatesRefreshRequired(boolean b) {
         return refreshCandidates.getAndSet(b);
     }
-
+    
     public void setSpeedLimitBeforePause(int downloadSpeedLimit) {
         speedLimitBeforePause.set(downloadSpeedLimit);
     }
-
+    
     public void setSpeedWasLimitedBeforePauseEnabled(boolean b) {
         speedLimitedBeforePause.set(b);
     }
-
+    
     public boolean compareAndSetSessionState(SessionState expect, SessionState update) {
         return sessionState.compareAndSet(expect, update);
     }
-
+    
     public void setSessionState(SessionState state) {
         sessionState.set(state);
     }
-
+    
     public void setSkipCounter(int i) {
         skipCounter.set(i);
     }
-
+    
 }
