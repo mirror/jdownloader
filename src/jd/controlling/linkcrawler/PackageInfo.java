@@ -7,46 +7,49 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class PackageInfo {
     private UniqueAlltimeID uniqueId              = null;
-
+    
     private boolean         packagizerRuleMatched = false;
     private boolean         ignoreVarious         = false;
-
+    
     public UniqueAlltimeID getUniqueId() {
         return uniqueId;
     }
-
+    
     public void setUniqueId(UniqueAlltimeID uniqueId) {
         this.uniqueId = uniqueId;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setName(String name) {
+        if (StringUtils.isEmpty(name)) name = null;
         this.name = name;
     }
-
+    
     public String getDestinationFolder() {
         return destinationFolder;
     }
-
+    
     public void setDestinationFolder(String destinationFolder) {
+        if (StringUtils.isEmpty(destinationFolder)) destinationFolder = null;
         this.destinationFolder = destinationFolder;
     }
-
+    
     public String getComment() {
         return comment;
     }
-
+    
     public void setComment(String comment) {
+        if (StringUtils.isEmpty(comment)) comment = null;
         this.comment = comment;
     }
-
+    
     private String name              = null;
     private String destinationFolder = null;
     private String comment           = null;
-
+    
     /**
      * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package, which is not part of
      * autopackaging.
@@ -69,7 +72,7 @@ public class PackageInfo {
         }
         return sb.length() == 0 ? null : sb.toString();
     }
-
+    
     public static CrawledPackage createCrawledPackage(CrawledLink link) {
         PackageInfo dpi = link.getDesiredPackageInfo();
         if (dpi == null) return null;
@@ -85,20 +88,20 @@ public class PackageInfo {
         }
         ret.setCreated(link.getCreated());
         ret.setComment(dpi.getComment());
-
+        
         if (!StringUtils.isEmpty(dpi.getDestinationFolder())) {
             ret.setDownloadFolder(dpi.getDestinationFolder());
         }
         return ret;
     }
-
+    
     /**
      * @return the packagizerRuleMatched
      */
     public boolean isPackagizerRuleMatched() {
         return packagizerRuleMatched;
     }
-
+    
     /**
      * @param packagizerRuleMatched
      *            the packagizerRuleMatched to set
@@ -106,14 +109,14 @@ public class PackageInfo {
     public void setPackagizerRuleMatched(boolean packagizerRuleMatched) {
         this.packagizerRuleMatched = packagizerRuleMatched;
     }
-
+    
     /**
      * @return the ignoreVarious
      */
     public boolean isIgnoreVarious() {
         return ignoreVarious;
     }
-
+    
     /**
      * @param ignoreVarious
      *            the ignoreVarious to set
@@ -121,5 +124,5 @@ public class PackageInfo {
     public void setIgnoreVarious(boolean ignoreVarious) {
         this.ignoreVarious = ignoreVarious;
     }
-
+    
 }
