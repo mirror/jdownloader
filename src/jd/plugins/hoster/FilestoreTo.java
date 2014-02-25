@@ -118,6 +118,7 @@ public class FilestoreTo extends PluginForHost {
         if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String jcount = bjs.getRegex("var countdown = \"(\\d+)\";").getMatch(0);
         String pwnage[] = new String[4];
+        String newbull = null;
         // find startDownload, usually within primary controlling js
         String startDl = bjs.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
         // at times he places in base html source
@@ -145,6 +146,9 @@ public class FilestoreTo extends PluginForHost {
                         data = new Regex(startDl, "data\\s*:\\s*([a-zA-Z0-9]+),").getRow(0);
                         if (data == null || data.length != 1) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                     }
+                } else {
+                    pwnage[0] = data[1];
+                    newbull = br.getRegex("var\\s*(?-i)" + data[2] + "\\s*=\\s*(\"|')([a-zA-Z0-9]+)\\1").getMatch(1);
                 }
                 String[] var = null;
                 if (data != null && data.length != 1) var = new Regex(startDl, "var\\s*(?-i)" + data[2] + "(?i)\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
@@ -154,7 +158,7 @@ public class FilestoreTo extends PluginForHost {
                     pwnage[2] = var[3];
                     if (data[4] != null) pwnage[3] = data[4];
                 } else if ((var == null || var.length != 4) && data.length == 1) {
-                    var = new Regex(startDl, "var\\s*(?-i)" + data[0] + "(?i)\\s*=\\s*(\"|')(\\w+=)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)(\\+(\"|')([\\w&=]+)\\8(,|;))?").getRow(0);
+                    var = new Regex(startDl, "var\\s*(?-i)" + data[0] + "(?i)\\s*=\\s*(\"|')(\\w+=)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)(\\+(\"|')([\\w&=]+)\\8)?(,|;)").getRow(0);
                     if (var != null && var.length >= 5) {
                         pwnage[0] = var[1];
                         pwnage[1] = var[3];
@@ -178,8 +182,14 @@ public class FilestoreTo extends PluginForHost {
             logger.warning("FATAL waittime error!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String code = br.getRegex("=\"" + pwnage[1] + "\"\\s*" + pwnage[2] + "=\"([A-Z0-9]+)\"").getMatch(0);
-        if (code == null) code = br.getRegex(pwnage[2] + "=\"([A-Z0-9]+)\"\\s*").getMatch(0);
+        String code = null;
+        if (pwnage != null && pwnage[1] != null && pwnage[2] != null) {
+            code = br.getRegex("=\"" + pwnage[1] + "\"\\s*" + pwnage[2] + "=\"([A-Z0-9]+)\"").getMatch(0);
+        }
+        if (code == null && (pwnage != null && pwnage[2] != null)) code = br.getRegex(pwnage[2] + "=\"([A-Z0-9]+)\"\\s*").getMatch(0);
+        if (code == null && newbull != null) {
+            code = newbull;
+        }
         if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser brd = br.cloneBrowser();
         prepAjax(brd);
