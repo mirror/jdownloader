@@ -90,11 +90,9 @@ public class DevArtCm extends PluginForDecrypt {
             }
             // find and set page type
             String pagetype = "";
-            String catpath_addition = null;
             if (parameter.matches(TYPE_CATPATH_2)) {
-                catpath_addition = new Regex(parameter, "deviantart\\.com/gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
-            }
-            if (parameter.contains("/favourites/"))
+                pagetype = new Regex(parameter, "deviantart\\.com/gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
+            } else if (parameter.contains("/favourites/"))
                 pagetype = "Favourites";
             else if (parameter.contains("/gallery/"))
                 pagetype = "Gallery";
@@ -105,9 +103,7 @@ public class DevArtCm extends PluginForDecrypt {
             if (pagename != null) pagename = Encoding.htmlDecode(pagename.trim());
             // set packagename
             String fpName = "";
-            if (pagename != null && catpath_addition != null) {
-                fpName = username + " - " + pagetype + " - " + catpath_addition + " - " + pagename;
-            } else if (pagename != null) {
+            if (pagename != null) {
                 fpName = username + " - " + pagetype + " - " + pagename;
             } else {
                 fpName = username + " - " + pagetype;

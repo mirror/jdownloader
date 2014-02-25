@@ -68,11 +68,14 @@ public class EightTracksCom extends PluginForHost {
     private static final boolean TEST_MODE                                         = false;
     private static final String  TEST_MODE_TOKEN                                   = null;
 
+    private static Object        LOCK                                              = new Object();
     private String               MAIN_LINK                                         = null;
     private String               clipData;
     private boolean              AT_END                                            = false;
     private boolean              AT_LAST_TRACK                                     = false;
     private static boolean       pluginloaded                                      = false;
+
+    private String               currenttrackid                                    = null;
 
     // XML version needs API key so we use the json version
     @Override
@@ -101,7 +104,7 @@ public class EightTracksCom extends PluginForHost {
         if (filename == null) filename = downloadLink.getStringProperty("tempname", null);
         final int tracknumber = (int) getLongProperty(downloadLink, "tracknumber", -1);
         /* http://8tracks.com/tracks/TRACKID */
-        String currenttrackid = downloadLink.getStringProperty("trackid", null);
+        currenttrackid = downloadLink.getStringProperty("trackid", null);
         /* Only go in this handling if the user added a single tracks, otherwise we will get low quality 30 seconds preview files */
         if (downloadLink.getBooleanProperty("single_link", false)) {
             /* This should never happen */
@@ -120,6 +123,7 @@ public class EightTracksCom extends PluginForHost {
             String sameLink = "";
             String playToken = downloadLink.getStringProperty("playtoken", null);
             if (TEST_MODE && TEST_MODE_TOKEN != null) playToken = TEST_MODE_TOKEN;
+            playToken = null;
             final String mixid = downloadLink.getStringProperty("mixid", null);
             final int last_track_number = (int) getLongProperty(downloadLink, "lasttracknumber", 0);
             int start_position = 1;
@@ -138,23 +142,34 @@ public class EightTracksCom extends PluginForHost {
                 if (tracklist_text != null) ids = new Regex(tracklist_text, "(\\{.*?\\})").getColumn(0);
                 /* Check how many tracks we already unlocked and if our token still works */
                 if (ids != null && ids.length != 0) {
+                    final int list_length = ids.length;
+                    synchronized (LOCK) {
+                        final int old_list_length = (int) getLongPropertyPluginCfg("tracks_played_list_length", -1);
+                        logger.info("Old list length: " + old_list_length + " // current list length: " + list_length);
+                        if (list_length < old_list_length) {
+                            logger.info("List length doesn't match (too small) -> Maybe reset token to retry from the beginning?");
+                        } else {
+                            logger.info("List length is okay (same or bigger) -> Saving it!");
+                            this.getPluginConfig().setProperty("tracks_played_list_length", list_length);
+                        }
+                    }
                     /* Check if we got a higher amount of the tracks than the track-number we need */
-                    if (ids.length >= tracknumber) {
+                    if (list_length >= tracknumber) {
                         /* Yes -> Set information for the track w need */
                         clipData = ids[tracknumber - 1];
                         currenttrackid = updateTrackID();
                         start_position = tracknumber;
                     } else {
                         /* No -> Set information for the latest track available and of course our start-position */
-                        clipData = ids[ids.length - 1];
+                        clipData = ids[list_length - 1];
                         currenttrackid = updateTrackID();
-                        start_position = ids.length;
+                        start_position = list_length;
                         /* We might be out of the skip range --> We have to wait till we can access the next track */
                         if (start_position >= SKIP_POSSIBLE_TILL_TRACK) force_skip_wait = true;
                     }
                 } else {
-                    /* Token invalid -> will be refreshed later */
-                    playToken = null;
+                    // /* We have no list of started tracks - let's start with track 1 */
+                    startPlaylist(playToken, mixid);
                 }
             }
             if (playToken == null) {
@@ -170,8 +185,7 @@ public class EightTracksCom extends PluginForHost {
                 setCookies(playToken);
                 /* Important to remember the position we were at */
                 downloadLink.setProperty("playtoken", playToken);
-                /* Start playlist */
-                clipData = getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
+                startPlaylist(playToken, mixid);
                 currenttrackid = mixid;
             }
 
@@ -179,8 +193,10 @@ public class EightTracksCom extends PluginForHost {
             for (int i = start_position; i <= tracknumber; i++) {
                 logger.info("current track: " + i + " // looking for track: " + tracknumber + " // last tracknumber: " + last_track_number);
                 dllink = getDllink();
+                currenttrackid = updateTrackID();
                 if ((!AT_END && dllink == null) || (!AT_END && dllink != null && dllink.equals(sameLink))) {
-                    AT_END = true;
+                    logger.info(NICE_HOST + ": dllink is null or equals the same link as before, quitting loop");
+                    break;
                 } else if (dllink != null && i == tracknumber) {
                     break;
                 } else {
@@ -193,16 +209,15 @@ public class EightTracksCom extends PluginForHost {
                     logger.info(NICE_HOST + ": AT_LAST_TRACK --> Leaving loop");
                     break;
                 }
-
-                if (br.containsHTML("\"skip_allowed\":false") || force_skip_wait) {
+                if (!Boolean.parseBoolean(getClipData("skip_allowed")) || force_skip_wait) {
                     logger.info("We are not allowed to skip anymore --> Waiting in between to get the next track in order to get all tracks");
-                    currenttrackid = updateTrackID();
                     /* Special handling to get from the penultimate track to last track */
                     if (i == (last_track_number - 1)) {
                         /* Pretend to play the song */
                         this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
                         br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                        clipData = getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
+                        /* Same command to start and to get last track */
+                        startPlaylist(playToken, mixid);
                     } else {
                         /* Pretend to play the song */
                         this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
@@ -217,7 +232,6 @@ public class EightTracksCom extends PluginForHost {
                     force_skip_wait = false;
                 } else {
                     logger.info("We are still allowed to skip");
-                    currenttrackid = updateTrackID();
                     /* Skip track */
                     clipData = getPage(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                 }
@@ -226,20 +240,18 @@ public class EightTracksCom extends PluginForHost {
                  * If skip track fails because of too short waittime, even multiple times, we simply wait a minute and try again till we can
                  * finally get to the next track
                  */
-                for (int skip_block = 1; skip_block <= 10; skip_block++) {
-                    if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
-                        logger.info("Exceeded skip limit -> re-trying again " + skip_block + " / 10");
+                if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                    for (int skip_block = 1; skip_block <= 10; skip_block++) {
                         this.sleep(WAITTIME_SECONDS_SKIPLIMIT * 1000l, downloadLink);
                         // Maybe listened to the track -> Next track
                         clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                        continue;
-                    } else {
-                        logger.info("There is no skip limit -> Continuing");
+                        if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) continue;
                         break;
+
                     }
+                    /* In case it fails after 10 minutes */
+                    if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
                 }
-                /* In case it fails after 10 minutes */
-                if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
 
                 AT_END = Boolean.parseBoolean(getClipData("at_end"));
                 AT_LAST_TRACK = Boolean.parseBoolean(getClipData("at_last_track"));
@@ -281,8 +293,10 @@ public class EightTracksCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find desired track");
                 }
             }
-            downloadLink.setProperty("trackid", currenttrackid);
             if (getFilename() != null) filename = getFilename();
+            logger.info("Updating track ID the last time");
+            currenttrackid = updateTrackID();
+            downloadLink.setProperty("trackid", currenttrackid);
             finallink = getFinalDirectlink(dllink);
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -315,10 +329,9 @@ public class EightTracksCom extends PluginForHost {
         }
     }
 
-    private String updateTrackID() throws PluginException {
-        String currenttrackid = getClipData("id");
-        if (currenttrackid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        return currenttrackid;
+    private void startPlaylist(final String playToken, final String mixid) throws IOException, PluginException {
+        clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
+        currenttrackid = updateTrackID();
     }
 
     private long getWaitSeconds(final String dllink) {
@@ -437,6 +450,12 @@ public class EightTracksCom extends PluginForHost {
         return filename;
     }
 
+    private String updateTrackID() throws PluginException {
+        final String currenttrackid = getClipData("id");
+        if (currenttrackid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return currenttrackid;
+    }
+
     private String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
@@ -492,6 +511,25 @@ public class EightTracksCom extends PluginForHost {
         } catch (final Throwable e) {
             try {
                 Object r = link.getProperty(key, def);
+                if (r instanceof String) {
+                    r = Long.parseLong((String) r);
+                } else if (r instanceof Integer) {
+                    r = ((Integer) r).longValue();
+                }
+                final Long ret = (Long) r;
+                return ret;
+            } catch (final Throwable e2) {
+                return def;
+            }
+        }
+    }
+
+    private long getLongPropertyPluginCfg(final String key, final long def) {
+        try {
+            return this.getPluginConfig().getLongProperty(key, def);
+        } catch (final Throwable e) {
+            try {
+                Object r = this.getPluginConfig().getProperty(key, def);
                 if (r instanceof String) {
                     r = Long.parseLong((String) r);
                 } else if (r instanceof Integer) {

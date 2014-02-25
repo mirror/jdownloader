@@ -233,6 +233,20 @@ public class PremiumTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!dl.getConnection().isContentDisposition()) {
+                if (dl.getConnection().getResponseCode() == 420) {
+                    int timesFailed = link.getIntegerProperty("timesfailedpremiumto_420dlerror", 0);
+                    link.getLinkStatus().setRetryCount(0);
+                    logger.info("premium.to: Download attempt failed because of server error 420");
+                    if (timesFailed <= 10) {
+                        timesFailed++;
+                        link.setProperty("timesfailedpremiumto_420dlerror", timesFailed);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started (420)");
+                    } else {
+                        link.setProperty("timesfailedpremiumto_420dlerror", Property.NULL);
+                        logger.info("premium.to: 420 download error - disabling current host!");
+                        tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                    }
+                }
                 br.followConnection();
                 logger.severe("PremiumTo(Error): " + br.toString());
                 /*

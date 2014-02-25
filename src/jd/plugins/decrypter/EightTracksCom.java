@@ -122,25 +122,28 @@ public class EightTracksCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            String trackid = null;
+            String filename = null;
+            String dllink = null;
             String playToken = null;
             if (TEST_MODE && TEST_MODE_TOKEN != null) {
                 playToken = "608739506";
             } else {
-                /* Get token */
+                // /* Get token */
                 clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
                 playToken = getClipData("play_token");
                 if (playToken == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                /* Play one track, then skip one track so we can re-use the token later for all links which really speeds up this whole */
+                /* Play one track and get the token */
                 clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/play?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&format=jsonh");
-                final String trackid = updateTrackID();
-                if (trackid == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + trackid + "&format=jsonh");
+                trackid = updateTrackID();
+                dllink = getDllink();
+                filename = getFilename();
+                // clipData = br.getPage(MAINPAGE + "sets/" + playToken +
+                // "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + trackid +
+                // "&format=jsonh");
             }
 
             final int tracks_in_mix = Integer.parseInt(tracksInMix);
@@ -156,6 +159,11 @@ public class EightTracksCom extends PluginForDecrypt {
                 dl.setProperty("tempname_with_ext", temp_name + TEMP_EXT);
                 dl.setProperty("tracknumber", Integer.toString(i));
                 dl.setProperty("lasttracknumber", tracks_in_mix);
+                if (i == 1 && trackid != null && dllink != null && filename != null) {
+                    dl.setProperty("trackid", trackid);
+                    dl.setProperty("savedlink", dllink);
+                    dl.setProperty("final_filename", filename);
+                }
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
@@ -176,6 +184,37 @@ public class EightTracksCom extends PluginForDecrypt {
         return currenttrackid;
     }
 
+    private String getDllink() {
+        String dllink = null;
+        final String soundcloud_trackID = new Regex(clipData, "\"uid\":\"sc\\-(\\d+)\"").getMatch(0);
+        if (soundcloud_trackID != null) {
+            dllink = "https://api.soundcloud.com/tracks/" + soundcloud_trackID + "/stream?client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID;
+        } else {
+            dllink = getClipData("track_file_stream_url");
+        }
+        return dllink;
+    }
+
+    private String getFilename() {
+        String filename = null;
+        final Regex name_and_artist = new Regex(clipData, "\"name\":\"([^<>\"]*?)\",\"performer\":\"([^<>\"]*?)\"");
+        String album = getClipData("release_name");
+        String title = name_and_artist.getMatch(0);
+        String artist = name_and_artist.getMatch(1);
+        if (album == null || title == null) return null;
+        if (album.contains(":")) album = album.substring(0, album.indexOf(":"));
+        if (album.equals(title) || isEmpty(album)) album = null;
+        title = encodeUnicode(Encoding.htmlDecode(title.trim()));
+        artist = encodeUnicode(Encoding.htmlDecode(artist.trim()));
+        if (album != null) {
+            album = encodeUnicode(Encoding.htmlDecode(album.trim()));
+            filename = artist + " - " + album + " - " + title;
+        } else {
+            filename = artist + " - " + title;
+        }
+        return filename;
+    }
+
     private String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
@@ -189,6 +228,10 @@ public class EightTracksCom extends PluginForDecrypt {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private boolean isEmpty(final String ip) {
+        return ip == null || ip.trim().length() == 0;
     }
 
     /* NO OVERRIDE!! */
