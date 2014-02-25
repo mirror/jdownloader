@@ -217,6 +217,7 @@ public class HostingBulkCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
         if (dllink == null) dllink = getDllink();
+        checkErrors(downloadLink, false);
         // Third, do they provide video hosting?
         if (dllink == null && VIDEOHOSTER) {
             try {

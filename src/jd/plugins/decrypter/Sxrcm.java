@@ -56,9 +56,24 @@ public class Sxrcm extends PluginForDecrypt {
         synchronized (LOCK) {
             if (new Regex(parameter, PATTEREN_SUPPORTED_MAIN).matches()) {
                 br.getPage(parameter);
-                String links[] = br.getRegex(PATTERN_DL_LINK_PAGE).getColumn(0);
-                for (String link : links) {
-                    decryptedLinks.add(createDownloadlink("http://sexuria.com/v1/" + link));
+                final String[] final_links = br.getRegex("onclick=\"this\\.className\\+=\\' disabled\\'\" href=\"(http[^<>\"]*?)\"").getColumn(0);
+                if (final_links != null && final_links.length != 0) {
+                    for (final String finallink : final_links) {
+                        decryptedLinks.add(createDownloadlink(finallink));
+                    }
+                } else {
+                    final String links[] = br.getRegex(PATTERN_DL_LINK_PAGE).getColumn(0);
+                    if (links == null || links.length == 0) {
+                        if (br.containsHTML("<h2>Porn\\-Chat</h2>")) {
+                            logger.info("Link offline: " + parameter);
+                            return decryptedLinks;
+                        }
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    for (String link : links) {
+                        decryptedLinks.add(createDownloadlink("http://sexuria.com/v1/" + link));
+                    }
                 }
                 return decryptedLinks;
             } else if (new Regex(parameter, PATTERN_SUPPORTED_CRYPT).matches()) {

@@ -40,7 +40,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read")) {
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -50,6 +50,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         }
 
         String contentReleaseName = br.getRegex("<h2 class=\"post\\-title\">(.*?)</h2>").getMatch(0);
+        if (contentReleaseName == null) contentReleaseName = br.getRegex("<h1 class=\"post\\-title\">([^<>\"]*?)</h1>").getMatch(0);
         if (contentReleaseName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -94,8 +95,8 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         if (CATEGORY != Category.SITERIP) {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
-            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
-            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)class=\"comments\">Comments are closed").getMatch(0);
+            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(1);
+            if (contentReleaseLinks == null) contentReleaseLinks = br.getRegex("<h(1|2) class=\"post\\-title\">(.*?)class=\"comments\">Comments are closed").getMatch(1);
         } else {
             // Get all links from title till comment field
             contentReleaseLinks = br.getRegex("<h2 class=\"post\\-title\">(.*?)function validatecomment\\(form\\)\\{").getMatch(0);
