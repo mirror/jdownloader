@@ -42,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
@@ -126,7 +126,7 @@ public class NowVideoEu extends PluginForHost {
     }
 
     private String validateHost() {
-        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag" };
+        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag", "at" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
             String CCtld = ccTLDs[i];
@@ -152,7 +152,7 @@ public class NowVideoEu extends PluginForHost {
     private static StringContainer MAINPAGE           = new StringContainer("http://www.nowvideo.sx");
     private static StringContainer ccTLD              = new StringContainer("sx");
     private final String           ISBEINGCONVERTED   = ">The file is being converted.";
-    private final String           domains            = "nowvideo\\.(sx|eu|co|ch|ag)";
+    private final String           domains            = "nowvideo\\.(sx|eu|co|ch|ag|at)";
     private static AtomicBoolean   AVAILABLE_PRECHECK = new AtomicBoolean(false);
     private static StringContainer agent              = new StringContainer(null);
 

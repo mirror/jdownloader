@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu", "likeupload.net" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co|ch|sx|ag|at)/(dl(\\d+)?/|down(load)?\\.php\\?id=)[a-z0-9]+", "https?://(www\\.)?likeupload\\.(net|org)/[a-z0-9]{12}" }, flags = { 2, 2 })
 public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
@@ -54,7 +54,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     public Boolean rewriteHost(DownloadLink link) {
-        if (link != null && ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost()) || "nowdownload.sx".equals(link.getHost()) || "nowdownload.ag".equals(link.getHost()))) {
+        if (link != null && ("nowdownload.co".equals(link.getHost()) || "nowdownload.ch".equals(link.getHost()) || "nowdownload.sx".equals(link.getHost()) || "nowdownload.ag".equals(link.getHost()) || "nowdownload.at".equals(link.getHost()))) {
             link.setHost("nowdownload.eu");
             return true;
         }
@@ -62,7 +62,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     public Boolean rewriteHost(Account acc) {
-        if (acc != null && ("nowdownload.co".equals(acc.getHoster()) || "nowdownload.ch".equals(acc.getHoster()) || "nowdownload.sx".equals(acc.getHoster()) || "nowdownload.ag".equals(acc.getHoster()))) {
+        if (acc != null && ("nowdownload.co".equals(acc.getHoster()) || "nowdownload.ch".equals(acc.getHoster()) || "nowdownload.sx".equals(acc.getHoster()) || "nowdownload.ag".equals(acc.getHoster()) || "nowdownload.at".equals(acc.getHoster()))) {
             acc.setHoster("nowdownload.eu");
             return true;
         }
@@ -94,7 +94,7 @@ public class NowDownloadEu extends PluginForHost {
     private static Object          LOCK                    = new Object();
     private final String           TEMPUNAVAILABLE         = ">The file is being transfered\\. Please wait";
     private final String           TEMPUNAVAILABLEUSERTEXT = "Host says: 'The file is being transfered. Please wait!'";
-    private final String           domains                 = "nowdownload\\.(eu|co|ch|sx|ag)";
+    private final String           domains                 = "nowdownload\\.(eu|co|ch|sx|ag|at)";
 
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().contains("likeupload.")) {
@@ -236,7 +236,7 @@ public class NowDownloadEu extends PluginForHost {
     }
 
     private String validateHost() {
-        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag" };
+        final String[] ccTLDs = { "sx", "eu", "co", "ch", "ag", "at" };
 
         for (int i = 0; i < ccTLDs.length; i++) {
             String domain = ccTLDs[i];
