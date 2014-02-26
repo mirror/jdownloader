@@ -851,6 +851,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
             dl.setTimestamp(System.currentTimeMillis());
+
             dl.setSessionStart(sessionStart);
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
             // this.
@@ -873,7 +874,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
         sendTo.add(new LogEntryWrapper(dl, LogEntryWrapper.VERSION));
         try {
-            br.postPageRaw(getBase() + "stats/push", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));
+            String feedbackjson = JSonStorage.serializeToJson(new TimeWrapper(sendTo));
+
+            br.postPageRaw(getBase() + "stats/push", feedbackjson);
 
             // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
 
