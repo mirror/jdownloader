@@ -12,7 +12,7 @@ import org.jdownloader.logging.LogController;
 
 public class IP {
     public static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
-
+    
     /**
      * validates the adress, and returns an IP instance or throws an exception in case of validation errors
      * 
@@ -38,7 +38,7 @@ public class IP {
                 /* fritzbox sends 0.0.0.0 while its offline */
                 if (n1 == 0 && n2 == 0 && n3 == 0 && n4 == 0) { throw new OfflineException(ip); }
                 if (n1 >= 0 && n1 <= 255 && n2 >= 0 && n2 <= 255 && n3 >= 0 && n3 <= 255 && n4 >= 0 && n4 <= 255) {
-
+                    
                     if (!IP.validateIP(ip)) { throw new ForbiddenIPException(ip); }
                     return new IP(ip);
                 } else {
@@ -47,9 +47,9 @@ public class IP {
             }
         }
         throw new InvalidIPException(ip);
-
+        
     }
-
+    
     /**
      * Überprüft ob eine IP gültig ist. das verwendete Pattern kann in der config editiert werden.
      * 
@@ -66,14 +66,17 @@ public class IP {
         }
         return true;
     }
-
-    protected String ip = null;
-
+    
+    protected final String ip;
+    
     private IP(final String ip) {
         this.ip = ip;
-
     }
-
+    
+    public String getIP() {
+        return ip;
+    }
+    
     public boolean equals(final Object c) {
         if (c != null && c instanceof IP) {
             final IP ip = (IP) c;
@@ -81,19 +84,19 @@ public class IP {
         }
         return false;
     }
-
+    
     public int hashCode() {
         return this.ip.hashCode();
     }
-
+    
     public String toString() {
         return this.ip != null ? this.ip : "unknown";
     }
-
+    
     public static void main(String[] args) {
         System.out.println(isValidRouterIP("192.168.0.1"));
     }
-
+    
     public static boolean isValidRouterIP(String gatewayIP) {
         boolean localip = isLocalIP(gatewayIP);
         if (!localip) {
@@ -106,9 +109,9 @@ public class IP {
         if (!localip) return false;
         return RouterUtils.checkPort(gatewayIP);
     }
-
+    
     public static boolean isLocalIP(String ip) {
-
+        
         if (ip == null) return false;
         if (ip.matches("^\\d+\\.\\d+\\.\\d+\\.\\d+$")) {
             final String parts[] = ip.split("\\.");
@@ -119,15 +122,15 @@ public class IP {
                 // final int n3 = Integer.parseInt(parts[2]);
                 // final int n4 = Integer.parseInt(parts[3]);
                 /* 10.0.0.0-10.255.255.255 */
-                if (n1 == 10) { return true; }
+                if (n1 == 10 || n1 == 127) { return true; }
                 /* 192.168.0.0 - 192.168.255.255 */
                 if (n1 == 192 && n2 == 168) { return true; }
                 /* 172.16.0.0 - 172.31.255.255 */
                 if (n1 == 172 && n2 >= 16 && n2 <= 31) { return true; }
-
+                
             }
         }
         return false;
     }
-
+    
 }

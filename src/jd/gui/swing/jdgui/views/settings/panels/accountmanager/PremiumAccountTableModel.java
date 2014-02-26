@@ -196,29 +196,6 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
         });
         this.addColumn(new ExtTextColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_hoster()) {
             
-            {
-                final ExtDefaultRowSorter<AccountEntry> oldSorter = getRowSorter();
-                setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
-                    
-                    public int compare(boolean x, boolean y) {
-                        return (x == y) ? 0 : (x ? 1 : -1);
-                    }
-                    
-                    @Override
-                    public int compare(final AccountEntry o1, final AccountEntry o2) {
-                        int ret = compare(o1.getAccount().isEnabled(), o2.getAccount().isEnabled());
-                        if (ret == 0) {
-                            return oldSorter.compare(o1, o2);
-                        } else if (getSortOrderIdentifier() != ExtColumn.SORT_ASC) {
-                            return -ret;
-                        } else {
-                            return ret;
-                        }
-                    }
-                    
-                });
-            }
-            
             private static final long serialVersionUID = -3693931358975303164L;
             
             @Override

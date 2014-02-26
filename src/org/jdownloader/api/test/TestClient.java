@@ -208,6 +208,9 @@ public class TestClient {
         register(new RequestAccessTokenTest());
         register(new CancelRegistrationTest());
         register(new CallAccessTokenURL());
+        register(new GetDirectConnectionInfo());
+        register(new VerifyDirectConnection());
+        register(new DirectConnectionCall());
         JacksonMapper jm;
         JSonStorage.setMapper(jm = new JacksonMapper());
         

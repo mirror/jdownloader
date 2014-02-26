@@ -41,12 +41,12 @@ import org.jdownloader.myjdownloader.client.SessionInfo;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 
 public class MyJDownloaderHttpConnection extends HttpConnection {
-
+    
     private final ArrayList<HttpRequestHandler> requestHandler;
     private final MyJDownloaderAPI              api;
-
+    
     private LogSource                           logger;
-
+    
     public static MyJDownloaderHttpConnection getMyJDownloaderHttpConnection(RemoteAPIRequest request) {
         if (request instanceof SessionRemoteAPIRequest<?>) {
             Object session = ((SessionRemoteAPIRequest<?>) request).getSession();
@@ -54,7 +54,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         }
         return null;
     }
-
+    
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(null, clientConnection);
         requestHandler = new ArrayList<HttpRequestHandler>();
@@ -63,39 +63,39 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         this.api = api;
         logger = api.getLogger();
     }
-
+    
     protected GetRequest buildGetRequest() {
         return new MyJDownloaderGetRequest(this);
     }
-
+    
     protected HeadRequest buildHeadRequest() {
         return new MyJDownloaderHeadRequest(this);
     }
-
+    
     protected OptionsRequest buildOptionsRequest() {
         return new MyJDownloaderOptionsRequest(this);
     }
-
+    
     protected PostRequest buildPostRequest() {
-
+        
         return new MyJDownloaderPostRequest(this);
     }
-
+    
     private OutputStream os                     = null;
     private byte[]       payloadEncryptionToken = null;
-
+    
     private String       requestConnectToken;
     private HTTPHeader   accept_encoding;
-
+    
     @Override
     public List<HttpRequestHandler> getHandler() {
         return requestHandler;
     }
-
+    
     protected void onUnhandled(final HttpRequest request, final HttpResponse response) throws IOException {
         onException(new ApiInterfaceNotAvailable(), request, response);
     }
-
+    
     @Override
     public boolean onException(Throwable e, final HttpRequest request, final HttpResponse response) throws IOException {
         BasicRemoteAPIException apiException;
@@ -106,10 +106,9 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         }
         logger.log(apiException);
         this.response = new HttpResponse(this);
-
         return apiException.handle(this.response);
     }
-
+    
     // @Override
     // public byte[] getAESJSon_IV(String ID) {
     // if (ID != null) {
@@ -119,15 +118,15 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     // }
     // return null;
     // }
-
+    
     public byte[] getPayloadEncryptionToken() {
         return payloadEncryptionToken;
     }
-
+    
     public String getRequestConnectToken() {
         return requestConnectToken;
     }
-
+    
     // @Override
     // public byte[] getAESJSon_KEY(String ID) {
     // if (ID != null) {
@@ -137,7 +136,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     // }
     // return null;
     // }
-
+    
     @Override
     protected HttpRequest buildRequest() throws IOException {
         HttpRequest ret = super.buildRequest();
@@ -146,7 +145,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         ret.getRequestHeaders().remove(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING);
         return ret;
     }
-
+    
     @Override
     public void closeConnection() {
         try {
@@ -159,7 +158,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         } catch (final Throwable nothing) {
         }
     }
-
+    
     @Override
     protected String preProcessRequestLine(String requestLine) throws IOException {
         RequestLineParser parser = RequestLineParser.parse(requestLine.getBytes("UTF-8"));
@@ -172,9 +171,9 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 payloadEncryptionToken = session.getServerEncryptionToken();
             } else {
                 // The request origin is a remote client
-
+                
                 payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
-
+                
             }
         } catch (final MyJDownloaderException e) {
             throw new IOException(e);
@@ -182,7 +181,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         requestLine = requestLine.replaceFirst(" /t_[a-zA-z0-9]{40}_.+?/", " /");
         return requestLine;
     };
-
+    
     @Override
     public synchronized OutputStream getOutputStream(boolean sendHeaders) throws IOException {
         if (this.os != null) return this.os;
@@ -226,37 +225,37 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
                                                                   // public void close() throws IOException {
                                                                   // };
-
+                                                                  
                                                               };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
-
+                        
                         {
                             if (useDeChunkingOutputStream) {
                                 outos = new DeChunkingOutputStream(outos);
                             }
                         }
-
+                        
                         @Override
                         public void close() throws IOException {
                             outos.close();
                             b64os.flush();
                             chunkedOS.close();
                         }
-
+                        
                         @Override
                         public void flush() throws IOException {
                         }
-
+                        
                         @Override
                         public void write(int b) throws IOException {
                             outos.write(b);
                         }
-
+                        
                         @Override
                         public void write(byte[] b, int off, int len) throws IOException {
                             outos.write(b, off, len);
                         };
-
+                        
                     };
                 }
             } catch (final Throwable e) {

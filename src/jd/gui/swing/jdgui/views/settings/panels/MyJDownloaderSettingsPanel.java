@@ -22,11 +22,9 @@ import java.awt.event.ActionEvent;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JTextArea;
 
 import jd.controlling.TaskQueue;
-import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.PasswordInput;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
@@ -64,7 +62,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
     private JButton           connectButton;
     private AppAction         connectAction;
     private AppAction         disconnectAction;
-    private Checkbox          checkBox;
     private AppAction         reconnectAction;
     private ExtButton         disconnectButton;
     private TextInput         deviceName;
@@ -182,9 +179,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         disconnectButton = new ExtButton(disconnectAction);
         MyJDownloaderController.getInstance().getEventSender().addListener(this, true);
         SwingUtils.toBold(status);
-        checkBox = new Checkbox(CFG_MYJD.AUTO_CONNECT_ENABLED);
-        checkBox.setToolTipText(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_tt());
-        
         CFG_MYJD.LATEST_ERROR.getEventSender().addListener(this, true);
         this.addHeader(getTitle(), NewTheme.I().getIcon("myjdownloader", 32));
         this.addDescription(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description());
@@ -199,17 +193,11 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         
         addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_devicename_(), null, deviceName);
         
-        MigPanel p = new MigPanel("ins 0 0 0 0", "[grow,fill][][][][]", "[]");
+        MigPanel p = new MigPanel("ins 0 0 0 0", "[grow,fill][][]", "[]");
         p.setOpaque(false);
         p.add(status, "wmin 10");
         // add(status, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10");
         // p.add(Box.createHorizontalGlue());
-        JLabel lbl;
-        p.add(lbl = new JLabel(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_()));
-        lbl.setToolTipText(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_tt());
-        checkBox.setToolTipText(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_autoconnect_tt());
-        
-        p.add(checkBox);
         
         p.add(connectButton);
         p.add(disconnectButton);
@@ -217,7 +205,6 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         add(p, "spanx,pushx,growx");
         add(Box.createHorizontalGlue(), "gapleft 37");
         add(error, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
-        
     }
     
     @Override

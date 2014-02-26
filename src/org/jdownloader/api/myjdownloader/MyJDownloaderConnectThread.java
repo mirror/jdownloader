@@ -147,22 +147,33 @@ public class MyJDownloaderConnectThread extends Thread {
         return logger;
     }
     
-    private AtomicLong                                             syncMark                  = new AtomicLong(-1);
-    private ScheduledExecutorService                               THREADQUEUE               = DelayedRunnable.getNewScheduledExecutorService();
+    private AtomicLong                                             syncMark        = new AtomicLong(-1);
+    private ScheduledExecutorService                               THREADQUEUE     = DelayedRunnable.getNewScheduledExecutorService();
     private final DeviceConnectionHelper[]                         deviceConnectionHelper;
-    private int                                                    helperIndex               = 0;
-    private NullsafeAtomicReference<MyJDownloaderConnectionStatus> connected                 = new NullsafeAtomicReference<MyJDownloaderConnectionStatus>(MyJDownloaderConnectionStatus.UNCONNECTED);
+    private int                                                    helperIndex     = 0;
+    private NullsafeAtomicReference<MyJDownloaderConnectionStatus> connected       = new NullsafeAtomicReference<MyJDownloaderConnectionStatus>(MyJDownloaderConnectionStatus.UNCONNECTED);
     private String                                                 password;
     private String                                                 email;
     private String                                                 deviceName;
     private Set<TYPE>                                              notifyInterests;
-    private final static HashMap<Thread, Socket>                   openConnections           = new HashMap<Thread, Socket>();
-    private final ArrayDeque<MyJDownloaderConnectionResponse>      responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
-    private final ArrayList<MyJDownloaderWaitingConnectionThread>  waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
-    private final int                                              minimumWaitingConnections = 1;
-    private final int                                              maximumWaitingConnections = 4;
-    private final File                                             sessionInfoCache;
-    private final static Object                                    SESSIONLOCK               = new Object();
+    private final static HashMap<Thread, Socket>                   openConnections = new HashMap<Thread, Socket>();
+    
+    protected static HashMap<Thread, Socket> getOpenconnections() {
+        return openConnections;
+    }
+    
+    private final ArrayDeque<MyJDownloaderConnectionResponse>     responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
+    private final ArrayList<MyJDownloaderWaitingConnectionThread> waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
+    private final int                                             minimumWaitingConnections = 1;
+    private final int                                             maximumWaitingConnections = 4;
+    private final File                                            sessionInfoCache;
+    private final MyJDownloaderDirectServer                       directServer;
+    
+    public MyJDownloaderDirectServer getDirectServer() {
+        return directServer;
+    }
+    
+    private final static Object SESSIONLOCK = new Object();
     
     public MyJDownloaderConnectThread(MyJDownloaderController myJDownloaderExtension) {
         setName("MyJDownloaderConnectThread");
@@ -188,6 +199,15 @@ public class MyJDownloaderConnectThread extends Thread {
         notifyInterests = new CopyOnWriteArraySet<NotificationRequestMessage.TYPE>();
         sessionInfoCache = Application.getTempResource("myjd.session");
         loadSessionInfo();
+        if (CFG_MYJD.DIRECT_CONNECT_ENABLED.isEnabled()) {
+            directServer = new MyJDownloaderDirectServer(this);
+        } else {
+            directServer = null;
+        }
+    }
+    
+    protected MyJDownloaderAPI getApi() {
+        return api;
     }
     
     public boolean putResponse(MyJDownloaderConnectionResponse response) {
@@ -344,6 +364,7 @@ public class MyJDownloaderConnectThread extends Thread {
         DeviceConnectionHelper currentHelper = null;
         int unknownErrorSafeOff = 10;
         try {
+            if (directServer != null) directServer.start();
             while (myJDownloaderExtension.getConnectThread() == this && api != null) {
                 try {
                     try {
@@ -465,16 +486,17 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
             }
         } finally {
+            if (directServer != null) directServer.close();
             disconnect();
         }
     }
     
-    private void setConnected(MyJDownloaderConnectionStatus set) {
+    protected void setConnected(MyJDownloaderConnectionStatus set) {
         if (connected.getAndSet(set) == set) return;
         myJDownloaderExtension.fireConnectionStatusChanged(set, getEstablishedConnections());
     }
     
-    private void setEstablishedConnections(int connections) {
+    protected void setEstablishedConnections(int connections) {
         myJDownloaderExtension.fireConnectionStatusChanged(connected.get(), connections);
     }
     
@@ -559,7 +581,7 @@ public class MyJDownloaderConnectThread extends Thread {
         notifyInterests.remove(captcha);
     }
     
-    private void handleConnection(final Socket clientSocket) {
+    protected void handleConnection(final Socket clientSocket) {
         Thread connectionThread = new Thread("MyJDownloaderConnection:" + THREADCOUNTER.incrementAndGet()) {
             @Override
             public void run() {
@@ -569,6 +591,10 @@ public class MyJDownloaderConnectThread extends Thread {
                 } catch (final Throwable e) {
                     logger.log(e);
                 } finally {
+                    try {
+                        clientSocket.close();
+                    } catch (final Throwable e) {
+                    }
                     synchronized (openConnections) {
                         openConnections.remove(Thread.currentThread());
                     }
@@ -784,7 +810,7 @@ public class MyJDownloaderConnectThread extends Thread {
         return connected.get();
     }
     
-    public int getEstablishedConnections() {
+    protected int getEstablishedConnections() {
         synchronized (openConnections) {
             return openConnections.size();
         }
