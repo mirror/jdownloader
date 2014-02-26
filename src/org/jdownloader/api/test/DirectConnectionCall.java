@@ -18,7 +18,7 @@ public class DirectConnectionCall extends Test {
         final DeviceList list = api.listDevices();
         if (list.getList().size() == 0) { throw new RuntimeException("No Device Connected"); }
         final int device = Dialog.getInstance().showComboDialog(0, "Choose Device", "Choose Device", list.getList().toArray(new DeviceData[] {}), 0, null, null, null, null);
-        AbstractMyJDDeviceClient deviceAPI = new AbstractMyJDDeviceClient(list.getList().get(device), api);
+        AbstractMyJDDeviceClient deviceAPI = new AbstractMyJDDeviceClient(list.getList().get(device).getId(), api);
         final DirectConnectionInfos infos = deviceAPI.getDirectConnectionInfos();
         if (infos.getInfos() == null) {
             Dialog.getInstance().showMessageDialog(Dialog.STYLE_LARGE, "No direct Connection available!");
