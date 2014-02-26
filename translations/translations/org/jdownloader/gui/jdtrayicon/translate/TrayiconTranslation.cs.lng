@@ -11,6 +11,7 @@ OnMinimizeAction_totaskbar=Minimalizovat na hlavní panel
 OnMinimizeAction_totray=Zavřít do oznamovací oblasti
 TrayMenuManager_getName=Správce ikony v oznamovací oblasti
 getName=Ikona v oznamovací oblasti
+jd_plugins_optional_jdtrayicon_jdlighttray=Jednoduchá oznamovací oblast
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Umožňuje minimalizaci nebo zavření JDownloaderu do oznamovací oblasti a další související vlastnosti, jako ochranu heslem a další.
 plugins_optional_JDLightTray_closetotray2=Klikněte na akci 'Zavřít <X>'
 plugins_optional_JDLightTray_hideifframevisible=Skrýt oznamovací oblast, pokud je okno viditelné
