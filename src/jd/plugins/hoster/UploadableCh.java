@@ -19,7 +19,9 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -40,6 +42,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadable.ch" }, urls = { "http://(www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
@@ -53,6 +56,8 @@ public class UploadableCh extends PluginForHost {
     public String getAGBLink() {
         return "http://www.uploadable.ch/terms.php";
     }
+
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     // TODO: Maybe implement mass linkchecker: http://www.uploadable.ch/check.php
     @Override
@@ -198,9 +203,32 @@ public class UploadableCh extends PluginForHost {
         br.getPage("http://www.uploadable.ch/indexboard.php");
         final String space = br.getRegex(">Storage</div>[\t\r\n ]+<div class=\"b_blue_type\">([^\"/]*?)</span>").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim().replace("<span>", ""));
+        final String expiredate = br.getRegex("lass=\"grey_type\">[\r\n\t ]+Until([^<>\"]*?)</div>").getMatch(0);
+        if (expiredate == null) {
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            account.setProperty("nopremium", true);
+            ai.setStatus("Registered (free) user");
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "dd MMM yyyy", Locale.ENGLISH));
+            try {
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
+            account.setProperty("nopremium", false);
+            ai.setStatus("Premium user");
+        }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
@@ -208,7 +236,24 @@ public class UploadableCh extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        doFree(link);
+        if (account.getBooleanProperty("nopremium", false)) {
+            doFree(link);
+        } else {
+            br.setFollowRedirects(false);
+            /* This way we don't have to care about the users' "instant download" setting */
+            br.postPage(link.getDownloadURL(), "download=premium");
+            final String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                logger.warning("Final link is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        }
     }
 
     @Override

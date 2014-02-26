@@ -188,6 +188,7 @@ public class EightTracksCom extends PluginForHost {
                 currenttrackid = mixid;
             }
 
+            // TODO: Change loop & add "startPlaylist" for first song from existing temp tracklist
             /* limit to 100 API calls per minute -> Usually we will not exceed this limit */
             for (int i = start_position; i <= tracknumber; i++) {
                 logger.info("current track: " + i + " // looking for track: " + tracknumber + " // last tracknumber: " + last_track_number);

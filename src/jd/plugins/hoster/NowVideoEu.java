@@ -42,7 +42,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
 
     public NowVideoEu(PluginWrapper wrapper) {
@@ -68,9 +68,9 @@ public class NowVideoEu extends PluginForHost {
         }
     }
 
-    public Boolean rewriteHost(DownloadLink link) {
+    public Boolean rewriteHost(final DownloadLink link) {
         if ("nowvideo.eu".equals(getHost())) {
-            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.sx".equals(link.getHost()) || "nowvideo.ag".equals(link.getHost()))) {
+            if (link != null && ("nowvideo.ch".equals(link.getHost()) || "nowvideo.co".equals(link.getHost()) || "nowvideo.sx".equals(link.getHost()) || "nowvideo.ag".equals(link.getHost()) || "nowvideo.at".equals(link.getHost()))) {
                 link.setHost("nowvideo.eu");
                 return true;
             }
@@ -79,9 +79,9 @@ public class NowVideoEu extends PluginForHost {
         return null;
     }
 
-    public Boolean rewriteHost(Account acc) {
+    public Boolean rewriteHost(final Account acc) {
         if ("nowvideo.eu".equals(getHost())) {
-            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.sx".equals(acc.getHoster()) || "nowvideo.ag".equals(acc.getHoster()))) {
+            if (acc != null && ("nowvideo.ch".equals(acc.getHoster()) || "nowvideo.co".equals(acc.getHoster()) || "nowvideo.sx".equals(acc.getHoster()) || "nowvideo.ag".equals(acc.getHoster()) || "nowvideo.at".equals(acc.getHoster()))) {
                 acc.setHoster("nowvideo.eu");
                 return true;
             }

@@ -38,8 +38,12 @@ public class MixtureCloudComFolder extends PluginForDecrypt {
         // required for http to https
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("404: page not found|There is no album here<")) {
+        if (br.containsHTML("data\\-dismiss=\"alert\"")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("<span>0 Item</span>")) {
+            logger.info("There are no items in this album: " + parameter);
             return decryptedLinks;
         }
         final String[] links = br.getRegex("\"(media/(?!share)[A-Za-z0-9]+)\"").getColumn(0);
