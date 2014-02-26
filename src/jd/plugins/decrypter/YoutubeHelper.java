@@ -1575,7 +1575,7 @@ public class YoutubeHelper {
                 urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
                 return;
             } else {
-
+                return;
             }
         }
         urls.put(lang, new YoutubeSubtitleInfo(ttsUrl, lang, name, kind, langOrg));
