@@ -33,6 +33,7 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 
 import jd.PluginWrapper;
@@ -67,20 +68,21 @@ import org.jdownloader.images.NewTheme;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class FreeWayMe extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap               = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem                          = new AtomicInteger(1);
-    private final String                                   ALLOWRESUME                      = "ALLOWRESUME";
-    private final String                                   BETAUSER                         = "FREEWAYBETAUSER";
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
+    private static AtomicInteger                           maxPrem                             = new AtomicInteger(1);
+    private final String                                   ALLOWRESUME                         = "ALLOWRESUME";
+    private final String                                   BETAUSER                            = "FREEWAYBETAUSER";
 
-    private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE = "NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE";
-    private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_DIALOG = "NOTIFY_ON_FULLSPEED_LIMIT_DIALOG";
+    private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE    = "NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE";
+    private final String                                   NOTIFY_ON_FULLSPEED_LIMIT_DIALOG    = "NOTIFY_ON_FULLSPEED_LIMIT_DIALOG";
 
-    private static final String                            NORESUME                         = "NORESUME";
-    private static final String                            PREVENTSPRITUSAGE                = "PREVENTSPRITUSAGE";
+    private static final String                            NORESUME                            = "NORESUME";
+    private static final String                            PREVENTSPRITUSAGE                   = "PREVENTSPRITUSAGE";
 
-    public final String                                    ACC_PROPERTY_CONNECTIONS         = "parallel";
-    public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION   = "ACC_TRAFFIC_REDUCTION";
-    public final String                                    ACC_PROPERTY_UNKOWN_FAILS        = "timesfailedfreewayme_unknown";
+    public final String                                    ACC_PROPERTY_CONNECTIONS            = "parallel";
+    public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION      = "ACC_TRAFFIC_REDUCTION";
+    public final String                                    ACC_PROPERTY_REST_FULLSPEED_TRAFFIC = "ACC_PROPERTY_REST_FULLSPEED_TRAFFIC";
+    public final String                                    ACC_PROPERTY_UNKOWN_FAILS           = "timesfailedfreewayme_unknown";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -115,7 +117,8 @@ public class FreeWayMe extends PluginForHost {
                                                       put("DETAILS_ACCOUNT_NAME", "Account name:");
                                                       put("DETAILS_ACCOUNT_TYPE", "Account type:");
                                                       put("DETAILS_SIMULTAN_DOWNLOADS", "Simultaneous Downloads:");
-                                                      put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeed traffic:");
+                                                      put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeed traffic used:");
+                                                      put("DETAILS_FULLSPEED_REST_TRAFFIC", "Fullspeed traffic left:");
                                                       put("DETAILS_FULLSPEED_UNKOWN", "unknown");
                                                       put("DETAILS_FULLSPEED_REDUCED", "reduced");
                                                       put("DETAILS_NOTIFICATIONS", "Notifications:");
@@ -158,6 +161,7 @@ public class FreeWayMe extends PluginForHost {
                                                       put("DETAILS_ACCOUNT_TYPE", "Account Typ:");
                                                       put("DETAILS_SIMULTAN_DOWNLOADS", "Gleichzeitige Downloads:");
                                                       put("DETAILS_FULLSPEED_TRAFFIC", "Fullspeedvolumen verbraucht:");
+                                                      put("DETAILS_FULLSPEED_REST_TRAFFIC", "Restliches Fullspeedvolumen:");
                                                       put("DETAILS_FULLSPEED_UNKOWN", "unbekannt");
                                                       put("DETAILS_FULLSPEED_REDUCED", "gedrosselt");
                                                       put("DETAILS_NOTIFICATIONS", "Benachrichtigungen:");
@@ -253,12 +257,16 @@ public class FreeWayMe extends PluginForHost {
         }
         maxPrem.set(maxPremi);
 
-        int trafficPerc = -1;
+        // get available fullspeed traffic
+        account.setProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, getJson("restgb", br.toString()));
+
+        // get percentage usage of fullspeed traffic
+        float trafficPerc = -1f;
         final String trafficPercApi = getJson("perc", br.toString());
         if (trafficPercApi != null) {
-            trafficPerc = Integer.parseInt(trafficPercApi);
+            trafficPerc = Float.parseFloat(trafficPercApi);
 
-            if (trafficPerc > 95) {
+            if (trafficPerc > 95.0f) {
                 // todays traffic limit reached...
                 String lastNotification = account.getStringProperty("LAST_SPEEDLIMIT_NOTIFICATION", "default");
                 if (lastNotification != null) {
@@ -292,8 +300,7 @@ public class FreeWayMe extends PluginForHost {
                 }
             }
         }
-
-        account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, trafficPerc);
+        account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, ((int) trafficPerc * 100));
 
         try {
             Long guthaben = Long.parseLong(getRegexTag(br.toString(), "guthaben").getMatch(0));
@@ -351,7 +358,7 @@ public class FreeWayMe extends PluginForHost {
     }
 
     private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
+        String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
         if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
         return result;
     }
@@ -515,7 +522,8 @@ public class FreeWayMe extends PluginForHost {
                 final String accType = account.getStringProperty("acctype", null);
                 final String maxSimultanDls = account.getStringProperty(ACC_PROPERTY_CONNECTIONS, null);
                 final String notifications = account.getStringProperty("notifications", "0");
-                final int trafficUsage = account.getIntegerProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, -1);
+                final float trafficUsage = ((float) account.getIntegerProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, -1)) / 100f;
+                final String restFullspeedTraffic = account.getStringProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, "?");
 
                 Set<MultihostContainer> hostList = new HashSet<MultihostContainer>();
 
@@ -553,12 +561,18 @@ public class FreeWayMe extends PluginForHost {
 
                 panelGenerator.addEntry(getPhrase("DETAILS_FULLSPEED_TRAFFIC"), (trafficUsage == -1) ? getPhrase("DETAILS_FULLSPEED_UNKOWN") : ((trafficUsage >= 100) ? getPhrase("DETAILS_FULLSPEED_REDUCED") : trafficUsage + "%"));
 
-                panelGenerator.addEntry(getPhrase("DETAILS_NOTIFICATIONS"), notifications);
+                panelGenerator.addEntry(getPhrase("DETAILS_FULLSPEED_REST_TRAFFIC"), restFullspeedTraffic + " GB");
+
+                // panelGenerator.addEntry(getPhrase("DETAILS_NOTIFICATIONS"), notifications);
 
                 panelGenerator.addCategory(getPhrase("DETAILS_CATEGORY_HOSTS"));
                 panelGenerator.addEntry(getPhrase("DETAILS_HOSTS_AMOUNT"), Integer.toString(hostList.size()));
 
                 panelGenerator.addTable(hostList);
+                // TODO: Add log...
+                // panelGenerator.addCategory("Error Log");
+                // JTextArea tf = new JTextArea("Test\n123\n Test");
+                // panelGenerator.addTextField(tf);
 
                 panelGenerator.addEntry(getPhrase("DETAILS_REVISION"), revision);
 
@@ -621,6 +635,17 @@ public class FreeWayMe extends PluginForHost {
             c.gridx = 1;
             panel.add(valueLabel, c);
 
+            y++;
+        }
+
+        public void addTextField(JTextArea textfield) {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(textfield, c);
             y++;
         }
 
