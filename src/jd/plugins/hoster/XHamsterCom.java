@@ -95,6 +95,7 @@ public class XHamsterCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        prepBr();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) login(this.br, aa, false);
         br.getPage(downloadLink.getDownloadURL());
@@ -196,6 +197,7 @@ public class XHamsterCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                prepBr();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -282,6 +284,10 @@ public class XHamsterCom extends PluginForHost {
         requestFileInformation(link);
         login(this.br, account, false);
         doFree(link);
+    }
+
+    private void prepBr() {
+        br.setCookie(MAINPAGE, "lang", "en");
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

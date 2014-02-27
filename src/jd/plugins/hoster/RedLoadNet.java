@@ -116,7 +116,7 @@ public class RedLoadNet extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = -10;
+            chunks = 1;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -771,7 +771,14 @@ public class RedLoadNet extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            try {
+                maxPrem.set(10);
+                account.setProperty("totalMaxSim", maxPrem.get());
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }

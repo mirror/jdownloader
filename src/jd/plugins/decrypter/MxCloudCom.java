@@ -46,6 +46,7 @@ public class MxCloudCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<String> tempLinks = new ArrayList<String>();
         final String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
         if (parameter.matches(INVALIDLINKS)) {
@@ -72,10 +73,21 @@ public class MxCloudCom extends PluginForDecrypt {
         String theName = br.getRegex("class=\"cloudcast\\-name\" itemprop=\"name\">(.*?)</h1>").getMatch(0);
         if (theName == null) theName = br.getRegex("data-resourcelinktext=\"(.*?)\"").getMatch(0);
         if (theName == null) theName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (theName == null) return null;
+        if (theName == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         final String playInfo = br.getRegex("m\\-play\\-info=\"([^\"]+)\"").getMatch(0);
-        if (playInfo == null) return null;
+        if (playInfo == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final String previewLink = br.getRegex("\"(http://stream\\d+\\.mixcloud\\.com/previews/[^<>\"]*?\\.mp3)\"").getMatch(0);
+        if (previewLink != null) {
+            final String mp3link = previewLink.replace("/previews/", "/c/originals/");
+            tempLinks.add(mp3link);
+        }
 
         String result = null;
         try {
@@ -90,9 +102,17 @@ public class MxCloudCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         final String[] links = new Regex(result, "\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        HashMap<String, Long> alreadyFound = new HashMap<String, Long>();
-        for (final String dl : links) {
+        if (links != null && links.length != 0) {
+            for (final String temp : links) {
+                tempLinks.add(temp);
+            }
+        }
+        if (tempLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final HashMap<String, Long> alreadyFound = new HashMap<String, Long>();
+        for (final String dl : tempLinks) {
             if (!dl.endsWith(".mp3") && !dl.endsWith(".m4a")) {
                 continue;
             }

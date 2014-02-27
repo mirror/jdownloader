@@ -55,7 +55,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         String continuelink = br.getRegex("\"(/mstat\\.php\\?uid=" + uid + "&[^\"]+=[a-f0-9]{32})\"").getMatch(0);
         if (continuelink != null) br.getPage(continuelink);
         /* Error handling */
-        if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error - Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <)")) {
+        if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error \\- Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <|>Links Unavailable\\.<)")) {
             logger.info("The following link should be offline: " + param.toString());
             return decryptedLinks;
         }

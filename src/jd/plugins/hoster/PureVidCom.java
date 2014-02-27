@@ -59,7 +59,8 @@ public class PureVidCom extends PluginForHost {
         this.setBrowserExclusive();
         String fuid = new Regex(downloadLink.getDownloadURL(), "/(\\?m=embed&id=|v/)([a-z0-9]+)").getMatch(1);
         br.getPage(downloadLink.getDownloadURL());
-        Browser fl = br.cloneBrowser();
+        if (br.containsHTML("id=\"error\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Browser fl = br.cloneBrowser();
         fl.getHeaders().put("Referer", "http://www.purevid.com/include/fp.purevid-2.2.swf");
         fl.getHeaders().put("Accept", "text/html, application/xml;q=0.9, application/xhtml+xml, image/png, image/webp, image/jpeg, image/gif, image/x-xbitmap, */*;q=0.1");
         fl.getHeaders().put("Pragma", null);

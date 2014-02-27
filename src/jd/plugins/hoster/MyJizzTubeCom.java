@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -97,7 +98,11 @@ public class MyJizzTubeCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final ConnectException ecn) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

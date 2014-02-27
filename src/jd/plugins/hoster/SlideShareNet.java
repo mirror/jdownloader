@@ -149,9 +149,26 @@ public class SlideShareNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
+                br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+                br.getPage("https://www.slideshare.net/login");
+                final String token = br.getRegex("window\\._auth_token = \"([^<>\"]*?)\"").getMatch(0);
+                final String lang = System.getProperty("user.language");
+                if (token == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://www.slideshare.net/login", "remember=1&source_from=&authenticity_token=" + Encoding.urlEncode("") + "&user_login=" + Encoding.urlEncode(account.getUser()) + "&user_password=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML("\"success\":true") || br.getCookie(MAINPAGE, "logged_in") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("https://www.slideshare.net/login", "login_source=login.page&remember=1&source_from=&utf8=%E2%9C%93&authenticity_token=" + Encoding.urlEncode(token) + "&user_login=" + Encoding.urlEncode(account.getUser()) + "&user_password=" + Encoding.urlEncode(account.getPass()));
+                if (!br.containsHTML("\"success\":true") || br.getCookie(MAINPAGE, "logged_in") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 if (!"false".equals(br.getCookie(MAINPAGE, "is_pro"))) {
                     logger.info("Premium accounts are not (yet) supported, please contact us in our supportforum!");
                     final AccountInfo ai = new AccountInfo();
@@ -180,9 +197,9 @@ public class SlideShareNet extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
