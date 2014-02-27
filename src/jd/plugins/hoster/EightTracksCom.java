@@ -98,7 +98,6 @@ public class EightTracksCom extends PluginForHost {
 
         /* Difference between dllink and finallink: dllink can also be a soundcloud API link - this is easier to re-use later */
         String finallink = checkDirectLink(downloadLink, "savedlink");
-        finallink = null;
         String dllink = null;
         String ext = null;
         String filename = downloadLink.getStringProperty("final_filename", null);
