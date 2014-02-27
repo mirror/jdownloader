@@ -233,6 +233,8 @@ public class EightTracksCom extends PluginForHost {
                     }
                 }
                 logger.info("current track: " + i + " // looking for track: " + tracknumber + " // last tracknumber: " + last_track_number);
+                AT_END = Boolean.parseBoolean(getClipData("at_end"));
+                AT_LAST_TRACK = Boolean.parseBoolean(getClipData("at_last_track"));
                 dllink = getDllink();
                 currenttrackid = updateTrackID();
                 if ((!AT_END && dllink == null) || (!AT_END && dllink != null && dllink.equals(sameLink))) {
@@ -250,9 +252,6 @@ public class EightTracksCom extends PluginForHost {
                     logger.info(NICE_HOST + ": AT_LAST_TRACK --> Leaving loop");
                     break;
                 }
-
-                AT_END = Boolean.parseBoolean(getClipData("at_end"));
-                AT_LAST_TRACK = Boolean.parseBoolean(getClipData("at_last_track"));
             }
             if (dllink == null && AT_END) {
                 /* Hmm maybe we're too far - next try we should be able to download the track we were looking for */
