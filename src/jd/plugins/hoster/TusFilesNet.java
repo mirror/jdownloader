@@ -814,9 +814,11 @@ public class TusFilesNet extends PluginForHost {
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
                 // check form for login captcha crap.
-                DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
+                final DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
                 loginform = captchaForm(dummyLink, loginform);
                 // end of check form for login captcha crap.
+                loginform.remove(null);
+                loginform.setAction("https://www.tusfiles.net/");
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(language)) {

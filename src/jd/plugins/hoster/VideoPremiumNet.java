@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -207,7 +208,7 @@ public class VideoPremiumNet extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        if (VIDEOHOSTER) {
+        if (VIDEOHOSTER && !downloadLink.getBooleanProperty("http_failed", false)) {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(false);
@@ -217,7 +218,12 @@ public class VideoPremiumNet extends PluginForHost {
             }
         }
         if (dllink != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            try {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            } catch (final SocketTimeoutException e) {
+                downloadLink.setProperty("http_failed", true);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "HTTP version download failed, retry RTMP");
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 logger.warning("The final dllink seems not to be a file!");
@@ -464,9 +470,11 @@ public class VideoPremiumNet extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            String rtmpStuff[] = new Regex(decoded, "flashvars=\\{\"comment\":\"[^\"]+\",\"st\":\"[^\"]+\",\"file\":\"([^\"]+)\",p2pkey:\"([^\"]+)\",.*?swfobject\\.embedSWF\\(\"(http://[^\"]+)\",").getRow(0);
+            String rtmpStuff[] = new Regex(decoded, "flashvars=\\{\"comment\":\"[^\"]+\",\"st\":\"[^\"]+\",\"file\":\"([^\"]+)\",p2pkey:\"([^\"]+)\",.*?swfobject\\.embedSWF\\(\"([^\"]+)\",").getRow(0);
             if (rtmpStuff != null && rtmpStuff.length == 3) {
-                finallink = rtmpStuff[0] + "@" + rtmpStuff[1] + "@" + rtmpStuff[2];
+                String player = rtmpStuff[2];
+                if (!player.startsWith("http://")) player = COOKIE_HOST + player;
+                finallink = rtmpStuff[0] + "@" + rtmpStuff[1] + "@" + player;
             }
         }
         return finallink;

@@ -98,6 +98,7 @@ public class EightTracksCom extends PluginForHost {
 
         /* Difference between dllink and finallink: dllink can also be a soundcloud API link - this is easier to re-use later */
         String finallink = checkDirectLink(downloadLink, "savedlink");
+        finallink = null;
         String dllink = null;
         String ext = null;
         String filename = downloadLink.getStringProperty("final_filename", null);
@@ -125,51 +126,9 @@ public class EightTracksCom extends PluginForHost {
             if (TEST_MODE && TEST_MODE_TOKEN != null) playToken = TEST_MODE_TOKEN;
             final String mixid = downloadLink.getStringProperty("mixid", null);
             final int last_track_number = (int) getLongProperty(downloadLink, "lasttracknumber", 0);
-            int start_position = 1;
             final boolean NEED_LAST_TRACK = (tracknumber == last_track_number);
-            // int counter = 1;
-            boolean force_skip_wait = false;
             if (br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").matches()) {
                 br.getHeaders().put("X-CSRF-Token", br.getRegex("name=\"csrf-token\" content=\"(.*?)\"").getMatch(0));
-            }
-
-            if (playToken != null) {
-                setCookies(playToken);
-                clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/tracks_played?mix_id=" + mixid + "&reverse=true&format=jsonh");
-                final String tracklist_text = br.getRegex("\\{\"tracks\":\\[(.*?)\\],\"status\"").getMatch(0);
-                String[] ids = null;
-                if (tracklist_text != null) ids = new Regex(tracklist_text, "(\\{.*?\\})").getColumn(0);
-                /* Check how many tracks we already unlocked and if our token still works */
-                if (ids != null && ids.length != 0) {
-                    final int list_length = ids.length;
-                    synchronized (LOCK) {
-                        final int old_list_length = (int) getLongPropertyPluginCfg("tracks_played_list_length", -1);
-                        logger.info("Old list length: " + old_list_length + " // current list length: " + list_length);
-                        if (list_length < old_list_length) {
-                            logger.info("List length doesn't match (too small) -> Maybe reset token to retry from the beginning?");
-                        } else {
-                            logger.info("List length is okay (same or bigger) -> Saving it!");
-                            this.getPluginConfig().setProperty("tracks_played_list_length", list_length);
-                        }
-                    }
-                    /* Check if we got a higher amount of the tracks than the track-number we need */
-                    if (list_length >= tracknumber) {
-                        /* Yes -> Set information for the track w need */
-                        clipData = ids[tracknumber - 1];
-                        currenttrackid = updateTrackID();
-                        start_position = tracknumber;
-                    } else {
-                        /* No -> Set information for the latest track available and of course our start-position */
-                        clipData = ids[list_length - 1];
-                        currenttrackid = updateTrackID();
-                        start_position = list_length;
-                        /* We might be out of the skip range --> We have to wait till we can access the next track */
-                        if (start_position >= SKIP_POSSIBLE_TILL_TRACK) force_skip_wait = true;
-                    }
-                } else {
-                    // /* We have no list of started tracks - let's start with track 1 */
-                    startPlaylist(playToken, mixid);
-                }
             }
             if (playToken == null) {
                 /* Refresh token */
@@ -190,7 +149,90 @@ public class EightTracksCom extends PluginForHost {
 
             // TODO: Change loop & add "startPlaylist" for first song from existing temp tracklist
             /* limit to 100 API calls per minute -> Usually we will not exceed this limit */
-            for (int i = start_position; i <= tracknumber; i++) {
+            for (int i = 1; i <= tracknumber; i++) {
+                if (i == 1) {
+                    setCookies(playToken);
+                    clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/tracks_played?mix_id=" + mixid + "&reverse=true&format=jsonh");
+                    final String tracklist_text = br.getRegex("\\{\"tracks\":\\[(.*?)\\],\"status\"").getMatch(0);
+                    String[] ids = null;
+                    if (tracklist_text != null) ids = new Regex(tracklist_text, "(\\{.*?\\})").getColumn(0);
+                    /* Check how many tracks we already unlocked and if our token still works */
+                    if (ids != null && ids.length != 0) {
+                        final int list_length = ids.length;
+                        synchronized (LOCK) {
+                            final int old_list_length = (int) getLongPropertyPluginCfg("tracks_played_list_length", -1);
+                            logger.info("Old list length: " + old_list_length + " // current list length: " + list_length);
+                            if (list_length < old_list_length) {
+                                logger.info("List length doesn't match (too small) -> Maybe reset token to retry from the beginning?");
+                            } else {
+                                logger.info("List length is okay (same or bigger) -> Saving it!");
+                                this.getPluginConfig().setProperty("tracks_played_list_length", list_length);
+                            }
+                        }
+                        /* Check if we got a higher amount of the tracks than the track-number we need */
+                        if (list_length >= tracknumber) {
+                            /* Yes -> Set information for the track w need */
+                            clipData = ids[tracknumber - 1];
+                            currenttrackid = updateTrackID();
+                            i = tracknumber;
+                        } else {
+                            /* No -> Set information for the latest track available and of course our start-position */
+                            clipData = ids[list_length - 1];
+                            currenttrackid = updateTrackID();
+                            i = list_length;
+                            // /* We might be out of the skip range --> We have to wait till we can access the next track */
+                            // if (i >= SKIP_POSSIBLE_TILL_TRACK) force_skip_wait = true;
+                            startPlaylist(playToken, mixid);
+                            i++;
+                        }
+                    } else {
+                        // /* We have no list of started tracks - let's start with track 1 */
+                        startPlaylist(playToken, mixid);
+                    }
+                } else {
+                    if (!Boolean.parseBoolean(getClipData("skip_allowed"))) {
+                        logger.info("We are not allowed to skip anymore --> Waiting in between to get the next track in order to get all tracks");
+                        /* Special handling to get from the penultimate track to last track */
+                        if (i == (last_track_number - 1)) {
+                            /* Pretend to play the song */
+                            this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
+                            br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                            /* Same command to start and to get last track */
+                            startPlaylist(playToken, mixid);
+                        } else {
+                            /* Pretend to play the song */
+                            this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
+                            br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                            /* Wait till "the song is (probably) "over" */
+                            long wait_seconds = getWaitSeconds(dllink);
+                            if (TEST_MODE) wait_seconds = WAITTIME_SECONDS_TEST_MODE;
+                            logger.info("Waiting " + wait_seconds + " seconds from now on...");
+                            this.sleep(wait_seconds * 1000l, downloadLink);
+                            clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                        }
+                    } else {
+                        logger.info("We are still allowed to skip");
+                        /* Skip track */
+                        clipData = getPage(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                    }
+
+                    /*
+                     * If skip track fails because of too short waittime, even multiple times, we simply wait a minute and try again till we
+                     * can finally get to the next track
+                     */
+                    if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
+                        for (int skip_block = 1; skip_block <= 10; skip_block++) {
+                            this.sleep(WAITTIME_SECONDS_SKIPLIMIT * 1000l, downloadLink);
+                            // Maybe listened to the track -> Next track
+                            clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                            if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) continue;
+                            break;
+
+                        }
+                        /* In case it fails after 10 minutes */
+                        if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+                    }
+                }
                 logger.info("current track: " + i + " // looking for track: " + tracknumber + " // last tracknumber: " + last_track_number);
                 dllink = getDllink();
                 currenttrackid = updateTrackID();
@@ -208,49 +250,6 @@ public class EightTracksCom extends PluginForHost {
                 } else if (AT_LAST_TRACK) {
                     logger.info(NICE_HOST + ": AT_LAST_TRACK --> Leaving loop");
                     break;
-                }
-                if (!Boolean.parseBoolean(getClipData("skip_allowed")) || force_skip_wait) {
-                    logger.info("We are not allowed to skip anymore --> Waiting in between to get the next track in order to get all tracks");
-                    /* Special handling to get from the penultimate track to last track */
-                    if (i == (last_track_number - 1)) {
-                        /* Pretend to play the song */
-                        this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
-                        br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                        /* Same command to start and to get last track */
-                        startPlaylist(playToken, mixid);
-                    } else {
-                        /* Pretend to play the song */
-                        this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
-                        br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                        /* Wait till "the song is (probably) "over" */
-                        long wait_seconds = getWaitSeconds(dllink);
-                        if (TEST_MODE) wait_seconds = WAITTIME_SECONDS_TEST_MODE;
-                        logger.info("Waiting " + wait_seconds + " seconds from now on...");
-                        this.sleep(wait_seconds * 1000l, downloadLink);
-                        clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                    }
-                    force_skip_wait = false;
-                } else {
-                    logger.info("We are still allowed to skip");
-                    /* Skip track */
-                    clipData = getPage(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                }
-
-                /*
-                 * If skip track fails because of too short waittime, even multiple times, we simply wait a minute and try again till we can
-                 * finally get to the next track
-                 */
-                if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
-                    for (int skip_block = 1; skip_block <= 10; skip_block++) {
-                        this.sleep(WAITTIME_SECONDS_SKIPLIMIT * 1000l, downloadLink);
-                        // Maybe listened to the track -> Next track
-                        clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                        if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) continue;
-                        break;
-
-                    }
-                    /* In case it fails after 10 minutes */
-                    if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
                 }
 
                 AT_END = Boolean.parseBoolean(getClipData("at_end"));
@@ -451,9 +450,7 @@ public class EightTracksCom extends PluginForHost {
     }
 
     private String updateTrackID() throws PluginException {
-        final String currenttrackid = getClipData("id");
-        if (currenttrackid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        return currenttrackid;
+        return getClipData("id");
     }
 
     private String encodeUnicode(final String input) {
