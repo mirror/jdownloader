@@ -260,7 +260,7 @@ public class OneFichierCom extends PluginForHost {
                 // ddlink is within the ?e=1 page request! but it seems you need to do the following posts to be able to use the link
                 // dllink = br.getRegex("(http.+/get/" + new Regex(downloadLink.getDownloadURL(), "https?://([^\\.]+)").getMatch(0) +
                 // "[^;]+)").getMatch(0);
-                br.postPage(downloadLink.getDownloadURL() + "/en/", "a=1&submit=Download+the+file");
+                br.postPage(downloadLink.getDownloadURL() + "/en/", "b=1&submit=Download+the+file");
             }
             if (dllink == null) dllink = br.getRedirectLocation();
             if (dllink == null) {
