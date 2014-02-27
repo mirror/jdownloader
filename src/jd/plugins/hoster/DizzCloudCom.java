@@ -245,6 +245,9 @@ public class DizzCloudCom extends PluginForHost {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
+                            if (key.startsWith("dzinfo_")) {
+                                br.setCookie("http://cloudstoreservice.net", key, value);
+                            }
                         }
                         return cookies;
                     }
@@ -257,6 +260,9 @@ public class DizzCloudCom extends PluginForHost {
                 final Cookies add = br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
+                    if (c.getKey().startsWith("dzinfo_")) {
+                        br.setCookie("http://cloudstoreservice.net", c.getKey(), c.getValue());
+                    }
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
@@ -321,6 +327,11 @@ public class DizzCloudCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
+            for (final Cookie c : br.getCookies(MAINPAGE).getCookies()) {
+                if (c.getKey().startsWith("dzinfo_")) {
+                    br.setCookie("http://cloudstoreservice.net", c.getKey(), c.getValue());
+                }
+            }
             doFree(downloadLink, now, newLogins, account);
         } else {
             br.setFollowRedirects(false);
@@ -328,6 +339,11 @@ public class DizzCloudCom extends PluginForHost {
             if (br.containsHTML("class=\"daydllimit\"")) {
                 logger.info("daily limit reached, temp disabling premium");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            for (final Cookie c : br.getCookies(MAINPAGE).getCookies()) {
+                if (c.getKey().startsWith("dzinfo_")) {
+                    br.setCookie("http://cloudstoreservice.net", c.getKey(), c.getValue());
+                }
             }
             handleErrors();
             String dllink = br.getRedirectLocation();
@@ -342,6 +358,7 @@ public class DizzCloudCom extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
