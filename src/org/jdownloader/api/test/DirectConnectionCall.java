@@ -27,4 +27,5 @@ public class DirectConnectionCall extends Test {
         final int info = Dialog.getInstance().showComboDialog(0, "Choose Device", "Choose Device", infos.getInfos().toArray(new DirectConnectionInfo[] {}), 0, null, null, null, null);
         Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, "REsult", "" + JSonStorage.toString(deviceAPI.verifyDirectConnectionInfo(infos.getInfos().get(info))));
     }
+    
 }

@@ -42,10 +42,14 @@ import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 
 public class MyJDownloaderHttpConnection extends HttpConnection {
     
-    private final ArrayList<HttpRequestHandler> requestHandler;
-    private final MyJDownloaderAPI              api;
+    protected final static ArrayList<HttpRequestHandler> requestHandler = new ArrayList<HttpRequestHandler>();
+    static {
+        requestHandler.add(new OptionsRequestHandler());
+        requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
+    }
+    protected final MyJDownloaderAPI                     api;
     
-    private LogSource                           logger;
+    private LogSource                                    logger;
     
     public static MyJDownloaderHttpConnection getMyJDownloaderHttpConnection(RemoteAPIRequest request) {
         if (request instanceof SessionRemoteAPIRequest<?>) {
@@ -57,9 +61,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(null, clientConnection);
-        requestHandler = new ArrayList<HttpRequestHandler>();
-        requestHandler.add(new OptionsRequestHandler());
-        requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
         this.api = api;
         logger = api.getLogger();
     }
@@ -171,7 +172,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                 payloadEncryptionToken = session.getServerEncryptionToken();
             } else {
                 // The request origin is a remote client
-                
                 payloadEncryptionToken = api.getDeviceEncryptionTokenBySession(parser.getSessionToken());
                 
             }

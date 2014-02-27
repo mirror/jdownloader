@@ -137,7 +137,7 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
     
-    private final AtomicLong        THREADCOUNTER = new AtomicLong(0);
+    protected final AtomicLong      THREADCOUNTER = new AtomicLong(0);
     private MyJDownloaderController myJDownloaderExtension;
     
     private MyJDownloaderAPI        api;
@@ -582,10 +582,12 @@ public class MyJDownloaderConnectThread extends Thread {
     }
     
     protected void handleConnection(final Socket clientSocket) {
-        Thread connectionThread = new Thread("MyJDownloaderConnection:" + THREADCOUNTER.incrementAndGet()) {
+        final long requestNumber = THREADCOUNTER.incrementAndGet();
+        Thread connectionThread = new Thread("MyJDownloaderConnection:" + requestNumber) {
             @Override
             public void run() {
                 try {
+                    System.out.println("Handle a passthrough MyJDownloader connection:" + requestNumber);
                     MyJDownloaderHttpConnection httpConnection = new MyJDownloaderHttpConnection(clientSocket, api);
                     httpConnection.run();
                 } catch (final Throwable e) {

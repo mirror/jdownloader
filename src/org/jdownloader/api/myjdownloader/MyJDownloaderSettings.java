@@ -103,6 +103,18 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     public void setManualLocalPort(int port);
     
     @AboutConfig
+    @DefaultIntValue(0)
+    public int getLastLocalPort();
+    
+    public void setLastLocalPort(int port);
+    
+    @AboutConfig
+    @DefaultIntValue(0)
+    public int getLastUpnpPort();
+    
+    public void setLastUpnpPort(int port);
+    
+    @AboutConfig
     @DefaultIntValue(3129)
     @RequiresRestart("A JDownloader Restart is Required")
     @SpinnerValidator(min = 80, max = 65000)
