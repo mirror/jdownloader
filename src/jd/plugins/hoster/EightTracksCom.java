@@ -192,7 +192,7 @@ public class EightTracksCom extends PluginForHost {
                     if (!Boolean.parseBoolean(getClipData("skip_allowed"))) {
                         logger.info("We are not allowed to skip anymore --> Waiting in between to get the next track in order to get all tracks");
                         /* Special handling to get from the penultimate track to last track */
-                        if (i == (last_track_number - 1)) {
+                        if (i == last_track_number) {
                             /* Pretend to play the song */
                             this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
                             br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
