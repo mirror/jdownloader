@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -62,7 +63,7 @@ public class FileFactory extends PluginForHost {
     // other: currently they 302 redirect all non www. to www. which kills most of this plugin.
     // Adjust COOKIE_HOST to suite future changes, or remove COOKIE_HOST from that section of the script.
 
-    private static AtomicInteger maxPrem            = new AtomicInteger(1);
+    private static AtomicInteger maxPrem            = new AtomicInteger(-1);
     private final String         NO_SLOT            = ">All free download slots";
     private final String         NO_SLOT_USERTEXT   = "No free slots available";
     private final String         NOT_AVAILABLE      = "class=\"box error\"|have been deleted";
@@ -134,93 +135,99 @@ public class FileFactory extends PluginForHost {
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
-        final Browser br = new Browser();
-        br.setCookiesExclusive(true);
-        br.getHeaders().put("Accept-Encoding", "");
-        // logic to grab account cookie to do fast linkchecking vs one at a time.
-        boolean loggedIn = false;
-        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
-        if (accounts != null && accounts.size() != 0) {
-            Iterator<Account> it = accounts.iterator();
-            while (it.hasNext()) {
-                Account n = it.next();
-                if (n.isEnabled() && n.isValid()) {
-                    try {
-                        login(n, false, br);
-                        loggedIn = true;
-                    } catch (Exception e) {
-                    }
-                    break;
-                }
-            }
+        useAPI.set(true);
+        if (useAPI.get()) {
+            checkLinks_API(urls, null);
         }
-        if (!loggedIn) {
-            // no account present or disabled account, we port back into requestFileInformation
-            for (DownloadLink link : urls) {
-                try {
-                    requestFileInformation(link);
-                } catch (Throwable e) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        try {
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                br.getPage(COOKIE_HOST + "/account/tools/link-checker.php");
-                links.clear();
-                while (true) {
-                    if (index == urls.length || links.size() > 100) {
+        if (!useAPI.get()) {
+            final Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            br.getHeaders().put("Accept-Encoding", "");
+            // logic to grab account cookie to do fast linkchecking vs one at a time.
+            boolean loggedIn = false;
+            ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
+            if (accounts != null && accounts.size() != 0) {
+                Iterator<Account> it = accounts.iterator();
+                while (it.hasNext()) {
+                    Account n = it.next();
+                    if (n.isEnabled() && n.isValid()) {
+                        try {
+                            login(n, false, br);
+                            loggedIn = true;
+                        } catch (Exception e) {
+                        }
                         break;
                     }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                sb.append("links=");
-                for (final DownloadLink dl : links) {
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
-                    sb.append("%0D%0A");
-                }
-                // lets remove last "%0D%0A"
-                sb.replace(sb.length() - 6, sb.length(), "");
-                sb.append("&Submit=Check+Links");
-                br.postPage(br.getURL(), sb.toString());
-                for (final DownloadLink dl : links) {
-                    dl.setName(new Regex(dl.getDownloadURL(), "filefactory\\.com/(.+)").getMatch(0));
-                    if (br.getRedirectLocation() != null && (br.getRedirectLocation().endsWith("/member/setpwd.php") || br.getRedirectLocation().endsWith("/member/setdob.php"))) {
-                        // password needs changing or dob needs setting.
-                        dl.setAvailable(true);
-                        continue;
-                    }
-                    String filter = br.getRegex("(<tr([^\n]+\n){4}[^\"]+\"" + dl.getDownloadURL() + "([^\n]+\n){4})").getMatch(0);
-                    if (filter == null) dl.setAvailable(false);
-                    String size = new Regex(filter, ">([\\d\\.]+ (KB|MB|GB|TB))<").getMatch(0);
-                    String name = new Regex(filter, "<a href=\".*?/file/[a-z0-9]+/([^\"]+)").getMatch(0);
-                    if (name != null) {
-                        // Temporary workaround because they don't show full filenames (yet)
-                        name = name.replace("_rar", ".rar");
-                        name = name.replace("_zip", ".zip");
-                        name = name.replace("_avi", ".avi");
-                        name = name.replace("_mkv", ".mkv");
-                        name = name.replace("_mp4", ".mp4");
-                        dl.setName(name.trim());
-                    }
-                    if (size != null) dl.setDownloadSize(SizeFormatter.getSize(size));
-                    if (filter != null && filter.contains(">Valid</abbr>"))
-                        dl.setAvailable(true);
-                    else
-                        dl.setAvailable(false);
-                }
-                if (index == urls.length) {
-                    break;
                 }
             }
-        } catch (final Exception e) {
-            return false;
+            if (!loggedIn) {
+                // no account present or disabled account, we port back into requestFileInformation
+                for (DownloadLink link : urls) {
+                    try {
+                        requestFileInformation(link);
+                    } catch (Throwable e) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            try {
+                final StringBuilder sb = new StringBuilder();
+                final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+                int index = 0;
+                while (true) {
+                    br.getPage(COOKIE_HOST + "/account/tools/link-checker.php");
+                    links.clear();
+                    while (true) {
+                        if (index == urls.length || links.size() > 100) {
+                            break;
+                        }
+                        links.add(urls[index]);
+                        index++;
+                    }
+                    sb.delete(0, sb.capacity());
+                    sb.append("links=");
+                    for (final DownloadLink dl : links) {
+                        sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                        sb.append("%0D%0A");
+                    }
+                    // lets remove last "%0D%0A"
+                    sb.replace(sb.length() - 6, sb.length(), "");
+                    sb.append("&Submit=Check+Links");
+                    br.postPage(br.getURL(), sb.toString());
+                    for (final DownloadLink dl : links) {
+                        dl.setName(new Regex(dl.getDownloadURL(), "filefactory\\.com/(.+)").getMatch(0));
+                        if (br.getRedirectLocation() != null && (br.getRedirectLocation().endsWith("/member/setpwd.php") || br.getRedirectLocation().endsWith("/member/setdob.php"))) {
+                            // password needs changing or dob needs setting.
+                            dl.setAvailable(true);
+                            continue;
+                        }
+                        String filter = br.getRegex("(<tr([^\n]+\n){4}[^\"]+\"" + dl.getDownloadURL() + "([^\n]+\n){4})").getMatch(0);
+                        if (filter == null) dl.setAvailable(false);
+                        String size = new Regex(filter, ">([\\d\\.]+ (KB|MB|GB|TB))<").getMatch(0);
+                        String name = new Regex(filter, "<a href=\".*?/file/[a-z0-9]+/([^\"]+)").getMatch(0);
+                        if (name != null) {
+                            // Temporary workaround because they don't show full filenames (yet)
+                            name = name.replace("_rar", ".rar");
+                            name = name.replace("_zip", ".zip");
+                            name = name.replace("_avi", ".avi");
+                            name = name.replace("_mkv", ".mkv");
+                            name = name.replace("_mp4", ".mp4");
+                            dl.setName(name.trim());
+                        }
+                        if (size != null) dl.setDownloadSize(SizeFormatter.getSize(size));
+                        if (filter != null && filter.contains(">Valid</abbr>"))
+                            dl.setAvailable(true);
+                        else
+                            dl.setAvailable(false);
+                    }
+                    if (index == urls.length) {
+                        break;
+                    }
+                }
+            } catch (final Exception e) {
+                return false;
+            }
         }
         return true;
     }
@@ -243,76 +250,77 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        // remove old account setter - delete after next stable update 20130911
-        account.setProperty("freeAcc", Property.NULL);
-
-        final AccountInfo ai = new AccountInfo();
+        AccountInfo ai = new AccountInfo();
+        if (!isMail(account.getUser())) {
+            ai.setStatus("Please enter your E-Mail address as username!");
+            account.setValid(false);
+            return ai;
+        }
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        if (!isMail(account.getUser())) {
-            ai.setStatus("Please enter your E-Mail adress as username!");
-            account.setValid(false);
-            return ai;
-        }
-        try {
-            login(account, true, br);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        if (!br.getURL().endsWith("/account/")) br.getPage("/account/");
-        // <li class="tooltipster" title="Premium valid until: <strong>30th Jan, 2014</strong>">
-        if (!br.containsHTML("title=\"(Premium valid until|Lifetime Member)")) {
-            ai.setStatus("Registered (free) User");
-            ai.setUnlimitedTraffic();
-            account.setProperty("free", true);
-            try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
+        if (useAPI.get()) {
+            ai = fetchAccountInfo_API(account, ai);
         } else {
-            account.setProperty("free", false);
-            if (br.containsHTML(">Lifetime Member<")) {
-                ai.setValidUntil(-1);
-            } else {
-                String expire = br.getRegex("Premium valid until: <strong>(.*?)</strong>").getMatch(0);
-                if (expire == null) {
-                    account.setValid(false);
-                    return ai;
-                }
-                // remove st/nd/rd/th
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("(st|nd|rd|th)", ""), "d MMM, yyyy", Locale.UK));
-            }
-            String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
-            if (space != null) ai.setUsedSpace(space);
-            String traffic = br.getRegex("donoyet(.*?)xyz").getMatch(0);
-            if (traffic != null) {
-                // OLD SHIT
-                String loaded = br.getRegex("You have used (.*?) out").getMatch(0);
-                String max = br.getRegex("limit of (.*?)\\. ").getMatch(0);
-                if (max != null && loaded != null) {
-                    // you don't need to strip characters or reorder its structure. The source is fine!
-                    ai.setTrafficMax(SizeFormatter.getSize(max));
-                    ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
-                } else {
-                    max = br.getRegex("You can now download up to (.*?) in").getMatch(0);
-                    if (max != null) {
-                        ai.setTrafficLeft(SizeFormatter.getSize(max));
-                    } else {
-                        ai.setUnlimitedTraffic();
-                    }
-                }
-            } else {
-                ai.setUnlimitedTraffic();
-            }
-            ai.setStatus("Premium User");
             try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
+                login(account, true, br);
+            } catch (final PluginException e) {
+                account.setValid(false);
+                return ai;
+            }
+            if (!br.getURL().endsWith("/account/")) br.getPage("/account/");
+            // <li class="tooltipster" title="Premium valid until: <strong>30th Jan, 2014</strong>">
+            if (!br.containsHTML("title=\"(Premium valid until|Lifetime Member)")) {
+                ai.setStatus("Registered (free) User");
+                ai.setUnlimitedTraffic();
+                account.setProperty("free", true);
+                try {
+                    maxPrem.set(1);
+                    account.setMaxSimultanDownloads(1);
+                    account.setConcurrentUsePossible(false);
+                } catch (final Throwable e) {
+                }
+            } else {
+                account.setProperty("free", false);
+                if (br.containsHTML(">Lifetime Member<")) {
+                    ai.setValidUntil(-1);
+                } else {
+                    String expire = br.getRegex("Premium valid until: <strong>(.*?)</strong>").getMatch(0);
+                    if (expire == null) {
+                        account.setValid(false);
+                        return ai;
+                    }
+                    // remove st/nd/rd/th
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replaceFirst("(st|nd|rd|th)", ""), "d MMM, yyyy", Locale.UK));
+                }
+                String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
+                if (space != null) ai.setUsedSpace(space);
+                String traffic = br.getRegex("donoyet(.*?)xyz").getMatch(0);
+                if (traffic != null) {
+                    // OLD SHIT
+                    String loaded = br.getRegex("You have used (.*?) out").getMatch(0);
+                    String max = br.getRegex("limit of (.*?)\\. ").getMatch(0);
+                    if (max != null && loaded != null) {
+                        // you don't need to strip characters or reorder its structure. The source is fine!
+                        ai.setTrafficMax(SizeFormatter.getSize(max));
+                        ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
+                    } else {
+                        max = br.getRegex("You can now download up to (.*?) in").getMatch(0);
+                        if (max != null) {
+                            ai.setTrafficLeft(SizeFormatter.getSize(max));
+                        } else {
+                            ai.setUnlimitedTraffic();
+                        }
+                    }
+                } else {
+                    ai.setUnlimitedTraffic();
+                }
+                ai.setStatus("Premium User");
+                try {
+                    maxPrem.set(-1);
+                    account.setMaxSimultanDownloads(-1);
+                    account.setConcurrentUsePossible(true);
+                } catch (final Throwable e) {
+                }
             }
         }
         return ai;
@@ -329,7 +337,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
@@ -383,10 +391,14 @@ public class FileFactory extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
-            handleTrafficShare(downloadLink);
+        if (useAPI.get()) {
+            handleDownload_API(downloadLink, null);
         } else {
-            doFree(downloadLink);
+            if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
+                handleTrafficShare(downloadLink);
+            } else {
+                doFree(downloadLink);
+            }
         }
     }
 
@@ -496,45 +508,49 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
-            handleTrafficShare(downloadLink);
+        if (useAPI.get()) {
+            handleDownload_API(downloadLink, account);
         } else {
-            login(account, false, br);
-            if (account.getBooleanProperty("free")) {
-                br.setFollowRedirects(true);
-                br.getPage(downloadLink.getDownloadURL());
-                doFree(downloadLink);
+            requestFileInformation(downloadLink);
+            if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
+                handleTrafficShare(downloadLink);
             } else {
-                // NOTE: no premium, pre download password handling yet...
-                br.setFollowRedirects(false);
-                br.getPage(downloadLink.getDownloadURL());
-                // Directlink
-                String finallink = br.getRedirectLocation();
-                // No directlink
-                if (finallink == null) finallink = br.getRegex("\"(http://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                br.setFollowRedirects(true);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
-                if (!dl.getConnection().isContentDisposition()) {
-                    br.followConnection();
-                    checkErrors(true);
-                    String red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
-                    if (red == null) red = br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
-                    if (red == null) red = br.getRegex("downloadLink.*?href=\"(.*?)\"").getMatch(0);
-                    logger.finer("Indirect download");
+                login(account, false, br);
+                if (account.getBooleanProperty("free")) {
                     br.setFollowRedirects(true);
-                    if (red == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, red, true, 0);
+                    br.getPage(downloadLink.getDownloadURL());
+                    doFree(downloadLink);
+                } else {
+                    // NOTE: no premium, pre download password handling yet...
+                    br.setFollowRedirects(false);
+                    br.getPage(downloadLink.getDownloadURL());
+                    // Directlink
+                    String finallink = br.getRedirectLocation();
+                    // No directlink
+                    if (finallink == null) finallink = br.getRegex("\"(http://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]*?)\"").getMatch(0);
+                    if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    br.setFollowRedirects(true);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
-                        if (br.containsHTML("Unfortunately we have encountered a problem locating your file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        checkErrors(true);
+                        String red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
+                        if (red == null) red = br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
+                        if (red == null) red = br.getRegex("downloadLink.*?href=\"(.*?)\"").getMatch(0);
+                        logger.finer("Indirect download");
+                        br.setFollowRedirects(true);
+                        if (red == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, red, true, 0);
+                        if (!dl.getConnection().isContentDisposition()) {
+                            br.followConnection();
+                            if (br.containsHTML("Unfortunately we have encountered a problem locating your file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    } else {
+                        logger.finer("DIRECT download");
                     }
-                } else {
-                    logger.finer("DIRECT download");
+                    dl.startDownload();
                 }
-                dl.startDownload();
             }
         }
     }
@@ -738,5 +754,290 @@ public class FileFactory extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private String getFUID(DownloadLink downloadLink) {
+        final String fuid = new Regex(downloadLink.getDownloadURL(), "file/([\\w]+)").getMatch(0);
+        return fuid;
+    }
+
+    private boolean checkLinks_API(final DownloadLink[] urls, Account account) {
+        if (account == null) {
+            ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
+            Account n = null;
+            if (accounts != null && accounts.size() != 0) {
+                Iterator<Account> it = accounts.iterator();
+                while (it.hasNext()) {
+                    n = it.next();
+                    if (n.isEnabled() && n.isValid()) {
+                        try {
+                            if (getApiKey(n) != null) {
+                                account = n;
+                                break;
+                            } else {
+                                n = null;
+                            }
+                        } catch (Exception e) {
+                        }
+                    }
+                }
+            }
+        }
+        try {
+            final Browser br = new Browser();
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    if (links.size() > 100 || index == urls.length) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("file=");
+                for (final DownloadLink dl : links) {
+                    sb.append(getFUID(dl));
+                    sb.append(",");
+                }
+                // lets remove last ","
+                sb.replace(sb.length() - 1, sb.length(), "");
+                getPage(br, api + "/getFileInfo?" + sb, account);
+                for (final DownloadLink dl : links) {
+                    final String filter = br.getRegex("(\"" + getFUID(dl) + "\":\\{.*?\\})").getMatch(0);
+                    if (filter == null) return false;
+                    final String status = getJson("status", filter);
+                    if (!"online".equalsIgnoreCase(status)) {
+                        dl.setAvailable(false);
+                        continue;
+                    } else
+                        dl.setAvailable(true);
+                    final String name = getJson("name", filter);
+                    final String size = getJson("size", filter);
+                    final String md5 = getJson("md5", filter);
+                    final String prem = getJson("premiumOnly", filter);
+                    final String pass = getJson("password", filter);
+                    if (name != null) dl.setName(name);
+                    if (size != null) dl.setDownloadSize(Long.parseLong(size));
+                    if (md5 != null) dl.setMD5Hash(md5);
+                    if (prem != null) dl.setProperty("premiumRequired", Boolean.parseBoolean(prem));
+                    if (pass != null) dl.setProperty("passwordRequired", Boolean.parseBoolean(pass));
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    private String  dllink  = null;
+    private int     chunks  = 0;
+    private boolean resumes = true;
+    private boolean isFree  = true;
+
+    private void setConstants(final Account account, final boolean trafficShare) {
+        if (trafficShare) {
+            // traffic share download
+            chunks = 0;
+            resumes = true;
+            isFree = false;
+        } else {
+            if (account != null) {
+                if (account.getBooleanProperty("free", false)) {
+                    // free account
+                    chunks = 0;
+                    resumes = true;
+                    isFree = true;
+                } else {
+                    // premium account
+                    chunks = 0;
+                    resumes = true;
+                    isFree = false;
+                }
+            } else {
+                // free non account
+                chunks = 0;
+                resumes = true;
+                isFree = true;
+            }
+        }
+    }
+
+    private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
+        setConstants(account, false);
+        checkLinks_API(new DownloadLink[] { downloadLink }, account);
+        String passCode = downloadLink.getStringProperty("pass", null);
+        prepApiBrowser(br);
+        // believe error handling within download servers is via redirects (not confirmed).
+        br.setFollowRedirects(true);
+        if (dllink == null) {
+            if (downloadLink.getBooleanProperty("premiumRequired", false) && isFree) {
+                // free dl isn't possible, place before passwordRequired!
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
+            }
+            if (downloadLink.getBooleanProperty("passwordRequired", false)) {
+                // dl requires pre download password
+                if (inValidate(passCode)) passCode = Plugin.getUserInput("Password Required!", downloadLink);
+                if (inValidate(passCode)) {
+                    logger.info("User has entered blank password!");
+                    downloadLink.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
+                }
+            }
+            getPage(br, api + "/getDownloadLink?file=" + getFUID(downloadLink) + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
+            if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":712")) {
+                // 712 ERR_API_FILE_INVALID
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":713")) {
+                // 713 ERR_API_FILE_OFFLINE
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":714")) {
+                // 714 ERR_API_FILE_SERVER_LOAD || free account == too many ppl dling
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l);
+            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":715")) {
+                // 715 ERR_API_PASSWORD_REQUIRED
+                // this should not happen as we have a check in linkgrabber... would only be a problem if linkgrabber info was incorrect.
+            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":716")) {
+                // 716 ERR_API_PASSWORD_INVALID
+                logger.info("Invalid password!");
+                downloadLink.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
+            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":717")) {
+                // 717 ERR_API_PASSWORD_ATTEMPTS
+                logger.info("Invalid password! Too many incorrect guesses");
+                downloadLink.setProperty("pass", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 5 * 60 * 1001);
+            }
+            dllink = getJson("url", br);
+            final String linkType = getJson("linkType", br);
+            if (inValidate(dllink)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if ("trafficshare".equalsIgnoreCase(linkType)) setConstants(account, true);
+            String delay = getJson("delay", br);
+            if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
+            if (isFree && !inValidate(delay) && !"0".equals(delay)) sleep(Integer.parseInt(delay) * 1001, downloadLink);
+            dllink = dllink.replace("\\", "");
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private String loginKey(final Account account) throws Exception {
+        final Browser nbr = new Browser();
+        prepApiBrowser(nbr);
+        nbr.getPage(api + "/getSessionKey?email=" + account.getUser() + "&password=" + account.getPass());
+        final String apiKey = getJson("key", nbr);
+        if (apiKey != null) account.setProperty("apiKey", apiKey);
+        return apiKey;
+    }
+
+    private synchronized String getApiKey(final Account account) throws Exception {
+        String apiKey = account.getStringProperty("apiKey", null);
+        if (apiKey == null) {
+            loginKey(account);
+        }
+        return apiKey;
+    }
+
+    private Browser prepApiBrowser(final Browser ibr) {
+        return ibr;
+    }
+
+    private synchronized void getPage(Browser ibr, String url, final Account account) throws Exception {
+        if (account != null) {
+            String apiKey = getApiKey(account);
+            url = url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey;
+            ibr.getPage(url);
+            if (sessionKeyInValid(account, ibr)) {
+                apiKey = getApiKey(account);
+                if (apiKey == null) {
+                    // not sure if this is the best measure...
+                    useAPI.set(false);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                ibr.getPage(url);
+            }
+        } else {
+            ibr.getPage(url);
+        }
+    }
+
+    private boolean sessionKeyInValid(final Account account, final Browser ibr) {
+        if ("error".equalsIgnoreCase(getJson("type", ibr)) && ("710".equalsIgnoreCase(getJson("code", ibr)) || "711".equalsIgnoreCase(getJson("code", ibr)))) {
+            account.setProperty("apiKey", Property.NULL);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private AccountInfo fetchAccountInfo_API(final Account account, final AccountInfo ai) throws Exception {
+        loginKey(account);
+        getPage(br, api + "/getMemberInfo", account);
+        String expire = getJson("expiryMs", br);
+        String type = getJson("accountType", br);
+        if ("premium".equalsIgnoreCase(type)) {
+            account.setProperty("free", false);
+            if (expire != null) ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire));
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+            }
+        } else {
+            account.setProperty("free", false);
+            ai.setStatus("Registered (free) User");
+            ai.setUnlimitedTraffic();
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+            }
+        }
+        return ai;
+    }
+
+    private final String        api    = "https://api.filefactory.com/v1";
+    private final AtomicBoolean useAPI = new AtomicBoolean(true);
+
+    private String getJson(final String key, final Browser ibr) {
+        return getJson(key, ibr.toString());
+    }
+
+    private String getJson(final String key, String source) {
+        String result = new Regex(source, "\"" + key + "\":\"([^\r\n\"]+)\"").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + key + "\":(true|false|null|\\d+)").getMatch(0);
+        return result;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     * 
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+            return true;
+        else
+            return false;
     }
 }
