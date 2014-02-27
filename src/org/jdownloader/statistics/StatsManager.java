@@ -811,7 +811,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private String getBase() {
         if (!Application.isJared(null) && false) return "http://localhost:8888/";
-        if (!Application.isJared(null) && true) return "http://192.168.2.250:81/thomas/fcgi/";
+        if (!Application.isJared(null) && false) return "http://192.168.2.250:81/thomas/fcgi/";
         return "http://stats.appwork.org/jcgi/";
     }
 
