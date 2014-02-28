@@ -25,7 +25,9 @@ public class DirectConnectionCall extends Test {
             return;
         }
         final int info = Dialog.getInstance().showComboDialog(0, "Choose Device", "Choose Device", infos.getInfos().toArray(new DirectConnectionInfo[] {}), 0, null, null, null, null);
-        Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, "REsult", "" + JSonStorage.toString(deviceAPI.verifyDirectConnectionInfo(infos.getInfos().get(info))));
+        deviceAPI.setAutoFallbackEnabled(false);
+        deviceAPI.setDirectConnectionInfo(infos.getInfos().get(info));
+        Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, "REsult", "" + JSonStorage.toString(deviceAPI.callAction("/device/ping", Boolean.class, (Object[]) null)));
     }
     
 }
