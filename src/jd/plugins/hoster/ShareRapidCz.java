@@ -71,6 +71,7 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (true) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Host has financial issues, Please visit there homepage!"); }
         setBrowserExclusive();
         prepBr(this.br);
         br.getPage(link.getDownloadURL());
@@ -94,6 +95,11 @@ public class ShareRapidCz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        if (true) {
+            account.setValid(false);
+            ai.setStatus("Host has financial issues, Please visit there homepage!");
+            return ai;
+        }
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
@@ -195,6 +201,7 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (true) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Host has financial issues, Please visit there homepage!"); }
         requestFileInformation(downloadLink);
         if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000); }
         if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
@@ -220,6 +227,7 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (true) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Host has financial issues, Please visit there homepage!"); }
         String dllink = null;
         // requestFileInformation(downloadLink);
         login(account, false);
