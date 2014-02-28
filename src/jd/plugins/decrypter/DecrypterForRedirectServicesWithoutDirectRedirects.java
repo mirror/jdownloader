@@ -27,6 +27,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -476,7 +477,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (click != null) {
                 br.getHeaders().put("Referer", parameter);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage(click);
+                br.getPage(HTMLEntities.unhtmlentities(click));
                 if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches("http://adfoc.us/")) {
                     finallink = br.getRedirectLocation();
                 }
