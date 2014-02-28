@@ -119,6 +119,10 @@ public class ClipboardMonitoring {
 
     private boolean ignoreTransferable(Transferable transferable) {
         if (transferable == null) return true;
+        if (transferable.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
+            /* we have Package/Children in clipboard, skip them */
+            return true;
+        }
         try {
             if (transferable.getClass().getName().contains("TransferableProxy")) {
                 Field isLocal = transferable.getClass().getDeclaredField("isLocal");
@@ -165,12 +169,10 @@ public class ClipboardMonitoring {
                         lastBrowserUrl = null;
                         Transferable currentContent = clipboard.getContents(null);
                         if (ignoreTransferable(currentContent)) continue;
-                        if (currentContent.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
-                            /* we have Package/Children in clipboard, skip them */
-                            continue;
-                        }
+
                         final boolean htmlFlavorAllowed = isHtmlFlavorAllowed();
                         String handleThisRound = null;
+                        boolean macOSWorkaroundNeeded = false;
                         try {
                             /* change detection for List/URI content */
                             String newListContent = getListTransferData(currentContent);
@@ -188,6 +190,13 @@ public class ClipboardMonitoring {
                                 }
                             }
                         } catch (final Throwable e) {
+                            if (CrossSystem.isMac() && e instanceof IOException) {
+                                /**
+                                 * Couldn't get a file system path for a URL: file:///.file/id=6571367.1715588 2014-02-28 09:52:10.362
+                                 * java[1637:507] Looked for URLs on the pasteboard, but found none.
+                                 **/
+                                macOSWorkaroundNeeded = true;
+                            }
                         }
                         if (StringUtils.isEmpty(handleThisRound)) {
                             /* change detection for String/HTML content */
@@ -270,6 +279,9 @@ public class ClipboardMonitoring {
                             } else {
                                 FIRSTROUNDDONE = true;
                             }
+                        }
+                        if (macOSWorkaroundNeeded) {
+                            setCurrentContent(handleThisRound);
                         }
                     } catch (final Throwable e) {
                         Log.exception(e);
