@@ -305,7 +305,7 @@ public class HugeFilesNet extends PluginForHost {
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                fileInfo[1] = cbr.getRegex("\">File Size:</span> <span style=\"font\\-size:17px; font\\-weight:bold; color:#5c5c5c;\">([^<>\"]*?)</span>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
                     fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                     if (inValidate(fileInfo[1])) {
@@ -381,22 +381,22 @@ public class HugeFilesNet extends PluginForHost {
                 cbr = obrc;
             }
         }
-        // Fourth, continue like normal.
+        // // Fourth, continue like normal.
+        // if (inValidate(dllink)) {
+        // checkErrors(downloadLink, account, false);
+        // Form download1 = getFormByKey(cbr, "op", "download1");
+        // if (download1 != null) {
+        // // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+        // download1 = cleanForm(download1);
+        // // end of backward compatibility
+        // download1.remove("method_premium");
+        // sendForm(download1);
+        // checkErrors(downloadLink, account, false);
+        // getDllink();
+        // }
+        // }
         if (inValidate(dllink)) {
-            checkErrors(downloadLink, account, false);
-            Form download1 = getFormByKey(cbr, "op", "download1");
-            if (download1 != null) {
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
-                download1 = cleanForm(download1);
-                // end of backward compatibility
-                download1.remove("method_premium");
-                sendForm(download1);
-                checkErrors(downloadLink, account, false);
-                getDllink();
-            }
-        }
-        if (inValidate(dllink)) {
-            Form dlForm = getFormByKey(cbr, "op", "download2");
+            Form dlForm = getFormByKey(cbr, "op", "download1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 2;
@@ -418,6 +418,8 @@ public class HugeFilesNet extends PluginForHost {
                 dlForm = captchaForm(downloadLink, dlForm);
                 /* Captcha END */
                 if (!skipWaitTime) waitTime(timeBefore, downloadLink);
+                final String ctype = cbr.getRegex("name=\"ctype\" value=\"([^<>\"]*?)\">").getMatch(0);
+                if (ctype != null) dlForm.put("ctype", ctype);
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
@@ -428,15 +430,20 @@ public class HugeFilesNet extends PluginForHost {
                     else
                         logger.warning("Couldn't find 'download2' and 'dllink == null'");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (inValidate(dllink) && getFormByKey(cbr, "op", "download2") != null) {
-                    dlForm = getFormByKey(cbr, "op", "download2");
+                } else if (inValidate(dllink) && getFormByKey(cbr, "op", "download1") != null) {
+                    dlForm = getFormByKey(cbr, "op", "download1");
                     continue;
                 } else {
                     break;
                 }
             }
+            final Form finaldlForm = getFormByKey(cbr, "op", "download2");
+            if (finaldlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            sendForm(finaldlForm);
+            dllink = br.getRedirectLocation();
         }
         if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
         controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -1293,7 +1300,7 @@ public class HugeFilesNet extends PluginForHost {
      * */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
-        if (form.containsHTML(";background:#ccc;text-align")) {
+        if (form.containsHTML(";background:#ccc;text-align") || cbr.containsHTML("name=\"ctype\" value=\"2\"")) {
             logger.info("Detected captcha method \"Plaintext Captcha\"");
             /** Captcha method by ManiacMansion */
             String[][] letters = form.getRegex("<span style=\"position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;\">(&#\\d+;)</span>").getMatches();

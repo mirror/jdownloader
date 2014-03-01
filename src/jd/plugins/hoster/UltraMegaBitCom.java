@@ -250,7 +250,8 @@ public class UltraMegaBitCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        // Force login or download will fail
+        login(account, true);
         if (account.getBooleanProperty("free", false)) {
             br.getPage(link.getDownloadURL());
             doFree(link);
@@ -258,7 +259,7 @@ public class UltraMegaBitCom extends PluginForHost {
             final String token = br.getCookie(MAINPAGE, "csrf_cookie");
             if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(false);
-            br.postPage("http://ultramegabit.com/file/download", "csrf_token=" + token + "&encode=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
+            br.postPage("https://ultramegabit.com/file/download", "csrf_token=" + token + "&encode=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
             final String finallink = br.getRedirectLocation();
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -15);
