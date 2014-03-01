@@ -146,7 +146,6 @@ public class EightTracksCom extends PluginForHost {
                 currenttrackid = mixid;
             }
 
-            // TODO: Change loop & add "startPlaylist" for first song from existing temp tracklist
             /* limit to 100 API calls per minute -> Usually we will not exceed this limit */
             for (int i = 1; i <= tracknumber; i++) {
                 if (i == 1) {
@@ -179,8 +178,6 @@ public class EightTracksCom extends PluginForHost {
                             clipData = ids[list_length - 1];
                             currenttrackid = updateTrackID();
                             i = list_length;
-                            // /* We might be out of the skip range --> We have to wait till we can access the next track */
-                            // if (i >= SKIP_POSSIBLE_TILL_TRACK) force_skip_wait = true;
                             startPlaylist(playToken, mixid);
                             i++;
                         }
@@ -191,24 +188,15 @@ public class EightTracksCom extends PluginForHost {
                 } else {
                     if (!Boolean.parseBoolean(getClipData("skip_allowed"))) {
                         logger.info("We are not allowed to skip anymore --> Waiting in between to get the next track in order to get all tracks");
-                        /* Special handling to get from the penultimate track to last track */
-                        if (i == last_track_number) {
-                            /* Pretend to play the song */
-                            this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
-                            br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                            /* Same command to start and to get last track */
-                            startPlaylist(playToken, mixid);
-                        } else {
-                            /* Pretend to play the song */
-                            this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
-                            br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                            /* Wait till "the song is (probably) "over" */
-                            long wait_seconds = getWaitSeconds(dllink);
-                            if (TEST_MODE) wait_seconds = WAITTIME_SECONDS_TEST_MODE;
-                            logger.info("Waiting " + wait_seconds + " seconds from now on...");
-                            this.sleep(wait_seconds * 1000l, downloadLink);
-                            clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
-                        }
+                        /* Pretend to play the song */
+                        this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
+                        br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                        /* Wait till "the song is (probably) "over" */
+                        long wait_seconds = getWaitSeconds(dllink);
+                        if (TEST_MODE) wait_seconds = WAITTIME_SECONDS_TEST_MODE;
+                        logger.info("Waiting " + wait_seconds + " seconds from now on...");
+                        this.sleep(wait_seconds * 1000l, downloadLink);
+                        clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                     } else {
                         logger.info("We are still allowed to skip");
                         /* Skip track */
@@ -253,6 +241,8 @@ public class EightTracksCom extends PluginForHost {
                     break;
                 }
             }
+            /* This may happen if the last track of the playlist is missing */
+            if (AT_END && NEED_LAST_TRACK) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This track does not exist"); }
             if (dllink == null && AT_END) {
                 /* Hmm maybe we're too far - next try we should be able to download the track we were looking for */
                 logger.info(NICE_HOST + ": Reached the end of the playlist // failed to get track: " + tracknumber + " // last tracknumber: " + last_track_number);
