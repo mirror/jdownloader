@@ -26,14 +26,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "http://(www\\.)?(tusfiles\\.net/go/[a-z0-9]{12}/|j\\-b\\.tusfil\\.es/[A-Z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?(tusfiles\\.net/go/[a-z0-9]{12}/|j\\-b\\.tusfil\\.es/[A-Z0-9]+)" }, flags = { 0 })
 public class TusFilesNet extends PluginForDecrypt {
 
     public TusFilesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_SHORT = "http://(www\\.)?j\\-b\\.tusfil\\.es/[A-Z0-9]+";
+    private static final String TYPE_SHORT = "https?://(www\\.)?j\\-b\\.tusfil\\.es/[A-Z0-9]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -69,15 +69,15 @@ public class TusFilesNet extends PluginForDecrypt {
                     // Not available in old 0.9.581 Stable
                 }
                 if (i > 1) {
-                    br.getPage("http://www.tusfiles.net/go/" + folderid + "/" + i + "/");
+                    br.getPage("https?://www.tusfiles.net/go/" + folderid + "/" + i + "/");
                     // Site bug
                     if (br.containsHTML(">No such folder<")) {
                         logger.info("Got all links, stopping...");
                         break;
                     }
                 }
-                final String[] folders = br.getRegex("\"(http://(www\\.)?tusfiles\\.net/go/[a-z0-9]{12}/)\"").getColumn(0);
-                final String[] links = br.getRegex("\"(http://(www\\.)?tusfiles\\.net/[a-z0-9]{12})\"").getColumn(0);
+                final String[] folders = br.getRegex("\"(https?://(www\\.)?tusfiles\\.net/go/[a-z0-9]{12}/)\"").getColumn(0);
+                final String[] links = br.getRegex("\"(https?://(www\\.)?tusfiles\\.net/[a-z0-9]{12})\"").getColumn(0);
                 if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
