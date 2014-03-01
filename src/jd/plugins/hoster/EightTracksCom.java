@@ -58,15 +58,15 @@ public class EightTracksCom extends PluginForHost {
     private static final int     WAITTIME_SECONDS_EXTRA                            = 5;
     private static final int     WAITTIME_SECONDS_SKIPLIMIT                        = 60;
     private static final int     WAITTIME_SECONDS_TEST_MODE                        = 10;
-    private static final int     SKIPS_EXCECUTED_IN_DECRYPTER                      = 1;
-    private static final int     SKIP_POSSIBLE_TILL_TRACK                          = 4 - SKIPS_EXCECUTED_IN_DECRYPTER;
     // private static final long BITRATE_SOUNDCLOUD = 11250;
     private static final long    SOURCE_8TRACKS_BITRATE                            = 5000;
-    private static final String  SOURCE_8TRACKS_CLIENT_ID                          = "3904229f42df3999df223f6ebf39a8fe";
 
-    // sets wrong waittimes to check skip_failed errorhandling
+    /* sets wrong waittimes to check skip_failed errorhandling */
     private static final boolean TEST_MODE                                         = false;
     private static final String  TEST_MODE_TOKEN                                   = null;
+
+    /* 8tracks.com has a bug - the playlists length they tell you is always -1 track */
+    private static final boolean EIGHT_TRACKS_BUG_EXISTS                           = false;
 
     private static Object        LOCK                                              = new Object();
     private String               MAIN_LINK                                         = null;
@@ -76,13 +76,15 @@ public class EightTracksCom extends PluginForHost {
     private static boolean       pluginloaded                                      = false;
 
     private String               currenttrackid                                    = null;
+    private DownloadLink         current_downloadlink                              = null;
 
     // XML version needs API key so we use the json version
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        current_downloadlink = link;
         if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
-        prepBr();
+        prepBr(link);
         MAIN_LINK = link.getStringProperty("mainlink", null);
         br.getPage(MAIN_LINK);
         if (br.containsHTML(">Sorry, that page doesn\\'t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -241,51 +243,49 @@ public class EightTracksCom extends PluginForHost {
                     break;
                 }
             }
-            /* This may happen if the last track of the playlist is missing */
-            if (AT_END && NEED_LAST_TRACK) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This track does not exist"); }
-            if (dllink == null && AT_END) {
-                /* Hmm maybe we're too far - next try we should be able to download the track we were looking for */
-                logger.info(NICE_HOST + ": Reached the end of the playlist // failed to get track: " + tracknumber + " // last tracknumber: " + last_track_number);
-                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_toofar", 0);
-                downloadLink.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    logger.info(NICE_HOST + ": Re-Trying...");
-                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_toofar", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Failed to find desired track");
-                } else {
-                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_toofar", Property.NULL);
-                    logger.info(NICE_HOST + ": Download not available at the moment - disabling current host!");
-                    logger.info(NICE_HOST + ": Failed...");
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find desired track #1");
-                }
+            /* Serverside bug - the last track is missing (we have 1 song less than the 8tracks page claims) */
+            if (AT_END && NEED_LAST_TRACK) {
+                logger.info("Seems like the last track does not exist -> Throwing 'file not found' exception");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* This may happen if the 8tracks.com serverside bug exists */
+            if (AT_END) { throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to get desired track"); }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (NEED_LAST_TRACK && !AT_LAST_TRACK) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This is not the last track", 5 * 60 * 1000l);
-            } else if (!NEED_LAST_TRACK && AT_LAST_TRACK) {
-                /* Hmm maybe we're too far - next try we should be able to download the track we were looking for */
-                logger.info(NICE_HOST + ": Reached the last track of the playlist // failed to get track: " + tracknumber + " // last tracknumber: " + last_track_number);
-                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_toofar2", 0);
-                downloadLink.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    logger.info(NICE_HOST + ": Re-Trying...");
-                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_toofar2", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Failed to find desired track #2");
-                } else {
-                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_toofar2", Property.NULL);
-                    logger.info(NICE_HOST + ": Download not available at the moment - disabling current host!");
-                    logger.info(NICE_HOST + ": Failed...");
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find desired track");
+
+            /* Not yet sure how to handle these cases */
+            if (EIGHT_TRACKS_BUG_EXISTS) {
+                if (NEED_LAST_TRACK && !AT_LAST_TRACK) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This is not the last track", 5 * 60 * 1000l);
+                } else if (!NEED_LAST_TRACK && AT_LAST_TRACK) {
+                    /* Hmm maybe we're too far - next try we should be able to download the track we were looking for */
+                    logger.info(NICE_HOST + ": Reached the last track of the playlist // failed to get track: " + tracknumber + " // last tracknumber: " + last_track_number);
+                    int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_toofar2", 0);
+                    downloadLink.getLinkStatus().setRetryCount(0);
+                    if (timesFailed <= 2) {
+                        timesFailed++;
+                        logger.info(NICE_HOST + ": Re-Trying...");
+                        downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_toofar2", timesFailed);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Failed to find desired track #2");
+                    } else {
+                        downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_toofar2", Property.NULL);
+                        logger.info(NICE_HOST + ": Download not available at the moment - disabling current host!");
+                        logger.info(NICE_HOST + ": Failed...");
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to find desired track");
+                    }
                 }
             }
             if (getFilename() != null) filename = getFilename();
             logger.info("Updating track ID the last time");
             currenttrackid = updateTrackID();
             downloadLink.setProperty("trackid", currenttrackid);
+            /*
+             * Whatever happens, we have our directlink, we know it's the right link so we don't want to lose it again in case some bug
+             * happens later
+             */
+            downloadLink.setProperty("savedlink", dllink);
             finallink = getFinalDirectlink(dllink);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* If it fails here it's probably a serverside soundcdloud.com or 8tracks.com bug */
+            if (finallink == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (finallink.contains(".mp3")) ext = "mp3";
@@ -466,19 +466,43 @@ public class EightTracksCom extends PluginForHost {
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 
-    private void prepBr() {
+    private void prepBr(final DownloadLink dl) {
         br.setFollowRedirects(false);
         br.setReadTimeout(90 * 1000);
         /* This UA will give us better audio quality */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2");
+        String ua = dl.getStringProperty("user_agent", null);
+        if (ua == null) ua = "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2";
+        if (dl.getBooleanProperty("change_ua")) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            ua = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            dl.setProperty("change_ua", false);
+        }
+        br.getHeaders().put("User-Agent", ua);
+        dl.setProperty("user_agent", ua);
     }
 
-    private String getPage(final String url) throws IOException {
+    private String getPage(final String url) throws IOException, PluginException {
         br.getHeaders().put("Referer", MAIN_LINK);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getPage(url);
+        stupidLicenseErrorHandling();
         return br.toString();
+    }
+
+    /* Errorhandling for errors which completely stop the download-flow */
+    private void stupidLicenseErrorHandling() throws PluginException {
+        /* Limit sits on cookies (token) and User-Agent */
+        if (br.containsHTML("We're sorry, our music license requires us to limit the number of times you can play a particular mix")) {
+            current_downloadlink.setProperty("change_ua", true);
+            current_downloadlink.setProperty("playtoken", Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Avoiding limit");
+            // final String hours =
+            // br.getRegex("We\\'re sorry, our music license requires us to limit the number of times you can play a particular mix in an (\\d+)\\-hour period\\.").getMatch(0);
+            // if (hours != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(hours) * 60 * 60 * 1001l); }
+            // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
     }
 
     private void setCookies(final String playToken) {

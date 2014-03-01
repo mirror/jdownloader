@@ -357,11 +357,13 @@ public class PremiumDebridCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private static final String PASSNEEDED = "<b>Security ID</b>";
+    private static final String PASSNEEDED             = "<b>Security ID</b>";
+    private static final String CURRENT_GENERATTOR_URL = "http://premiumdebrid.com/dl/";
 
     private String generatedllink_generator(final DownloadLink dl, final Account acc) throws IOException, PluginException {
         final String url = Encoding.urlEncode(dl.getDownloadURL());
-        br.getPage("http://www.premiumdebrid.com/dl.php");
+        br.getPage(CURRENT_GENERATTOR_URL);
+        /* The password handling is either not needed anymore or outdated */
         if (br.containsHTML(PASSNEEDED)) {
             synchronized (LOCK) {
                 br.setFollowRedirects(false);
@@ -400,7 +402,7 @@ public class PremiumDebridCom extends PluginForHost {
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "*/*");
-        br.postPage("http://www.premiumdebrid.com/dl.php?rand=0." + System.currentTimeMillis(), "urllist=" + url);
+        br.postPage(CURRENT_GENERATTOR_URL + "index.php?rand=0." + System.currentTimeMillis(), "urllist=" + url);
         if (br.containsHTML("Hoster could not be parsed from link, the link was invalid or the hoster is not supported")) {
             logger.info("premiumdebrid.com: Disabling current host because server says 'Hoster could not be parsed from link, the link was invalid or the hoster is not supported'");
             tempUnavailableHoster(acc, dl, 60 * 60 * 1000l);
@@ -409,7 +411,7 @@ public class PremiumDebridCom extends PluginForHost {
             tempUnavailableHoster(acc, dl, 2 * 60 * 60 * 1000l);
         }
         String dllink = br.getRegex("here to download\\' href=\\'(https?[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\\'|\")(https?://(www\\.)?premiumdebrid\\.com/dl\\.php\\?file=[A-Za-z0-9]+)(\\'|\")").getMatch(1);
+        if (dllink == null) dllink = br.getRegex("(\\'|\")(https?://(www\\.)?premiumdebrid\\.com/dl\\?[^<>\"]+)(\\'|\")").getMatch(1);
         return dllink;
     }
 
