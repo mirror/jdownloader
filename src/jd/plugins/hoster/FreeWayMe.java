@@ -128,7 +128,6 @@ public class FreeWayMe extends PluginForHost {
                                                       put("CLOSE", "Close");
                                                       put("ERROR_PREVENT_SPRIT_USAGE", "Sprit usage prevented!");
                                                       put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeedlimit");
-                                                      put("FULLSPEED_TRAFFIC_NOTIFICATION_MSG", "You used your todays free-way.me fullspeed traffic.\r\nYour speed is limited until midnight.");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Show bubble notification if fullspeed limit is reached");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Show dialog notification if fullspeed limit is reached");
                                                   }
@@ -171,7 +170,6 @@ public class FreeWayMe extends PluginForHost {
                                                       put("CLOSE", "Schließen");
                                                       put("ERROR_PREVENT_SPRIT_USAGE", "Spritverbrauch verhindert!");
                                                       put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeed-Limit");
-                                                      put("FULLSPEED_TRAFFIC_NOTIFICATION_MSG", "Dein free-way.me Account wurde gemäß der AGB auf zwei parallele Downloads und unter 500kb/s gedrosselt.\r\nDiese Beschränkungen werden um 24 Uhr automatisch aufgehoben.\r\n\r\nDiese Benachrichtigung kann in den Plugin-Einstellungen deaktiviert werden.");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_BUBBLE", "Zeige Bubble-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
                                                       put("SETTINGS_FULLSPEED_NOTIFICATION_DIALOG", "Zeige Dialog-Benachrichtigung wenn das Fullspeedlimit ausgeschöpft ist");
                                                   }
@@ -247,10 +245,10 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("ERROR_UNKNOWN_FULL"), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // account should be valid now, let's get account information:
-        br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
+        String accInfoAPIResp = br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass + "&encoded");
 
         int maxPremi = 1;
-        final String maxPremApi = getJson("parallel", br.toString());
+        final String maxPremApi = getJson("parallel", accInfoAPIResp);
         if (maxPremApi != null) {
             maxPremi = Integer.parseInt(maxPremApi);
             account.setProperty(ACC_PROPERTY_CONNECTIONS, maxPremApi);
@@ -258,11 +256,11 @@ public class FreeWayMe extends PluginForHost {
         maxPrem.set(maxPremi);
 
         // get available fullspeed traffic
-        account.setProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, getJson("restgb", br.toString()));
+        account.setProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, getJson("restgb", accInfoAPIResp));
 
         // get percentage usage of fullspeed traffic
         float trafficPerc = -1f;
-        final String trafficPercApi = getJson("perc", br.toString());
+        final String trafficPercApi = getJson("perc", accInfoAPIResp);
         if (trafficPercApi != null) {
             trafficPerc = Float.parseFloat(trafficPercApi);
 
@@ -278,16 +276,24 @@ public class FreeWayMe extends PluginForHost {
                         account.setProperty("LAST_SPEEDLIMIT_NOTIFICATION", today);
                         // search whether we have to notify by bubble
                         boolean bubbleNotify = this.getPluginConfig().getBooleanProperty(NOTIFY_ON_FULLSPEED_LIMIT_BUBBLE, false);
-                        if (bubbleNotify) {
-                            BasicNotify no = new BasicNotify(getPhrase("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION"), getPhrase("FULLSPEED_TRAFFIC_NOTIFICATION_MSG"), NewTheme.I().getIcon("info", 32));
-                            BubbleNotify.getInstance().show(no);
-                        }
                         // search whether we have to notify by dialog
                         boolean dialogNotify = this.getPluginConfig().getBooleanProperty(NOTIFY_ON_FULLSPEED_LIMIT_DIALOG, true);
+
+                        if (bubbleNotify) {
+                            /**
+                             * we get the msg twice (see below), because we need it final. A conditional get in this case is not possible.
+                             * But it shouldn't matter, because no one should enable dialog- and bubblenotify...
+                             */
+                            final String msg = br.getPage("https://www.free-way.me/ajax/jd.php?id=8");
+                            BasicNotify no = new BasicNotify(getPhrase("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION"), msg, NewTheme.I().getIcon("info", 32));
+                            BubbleNotify.getInstance().show(no);
+                        }
+
                         if (dialogNotify) {
+                            final String msg = br.getPage("https://www.free-way.me/ajax/jd.php?id=8");
                             Thread t = new Thread(new Runnable() {
                                 public void run() {
-                                    MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, getPhrase("FULLSPEED_TRAFFIC_NOTIFICATION_MSG"));
+                                    MessageDialogImpl dialog = new MessageDialogImpl(UIOManager.LOGIC_COUNTDOWN, msg);
                                     try {
                                         Dialog.getInstance().showDialog(dialog);
                                     } catch (DialogNoAnswerException e) {
@@ -303,11 +309,11 @@ public class FreeWayMe extends PluginForHost {
         account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, ((int) trafficPerc * 100));
 
         try {
-            Long guthaben = Long.parseLong(getRegexTag(br.toString(), "guthaben").getMatch(0));
+            Long guthaben = Long.parseLong(getRegexTag(accInfoAPIResp, "guthaben").getMatch(0));
             ac.setTrafficLeft(guthaben * 1024 * 1024);
             logger.info("{fetchAccInfo} Limited traffic: " + guthaben * 1024 * 1024);
         } catch (Exception e) {
-            logger.info("{fetchAccInfo} Unlimited traffic, api response: " + br.toString());
+            logger.info("{fetchAccInfo} Unlimited traffic, api response: " + accInfoAPIResp);
             ac.setUnlimitedTraffic(); // workaround
         }
         try {
@@ -316,20 +322,20 @@ public class FreeWayMe extends PluginForHost {
         } catch (final Throwable e) {
             // not available in old Stable 0.9.581
         }
-        String accountType = getRegexTag(br.toString(), "premium").getMatch(0);
+        String accountType = getRegexTag(accInfoAPIResp, "premium").getMatch(0);
         ac.setValidUntil(-1);
         if (accountType != null) {
             if (accountType.equalsIgnoreCase("Flatrate")) {
                 logger.info("{fetchAccInfo} Flatrate Account");
                 ac.setUnlimitedTraffic();
-                long validUntil = Long.parseLong(getRegexTag(br.toString(), "Flatrate").getMatch(0));
+                long validUntil = Long.parseLong(getRegexTag(accInfoAPIResp, "Flatrate").getMatch(0));
                 ac.setValidUntil(validUntil * 1000);
             } else if (accountType.equalsIgnoreCase("Spender")) {
                 logger.info("{fetchAccInfo} Spender Account");
                 ac.setUnlimitedTraffic();
             }
         }
-        account.setProperty("notifications", br.getRegex("\"notis\":(\\d+)").getMatch(0));
+        account.setProperty("notifications", (new Regex(accInfoAPIResp, "\"notis\":(\\d+)")).getMatch(0));
         account.setProperty("acctype", accountType);
         // check if beta-account is enabled
         String hostsUrl = "https://www.free-way.me/ajax/jd.php?id=3";
@@ -464,12 +470,12 @@ public class FreeWayMe extends PluginForHost {
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
-                if (link.getLinkStatus().getRetryCount() >= 2) {
+                if (link.getLinkStatus().getRetryCount() >= 3) {
                     /* reset retrycounter */
                     link.getLinkStatus().setRetryCount(0);
-                    tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l, error);
+                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l, error);
                 }
-                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+                String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 4 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_RETRY_SECONDS") + msg, 20 * 1000l);
             } else if (error.startsWith("Die Datei darf maximal")) {
                 logger.info("{handleMultiHost} File download limit");
@@ -487,10 +493,10 @@ public class FreeWayMe extends PluginForHost {
                     /* reset retrycounter */
                     link.getLinkStatus().setRetryCount(0);
                     logger.info(getPhrase("ERROR_NO_STABLE_ACCOUNTS") + " --> Disabling current host for 15 minutes");
-                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l, error);
+                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l, getPhrase("ERROR_NO_STABLE_ACCOUNTS"));
                 }
-                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
-                throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
+                String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
             }
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
             int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
