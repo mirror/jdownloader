@@ -194,10 +194,8 @@ public class EightTracksCom extends PluginForHost {
                         this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
                         br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                         /* Wait till "the song is (probably) "over" */
-                        long wait_seconds = getWaitSeconds(dllink);
-                        if (TEST_MODE) wait_seconds = WAITTIME_SECONDS_TEST_MODE;
-                        logger.info("Waiting " + wait_seconds + " seconds from now on...");
-                        this.sleep(wait_seconds * 1000l, downloadLink);
+                        handleLongWait(dllink);
+
                         clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                     } else {
                         logger.info("We are still allowed to skip");
@@ -291,12 +289,11 @@ public class EightTracksCom extends PluginForHost {
         if (finallink.contains(".mp3")) ext = "mp3";
         if (ext == null && finallink.contains(".")) ext = finallink.substring(finallink.lastIndexOf(".") + 1);
         if (ext == null || ext.equals("m4a") || ext.length() > 5) ext = "m4a";
+        downloadLink.setProperty("final_filename", filename);
         if (tracknumber != -1) {
             filename = tracknumber + "." + filename;
-            downloadLink.setProperty("final_filename", filename);
             downloadLink.setFinalFileName(filename + "." + ext);
         } else {
-            downloadLink.setProperty("final_filename", filename);
             downloadLink.setFinalFileName(filename + "." + ext);
         }
 
@@ -321,7 +318,7 @@ public class EightTracksCom extends PluginForHost {
         currenttrackid = updateTrackID();
     }
 
-    private long getWaitSeconds(final String dllink) {
+    private long handleLongWait(final String dllink) throws PluginException {
         long waitSeconds = 0;
         try {
             final Browser br2 = br.cloneBrowser();
@@ -352,7 +349,11 @@ public class EightTracksCom extends PluginForHost {
         } catch (final Throwable e) {
             waitSeconds = WAITTIME_SECONDS_DEFAULT;
         }
+        // waitSeconds = waitSeconds / 2 + 5;
         waitSeconds = waitSeconds - WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION + WAITTIME_SECONDS_EXTRA;
+        if (TEST_MODE) waitSeconds = WAITTIME_SECONDS_TEST_MODE;
+        logger.info("Waiting " + waitSeconds + " seconds from now on...");
+        if (waitSeconds > 0) this.sleep(waitSeconds * 1000l, current_downloadlink);
         return waitSeconds;
     }
 
@@ -423,9 +424,12 @@ public class EightTracksCom extends PluginForHost {
         String album = getClipData("release_name");
         String title = name_and_artist.getMatch(0);
         String artist = name_and_artist.getMatch(1);
-        if (album == null || title == null) return null;
-        if (album.contains(":")) album = album.substring(0, album.indexOf(":"));
-        if (album.equals(title) || isEmpty(album)) album = null;
+        if (title == null || artist == null) return null;
+
+        if (album.equals("null")) album = null;
+        if (album != null && album.contains(":")) album = album.substring(0, album.indexOf(":"));
+        if (album != null && (album.equals(title) || isEmpty(album))) album = null;
+
         title = encodeUnicode(Encoding.htmlDecode(title.trim()));
         artist = encodeUnicode(Encoding.htmlDecode(artist.trim()));
         if (album != null) {
@@ -439,31 +443,6 @@ public class EightTracksCom extends PluginForHost {
 
     private String updateTrackID() throws PluginException {
         return getClipData("id");
-    }
-
-    private String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
-    }
-
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
-            pluginloaded = true;
-        }
-        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     private void prepBr(final DownloadLink dl) {
@@ -480,6 +459,11 @@ public class EightTracksCom extends PluginForHost {
         }
         br.getHeaders().put("User-Agent", ua);
         dl.setProperty("user_agent", ua);
+    }
+
+    private void setCookies(final String playToken) {
+        br.setCookie(MAINPAGE, "play_token", playToken);
+        br.setCookie(MAINPAGE, "initial_source", "");
     }
 
     private String getPage(final String url) throws IOException, PluginException {
@@ -505,9 +489,19 @@ public class EightTracksCom extends PluginForHost {
         }
     }
 
-    private void setCookies(final String playToken) {
-        br.setCookie(MAINPAGE, "play_token", playToken);
-        br.setCookie(MAINPAGE, "initial_source", "");
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     private boolean isEmpty(final String ip) {
@@ -550,6 +544,17 @@ public class EightTracksCom extends PluginForHost {
                 return def;
             }
         }
+    }
+
+    @SuppressWarnings("unused")
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override
