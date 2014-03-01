@@ -105,7 +105,7 @@ public class UseFileCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: 4dignum
     // other: no redirects
-    // mods:
+    // mods: fetchAccountInfo
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -705,7 +705,7 @@ public class UseFileCom extends PluginForHost {
             getPage(myAccount);
         }
         // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
+        if (cbr.containsHTML("<TD>Account Status:</TD><TD> <b> Free</b>")) {
             account.setProperty("free", true);
         } else {
             account.setProperty("free", false);

@@ -62,14 +62,14 @@ public class WallBaseCc extends PluginForHost {
         if (br.containsHTML("(>Not found \\(404\\)|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\- Wallpaper \\(").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) \\(#\\d+\\) / Wallbase\\.cc</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>]*?) \\(#\\d+\\) / Wallbase\\.cc</title>").getMatch(0);
             if (filename != null) {
-                String id = br.getRegex("<title>([^<>\"]*?) \\(#(\\d+)\\) / Wallbase\\.cc</title>").getMatch(1);
+                String id = br.getRegex("<title>([^<>]*?) \\(#(\\d+)\\) / Wallbase\\.cc</title>").getMatch(1);
                 if (id != null) filename = filename.trim() + "_" + id;
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".jpg");
+        link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".jpg");
         return AvailableStatus.TRUE;
     }
 
@@ -191,6 +191,21 @@ public class WallBaseCc extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         handleDownload(link);
+    }
+
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

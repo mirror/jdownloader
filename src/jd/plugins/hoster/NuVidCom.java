@@ -78,7 +78,7 @@ public class NuVidCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // Offline1
-        if (br.containsHTML("(This page cannot be found|Are you sure you typed in the correct url|<title>Most Recent Videos \\- Free Sex Adult Videos \\- NuVid\\.com</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(This page cannot be found|Are you sure you typed in the correct url|<title>Most Recent Videos \\- Free Sex Adult Videos \\- NuVid\\.com</title>|This video was not found)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // Offline2
         if (br.containsHTML("This video was deleted\\.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);

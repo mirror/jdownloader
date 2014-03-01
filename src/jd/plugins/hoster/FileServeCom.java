@@ -310,8 +310,9 @@ public class FileServeCom extends PluginForHost {
             try {
                 logger.warning("API login failed, trying login via website!");
                 loginSite(account, true);
-            } catch (PluginException e2) {
+            } catch (final PluginException e2) {
                 account.setValid(false);
+                throw e2;
             }
         }
         if (account.getAccountInfo() != null) {
@@ -524,6 +525,14 @@ public class FileServeCom extends PluginForHost {
         String username = Encoding.urlEncode(account.getUser());
         String password = Encoding.urlEncode(account.getPass());
         br.postPage("http://app.fileserve.com/api/login/", "username=" + username + "&password=" + password + "&submit=Submit+Query");
+        final String lang = System.getProperty("user.language");
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDie fileserve.com API funktioniert nicht - login nicht möglich!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThe fileserve.com API is broken - login not possible!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         String type = br.getRegex("type\":\"(.*?)\"").getMatch(0);
         if (!"premium".equalsIgnoreCase(type)) {
             String error_code = br.getRegex("error_code\":(\\d+)").getMatch(0);
@@ -536,7 +545,11 @@ public class FileServeCom extends PluginForHost {
             if ("free".equalsIgnoreCase(type)) {
                 ai.setStatus("Free accounts are not supported!");
             }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDieses Plugin unterstützt keine kostenlosen Accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThis plugin does not support free accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         String expire = br.getRegex("expireTime\":\"(.*?)\"").getMatch(0);
         if (expire != null) {
@@ -573,13 +586,24 @@ public class FileServeCom extends PluginForHost {
                     }
                 }
                 br.postPage("http://fileserve.com/login.php", "loginUserName=" + Encoding.urlEncode(account.getUser()) + "&loginUserPassword=" + Encoding.urlEncode(account.getPass()) + "&autoLogin=on&ppp=102&loginFormSubmit=Login");
-                if (br.getCookie(COOKIE_HOST, "cookie") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String lang = System.getProperty("user.language");
+                if (br.getCookie(COOKIE_HOST, "cookie") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 br.getPage("http://fileserve.com/dashboard.php");
                 String type = br.getRegex("<h5>Account type:</h5>[\t\n\r ]+<h3>(Premium) <a").getMatch(0);
                 if (type == null) type = br.getRegex("<h4>Account Type</h4></td> <td><h5 class=\"inline\">(Premium) </h5>").getMatch(0);
                 if (type == null) {
-                    logger.warning("No premiumaccount or login broken");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    // Free account
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDieses Plugin unterstützt keine kostenlosen Accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThis plugin does not support free accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 String uploadedFiles = br.getRegex("<h5>Files uploaded:</h5>[\t\n\r ]+<h3>(\\d+)<span>").getMatch(0);
                 String expire = br.getRegex("<h4>Premium Until</h4></td>[\t\n\r ]+<td><h5>(.*?) EST").getMatch(0);

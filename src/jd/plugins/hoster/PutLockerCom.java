@@ -107,7 +107,8 @@ public class PutLockerCom extends PluginForHost {
             link.getLinkStatus().setStatusText("This link is password protected");
             return AvailableStatus.TRUE;
         }
-        final String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)<br>").getMatch(0);
+        String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)<br>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\| Firedrive</title>").getMatch(0);
         final String filesize = br.getRegex("<b>Size:</b>([^<>\"]*?)<br>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // User sometimes adds random stuff to filenames when downloading so we

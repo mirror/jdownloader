@@ -649,7 +649,7 @@ public class FileMazeWs extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/");
-                getPage(COOKIE_HOST + "/signin.html");
+                getPage(COOKIE_HOST + "/login.html");
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));

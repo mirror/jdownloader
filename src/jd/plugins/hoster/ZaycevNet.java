@@ -52,7 +52,8 @@ public class ZaycevNet extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null || br.containsHTML("http\\-equiv=\"Refresh\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("text download\\-link\">([^<>\"]*?)</a>").getMatch(0);
+        String filename = br.getRegex("text download\\-link\">([^<>\"]*?)</a>").getMatch(0);
+        if (filename == null) filename = br.getRegex("id=\"pages\\-download\\-link\">([^<>\"]*?)</a>").getMatch(0);
         final String filesize = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()) + ".mp3");
@@ -64,6 +65,7 @@ public class ZaycevNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String finallink = checkDirectLink(downloadLink, "savedlink");
+        if (finallink == null) finallink = br.getRegex("\"(http://dl\\.zaycev\\.net/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             String cryptedlink = br.getRegex("\"(/download\\.php\\?id=\\d+\\&ass=[^<>/\"]*?\\.mp3)\"").getMatch(0);
             if (cryptedlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

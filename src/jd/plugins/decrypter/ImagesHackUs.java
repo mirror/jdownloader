@@ -37,7 +37,7 @@ public class ImagesHackUs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_PHOTO = ".*?imageshack\\.us/photo/[^<>\"\\'/]+/\\d+/[^<>\"\\'/]+/?";
+    private static final String TYPE_PHOTO = ".*?imageshack\\.(us|com)/photo/.+";
     private static final String TYPE_USER  = "https?://(www\\.)?imageshack\\.(com|us)/user/[A-Za-z0-9\\-_]+";
 
     @SuppressWarnings("unused")
@@ -57,6 +57,10 @@ public class ImagesHackUs extends PluginForDecrypt {
         }
         if (br.getURL() != parameter) parameter = br.getURL();
         if (parameter.matches(TYPE_PHOTO)) {
+            if (br.containsHTML("Looks like the image is no longer here")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String finallink = br.getRegex("<meta property=\"og:image\" content=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<link rel=\"image_src\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);

@@ -63,7 +63,7 @@ public class MagnoVideoCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBR(this.br);
         br.getPage("http://www.magnovideo.com/?d=" + getFID(link));
-        if (br.containsHTML("<title>File share metatitle \\- New MagnoVideo</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title>File share metatitle \\- New MagnoVideo</title>|<title>Magnovideo\\.com \\- Almacenamiento y uso compartido de v\\&iacute;deo gratis</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final Regex info = br.getRegex("<h3>You would like to download the following file:</h3>[\t\n\r ]+<p>([^<>\"]*?) \\| (\\d+(\\.\\d+)? [A-Za-z]{1,5})</p>");
         final String filesize = info.getMatch(1);
