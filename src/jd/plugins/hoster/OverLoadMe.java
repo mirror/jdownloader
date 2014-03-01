@@ -63,6 +63,8 @@ public class OverLoadMe extends PluginForHost {
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
+        br.setConnectTimeout(60 * 1000);
+        br.setReadTimeout(60 * 1000);
         return br;
     }
 

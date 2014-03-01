@@ -42,7 +42,7 @@ public class StiahniSi extends PluginForHost {
 
     public StiahniSi(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.stiahni.si/premium.php");
+        this.enablePremium("http://stiahni.si/en/premium");
     }
 
     @Override
@@ -73,6 +73,7 @@ public class StiahniSi extends PluginForHost {
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Stiahni\\.si \\-([^<>\"]*?)\\- Damn good file\\-hosting</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"file_download_name\">([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("file\\-title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex("Size: ([^<>\"]*?)<br/>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
@@ -129,8 +130,9 @@ public class StiahniSi extends PluginForHost {
                         return;
                     }
                 }
-                br.postPage("http://www.stiahni.si/en/login", "rememberMe=1&yt0=Sign+in&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5BoldPassword%5D=" + Encoding.urlEncode(account.getPass()));
-                br.getPage("http://www.stiahni.si/en/index");
+                br.getPage("http://stiahni.si/en/index");
+                br.postPage("http://stiahni.si/en/login", "rememberMe=1&yt0=Sign+in&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5BoldPassword%5D=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("http://stiahni.si/en/index");
                 if (!br.containsHTML(">Log out</span>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();

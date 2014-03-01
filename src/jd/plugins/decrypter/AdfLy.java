@@ -33,7 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|dl\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co)/[^<>\r\n\t]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "https?://(www\\.)?(adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy|(dl|david)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co)/[^<>\r\n\t]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class AdfLy extends PluginForDecrypt {
 
