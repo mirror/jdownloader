@@ -828,7 +828,10 @@ public class WipFilesNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/?op=login2");
+                getPage(COOKIE_HOST);
+                String loginpage = br.getRegex("\"(https?://(www\\.)?wipfiles\\.net/[^<>\"]*?)\"><b>Login</b>").getMatch(0);
+                if (loginpage == null) loginpage = COOKIE_HOST + "/?op=login2";
+                getPage(loginpage);
                 final String lang = System.getProperty("user.language");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {

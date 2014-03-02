@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -56,16 +56,32 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             String correctLink = br.getRedirectLocation();
-            if (correctLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (correctLink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             br.getPage(correctLink);
             correctLink = br.getRedirectLocation();
-            if (correctLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (correctLink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             parameter = correctLink;
             br.setFollowRedirects(true);
         } else {
             getUserLogin();
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            try {
+                br.getPage(parameter);
+            } catch (final BrowserException e) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
+                    logger.info("Failed to decrypt link because of server error 503: " + parameter);
+                    return decryptedLinks;
+                }
+
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
         if (br.getURL().contains("error/login.html")) {
             logger.info("Login needed to decrypt link: " + parameter);

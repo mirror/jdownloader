@@ -254,6 +254,7 @@ public class FreeWayMe extends PluginForHost {
             account.setProperty(ACC_PROPERTY_CONNECTIONS, maxPremApi);
         }
         maxPrem.set(maxPremi);
+        account.setMaxSimultanDownloads(maxPremi);
 
         // get available fullspeed traffic
         account.setProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, getJson("restgb", accInfoAPIResp));

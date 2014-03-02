@@ -50,7 +50,7 @@ public class PanBaiduCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Other or older User-Agents might get slow speed
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
+        br.getHeaders().put("User-Agent", "netdisk;4.5.1.3;PC;PC-Windows;6.2.9200;WindowsBaiduYunGuanJia");
         // From decrypter
         DLLINK = downloadLink.getStringProperty("dlink", null);
         // From host plugin

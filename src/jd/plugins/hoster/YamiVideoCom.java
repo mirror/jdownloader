@@ -45,6 +45,7 @@ public class YamiVideoCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">404 Page not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2 style=\"font\\-size:20px\">([^<>\"]*?)</h2>").getMatch(0);
@@ -57,8 +58,10 @@ public class YamiVideoCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("I AM HUMAN")) br.postPage(downloadLink.getDownloadURL(), "submit_human=I+AM+HUMAN");
-        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs%5B%5D=N1");
+        if (br.containsHTML("I AM HUMAN")) br.postPage(downloadLink.getDownloadURL(), "submit_human=I+AM+HUMAN+%2C+CONTINUE+TO+THE+VIDEO");
+        final String postData = "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs[]=N1&xjxargs[]=Sip";
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", Encoding.urlEncode(postData));
         final String dllink = br.getRegex("\\&file=(http://[a-z0-9]+\\." + this.getHost() + "/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);

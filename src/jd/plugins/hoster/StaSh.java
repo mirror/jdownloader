@@ -69,7 +69,7 @@ public class StaSh extends PluginForHost {
         // Motionbooks are not supported (yet)
         if (br.containsHTML(",target: \\'motionbooks/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         filename = Encoding.htmlDecode(filename.trim());
         String ext = null;
         String filesize = null;
@@ -104,7 +104,12 @@ public class StaSh extends PluginForHost {
                 final String dllink = getCrippledDllink();
                 if (dllink != null) ext = dllink.substring(dllink.lastIndexOf(".") + 1);
             }
-            if (ext == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Just download the html */
+            if (ext == null) {
+                HTMLALLOWED = true;
+                ext = "html";
+                DLLINK = br.getURL();
+            }
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
@@ -132,25 +137,27 @@ public class StaSh extends PluginForHost {
     }
 
     private String getDllink() throws PluginException {
-        String dllink = null;
-        // Check if it's a video
-        dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
-        // First try to get downloadlink, if that doesn't exist, try to get the
-        // link to the picture which is displayed in browser
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?sta\\.sh/download/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            if (br.containsHTML(">Mature Content</span>")) {
-                dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
-            } else {
-                dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+        if (DLLINK == null) {
+            String dllink = null;
+            // Check if it's a video
+            dllink = br.getRegex("\"src\":\"(http:[^<>\"]*?mp4)\"").getMatch(0);
+            // First try to get downloadlink, if that doesn't exist, try to get the
+            // link to the picture which is displayed in browser
+            if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?sta\\.sh/download/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                if (br.containsHTML(">Mature Content</span>")) {
+                    dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
+                } else {
+                    dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+                }
             }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = dllink.replace("\\", "");
+            dllink = Encoding.htmlDecode(dllink);
+            DLLINK = dllink;
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = dllink.replace("\\", "");
-        dllink = Encoding.htmlDecode(dllink);
-        DLLINK = dllink;
-        return dllink;
+        return DLLINK;
     }
 
     private String getCrippledDllink() {

@@ -93,7 +93,7 @@ public class TriLuLiLuRo extends PluginForHost {
         if (br.containsHTML(">Trilulilu 404<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
         String filename = null;
-        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE)) {
+        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE) || br.getURL().matches(TYPE_IMAGE)) {
             filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Imagini  \\- Trilulilu\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = br.getRegex("<div class=\"img_player\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?\\.jpg)\"").getMatch(0);
@@ -116,7 +116,7 @@ public class TriLuLiLuRo extends PluginForHost {
                     }
                 }
             }
-            if (filename == null) filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Video  \\- Trilulilu\"").getMatch(0);
+            if (filename == null) filename = br.getRegex("property=\"og:title\"[\t\n\r ]+content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             filename = Encoding.htmlDecode(filename.trim());
             if (br.containsHTML(VIDEOPLAYER))
@@ -373,7 +373,7 @@ public class TriLuLiLuRo extends PluginForHost {
         if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (br.containsHTML(COUNTRYBLOCK)) throw new PluginException(LinkStatus.ERROR_FATAL, COUNTRYBLOCKUSERTEXT);
         if (br.containsHTML(ONLYFORREGISTEREDUSERS)) throw new PluginException(LinkStatus.ERROR_FATAL, ONLYFORREGISTEREDUSERSTEXT);
-        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE)) {
+        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE) || br.getURL().matches(TYPE_IMAGE)) {
         } else {
             getDownloadUrl(downloadLink);
         }

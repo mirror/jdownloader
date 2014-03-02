@@ -127,10 +127,16 @@ public class SuperUploadCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                // br.getPage("");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://superupload.com/?login", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("http://www.superupload.com/?login", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "auth") == null) {
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -154,7 +160,7 @@ public class SuperUploadCom extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         br.getPage("http://superupload.com/?account&page=panel");
         if (br.containsHTML("<div class=\"sideProfile\">[\t\n\r ]+<span>Never expire</span>")) {
@@ -163,8 +169,12 @@ public class SuperUploadCom extends PluginForHost {
             ai.setStatus("Premium User");
             final String expire = br.getRegex("<BR>Exp.: (\\d{2}/\\d{2}/\\d{2}  \\-  \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
-                account.setValid(false);
-                return ai;
+                final String lang = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yy  -  hh:mm:ss", null));
             }

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,6 +46,8 @@ public class OverLoadMe extends PluginForHost {
     private static final String                            APIKEY             = "MDAwMS05YWRhMzI5Y2Y1ODk0ZjM2MGQxM2FjM2I5MTU4OGExYjUzMGE3NmVlNDg4MTQtNTMwYTc2ZWUtNGMwMS0zYWIwMTJlYw==";
     private int                                            STATUSCODE         = 0;
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
+
+    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
 
     public OverLoadMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -113,7 +116,7 @@ public class OverLoadMe extends PluginForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        int maxChunks = 1;
+        int maxChunks = (int) account.getLongProperty("chunklimit", 1);
         if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
@@ -154,10 +157,12 @@ public class OverLoadMe extends PluginForHost {
                 /* unknown error, we disable multiple chunks */
                 if (link.getBooleanProperty(OverLoadMe.NOCHUNKS, false) == false) {
                     link.setProperty(OverLoadMe.NOCHUNKS, Boolean.valueOf(true));
+                    link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
+            link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(OverLoadMe.NOCHUNKS, false) == false) {
@@ -217,6 +222,8 @@ public class OverLoadMe extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         accessAPISafe(account, null, DOMAIN + "account.php?user=" + Encoding.urlEncode(account.getUser()) + "&auth=" + Encoding.urlEncode(account.getPass()));
@@ -246,6 +253,18 @@ public class OverLoadMe extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
+        long maxchunks = Integer.parseInt(getJson("chunklimit"));
+        if (maxchunks <= 0)
+            maxchunks = 1;
+        else if (maxchunks > 20) maxchunks = 20;
+        if (maxchunks > 1) maxchunks = -maxchunks;
+        account.setProperty("chunklimit", maxchunks);
+        int simultandls = Integer.parseInt(getJson("downloadlimit"));
+        if (simultandls <= 0)
+            simultandls = 1;
+        else if (simultandls > 20) simultandls = 20;
+        account.setMaxSimultanDownloads(simultandls);
+        maxPrem.set(simultandls);
         accessAPISafe(account, null, DOMAIN + "hoster.php?auth=" + Encoding.Base64Decode(APIKEY));
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomains = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
@@ -436,7 +455,7 @@ public class OverLoadMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 5;
+        return maxPrem.get();
     }
 
     @Override

@@ -49,7 +49,9 @@ public class BteTo extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links) {
+        for (String singleLink : links) {
+            singleLink = singleLink.replace("http://www.dereferer.org/?", "");
+            singleLink = Encoding.htmlDecode(singleLink);
             if (!singleLink.matches("http://(www\\.)?byte\\.to/category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html")) decryptedLinks.add(createDownloadlink(singleLink));
         }
 

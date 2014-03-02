@@ -40,9 +40,19 @@ public class ShareBeastComUser extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookie("http://" + HOST, "lang", "english");
         br.getPage(parameter);
-        if (br.containsHTML("No such user exist")) return decryptedLinks;
+        if (br.containsHTML("No such user exist")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String[] links = br.getRegex("\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            if (br.containsHTML("<H1>Files of ")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
         return decryptedLinks;

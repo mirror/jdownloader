@@ -81,6 +81,7 @@ public class FlickrCom extends PluginForDecrypt {
         if (parameter.matches(SETLINK)) {
             picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
             if (picCount == null) picCount = br.getRegex("<div class=\"vsNumbers\">[\t\n\r ]+(\\d+) photos").getMatch(0);
+            if (picCount == null) picCount = br.getRegex("<h1>(\\d+)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
             fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\- a set on Flickr</title>").getMatch(0);
         } else if (parameter.matches(PHOTOLINK)) {

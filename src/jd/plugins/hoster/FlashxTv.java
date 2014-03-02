@@ -166,8 +166,8 @@ public class FlashxTv extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             br.followConnection();
-            if (br.containsHTML(">404 \\- Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!this.dl.startDownload()) {
