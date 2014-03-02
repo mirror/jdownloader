@@ -1,6 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=Minimiziraj u Taskbar
 JDGui_windowClosing_try_answer_tray=Sakrij u Tray
 JDGui_windowClosing_try_asnwer_close=Zatvori JDownloader
+JDGui_windowClosing_try_msg_2=Molimo izaberite između\n  - Napusti JDownloader (Otkaži sve pokrenute procese)\n  - Minimiziraj u Taskbar (Download-i će se nastaviti)\n  - Sakrij u Sistemski Tray (Download-i će biti nastavljeni u pozadini)
 JDGui_windowClosing_try_title=Zatvaranje JDownloader-a
 OnCloseAction_exit=Napusti Aplikaciju
 OnCloseAction_totaskbar=Minimiziraj u Taskbar
