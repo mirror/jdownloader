@@ -817,7 +817,7 @@ public class YoutubeHelper {
             }
         }
         if (StringUtils.isEmpty(vid.channel)) {
-            final String match = this.br.getRegex("feature=watch\"[^>]+dir=\"ltr[^>]+>(.*?)</a>(\\s+)?<span class=\"yt-user").getMatch(0);
+            final String match = this.br.getRegex("data-name=\"watch\">(.*?)</a>").getMatch(0);
             if (match != null) {
                 vid.channel = Encoding.htmlDecode(match.trim());
 
