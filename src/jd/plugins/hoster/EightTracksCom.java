@@ -57,6 +57,7 @@ public class EightTracksCom extends PluginForHost {
     private static final int     WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION = 32;
     private static final int     WAITTIME_SECONDS_EXTRA                            = 5;
     private static final int     WAITTIME_SECONDS_SKIPLIMIT                        = 60;
+    private static final int     WAITTIME_DIVISOR                                  = 2;
     private static final int     WAITTIME_SECONDS_TEST_MODE                        = 10;
     // private static final long BITRATE_SOUNDCLOUD = 11250;
     private static final long    SOURCE_8TRACKS_BITRATE                            = 5000;
@@ -191,8 +192,11 @@ public class EightTracksCom extends PluginForHost {
                     if (!Boolean.parseBoolean(getClipData("skip_allowed"))) {
                         logger.info("We are not allowed to skip anymore --> Waiting in between to get the next track in order to get all tracks");
                         /* Pretend to play the song */
-                        this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
-                        br.getPage(MAINPAGE + "sets/" + playToken + "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                        /* Lines below might be needed if they change their system */
+                        // this.sleep(WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION * 1000l, downloadLink);
+                        // br.getPage(MAINPAGE + "sets/" + playToken +
+                        // "/report?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" +
+                        // currenttrackid + "&format=jsonh");
                         /* Wait till "the song is (probably) "over" */
                         handleLongWait(dllink);
 
@@ -349,8 +353,9 @@ public class EightTracksCom extends PluginForHost {
         } catch (final Throwable e) {
             waitSeconds = WAITTIME_SECONDS_DEFAULT;
         }
-        // waitSeconds = waitSeconds / 2 + 5;
-        waitSeconds = waitSeconds - WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION + WAITTIME_SECONDS_EXTRA;
+        waitSeconds = waitSeconds / WAITTIME_DIVISOR + WAITTIME_SECONDS_EXTRA;
+        /* Maybe needed if they change their system */
+        // waitSeconds = waitSeconds - WAITTIME_SECONDS_BEFORE_TRACK_PLAYED_CONFIRMATION + WAITTIME_SECONDS_EXTRA;
         if (TEST_MODE) waitSeconds = WAITTIME_SECONDS_TEST_MODE;
         logger.info("Waiting " + waitSeconds + " seconds from now on...");
         if (waitSeconds > 0) this.sleep(waitSeconds * 1000l, current_downloadlink);

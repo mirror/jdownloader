@@ -30,12 +30,14 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://(www\\.)?(8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+|8trx\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
 public class EightTracksCom extends PluginForDecrypt {
 
     private static final String  MAINPAGE          = "http://8tracks.com/";
     private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage|sets/new)";
+    private static final String  TYPE_GENERAL      = "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+";
     private static final String  TYPE_SINGLE_TRACK = "http://(www\\.)?8tracks\\.com/tracks/\\d+";
+    private static final String  TYPE_SHORT        = "http://(www\\.)?8trx\\.com/[A-Za-z0-9]+";
 
     private String               clipData;
     private static final String  TEMP_EXT          = ".mp3";
@@ -50,7 +52,7 @@ public class EightTracksCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>(0);
-        final String parameter = param.toString();
+        String parameter = param.toString();
         setBrowserExclusive();
 
         if (parameter.matches(UNSUPPORTEDLINKS)) {
@@ -63,6 +65,14 @@ public class EightTracksCom extends PluginForDecrypt {
         /* nachfolgender UA sorgt für bessere Audioqualität */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2");
         br.getPage(parameter);
+
+        if (parameter.matches(TYPE_SHORT)) {
+            if (!br.getURL().matches(TYPE_GENERAL)) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            parameter = br.getURL();
+        }
 
         final DownloadLink offline = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
         offline.setName(new Regex(parameter, "8tracks\\.com/(.+)").getMatch(0));
