@@ -34,6 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
@@ -113,14 +114,15 @@ public class Zippysharecom extends PluginForHost {
         try {
             if (!fromFlash) {
                 // document.getElementById('id').href
-                engine.eval("var doc = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
+                engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
                 engine.eval(fun);
                 result = engine.get("result");
             } else {
                 result = ((Double) engine.eval(fun)).intValue();
             }
         } catch (final Throwable e) {
-            return null;
+            throw new WTFException(e);
+
         }
         return result == null ? null : result.toString();
     }
@@ -234,7 +236,7 @@ public class Zippysharecom extends PluginForHost {
                 DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\).href = \"/.*?\";)").getMatch(0);
                 String math = br.getRegex("\r?\n<script type=\"text/javascript\">(.*?)</script>\r?\n").getMatch(0);
                 if (DLLINK != null && math != null) {
-                    math = math.replace(DLLINK, "var result = " + DLLINK).replace("document", "doc");
+                    math = math.replace(DLLINK, "var result = " + DLLINK);
                     String data = execJS(math, false);
                     if (data == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     if (data.startsWith("/")) data = data.substring(1);
