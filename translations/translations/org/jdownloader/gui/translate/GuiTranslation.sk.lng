@@ -752,6 +752,7 @@ gui_linklist_editpackagename_message=Názov nového balíka
 gui_menu_about=Pomocník
 gui_menu_action_break2_desc=Pozastaviť sťahovanie. Obmedzí celkový prenosový limit na %s1 KiB/s
 gui_menu_action_premium_buy_name=Kúpiť prémiový účet
+gui_menu_error_report=Nahlásiť problém
 gui_reconnect_confirm=Chcete sa znovu pripojiť k Internetu?
 gui_settings_advanced_title=Rozšírené nastavenia
 gui_table_contextmenu_browselink=Otvoriť v prehliadači
