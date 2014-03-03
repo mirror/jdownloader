@@ -421,13 +421,12 @@ public class SecureUploadEu extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
-        }
+        int wait = 60;
+        final String ttt = new Regex(correctedBR, "id=\"showsec\">(\\d+)</span>").getMatch(0);
+        if (ttt != null) wait = Integer.parseInt(ttt);
+        wait -= passedTime;
+        logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+        if (wait > 0) sleep(wait * 1000l, downloadLink);
     }
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
