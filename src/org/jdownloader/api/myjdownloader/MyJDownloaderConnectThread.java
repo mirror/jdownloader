@@ -765,11 +765,11 @@ public class MyJDownloaderConnectThread extends Thread {
         try {
             session = (SessionInfoWrapper) lapi.connect(getEmail(), getPassword());
             // Thread.sleep(1000);
-            DeviceData device = lapi.bindDevice(new DeviceData(CFG_MYJD.CFG.getUniqueDeviceID(), "jd", getDeviceName()));
+            String uniqueID = getUniqueDeviceID();
+            DeviceData device = lapi.bindDevice(new DeviceData(uniqueID, "jd", getDeviceName()));
             if (StringUtils.isNotEmpty(device.getId())) {
-                if (!device.getId().equals(CFG_MYJD.CFG.getUniqueDeviceID())) {
-                    CFG_MYJD.CFG.setUniqueDeviceID(device.getId());
-                    CFG_MYJD.CFG._getStorageHandler().write();
+                if (!device.getId().equals(uniqueID)) {
+                    setUniqueDeviceID(device.getId());
                 }
                 validateSession(session);
                 deviceBound = true;
@@ -780,7 +780,18 @@ public class MyJDownloaderConnectThread extends Thread {
                 disconnectSession(lapi, session);
             }
         }
-        
+    }
+    
+    protected String getUniqueDeviceID() {
+        String salt = Hash.getSHA256(CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath());
+        if (salt.equals(CFG_MYJD.CFG.getUniqueDeviceIDSalt())) { return CFG_MYJD.CFG.getUniqueDeviceID(); }
+        return null;
+    }
+    
+    private void setUniqueDeviceID(String uniqueID) {
+        CFG_MYJD.CFG.setUniqueDeviceIDSalt(Hash.getSHA256(CFG_MYJD.CFG._getStorageHandler().getPath().getAbsolutePath()));
+        CFG_MYJD.CFG.setUniqueDeviceID(uniqueID);
+        CFG_MYJD.CFG._getStorageHandler().write();
     }
     
     protected String getDeviceName() {
