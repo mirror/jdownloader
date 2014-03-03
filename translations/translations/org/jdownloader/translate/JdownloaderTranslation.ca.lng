@@ -1,7 +1,13 @@
 AddContainerAction_delete_container_msg=Voleu eliminar %s1 després d'afegir l'enllaç o enllaços al JDownloader?
 DownloadLink_setSkipped_statusmessage=Saltat
+DownloadLink_setSkipped_statusmessage_account=Saltat - Cal un compte
+DownloadLink_setSkipped_statusmessage_captcha=Saltat - Captcha requerit
+DownloadLink_setSkipped_statusmessage_disk_full=Saltat - El disc està ple
+DownloadLink_setSkipped_statusmessage_ffmpeg=Saltat - Falta FFmpeg™
 DownloadLink_setSkipped_statusmessage_file_exists=Saltat - el fitxer ja existeix
 DownloadLink_setSkipped_statusmessage_invalid_path=Directori de descàrrega invàlid
+DownloadLink_setSkipped_statusmessage_toomanyretries=Saltat - Massa reintents
+DownloadLink_setSkipped_statusmessage_update_restart=Saltat - Cal reiniciar
 DownloadWatchDog_onShutdownRequest_=Descàrregues en progrés!
 DownloadWatchDog_onShutdownRequest_msg=Voleu aturar les descàrregues en progrés en sortir del JDownloader?
 DownloadWatchDog_onShutdownRequest_nonresumable=Descàrregues no continuables en progrés!
