@@ -76,7 +76,7 @@ public class FileniumCom extends PluginForHost {
     public Browser newBrowser() {
         br = new Browser();
         br.setCookiesExclusive(true);
-        // define custom browser headers and language settings.
+        /* define custom browser headers and language settings. */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie("http://filenium.com", "langid", "1");
         br.getHeaders().put("Agent", "JDOWNLOADER");
@@ -220,9 +220,14 @@ public class FileniumCom extends PluginForHost {
              * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
-            if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<"))
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            else if (br.containsHTML(">TRAFICO CONSUMIDO PARA")) {
+                logger.info("Traffic for the current host is exhausted");
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            }
             generalErrorhandling(link, account);
-            // Seems like we're on the mainpage -> Traffic exhausted
+            /* Seems like we're on the mainpage -> Maybe traffic exhausted */
             if (br.containsHTML("filenium\\.com/favicon\\.ico\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
 
@@ -320,17 +325,6 @@ public class FileniumCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // if (!br.containsHTML("type>premium<")) {
-                // if ("de".equalsIgnoreCase(lang)) {
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-                // "\r\nDer eingegebene Account ist ein kostenloser Account.\r\nFür diesen Anbieter unterstützt JDownloader nur premium Accounts!",
-                // PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // } else {
-                // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-                // "\r\nPThe added account is a free account.\r\nFor this service, JDownloader only supports premium accounts!",
-                // PluginException.VALUE_ID_PREMIUM_DISABLE);
-                // }
-                // }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies("http://filenium.com");
