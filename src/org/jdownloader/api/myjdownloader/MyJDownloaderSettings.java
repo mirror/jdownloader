@@ -56,6 +56,10 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     
     public String getUniqueDeviceID();
     
+    public String getUniqueDeviceIDSalt();
+    
+    public void setUniqueDeviceIDSalt(String salt);
+    
     public void setUniqueDeviceID(String id);
     
     public static class DeviceNameFactory extends AbstractDefaultFactory<String> {
