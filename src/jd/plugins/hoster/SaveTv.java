@@ -388,11 +388,12 @@ public class SaveTv extends PluginForHost {
         return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        // Improvised workaround for http://svn.jdownloader.org/issues/10306
-        // TODO: Remove stupid workaround errorhandling once the ticket is closed
+        /*
+         * Improvised workaround for http://svn.jdownloader.org/issues/10306 TODO: Remove stupid workaround errorhandling once the ticket is
+         * closed
+         */
         final int premiumError = (int) getLongProperty(downloadLink, LASTFAILEDSTRING, -1l);
         if (premiumError > 0) {
             switch (premiumError) {
@@ -590,6 +591,7 @@ public class SaveTv extends PluginForHost {
      * @param soapPost
      *            : The soap post data
      */
+    @SuppressWarnings("unused")
     private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
         System.out.println(soapPost);
         br.getHeaders().put("SOAPAction", soapAction);
@@ -597,8 +599,9 @@ public class SaveTv extends PluginForHost {
         br.postPageRaw("http://api.save.tv/v2/Api.svc", soapAction);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(this.br, account, true);
@@ -607,14 +610,24 @@ public class SaveTv extends PluginForHost {
             account.setValid(false);
             throw e;
         } catch (final BrowserException eb) {
+            boolean success = false;
             for (int i = 1; i <= 3; i++) {
                 try {
                     login(this.br, account, true);
                 } catch (final BrowserException ebr) {
-                    logger.info(i + "von 3: save.tv Login wegen Serverfehler (Timeout oder Serverfehler) fehlgeschlagen");
+                    logger.info(i + "von 3: save.tv Login failed because of server error or timeout");
                     continue;
                 }
+                success = true;
                 break;
+            }
+            final String lang = System.getProperty("user.language");
+            if (!success) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin wegen Serverfehler oder Timeout fehlgeschlagen!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin failed because of server error or timeout!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
         }
         ai.setStatus("Premium save.tv User");
@@ -623,7 +636,7 @@ public class SaveTv extends PluginForHost {
         return ai;
     }
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings({ "unchecked" })
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
@@ -796,7 +809,6 @@ public class SaveTv extends PluginForHost {
         return df.format(new Random().nextInt(10000));
     }
 
-    @SuppressWarnings("deprecation")
     private String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         String ext = downloadLink.getStringProperty("type", null);
@@ -908,7 +920,6 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private String getFakeOriginalFilename(final DownloadLink downloadLink) throws ParseException {
         String ext = downloadLink.getStringProperty("type", null);
         if (ext == null) ext = ".mp4";

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -57,10 +58,10 @@ public class MyDownloaderNet extends PluginForHost {
         try {
             // login
             token = getLoginToken(account);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             account.setValid(false);
             ac.setProperty("multiHostSupport", Property.NULL);
-            ac.setStatus("can't get login token. Wrong password?");
+            ac.setStatus("\r\nCan't get login token. Wrong password?");
             return ac;
         }
         // get account info:
@@ -81,9 +82,16 @@ public class MyDownloaderNet extends PluginForHost {
                 ac.setValidUntil(-1);
             } else if (expire.equalsIgnoreCase("expired")) {
                 ac.setExpired(true);
-                return ac;
+                ac.setStatus("\r\nAccont expired!\r\nAccount abgelaufen!");
+                /* Workaround for bug: http://svn.jdownloader.org/issues/11637 */
+                final String lang = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount abgelaufen!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount expired!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             } else {
-                ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
+                ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
             }
         }
         // get supported hoster
