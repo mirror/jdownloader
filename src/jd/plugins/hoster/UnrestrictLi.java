@@ -69,10 +69,15 @@ public class UnrestrictLi extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
+    public AvailableStatus requestFileInformation(final DownloadLink dl) throws PluginException, IOException {
         // Set JDownloader User-Agent
         br.getHeaders().put("User-Agent", "JDownloader");
         URLConnectionAdapter con = null;
+        try {
+            br.setAllowedResponseCodes(new int[] { 503 });
+        } catch (final Throwable e) {
+            // Not available in old Stable
+        }
         try {
             con = br.openGetConnection(dl.getDownloadURL());
             if (con.isContentDisposition()) {
@@ -81,6 +86,21 @@ public class UnrestrictLi extends PluginForHost {
                 dl.setAvailable(true);
                 return AvailableStatus.TRUE;
             } else {
+                if (con.getResponseCode() == 503) {
+                    try {
+                        br.followConnection();
+                    } catch (final Throwable e) {
+                        dl.getLinkStatus().setStatusText("Cannot check links while downloading");
+                        return AvailableStatus.UNCHECKABLE;
+                    }
+                    if (br.containsHTML("Link could not be found")) {
+                        dl.setAvailable(false);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (br.containsHTML("You are already downloading a file")) {
+                        dl.getLinkStatus().setStatusText("Cannot check links while downloading");
+                        return AvailableStatus.TRUE;
+                    }
+                }
                 dl.setAvailable(false);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -389,7 +409,7 @@ public class UnrestrictLi extends PluginForHost {
             // MessageDialog("Error", "Please upgrade to VIP to use this plugin", false);
             ai.setStatus("only VIP members can use this plugin");
             ai.setProperty("multiHostSupport", Property.NULL);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThis service only accepts VIP accounts\r\nDieser Anbieter akzeptiert nur VIP accounts", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThis service only accepts VIP accounts!\r\nDieser Anbieter akzeptiert nur VIP accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         try {
             String apihosts = br.cloneBrowser().getPage("http://unrestrict.li/api/jdownloader/hosts.php");

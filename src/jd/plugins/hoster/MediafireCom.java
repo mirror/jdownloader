@@ -349,7 +349,7 @@ public class MediafireCom extends PluginForHost {
             login(br, account, true);
         } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         account.setValid(true);
         if (account.getBooleanProperty("free")) {
@@ -778,19 +778,39 @@ public class MediafireCom extends PluginForHost {
                     }
                 }
                 this.setBrowserExclusive();
+                final String lang = System.getProperty("user.language");
                 lbr.setFollowRedirects(true);
+                if (!isValidMailAdress(account.getUser())) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte trage deine E-Mail Adresse in das 'Name'-Feld ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the 'Name'-field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 lbr.getPage("http://www.mediafire.com/");
                 Form form = lbr.getFormbyProperty("name", "form_login1");
                 if (form == null) {
                     form = lbr.getFormBySubmitvalue("login_email");
                 }
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (form == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 form.put("login_email", Encoding.urlEncode(account.getUser()));
                 form.put("login_pass", Encoding.urlEncode(account.getPass()));
                 lbr.submitForm(form);
                 lbr.getPage("/myfiles.php");
                 final String cookie = lbr.getCookie("http://www.mediafire.com", "user");
-                if ("x".equals(cookie) || cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if ("x".equals(cookie) || cookie == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 lbr.setFollowRedirects(false);
                 lbr.getPage("https://www.mediafire.com/myaccount/download_options.php");
                 if (lbr.getRedirectLocation() != null && lbr.getRedirectLocation().contains("mediafire.com/upgrade")) {
@@ -944,6 +964,10 @@ public class MediafireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (eBr.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", 30 * 60 * 1000l);
+    }
+
+    private boolean isValidMailAdress(final String value) {
+        return value.matches(".+@.+");
     }
 
     @Override

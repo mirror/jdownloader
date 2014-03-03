@@ -29,15 +29,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie(2|4)k\\.to/(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+|\\d+\\-[^<>\"/]*?)(\\.html)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie(2|4)k\\.to//?(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+|\\d+\\-[^<>\"/]*?)(\\.html)?" }, flags = { 0 })
 public class Mv2kTo extends PluginForDecrypt {
 
     public Mv2kTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS  = "http://(www\\.)?movie4k\\.to/[a-z0-9\\-_]+\\-all\\-\\d+\\.html";
-    private static final String INVALIDLINKS2 = "http://(www\\.)?movie4k\\.to/tvshows\\-episode[a-z0-9\\-]+\\.html";
+    private static final String INVALIDLINKS  = "http://(www\\.)?movie4k\\.to//?[a-z0-9\\-_]+\\-all\\-\\d+\\.html";
+    private static final String INVALIDLINKS2 = "http://(www\\.)?movie4k\\.to//?tvshows\\-episode[a-z0-9\\-]+\\.html";
 
     /**
      * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,vidbux.com,xvidstage.com,vidstream.in

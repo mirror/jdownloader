@@ -159,7 +159,7 @@ public class SecureUploadEu extends PluginForHost {
     }
 
     private String[] scanInfo(String[] fileInfo) {
-        final Regex fInfo = new Regex(correctedBR, "<h3>Downloading ([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]{1,5})\\)</h3>");
+        final Regex fInfo = new Regex(correctedBR, "<p class=\"font14\">Downloading \"([^<>\"]*?)\" \\(([^<>\"]*?)\\)</p>");
         // standard traits from base page
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
@@ -626,8 +626,8 @@ public class SecureUploadEu extends PluginForHost {
                         return;
                     }
                 }
-                getPage(COOKIE_HOST + "//login");
-                final Form loginform = br.getFormbyProperty("name", "FL");
+                getPage(COOKIE_HOST + "/login");
+                final Form loginform = br.getForm(0);
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));

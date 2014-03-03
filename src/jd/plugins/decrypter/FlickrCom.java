@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -68,8 +67,7 @@ public class FlickrCom extends PluginForDecrypt {
         }
         /** Login is not always needed but we force it to get all pictures */
         if (!getUserLogin()) {
-            logger.info("Login failed -> Cannot decrypt flickr links without any active accounts: " + parameter);
-            return decryptedLinks;
+            logger.info("Login failed or no accounts active/existing -> Continuing without account");
         }
         br.getPage(parameter);
 
@@ -159,33 +157,19 @@ public class FlickrCom extends PluginForDecrypt {
 
     private boolean getUserLogin() throws Exception {
         final PluginForHost flickrPlugin = JDUtilities.getPluginForHost("flickr.com");
-        Account aa = AccountController.getInstance().getValidAccount(flickrPlugin);
-        boolean addAcc = false;
-        if (aa == null) {
-            String username = UserIO.getInstance().requestInputDialog("Enter Loginname for flickr.com :");
-            if (username == null) {
-                logger.info("Username not entered, continuing without account...");
+        final Account aa = AccountController.getInstance().getValidAccount(flickrPlugin);
+        if (aa != null) {
+            try {
+                ((jd.plugins.hoster.FlickrCom) flickrPlugin).login(aa, false, this.br);
+            } catch (final PluginException e) {
+                aa.setValid(false);
+                logger.info("Account seems to be invalid!");
                 return false;
             }
-            String password = UserIO.getInstance().requestInputDialog("Enter password for flickr.com :");
-            if (password == null) {
-                logger.info("Password not entered, continuing without account...");
-                return false;
-            }
-            aa = new Account(username, password);
-            addAcc = true;
-        }
-        try {
-            ((jd.plugins.hoster.FlickrCom) flickrPlugin).login(aa, false, this.br);
-        } catch (final PluginException e) {
-
-            aa.setValid(false);
-            logger.info("Account seems to be invalid!");
+            return true;
+        } else {
             return false;
         }
-        // Account is valid, let's just add it
-        if (addAcc) AccountController.getInstance().addAccount(flickrPlugin, aa);
-        return true;
     }
 
     /* NO OVERRIDE!! */

@@ -66,8 +66,7 @@ public class FlickrCom extends PluginForHost {
         if (aa != null) {
             login(aa, false, br);
         } else {
-            logger.info("File not checkable without logindata!");
-            return AvailableStatus.UNCHECKABLE;
+            logger.info("No account available, continuing without account...");
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -130,13 +129,14 @@ public class FlickrCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users [Add a flickt account to download such links!]");
+        dl.startDownload();
     }
 
     @Override
