@@ -211,6 +211,7 @@ public class TestClient {
         register(new GetDirectConnectionInfo());
         register(new VerifyDirectConnection());
         register(new DirectConnectionCall());
+        register(new StorageRemoveKeyTest());
         JacksonMapper jm;
         JSonStorage.setMapper(jm = new JacksonMapper());
         
