@@ -363,7 +363,7 @@ public class MediafireCom extends PluginForHost {
             }
         } else {
             br.setFollowRedirects(true);
-            br.getPage("/myaccount.php");
+            br.getPage("/myaccount/");
             String trafficleft = br.getRegex("View Statistics</a></span>.+</div>.+class=\"lg-txt\">([^<>]+)</div>").getMatch(0);
             if (trafficleft != null) {
                 trafficleft = trafficleft.trim();
@@ -377,8 +377,8 @@ public class MediafireCom extends PluginForHost {
             }
             ai.setStatus("Premium User");
             try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
+                maxPrem.set(20);
+                account.setMaxSimultanDownloads(20);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }

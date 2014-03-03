@@ -835,8 +835,19 @@ public class BillionUploadsCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
-                Form loginform = br.getFormbyProperty("name", "FL");
+                Form loginform = null;
+                for (int i = 1; i <= 5; i++) {
+                    getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
+                    loginform = br.getFormbyProperty("name", "FL");
+                    if (loginform == null) {
+                        logger.warning("billionuploads.com: Failed to get loginform attempt " + i + " / 3");
+                        this.br.clearCookies(COOKIE_HOST);
+                        Thread.sleep(3 * 1000l);
+                        continue;
+                    }
+                    break;
+                }
+
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(language)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
