@@ -115,8 +115,9 @@ public class Zippysharecom extends PluginForHost {
             if (!fromFlash) {
                 // document.getElementById('id').href
                 engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
-                engine.eval(fun);
+                engine.eval(fun + "\r\nvar result=document.getElementById('dlbutton').href;");
                 result = engine.get("result");
+
             } else {
                 result = ((Double) engine.eval(fun)).intValue();
             }
