@@ -27,30 +27,30 @@ import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadLinkArchiveFile implements ArchiveFile {
-
+    
     private List<DownloadLink> downloadLinks;
     private String             name;
     private String             filePath;
     private long               size;
     private Archive            archive;
-
+    
     public DownloadLinkArchiveFile(DownloadLink link) {
         downloadLinks = new CopyOnWriteArrayList<DownloadLink>();
         downloadLinks.add(link);
-        name = new File(link.getFileOutput()).getName();
-        filePath = link.getFileOutput();
+        name = new File(link.getFileOutput(false, true)).getName();
+        filePath = link.getFileOutput(false, true);
         size = link.getView().getBytesTotalEstimated();
     }
-
+    
     public String toString() {
         return "DownloadLink: " + filePath + " Complete:" + isComplete();
     }
-
+    
     @Override
     public int hashCode() {
         return downloadLinks.hashCode();
     }
-
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof DownloadLinkArchiveFile)) return false;
@@ -61,7 +61,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         }
         return false;
     }
-
+    
     @Override
     public boolean isComplete() {
         for (DownloadLink downloadLink : downloadLinks) {
@@ -69,25 +69,25 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         }
         return false;
     }
-
+    
     public String getFilePath() {
         return filePath;
     }
-
+    
     public void deleteFile(DeleteOption option) {
-
+        
         DownloadWatchDog.getInstance().delete(downloadLinks, option);
     }
-
+    
     public List<DownloadLink> getDownloadLinks() {
         return downloadLinks;
-
+        
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public void setStatus(ExtractionController controller, ExtractionStatus status) {
         for (DownloadLink downloadLink : downloadLinks) {
             downloadLink.setExtractionStatus(status);
@@ -95,14 +95,14 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             if (progress != null && progress instanceof ExtractionProgress) ((ExtractionProgress) progress).setMessage(status.getExplanation());
         }
     }
-
+    
     public void setMessage(ExtractionController controller, String text) {
         for (DownloadLink downloadLink : downloadLinks) {
             PluginProgress progress = downloadLink.getPluginProgress();
             if (progress != null && progress instanceof ExtractionProgress) ((ExtractionProgress) progress).setMessage(text);
         }
     }
-
+    
     public void setProgress(ExtractionController controller, long value, long max, Color color) {
         PluginProgress progress = controller.getExtractionProgress();
         progress.updateValues(value, max);
@@ -120,102 +120,102 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             }
         }
     }
-
+    
     @Override
     public long getFileSize() {
         return size;
     }
-
+    
     @Override
     public void deleteLink() {
         java.util.List<DownloadLink> list = new ArrayList<DownloadLink>(downloadLinks);
         DownloadController.getInstance().removeChildren(list);
     }
-
+    
     public void addMirror(DownloadLink link) {
         downloadLinks.add(link);
         size = Math.max(link.getView().getBytesTotal(), size);
     }
-
+    
     public void setProperty(String key, Object value) {
         for (DownloadLink downloadLink : downloadLinks) {
             downloadLink.setProperty(key, value);
         }
     }
-
+    
     public Object getProperty(String key) {
         for (DownloadLink downloadLink : downloadLinks) {
             if (downloadLink.hasProperty(key)) { return downloadLink.getProperty(key); }
         }
         return null;
     }
-
+    
     public AvailableStatus getAvailableStatus() {
         AvailableStatus ret = null;
         for (DownloadLink downloadLink : downloadLinks) {
             switch (downloadLink.getAvailableStatus()) {
-            case TRUE:
-                return downloadLink.getAvailableStatus();
-            case UNCHECKED:
-                ret = AvailableStatus.UNCHECKED;
-                break;
-            case UNCHECKABLE:
-                if (ret != AvailableStatus.UNCHECKED) ret = AvailableStatus.UNCHECKABLE;
-                break;
-            case FALSE:
-                if (ret == null) ret = AvailableStatus.FALSE;
-                break;
+                case TRUE:
+                    return downloadLink.getAvailableStatus();
+                case UNCHECKED:
+                    ret = AvailableStatus.UNCHECKED;
+                    break;
+                case UNCHECKABLE:
+                    if (ret != AvailableStatus.UNCHECKED) ret = AvailableStatus.UNCHECKABLE;
+                    break;
+                case FALSE:
+                    if (ret == null) ret = AvailableStatus.FALSE;
+                    break;
             }
         }
         return ret;
     }
-
+    
     @Override
     public void onCleanedUp(final ExtractionController controller) {
         for (final DownloadLink downloadLink : downloadLinks) {
             downloadLink.compareAndSetPluginProgress(controller.getExtractionProgress(), null);
             switch (CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) {
-            case CLEANUP_IMMEDIATELY:
-                DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                    @Override
-                    protected Void run() throws RuntimeException {
-                        controller.getLogger().info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
-                        java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
-                        remove.add(downloadLink);
-                        if (DownloadController.getInstance().askForRemoveVetos(remove)) {
-                            DownloadController.getInstance().removeChildren(remove);
-                        } else {
-                            controller.getLogger().info("Remove Link " + downloadLink.getName() + " failed because of removeVetos!");
+                case CLEANUP_IMMEDIATELY:
+                    DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+                        
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            controller.getLogger().info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
+                            java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                            remove.add(downloadLink);
+                            if (DownloadController.getInstance().askForRemoveVetos(remove)) {
+                                DownloadController.getInstance().removeChildren(remove);
+                            } else {
+                                controller.getLogger().info("Remove Link " + downloadLink.getName() + " failed because of removeVetos!");
+                            }
+                            return null;
                         }
-                        return null;
-                    }
-                });
-                break;
-            case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
-                DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                    @Override
-                    protected Void run() throws RuntimeException {
-                        controller.getLogger().info("Remove Package " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
-                        FilePackage fp = downloadLink.getFilePackage();
-                        if (fp.getControlledBy() != null) {
-                            DownloadController.removePackageIfFinished(controller.getLogger(), fp);
-                        } else {
-                            controller.getLogger().info("Cannot remove. Package has no controller");
+                    });
+                    break;
+                case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                    DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+                        
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            controller.getLogger().info("Remove Package " + downloadLink.getName() + " because Finished and CleanupImmediately and Extrating finished!");
+                            FilePackage fp = downloadLink.getFilePackage();
+                            if (fp.getControlledBy() != null) {
+                                DownloadController.removePackageIfFinished(controller.getLogger(), fp);
+                            } else {
+                                controller.getLogger().info("Cannot remove. Package has no controller");
+                            }
+                            return null;
                         }
-                        return null;
-                    }
-
-                });
-                break;
-            case CLEANUP_ONCE_AT_STARTUP:
-            case NEVER:
-                controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + "");
+                        
+                    });
+                    break;
+                case CLEANUP_ONCE_AT_STARTUP:
+                case NEVER:
+                    controller.getLogger().info(CFG_GENERAL.CFG.getCleanupAfterDownloadAction() + "");
             }
         }
     }
-
+    
     @Override
     public void setArchive(Archive archive) {
         this.archive = archive;
@@ -224,25 +224,25 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
                 downloadLink.setArchiveID(archive.getFactory().getID());
             }
         }
-
+        
     }
-
+    
     public Archive getArchive() {
         return archive;
     }
-
+    
     @Override
     public boolean exists() {
         return new File(filePath).exists();
     }
-
+    
     @Override
     public void notifyChanges(Object type) {
-
+        
         for (DownloadLink link : getDownloadLinks()) {
             link.firePropertyChanged(DownloadLinkProperty.Property.ARCHIVE, type);
         }
-
+        
     }
-
+    
 }
