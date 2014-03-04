@@ -20,6 +20,9 @@ import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.model.action.ActionInvocation;
 import org.fourthline.cling.model.message.UpnpResponse;
 import org.fourthline.cling.model.meta.Device;
+import org.fourthline.cling.model.meta.DeviceDetails;
+import org.fourthline.cling.model.meta.DeviceIdentity;
+import org.fourthline.cling.model.meta.RemoteDeviceIdentity;
 import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.model.types.UDAServiceType;
 import org.fourthline.cling.model.types.UnsignedIntegerTwoBytes;
@@ -86,15 +89,26 @@ public class MyJDownloaderDirectServer extends Thread {
         UpnpServiceImpl upnpService = null;
         try {
             upnpService = new UpnpServiceImpl();
-            upnpService.getControlPoint().search(10000);
-            Thread.sleep(10000);
+            upnpService.getControlPoint().search(15000);
+            Thread.sleep(15000);
             final CopyOnWriteArrayList<InetAddress> localIPs = new CopyOnWriteArrayList<InetAddress>(HTTPProxyUtils.getLocalIPs());
             InetAddress netMask = InetAddress.getByName("255.255.255.0");
             for (UDAServiceType udaService : udaServices) {
                 for (Device device : upnpService.getRegistry().getDevices(udaService)) {
                     Service service = device.findService(udaService);
                     if (service == null) continue;
-                    String deviceIP = device.getDetails().getBaseURL().getHost();
+                    String deviceIP = null;
+                    DeviceDetails details = device.getDetails();
+                    if (details.getBaseURL() != null) {
+                        deviceIP = details.getBaseURL().getHost();
+                    } else {
+                        DeviceIdentity identity = device.getIdentity();
+                        if (identity instanceof RemoteDeviceIdentity) {
+                            RemoteDeviceIdentity remoteIdentity = (RemoteDeviceIdentity) identity;
+                            deviceIP = remoteIdentity.getDescriptorURL().getHost();
+                        }
+                    }
+                    if (deviceIP == null) continue;
                     Iterator<InetAddress> it = localIPs.iterator();
                     InetAddress localIP = null;
                     while (it.hasNext()) {
