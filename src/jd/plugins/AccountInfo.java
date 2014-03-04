@@ -21,42 +21,42 @@ import jd.config.Property;
 import org.appwork.utils.formatter.SizeFormatter;
 
 public class AccountInfo extends Property {
-
-    private static final long serialVersionUID         = 1825140346023286206L;
-
-    private long              account_validUntil       = -1;
-    private long              account_trafficLeft      = -1;
-    private long              account_trafficMax       = -1;
-    private long              account_filesNum         = -1;
-    private long              account_premiumPoints    = -1;
-    private long              account_accountBalance   = -1;
-    private long              account_usedSpace        = -1;
-    private long              account_trafficShareLeft = -1;
-    private boolean           unlimitedTraffic         = true;
-    private boolean           account_expired          = false;
+    
+    private static final long serialVersionUID       = 1825140346023286206L;
+    
+    private long              account_validUntil     = -1;
+    
+    private long              account_trafficLeft    = -1;
+    private long              account_trafficMax     = -1;
+    
+    private long              account_filesNum       = -1;
+    private long              account_premiumPoints  = -1;
+    private long              account_accountBalance = -1;
+    private long              account_usedSpace      = -1;
+    
     private String            account_status;
-    private long              account_createTime       = 0;
+    private long              account_createTime     = 0;
     /**
      * indicator that host, account has special traffic handling, do not temp disable if traffic =0
      */
-    private boolean           specialTraffic           = false;
-
+    private boolean           specialTraffic         = false;
+    
     public long getCreateTime() {
         return account_createTime;
     }
-
+    
     public void setSpecialTraffic(final boolean b) {
         specialTraffic = b;
     }
-
+    
     public boolean isSpecialTraffic() {
         return specialTraffic;
     }
-
+    
     public void setCreateTime(final long createTime) {
         this.account_createTime = createTime;
     }
-
+    
     /**
      * Gibt zurück wieviel (in Cent) Geld gerade auf diesem Account ist
      * 
@@ -65,7 +65,7 @@ public class AccountInfo extends Property {
     public long getAccountBalance() {
         return account_accountBalance;
     }
-
+    
     /**
      * Gibt zurück wieviele Files auf dem Account hochgeladen sind
      * 
@@ -74,7 +74,7 @@ public class AccountInfo extends Property {
     public long getFilesNum() {
         return account_filesNum;
     }
-
+    
     /**
      * Gibt an wieviele PremiumPunkte der Account hat
      * 
@@ -83,24 +83,24 @@ public class AccountInfo extends Property {
     public long getPremiumPoints() {
         return account_premiumPoints;
     }
-
+    
     public String getStatus() {
         return account_status;
     }
-
+    
     /**
      * Gibt an wieviel Traffic noch frei ist (in bytes)
      * 
      * @return
      */
     public long getTrafficLeft() {
-        return account_trafficLeft;
+        return Math.max(0, account_trafficLeft);
     }
-
+    
     public long getTrafficMax() {
-        return Math.max(account_trafficLeft, account_trafficMax);
+        return Math.max(getTrafficLeft(), account_trafficMax);
     }
-
+    
     /**
      * Gibt zurück wieviel Platz (bytes) die Oploads auf diesem Account belegen
      * 
@@ -109,7 +109,7 @@ public class AccountInfo extends Property {
     public long getUsedSpace() {
         return account_usedSpace;
     }
-
+    
     /**
      * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw. ausgelaufen ist.(-1 für Nie)
      * 
@@ -118,96 +118,86 @@ public class AccountInfo extends Property {
     public long getValidUntil() {
         return account_validUntil;
     }
-
+    
     /**
      * Gibt zurück ob der Account abgelaufen ist
      * 
      * @return
      */
     public boolean isExpired() {
-        validUntilCheck();
-        return account_expired;
+        long validUntil = getValidUntil();
+        if (validUntil < 0) return false;
+        if (validUntil == 0) return true;
+        return validUntil < System.currentTimeMillis();
     }
-
+    
     public void setAccountBalance(final long parseInt) {
         this.account_accountBalance = Math.max(0, parseInt);
     }
-
+    
     public void setAccountBalance(final String string) {
         this.setAccountBalance((long) (Double.parseDouble(string) * 100));
     }
-
+    
     public void setExpired(final boolean b) {
-        this.account_expired = b;
+        if (b) {
+            setValidUntil(0);
+        } else {
+            setValidUntil(-1);
+        }
     }
-
+    
     public void setFilesNum(final long parseInt) {
         this.account_filesNum = Math.max(0, parseInt);
     }
-
+    
     public void setPremiumPoints(final long parseInt) {
         this.account_premiumPoints = Math.max(0, parseInt);
     }
-
+    
     public void setPremiumPoints(final String string) {
         this.setPremiumPoints(Integer.parseInt(string.trim()));
     }
-
+    
     public void setStatus(final String string) {
         this.account_status = string;
     }
-
+    
     public void setTrafficLeft(long size) {
         this.account_trafficLeft = Math.max(0, size);
-        unlimitedTraffic = false;
     }
-
+    
     public void setUnlimitedTraffic() {
-        unlimitedTraffic = true;
         account_trafficLeft = -1;
     }
-
+    
     public boolean isUnlimitedTraffic() {
-        return unlimitedTraffic;
+        return account_trafficLeft == -1;
     }
-
+    
     public void setTrafficLeft(final String freeTraffic) {
         this.setTrafficLeft(SizeFormatter.getSize(freeTraffic, true, true));
     }
-
+    
     public void setTrafficMax(final long trafficMax) {
         this.account_trafficMax = Math.max(0, trafficMax);
     }
-
+    
     public void setUsedSpace(final long size) {
         this.account_usedSpace = Math.max(0, size);
     }
-
+    
     public void setUsedSpace(final String string) {
         this.setUsedSpace(SizeFormatter.getSize(string, true, true));
     }
-
+    
     /**
      * -1 für Niemals ablaufen
      * 
      * @param validUntil
      */
     public void setValidUntil(final long validUntil) {
-        if (account_validUntil != validUntil) {
-            this.account_validUntil = validUntil;
-            validUntilCheck();
-        }
+        this.account_validUntil = validUntil;
     }
-
-    public void validUntilCheck() {
-        if (account_validUntil != -1) {
-            long cur = System.currentTimeMillis();
-            if (account_validUntil < cur) {
-                this.setExpired(true);
-            }
-        } else {
-            this.setExpired(false);
-        }
-    }
-
+    
 }
