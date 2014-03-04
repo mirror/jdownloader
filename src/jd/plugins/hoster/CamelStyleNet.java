@@ -67,14 +67,14 @@ public class CamelStyleNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://www.camelstyle.net/") || br.containsHTML("<title>Free Porn, Sex, Tube Videos, XXX Pics, Fucking \\| Camel Style</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\| Camel Style</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?)\\| ").getMatch(0);
         Regex basicRegex = br.getRegex("createPlayer\\(\"(http://.*?)\",\"http://.*?\",\"(.*?)\"");
         DLLINK = basicRegex.getMatch(0);
         String token = basicRegex.getMatch(1);
         if (filename == null || DLLINK == null || token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
+        downloadLink.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename)) + DLLINK.subSequence(DLLINK.length() - 4, DLLINK.length()));
         DLLINK += "?start=0&id=videoplayer&client=FLASH%20WIN%2010,3,181,26&version=4.2.95&width=662&token=" + token;
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -93,6 +93,21 @@ public class CamelStyleNet extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -44,6 +45,9 @@ public class YunFileComFolder extends PluginForDecrypt {
             br.getPage(parameter);
         } catch (final BrowserException e) {
             logger.info("Decrypt failed (server error): " + parameter);
+            return decryptedLinks;
+        } catch (final SocketTimeoutException e) {
+            logger.info("Decrypt failed (timeout): " + parameter);
             return decryptedLinks;
         }
         if (br.containsHTML("\\[ The uploader has no shared file lists\\.\\! \\]")) {
