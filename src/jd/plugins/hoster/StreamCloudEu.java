@@ -103,7 +103,7 @@ public class StreamCloudEu extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(No such file|>(404|File) Not Found<|>The file was removed by|Reason (of|for) deletion:\n)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("name=\"fname\" value=\"([^<>\"/]+)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>Watch video: ([^<>\"]+)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
