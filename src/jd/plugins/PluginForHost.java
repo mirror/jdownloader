@@ -16,7 +16,6 @@
 
 package jd.plugins;
 
-import java.awt.MouseInfo;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -100,31 +99,31 @@ public abstract class PluginForHost extends Plugin {
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
             // normal files with extension
             Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
-
+    
     private LazyHostPlugin              lazyP                 = null;
     /**
      * Is true if the user has answerd a captcha challenge. does not say anything whether if the answer was correct or not
      */
     protected transient ResponseList<?> lastChallengeResponse = null;
-
+    
     private boolean                     hasCaptchas           = false;
-
+    
     public void setLastChallengeResponse(ResponseList<?> lastChallengeResponse) {
         this.lastChallengeResponse = lastChallengeResponse;
     }
-
+    
     public LazyHostPlugin getLazyP() {
         return lazyP;
     }
-
+    
     public void setLazyP(LazyHostPlugin lazyP) {
         this.lazyP = lazyP;
     }
-
+    
     // override to let the plugin show an account details dialog
     public void showAccountDetailsDialog(Account account) {
     }
-
+    
     public void errLog(Throwable e, Browser br, DownloadLink link) {
         LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
         try {
@@ -139,7 +138,7 @@ public abstract class PluginForHost extends Plugin {
             errlogger.close();
         }
     }
-
+    
     @Deprecated
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);
@@ -150,29 +149,29 @@ public abstract class PluginForHost extends Plugin {
         /* workaround for all the lazy init issues */
         this.lazyP = (LazyHostPlugin) wrapper.getLazy();
     }
-
+    
     public void setBrowser(Browser brr) {
         br = brr;
     }
-
+    
     public DownloadInterface getDownloadInterface() {
         return dl;
     }
-
+    
     protected String getCaptchaCode(final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
         return getCaptchaCode(getHost(), captchaAddress, downloadLink);
     }
-
+    
     @Override
     public long getVersion() {
         return lazyP.getVersion();
     }
-
+    
     @Override
     public Pattern getSupportedLinks() {
         return lazyP.getPattern();
     }
-
+    
     protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");
@@ -193,16 +192,16 @@ public abstract class PluginForHost extends Plugin {
             FileCreationManager.getInstance().delete(captchaFile, null);
         }
     }
-
+    
     protected String getCaptchaCode(final File captchaFile, final DownloadLink downloadLink) throws PluginException {
         return getCaptchaCode(getHost(), captchaFile, downloadLink);
     }
-
+    
     protected String getCaptchaCode(final String methodname, final File captchaFile, final DownloadLink downloadLink) throws PluginException {
-
+        
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
-
+    
     public void invalidateLastChallengeResponse() {
         try {
             ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
@@ -222,7 +221,7 @@ public abstract class PluginForHost extends Plugin {
             lastChallengeResponse = null;
         }
     }
-
+    
     public void validateLastChallengeResponse() {
         try {
             ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
@@ -242,13 +241,13 @@ public abstract class PluginForHost extends Plugin {
             lastChallengeResponse = null;
         }
     }
-
+    
     public boolean hasChallengeResponse() {
         return lastChallengeResponse != null;
     }
-
+    
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
-
+        
         CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         this.hasCaptchas = true;
@@ -268,7 +267,7 @@ public abstract class PluginForHost extends Plugin {
             if (this.getDownloadLink() == null) this.setDownloadLink(link);
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
             BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
-
+                
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
                     if (insideAccountChecker) {
@@ -281,19 +280,19 @@ public abstract class PluginForHost extends Plugin {
                         return false;
                     }
                     switch (skipRequest) {
-                    case BLOCK_ALL_CAPTCHAS:
-                        /* user wants to block all captchas (current session) */
-                        return true;
-                    case BLOCK_HOSTER:
-                        /* user wants to block captchas from specific hoster */
-                        return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
-                    case BLOCK_PACKAGE:
-                        /* user wants to block captchas from current FilePackage */
-                        DownloadLink lLink = Challenge.getDownloadLink(challenge);
-                        if (lLink == null || lLink.getDefaultPlugin() == null) return false;
-                        return link.getFilePackage() == lLink.getFilePackage();
-                    default:
-                        return false;
+                        case BLOCK_ALL_CAPTCHAS:
+                            /* user wants to block all captchas (current session) */
+                            return true;
+                        case BLOCK_HOSTER:
+                            /* user wants to block captchas from specific hoster */
+                            return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
+                        case BLOCK_PACKAGE:
+                            /* user wants to block captchas from current FilePackage */
+                            DownloadLink lLink = Challenge.getDownloadLink(challenge);
+                            if (lLink == null || lLink.getDefaultPlugin() == null) return false;
+                            return link.getFilePackage() == lLink.getFilePackage();
+                        default:
+                            return false;
                     }
                 }
             };
@@ -316,32 +315,32 @@ public abstract class PluginForHost extends Plugin {
         } catch (SkipException e) {
             if (getDownloadLink() != null) {
                 switch (e.getSkipRequest()) {
-                case BLOCK_ALL_CAPTCHAS:
-                    CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
-
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                    break;
-                case BLOCK_HOSTER:
-                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(getDownloadLink().getHost()));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                    break;
-
-                case BLOCK_PACKAGE:
-                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(getDownloadLink().getParentNode()));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                    break;
-                case SINGLE:
-                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                    break;
-                case TIMEOUT:
-                    if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
+                    case BLOCK_ALL_CAPTCHAS:
+                        CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
+                        
+                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        break;
+                    case BLOCK_HOSTER:
+                        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(getDownloadLink().getHost()));
+                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        break;
+                    
+                    case BLOCK_PACKAGE:
+                        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(getDownloadLink().getParentNode()));
+                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        break;
+                    case SINGLE:
                         CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
-                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, MouseInfo.getPointerInfo().getLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
-                    }
-                case REFRESH:
-                    // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
-                    break;
+                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        break;
+                    case TIMEOUT:
+                        if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
+                            CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
+                            if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        }
+                    case REFRESH:
+                        // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
+                        break;
                 }
             }
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -349,50 +348,50 @@ public abstract class PluginForHost extends Plugin {
             link.compareAndSetPluginProgress(progress, old);
         }
     }
-
+    
     protected volatile DownloadInterface dl                                           = null;
     private static final String          AUTO_FILE_NAME_CORRECTION_NAME_SPLIT         = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT";
     private static final String          AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN = "AUTO_FILE_NAME_CORRECTION_NAME_SPLIT_PATTERN";
-
+    
     private long                         WAIT_BETWEEN_STARTS                          = 0;
-
+    
     private boolean                      enablePremium                                = false;
-
+    
     private boolean                      accountWithoutUsername                       = false;
-
+    
     private String                       premiumurl                                   = null;
-
+    
     private DownloadLink                 link                                         = null;
-
+    
     protected DownloadInterfaceFactory   customizedDownloadFactory                    = null;
-
+    
     public DownloadInterfaceFactory getCustomizedDownloadFactory() {
         return customizedDownloadFactory;
     }
-
+    
     public void setCustomizedDownloadFactory(DownloadInterfaceFactory customizedDownloadFactory) {
         this.customizedDownloadFactory = customizedDownloadFactory;
     }
-
+    
     public boolean checkLinks(final DownloadLink[] urls) {
         return false;
     }
-
+    
     @Override
     public String getHost() {
         return lazyP.getDisplayName();
     }
-
+    
     @Override
     public LogSource getLogger() {
         return (LogSource) super.getLogger();
     }
-
+    
     @Override
     public SubConfiguration getPluginConfig() {
         return SubConfiguration.getConfig(lazyP.getHost());
     }
-
+    
     @Override
     public void clean() {
         lastChallengeResponse = null;
@@ -410,7 +409,7 @@ public abstract class PluginForHost extends Plugin {
         }
         super.clean();
     }
-
+    
     public void setDownloadInterface(DownloadInterface dl) {
         DownloadInterface oldDl = this.dl;
         this.dl = dl;
@@ -422,39 +421,39 @@ public abstract class PluginForHost extends Plugin {
             }
         }
     }
-
+    
     protected void setBrowserExclusive() {
         if (br == null) return;
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
     }
-
+    
     /** default fetchAccountInfo, set account valid to true */
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         account.setValid(true);
         return ai;
     }
-
+    
     public boolean getAccountwithoutUsername() {
         return accountWithoutUsername;
     }
-
+    
     public void setAccountwithoutUsername(boolean b) {
         accountWithoutUsername = b;
     }
-
+    
     public abstract String getAGBLink();
-
+    
     protected void enablePremium() {
         enablePremium(null);
     }
-
+    
     protected void enablePremium(final String url) {
         premiumurl = url;
         enablePremium = true;
     }
-
+    
     /**
      * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
      * 
@@ -464,7 +463,7 @@ public abstract class PluginForHost extends Plugin {
      */
     public ArrayList<DownloadLink> getDownloadLinks(final String data, final FilePackage fp) {
         ArrayList<DownloadLink> links = null;
-
+        
         final String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
             links = new ArrayList<DownloadLink>(hits.length);
@@ -484,7 +483,7 @@ public abstract class PluginForHost extends Plugin {
                     while (url.charAt(url.length() - 1) == '"') {
                         url = url.substring(0, url.length() - 1);
                     }
-
+                    
                     /*
                      * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
                      */
@@ -503,17 +502,17 @@ public abstract class PluginForHost extends Plugin {
         }
         return links;
     }
-
+    
     public boolean isValidURL(String URL) {
         return true;
     }
-
+    
     /*
      * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
-
+    
     /**
      * Holt Informationen zu einem Link. z.B. dateigroeße, Dateiname, verfuegbarkeit etc.
      * 
@@ -522,15 +521,15 @@ public abstract class PluginForHost extends Plugin {
      * @throws IOException
      */
     public abstract AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception;
-
+    
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-
+    
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
+    
     /*
      * Integer.Min_Value will result in no download at all (eg no free supported)
      * 
@@ -583,13 +582,13 @@ public abstract class PluginForHost extends Plugin {
             return 0;
         }
     }
-
+    
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
-
+    
     public abstract void handleFree(DownloadLink link) throws Exception;
-
+    
     /**
      * By overriding this method, a plugin is able to return a HostPluginInfoGenerator. <br>
      * <b>Attention: Until next stable update, we have to return Object here.</b>
@@ -607,14 +606,14 @@ public abstract class PluginForHost extends Plugin {
         for (Entry<String, Object> es : ai.getProperties().entrySet()) {
             String key = es.getKey();
             Object value = es.getValue();
-
+            
             if (value != null) {
                 ret.addPair(key, value.toString());
             }
         }
         return ret;
     }
-
+    
     /**
      * return if we can download given downloadLink via given account with this pluginForHost
      * 
@@ -625,7 +624,7 @@ public abstract class PluginForHost extends Plugin {
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         return true;
     }
-
+    
     /**
      * return if the given downloadLink can be downloaded via given pluginForHost
      * 
@@ -641,7 +640,7 @@ public abstract class PluginForHost extends Plugin {
          */
         return true;
     }
-
+    
     public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) {
         AccountInfo ai = null;
         if (account != null && (ai = account.getAccountInfo()) != null) {
@@ -650,7 +649,7 @@ public abstract class PluginForHost extends Plugin {
         }
         return true;
     }
-
+    
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         try {
             waitForNextStartAllowed(downloadLink);
@@ -686,7 +685,7 @@ public abstract class PluginForHost extends Plugin {
             }
         }
     }
-
+    
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setProperty("multiHostSupport", ArrayList<String>); to signal all supported multiHosts
@@ -704,31 +703,31 @@ public abstract class PluginForHost extends Plugin {
          */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
-
+    
     /**
      * Stellt das Plugin in den Ausgangszustand zurueck (variablen intialisieren etc)
      */
     public abstract void reset();
-
+    
     public abstract void resetDownloadlink(DownloadLink link);
-
+    
     public List<File> listProcessFiles(DownloadLink link) {
         List<File> ret = new ArrayList<File>();
         ret.add(new File(link.getFileOutput() + ".part"));
         ret.add(new File(link.getFileOutput()));
         ret.add(new File(link.getFileOutput(false, true)));
-
+        
         return ret;
     }
-
+    
     public int getTimegapBetweenConnections() {
         return 50;
     }
-
+    
     public void setStartIntervall(long interval) {
         WAIT_BETWEEN_STARTS = Math.max(0, interval);
     }
-
+    
     protected void waitForNextStartAllowed(final DownloadLink downloadLink) throws PluginException, InterruptedException {
         WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
         long wait = WAIT_BETWEEN_STARTS;
@@ -738,17 +737,17 @@ public abstract class PluginForHost extends Plugin {
         }
         PluginProgress progress = new PluginProgress(0, 0, null) {
             private String pluginMessage = null;
-
+            
             @Override
             public String getMessage(Object requestor) {
                 return pluginMessage;
             }
-
+            
             @Override
             public PluginTaskID getID() {
                 return PluginTaskID.WAIT;
             }
-
+            
             @Override
             public void updateValues(long current, long total) {
                 if (current > 0) {
@@ -793,7 +792,7 @@ public abstract class PluginForHost extends Plugin {
             downloadLink.compareAndSetPluginProgress(progress, old);
         }
     }
-
+    
     public void waitForNextConnectionAllowed(DownloadLink downloadLink) throws InterruptedException {
         WaitingQueueItem queueItem = downloadLink.getDownloadLinkController().getQueueItem();
         long wait = getTimegapBetweenConnections();
@@ -814,15 +813,15 @@ public abstract class PluginForHost extends Plugin {
         }
         if (downloadLink.getDownloadLinkController().isAborting()) throw new InterruptedException("Controller aborted");
     }
-
+    
     protected void sleep(final long i, final DownloadLink downloadLink) throws PluginException {
         sleep(i, downloadLink, "");
     }
-
+    
     @Deprecated
     public void resetPluginGlobals() {
     }
-
+    
     protected void sleep(long i, DownloadLink downloadLink, final String message) throws PluginException {
         PluginProgress progress = new SleepPluginProgress(i, message);
         progress.setProgressSource(this);
@@ -843,11 +842,11 @@ public abstract class PluginForHost extends Plugin {
         }
         if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-
+    
     public Browser getBrowser() {
         return br;
     }
-
+    
     /**
      * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden kann
      * 
@@ -857,19 +856,19 @@ public abstract class PluginForHost extends Plugin {
         if (premiumurl != null) return premiumurl;
         return premiumurl;
     }
-
+    
     public boolean isPremiumEnabled() {
         return enablePremium;
     }
-
+    
     public void setDownloadLink(DownloadLink link) {
         this.link = link;
     }
-
+    
     public DownloadLink getDownloadLink() {
         return link;
     }
-
+    
     /* override this if you want to change a link to use this plugin */
     /* dont forget to change host with setHost */
     /* must return true if changing was successful */
@@ -878,22 +877,22 @@ public abstract class PluginForHost extends Plugin {
     public Boolean rewriteHost(DownloadLink link) {
         return null;
     }
-
+    
     /* null = this function is not implemented */
     public Boolean rewriteHost(Account acc) {
         return null;
     }
-
+    
     public String getCustomFavIconURL(DownloadLink link) {
         return getHost();
     }
-
+    
     public DomainInfo getDomainInfo(DownloadLink link) {
         String host = getCustomFavIconURL(link);
         if (host == null) host = getHost();
         return DomainInfo.getInstance(host);
     }
-
+    
     public static void main(String[] args) throws IOException {
         try {
             File home = new File(Application.getRessourceURL(PluginForHost.class.getName().replace(".", "/") + ".class").toURI()).getParentFile().getParentFile().getParentFile().getParentFile();
@@ -913,40 +912,40 @@ public abstract class PluginForHost extends Plugin {
                             method.append("\r\n/* no account, yes we can expect captcha */");
                             method.append("\r\nreturn true;");
                             method.append("\r\n}");
-
+                            
                             method.append("\r\n if (Boolean.TRUE.equals(acc.getBooleanProperty(\"free\"))) {");
                             method.append("\r\n/* free accounts also have captchas */");
                             method.append("\r\nreturn true;");
                             method.append("\r\n}");
                             method.append("\r\nreturn false;");
                             method.append("\r\n}");
-
+                            
                         } else {
                             method.append("\r\n/* NO OVERRIDE!! We need to stay 0.9*compatible */");
                             method.append("\r\npublic boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {");
                             method.append("\r\nreturn true;");
                             method.append("\r\n}");
                         }
-
+                        
                     } else {
-
+                        
                     }
-
+                    
                     if (method.length() > 0) {
-
+                        
                         src = src.substring(0, src.lastIndexOf("}")) + method.toString() + "\r\n}";
                         FileCreationManager.getInstance().delete(f, null);
                         IO.writeStringToFile(f, src);
                     }
-
+                    
                 }
             }
-
+            
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
     }
-
+    
     /* can we expect a captcha if we try to load link with acc */
     public boolean hasCaptcha(DownloadLink link, Account acc) {
         /* you must distinguish between different acc types! */
@@ -954,13 +953,13 @@ public abstract class PluginForHost extends Plugin {
         /* best save the information in accountinformation! */
         return hasCaptchas;
     }
-
+    
     /* do we have anticaptcha available for this host */
     /* ONLY override if you have customized this */
     public boolean hasAutoCaptcha() {
         return JACMethod.hasMethod(getHost());
     }
-
+    
     /**
      * plugins may change the package identifier used for auto package matching. some hosters replace chars, shorten filenames...
      * 
@@ -970,7 +969,7 @@ public abstract class PluginForHost extends Plugin {
     public String filterPackageID(String packageIdentifier) {
         return packageIdentifier;
     }
-
+    
     /**
      * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
      * downloadlinks
@@ -985,11 +984,11 @@ public abstract class PluginForHost extends Plugin {
     // DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
     // return null;
     // }
-
+    
     public char[] getFilenameReplaceMap() {
         return new char[0];
     }
-
+    
     public String autoFilenameCorrection(HashMap<Object, Object> cache, String originalFilename, DownloadLink downloadLink, ArrayList<DownloadLink> dlinks) {
         try {
             // cache = null;
@@ -1087,7 +1086,7 @@ public abstract class PluginForHost extends Plugin {
                         cache.put(prototypeName + pattern.toString(), prototypesplit);
                     }
                 }
-
+                
                 if (isHosterManipulatesFilenames() && fileNameSplit[0].length() == prototypesplit.length() && filteredName.equalsIgnoreCase(filterPackageID(prototypesplit))) {
                     newName = getFixedFileName(originalFilename, originalReplaces, prototypesplit, next.getDefaultPlugin().getFilenameReplaceMap());
                     if (newName != null) {
@@ -1100,21 +1099,21 @@ public abstract class PluginForHost extends Plugin {
                         return newName + fileNameSplit[1];
                     }
                 }
-
+                
                 if ((!StringUtils.isEmpty(MD5) && MD5.equalsIgnoreCase(next.getMD5Hash())) || (!StringUtils.isEmpty(SHA1) && SHA1.equalsIgnoreCase(next.getSha1Hash()))) {
                     // 100% mirror! ok and now? these files should have the
                     // same filename!!
                     return next.getName();
                 }
             }
-
+            
         } catch (Throwable e) {
             LogController.CL().log(e);
         }
-
+        
         return null;
     }
-
+    
     protected String getFixedFileName(String originalFilename, char[] originalReplaces, String prototypeName, char[] prototypeReplaces) {
         if (originalReplaces.length == 0 && prototypeReplaces.length == 0) {
             /* no replacements available */
@@ -1150,7 +1149,7 @@ public abstract class PluginForHost extends Plugin {
         }
         return sb.toString();
     }
-
+    
     protected String fixCase(HashMap<Object, Object> cache, String originalFilename, String prototypeName) {
         if (cache != null) {
             Object ret = cache.get(originalFilename + "_" + prototypeName);
@@ -1178,7 +1177,7 @@ public abstract class PluginForHost extends Plugin {
         if (cache != null) cache.put(originalFilename + "_" + prototypeName, sb.toString());
         return sb.toString();
     }
-
+    
     /**
      * Some hoster manipulate the filename after upload. rapidshare for example, replaces special chars and spaces with _
      * 
@@ -1187,7 +1186,7 @@ public abstract class PluginForHost extends Plugin {
     public boolean isHosterManipulatesFilenames() {
         return false;
     }
-
+    
     /**
      * If a plugin want's to define it's one premium info dialog or premiuminfo panel. overwrite this methods
      * 
@@ -1197,7 +1196,7 @@ public abstract class PluginForHost extends Plugin {
     public JComponent layoutPremiumInfoPanel(AbstractDialog dialog) {
         return null;
     }
-
+    
     /**
      * Can be overridden to support special accounts like login tokens instead of username/password
      * 
@@ -1208,47 +1207,47 @@ public abstract class PluginForHost extends Plugin {
         if (getHost().equalsIgnoreCase("letitbit.net")) { return new LetitBitAccountFactory(); }
         return new DefaultAccountFactory();
     }
-
+    
     public void resumeDownloadlink(DownloadLink downloadLink) {
     }
-
+    
     public void setActiveVariantByLink(DownloadLink downloadLink, LinkVariant variant) {
-
+        
     }
-
+    
     public LinkVariant getActiveVariantByLink(DownloadLink downloadLink) {
         return null;
     }
-
+    
     public List<LinkVariant> getVariantsByLink(DownloadLink downloadLink) {
         return null;
     }
-
+    
     public JComponent getVariantPopupComponent(DownloadLink downloadLink) {
         return null;
     }
-
+    
     public boolean hasVariantToChooseFrom(DownloadLink downloadLink) {
         return false;
     }
-
+    
     public void extendLinkgrabberContextMenu(JComponent parent, PluginView<CrawledLink> pv) {
     }
-
+    
     public void extendDownloadsTableContextMenu(JComponent parent, PluginView<DownloadLink> pv) {
     }
-
+    
     /**
      * THIS IS JDOWNLOADER 2 ONLY!
      * 
      * @param domain
      */
     protected void showFreeDialog(String domain) {
-
+        
         AskToUsePremiumDialog d = new AskToUsePremiumDialog(domain, this);
-
+        
         UIOManager.I().show(AskToUsePremiumDialogInterface.class, d);
-
+        
     }
-
+    
 }

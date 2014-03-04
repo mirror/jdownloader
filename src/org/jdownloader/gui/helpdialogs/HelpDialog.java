@@ -1,6 +1,8 @@
 package org.jdownloader.gui.helpdialogs;
 
+import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.PointerInfo;
 import java.awt.event.WindowEvent;
 
 import javax.swing.ImageIcon;
@@ -20,27 +22,33 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.updatev2.RestartController;
 
 public class HelpDialog {
-
+    
     public static void show(final Point point, final String dontShowAgainKey, int flags, String title, String msg, ImageIcon icon) {
         show(null, null, point, dontShowAgainKey, flags, title, msg, icon);
     }
-
+    
+    public static Point getMouseLocation() {
+        PointerInfo pointerInfo = MouseInfo.getPointerInfo();
+        if (pointerInfo == null) return null;
+        return pointerInfo.getLocation();
+    }
+    
     public static void show(final Boolean expandToBottom, final Boolean expandToRight, final Point point, final String dontShowAgainKey, int flags, String title, String msg, ImageIcon icon) {
         final boolean test = RestartController.getInstance().getParameterParser(null).hasCommandSwitch("translatortest");
         if (!JsonConfig.create(GraphicalUserInterfaceSettings.class).isBalloonNotificationEnabled()) return;
-
+        
         if (dontShowAgainKey != null) {
-
+            
             Integer ret = JSonStorage.getPlainStorage("Dialogs").get(dontShowAgainKey, -1);
             if (ret != null && ret > 0) return;
         }
-
+        
         try {
-
+            
             ConfirmDialog d = new ConfirmDialog(flags | UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, _GUI._.literall_usage_tipp() + "\r\n\r\n..." + msg, icon, null, null) {
                 {
                     if (point != null) setLocator(new DialogLocator() {
-
+                        
                         @Override
                         public Point getLocationOnScreen(AbstractDialog<?> abstractDialog) {
                             if (Boolean.FALSE.equals(expandToBottom)) {
@@ -51,28 +59,28 @@ public class HelpDialog {
                             }
                             return AbstractLocator.correct(point, abstractDialog.getDialog());
                         }
-
+                        
                         @Override
                         public void onClose(AbstractDialog<?> abstractDialog) {
                         }
-
+                        
                     });
                 }
-
+                
                 @Override
                 public String getDontShowAgainKey() {
                     if (test) return "bla_" + System.currentTimeMillis();
                     if (dontShowAgainKey == null) return super.getDontShowAgainKey();
                     return dontShowAgainKey;
                 }
-
+                
                 public void windowClosing(final WindowEvent arg0) {
                     setReturnmask(false);
                     this.dispose();
                 }
-
+                
             };
-
+            
             if (BinaryLogic.containsAll(flags, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN)) {
                 d.setDoNotShowAgainSelected(true);
             }
@@ -82,11 +90,11 @@ public class HelpDialog {
         } catch (Throwable e) {
             Log.exception(e);
         }
-
+        
     }
-
+    
     public static void show(int flags, String title, String msg, ImageIcon icon) {
         show(null, title, flags, title, msg, icon);
     }
-
+    
 }

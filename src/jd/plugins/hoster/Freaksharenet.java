@@ -49,25 +49,25 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net", "freakshare.com" }, urls = { "REGEXNOTUSED_BLAHASDAHAHDAHAHSDHAHDASDHAHD1223", "http://(www\\.)?freakshare\\.(net|com)/files?/[\\w]+/.+(\\.html)?" }, flags = { 0, 2 })
 public class Freaksharenet extends PluginForHost {
-
+    
     private static final String  WAIT1              = "WAIT1";
     private static AtomicInteger MAXPREMDLS         = new AtomicInteger(-1);
     private static final String  MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
     private static final String  LIMITREACHED       = "Your Traffic is used up for today|Der Traffic für heute ist verbraucht";
     private static Object        LOCK               = new Object();
-
+    
     public Freaksharenet(final PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(1000l);
         this.enablePremium("http://freakshare.com/shop.html");
         setConfigElements();
     }
-
+    
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("freakshare.net", "freakshare.com"));
     }
-
+    
     @Override
     public Boolean rewriteHost(Account acc) {
         if ("freakshare.net".equals(getHost())) {
@@ -79,13 +79,13 @@ public class Freaksharenet extends PluginForHost {
         }
         return null;
     }
-
+    
     @Override
     public boolean isPremiumEnabled() {
         if ("freakshare.com".equals(getHost())) return true;
         return false;
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
@@ -105,7 +105,7 @@ public class Freaksharenet extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.freaksharecom.limitreached", "Limit reached: No full availablecheck possible at the moment!"));
             return AvailableStatus.TRUE;
         }
-
+        
         final String filename = br.getRegex("\"box_heading\" style=\"text\\-align:center;\">(.*?)\\- .*?</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
@@ -115,7 +115,7 @@ public class Freaksharenet extends PluginForHost {
         }
         return AvailableStatus.TRUE;
     }
-
+    
     public void doFree(final DownloadLink downloadLink) throws Exception {
         final boolean resume = false;
         final int maxchunks = 1;
@@ -131,12 +131,15 @@ public class Freaksharenet extends PluginForHost {
             Form[] forms = br.getForms();
             if (forms == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             for (Form a : forms) {
-                if (a.getAction().contains("shop")) continue;
-                if (a.getAction().contains("payment.html")) continue;
+                if (a.getAction() != null) {
+                    if (a.getAction().contains("shop")) continue;
+                    if (a.getAction().contains("payment.html")) continue;
+                }
                 form = a;
                 break;
             }
         }
+        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String ttt = null;
         if (ajax != null) {
             final Browser br2 = br.cloneBrowser();
@@ -158,8 +161,10 @@ public class Freaksharenet extends PluginForHost {
         form = null;
         if (forms == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         for (Form a : forms) {
-            if (a.getAction().contains("shop")) continue;
-            if (a.getAction().contains("payment.html")) continue;
+            if (a.getAction() != null) {
+                if (a.getAction().contains("shop")) continue;
+                if (a.getAction().contains("payment.html")) continue;
+            }
             form = a;
             break;
         }
@@ -230,7 +235,7 @@ public class Freaksharenet extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -284,35 +289,35 @@ public class Freaksharenet extends PluginForHost {
         }
         return ai;
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://freakshare.com/terms-of-service.html";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return MAXPREMDLS.get();
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
-
+    
     public void handleFreeErrors() throws PluginException {
         if (br.containsHTML("Sorry, you cant download more then 50 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (br.containsHTML("You can Download only 1 File in")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
         if (br.containsHTML("No Downloadserver\\. Please try again") || br.containsHTML("Downloadserver im Moment nicht erreichbar.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No Downloadserver. Please try again later", 15 * 60 * 1000l);
         if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
     }
-
+    
     private void handleOtherErrors(DownloadLink downloadLink) throws PluginException {
         if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Maximum concurrent download sessions reached.", 30 * 60 * 1000l); }
         if (br.containsHTML("File can not be found")) {
@@ -329,7 +334,7 @@ public class Freaksharenet extends PluginForHost {
         if (br.containsHTML("you cant  download more then 1 at time")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
         if (br.getURL().contains("section=filenotfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
@@ -361,19 +366,19 @@ public class Freaksharenet extends PluginForHost {
             dl.startDownload();
         }
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return true;
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
     }
-
+    
     private static final String COOKIE_HOST = "http://freakshare.com";
-
+    
     public void login(final Account account, final boolean force) throws IOException, PluginException {
         synchronized (LOCK) {
             try {
@@ -427,25 +432,25 @@ public class Freaksharenet extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-
+        
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }
-
+    
     private void setConfigElements() {
         final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), WAIT1, JDL.L("plugins.hoster.Freaksharenet.waitInsteadOfReconnect", "Wait and download instead of reconnecting if wait time is under 30 minutes")).setDefaultValue(true);
         getConfig().addEntry(cond);
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
