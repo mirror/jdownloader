@@ -38,6 +38,7 @@ LinkSource_ADD_LINKS_DIALOG=加入連結操作
 LinkSource_CLIPBOARD=剪貼簿
 LinkSource_CNL=Click'n'Load
 LinkSource_DOWNLOADED_CONTAINER=已下載的清單
+LinkSource_EXTENSION=任何副檔名
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=停靠 (僅限 Mac)
 LinkSource_MYJD=MyJDownloader
