@@ -51,6 +51,7 @@ extractprogress_label=Extrait: %s1: %s2 fichiers
 failed=L'extraction a échouée : %s1
 failed_no_details=L'extraction a échouée
 file_exists=Fichier existant
+file_exists_message=Un problème est survenu lors de l'extraction de l'archive.\nLe fichier à extraire existe déja sur le disque. Veuillez choisir l'action à effectuer:
 file_exists_not=Le fichier n'existe pas
 filename=nom du fichier
 files2=fichier(s)
