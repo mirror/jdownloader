@@ -21,6 +21,7 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -257,22 +258,33 @@ public class OneFichierCom extends PluginForHost {
                     if (passCode != null) downloadLink.setProperty("pass", passCode);
                 }
             } else {
-                // ddlink is within the ?e=1 page request! but it seems you need to do the following posts to be able to use the link
-                // dllink = br.getRegex("(http.+/get/" + new Regex(downloadLink.getDownloadURL(), "https?://([^\\.]+)").getMatch(0) +
-                // "[^;]+)").getMatch(0);
-                br.postPage(downloadLink.getDownloadURL() + "/en/", "b=1&submit=Download+the+file");
-            }
-            if (dllink == null) dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                String wait = br.getRegex(" var count = (\\d+);").getMatch(0);
-                if (wait != null && retried == false) {
-                    retried = true;
-                    sleep(1000 * Long.parseLong(wait), downloadLink);
-                    continue;
+                // base > submit:Free Download > submit:Show the download link + t:35140198 == link
+                Browser br2 = br.cloneBrowser();
+                br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                sleep(2000, downloadLink);
+                br2.postPage(br.getURL(), "submit=Free+Download");
+                String test = "";
+                while (test.length() != 7) {
+                    test = String.valueOf(new Random().nextLong()).substring(0, 7);
                 }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                sleep(2000, downloadLink);
+                br2 = br.cloneBrowser();
+                br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                sleep(2000, downloadLink);
+                br2.postPage(br.getURL(), "submit=Show+the+download+link&t=" + test);
+                if (dllink == null) dllink = br2.getRedirectLocation();
+                if (dllink == null) dllink = br2.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.1fichier\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
+                if (dllink == null) {
+                    String wait = br2.getRegex(" var count = (\\d+);").getMatch(0);
+                    if (wait != null && retried == false) {
+                        retried = true;
+                        sleep(1000 * Long.parseLong(wait), downloadLink);
+                        continue;
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                break;
             }
-            break;
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
