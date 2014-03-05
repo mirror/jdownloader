@@ -18,8 +18,13 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -34,9 +39,11 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.os.CrossSystem;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" }, flags = { 2 })
 public class FilerNet extends PluginForHost {
-
+    
     private static Object       LOCK                            = new Object();
     private int                 STATUSCODE                      = 0;
     private static final int    APIDISABLED                     = 400;
@@ -46,42 +53,107 @@ public class FilerNet extends PluginForHost {
     private static final int    UNKNOWNERROR                    = 599;
     private static final String UNKNOWNERRORTEXT                = "Unknown file error";
     private static final String NORESUME                        = "NORESUME";
-
+    
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filer.net/upgrade");
     }
-
+    
+    protected void showFreeDialog(final String domain) {
+        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
+            super.showFreeDialog(domain);
+            return;
+        }
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        String tab = "                        ";
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = domain + " Free Download";
+                            message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
+                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
+                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
+                        } else {
+                            title = domain + " Free Download";
+                            message = "You are using the " + domain + " Free Mode.\r\n";
+                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
+                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+    
+    private void checkShowFreeDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
+                if (config.getProperty("premAdShown2") == null) {
+                    File checkFile = JDUtilities.getResourceFile("tmp/filer");
+                    if (!checkFile.exists()) {
+                        checkFile.mkdirs();
+                        showFreeDialog("filer.net");
+                    }
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("premAdShown", Boolean.TRUE);
+                config.setProperty("premAdShown2", "shown");
+                config.save();
+            }
+        }
+    }
+    
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://filer.net/get/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
-
+    
     private void prepBrowser() {
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", "JDownloader");
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://filer.net/agb.htm";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 10;
     }
-
+    
     @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -104,17 +176,18 @@ public class FilerNet extends PluginForHost {
         link.setMD5Hash(null);
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         handleDownloadErrors();
+        checkShowFreeDialog();
         callAPI("http://filer.net/get/" + getFID(downloadLink) + ".json");
-
+        
         if (STATUSCODE == 501) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
         } else if (STATUSCODE == 502) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 5 * 60 * 1000l); }
-
+        
         int wait = Integer.parseInt(getJson("wait", br.toString()));
         if (STATUSCODE == 203) {
             sleep(wait * 1001l, downloadLink);
@@ -178,17 +251,17 @@ public class FilerNet extends PluginForHost {
             }
         }
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return true;
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
     }
-
+    
     public void login(final Account account) throws IOException, PluginException, InterruptedException {
         synchronized (LOCK) {
             /** Load cookies */
@@ -203,7 +276,7 @@ public class FilerNet extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -225,7 +298,7 @@ public class FilerNet extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setBrowserExclusive();
@@ -266,7 +339,7 @@ public class FilerNet extends PluginForHost {
             }
         }
     }
-
+    
     private void handleDownloadErrors() throws PluginException {
         if (STATUSCODE == APIDISABLED) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, APIDISABLEDTEXT, 2 * 60 * 60 * 1000l);
@@ -274,39 +347,39 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DOWNLOADTEMPORARILYDISABLEDTEXT, 2 * 60 * 60 * 1000l);
         } else if (STATUSCODE == UNKNOWNERROR) { throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT); }
     }
-
+    
     private String getFID(final DownloadLink link) {
         return new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
-
+    
     private void callAPI(final String url) throws IOException {
         br.getPage(url);
         updateStatuscode();
     }
-
+    
     private void updateStatuscode() {
         final String code = getJson("code", br.toString());
         if (code != null) STATUSCODE = Integer.parseInt(code);
     }
-
+    
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
         if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
         return result;
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
