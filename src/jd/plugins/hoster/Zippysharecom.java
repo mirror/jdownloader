@@ -235,7 +235,7 @@ public class Zippysharecom extends PluginForHost {
                 }
             } else {
                 DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\).href = \"/.*?\";)").getMatch(0);
-                String math = br.getRegex("\r?\n<script type=\"text/javascript\">(.*?)</script>\r?\n").getMatch(0);
+                String math = br.getRegex(".*<script type=\"text/javascript\">(.*?href =.*?)</script>\r?\n").getMatch(0);
                 if (DLLINK != null && math != null) {
                     math = math.replace(DLLINK, "var result = " + DLLINK);
                     String data = execJS(math, false);
