@@ -286,6 +286,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         uniqueID = null;
         skipReason = new NullsafeAtomicReference<SkipReason>(null);
         conditionalSkipReason = new NullsafeAtomicReference<ConditionalSkipReason>(null);
+        extractionStatus = new NullsafeAtomicReference<ExtractionStatus>();
         enabled = new AtomicBoolean(isEnabled);
         downloadLinkController = new NullsafeAtomicReference<SingleDownloadController>(null);
         finalLinkState = new NullsafeAtomicReference<FinalLinkState>(null);

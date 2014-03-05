@@ -51,7 +51,7 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import sun.swing.SwingUtilities2;
 
 public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericConfigEventListener<Boolean> {
-
+    
     /**
      * 
      */
@@ -64,7 +64,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
     protected Border          normalBorder;
     private boolean           selectAll         = false;
     private boolean           hideSinglePackage = true;
-
+    
     public FileColumn() {
         super(_GUI._.filecolumn_title());
         leftGapBorder = BorderFactory.createEmptyBorder(0, 32, 0, 0);
@@ -76,18 +76,17 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         setClickcount(0);
         hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
-
+        
     }
-
+    
     /**
      * @return
      */
     public JPopupMenu createHeaderPopup() {
-
         return FileColumn.createColumnPopup(this, (getMinWidth() == getMaxWidth() && getMaxWidth() > 0));
-
+        
     }
-
+    
     public static JPopupMenu createColumnPopup(ExtColumn<AbstractNode> fileColumn, boolean isLocked) {
         final JPopupMenu ret = new JPopupMenu();
         LockColumnWidthAction action;
@@ -109,110 +108,110 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         }
         return ret;
     }
-
+    
     @Override
     public boolean onDoubleClick(MouseEvent e, AbstractNode contextObject) {
-
+        
         if (e.getPoint().x - getBounds().x < 30) { return false; }
-
+        
         if (contextObject instanceof DownloadLink) {
             switch (CFG_GUI.CFG.getLinkDoubleClickAction()) {
-            case NOTHING:
-                java.awt.Toolkit.getDefaultToolkit().beep();
-                break;
-            case OPEN_FILE:
-                if (CrossSystem.isOpenFileSupported()) {
-                    new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())).actionPerformed(null);
-                }
-                break;
-            case OPEN_FOLDER:
-                if (CrossSystem.isOpenFileSupported()) {
-                    new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((DownloadLink) contextObject).getParentNode())).actionPerformed(null);
-                }
-                break;
-            case RENAME:
-                startEditing(contextObject);
-                break;
+                case NOTHING:
+                    java.awt.Toolkit.getDefaultToolkit().beep();
+                    break;
+                case OPEN_FILE:
+                    if (CrossSystem.isOpenFileSupported()) {
+                        new OpenFileAction(new File(((DownloadLink) contextObject).getFileOutput())).actionPerformed(null);
+                    }
+                    break;
+                case OPEN_FOLDER:
+                    if (CrossSystem.isOpenFileSupported()) {
+                        new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((DownloadLink) contextObject).getParentNode())).actionPerformed(null);
+                    }
+                    break;
+                case RENAME:
+                    startEditing(contextObject);
+                    break;
             }
         } else if (contextObject instanceof CrawledLink) {
             switch (CFG_GUI.CFG.getLinkDoubleClickAction()) {
-            case NOTHING:
-                java.awt.Toolkit.getDefaultToolkit().beep();
-                break;
-            case OPEN_FILE:
-                if (CrossSystem.isOpenFileSupported()) {
-                    new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
-                }
-                break;
-            case OPEN_FOLDER:
-                if (CrossSystem.isOpenFileSupported()) {
-                    new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((CrawledLink) contextObject).getParentNode())).actionPerformed(null);
-                }
-                break;
-            case RENAME:
-                startEditing(contextObject);
-                break;
+                case NOTHING:
+                    java.awt.Toolkit.getDefaultToolkit().beep();
+                    break;
+                case OPEN_FILE:
+                    if (CrossSystem.isOpenFileSupported()) {
+                        new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+                    }
+                    break;
+                case OPEN_FOLDER:
+                    if (CrossSystem.isOpenFileSupported()) {
+                        new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((CrawledLink) contextObject).getParentNode())).actionPerformed(null);
+                    }
+                    break;
+                case RENAME:
+                    startEditing(contextObject);
+                    break;
             }
         } else if (contextObject instanceof AbstractPackageNode) {
             switch (CFG_GUI.CFG.getPackageDoubleClickAction()) {
-            case EXPAND_COLLAPSE_TOGGLE:
-                if (e.isControlDown() && !e.isShiftDown()) {
-                    ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.BOTTOM);
-                } else if (e.isControlDown() && e.isShiftDown()) {
-                    ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.TOP);
-                } else {
-                    ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.CURRENT);
-                }
-                break;
-            case NOTHING:
-                java.awt.Toolkit.getDefaultToolkit().beep();
-                break;
-            case OPEN_FOLDER:
-                if (CrossSystem.isOpenFileSupported()) {
-                    new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
-                }
-                break;
-            case RENAME:
-                startEditing(contextObject);
-                break;
+                case EXPAND_COLLAPSE_TOGGLE:
+                    if (e.isControlDown() && !e.isShiftDown()) {
+                        ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.BOTTOM);
+                    } else if (e.isControlDown() && e.isShiftDown()) {
+                        ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.TOP);
+                    } else {
+                        ((PackageControllerTableModel) getModel()).toggleFilePackageExpand((AbstractPackageNode) contextObject, TOGGLEMODE.CURRENT);
+                    }
+                    break;
+                case NOTHING:
+                    java.awt.Toolkit.getDefaultToolkit().beep();
+                    break;
+                case OPEN_FOLDER:
+                    if (CrossSystem.isOpenFileSupported()) {
+                        new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+                    }
+                    break;
+                case RENAME:
+                    startEditing(contextObject);
+                    break;
             }
         }
         return true;
     }
-
+    
     @Override
     public boolean isEnabled(AbstractNode obj) {
         if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
         return obj.isEnabled();
     }
-
+    
     @Override
     public boolean isSortable(AbstractNode obj) {
         return true;
     }
-
+    
     @Override
     public int getDefaultWidth() {
         return 350;
     }
-
+    
     @Override
     public boolean isEditable(AbstractNode obj) {
-
+        
         return true;
     }
-
+    
     public boolean onRenameClick(final MouseEvent e, final AbstractNode obj) {
         if (e.getPoint().x - getBounds().x < 30) { return false; }
         startEditing(obj);
         return true;
-
+        
     }
-
+    
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
         return isEditable(obj);
     }
-
+    
     @Override
     protected void setStringValue(final String value, final AbstractNode object) {
         if (StringUtils.isEmpty(value)) return;
@@ -222,7 +221,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             ((CrawledPackage) object).setName(value);
         } else if (object instanceof CrawledLink) {
             boolean isMultiArchive = false;
-
+            
             try {
                 ExtractionExtension archiver = ((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
                 if (archiver != null) {
@@ -232,9 +231,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             } catch (Throwable e) {
                 Log.exception(Level.SEVERE, e);
             }
-
+            
             ((CrawledLink) object).setName(value);
-
+            
             if (isMultiArchive) {
                 String title = _GUI._.FileColumn_setStringValue_title_();
                 String msg = _GUI._.FileColumn_setStringValue_msg_();
@@ -243,7 +242,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             }
         }
     }
-
+    
     @Override
     protected Icon getIcon(AbstractNode value) {
         if (false && value instanceof ArchiveCrawledPackage) {
@@ -263,7 +262,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         }
         return null;
     }
-
+    
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         this.rendererIcon.setIcon(this.getIcon(value));
         String str = this.getStringValue(value);
@@ -272,7 +271,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             // opaque.
             str = "";
         }
-
+        
         if (getTableColumn() != null) {
             this.rendererField.setText(SwingUtilities2.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), str, getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 32));
         } else {
@@ -288,9 +287,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                 renderer.setBorder(leftGapBorder);
             }
         }
-
+        
     }
-
+    
     @Override
     public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
         super.configureEditorComponent(value, isSelected, row, column);
@@ -301,17 +300,17 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             selectAll = false;
             editor.setBorder(leftGapBorder);
         }
-
+        
     }
-
+    
     @Override
     public void focusLost(FocusEvent e) {
         super.focusLost(e);
     }
-
+    
     @Override
     public void focusGained(final FocusEvent e) {
-
+        
         String txt = editorField.getText();
         int point = txt.lastIndexOf(".");
         /* select filename only, try to keep the extension/filetype */
@@ -320,26 +319,26 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         } else {
             this.editorField.selectAll();
         }
-
+        
     }
-
+    
     @Override
     public boolean isHidable() {
         return false;
     }
-
+    
     @Override
     public final String getStringValue(AbstractNode value) {
         return value.getName();
     }
-
+    
     @Override
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
     }
-
+    
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         hideSinglePackage = newValue;
     }
-
+    
 }
