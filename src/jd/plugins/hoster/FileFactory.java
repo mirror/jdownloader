@@ -896,7 +896,13 @@ public class FileFactory extends PluginForHost {
                 }
             }
             getPage(br, api + "/getDownloadLink?file=" + getFUID(downloadLink) + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
-            if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":712")) {
+            if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":701")) {
+                // {"type":"error","message":"Error generating download link.  Please try again","code":701}
+                if (downloadLink.getLinkStatus().getRetryCount() == 3)
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                else
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":712")) {
                 // 712 ERR_API_FILE_INVALID
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":713")) {
@@ -925,7 +931,10 @@ public class FileFactory extends PluginForHost {
             if ("trafficshare".equalsIgnoreCase(linkType)) setConstants(account, true);
             String delay = getJson("delay", br);
             if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
-            if (isFree && !inValidate(delay) && !"0".equals(delay)) sleep(Integer.parseInt(delay) * 1001, downloadLink);
+            if (!inValidate(delay)) {
+                final int s = Integer.parseInt(delay);
+                sleep(s * 1001, downloadLink);
+            }
             dllink = dllink.replace("\\", "");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
@@ -939,7 +948,7 @@ public class FileFactory extends PluginForHost {
     private String loginKey(final Account account) throws Exception {
         final Browser nbr = new Browser();
         prepApiBrowser(nbr);
-        nbr.getPage(api + "/getSessionKey?email=" + account.getUser() + "&password=" + account.getPass());
+        nbr.getPage(api + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         final String apiKey = getJson("key", nbr);
         if (apiKey != null) account.setProperty("apiKey", apiKey);
         return apiKey;
