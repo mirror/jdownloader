@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spaceforfiles.com" }, urls = { "https?://(www\\.)?spaceforfiles\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spaceforfiles.com" }, urls = { "https?://(www\\.)?(spaceforfiles|filespace)\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class SpaceForFilesCom extends PluginForHost {
 
     private String                 correctedBR                  = "";
@@ -254,10 +254,21 @@ public class SpaceForFilesCom extends PluginForHost {
                 final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
                 final String postDataF1 = "op=download1&usr_login=&id=" + fid + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&lck=1&method_free=Free+Download";
                 brad.postPage(br.getURL(), postDataF1);
+                final String start_referer = brad.getURL();
                 final String rand = brad.getRegex("name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
                 if (rand == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                brad.cloneBrowser().getPage("http://www.filespace.com/locker/locker.js?1");
+                brad.getPage("http://www.filespace.com/locker/lockurl.php?uniqueid=" + fid);
+                if (!brad.containsHTML("\"lockid\":\\-1")) {
+                    final String lockid = brad.getRegex("\"lockid\":(\")?(\\d+)").getMatch(1);
+                    final String hash = brad.getRegex("\"hash\":\"([a-z0-9]+)\"").getMatch(0);
+                    if (lockid == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    brad.getPage("http://www.spaceforfiles.com/locker/offers.php?hash=" + hash + "&sid=" + fid);
+                    brad.cloneBrowser().getPage("http://www.filespace.com/locker/checkoffer.php?lockid=" + lockid);
+                }
+                brad.getHeaders().put("Referer", start_referer);
                 final String postData = "op=download2&id=" + fid + "&rand=" + rand + "&referer=" + Encoding.urlEncode(br.getURL()) + "&method_free=Free+Download&method_premium=&method_highspeed=1&lck=1&down_script=1";
-                brad.postPage(brad.getURL(), postData);
+                brad.postPage(start_referer, postData);
                 dllink = brad.getRedirectLocation();
             } catch (final Throwable e) {
             }

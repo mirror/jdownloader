@@ -286,7 +286,9 @@ public class ArteTv extends PluginForHost {
     private HashMap<String, String> requestLivewebArte() throws Exception {
         HashMap<String, String> paras = new HashMap<String, String>();
         String eventId = br.getRegex("eventId=(\\d+)").getMatch(0);
-        FLASHPLAYER = br.getRegex("(http://[^\\?\"]+player.swf)").getMatch(0);
+        FLASHPLAYER = br.getRegex("(http://[^\\?\"]+player\\.swf)").getMatch(0);
+        // No player, no video
+        if (FLASHPLAYER == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         XPath xPath = xmlParser("http://arte.vo.llnwd.net/o21/liveweb/events/event-" + eventId + ".xml?" + System.currentTimeMillis());
         NodeList modules = (NodeList) xPath.evaluate("//event[@id=" + eventId + "]/*|//event/video[@id]/*", doc, XPathConstants.NODESET);
