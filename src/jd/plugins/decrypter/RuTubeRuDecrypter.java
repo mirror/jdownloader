@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -35,14 +36,25 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
+        final String parameter = param.toString();
 
-        br.getPage(br.getURL().replace("/video/", "/api/video/") + "?format=xml");
-        String nextUrl = br.getRegex("src=\"([^\"]+)").getMatch(0);
+        String uid = new Regex(parameter, "/([a-fA-F0-9]{32})").getMatch(0);
+        if (uid == null) {
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
+            br.getPage(br.getURL().replace("/video/", "/api/video/") + "?format=xml");
 
-        if (nextUrl != null) decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(nextUrl)));
+            uid = br.getRegex("<id>([a-fA-F0-9]{32})</id>").getMatch(0);
+            if (uid == null) {
+                final String nextUrl = br.getRegex("src=\"([^\"]+)").getMatch(0);
+                if (nextUrl != null) {
+                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(nextUrl)));
+                }
+            }
+        }
+        if (uid != null && decryptedLinks.isEmpty()) {
+            decryptedLinks.add(createDownloadlink("http://video.rutube.ru/" + uid));
+        }
 
         return decryptedLinks;
     }
