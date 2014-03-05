@@ -471,7 +471,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
-            dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(result.getErrorID()));
+
+            String errorID = result.getErrorID();
+            if (!errorID.contains(dl.getCandidate().getPlugin())) {
+                errorID = dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "-" + errorID;
+            }
+            dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(errorID));
             dl.setTimestamp(System.currentTimeMillis());
             dl.setSessionStart(sessionStart);
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
