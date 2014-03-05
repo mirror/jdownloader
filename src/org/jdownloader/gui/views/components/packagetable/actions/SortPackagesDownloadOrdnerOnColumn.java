@@ -40,13 +40,11 @@ public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
             if (currentComparator != null && newID.equals(currentComparator.getID())) {
                 asc.set(!currentComparator.isAsc());
             }
-            boolean sortPackages = true;
-            
-            // if (CrossSystem.isMac() && ((e.getModifiers() & ActionEvent.META_MASK) == ActionEvent.META_MASK)) {
-            // sortPackages = false;
-            // }
+            final boolean sortPackages;
             if (!CrossSystem.isMac() && ((e.getModifiers() & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK)) {
                 sortPackages = false;
+            } else {
+                sortPackages = true;
             }
             modelController.sort(new PackageControllerComparator<AbstractNode>() {
                 
@@ -57,7 +55,6 @@ public class SortPackagesDownloadOrdnerOnColumn extends AppAction {
                     } else {
                         return sorter.compare(o2, o1);
                     }
-                    
                 }
                 
                 @Override
