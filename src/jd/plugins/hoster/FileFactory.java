@@ -836,10 +836,13 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    private String  dllink  = null;
-    private int     chunks  = 0;
-    private boolean resumes = true;
-    private boolean isFree  = true;
+    private final String        api     = "https://api.filefactory.com/v1";
+    private final AtomicBoolean useAPI  = new AtomicBoolean(true);
+
+    private String              dllink  = null;
+    private int                 chunks  = 0;
+    private boolean             resumes = true;
+    private boolean             isFree  = true;
 
     private void setConstants(final Account account, final boolean trafficShare) {
         if (trafficShare) {
@@ -950,7 +953,16 @@ public class FileFactory extends PluginForHost {
         prepApiBrowser(nbr);
         nbr.getPage(api + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         final String apiKey = getJson("key", nbr);
-        if (apiKey != null) account.setProperty("apiKey", apiKey);
+        if (apiKey != null)
+            account.setProperty("apiKey", apiKey);
+        else if ("error".equalsIgnoreCase(getJson("type", nbr)) && ("705".equalsIgnoreCase(getJson("code", nbr)) || "706".equalsIgnoreCase(getJson("code", nbr)) || "707".equalsIgnoreCase(getJson("code", nbr)))) {
+            // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
+            // 706 ERR_API_LOGIN_FAILED Login details were incorrect
+            // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
+            final String message = getJson("message", nbr);
+            logger.warning(message);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         return apiKey;
     }
 
@@ -973,12 +985,10 @@ public class FileFactory extends PluginForHost {
             ibr.getPage(url);
             if (sessionKeyInValid(account, ibr)) {
                 apiKey = getApiKey(account);
-                if (apiKey == null) {
-                    // not sure if this is the best measure...
-                    useAPI.set(false);
+                if (apiKey == null)
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                ibr.getPage(url);
+                else
+                    ibr.getPage(url);
             }
         } else {
             ibr.getPage(url);
@@ -995,7 +1005,12 @@ public class FileFactory extends PluginForHost {
     }
 
     private AccountInfo fetchAccountInfo_API(final Account account, final AccountInfo ai) throws Exception {
-        loginKey(account);
+        try {
+            loginKey(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
         getPage(br, api + "/getMemberInfo", account);
         String expire = getJson("expiryMs", br);
         String type = getJson("accountType", br);
@@ -1021,9 +1036,6 @@ public class FileFactory extends PluginForHost {
         }
         return ai;
     }
-
-    private final String        api    = "https://api.filefactory.com/v1";
-    private final AtomicBoolean useAPI = new AtomicBoolean(true);
 
     private String getJson(final String key, final Browser ibr) {
         return getJson(key, ibr.toString());
