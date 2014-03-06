@@ -228,7 +228,7 @@ public class CrockoCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (account.getBooleanProperty("freeacc", false)) {
+        if (account.getBooleanProperty("free", false)) {
             doFree(downloadLink);
         } else {
             if (br.containsHTML(FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -277,14 +277,15 @@ public class CrockoCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.setCookie(MAINPAGE, "language", "en");
                 // br.getPage(MAINPAGE);
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 br.postPage("https://www.crocko.com/accounts/login", "remember=1&success_llocation=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String acc = br.getCookie(MAINPAGE, "ACCOUNT");
+                final String acc = br.getCookie(MAINPAGE, "logacc");
                 final String prem = br.getCookie(MAINPAGE, "PREMIUM");
                 if (acc == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (prem == null) {
-                    account.setProperty("freeacc", true);
+                    account.setProperty("free", true);
                 } else {
-                    account.setProperty("freeacc", false);
+                    account.setProperty("free", false);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -313,8 +314,8 @@ public class CrockoCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://www.crocko.com/accounts");
-        if (account.getBooleanProperty("freeacc", false) || br.containsHTML(">expired")) {
+        br.getPage("/accounts");
+        if (account.getBooleanProperty("free", false) || br.containsHTML(">expired")) {
             try {
                 maxPrem.set(1);
                 // free accounts can still have captcha.
