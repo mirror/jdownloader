@@ -320,7 +320,7 @@ public class ImgSrcRu extends PluginForDecrypt {
 
     /* NOTE: no override to keep compatible to old stable */
     public int getMaxConcurrentProcessingInstances() {
-        return -1;
+        return 5;
     }
 
 }
