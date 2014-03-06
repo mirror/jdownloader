@@ -961,9 +961,7 @@ public class FileFactory extends PluginForHost {
             // 705 ERR_API_LOGIN_ATTEMPTS Too many failed login attempts. Please wait 15 minute and try to login again.
             // 706 ERR_API_LOGIN_FAILED Login details were incorrect
             // 707 ERR_API_ACCOUNT_DELETED Account has been deleted, or is pending deletion
-            final String message = getJson("message", nbr);
-            logger.warning(message);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + message, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(nbr), PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         return apiKey;
     }
@@ -992,9 +990,25 @@ public class FileFactory extends PluginForHost {
                 else
                     ibr.getPage(url);
             }
+            // account specific errors which could happen at any point in time!
+            if ("error".equalsIgnoreCase(getJson("type", ibr)) && ("719".equalsIgnoreCase(getJson("code", ibr)))) {
+                // 719 ERR_API_ACCOUNT_SUSPENDED The account being used has been suspended
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + errorMsg(ibr), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else {
             ibr.getPage(url);
         }
+        // error handling for generic errors which could occur at any point in time!
+        if ("error".equalsIgnoreCase(getJson("type", ibr)) && ("718".equalsIgnoreCase(getJson("code", ibr)))) {
+            // 718 ERR_API_IP_SUSPENDED The IP Address initiating the request has been suspended
+            throw new PluginException(LinkStatus.ERROR_FATAL, "\r\n" + errorMsg(ibr));
+        }
+    }
+
+    private String errorMsg(final Browser ibr) {
+        final String message = getJson("message", ibr);
+        logger.warning(message);
+        return message;
     }
 
     private boolean sessionKeyInValid(final Account account, final Browser ibr) {
