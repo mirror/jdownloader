@@ -49,6 +49,11 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
+    }
+
+    @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("decryptedimgsrc", "imgsrc"));
     }
@@ -102,6 +107,8 @@ public class ImgSrcRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         prepBrowser(br, false);
+        final String r = downloadLink.getStringProperty("Referer", null);
+        if (r != null) br.getHeaders().put("Referer", r);
         getPage(downloadLink.getDownloadURL(), downloadLink);
         js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var r='[a-zA-Z0-9]+';[\r\n\t ]+var o=[^<]+)</script>").getMatch(0);
         if (js != null) {
@@ -138,8 +145,8 @@ public class ImgSrcRu extends PluginForHost {
             }
         }
         String best = null;
-        String big = new Regex(js, "bigpic.+(http[^\r\n]+)';").getMatch(0);
-        String orginal = new Regex(js, "oripic.+(http[^\n\r]+)';").getMatch(0);
+        String big = new Regex(js, "big_?pic.+(http[^\r\n]+)';").getMatch(0);
+        String orginal = new Regex(js, "ori_?pic.+(http[^\n\r]+)';").getMatch(0);
         if (orginal != null) {
             best = orginal;
         } else if (big != null) {
@@ -171,7 +178,7 @@ public class ImgSrcRu extends PluginForHost {
         requestFileInformation(downloadLink);
         if (ddlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -256,7 +263,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return -1;
     }
 
     @Override

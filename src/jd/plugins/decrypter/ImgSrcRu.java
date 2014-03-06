@@ -56,6 +56,11 @@ public class ImgSrcRu extends PluginForDecrypt {
     private boolean                 offline          = false;
     private ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
 
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(this.getHost(), 500);
+    }
+
     private Browser prepBrowser(Browser prepBr, Boolean neu) {
         if (neu) {
             String refer = prepBr.getHeaders().get("Referer");
@@ -199,9 +204,11 @@ public class ImgSrcRu extends PluginForDecrypt {
         }
 
         if (imgs.size() != 0) {
+            final String currentLink = br.getURL();
             for (String dl : imgs) {
                 String upid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
                 final DownloadLink img = createDownloadlink("http://decryptedimgsrc.ru" + dl);
+                img.setProperty("Referer", currentLink);
                 img.setFinalFileName(upid);
                 img.setAvailable(true);
                 if (password != null) img.setProperty("password", password);
@@ -313,8 +320,7 @@ public class ImgSrcRu extends PluginForDecrypt {
 
     /* NOTE: no override to keep compatible to old stable */
     public int getMaxConcurrentProcessingInstances() {
-        // I've used unlimited and had issues.
-        return 5;
+        return -1;
     }
 
 }
