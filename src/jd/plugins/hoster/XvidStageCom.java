@@ -69,7 +69,7 @@ public class XvidStageCom extends PluginForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other: no redirects
-    // other: xvidstage.com xvidstream.net and flashstream are sister sites,
+    // other: xvidstage.com xvidstream.net are sister sites,
     // links are not transferable
 
     @Override

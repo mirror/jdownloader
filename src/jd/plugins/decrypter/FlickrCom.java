@@ -70,6 +70,10 @@ public class FlickrCom extends PluginForDecrypt {
             logger.info("Login failed or no accounts active/existing -> Continuing without account");
         }
         br.getPage(parameter);
+        if (br.containsHTML("doesn\\'t have anything available to you")) {
+            logger.info("Link offline (empty): " + parameter);
+            return decryptedLinks;
+        }
 
         // Some stuff which is different from link to link
         String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);

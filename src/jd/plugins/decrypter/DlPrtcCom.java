@@ -141,7 +141,7 @@ public class DlPrtcCom extends PluginForDecrypt {
             getPage(parameter);
         }
 
-        if (cbr.containsHTML(">Please click on continue to see the content")) {
+        if (cbr.containsHTML(">Please click on continue to see")) {
             Form continueForm = getContinueForm();
             if (continueForm == null) {
                 logger.warning("Decrypter broken 3 for link: " + parameter);

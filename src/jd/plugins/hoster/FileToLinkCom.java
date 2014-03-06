@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,8 +33,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/(d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8}|[a-z0-9]+)" }, flags = { 0 })
 public class FileToLinkCom extends PluginForHost {
-
-    private String DLLINK = null;
 
     public FileToLinkCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,13 +51,34 @@ public class FileToLinkCom extends PluginForHost {
     private static final String LOGINNEEDED         = "This file was uploaded by an unregistered user of";
     private static final String LOGINNEEDEDUSERTEXT = "Login needed to download this file";
 
+    private String              DLLINK              = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         // Offline links should also have nice filenames
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "filetolink\\.com/(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                DLLINK = downloadLink.getDownloadURL();
+                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setAvailable(true);
+                return AvailableStatus.TRUE;
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+
         if (br.containsHTML(">Sorry, this file does not exist\\.<") || br.getURL().contains("filetolink.com/d/notfound.html") || br.getURL().equals("http://www.filetolink.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // For invalid links
         if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -78,19 +99,21 @@ public class FileToLinkCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(LOGINNEEDED)) throw new PluginException(LinkStatus.ERROR_FATAL, LOGINNEEDEDUSERTEXT);
         boolean facebook = false;
-        String finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"0\\; URL=(/download/\\?h=[0-9a-z]+\\&t=\\d+\\&f=[0-9a-z]+)\"/>\\'").getMatch(0);
-        if (finallink != null) {
-            finallink = new Regex(br.getURL(), "(https?://.*\\.com)/.*").getMatch(0) + finallink;
-        } else {
-            facebook = true;
-            // Maybe facebook login required, let's skip that shit
-            final Regex noFB = br.getRegex("\\&redirect_url=http%3A%2F%2F(www\\.)?filetolink\\.com%2Fd%2F%3Fh%3D([a-z0-9]+)%26t%3D(\\d+)%26f%3D([a-z0-9]+)\"");
-            if (noFB.getMatches().length < 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            finallink = "http://www.filetolink.com/download/?h=" + noFB.getMatch(1) + "&t=" + noFB.getMatch(2) + "&f=" + noFB.getMatch(3);
+        if (DLLINK == null) {
+            if (br.containsHTML(LOGINNEEDED)) throw new PluginException(LinkStatus.ERROR_FATAL, LOGINNEEDEDUSERTEXT);
+            String DLLINK = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"0\\; URL=(/download/\\?h=[0-9a-z]+\\&t=\\d+\\&f=[0-9a-z]+)\"/>\\'").getMatch(0);
+            if (DLLINK != null) {
+                DLLINK = new Regex(br.getURL(), "(https?://.*\\.com)/.*").getMatch(0) + DLLINK;
+            } else {
+                facebook = true;
+                // Maybe facebook login required, let's skip that shit
+                final Regex noFB = br.getRegex("\\&redirect_url=http%3A%2F%2F(www\\.)?filetolink\\.com%2Fd%2F%3Fh%3D([a-z0-9]+)%26t%3D(\\d+)%26f%3D([a-z0-9]+)\"");
+                if (noFB.getMatches().length < 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                DLLINK = "http://www.filetolink.com/download/?h=" + noFB.getMatch(1) + "&t=" + noFB.getMatch(2) + "&f=" + noFB.getMatch(3);
+            }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             // Also not downloadable via browser with useless Facebook App
             // (tested)

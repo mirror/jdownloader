@@ -26,6 +26,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -37,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+|http://my\\.mail\\.ru/video/(top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+\\.html)" }, flags = { 2 })
 public class MyMailRu extends PluginForHost {
 
     public MyMailRu(PluginWrapper wrapper) {
@@ -50,37 +51,68 @@ public class MyMailRu extends PluginForHost {
         return "http://my.mail.ru/";
     }
 
-    private String DLLINK = null;
+    private String              DLLINK         = null;
+    private static final String TYPE_VIDEO_ALL = "http://my\\.mail\\.ru/video/(top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+\\.html)";
+    private static final String TYPE_VIDEO_1   = "http://my\\.mail\\.ru/video/top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+";
+    private static final String TYPE_VIDEO_2   = "http://my\\.mail\\.ru/video/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+\\.html";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        final String originalLink = link.getStringProperty("mainlink", null);
-        final Regex linkInfo = new Regex(originalLink, "http://foto\\.mail\\.ru/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/(\\d+)\\.html");
-        br.getPage(originalLink);
-        if (br.containsHTML(">Данная страница не найдена на нашем сервере")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        for (int i = 1; i <= 2; i++) {
-            if (i == 1) DLLINK = br.getRegex("\"(http://content\\.foto\\.mail\\.ru/[^<>\"/]*?/[^<>\"/]*?/[^<>\"/]*?/s\\-\\d+\\.[A-Za-z]{1,5})\"").getMatch(0);
-            if (DLLINK == null) DLLINK = "http://content.foto.mail.ru/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/" + linkInfo.getMatch(2) + "/i-" + linkInfo.getMatch(3) + link.getStringProperty("ext", null);
+        if (link.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
+            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            final String urlpart = getUrlpart(link);
+            br.getPage("http://my.mail.ru/video/" + urlpart + ".html?ajax=photoitem&ajax_call=1&func_name=&mna=&mnb=&encoding=windows-1251");
+            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+            final String signvideourl = getJson("signVideoUrl");
+            final String filename = getJson("videoTitle");
+            if (signvideourl == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("http://videoapi.my.mail.ru" + signvideourl);
+            getVideoURL();
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(DLLINK);
-                if (con.getResponseCode() == 500) {
-                    logger.info("High quality link is invalid, using normal link...");
-                    DLLINK = null;
-                    continue;
-                }
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                    link.setFinalFileName(linkInfo.getMatch(3) + link.getStringProperty("ext", null));
+                    link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                return AvailableStatus.TRUE;
             } finally {
                 try {
                     con.disconnect();
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
+                }
+            }
+        } else {
+            final String originalLink = link.getStringProperty("mainlink", null);
+            final Regex linkInfo = new Regex(originalLink, "http://foto\\.mail\\.ru/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/(\\d+)\\.html");
+            br.getPage(originalLink);
+            if (br.containsHTML(">Данная страница не найдена на нашем сервере")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            for (int i = 1; i <= 2; i++) {
+                if (i == 1) DLLINK = br.getRegex("\"(http://content\\.foto\\.mail\\.ru/[^<>\"/]*?/[^<>\"/]*?/[^<>\"/]*?/s\\-\\d+\\.[A-Za-z]{1,5})\"").getMatch(0);
+                if (DLLINK == null) DLLINK = "http://content.foto.mail.ru/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/" + linkInfo.getMatch(2) + "/i-" + linkInfo.getMatch(3) + link.getStringProperty("ext", null);
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(DLLINK);
+                    if (con.getResponseCode() == 500) {
+                        logger.info("High quality link is invalid, using normal link...");
+                        DLLINK = null;
+                        continue;
+                    }
+                    if (!con.getContentType().contains("html")) {
+                        link.setDownloadSize(con.getLongContentLength());
+                        link.setFinalFileName(linkInfo.getMatch(3) + link.getStringProperty("ext", null));
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    return AvailableStatus.TRUE;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
             }
         }
@@ -91,9 +123,13 @@ public class MyMailRu extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int maxChunks = 1;
+        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
+            maxChunks = 0;
+        }
         // More chunks possible but not needed because we're only downloading
         // pictures here
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -186,6 +222,49 @@ public class MyMailRu extends PluginForHost {
                 downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(oldExtension, newExtension));
             else
                 downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
+        }
+    }
+
+    private String getJson(final String parameter) {
+        String result = br.getRegex("\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\"([\t\n\r ]+)?:([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(2);
+        return result;
+    }
+
+    @SuppressWarnings("unused")
+    private String generateVideoUrl_old(final DownloadLink dl) throws IOException {
+        final Regex urlparts = new Regex(dl.getDownloadURL(), "video=/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]+)");
+        br.getPage("http://video.mail.ru/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + ".lite");
+        final String srv = grabVar("srv");
+
+        final String vcontentHost = grabVar("vcontentHost");
+        final String key = grabVar("key");
+        final String rnd = "abcde";
+        final String rk = rnd + key;
+        final String tempHash = JDHash.getMD5(rk);
+        final String pk = tempHash.substring(0, 9) + rnd;
+        DLLINK = "http://" + vcontentHost + "/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + "flv?k=" + pk + "&" + srv;
+        return DLLINK;
+    }
+
+    private String grabVar(final String var) {
+        return br.getRegex("\\$" + var + "=([^<>\"]*?)(\r|\t|\n)").getMatch(0);
+    }
+
+    private String getVideoURL() {
+        final String[] qualities = { "hd", "md", "sd" };
+        for (final String quality : qualities) {
+            DLLINK = br.getRegex("\"name\":\"" + quality + "\",\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK != null) break;
+        }
+        return DLLINK;
+    }
+
+    private String getUrlpart(final DownloadLink dl) {
+        if (dl.getDownloadURL().matches(TYPE_VIDEO_1)) {
+            return new Regex(dl.getDownloadURL(), "video=/(.+)").getMatch(0);
+        } else {
+            return new Regex(dl.getDownloadURL(), "video/(.+)\\.html").getMatch(0);
         }
     }
 

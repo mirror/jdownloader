@@ -69,9 +69,36 @@ public class FileFlyerCom extends PluginForHost {
         return 1;
     }
 
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
+        br.setCookie("http://www.fileflyer.com", "lang", "en");
+        br.getPage(downloadLink.getDownloadURL());
+        String filesize = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_size\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_file\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (name == null) name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_img\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
+        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>|>Expired</a>|class=\"removedlink\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (name == null || filesize == null) {
+            if (!br.containsHTML("class=\"fileslistwrap\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setName(name.trim().replace("", ""));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(ONLY4PREMIUM)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
+        if (br.containsHTML(ONLY4PREMIUM)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         if (br.containsHTML("serveroverload")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded!", 10 * 60 * 1000l);
         if (br.containsHTML("access to the service may be unavailable for a while")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
         String linkurl = getDllink();
@@ -121,26 +148,6 @@ public class FileFlyerCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.setCookie("http://www.fileflyer.com", "lang", "en");
-        br.getPage(downloadLink.getDownloadURL());
-        String filesize = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_size\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_file\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (name == null) name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_img\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
-        if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>|>Expired</a>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (name == null || filesize == null) {
-            if (!br.containsHTML("class=\"fileslistwrap\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setName(name.trim().replace("", ""));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     public void reset() {

@@ -16,13 +16,9 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -38,7 +34,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "filesmailrudecrypted://.+|http://my\\.mail\\.ru/video/top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "filesmailrudecrypted://.+" }, flags = { 2 })
 public class FilesMailRu extends PluginForHost {
     private static String       UA            = RandomUserAgent.generate();
     private boolean             keepCookies   = false;
@@ -69,91 +65,63 @@ public class FilesMailRu extends PluginForHost {
         br.setDebug(true);
         br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(true);
-        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
-            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-            final String urlpart = new Regex(downloadLink.getDownloadURL(), "video=/(.+)").getMatch(0);
-            br.getPage("http://my.mail.ru/video/" + urlpart + ".html?ajax=photoitem&ajax_call=1&func_name=&mna=&mnb=&encoding=windows-1251");
-            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-            final String signvideourl = getJson("signVideoUrl");
-            final String filename = getJson("videoTitle");
-            if (signvideourl == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage("http://videoapi.my.mail.ru" + signvideourl);
-            getVideoURL();
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) throw new PluginException(LinkStatus.ERROR_FATAL, "Please re-add this link!");
+        if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
+            logger.warning("final filename and folderID are bot null for unknown reasons!");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage(downloadLink.getStringProperty("folderID"));
+        if (br.containsHTML(DLMANAGERPAGE)) {
+            if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filesize = br.getRegex("</div>[\t\n\r ]+</div>[\t\n\r ]+</td>[\t\n\r ]+<td title=\"(\\d+(\\.\\d+)? [^<>\"]*?)\">").getMatch(0);
+            final String filename = br.getRegex("<title>([^<>\"]*?)  скачать [^<>\"]*?@Mail\\.Ru</title>").getMatch(0);
+            if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            return AvailableStatus.TRUE;
         } else {
-            if (downloadLink.getName() == null && downloadLink.getStringProperty("folderID", null) == null) {
-                logger.warning("final filename and folderID are bot null for unknown reasons!");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            br.getPage(downloadLink.getStringProperty("folderID"));
-            if (br.containsHTML(DLMANAGERPAGE)) {
-                if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                String filesize = br.getRegex("</div>[\t\n\r ]+</div>[\t\n\r ]+</td>[\t\n\r ]+<td title=\"(\\d+(\\.\\d+)? [^<>\"]*?)\">").getMatch(0);
-                final String filename = br.getRegex("<title>([^<>\"]*?)  скачать [^<>\"]*?@Mail\\.Ru</title>").getMatch(0);
-                if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                return AvailableStatus.TRUE;
-            } else {
-                // At the moment jd gets the russian version of the site.
-                // Errorhandling
-                // also works for English but filesize handling doesn't so if this
-                // plugin get's broken that's on of the first things to check
-                if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // This part is to find the filename in case the downloadurl
-                // redirects to the folder it comes from
-                String finalfilename = downloadLink.getStringProperty("realfilename");
-                if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
-                if (linkinformation == null || linkinformation.length == 0) {
-                    logger.warning("Critical error : Couldn't get the linkinformation");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                for (String info : linkinformation) {
-                    if (info.contains(finalfilename)) {
-                        // regex the new downloadlink and save it!
-                        String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
-                        if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
-                            logger.info("File " + downloadLink.getStringProperty("folderID", null) + " is still uploading (temporary unavailable)!");
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload"));
-                        }
-                        if (directlink == null) {
-                            logger.warning("Critical error occured: The final downloadlink couldn't be found in the available check!");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        directlink = fixLink(directlink, br);
-                        downloadLink.setUrlDownload(directlink);
-                        logger.info("Set new UrlDownload, link = " + downloadLink.getDownloadURL());
-                        String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
-                        String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
-                        if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
-                        if (filesize == null || filename == null) {
-                            logger.warning("filename and filesize regex of linkinformation seem to be broken!");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        filesize = fixFilesize(filesize, br);
-                        downloadLink.setFinalFileName(filename);
-                        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-                        return AvailableStatus.TRUE;
-                    }
-                }
-                logger.warning("File couldn't be found on the page...");
+            // At the moment jd gets the russian version of the site.
+            // Errorhandling
+            // also works for English but filesize handling doesn't so if this
+            // plugin get's broken that's on of the first things to check
+            if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // This part is to find the filename in case the downloadurl
+            // redirects to the folder it comes from
+            String finalfilename = downloadLink.getStringProperty("realfilename");
+            if (finalfilename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
+            if (linkinformation == null || linkinformation.length == 0) {
+                logger.warning("Critical error : Couldn't get the linkinformation");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            for (String info : linkinformation) {
+                if (info.contains(finalfilename)) {
+                    // regex the new downloadlink and save it!
+                    String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
+                    if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
+                        logger.info("File " + downloadLink.getStringProperty("folderID", null) + " is still uploading (temporary unavailable)!");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload"));
+                    }
+                    if (directlink == null) {
+                        logger.warning("Critical error occured: The final downloadlink couldn't be found in the available check!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    directlink = fixLink(directlink, br);
+                    downloadLink.setUrlDownload(directlink);
+                    logger.info("Set new UrlDownload, link = " + downloadLink.getDownloadURL());
+                    String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
+                    String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
+                    if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
+                    if (filesize == null || filename == null) {
+                        logger.warning("filename and filesize regex of linkinformation seem to be broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    filesize = fixFilesize(filesize, br);
+                    downloadLink.setFinalFileName(filename);
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                    return AvailableStatus.TRUE;
+                }
+            }
+            logger.warning("File couldn't be found on the page...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -164,39 +132,34 @@ public class FilesMailRu extends PluginForHost {
     }
 
     private void doFree(DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
-        int chunks = 1;
-        if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
-            chunks = 0;
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, chunks);
-        } else {
-            keepCookies = premium;
-            requestFileInformation(downloadLink);
-            // Downloadmanager
-            boolean dlManagerReady = false;
-            if (downloadLink.getBooleanProperty("MRDWNLD", false)) {
-                String id = br.getRegex("\"http://dlm\\.mail\\.ru/downloader_fmr_([0-9a-f]+)\\.exe\"").getMatch(0);
-                Browser MRDWNLD = br.cloneBrowser();
-                prepareBrowserForDlManager(MRDWNLD);
-                MRDWNLD.getPage("/cgi-bin/files/fdownload?dlink=" + id);
-                id = MRDWNLD.getRegex("<url>(http://.*?)</url>").getMatch(0);
-                if (id != null) {
-                    downloadLink.setUrlDownload(id);
-                    dlManagerReady = true;
-                }
+        keepCookies = premium;
+        requestFileInformation(downloadLink);
+        // Downloadmanager
+        boolean dlManagerReady = false;
+        if (downloadLink.getBooleanProperty("MRDWNLD", false)) {
+            String id = br.getRegex("\"http://dlm\\.mail\\.ru/downloader_fmr_([0-9a-f]+)\\.exe\"").getMatch(0);
+            Browser MRDWNLD = br.cloneBrowser();
+            prepareBrowserForDlManager(MRDWNLD);
+            MRDWNLD.getPage("/cgi-bin/files/fdownload?dlink=" + id);
+            id = MRDWNLD.getRegex("<url>(http://.*?)</url>").getMatch(0);
+            if (id != null) {
+                downloadLink.setUrlDownload(id);
+                dlManagerReady = true;
             }
-            DLLINK = br.getRegex(DLLINKREGEX).getMatch(0);
-            if (DLLINK == null && !dlManagerReady) {
-                logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!(premium || dlManagerReady)) goToSleep(downloadLink);
-            // Errorhandling, sometimes the link which is usually renewed by the
-            // linkgrabber doesn't work and needs to be refreshed again!
-            if (premium) chunks = 0;
-            if (dlManagerReady) prepareBrowserForDlManager(br);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!");
         }
+        DLLINK = br.getRegex(DLLINKREGEX).getMatch(0);
+        if (DLLINK == null && !dlManagerReady) {
+            logger.warning("Critical error occured: The final downloadlink couldn't be found in handleFree!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!(premium || dlManagerReady)) goToSleep(downloadLink);
+        // Errorhandling, sometimes the link which is usually renewed by the
+        // linkgrabber doesn't work and needs to be refreshed again!
+        int chunks = 1;
+        if (premium) chunks = 0;
+        if (dlManagerReady) prepareBrowserForDlManager(br);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, chunks);
+        if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!");
         dl.startDownload();
     }
 
@@ -300,42 +263,7 @@ public class FilesMailRu extends PluginForHost {
         return dllink;
     }
 
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\"([\t\n\r ]+)?:([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(2);
-        return result;
-    }
-
-    @SuppressWarnings("unused")
-    private String generateVideoUrl_old(final DownloadLink dl) throws IOException {
-        final Regex urlparts = new Regex(dl.getDownloadURL(), "video=/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]+)");
-        br.getPage("http://video.mail.ru/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + ".lite");
-        final String srv = grabVar("srv");
-
-        final String vcontentHost = grabVar("vcontentHost");
-        final String key = grabVar("key");
-        final String rnd = "abcde";
-        final String rk = rnd + key;
-        final String tempHash = JDHash.getMD5(rk);
-        final String pk = tempHash.substring(0, 9) + rnd;
-        DLLINK = "http://" + vcontentHost + "/" + urlparts.getMatch(0) + "/" + urlparts.getMatch(1) + "/" + urlparts.getMatch(2) + "/" + urlparts.getMatch(3) + "flv?k=" + pk + "&" + srv;
-        return DLLINK;
-    }
-
-    private String grabVar(final String var) {
-        return br.getRegex("\\$" + var + "=([^<>\"]*?)(\r|\t|\n)").getMatch(0);
-    }
-
-    private String getVideoURL() {
-        final String[] qualities = { "hd", "md", "sd" };
-        for (final String quality : qualities) {
-            DLLINK = br.getRegex("\"name\":\"" + quality + "\",\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK != null) break;
-        }
-        return DLLINK;
-    }
-
-    // Avoid multi-hosters from downloading links from this host because links come from a decrypter
+    /* Avoid multi-hosters from downloading links from this host because links come from a decrypter */
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());

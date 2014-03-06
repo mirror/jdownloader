@@ -206,6 +206,10 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("tuspics.net/")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);
+            if (br.containsHTML(">This server is in maintenance mode")) {
+                logger.info("Can't decrypt link, server is currently in maintenance mode: " + parameter);
+                return decryptedLinks;
+            }
             finalfilename = br.getRegex("class=\"dotted\\-header\"><span>([^<>\"]*?)</span>").getMatch(0);
             finallink = br.getRegex("<div class=\"gallery gallery\\-column\\-1 image\\-overlay\">.*?<a href=\"(http://[a-z0-9\\-]+\\.tuspics\\.net/img/i/[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("\"(http://[a-z0-9\\-]+\\.tuspics\\.net/img/i/[^<>\"]*?)\"").getMatch(0);

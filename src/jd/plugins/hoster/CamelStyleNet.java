@@ -49,24 +49,13 @@ public class CamelStyleNet extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
     // Site looks like burningcamel.com
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.camelstyle.net/") || br.containsHTML("<title>Free Porn, Sex, Tube Videos, XXX Pics, Fucking \\| Camel Style</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.getURL().contains("camelstyle.net/") || br.getURL().equals("http://www.camelstyle.net/") || br.containsHTML("<title>Free Porn, Sex, Tube Videos, XXX Pics, Fucking \\| Camel Style</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?)\\| ").getMatch(0);
         Regex basicRegex = br.getRegex("createPlayer\\(\"(http://.*?)\",\"http://.*?\",\"(.*?)\"");
         DLLINK = basicRegex.getMatch(0);
@@ -93,6 +82,17 @@ public class CamelStyleNet extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private String encodeUnicode(final String input) {

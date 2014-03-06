@@ -54,6 +54,10 @@ public class OneChannelCh extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+            if (br.containsHTML(">No episodes listed<")) {
+                logger.info("Link offline (no downloadlinks available): " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\-  on 1Channel \\| [^<>\"]*?</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
             if (parameter.contains("season-") && fpName != null) {
