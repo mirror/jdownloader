@@ -17,13 +17,13 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -234,8 +234,8 @@ public class Zippysharecom extends PluginForHost {
                     DLLINK = DLLINK.replace("'+" + var + "+'", data);
                 }
             } else {
-                DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\).href = \"/.*?\";)").getMatch(0);
-                String math = br.getRegex(".*<script type=\"text/javascript\">(.*?href =.*?)</script>\r?\n").getMatch(0);
+                DLLINK = br.getRegex("(document\\.getElementById\\(\\'dlbutton\\'\\)\\.href\\s*= \"/.*?\";)").getMatch(0);
+                String math = br.getRegex(".*<script type=\"text/javascript\">(.*?\\.href\\s*=.*?)</script>\r?\n").getMatch(0);
                 if (DLLINK != null && math != null) {
                     math = math.replace(DLLINK, "var result = " + DLLINK);
                     String data = execJS(math, false);
@@ -262,8 +262,15 @@ public class Zippysharecom extends PluginForHost {
         }
     }
 
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+
     private void prepareBrowser(final DownloadLink downloadLink) throws IOException {
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", agent.get());
         br.setCookie("http://www.zippyshare.com", "ziplocale", "en");
         br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
