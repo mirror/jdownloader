@@ -227,6 +227,7 @@ public class SecondLevelLaunch {
      * Checks if the user uses a correct java version
      */
     private static void javaCheck() {
+        if (Application.getResource("disableJavaCheck").exists()) return;
         if (Application.getJavaVersion() < Application.JAVA15) {
             SecondLevelLaunch.LOG.warning("Javacheck: JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
