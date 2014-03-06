@@ -233,6 +233,7 @@ public class ShareDirCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         final URLConnectionAdapter con = dl.getConnection();
         final String content_type = con.getContentType();
+        /* Maybe server sends a wrong file */
         if (con.getLongContentLength() <= 500 && content_type.equals("application/octet-stream")) {
             int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_size_mismatch_errorpremium", 0);
             link.getLinkStatus().setRetryCount(0);

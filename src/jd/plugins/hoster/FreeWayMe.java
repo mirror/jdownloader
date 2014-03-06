@@ -83,6 +83,7 @@ public class FreeWayMe extends PluginForHost {
     public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION      = "ACC_TRAFFIC_REDUCTION";
     public final String                                    ACC_PROPERTY_REST_FULLSPEED_TRAFFIC = "ACC_PROPERTY_REST_FULLSPEED_TRAFFIC";
     public final String                                    ACC_PROPERTY_UNKOWN_FAILS           = "timesfailedfreewayme_unknown";
+    public final String                                    ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST = "timesfailedfreewayme_curl_resolve_host";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -498,6 +499,18 @@ public class FreeWayMe extends PluginForHost {
                 }
                 String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
+            } else if (br.containsHTML("cURL\\-Error: Couldn\\'t resolve host")) {
+                int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty(ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST, timesFailed);
+                    logger.info("curl_resolve_host_error: " + getPhrase("ERROR_SERVER") + " -> Retrying");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_SERVER"));
+                } else {
+                    link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
+                    logger.info("curl_resolve_host_error: " + getPhrase("ERROR_SERVER") + " -> Disabling current host");
+                    tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l, getPhrase("ERROR_SERVER"));
+                }
             }
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
             int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
