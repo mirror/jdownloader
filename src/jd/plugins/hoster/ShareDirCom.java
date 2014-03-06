@@ -231,7 +231,23 @@ public class ShareDirCom extends PluginForHost {
             maxChunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
-        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+        final URLConnectionAdapter con = dl.getConnection();
+        final String content_type = con.getContentType();
+        if (con.getLongContentLength() <= 500 && content_type.equals("application/octet-stream")) {
+            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_size_mismatch_errorpremium", 0);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                logger.info(NICE_HOST + ": Size mismatch download error -> Retrying");
+                timesFailed++;
+                link.setProperty(NICE_HOSTproperty + "failedtimes_size_mismatch_errorpremium", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
+            } else {
+                logger.info(NICE_HOST + ": Size mismatch download error -> Disabling current host");
+                link.setProperty(NICE_HOSTproperty + "failedtimes_size_mismatch_errorpremium", Property.NULL);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            }
+        }
+        if (content_type != null && content_type.contains("html")) {
             br.followConnection();
             updatestatuscode();
             this.handleAPIErrors(this.br, account, link);
@@ -243,9 +259,9 @@ public class ShareDirCom extends PluginForHost {
                 link.setProperty(NICE_HOSTproperty + "failedtimes_unknowndlerrorpremium", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
             } else {
-                logger.info(NICE_HOST + ": Unknown download error -> Plugin is broken");
+                logger.info(NICE_HOST + ": Unknown download error -> Disabling current host");
                 link.setProperty(NICE_HOSTproperty + "failedtimes_unknowndlerrorpremium", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
         link.setProperty(NICE_HOSTproperty + "finallink", dllink);
