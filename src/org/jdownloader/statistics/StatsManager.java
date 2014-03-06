@@ -473,7 +473,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
 
             String errorID = result.getErrorID();
-            if (!errorID.contains(dl.getCandidate().getPlugin())) {
+            if (errorID != null && !errorID.contains(dl.getCandidate().getPlugin())) {
                 errorID = dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "-" + errorID;
             }
             dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(errorID));
