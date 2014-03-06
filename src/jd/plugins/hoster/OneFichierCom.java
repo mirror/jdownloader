@@ -21,7 +21,6 @@ import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -35,6 +34,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -227,22 +227,7 @@ public class OneFichierCom extends PluginForHost {
         String passCode = null;
         while (true) {
             br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
-            if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            if (br.containsHTML(IPBLOCKEDTEXTS)) {
-                final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
-                // Warning ! Without premium status, you can download only one file at a time and you must wait up to 5 minutes between each
-                // downloads.
-                final String waittime = br.getRegex("you can download only one file at a time and you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
-                if (waittime != null && preferReconnect) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
-                } else if (preferReconnect) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-                } else if (waittime != null) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", Integer.parseInt(waittime) * 60 * 1001l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 5 * 60 * 1001);
-                }
-            }
+            errorHandling(downloadLink, br);
             if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -260,22 +245,24 @@ public class OneFichierCom extends PluginForHost {
             } else {
                 // base > submit:Free Download > submit:Show the download link + t:35140198 == link
                 Browser br2 = br.cloneBrowser();
+                Form a1 = br2.getForm(0);
+                if (a1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 sleep(2000, downloadLink);
-                br2.postPage(br.getURL(), "submit=Free+Download");
-                String test = "";
-                while (test.length() != 7) {
-                    test = String.valueOf(new Random().nextLong()).substring(0, 7);
-                }
+                br2.submitForm(a1);
+                errorHandling(downloadLink, br2);
                 sleep(2000, downloadLink);
-                br2 = br.cloneBrowser();
-                br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                Browser br3 = br.cloneBrowser();
+                Form a2 = br2.getForm(0);
+                if (a2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 sleep(2000, downloadLink);
-                br2.postPage(br.getURL(), "submit=Show+the+download+link&t=" + test);
-                if (dllink == null) dllink = br2.getRedirectLocation();
-                if (dllink == null) dllink = br2.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.1fichier\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
+                br3.submitForm(a2);
+                errorHandling(downloadLink, br3);
+                if (dllink == null) dllink = br3.getRedirectLocation();
+                if (dllink == null) dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.1fichier\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
                 if (dllink == null) {
-                    String wait = br2.getRegex(" var count = (\\d+);").getMatch(0);
+                    String wait = br3.getRegex(" var count = (\\d+);").getMatch(0);
                     if (wait != null && retried == false) {
                         retried = true;
                         sleep(1000 * Long.parseLong(wait), downloadLink);
@@ -295,6 +282,25 @@ public class OneFichierCom extends PluginForHost {
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         downloadLink.setProperty(FREELINK, dllink);
         dl.startDownload();
+    }
+
+    private void errorHandling(final DownloadLink downloadLink, final Browser ibr) throws Exception {
+        if (ibr.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        if (ibr.containsHTML(IPBLOCKEDTEXTS)) {
+            final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
+            // Warning ! Without premium status, you can download only one file at a time and you must wait up to 5 minutes between each
+            // downloads.
+            final String waittime = ibr.getRegex("you can download only one file at a time and you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
+            if (waittime != null && preferReconnect) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
+            } else if (preferReconnect) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            } else if (waittime != null) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", Integer.parseInt(waittime) * 60 * 1001l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 5 * 60 * 1001);
+            }
+        }
     }
 
     @Override
@@ -554,7 +560,7 @@ public class OneFichierCom extends PluginForHost {
             if (br == null) { return; }
             br.setConnectTimeout(3 * 60 * 1000);
             br.setReadTimeout(3 * 60 * 1000);
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.116 Safari/537.36");
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.117 Safari/537.36");
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
             br.getHeaders().put("Pragma", null);
