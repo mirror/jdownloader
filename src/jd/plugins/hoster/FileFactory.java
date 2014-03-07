@@ -110,7 +110,7 @@ public class FileFactory extends PluginForHost {
         return prepBr;
     }
 
-    public void checkErrors(final boolean premiumActive, final boolean postDownload) throws PluginException {
+    public void checkErrors(final boolean freeDownload, final boolean postDownload) throws PluginException {
         if (isPremiumOnly(br)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -119,7 +119,7 @@ public class FileFactory extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
         }
-        if (postDownload && !premiumActive) {
+        if (postDownload && freeDownload) {
             if (br.containsHTML("have exceeded the download limit")) {
                 long waittime = 10 * 60 * 1000l;
                 try {
@@ -132,7 +132,7 @@ public class FileFactory extends PluginForHost {
         }
         if (br.getURL().contains("code=265")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The requested Download URL was invalid.  Please retry your download", 5 * 60 * 1000l); }
         if (br.getURL().contains("code=263")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Could not retrieve information about your download, or your download key has expired. Please try again. ", 5 * 60 * 1000l); }
-        if (!premiumActive) {
+        if (freeDownload) {
             if (br.containsHTML(CAPTCHALIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             if (br.containsHTML(NO_SLOT) || br.getURL().contains("code=257")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
             if (br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l); }
@@ -422,7 +422,7 @@ public class FileFactory extends PluginForHost {
                 br.setFollowRedirects(true);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
             } else {
-                checkErrors(false, false);
+                checkErrors(true, false);
                 if (br.containsHTML(PASSWORDPROTECTED)) {
                     if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
                     // stable is lame
@@ -454,7 +454,7 @@ public class FileFactory extends PluginForHost {
                     // Sometimes there is an ad
                     final String skipAds = br.getRegex("\"(http://(www\\.)?filefactory\\.com/dlf/[^<>\"]*?)\"").getMatch(0);
                     if (skipAds != null) br.getPage(skipAds);
-                    checkErrors(false, false);
+                    checkErrors(true, false);
                     String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
                     if (wait != null) {
                         waittime = Long.parseLong(wait) * 1000l;
@@ -484,7 +484,7 @@ public class FileFactory extends PluginForHost {
                 dl.startDownload();
             } else {
                 br.followConnection();
-                checkErrors(false, true);
+                checkErrors(true, true);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e4) {
@@ -534,7 +534,7 @@ public class FileFactory extends PluginForHost {
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
-                        checkErrors(true, true);
+                        checkErrors(false, true);
                         String red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
                         if (red == null) red = br.getRegex("subPremium.*?ready.*?<a href=\"(.*?)\"").getMatch(0);
                         if (red == null) red = br.getRegex("downloadLink.*?href=\"(.*?)\"").getMatch(0);
