@@ -34,6 +34,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.awfc.AWFCUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.DIRECTMODE;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
 import org.jdownloader.api.myjdownloader.MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionRequest;
 import org.jdownloader.api.myjdownloader.MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse;
@@ -199,10 +200,17 @@ public class MyJDownloaderConnectThread extends Thread {
         notifyInterests = new CopyOnWriteArraySet<NotificationRequestMessage.TYPE>();
         sessionInfoCache = Application.getTempResource("myjd.session");
         loadSessionInfo();
-        if (CFG_MYJD.DIRECT_CONNECT_ENABLED.isEnabled()) {
-            directServer = new MyJDownloaderDirectServer(this);
-        } else {
-            directServer = null;
+        DIRECTMODE mode = CFG_MYJD.CFG.getDirectConnectMode();
+        if (mode == null) mode = DIRECTMODE.NONE;
+        switch (CFG_MYJD.CFG.getDirectConnectMode()) {
+            case LAN:
+            case LAN_WAN_MANUAL:
+            case LAN_WAN_UPNP:
+                directServer = new MyJDownloaderDirectServer(this, mode);
+                break;
+            default:
+                directServer = null;
+                break;
         }
     }
     

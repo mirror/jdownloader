@@ -42,6 +42,7 @@ import net.sf.sevenzipjbinding.impl.VolumedArchiveInStream;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
@@ -1187,16 +1188,43 @@ public class Multi extends IExtraction {
                 }
             }
             if (archive.getType() == ArchiveType.SINGLE_FILE) {
-                if (matches(archive.getFirstArchiveFile().getFilePath(), REGEX_EXTENSION_RAR)) {
-                    format = ArchiveFormat.RAR;
-                } else if (matches(archive.getFirstArchiveFile().getFilePath(), _7Z$)) {
-                    format = ArchiveFormat.SEVEN_ZIP;
-                } else if (matches(archive.getFirstArchiveFile().getFilePath(), ZIP$)) {
-                    format = ArchiveFormat.ZIP;
-                } else if (matches(archive.getFirstArchiveFile().getFilePath(), GZ$)) {
-                    format = ArchiveFormat.GZIP;
-                } else if (matches(archive.getFirstArchiveFile().getFilePath(), BZ2$)) {
-                    format = ArchiveFormat.BZIP2;
+                try {
+                    String sig = FileSignatures.readFileSignature(new File(archive.getFirstArchiveFile().getFilePath()));
+                    Signature signature = new FileSignatures().getSignature(sig);
+                    ArchiveFormat format = null;
+                    if (signature != null) {
+                        if ("7Z".equalsIgnoreCase(signature.getId())) {
+                            format = ArchiveFormat.SEVEN_ZIP;
+                        } else if ("RAR".equalsIgnoreCase(signature.getId())) {
+                            format = ArchiveFormat.RAR;
+                        } else if ("ZIP".equalsIgnoreCase(signature.getId())) {
+                            format = ArchiveFormat.ZIP;
+                        } else if ("ZIP".equalsIgnoreCase(signature.getId())) {
+                            format = ArchiveFormat.GZIP;
+                        } else if ("BZ2".equalsIgnoreCase(signature.getId())) {
+                            format = ArchiveFormat.BZIP2;
+                        }
+                    }
+                    if (format != null) {
+                        this.format = format;
+                    } else {
+                        throw new WTFException("Unknown Signature:" + signature);
+                    }
+                } catch (Throwable e) {
+                    logger.log(e);
+                    if (matches(archive.getFirstArchiveFile().getFilePath(), BZ2$)) {
+                        format = ArchiveFormat.BZIP2;
+                    } else if (matches(archive.getFirstArchiveFile().getFilePath(), GZ$)) {
+                        format = ArchiveFormat.GZIP;
+                    } else if (matches(archive.getFirstArchiveFile().getFilePath(), REGEX_EXTENSION_RAR)) {
+                        format = ArchiveFormat.RAR;
+                    } else if (matches(archive.getFirstArchiveFile().getFilePath(), _7Z$)) {
+                        format = ArchiveFormat.SEVEN_ZIP;
+                    } else if (matches(archive.getFirstArchiveFile().getFilePath(), ZIP$)) {
+                        format = ArchiveFormat.ZIP;
+                    } else {
+                        throw new WTFException("Unknown Format:" + archive.getFirstArchiveFile().getFilePath());
+                    }
                 }
                 stream = new RandomAccessFileInStream(new RandomAccessFile(archive.getFirstArchiveFile().getFilePath(), "r"));
                 inArchive = SevenZip.openInArchive(format, stream);

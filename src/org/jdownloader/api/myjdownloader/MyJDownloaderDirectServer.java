@@ -39,10 +39,8 @@ public class MyJDownloaderDirectServer extends Thread {
     private final LogSource                  logger;
     private int                              upnpPort            = -1;
     
-    public MyJDownloaderDirectServer(MyJDownloaderConnectThread connectThread) {
+    public MyJDownloaderDirectServer(MyJDownloaderConnectThread connectThread, DIRECTMODE connectMode) {
         this.connectThread = connectThread;
-        DIRECTMODE connectMode = CFG_MYJD.CFG.getDirectConnectMode();
-        if (connectMode == null) connectMode = DIRECTMODE.LAN;
         this.connectMode = connectMode;
         logger = connectThread.getLogger();
     }
@@ -180,6 +178,8 @@ public class MyJDownloaderDirectServer extends Thread {
                     upnpPort = setUPNPPort();
                     logger.info("MyJDownloaderDirectConnectionServer: Mode=" + connectMode + " RemotePort=" + upnpPort + " LocalPort=" + currentServerSocket.getLocalPort() + "(" + lastLocalPort + ")");
                     break;
+                default:
+                    return;
             }
             while (connectThread.isAlive()) {
                 Socket clientSocket = null;

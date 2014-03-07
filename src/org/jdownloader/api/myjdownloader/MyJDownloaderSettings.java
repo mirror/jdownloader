@@ -20,6 +20,8 @@ import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 public interface MyJDownloaderSettings extends ConfigInterface {
     
     public static enum DIRECTMODE {
+        @EnumLabel("Disable direct connections")
+        NONE,
         @EnumLabel("Only allow direct connections from lan")
         LAN,
         @EnumLabel("Allow lan/wan connections with manual port forwarding")
@@ -81,14 +83,6 @@ public interface MyJDownloaderSettings extends ConfigInterface {
     public void setAutoConnectEnabledV2(boolean b);
     
     public boolean isAutoConnectEnabledV2();
-    
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("Enable direct connection for better speed/reduced latency")
-    public boolean isDirectConnectEnabled();
-    
-    public void setDirectConnectEnabled(boolean b);
     
     @AboutConfig
     @DefaultEnumValue("LAN")
