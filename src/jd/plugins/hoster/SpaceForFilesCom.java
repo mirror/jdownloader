@@ -53,24 +53,25 @@ public class SpaceForFilesCom extends PluginForHost {
     private String                 passCode                     = null;
     private static final String    PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String    COOKIE_HOST                  = "http://spaceforfiles.com";
+    private static final String    COOKIE_HOST                  = "http://filespace.com";
     private static final String    NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String    NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String    DOMAINS                      = "(spaceforfiles\\.com)";
+    private static final String    DOMAINS                      = "((spaceforfiles|filespace)\\.com)";
     private static final String    MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String    MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String    ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String    PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String    PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean   VIDEOHOSTER                  = false;
-    private static final boolean   TRY_SPECIAL_WAY              = true;
+    private static final boolean   TRY_SPECIAL_WAY              = false;
+    private static final boolean   TRY_SPECIAL_WAY_2            = true;
     private static final boolean   SUPPORTSHTTPS                = false;
     private final boolean          ENABLE_RANDOM_UA             = true;
     private static StringContainer agent                        = new StringContainer();
     // Connection stuff
-    private static final boolean   FREE_RESUME                  = true;
-    private static final int       FREE_MAXCHUNKS               = 0;
+    private static final boolean   FREE_RESUME                  = false;
+    private static final int       FREE_MAXCHUNKS               = 1;
     private static final int       FREE_MAXDOWNLOADS            = 20;
     private static final boolean   ACCOUNT_FREE_RESUME          = true;
     private static final int       ACCOUNT_FREE_MAXCHUNKS       = 0;
@@ -153,6 +154,7 @@ public class SpaceForFilesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
+        correctDownloadLink(link);
         prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
@@ -228,7 +230,7 @@ public class SpaceForFilesCom extends PluginForHost {
     }
 
     @SuppressWarnings("unused")
-    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         // First, bring up saved final links
@@ -248,15 +250,37 @@ public class SpaceForFilesCom extends PluginForHost {
             }
         }
         // Possibility to skip captcha & (reconnect) waittimes
-        if (dllink == null && TRY_SPECIAL_WAY) {
+        dllink = null;
+        boolean special_success = false;
+        boolean special2_success = false;
+        if (dllink == null && TRY_SPECIAL_WAY && !downloadLink.getBooleanProperty("special2_failed", false)) {
             try {
+                final String temp_id = this.getPluginConfig().getStringProperty("spaceforfiles_tempid", null);
+                if (temp_id != null) {
+                    final String checklink = "http://www.filespace.com/cgi-bin/dl.cgi/" + temp_id + "/" + Encoding.urlEncode(downloadLink.getName());
+                    final boolean isvalid = checkDirectLink(checklink);
+                    if (isvalid) {
+                        dllink = checklink;
+                        special_success = true;
+                    }
+                }
+            } catch (final Throwable e) {
+            }
+        }
+        if (dllink == null && TRY_SPECIAL_WAY_2 && !downloadLink.getBooleanProperty("special2_failed", false)) {
+            try {
+                /* Pattern of finallinks generated here: http://www.spaceforfiles.com/dlcdn/xxxxxxxxxxxx/filename.ext */
                 final Browser brad = br.cloneBrowser();
                 final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
                 final String postDataF1 = "op=download1&usr_login=&id=" + fid + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&lck=1&method_free=Free+Download";
                 brad.postPage(br.getURL(), postDataF1);
+                final String md5 = brad.getRegex("MD5 Checksum: ([a-f0-9]{32})").getMatch(0);
+                if (md5 != null) downloadLink.setMD5Hash(md5);
                 final String start_referer = brad.getURL();
                 final String rand = brad.getRegex("name=\"rand\" value=\"([a-z0-9]+)\"").getMatch(0);
                 if (rand == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // br.postPage("http://filespace.com/xxxxxxxxxxxx", "op=download2&id=" + fid + "&rand=" + rand +
+                // "&referer=&method_free=Free+Download&method_premium=&adcopy_response=&adcopy_challenge=&down_script=1");
                 brad.cloneBrowser().getPage("http://www.filespace.com/locker/locker.js?1");
                 brad.getPage("http://www.filespace.com/locker/lockurl.php?uniqueid=" + fid);
                 if (!brad.containsHTML("\"lockid\":\\-1")) {
@@ -270,6 +294,11 @@ public class SpaceForFilesCom extends PluginForHost {
                 final String postData = "op=download2&id=" + fid + "&rand=" + rand + "&referer=" + Encoding.urlEncode(br.getURL()) + "&method_free=Free+Download&method_premium=&method_highspeed=1&lck=1&down_script=1";
                 brad.postPage(start_referer, postData);
                 dllink = brad.getRedirectLocation();
+                if (dllink != null) {
+                    // resumable = true;
+                    // maxchunks = 0;
+                    special2_success = true;
+                }
             } catch (final Throwable e) {
             }
         }
@@ -432,6 +461,9 @@ public class SpaceForFilesCom extends PluginForHost {
             br.followConnection();
             correctBR();
             checkServerErrors();
+            if (special_success)
+                downloadLink.setProperty("special_failed", true);
+            else if (special2_success) downloadLink.setProperty("special2_failed", true);
             int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", 0);
             downloadLink.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
@@ -445,6 +477,8 @@ public class SpaceForFilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        final String tempid = new Regex(dllink, "cgi\\-bin/dl\\.cgi/([a-z0-9]+)/").getMatch(0);
+        if (tempid != null) this.getPluginConfig().setProperty("spaceforfiles_tempid", tempid);
         downloadLink.setProperty(directlinkproperty, dllink);
         fixFilename(downloadLink);
         try {
@@ -557,20 +591,25 @@ public class SpaceForFilesCom extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
+            final boolean isvalid = checkDirectLink(dllink);
+            if (!isvalid) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             }
         }
         return dllink;
+    }
+
+    private boolean checkDirectLink(final String directlink) {
+        try {
+            final Browser br2 = br.cloneBrowser();
+            URLConnectionAdapter con = br2.openGetConnection(directlink);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) { return false; }
+            con.disconnect();
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
     }
 
     private void getPage(final String page) throws Exception {
