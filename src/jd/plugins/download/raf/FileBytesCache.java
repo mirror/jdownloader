@@ -1,6 +1,8 @@
 package jd.plugins.download.raf;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -52,6 +54,19 @@ public class FileBytesCache {
             return flusher + ":" + writeCachePosition + "=" + size + "->" + fileWritePosition;
         }
     }
+    
+    private final static Comparator<WriteCacheEntry> sorter = new Comparator<WriteCacheEntry>() {
+                                                                
+                                                                private int compare(long x, long y) {
+                                                                    return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                }
+                                                                
+                                                                @Override
+                                                                public int compare(WriteCacheEntry o1, WriteCacheEntry o2) {
+                                                                    return compare(o1.getFileWritePosition(), o2.getFileWritePosition());
+                                                                }
+                                                                
+                                                            };
     
     public FileBytesCache(int writeCacheSize, int flushTimeout) {
         writeCache = new byte[writeCacheSize];
@@ -106,7 +121,9 @@ public class FileBytesCache {
         for (Entry<FileBytesCacheFlusher, ArrayList<WriteCacheEntry>> writeEntry : writeEntries.entrySet()) {
             FileBytesCacheFlusher flusher = writeEntry.getKey();
             try {
-                for (WriteCacheEntry writeCacheEntry : writeEntry.getValue()) {
+                ArrayList<WriteCacheEntry> cacheEntries = writeEntry.getValue();
+                Collections.sort(cacheEntries, sorter);
+                for (WriteCacheEntry writeCacheEntry : cacheEntries) {
                     flusher.flush(writeCache, writeCacheEntry.getWriteCachePosition(), writeCacheEntry.getSize(), writeCacheEntry.getFileWritePosition());
                 }
                 flusher.flushed();
