@@ -1229,13 +1229,19 @@ public class VKontakteRu extends PluginForDecrypt {
         for (int i = 1; i <= 10; i++) {
             br.postPage(page, postData);
             if (br.containsHTML(TEMPORARILYBLOCKED)) {
+                logger.info("Trying to avoid block " + i + " / 10");
                 this.sleep(3000, CRYPTEDLINK);
                 continue;
             }
             failed = false;
             break;
         }
-        if (failed) throw new DecrypterException("Blocked");
+        if (failed) {
+            logger.warning("Failed to avoid block!");
+            throw new DecrypterException("Blocked");
+        } else {
+            logger.info("Successfully avoided block!");
+        }
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {
