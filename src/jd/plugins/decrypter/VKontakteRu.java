@@ -72,8 +72,6 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     VKVIDEO_USEIDASPACKAGENAME         = "VKVIDEO_USEIDASPACKAGENAME";
     private static final String     VKAUDIO_USEIDASPACKAGENAME         = "VKAUDIO_USEIDASPACKAGENAME";
 
-    private static final String     FILEOFFLINE                        = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
-    private static final String     DOMAIN                             = "http://vk.com";
     private static final String     PATTERN_AUDIO_GENERAL              = "https?://(www\\.)?vk\\.com/audio.*?";
     private static final String     PATTERN_AUDIO_ALBUM                = "https?://(www\\.)?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios(\\-)?\\d+)";
     private static final String     PATTERN_VIDEO_SINGLE_ALL           = "https?://(www\\.)?vk\\.com/(video(\\-)?\\d+_\\d+(\\?list=[a-z0-9]+)?|video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+(\\&hash=[a-z0-9]+)?|public\\d+\\?z=video(\\-)?\\d+_\\d+|search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+)";
@@ -95,6 +93,11 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_CLUB_LINK                  = "https?://(www\\.)?vk\\.com/club\\d+";
     private static final String     PATTERN_ID_LINK                    = "https?://(www\\.)?vk\\.com/id\\d+";
 
+    /* Some patterns */
+    private static final String     TEMPORARILYBLOCKED                 = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    private static final String     FILEOFFLINE                        = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
+    private static final String     DOMAIN                             = "http://vk.com";
+
     // Intern settings
     private static final short      MAX_LINKS_PER_RUN                  = 5000;
 
@@ -103,6 +106,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private String                  CRYPTEDLINK_FUNCTIONAL             = null;
     private String                  CRYPTEDLINK_ORIGINAL               = null;
+    private CryptedLink             CRYPTEDLINK                        = null;
 
     private ArrayList<DownloadLink> decryptedLinks2                    = new ArrayList<DownloadLink>();
 
@@ -112,6 +116,7 @@ public class VKontakteRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CRYPTEDLINK_ORIGINAL = param.toString().replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
         CRYPTEDLINK_FUNCTIONAL = CRYPTEDLINK_ORIGINAL;
+        CRYPTEDLINK = param;
         cfg = SubConfiguration.getConfig("vkontakte.ru");
         prepBrowser(br);
         boolean loginrequired = true;
@@ -628,7 +633,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return output;
     }
 
-    private void decryptPhotoAlbum() throws IOException, DecrypterException {
+    private void decryptPhotoAlbum() throws Exception {
         final String type = "singlephotoalbum";
         if (this.CRYPTEDLINK_FUNCTIONAL.contains("#/album")) {
             this.CRYPTEDLINK_FUNCTIONAL = "http://vk.com/album" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
@@ -680,7 +685,7 @@ public class VKontakteRu extends PluginForDecrypt {
         return dl;
     }
 
-    private void decryptPhotoAlbums() throws IOException {
+    private void decryptPhotoAlbums() throws NumberFormatException, Exception {
         final String type = "multiplephotoalbums";
         if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
             this.CRYPTEDLINK_FUNCTIONAL = "http://vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
@@ -1057,7 +1062,7 @@ public class VKontakteRu extends PluginForDecrypt {
         fp.addLinks(decryptedLinks2);
     }
 
-    private ArrayList<String> decryptMultiplePages(final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
+    private ArrayList<String> decryptMultiplePages(final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, int increase, int alreadyOnPage, final String postPage, final String postData) throws Exception {
         ArrayList<String> decryptedData = new ArrayList<String>();
         logger.info("Decrypting " + numberOfEntries + " entries for linktype: " + type);
         int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / increase);
@@ -1075,7 +1080,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 // Not available in 0.9.851 Stable
             }
             if (i > 0) {
-                br.postPage(postPage, postData + offset);
+                postPageSafe(postPage, postData + offset);
                 for (String regex[] : regexesAllOthers) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
@@ -1103,9 +1108,9 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                 }
             }
-            if (addedLinks < increase || decryptedData.size() == Integer.parseInt(numberOfEntries)) {
+            if (addedLinks < increase || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {
                 logger.info("Fail safe #1 activated, stopping page parsing at page " + i + " of " + maxLoops);
-                break;
+                // break;
             }
             if (decryptedData.size() > Integer.parseInt(numberOfEntries)) {
                 logger.warning("Somehow this decrypter got more than the total number of video -> Maybe a bug -> Please report: " + this.CRYPTEDLINK_FUNCTIONAL);
@@ -1217,6 +1222,20 @@ public class VKontakteRu extends PluginForDecrypt {
                 break;
             }
         }
+    }
+
+    private void postPageSafe(final String page, final String postData) throws Exception {
+        boolean failed = true;
+        for (int i = 1; i <= 10; i++) {
+            br.postPage(page, postData);
+            if (br.containsHTML(TEMPORARILYBLOCKED)) {
+                this.sleep(3000, CRYPTEDLINK);
+                continue;
+            }
+            failed = false;
+            break;
+        }
+        if (failed) throw new DecrypterException("Blocked");
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {

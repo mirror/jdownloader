@@ -41,6 +41,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 //This plugin gets all its links from a decrypter!
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" }, flags = { 2 })
 public class ChoMikujPl extends PluginForHost {
@@ -159,8 +161,18 @@ public class ChoMikujPl extends PluginForHost {
             theLink.setFinalFileName(theLink.getName());
         } else {
             br.getPage("http://chomikuj.pl/action/fileDetails/Index/" + fid);
+            final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
+            if (filesize != null) theLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("fileDetails/Unavailable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            br.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(theLink.getStringProperty("requestverificationtoken")));
+            String requestVerificationToken = theLink.getStringProperty("requestverificationtoken");
+            if (requestVerificationToken == null) {
+                br.setFollowRedirects(true);
+                br.getPage(theLink.getDownloadURL());
+                br.setFollowRedirects(false);
+                requestVerificationToken = br.getRegex("<div id=\"content\">[\t\n\r ]+<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (requestVerificationToken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             if (br.containsHTML(PREMIUMONLY)) return false;
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);

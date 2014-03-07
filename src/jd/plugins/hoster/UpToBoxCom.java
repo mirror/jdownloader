@@ -74,8 +74,8 @@ public class UpToBoxCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.1-raz
     // mods: heavily modified, do NOT upgrade!
-    // non account: 1 * 1 (no resume)
-    // free account: same as above
+    // non account: 2 * 1
+    // free account: 2 * 1
     // premium account: 20 * 3 = max 60 connections
     // protocol: no https
     // captchatype: 4dignum
@@ -171,7 +171,7 @@ public class UpToBoxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -632,7 +632,7 @@ public class UpToBoxCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, false, 1, "freelink2");
+            doFree(link, true, -2, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {

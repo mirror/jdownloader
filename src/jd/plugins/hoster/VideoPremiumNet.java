@@ -247,6 +247,7 @@ public class VideoPremiumNet extends PluginForHost {
                 }
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            this.sleep(10 * 1000, downloadLink);
             rtmpDownload(downloadLink, dllink);
         }
     }

@@ -42,7 +42,7 @@ public class YamiVideoCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
@@ -56,12 +56,18 @@ public class YamiVideoCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("I AM HUMAN")) br.postPage(downloadLink.getDownloadURL(), "submit_human=I+AM+HUMAN+%2C+CONTINUE+TO+THE+VIDEO");
+        if (br.containsHTML("I AM HUMAN")) br.postPage(br.getURL(), "submit_human=I+AM+HUMAN+%2C+CONTINUE+TO+THE+VIDEO");
+        // br.cloneBrowser().getPage("http://yamivideo.com/web/css/style.css?v=2");
+        // br.cloneBrowser().getPage("http://yamivideo.com//web/js/xajax_js/xajax_core.js");
+        // br.cloneBrowser().getPage("http://yamivideo.com/web/css/sps2.css");
+        // br.cloneBrowser().openGetConnection("http://yamivideo.com/web/img/eng/play1.png");
         final String postData = "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs[]=N1&xjxargs[]=Sip";
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", Encoding.urlEncode(postData));
+        br.getHeaders().put("Accept-Charset", null);
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+        br.postPageRaw("http://" + this.getHost() + "/Xajax/saveaction/", postData);
         final String dllink = br.getRegex("\\&file=(http://[a-z0-9]+\\." + this.getHost() + "/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
