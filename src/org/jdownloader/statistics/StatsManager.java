@@ -869,7 +869,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setCounter(errorCounter.incrementAndGet());
             sendFeedback(dl);
 
-            UIOManager.I().showMessageDialog(_GUI._.VoteFinderWindow_runInEDT_thankyou_());
+            UIOManager.I().showMessageDialog(_GUI._.VoteFinderWindow_runInEDT_thankyou_2());
         }
 
     }

@@ -3,9 +3,6 @@ package jd.controlling.faviconcontroller;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.geom.Rectangle2D;
@@ -294,12 +291,13 @@ public class FavIcons {
             e.printStackTrace();
         }
 
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gd = ge.getDefaultScreenDevice();
+        // GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        // GraphicsDevice gd = ge.getDefaultScreenDevice();
 
-        GraphicsConfiguration gc = gd.getDefaultConfiguration();
-        final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
-
+        // GraphicsConfiguration gc = gd.getDefaultConfiguration();
+        // final BufferedImage image = gc.createCompatibleImage(w, h, Transparency.BITMASK);
+        final BufferedImage image = new BufferedImage(w, h, Transparency.TRANSLUCENT);
+        final Graphics2D g = image.createGraphics();
         String tld = Files.getExtension(host);
         if (tld != null) tld = tld.toLowerCase(Locale.ENGLISH);
         String dummy = host.toUpperCase();
@@ -320,7 +318,7 @@ public class FavIcons {
         }
         if (dummy.length() <= 0 || dummy.length() > 2) dummy = host.substring(0, Math.min(host.length(), 2));
         // paint
-        Graphics2D g = image.createGraphics();
+        // Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setFont(new Font("Arial", Font.BOLD, size));
         RoundRectangle2D roundedRectangle = new RoundRectangle2D.Float(0, 0, w - 1, h - 1, 5, 5);
