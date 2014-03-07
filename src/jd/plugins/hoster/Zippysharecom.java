@@ -34,19 +34,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(d/\\d+/\\d+/.|v/\\d+/[^<>\"/]*?\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
-
+    
     private String DLLINK = null;
-
+    
     public Zippysharecom(final PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     public void correctDownloadLink(final DownloadLink link) {
         final String addedLink = link.getDownloadURL();
         if (addedLink.matches("http://www\\d{0,}\\.zippyshare\\.com/downloadMusic\\?key=\\d+")) {
@@ -63,12 +62,12 @@ public class Zippysharecom extends PluginForHost {
             link.setUrlDownload("http://" + server + ".zippyshare.com/v/" + fid + "/file.html");
         }
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         prepareBrowser(downloadLink);
         if (br.containsHTML("(File has expired and does not exist anymore on this server|<title>Zippyshare.com \\- File does not exist</title>|File does not exist on this server)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
+        
         String filename = br.getRegex("<title>Zippyshare\\.com \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex(Pattern.compile("Name:(\\s+)?</font>(\\s+)?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(2);
@@ -82,7 +81,7 @@ public class Zippysharecom extends PluginForHost {
             filename = br.getRegex("document\\.getElementById\\(\\'dlbutton\\'\\)\\.href(.*?\";)").getMatch(0);
             if (filename != null) filename = new Regex(filename, "/([^<>\"]*?)\";").getMatch(0);
         }
-
+        
         if (filename == null || filename.contains("/fileName?key=")) {
             String url = br.getRegex("document\\.location = \\'(/d/[^<>\"]*?\\';)").getMatch(0);
             if (url != null) {
@@ -92,7 +91,7 @@ public class Zippysharecom extends PluginForHost {
                 if (url != null) filename = url;
             }
         }
-
+        
         if (filename == null) {
             filename = br.getRegex("\\+\"/(.*?)\";").getMatch(0);
         }
@@ -106,7 +105,7 @@ public class Zippysharecom extends PluginForHost {
         }
         return AvailableStatus.TRUE;
     }
-
+    
     private String execJS(final String fun, final boolean fromFlash) throws Exception {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
@@ -117,22 +116,22 @@ public class Zippysharecom extends PluginForHost {
                 engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
                 engine.eval(fun + "\r\nvar result=document.getElementById('dlbutton').href;");
                 result = engine.get("result");
-
+                
             } else {
                 result = ((Double) engine.eval(fun)).intValue();
             }
         } catch (final Throwable e) {
-            throw new WTFException(e);
-
+            throw new Exception(e);
+            
         }
         return result == null ? null : result.toString();
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.zippyshare.com/terms.html";
     }
-
+    
     private int getHashfromFlash(final String flashurl, final int time) throws Exception {
         final String[] args = { "-abc", flashurl };
         // disassemble abc
@@ -158,12 +157,12 @@ public class Zippysharecom extends PluginForHost {
         }
         return Integer.parseInt(execJS(function, true));
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
@@ -261,9 +260,9 @@ public class Zippysharecom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         }
     }
-
+    
     private static AtomicReference<String> agent = new AtomicReference<String>(null);
-
+    
     private void prepareBrowser(final DownloadLink downloadLink) throws IOException {
         if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
@@ -275,29 +274,29 @@ public class Zippysharecom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
     }
-
+    
     private String getDlCode(final String dlink) {
         String dlcode = new Regex(dlink, "zippyshare\\.com/v/(\\d+)").getMatch(0);
         if (dlcode == null) dlcode = new Regex(dlink, "(\\d+)$").getMatch(0);
         return dlcode;
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-
+        
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return true;
     }
-
+    
 }
