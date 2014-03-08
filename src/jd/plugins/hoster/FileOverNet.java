@@ -59,11 +59,11 @@ public class FileOverNet extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
@@ -72,9 +72,12 @@ public class FileOverNet extends PluginForHost {
         // <p>Mon, 30 May 2011 15:39:10 +0000</p>
         String expire = br.getRegex("<h2>Expires</h2>[\t\n\r ]+<p>[A-Za-z]+, (.*?) (\\+|\\-)\\d+</p>").getMatch(0);
         if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
         }

@@ -118,6 +118,7 @@ public class ShutterStockCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage("http://www.shutterstock.com/login.mhtml");
+                final String lang = System.getProperty("user.language");
                 if (br.containsHTML("google\\.com/recaptcha/")) {
                     // Handle stupid login captcha
                     final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
@@ -135,13 +136,20 @@ public class ShutterStockCom extends PluginForHost {
                     br.postPage("http://www.shutterstock.com/login.mhtml", "submit=Sign+In&landing_page=%2F&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "");
                     if (br.containsHTML("google\\.com/recaptcha/")) {
                         logger.info("Wrong password, username or captcha, stopping...");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login-captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 } else {
                     br.postPage("http://www.shutterstock.com/login.mhtml", "submit=Sign+In&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML("You\\'ve entered an incorrect username/password combination")) {
-                        logger.info("Wrong password or username, stopping...");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
                 }
                 // Save cookies
@@ -165,9 +173,9 @@ public class ShutterStockCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         long expireTime = 0;
@@ -179,9 +187,13 @@ public class ShutterStockCom extends PluginForHost {
         if (days != null) {
             expireTime += Integer.parseInt(days) * 24 * 60 * 60 * 1000;
         }
+        final String lang = System.getProperty("user.language");
         if (expireTime == 0) {
-            account.setValid(false);
-            return ai;
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else {
             ai.setValidUntil(System.currentTimeMillis() + expireTime);
         }

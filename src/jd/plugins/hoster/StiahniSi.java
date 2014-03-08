@@ -161,8 +161,12 @@ public class StiahniSi extends PluginForHost {
         }
         final String expire = br.getRegex("class=\"btn btn\\-info btn\\-sm\">(\\d+) Days</a>").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         } else {
             ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire) * 24 * 60 * 60 * 1001l);
         }

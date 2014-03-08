@@ -87,7 +87,7 @@ public class VidSpotNet extends PluginForHost {
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
     private final boolean              useAltLinkCheck              = false;
-    private final boolean              useVidEmbed                  = true;
+    private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = true;
     private final boolean              useAltExpire                 = true;
     private final long                 useLoginIndividual           = 6 * 3480000;
@@ -1413,6 +1413,7 @@ public class VidSpotNet extends PluginForHost {
         }
         if (inValidate(result)) result = new Regex(source, "\"(" + dllinkRegex + ")\"").getMatch(0);
         if (inValidate(result)) result = new Regex(source, "'(" + dllinkRegex + ")'").getMatch(0);
+        if (inValidate(result)) result = new Regex(source, "\"file\" : \"(http://[^<>\"]*?)\"").getMatch(0);
         return result;
     }
 
