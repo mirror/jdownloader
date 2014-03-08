@@ -12,6 +12,7 @@ TrayMenuManager_getName=Administrador de la icona de l'àrea de notificacions
 getName=Icona de l'àrea de notificacions
 plugins_optional_JDLightTray_startMinimized=Inicia minimitzat
 plugins_optional_trayIcon_dl_total=Total:
+plugins_optional_trayIcon_progress=Progrés:
 plugins_optional_trayIcon_speed=Velocitat:
 popup_downloadfolder=Obre la carpeta de descàrregues
 popup_exit=Tanca el JDownloader
