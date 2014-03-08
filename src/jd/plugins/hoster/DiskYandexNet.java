@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,11 +29,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=]+|#[A-Za-z0-9%\\/+=]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "http://yandexdecrypted\\.net/\\d+" }, flags = { 0 })
 public class DiskYandexNet extends PluginForHost {
-
-    private static final String primaryURLs = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
-    private static final String shortURLs   = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
 
     public DiskYandexNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,90 +41,34 @@ public class DiskYandexNet extends PluginForHost {
         return "https://disk.yandex.net/";
     }
 
-    public void correctDownloadLink(DownloadLink link) throws PluginException {
-        link.setUrlDownload(link.getDownloadURL().replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash="));
-        if (!link.getDownloadURL().matches("(" + shortURLs + ")")) {
-            String protocol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);
-            String hashID = new Regex(link.getDownloadURL(), "hash=(.+)$").getMatch(0);
-            if (protocol == null || hashID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            link.setUrlDownload(protocol + "://disk.yandex.com/public/?hash=" + hashID);
-        }
-
-    }
-
-    private String getHashID(DownloadLink link) throws PluginException {
-        String hashID = new Regex(link.getDownloadURL(), "hash=(.+)$").getMatch(0);
-        if (hashID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        hashID = Encoding.urlDecode(hashID, false);
-        hashID = hashID.replaceAll(" ", "+");
-        return hashID;
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!link.getDownloadURL().matches("http://yandexdecrypted\\.net/\\d+")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         setBrowserExclusive();
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
-        // redirect links
-        if (link.getDownloadURL().matches(shortURLs)) {
-            br.getPage(link.getDownloadURL());
-            if (link.getDownloadURL().matches(shortURLs)) {
-                if (br.containsHTML("This link was removed or not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String newUrl = Encoding.htmlDecode(br.getURL()).replace("&locale=ru", "");
-            if (!newUrl.matches(primaryURLs)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setUrlDownload(new Regex(newUrl, "(" + primaryURLs + ")").getMatch(0));
-            // lets format back into single url format, as short links redirect
-            // to different the different domains depending on geolcoation
-            // and we need English for Error catching!
-            correctDownloadLink(link);
-        }
-        br.getPage(link.getDownloadURL() + "&locale=en");
-        String filename;
-        String filesize;
-        if (br.getURL().contains("&final=true")) {
-            // prob not needed
-            final String xml = br.getRegex("<script id=\"xml\\-data\">(.*?)</script>").getMatch(0);
-            if (xml == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getRequest().setHtmlCode(Encoding.htmlDecode(xml));
-            if (br.containsHTML(">resource not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(link.getStringProperty("mainlink", null));
+        if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = link.getStringProperty("plain_filename", null);
+        final String filesize = link.getStringProperty("plain_size", null);
 
-            filename = parse("name");
-            filesize = parse("size");
-            if (filesize != null) filesize = filesize + "b";
-        } else {
-            if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found — Yandex\\.Disk</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            filename = br.getRegex("<title>(.*?) \\— Yandex\\.Disk</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("b\\-text_title\">(.*?)</span>").getMatch(0);
-            filesize = br.getRegex("<span class=\"b\\-text\">(.*?), uploaded").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-        }
-
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setName(filename);
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String ckey = br.getRegex("\"ckey\":\"([^\"]+)\"").getMatch(0);
+        final String hash = downloadLink.getStringProperty("hash_plain", null);
+        final String ckey = br.getRegex("\"ckey\":\"([^\"]+)\"").getMatch(0);
         if (ckey == null) {
             logger.warning("Could not find ckey");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        if (br.getURL().contains("&final=true")) {
-            // this is prob wrong
-            // br.postPage("/handlers.jsx",
-            // "_c&public_url=1&_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash="
-            // +
-            // Encoding.urlEncode(getHashID(downloadLink)));
-            logger.warning("Component disabled. Please report the source URL to JDownloader Development Team so we can fix!");
-        } else {
-            br.postPage("/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(getHashID(downloadLink)));
-        }
+        br.postPage("/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(hash));
         String dllink = parse("url");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.startsWith("//")) dllink = "http:" + dllink;

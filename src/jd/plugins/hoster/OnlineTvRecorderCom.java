@@ -227,27 +227,13 @@ public class OnlineTvRecorderCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
+        // requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
 
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(link.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -2);
-            } else {
-                br.followConnection();
-                if (br.containsHTML("<div id=\"error_message\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: reduce connections to this host to continue downloading", 5 * 60 * 1000l);
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

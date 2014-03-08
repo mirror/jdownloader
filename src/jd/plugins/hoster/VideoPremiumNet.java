@@ -140,6 +140,7 @@ public class VideoPremiumNet extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
+        if (correctedBR.contains("No htmlCode read")) return AvailableStatus.UNCHECKABLE;
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
@@ -206,6 +207,7 @@ public class VideoPremiumNet extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (correctedBR.contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 1000l);
         String passCode = null;
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (VIDEOHOSTER && !downloadLink.getBooleanProperty("http_failed", false)) {

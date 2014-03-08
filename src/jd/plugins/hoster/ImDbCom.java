@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/(video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|media/rm\\d+/[a-z]{2}\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/(video/(?!imdblink|internet\\-archive)[\\w\\-]+/vi\\d+|media/rm\\d+/(tt|nm|rg)\\d+)" }, flags = { 0 })
 public class ImDbCom extends PluginForHost {
 
     private String              DLLINK     = null;
@@ -71,6 +71,10 @@ public class ImDbCom extends PluginForHost {
             DLLINK = br.getRegex("id=\"primary\\-img\"[^\t\n\r]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
             filename = br.getRegex("<div id=\"photo\\-caption\">([^<>\"]*?)</div>").getMatch(0);
             if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK.contains("@@")) {
+                final String qualityPart = DLLINK.substring(DLLINK.lastIndexOf("@@") + 2);
+                if (qualityPart != null) DLLINK = DLLINK.replace(qualityPart, "");
+            }
             filename = Encoding.htmlDecode(filename.trim());
             final String fid = new Regex(downloadLink.getDownloadURL(), "rm(\\d+)").getMatch(0);
             String artist = br.getRegex("itemprop=\\'url\\'>([^<>\"]*?)</a>").getMatch(0);

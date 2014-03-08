@@ -28,12 +28,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/name/nm\\d+/mediaindex" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/((name|title)/(nm|tt)\\d+/mediaindex|media/index/rg\\d+)" }, flags = { 0 })
 public class ImdbCom extends PluginForDecrypt {
 
     public ImdbCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE_ARTIST = "http://(www\\.)?imdb\\.com/media/index/rg\\d+";
+    private static final String TYPE_TITLE  = "http://(www\\.)?imdb\\.com/name|title/tt\\d+/mediaindex";
+    private static final String TYPE_NAME   = "http://(www\\.)?imdb\\.com/name/nm\\d+/mediaindex";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -52,7 +56,7 @@ public class ImdbCom extends PluginForDecrypt {
             }
         }
         String fpName = br.getRegex("itemprop=\\'url\\'>([^<>\"]*?)</a>").getMatch(0);
-        if (fpName == null) fpName = "imdb.com - " + new Regex(parameter, "(nm\\d+)").getMatch(0);
+        if (fpName == null) fpName = "imdb.com - " + new Regex(parameter, "([a-z]{2}\\d+)").getMatch(0);
         fpName = Encoding.htmlDecode(fpName.trim());
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
@@ -66,7 +70,7 @@ public class ImdbCom extends PluginForDecrypt {
                 // Not available in old 0.9.581 Stable
             }
             if (i > 1) br.getPage(parameter + "?page=" + i);
-            final String[][] links = br.getRegex("\"(/media/rm\\d+/nm\\d+)\\?ref_=[^<>\"/]+\" title=\"([^<>\"]*?)\"").getMatches();
+            final String[][] links = br.getRegex("\"(/media/rm\\d+/(nm|tt|rg)\\d+)([^<>\"/]+)?\"( title=\"([^<>\"]*?)\")?").getMatches();
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -76,7 +80,12 @@ public class ImdbCom extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink(link);
                 final String id = new Regex(link, "rm(\\d+)").getMatch(0);
                 dl._setFilePackage(fp);
-                dl.setName(fpName + "_" + id + "_" + Encoding.htmlDecode(linkinfo[1].trim()) + ".jpg");
+                final String subtitle = Encoding.htmlDecode(linkinfo[4]);
+                if (subtitle != null) {
+                    dl.setName(fpName + "_" + id + "_" + Encoding.htmlDecode(subtitle.trim()) + ".jpg");
+                } else {
+                    dl.setName(fpName + "_" + id + "_" + ".jpg");
+                }
                 dl.setAvailable(true);
                 try {
                     distribute(dl);

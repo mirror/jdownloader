@@ -394,7 +394,12 @@ public class SendspaceCom extends PluginForHost {
                 apiLogin(account.getUser(), account.getPass());
                 if ("Lite".equals(get("membership_type"))) {
                     logger.info("This is a free account, JDownloader doesn't support sendspace.com free accounts!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -424,7 +429,7 @@ public class SendspaceCom extends PluginForHost {
             login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         final String left = get("bandwidth_left");
         if (left != null) {
