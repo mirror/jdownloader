@@ -54,7 +54,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VIDEOLINK                  = "http://vkontaktedecrypted\\.ru/videolink/\\d+";
     private static final String DOCLINK                    = "http://vk\\.com/doc\\d+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                  = 1;
-    private static final String TEMPORARILYBLOCKED         = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    private static final String TEMPORARILYBLOCKED         = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     /** Settings stuff */
     private final String        USECOOKIELOGIN             = "USECOOKIELOGIN";
     private final String        FASTLINKCHECK              = "FASTLINKCHECK";

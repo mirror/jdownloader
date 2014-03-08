@@ -94,7 +94,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_ID_LINK                    = "https?://(www\\.)?vk\\.com/id\\d+";
 
     /* Some patterns */
-    private static final String     TEMPORARILYBLOCKED                 = "You tried to load the same page more than once in one second|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
+    private static final String     TEMPORARILYBLOCKED                 = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     private static final String     FILEOFFLINE                        = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
     private static final String     DOMAIN                             = "http://vk.com";
 
@@ -1110,7 +1110,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
             if (addedLinks < increase || decryptedData.size() >= Integer.parseInt(numberOfEntries)) {
                 logger.info("Fail safe #1 activated, stopping page parsing at page " + i + " of " + maxLoops);
-                // break;
+                break;
             }
             if (decryptedData.size() > Integer.parseInt(numberOfEntries)) {
                 logger.warning("Somehow this decrypter got more than the total number of video -> Maybe a bug -> Please report: " + this.CRYPTEDLINK_FUNCTIONAL);
@@ -1226,9 +1226,11 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private void postPageSafe(final String page, final String postData) throws Exception {
         boolean failed = true;
+        boolean failed_once = false;
         for (int i = 1; i <= 10; i++) {
             br.postPage(page, postData);
             if (br.containsHTML(TEMPORARILYBLOCKED)) {
+                failed_once = true;
                 logger.info("Trying to avoid block " + i + " / 10");
                 this.sleep(3000, CRYPTEDLINK);
                 continue;
@@ -1239,7 +1241,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (failed) {
             logger.warning("Failed to avoid block!");
             throw new DecrypterException("Blocked");
-        } else {
+        } else if (!failed && failed_once) {
             logger.info("Successfully avoided block!");
         }
     }
