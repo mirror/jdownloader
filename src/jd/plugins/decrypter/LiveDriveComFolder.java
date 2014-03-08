@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -51,7 +52,7 @@ public class LiveDriveComFolder extends PluginForDecrypt {
             br.getPage(parameter);
         }
         // Single link or folder
-        if (parameter.matches("http://[a-z0-9]+\\.livedrive\\.com/item/[a-z0-9]{32}")) {
+        if (new Regex(parameter, Pattern.compile("(http://[a-z0-9]+\\.livedrive\\.com/item/[a-z0-9]{32})", Pattern.CASE_INSENSITIVE)).matches()) {
             decryptedLinks.add(createDownloadlink(parameter.replace("livedrive.com/", "livedrivedecrypted.com/")));
         } else {
             String liveDriveUrlUserPart = new Regex(parameter, "(.*?)\\.livedrive\\.com").getMatch(0);

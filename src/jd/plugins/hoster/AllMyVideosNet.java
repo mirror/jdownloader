@@ -16,12 +16,12 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net", "allmyvids.de" }, urls = { "https?://(www\\.)?allmyvideos\\.net/v/v\\-[A-Za-z0-9]+", "et65iuz549tgfr4u89ztg5zht58g590jh40erh7UNUSEDREGEXeTGig5rik" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net", "allmyvids.de" }, urls = { "https?://(www\\.)?allmyvideos\\.net/[a-z0-9]{12}", "et65iuz549tgfr4u89ztg5zht58g590jh40erh7UNUSEDREGEXeTGig5rik" }, flags = { 0, 0 })
 public class AllMyVideosNet extends PluginForHost {
 
     public AllMyVideosNet(PluginWrapper wrapper) {
@@ -43,20 +43,26 @@ public class AllMyVideosNet extends PluginForHost {
         return "http://www.allmyvideos.net/tos.html";
     }
 
-    /** This site uses a hightly modified XFS script */
+    private static final String TYPE_OLD = "https?://(www\\.)?allmyvideos\\.net/v/v\\-[A-Za-z0-9]+";
+
+    /**
+     * This site uses a modified XFS script
+     * 
+     * @throws Exception
+     */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        if (downloadLink.getDownloadURL().matches(TYPE_OLD)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta content=\"([^<>\"]*?)\" property=\"og:title\">").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- allmyvideos\\.net</title>").getMatch(0);
-        final String contLink = br.getRegex("\"(http://allmyvideos\\.net/builtin\\-[a-z0-9]+\\.html)\"").getMatch(0);
-        if (filename == null || contLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(contLink);
+        String filename = br.getRegex("type=\"hidden\" name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Form download1 = getFormByKey("op", "download1");
+        if (download1 != null) br.submitForm(download1);
         DLLINK = br.getRegex("\"file\" : \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -92,9 +98,27 @@ public class AllMyVideosNet extends PluginForHost {
         dl.startDownload();
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
-        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    /**
+     * Returns the first form that has a 'key' that equals 'value'.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    private Form getFormByKey(final String key, final String value) {
+        Form[] workaround = br.getForms();
+        if (workaround != null) {
+            for (Form f : workaround) {
+                for (InputField field : f.getInputFields()) {
+                    if (key != null && key.equals(field.getKey())) {
+                        if (value == null && field.getValue() == null) return f;
+                        if (value != null && value.equals(field.getValue())) return f;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public int getMaxSimultanFreeDownloadNum() {

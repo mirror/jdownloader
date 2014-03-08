@@ -69,12 +69,6 @@ public class FilthDumpCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("dump1\\.com/flv_player/data/playerConfig(Embed)?/(\\d+)").getMatch(1);
-        if (tempID != null) {
-            final DownloadLink dl = createDownloadlink("http://www.dump1.com/media/" + tempID + "/");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         tempID = br.getRegex("addParam\\(\\'flashvars\\',\\'\\&file=(http://video\\.teensexmovs\\.com/.*?)\\&").getMatch(0);
         if (tempID != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + tempID);

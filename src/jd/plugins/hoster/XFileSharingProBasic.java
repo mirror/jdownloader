@@ -94,7 +94,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                 fuid                         = null;
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.6.4.5
+    // XfileSharingProBasic Version 2.6.4.6
     // mods:
     // limit-info:
     // protocol: no https
@@ -742,9 +742,13 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
-        }
-        if (br.getURL().contains("/?op=login&redirect=")) {
+        } else if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("Only downloadable via premium");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);

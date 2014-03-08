@@ -378,7 +378,7 @@ public class SecureUploadEu extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "class=\"large gray button dlDark\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "\"(http://s\\d+\\.secureupload\\.eu:\\d+/d/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
+                dllink = new Regex(correctedBR, "(\"|\\')(https?://s\\d+\\.secureupload\\.eu(:\\d+)?/d/[A-Za-z0-9\\-_]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             }
         }
         return dllink;

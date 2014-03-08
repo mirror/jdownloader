@@ -93,11 +93,11 @@ public class DropboxCom extends PluginForHost {
         try {
             login(account, true);
         } catch (final PluginException e) {
-            ai.setStatus("Account not valid.");
             account.setValid(false);
-            return ai;
+            throw e;
         }
-        ai.setStatus("Account ok");
+        ai.setStatus("Registered (free) user");
+        ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }
@@ -215,8 +215,23 @@ public class DropboxCom extends PluginForHost {
             }
             try {
                 br.getPage("https://www.dropbox.com");
-                br.postPage("https://www.dropbox.com/login", "t=&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie("https://www.dropbox.com", "puc") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String lang = System.getProperty("user.language");
+                final String t = br.getRegex("type=\"hidden\" name=\"t\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (t == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                br.postPage("https://www.dropbox.com/login", "login_submit=1&remember_me=on&login_submit_dummy=Sign+in&t=" + t + "&display=desktop&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie("https://www.dropbox.com", "puc") == null) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 ok = true;
             } finally {
                 if (ok) {

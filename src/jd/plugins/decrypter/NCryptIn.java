@@ -60,7 +60,7 @@ public class NCryptIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("open-", "folder-").replace("urlcrypt.com/", "ncrypt.in/");
         try {
             br.setLoadLimit(16777216);
@@ -230,21 +230,14 @@ public class NCryptIn extends PluginForDecrypt {
             final String[] containerIDs = br.getRegex("(/container/(dlc|rsdf|ccf)/([a-z0-9]+)\\.(dlc|rsdf|ccf))").getColumn(0);
             if (containerIDs != null && containerIDs.length != 0) {
                 for (final String containerLink : containerIDs) {
-                    ArrayList<DownloadLink> containerLinks = new ArrayList<DownloadLink>();
-                    containerLinks = loadcontainer(containerLink);
-                    if (containerLinks != null) {
-                        for (final DownloadLink cryptedLink : containerLinks) {
-                            cryptedLink.setBrowserUrl(parameter);
-                            decryptedLinks.add(cryptedLink);
-                        }
-                    }
+                    decryptedLinks = loadcontainer(containerLink);
                 }
             }
-            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            if (decryptedLinks == null) {
                 // Webprotection decryption
                 logger.info("ContainerID is null, trying webdecryption...");
                 br.setFollowRedirects(false);
-                final String[] links = br.getRegex("\\'(http://ncrypt\\.in/link-.*?=)\\'").getColumn(0);
+                final String[] links = br.getRegex("\\'(http://ncrypt\\.in/link\\-.*?=)\\'").getColumn(0);
                 if (links == null || links.length == 0) {
                     logger.info("No links found, let's see if CNL2 is available!");
                     if (br.containsHTML("cnl2")) {
@@ -317,6 +310,7 @@ public class NCryptIn extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private ArrayList<DownloadLink> loadcontainer(String theLink) throws IOException, PluginException {
         ArrayList<DownloadLink> decryptedLinks = null;
         final Browser brc = br.cloneBrowser();
@@ -334,6 +328,7 @@ public class NCryptIn extends PluginForDecrypt {
                 brc.downloadConnection(file, con);
                 if (file != null && file.exists() && file.length() > 100) {
                     decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                    return decryptedLinks;
                 }
             }
         } finally {

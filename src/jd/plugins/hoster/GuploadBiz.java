@@ -162,7 +162,7 @@ public class GuploadBiz extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.postPage(MAINPAGE.replace("http://", "https://") + "/login.php", "loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&submitme=1");
                 final String lang = System.getProperty("user.language");
-                if (br.getCookie(MAINPAGE, "spf") == null) {
+                if (!br.containsHTML("logout\\.php\">logout")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
