@@ -2,7 +2,6 @@ package org.jdownloader.statistics;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
@@ -42,6 +41,7 @@ public class Candidate extends AbstractJsonData implements Storable {
 
     private long   revision;
     private String type = FREE;
+    private String id;
 
     public Candidate(/* storable */) {
 
@@ -51,6 +51,7 @@ public class Candidate extends AbstractJsonData implements Storable {
         this.plugin = pluginHoster;
         this.revision = revision;
         this.type = type;
+        this.id = this.plugin + "_" + this.revision + "_" + this.type;
     }
 
     public static Candidate create(CachedAccount account) {
@@ -76,11 +77,12 @@ public class Candidate extends AbstractJsonData implements Storable {
             break;
 
         }
-
+        ret.id = ret.plugin + "_" + ret.revision + "_" + ret.type;
         return ret;
     }
 
     public String toID() {
-        return JSonStorage.serializeToJson(this);
+
+        return id;
     }
 }
