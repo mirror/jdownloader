@@ -45,7 +45,7 @@ public class PanBaiduCom extends PluginForHost {
     private String              DLLINK                                     = null;
     private static final String TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?shareid=\\d+\\&uk=\\d+";
     private static final String NOCHUNKS                                   = "NOCHUNKS";
-    private static final String USER_AGENT                                 = "User-Agent: netdisk;4.5.1.5;PC;PC-Windows;6.2.9200;WindowsBaiduYunGuanJia";
+    private static final String USER_AGENT                                 = "netdisk;4.5.1.5;PC;PC-Windows;6.2.9200;WindowsBaiduYunGuanJia";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {

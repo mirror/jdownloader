@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dupload.org" }, urls = { "https?://(www\\.)?dupload\\.org/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dupload.net", "dupload.org" }, urls = { "https?://(www\\.)?dupload\\.(org|net)/(vidembed\\-)?[a-z0-9]{12}", "gtrhijnoreoipüj649cojnwfge4680945fgnDELETE_MEfgnbhfjtrehrdefwiohj" }, flags = { 2, 2 })
 public class DuploadOrg extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -61,8 +61,9 @@ public class DuploadOrg extends PluginForHost {
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
     private static final String  COOKIE_HOST                  = "http://dupload.org";
+    private static final String  COOKIE_HOST_NEW              = "http://dupload.net";
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(dupload\\.org)";
+    private static final String  DOMAINS                      = "(dupload\\.(org|net))";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -104,12 +105,12 @@ public class DuploadOrg extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/tos.html";
+        return COOKIE_HOST_NEW + "/tos.html";
     }
 
     public DuploadOrg(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST_NEW + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -126,6 +127,7 @@ public class DuploadOrg extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setCookie(COOKIE_HOST_NEW, "lang", "english");
     }
 
     @Override
@@ -731,18 +733,25 @@ public class DuploadOrg extends PluginForHost {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(COOKIE_HOST, key, value);
+                            this.br.setCookie(COOKIE_HOST_NEW, key, value);
                         }
                         return;
                     }
                 }
                 br.setFollowRedirects(true);
+                boolean use_new_domain = false;
                 getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                Form loginform = br.getFormbyProperty("name", "FL");
+                if (loginform == null) {
+                    use_new_domain = true;
+                    getPage(COOKIE_HOST_NEW + "/login.html");
+                    loginform = br.getFormbyProperty("name", "FL");
+                    if (loginform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if ((br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) && (br.getCookie(COOKIE_HOST_NEW, "login") == null || br.getCookie(COOKIE_HOST_NEW, "xfss") == null)) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!br.getURL().contains("/?op=my_account")) {
                     getPage("/?op=my_account");
                 }
@@ -753,7 +762,12 @@ public class DuploadOrg extends PluginForHost {
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                Cookies add = null;
+                if (use_new_domain) {
+                    add = this.br.getCookies(COOKIE_HOST_NEW);
+                } else {
+                    add = this.br.getCookies(COOKIE_HOST);
+                }
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

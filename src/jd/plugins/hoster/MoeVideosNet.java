@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -50,41 +48,45 @@ public class MoeVideosNet extends PluginForHost {
         return 1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            isDled.set(true);
-            dl.startDownload();
-        } finally {
-            isDled.set(false);
-        }
-    }
+    private String uid = null;
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([0-9a-f\\.]+)$").getMatch(0) + ".flv");
         setBrowserExclusive();
         br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
         /* uid */
-        String uid = new Regex(dllink, "uid=(.*?)$").getMatch(0);
+        uid = new Regex(dllink, "uid=(.*?)$").getMatch(0);
         if (uid == null) uid = new Regex(dllink, "(video/|file=)(.*?)$").getMatch(1);
         if (uid == null) {
             br.getPage(dllink);
             if (br.containsHTML("Vídeo no existe posiblemente")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            Form iAmHuman = br.getFormbyProperty("name", "formulario");
-            if (iAmHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.submitForm(iAmHuman);
-            uid = br.getRegex("video\\.php\\?file=([0-9a-f\\.]+)\\&").getMatch(0);
+            return AvailableStatus.TRUE;
         }
-        if (uid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return AvailableStatus.UNCHECKABLE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (uid == null) {
+            final Form iAmHuman = br.getFormbyProperty("name", "formulario");
+            if (iAmHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            iAmHuman.remove("enviar");
+
+            // String waittime = br.getRegex("var tiempo = (\\d+);").getMatch(0);
+            // int wait = 5;
+            // if (waittime != null) wait = Integer.parseInt(waittime);
+            // sleep(wait * 1001l, downloadLink);
+
+            br.submitForm(iAmHuman);
+            uid = br.getRegex("file=([0-9a-f\\.]+)(\\&|\"|\\')").getMatch(0);
+        }
         /* finallink */
         br.postPage("http://api.letitbit.net/", "r=[\"tVL0gjqo5\",[\"preview/flv_image\",{\"uid\":\"" + uid + "\"}],[\"preview/flv_link\",{\"uid\":\"" + uid + "\"}]]");
+        final String fsize = br.getRegex("\"convert_size\":\"(\\d+)\"").getMatch(0);
+        if (fsize != null) downloadLink.setDownloadSize(Long.parseLong(fsize));
 
         boolean status = br.getRegex("\"status\":\"OK\"").matches() ? true : false;
 
@@ -98,27 +100,19 @@ public class MoeVideosNet extends PluginForHost {
         String filename = new Regex(DLLINK, "/[0-9a-f]+_\\d+_(.*?)\\.flv").getMatch(0);
         filename = filename != null ? filename : "unknown_filename" + uid + ".flv";
         downloadLink.setFinalFileName(filename);
-        /* filesize */
-        if (isDled.get() == false) {
-            Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("Range", "bytes=0-"); // important
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html"))
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                else
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
+
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 401) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 30 * 60 * 1000l);
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            isDled.set(true);
+            dl.startDownload();
+        } finally {
+            isDled.set(false);
         }
-        return AvailableStatus.UNCHECKABLE;
     }
 
     @Override

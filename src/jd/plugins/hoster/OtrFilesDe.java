@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -30,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr-files.de" }, urls = { "http://(www\\.)?otr\\-files\\.de/(index\\.php\\?option=com_content\\&task=view\\&id=\\d+\\&Itemid=\\d+\\&server=\\d+\\&f=[^<>\"\\']+\\.otrkey|\\?file=[^<>\"\\']+\\.otrkey)" }, flags = { 0 })
 public class OtrFilesDe extends PluginForHost {
@@ -47,9 +50,10 @@ public class OtrFilesDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        prepareBrowser();
         br.getPage(link.getDownloadURL());
         if (!link.getDownloadURL().contains("?otr-files.de/index.php?option=")) {
             final String correctLink = br.getRegex("\"(http://(www\\.)?otr\\-files\\.de/index\\.php\\?option=com_content\\&amp;task=view\\&amp;id=\\d+\\&amp;Itemid=\\d+\\&amp;server=[a-z0-9]+\\&amp;f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
@@ -63,7 +67,7 @@ public class OtrFilesDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = downloadLink.getStringProperty("freelink");
         if (dllink != null) {
@@ -81,7 +85,7 @@ public class OtrFilesDe extends PluginForHost {
             }
         }
         if (dllink == null) {
-            if (br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Keine freien Slots verfügbar!", 5 * 60 * 1000l);
+            if (br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Keine freien Slots verfügbar!", (1 + new Random().nextInt(7)) * 60 * 1000l);
             if (br.containsHTML(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             dllink = br.getRegex("\"(http://otr\\-files\\.de/dl\\-slot/\\d+/[a-z0-9]+/[^<>\"\\']+\\.otrkey)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("<br><br><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
@@ -94,6 +98,16 @@ public class OtrFilesDe extends PluginForHost {
         }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
+    }
+
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+
+    private void prepareBrowser() throws IOException {
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
     }
 
     @Override

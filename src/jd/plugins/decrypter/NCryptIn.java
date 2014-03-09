@@ -233,7 +233,7 @@ public class NCryptIn extends PluginForDecrypt {
                     decryptedLinks = loadcontainer(containerLink);
                 }
             }
-            if (decryptedLinks == null) {
+            if (decryptedLinks == null || (containerIDs == null || containerIDs.length == 0)) {
                 // Webprotection decryption
                 logger.info("ContainerID is null, trying webdecryption...");
                 br.setFollowRedirects(false);

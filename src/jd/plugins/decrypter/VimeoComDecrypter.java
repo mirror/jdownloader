@@ -64,15 +64,13 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
-        final String ID = new Regex(parameter, "(\\d+)$").getMatch(0);
-        parameter = "http://vimeo.com/" + ID;
-
         final Browser br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("vimeo.com", "v6f", "1");
-        br.getPage(parameter);
+
         if (parameter.matches(LINKTYPE_USER)) {
+            br.getPage(parameter);
             if (br.containsHTML(">We couldn't find that page")) {
                 final DownloadLink link = createDownloadlink("decryptedforVimeoHosterPlugin1://vimeo\\.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
                 link.setAvailable(false);
@@ -130,6 +128,9 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             fp.setName("Videos of vimeo.com user " + user);
             fp.addLinks(decryptedLinks);
         } else {
+            final String ID = new Regex(parameter, "(\\d+)$").getMatch(0);
+            parameter = "http://vimeo.com/" + ID;
+            br.getPage(parameter);
 
             /* Workaround for User from Iran */
             if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) br.getPage("http://player.vimeo.com/config/" + ID);

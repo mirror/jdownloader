@@ -70,7 +70,10 @@ public class SolidFilesCom extends PluginForHost {
         String dllink = br.getRegex("<a id=\"download-button\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("(https?://\\w+\\.sfcdn\\.in/[^\"']+)").getMatch(0);
-            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        }
+        if (dllink == null) {
+            logger.warning("Final downloadlink is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         int maxChunks = 0;
@@ -78,6 +81,7 @@ public class SolidFilesCom extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - use less connections and try again", 10 * 60 * 1000l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
