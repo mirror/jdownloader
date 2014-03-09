@@ -27,20 +27,20 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobug.net" }, urls = { "http://(www\\.)?videobug\\.net/embed\\.php\\?.+" }, flags = { 0 })
-public class VideoBugNet extends PluginForHost {
+@HostPlugin(revision = "$Revision: 24087 $", interfaceVersion = 2, names = { "byzoo.org" }, urls = { "http://(www\\.)?byzoo\\.org/embed\\.php\\?.+" }, flags = { 0 })
+public class ByZooOrg extends PluginForHost {
 
     // raztoki embed video player template.
 
     private String dllink = null;
 
-    public VideoBugNet(PluginWrapper wrapper) {
+    public ByZooOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.videobug.net/";
+        return "http://www.byzoo.org/";
     }
 
     @Override
@@ -59,7 +59,7 @@ public class VideoBugNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        dllink = br.getRegex("url: '(http[^']+(videobug\\.net|play44\\.net)%2Fvideos[^']+)").getMatch(0);
+        dllink = br.getRegex("url: '(http[^']+byzoo\\.org%2[^']+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();

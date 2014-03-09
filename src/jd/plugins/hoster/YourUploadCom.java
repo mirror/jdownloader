@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?yourupload\\.com/(file|embed(_ext/\\w+)?|watch)/[a-z0-9]+|embed\\.yourupload\\.com/[A-Za-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://((www\\.)?(yourupload\\.com|yucache\\.net)/(file|embed(_ext/\\w+)?|watch)/[a-z0-9]+|embed\\.(yourupload\\.com|yucache\\.net)/[A-Za-z0-9]+)" }, flags = { 0 })
 public class YourUploadCom extends PluginForHost {
 
     private String dllink = null;
@@ -46,7 +46,7 @@ public class YourUploadCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // you can not convert embed formats back! will always show up offline!
-        if (!link.getDownloadURL().matches(".+(/embed_ext/|embed\\.yourupload\\.com/).+")) link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        if (!link.getDownloadURL().matches(".+(/embed_ext/|embed\\.(yourupload\\.com|yucache\\.net)/).+")) link.setUrlDownload("http://yourupload.com/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -58,7 +58,7 @@ public class YourUploadCom extends PluginForHost {
         // Correct old links
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
-        if (link.getDownloadURL().matches(".+(/embed_ext/|embed\\.yourupload\\.com/).+")) {
+        if (link.getDownloadURL().matches(".+(/embed_ext/|embed\\.(yourupload\\.com|yucache\\.net)/).+")) {
             if (br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist") || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
@@ -110,7 +110,7 @@ public class YourUploadCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (dllink == null) dllink = br.getRegex("(http://download\\.yourupload\\.com/[a-f0-9]{32}[^\"]+)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(http://download\\.(yourupload\\.com|yucache\\.net)/[a-f0-9]{32}[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
