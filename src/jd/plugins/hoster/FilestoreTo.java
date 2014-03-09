@@ -143,8 +143,16 @@ public class FilestoreTo extends PluginForHost {
                 if (data == null || data.length != 3) {
                     data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+([a-zA-Z0-9]+)\\+(\"|')([&a-zA-Z0-9=]+)\\4").getRow(0);
                     if (data == null || data.length != 5) {
-                        data = new Regex(startDl, "data\\s*:\\s*([a-zA-Z0-9]+),").getRow(0);
-                        if (data == null || data.length != 1) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                        data = new Regex(startDl, "data\\s*:\\s*(\"|')([a-zA-Z0-9]+(=[A-za-z0-9]+))\\1,").getRow(0);
+                        if (data == null || data.length != 1) {
+                            data = new Regex(startDl, "data\\s*:\\s*(\"|')([a-zA-Z0-9]+=)([A-za-z0-9]+)\\1,").getRow(0);
+                            if (data == null || data.length != 3) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            } else {
+                                pwnage[0] = data[1];
+                                newbull = data[2];
+                            }
+                        }
                     }
                 } else {
                     pwnage[0] = data[1];
