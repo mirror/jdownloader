@@ -11,7 +11,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?(redtube(\\.cn)?\\.com/|embed\\.redtube\\.com/video/info/\\?id=)\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?(redtube\\.(cn\\.com|com|tv)/|embed\\.redtube\\.(cn\\.com|com|tv)/video/info/\\?id=)\\d+" }, flags = { 0 })
 public class RedTubeCom extends PluginForHost {
     private String dlink = null;
 
@@ -27,6 +27,11 @@ public class RedTubeCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload("http://www.redtube.com/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     @Override
@@ -80,11 +85,6 @@ public class RedTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload("http://www.redtube.com/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

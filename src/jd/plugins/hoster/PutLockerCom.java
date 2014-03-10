@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -93,6 +95,55 @@ public class PutLockerCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         // Correct all because firedrive doesn't have the embed links though users use them anyways
         link.setUrlDownload("http://www.firedrive.com/file/" + new Regex(link.getDownloadURL(), "/([A-Z0-9]+)$").getMatch(0));
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            prepBrowser();
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once - limit is unknown */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                for (final DownloadLink dl : links) {
+                    sb.append(getFID(dl) + "-");
+                }
+                br.getPage("http://www.firedrive.com/share/" + sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String fid = getFID(dllink);
+                    final Regex finfo = br.getRegex("public=\\'" + fid + "\\' data\\-name=\"([^<>\"]*?)\" data\\-type=\"([^<>\"]*?)\" data\\-size=\"(\\d+)\"");
+                    final String filename = finfo.getMatch(0);
+                    final String filesize = finfo.getMatch(2);
+                    if (filename == null || filesize == null) {
+                        dllink.setName(fid);
+                        dllink.setAvailable(false);
+                    } else {
+                        dllink.setName(Encoding.htmlDecode(filename.trim()));
+                        dllink.setDownloadSize(Long.parseLong(filesize));
+                        dllink.setAvailable(true);
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -382,6 +433,10 @@ public class PutLockerCom extends PluginForHost {
 
     private String getFileDllink() {
         return br.getRegex("\"(https?://dl\\.firedrive\\.com/[^<>\"]+)\"").getMatch(0);
+    }
+
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
     }
 
     private void fixFilename(final DownloadLink downloadLink) {

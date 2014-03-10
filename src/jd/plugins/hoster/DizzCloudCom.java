@@ -51,20 +51,20 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dizzcloud.com" }, urls = { "http://(www\\.)?dizzcloud\\.com/dl/(?!robots)[a-z0-9]+" }, flags = { 2 })
 public class DizzCloudCom extends PluginForHost {
-    
+
     public DizzCloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://dizzcloud.com/upgrade");
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://dizzcloud.com/tos";
     }
-    
+
     private final String        PREMIUMONLY    = ">Only premium users can download this file|disabled the ability to free download a file larger than  \\d+ Mb\\.<|>File owner has disabled<";
     private static final String DYNAMICIPERROR = "Dynamic IP error";
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -84,7 +84,7 @@ public class DizzCloudCom extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-    
+
     private void checkShowFreeDialog() {
         SubConfiguration config = null;
         try {
@@ -111,7 +111,7 @@ public class DizzCloudCom extends PluginForHost {
             }
         }
     }
-    
+
     protected void showFreeDialog(final String domain) {
         if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
@@ -119,7 +119,7 @@ public class DizzCloudCom extends PluginForHost {
         }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-                
+
                 @Override
                 public void run() {
                     try {
@@ -149,14 +149,14 @@ public class DizzCloudCom extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         checkShowFreeDialog();
         doFree(downloadLink, null, false, null);
     }
-    
+
     private void doFree(final DownloadLink downloadLink, Object now, boolean newLogins, Account account) throws Exception {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
@@ -206,7 +206,7 @@ public class DizzCloudCom extends PluginForHost {
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
-    
+
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -225,10 +225,10 @@ public class DizzCloudCom extends PluginForHost {
         }
         return dllink;
     }
-    
+
     private static final String MAINPAGE = "http://dizzcloud.com";
     private static Object       LOCK     = new Object();
-    
+
     @SuppressWarnings("unchecked")
     private Object login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -274,7 +274,7 @@ public class DizzCloudCom extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -304,7 +304,7 @@ public class DizzCloudCom extends PluginForHost {
         account.setValid(true);
         return ai;
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
@@ -355,10 +355,15 @@ public class DizzCloudCom extends PluginForHost {
                 if (dllink != null) dllink = dllink.replace("\\", "");
             }
             if (dllink == null) {
+                if (br.containsHTML(">Premium users get many benefits like instant download on maximum")) {
+                    logger.info("Premium handling failed - maybe this is a free account --> Retrying");
+                    account.setProperty("free", true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            
+
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
@@ -382,28 +387,28 @@ public class DizzCloudCom extends PluginForHost {
             dl.startDownload();
         }
     }
-    
+
     private void handleErrors() throws NumberFormatException, PluginException {
         final String waittime = br.getRegex(">Next free download from your ip will be available in <b>(\\d+) minutes</p>").getMatch(0);
         if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-    
+
 }

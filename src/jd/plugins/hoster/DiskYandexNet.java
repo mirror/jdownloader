@@ -60,21 +60,28 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /* Settings values */
-    private static final String  MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
-    private static final String  MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD = "MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD";
-    private static final String  EMPTY_TRASH_AFTER_DOWNLOAD         = "EMPTY_TRASH_AFTER_DOWNLOAD";
+    private static final String   MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
+    private static final String   MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD = "MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD";
+    private static final String   EMPTY_TRASH_AFTER_DOWNLOAD         = "EMPTY_TRASH_AFTER_DOWNLOAD";
 
-    private static final String  CLIENT_ID                          = "24f549192f9f2fac2d80c71dd7969442";
-    private static final String  VERSION                            = "1.0.20";
+    /* Some contants which they used in browser */
+    private static final String   CLIENT_ID                          = "24f549192f9f2fac2d80c71dd7969442";
+    private static final String   VERSION                            = "1.0.20";
+    private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
 
-    private static final String  STANDARD_FREE_SPEED                = "64 kbit/s";
     /* Connection limits */
-    private static final boolean FREE_RESUME                        = false;
-    private static final int     FREE_MAXCHUNKS                     = 1;
-    private static final boolean ACCOUNT_RESUME                     = true;
-    private static final int     ACCOUNT_MAXCHUNKS                  = 0;
+    private static final boolean  FREE_RESUME                        = false;
+    private static final int      FREE_MAXCHUNKS                     = 1;
+    private static final boolean  ACCOUNT_RESUME                     = true;
+    private static final int      ACCOUNT_MAXCHUNKS                  = 0;
 
-    private String               ACCOUNT_SK                         = null;
+    /* Domain & other login stuff */
+    private static final String   MAIN_DOMAIN                        = "https://yandex.com";
+    private static final String[] domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
+    private static Object         LOCK                               = new Object();
+
+    /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
+    private String                ACCOUNT_SK                         = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -108,7 +115,7 @@ public class DiskYandexNet extends PluginForHost {
         String dllink = parse("url", this.br);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.startsWith("//")) dllink = "http:" + dllink;
-        // Don't do htmldecode as the link will be invalid then
+        /* Don't do htmldecode because the link will be invalid then */
         dllink = dllink.replace("amp;", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -124,15 +131,11 @@ public class DiskYandexNet extends PluginForHost {
         return ckey;
     }
 
-    private static final String   MAIN_DOMAIN = "https://yandex.com";
-    private static final String[] domains     = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.com/" };
-    private static Object         LOCK        = new Object();
-
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                // Load cookies
+                /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepBr();
                 final Object ret = account.getProperty("cookies", null);
@@ -161,7 +164,7 @@ public class DiskYandexNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
+                /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAIN_DOMAIN);
                 for (final Cookie c : add.getCookies()) {
@@ -368,7 +371,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings - to get more speed than " + STANDARD_FREE_SPEED + ":"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1.Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
         getConfig().addEntry(moveFilesToAcc);
         final ConfigEntry moveFilesToTrash = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToTrashAfterSuccessfulDownload", "2.Move successfully downloaded files to trash after download?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false);
@@ -412,17 +415,17 @@ public class DiskYandexNet extends PluginForHost {
                         final String lang = System.getProperty("user.language");
                         if ("de".equalsIgnoreCase(lang)) {
                             message += "Du benutzt disk.yandex.net zum ersten mal in JDownloader.\r\n";
-                            message += "Momentan lädst du ohne Account und somit begrenzt Yandex deine Downloadgeschwindigkeit auf nur " + STANDARD_FREE_SPEED + ".\r\n";
-                            message += "Indem du dir einen KOSTENLOSEN (keine Werbung!) Account anlegst und ihn in JDownloader einträgst,\r\n";
-                            message += "kannst du ohne Geschwindigkeitlimits von diesem Hoster laden.\r\n";
+                            message += "Momentan lädst du ohne Account und somit begrenzt yandex.net deine Downloadgeschwindigkeit auf nur " + STANDARD_FREE_SPEED + ".\r\n";
+                            message += "Indem du dir einen KOSTENLOSEN Account (das ist KEINE Werbung!) anlegst und ihn in JDownloader einträgst,\r\n";
+                            message += "kannst du ohne Limits von diesem Hoster laden.\r\n";
                             message += "\r\n";
                             message += "Wir wünschen dir weiterhin viel Spaß mit JDownloader.\r\n";
                             message += "Fragen oder Probleme? Melde dich in unserem Support Forum!";
                         } else {
                             message += "You're using disk.yandex.net for the frist time in JDownloader.\r\n";
-                            message += "Because you're downloading without Account, your speed is limited to only " + STANDARD_FREE_SPEED + ".\r\n";
-                            message += "By creating a FREE (this is no advertising!) account and adding it to JDownloader\r\n";
-                            message += "you can download without any limits from this host.\r\n";
+                            message += "Because you're downloading without Account, yandex.net limits your speed to only " + STANDARD_FREE_SPEED + ".\r\n";
+                            message += "By creating a FREE account (this is NOT advertising!) and adding it to JDownloader\r\n";
+                            message += "you will be able to download without any limits from this host.\r\n";
                             message += "\r\n";
                             message += "Furthermore have fun using JDownloader.\r\n";
                             message += "In case there are any questions or problems, you can contact us via our support forum!";

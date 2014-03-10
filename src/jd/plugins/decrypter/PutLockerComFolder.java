@@ -23,49 +23,75 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/public/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?firedrive\\.com/share/(F_[A-Z0-9]+|[A-Za-z0-9\\-]+)" }, flags = { 0 })
 public class PutLockerComFolder extends PluginForDecrypt {
 
     public PutLockerComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_REAL_FOLDER = "http://(www\\.)?firedrive\\.com/share/F_[A-Z0-9]+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> pages = new ArrayList<String>();
-        pages.add("1");
         final String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.containsHTML(">No files to display<")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        final String fpName = br.getRegex("<title>([^<>\"]*?) on PutLocker</title>").getMatch(0);
-        final String[] addPages = br.getRegex("\\&page=\\d+\">(\\d+)</a>").getColumn(0);
-        if (addPages != null && addPages.length != 0) {
-            for (final String aPage : addPages)
-                pages.add(aPage);
-        }
-        for (final String currentPage : pages) {
-            if (!currentPage.equals("1")) br.getPage(parameter + "?folder_pub=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0) + "&page=" + currentPage);
-            final String[] links = br.getRegex("\"(http://(www\\.)?putlocker\\.com/file/[A-Za-z0-9]+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+        String fpName = null;
+        String[] ids = null;
+        String passCode = null;
+        if (parameter.matches(TYPE_REAL_FOLDER)) {
+            br.getPage(parameter);
+            if (br.containsHTML("class=\"removed_folder_image\"")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
-            for (String singleLink : links)
-                decryptedLinks.add(createDownloadlink(singleLink));
+            if (br.containsHTML("id=\"file_password_container\"")) {
+                for (int i = 1; i <= 3; i++) {
+                    passCode = getUserInput("Password?", param);
+                    br.postPage(br.getURL(), "item_pass=" + Encoding.urlEncode(passCode));
+                    if (br.containsHTML("id=\"file_password_container\"")) continue;
+                    break;
+                }
+                if (br.containsHTML("id=\"file_password_container\"")) throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            fpName = br.getRegex("class=\"public_title_left\">([^<>\"]*?)</div>").getMatch(0);
+            ids = br.getRegex("public=\\'([A-Z0-9]+)\\'").getColumn(0);
+        } else {
+            br.getPage(parameter);
+            ids = new Regex(parameter, "firedrive\\.com/share/(.+)").getMatch(0).split("-");
         }
+        if (ids == null || ids.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (final String fid : ids) {
+            final Regex finfo = br.getRegex("public=\\'" + fid + "\\' data\\-name=\"([^<>\"]*?)\" data\\-type=\"([^<>\"]*?)\" data\\-size=\"(\\d+)\"");
+            final String filename = finfo.getMatch(0);
+            final String filesize = finfo.getMatch(2);
+            final DownloadLink dl = createDownloadlink("http://www.firedrive.com/file/" + fid);
+            if (filename == null || filesize == null) {
+                dl.setName(fid);
+                dl.setAvailable(false);
+            } else {
+                dl.setName(Encoding.htmlDecode(filename.trim()));
+                dl.setDownloadSize(Long.parseLong(filesize));
+                dl.setAvailable(true);
+            }
+            if (passCode != null) dl.setProperty("pass", passCode);
+            decryptedLinks.add(dl);
+        }
+
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
+
         return decryptedLinks;
     }
 

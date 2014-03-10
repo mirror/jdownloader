@@ -396,6 +396,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     ext = Encoding.htmlDecode(ext.trim());
 
                     dl.setProperty("fileid", fid);
+                    dl.setProperty("__RequestVerificationToken_Lw__", br.getCookie(parameter, "__RequestVerificationToken_Lw__"));
                     dl.setName(correctFilename(Encoding.htmlDecode(filename)) + ext);
 
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));

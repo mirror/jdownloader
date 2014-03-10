@@ -65,7 +65,7 @@ public class AdltDlCom extends PluginForDecrypt {
         }
         String fpName = br.getRegex(" title=\"Comment on ([^<>\"\\']+)\"").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| AdultDDL</title>").getMatch(0);
-        final String streamLink = br.getRegex("\\'(http://(www\\.)?putlocker\\.com/embed/[A-Z0-9]+)\\'").getMatch(0);
+        final String streamLink = br.getRegex("\\'(http://(www\\.)?(putlocker|firedrive)\\.com/embed/[A-Z0-9]+)\\'").getMatch(0);
         if (streamLink != null) decryptedLinks.add(createDownloadlink(streamLink));
         final String linksText = br.getRegex("<div class=\\'links\\'>(.*?)<div id=\"comment\\-section\"").getMatch(0);
         if (linksText == null) {

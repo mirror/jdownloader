@@ -163,6 +163,22 @@ public class OverLoadMe extends PluginForHost {
             }
         } catch (final PluginException e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            /* This may happen if the downloads stops at 99,99% - a few retries usually help in this case */
+            if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                logger.info(NICE_HOST + ": DOWNLOAD_INCOMPLETE");
+                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", 0);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 5) {
+                    timesFailed++;
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", timesFailed);
+                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - Retrying!");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "timesfailed_dl_incomplete");
+                } else {
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", Property.NULL);
+                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - disabling current host!");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                }
+            }
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(OverLoadMe.NOCHUNKS, false) == false) {
