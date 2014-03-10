@@ -984,13 +984,12 @@ public class FileFactory extends PluginForHost {
             ibr.getPage(url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
             if (sessionKeyInValid(account, ibr)) {
                 apiKey = getApiKey(account);
-                if (sessionKeyInValid(account, ibr))
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
-                else if (apiKey == null)
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                else {
+                if (apiKey != null)
+                    // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
                     ibr.getPage(url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
-                }
+                else
+                    // failure occurred.
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
             }
             // account specific errors which could happen at any point in time!
             if ("error".equalsIgnoreCase(getJson("type", ibr)) && ("707".equalsIgnoreCase(getJson("code", ibr)) || "719".equalsIgnoreCase(getJson("code", ibr)))) {
