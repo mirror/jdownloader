@@ -34,20 +34,21 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "http://(www\\.)?solidfiles\\.com/d/[a-z0-9]+/?" }, flags = { 2 })
 public class SolidFilesCom extends PluginForHost {
-
+    
     public SolidFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+        this.setStartIntervall(500l);
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.solidfiles.com/terms/";
     }
-
+    
     public static final String  DECRYPTFOLDERS = "DECRYPTFOLDERS";
     private static final String NOCHUNKS       = "NOCHUNKS";
-
+    
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -63,7 +64,7 @@ public class SolidFilesCom extends PluginForHost {
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -75,10 +76,10 @@ public class SolidFilesCom extends PluginForHost {
             logger.warning("Final downloadlink is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
+        
         int maxChunks = 0;
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
-
+        
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - use less connections and try again", 10 * 60 * 1000l);
@@ -106,22 +107,22 @@ public class SolidFilesCom extends PluginForHost {
             }
         }
     }
-
+    
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, JDL.L("plugins.hoster.solidfilescom.decryptfolders", "Decrypt subfolders in folders")).setDefaultValue(true));
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
 }
