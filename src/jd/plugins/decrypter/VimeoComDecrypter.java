@@ -233,6 +233,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 }
                 if (url == null || name == null) continue;
                 if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
+                final String qualityPart = new Regex(name, "(\\d+x\\d+_.+)$").getMatch(0);
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin" + format + "://"));
                 link.setProperty("directURL", url);
                 link.setProperty("directQuality", fmt);
@@ -241,7 +242,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
                 if (date != null) link.setProperty("originaldate", date);
                 if (channelName != null) link.setProperty("channel", Encoding.htmlDecode(channelName.trim()));
-                link.setProperty("plainfilename", name);
+                if (qualityPart != null) {
+                    link.setProperty("plainfilename", title + " (" + qualityPart + ")");
+                } else {
+                    link.setProperty("plainfilename", name);
+                }
                 /* make sure the plugin is loaded! */
                 JDUtilities.getPluginForHost("vimeo.com");
                 final String formattedFilename = ((jd.plugins.hoster.VimeoCom) hostPlugin).getFormattedFilename(link);

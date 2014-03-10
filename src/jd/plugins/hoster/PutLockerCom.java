@@ -121,6 +121,10 @@ public class PutLockerCom extends PluginForHost {
                 for (final DownloadLink dl : links) {
                     sb.append(getFID(dl) + "-");
                 }
+                /*
+                 * They use this to show many IDs as a folder - we use this to check links. This way, we can even get filename & size for
+                 * password protected links!
+                 */
                 br.getPage("http://www.firedrive.com/share/" + sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String fid = getFID(dllink);

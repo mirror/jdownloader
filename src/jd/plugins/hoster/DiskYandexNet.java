@@ -275,6 +275,7 @@ public class DiskYandexNet extends PluginForHost {
             } else {
                 logger.info("MoveToAccount handling is inactive -> Starting free download handling");
                 doFree(link, ACCOUNT_RESUME, ACCOUNT_MAXCHUNKS, ckey);
+                return;
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
