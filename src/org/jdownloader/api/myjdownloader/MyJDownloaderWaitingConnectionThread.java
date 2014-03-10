@@ -1,6 +1,7 @@
 package org.jdownloader.api.myjdownloader;
 
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,56 +13,56 @@ import org.jdownloader.api.myjdownloader.MyJDownloaderConnectThread.SessionInfoW
 import org.jdownloader.myjdownloader.client.json.DeviceConnectionStatus;
 
 public class MyJDownloaderWaitingConnectionThread extends Thread {
-
+    
     protected static class MyJDownloaderConnectionRequest {
         private final InetSocketAddress addr;
-
+        
         public final InetSocketAddress getAddr() {
             return addr;
         }
-
+        
         public final SessionInfoWrapper getSession() {
             return session;
         }
-
+        
         private final SessionInfoWrapper     session;
         private final DeviceConnectionHelper connectionHelper;
-
+        
         public final DeviceConnectionHelper getConnectionHelper() {
             return connectionHelper;
         }
-
+        
         protected MyJDownloaderConnectionRequest(SessionInfoWrapper session, DeviceConnectionHelper connectionHelper) {
             this.addr = connectionHelper.getAddr();
             this.session = session;
             this.connectionHelper = connectionHelper;
         }
     }
-
+    
     protected static class MyJDownloaderConnectionResponse {
-
+        
         public final DeviceConnectionStatus getConnectionStatus() {
             return connectionStatus;
         }
-
+        
         public final Socket getConnectionSocket() {
             return connectionSocket;
         }
-
+        
         public final Throwable getThrowable() {
             return throwable;
         }
-
+        
         private final DeviceConnectionStatus               connectionStatus;
         private final Socket                               connectionSocket;
         private final Throwable                            throwable;
         private final MyJDownloaderWaitingConnectionThread thread;
         private final MyJDownloaderConnectionRequest       request;
-
+        
         public final MyJDownloaderConnectionRequest getRequest() {
             return request;
         }
-
+        
         protected MyJDownloaderConnectionResponse(MyJDownloaderWaitingConnectionThread thread, MyJDownloaderConnectionRequest request, DeviceConnectionStatus connectionStatus, Socket connectionSocket, Throwable e) {
             this.request = request;
             this.connectionStatus = connectionStatus;
@@ -69,29 +70,29 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
             this.throwable = e;
             this.thread = thread;
         }
-
+        
         /**
          * @return the thread
          */
         public final MyJDownloaderWaitingConnectionThread getThread() {
             return thread;
         }
-
+        
     }
-
+    
     protected AtomicBoolean                                           running           = new AtomicBoolean(true);
     protected NullsafeAtomicReference<MyJDownloaderConnectionRequest> connectionRequest = new NullsafeAtomicReference<MyJDownloaderConnectionRequest>();
     private final LogSource                                           logger;
     protected final MyJDownloaderConnectThread                        connectThread;
     private final static AtomicInteger                                THREADID          = new AtomicInteger(0);
-
+    
     public MyJDownloaderWaitingConnectionThread(MyJDownloaderConnectThread connectThread) {
         this.setDaemon(true);
         this.setName("MyJDownloaderWaitingConnectionThread:" + THREADID.incrementAndGet());
         logger = connectThread.getLogger();
         this.connectThread = connectThread;
     }
-
+    
     @Override
     public void run() {
         try {
@@ -111,7 +112,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
                     Socket connectionSocket = null;
                     try {
                         logger.info("Connect " + request.getAddr());
-                        connectionSocket = new Socket();
+                        connectionSocket = new Socket(Proxy.NO_PROXY);
                         connectionSocket.setReuseAddress(true);
                         connectionSocket.setSoTimeout(180000);
                         connectionSocket.setTcpNoDelay(true);
@@ -143,11 +144,11 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
             interrupt();
         }
     }
-
+    
     public boolean isRunning() {
         return running.get();
     }
-
+    
     public boolean putRequest(MyJDownloaderConnectionRequest request) {
         synchronized (connectionRequest) {
             if (running.get() == false) return false;
@@ -158,7 +159,7 @@ public class MyJDownloaderWaitingConnectionThread extends Thread {
             return false;
         }
     }
-
+    
     @Override
     public void interrupt() {
         synchronized (connectionRequest) {
