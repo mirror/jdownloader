@@ -75,8 +75,8 @@ public class FileFlyerCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setCookie("http://www.fileflyer.com", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        String filesize = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_size\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_file\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String filesize = br.getRegex(Pattern.compile("id=\"ItemsList([^<>\"/]*?)?size([^<>\"/]*?)?\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+        String name = br.getRegex(Pattern.compile("id=\"ItemsList([^<>\"/]*?)?file([^<>\"/]*?)?\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(2);
         if (name == null) name = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_img\" title=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
         if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>|>Expired</a>|class=\"removedlink\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -89,7 +89,7 @@ public class FileFlyerCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML(ONLY4PREMIUM)) {
             try {

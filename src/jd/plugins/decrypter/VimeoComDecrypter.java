@@ -79,7 +79,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(link);
                 return decryptedLinks;
             }
-            final String user = new Regex(parameter, "vimeo\\.com/([A-Za-z0-9\\-_]+)/videos").getMatch(0);
+
+            final String user_id = new Regex(parameter, "vimeo\\.com/([A-Za-z0-9\\-_]+)/videos").getMatch(0);
+            String userName = br.getRegex(">Here are all of the videos that <a href=\"/user\\d+\">([^<>\"]*?)</a> has uploaded to Vimeo").getMatch(0);
+            if (userName == null) userName = user_id;
             final String totalVideoNum = br.getRegex(">(\\d+) Total</a>").getMatch(0);
             int totalPages = 1;
             final String[] pages = br.getRegex("/videos/page:(\\d+)/").getColumn(0);
@@ -104,7 +107,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                     // Not available in old 0.9.581 Stable
                 }
                 if (i > 1) {
-                    br.getPage("http://vimeo.com/" + user + "/videos/page:" + i + "/sort:date/format:detail");
+                    br.getPage("http://vimeo.com/" + user_id + "/videos/page:" + i + "/sort:date/format:detail");
                 }
                 final String[] videoIDs = br.getRegex("id=\"clip_(\\d+)\"").getColumn(0);
                 if (videoIDs == null || videoIDs.length == 0) {
@@ -125,7 +128,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             }
             logger.info("vimeo.com: Decrypt done! Total amount of decrypted videolinks: " + decryptedLinks.size() + " of " + totalVids);
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName("Videos of vimeo.com user " + user);
+            fp.setName("Videos of vimeo.com user " + userName);
             fp.addLinks(decryptedLinks);
         } else {
             final String ID = new Regex(parameter, "(\\d+)$").getMatch(0);

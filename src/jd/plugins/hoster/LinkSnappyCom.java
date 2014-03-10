@@ -94,9 +94,17 @@ public class LinkSnappyCom extends PluginForHost {
             accountType = "Premium Account";
         }
 
-        // now it's time to get all supported hosts
+        /* now it's time to get all supported hosts */
         ArrayList<String> supportedHosts = new ArrayList<String>();
         getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=FILEHOSTS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
+        if (br.containsHTML("\"error\":\"Account has exceeded")) {
+            logger.info("Daily limit exceeded");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTageslimit überschritten!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDaily limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+        }
         final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}\\}").getMatch(0);
         hosts = hostText.split("\\},");
         for (final String hostInfo : hosts) {
