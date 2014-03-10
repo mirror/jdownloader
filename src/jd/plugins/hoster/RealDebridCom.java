@@ -238,6 +238,15 @@ public class RealDebridCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        // work around
+        if (link.getBooleanProperty("hasFailed", false)) {
+            final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
+            // nullify old storeables
+            link.setProperty("hasFailed", Property.NULL);
+            link.setProperty("hasFailedWait", Property.NULL);
+            sleep(hasFailedInt * 1001, link);
+        }
+
         prepBrowser(br);
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
@@ -296,6 +305,10 @@ public class RealDebridCom extends PluginForHost {
                 // dedicated server is detected, it does not allow you to generate links
                 logger.info("Dedicated server detected, account disabled");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (br.containsHTML("\"error\":4,")) {
+                // {"error":4,"message":"Unsupported link format or unsupported hoster"}
+                logger.info("Unsupported link format or unsupported hoster");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             } else if (br.containsHTML("\"error\":5,")) {
                 /* no happy hour */
                 logger.info("It's not happy hour, free account, you need premium!.");
@@ -325,27 +338,37 @@ public class RealDebridCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 12: You have too many simultaneous downloads", 20 * 1000l);
             } else if (br.containsHTML("error\":(13|9),")) {
                 String num = "";
+                String err = "";
                 if (br.containsHTML("error\":13,")) {
+                    err = "Unknown error";
                     num = "13";
-                    logger.info("Unknown error " + num);
                 }
                 // doesn't warrant not retrying! it just means no available host at this point in time! ??
                 if (br.containsHTML("error\":9,")) {
+                    err = "Host is currently not possible because no server is available!";
                     num = "9";
-                    logger.info("Host is currently not possible because no server is available!");
                 }
 
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
-                if (link.getLinkStatus().getRetryCount() == 3) {
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                int retry = link.getIntegerProperty("retry_913", 0);
+                if (retry == 3) {
                     /* reset retry counter */
-                    link.getLinkStatus().setRetryCount(0);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    link.setProperty("retry_913", Property.NULL);
+                    link.setProperty("hasFailedWait", Property.NULL);
+                    // remove host from download method, but don't remove host from array!
+                    logger.warning("Exausted retry count! :: " + err);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                } else {
+                    String msg = (retry + 1) + " / 3";
+                    logger.warning("Error " + num + " : Retry " + msg);
+                    link.setProperty("hasFailed", true);
+                    retry++;
+                    link.setProperty("retry_913", retry);
+                    link.setProperty("hasFailedWait", 120);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Error " + num + " : Retry " + msg);
                 }
-                String msg = (link.getLinkStatus().getRetryCount() + 1) + " / 3";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error " + num + " : Retry " + msg, 120 * 1000l);
             } else {
                 // unknown error2
                 logger.info(this.getHost() + "Unknown Error1");
@@ -363,6 +386,8 @@ public class RealDebridCom extends PluginForHost {
             }
         }
         if (!genLnk.startsWith("http")) throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
+        // no longer have issues, with above error handling. Next time download starts, error count starts from 0.
+        link.setProperty("retry_913", Property.NULL);
         showMessage(link, "Task 2: Download begins!");
         genLnk = genLnk.replaceAll("\\\\/", "/");
         try {
@@ -598,6 +623,9 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.setProperty("retry_913", Property.NULL);
+        link.setProperty("hasFailed", Property.NULL);
+        link.setProperty("hasFailedWait", Property.NULL);
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
