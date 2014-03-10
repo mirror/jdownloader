@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "^https?://x\\-art\\.com/members/videos/[a-zA0-9\\-\\_]+/$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "^https?://(www\\.)?x-art\\.com/members/videos/[a-zA0-9\\-\\_]+/$" }, flags = { 0 })
 public class XArt extends PluginForDecrypt {
 
     public XArt(PluginWrapper wrapper) {
@@ -65,17 +65,21 @@ public class XArt extends PluginForDecrypt {
         br.getPage(parameter.toString());
 
         String links[] = br.getRegex("href=\"([a-zA-Z0-9\\_\\-]*\\.(mp4|wmv|mov))\"").getColumn(0);
-
-        if (links == null || links.length == 0) {
+        String lnks[] = br.getRegex("href=(\"|')(https?://[^\r\n\t\"]+\\.x-art\\.com/[^\r\n\t\"]+\\.(mp4|wmv|mov)\\?[^\r\n\t\"]+)\\1").getColumn(1);
+        if ((links == null || links.length == 0) && (lnks == null || lnks.length == 0)) {
             logger.warning("Possible plugin defect, please confirm in browser. If their are links present please report to JDownloader Development Team : " + parameter.toString());
             return null;
         }
-
         for (String link : links) {
             String fulllink = br.getURL() + link;
             DownloadLink dl = createDownloadlink(Encoding.htmlDecode(fulllink));
             ret.add(dl);
         }
+        for (String link : lnks) {
+            DownloadLink dl = createDownloadlink(Encoding.htmlDecode(link));
+            ret.add(dl);
+        }
+
         String title = br.getRegex("<h1>([a-zA-Z0-9\\_\\-\\ ]*)<\\/h1>").getMatch(0);
         if (title != null) {
             FilePackage fp = FilePackage.getInstance();

@@ -42,8 +42,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x\\-art\\.com/members/videos/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://(x-art\\.com/members/videos/.+|([a-z0-9]+\\.)?x-art\\.com/.+\\.(mov|mp4|wmv).+)" }, flags = { 2 })
 public class XArtCom extends PluginForHost {
+
+    // DEVNOTES
+    // links are now session based, we will need to add some sort of handling to get new token if/when token expires.
 
     private static Object LOCK   = new Object();
     private boolean       useRUA = true;
@@ -60,23 +63,10 @@ public class XArtCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        String name = null;
-        if (parameter.getDownloadURL().contains("/videos/")) {
-            name = new Regex(parameter.getDownloadURL(), "/videos/.+/(.+)\\.(mov|mp4|wmv)").getMatch(0);
-        }
-        if (name == null) name = "Unknown Filename";
-        String type = new Regex(parameter.getDownloadURL(), "/videos/.+/(.+)\\.(mov|mp4|wmv)").getMatch(1);
-        if (type != null) {
-            if ("wmv".equalsIgnoreCase(type)) {
-                name = name + ".wmv";
-            } else if ("mp4".equalsIgnoreCase(type)) {
-                name = name + ".mp4";
-            } else if ("mov".equalsIgnoreCase(type)) {
-                name = name + ".mov";
-            } else {
-                name = name + "-" + type + ".mp4";
-            }
-        }
+
+        final String name = new Regex(parameter.getDownloadURL(), "([^/]+\\.(mov|mp4|wmv))").getMatch(0);
+        if (name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         parameter.setName(name);
 
         ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("x-art.com");
@@ -175,6 +165,7 @@ public class XArtCom extends PluginForHost {
     @SuppressWarnings("unchecked")
     public void login(final Account account, Browser lbr, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean redirect = lbr.isFollowingRedirects();
             try {
                 /** Load cookies */
                 final Object ret = account.getProperty("cookies", null);
@@ -194,6 +185,7 @@ public class XArtCom extends PluginForHost {
                     }
                 }
                 prepBrowser(lbr);
+                lbr.setFollowRedirects(true);
                 lbr.getPage("http://x-art.com/members/");
                 Form loginform = br.getForm(0);
                 if (loginform == null) {
@@ -217,7 +209,6 @@ public class XArtCom extends PluginForHost {
                 loginform.put("uid", Encoding.urlEncode(account.getUser()));
                 loginform.put("pwd", Encoding.urlEncode(account.getPass()));
 
-                lbr.setFollowRedirects(true);
                 lbr.submitForm(loginform);
                 if (lbr.getCookie(this.getHost(), "sd_session_id") == null) {
                     String lang = System.getProperty("user.language");
@@ -259,6 +250,8 @@ public class XArtCom extends PluginForHost {
                 account.setProperty("lastFullLogin", Property.NULL);
                 account.setProperty("userAgent", Property.NULL);
                 throw e;
+            } finally {
+                lbr.setFollowRedirects(redirect);
             }
         }
     }
