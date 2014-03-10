@@ -31,13 +31,13 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
-
+    
     private String fpName = null;
-
+    
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     // DEV NOTES:
     //
     // REGEX run down, allows the following
@@ -51,7 +51,7 @@ public class MotherLessCom extends PluginForDecrypt {
     // - Server issues can return many 503's in high load situations.
     // - Server also punishes user who downloads with too many connections. This is a linkchecking issue also, as grabs info from headers.
     // - To reduce server loads associated with linkchecking, I've set 'setAvailable(true) for greater than 5 pages.
-
+    
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -127,7 +127,7 @@ public class MotherLessCom extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
+    
     // finds the uid within the grouping
     private String formLink(String singlelink) {
         if (singlelink.startsWith("/")) singlelink = "http://motherless.com" + singlelink;
@@ -135,7 +135,7 @@ public class MotherLessCom extends PluginForDecrypt {
         if (ID != null) singlelink = "http://motherless.com/" + ID;
         return singlelink;
     }
-
+    
     private void Gallery(ArrayList<DownloadLink> ret, String parameter, ProgressController progress) throws IOException {
         if (fpName == null) {
             fpName = br.getRegex("<title>MOTHERLESS\\.COM \\- Go Ahead She Isn\\'t Looking\\! :  (.*?)</title>").getMatch(0);
@@ -150,7 +150,7 @@ public class MotherLessCom extends PluginForDecrypt {
             totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=(\\d+)\"[^>]+>\\d+</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
             if (totalpages == null) totalpages = "1";
         }
-
+        
         int numberOfPages = Integer.parseInt(totalpages);
         progress.setRange(numberOfPages);
         logger.info("Found " + numberOfPages + " page(s), decrypting now...");
@@ -166,7 +166,7 @@ public class MotherLessCom extends PluginForDecrypt {
                     if (fpName != null) dl.setProperty("package", fpName);
                     dl.setProperty("dltype", "image");
                     // fast add.
-                    if (picturelinks.length >= 10) dl.setAvailable(true);
+                    dl.setAvailable(true);
                     ret.add(dl);
                 }
             }
@@ -180,7 +180,7 @@ public class MotherLessCom extends PluginForDecrypt {
                     dl.setProperty("dltype", "video");
                     if (fpName != null) dl.setProperty("package", fpName);
                     // fast add.
-                    if (videolinks.length >= 10) dl.setAvailable(true);
+                    dl.setAvailable(true);
                     ret.add(dl);
                 }
             }
@@ -192,10 +192,10 @@ public class MotherLessCom extends PluginForDecrypt {
             progress.increase(1);
         }
     }
-
+    
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
+    
 }
