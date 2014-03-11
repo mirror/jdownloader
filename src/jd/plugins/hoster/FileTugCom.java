@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -54,18 +54,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetug.com" }, urls = { "https?://(www\\.)?filetug\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class FileTugCom extends PluginForHost {
 
     private String                 correctedBR                  = "";
     private String                 passCode                     = null;
     private static final String    PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String    COOKIE_HOST                  = "http://ForDevsToPlayWith.com";
+    private static final String    COOKIE_HOST                  = "http://filetug.com";
     private static final String    NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String    NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String    DOMAINS                      = "(ForDevsToPlayWith\\.com)";
+    private static final String    DOMAINS                      = "(filetug\\.com)";
     private static final String    MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String    MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String    ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -94,11 +94,11 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                 fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.4.7
+    // XfileSharingProBasic Version 2.6.4.6
     // mods:
-    // limit-info:
+    // limit-info: Premium untested, set free account limits
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: null
     // other:
 
     @Override
@@ -116,9 +116,9 @@ public class XFileSharingProBasic extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public FileTugCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @Override
@@ -156,7 +156,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         /* standard traits from base page */
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
+            fileInfo[0] = new Regex(correctedBR, "nowrap style=\"background:none;\" align=\"left\">([^<>\"]*?)\\&nbsp;").getMatch(0);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
@@ -245,9 +245,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) {
-                handlePluginBroken(downloadLink, "dlform_f1_null", 3);
-            }
+            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /* how many forms deep do you want to try? */
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
@@ -381,7 +379,18 @@ public class XFileSharingProBasic extends PluginForHost {
             br.followConnection();
             correctBR();
             checkServerErrors();
-            handlePluginBroken(downloadLink, "dllinknofile", 3);
+            int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", 0);
+            downloadLink.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                logger.info(NICE_HOST + ": Final link is no file -> Retrying");
+                timesFailed++;
+                downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+            } else {
+                downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", Property.NULL);
+                logger.info(NICE_HOST + ": Final link is no file -> Plugin is broken");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         fixFilename(downloadLink);
@@ -460,7 +469,6 @@ public class XFileSharingProBasic extends PluginForHost {
         // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         /* generic cleanup */
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
@@ -757,32 +765,6 @@ public class XFileSharingProBasic extends PluginForHost {
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (404)", 30 * 60 * 1000l);
     }
 
-    /**
-     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
-     * error.
-     * 
-     * @param dl
-     *            : The DownloadLink
-     * @param error
-     *            : The name of the error
-     * @param maxRetries
-     *            : Max retries before out of date error is thrown
-     */
-    private void handlePluginBroken(final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
-        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        dl.getLinkStatus().setRetryCount(0);
-        if (timesFailed <= maxRetries) {
-            logger.info(NICE_HOST + ": " + error + " -> Retrying");
-            timesFailed++;
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
-        } else {
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -946,7 +928,18 @@ public class XFileSharingProBasic extends PluginForHost {
                 br.followConnection();
                 correctBR();
                 checkServerErrors();
-                handlePluginBroken(downloadLink, "dllinknofile", 3);
+                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    logger.info(NICE_HOST + ": Final link is no file -> Retrying");
+                    timesFailed++;
+                    downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+                } else {
+                    downloadLink.setProperty(NICE_HOSTproperty + "failedtimes_dllinknofile", Property.NULL);
+                    logger.info(NICE_HOST + ": Final link is no file -> Plugin is broken");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             fixFilename(downloadLink);
             downloadLink.setProperty("premlink", dllink);

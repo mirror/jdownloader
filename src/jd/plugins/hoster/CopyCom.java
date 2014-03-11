@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,9 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copy.com" }, urls = { "https?://(www\\.)?copy\\.com/(s/)?[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copy.com" }, urls = { "http://copydecrypted\\.com/\\d+" }, flags = { 0 })
 public class CopyCom extends PluginForHost {
 
     public CopyCom(PluginWrapper wrapper) {
@@ -42,53 +38,62 @@ public class CopyCom extends PluginForHost {
         return "https://www.copy.com/about/tos";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("https://www.copy.com/s/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-    }
+    private static final String TYPE_OLD = "https?://(www\\.)?copy\\.com/(s/)?[A-Za-z0-9]+(/[^<>\"/]+)?";
 
-    private static final String INVALIDLINKS = "https?://(www\\.)?copy\\.com/(price|about|barracuda|bigger|install|developer|browse|home|auth|signup|policies)";
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     /** They got an API: https://www.copy.com/developer/documentation */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.getPage(link.getDownloadURL());
-        String realUrl = br.getRegex("\"mime_type\":\"[^<>\"]{1,}\",\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
-        if (realUrl != null) {
-            realUrl = realUrl.replace("\\", "").replace("copy.com/", "copy.com/s/");
-            if (!realUrl.contains("www.")) realUrl = realUrl.replace("://", "://www.");
-            br.getPage(realUrl);
-        }
+        /* Filter links which have been added before the big change */
+        if (link.getDownloadURL().matches(TYPE_OLD)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(link.getStringProperty("mainlink", null));
+
         if (br.containsHTML(">You\\&rsquo;ve found a page that doesn\\&rsquo;t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String fInfo = br.getRegex("\"children\":\\[\\{(.*?)\\}").getMatch(0);
-        if (fInfo == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = getJson("name", fInfo);
-        final String filesize = getJson("size", fInfo);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        final String filename = link.getStringProperty("plain_name", null);
+        final String filesize = link.getStringProperty("plain_size", null);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(filename);
+        link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getURL().replace("/s/", "/").replace("www.", "") + "?download=1";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        final String dllink = downloadLink.getStringProperty("specified_link", null) + "?download=1";
+
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Cannot find requested object id")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
-    }
-
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        return result;
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(CopyCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(CopyCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(CopyCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(CopyCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override

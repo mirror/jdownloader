@@ -51,15 +51,14 @@ public class OtrFilesDe extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* Offline links should also have nice filenames */
+        link.setName(new Regex(link.getDownloadURL(), "file=(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepareBrowser();
         br.getPage(link.getDownloadURL());
-        if (!link.getDownloadURL().contains("?otr-files.de/index.php?option=")) {
-            final String correctLink = br.getRegex("\"(http://(www\\.)?otr\\-files\\.de/index\\.php\\?option=com_content\\&amp;task=view\\&amp;id=\\d+\\&amp;Itemid=\\d+\\&amp;server=[a-z0-9]+\\&amp;f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
-            if (correctLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setUrlDownload(Encoding.htmlDecode(correctLink));
-            br.getPage(link.getDownloadURL());
+        if (!br.getURL().contains("?otr-files.de/index.php?option=")) {
+            br.getPage(getOptionsLink());
         }
         if (!br.containsHTML("> Verf\\&uuml;gbare Formate auf otr\\-files") && !br.containsHTML(LIMITREACHED) && !br.containsHTML(NOSLOTS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setFinalFileName(Encoding.htmlDecode(new Regex(link.getDownloadURL(), "\\&f=(.+\\.otrkey)$").getMatch(0)));
@@ -91,13 +90,19 @@ public class OtrFilesDe extends PluginForHost {
             if (dllink == null) dllink = br.getRegex("<br><br><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
+    }
+
+    private String getOptionsLink() throws PluginException {
+        final String optlink = br.getRegex("\"(http://(www\\.)?otr\\-files\\.de/index\\.php\\?option=com_content\\&amp;task=view\\&amp;id=\\d+\\&amp;Itemid=\\d+\\&amp;server=[a-z0-9]+\\&amp;f=[^<>\"\\']+\\.otrkey)\"").getMatch(0);
+        if (optlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return Encoding.htmlDecode(optlink);
     }
 
     private static AtomicReference<String> agent = new AtomicReference<String>(null);

@@ -188,7 +188,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 return null;
             }
             title = unescape(title);
-            title = Encoding.htmlDecode(title.replaceAll("(\\\\|/)", "_").replaceAll("_+", "_").trim());
+            title = Encoding.htmlDecode(title).trim();
+            title = encodeUnicode(title);
             final PluginForHost hostPlugin = JDUtilities.getPluginForHost("vimeo.com");
 
             String qualities[][] = getQualities(br, ID, title);
@@ -431,6 +432,21 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    private String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     /* NO OVERRIDE!! */

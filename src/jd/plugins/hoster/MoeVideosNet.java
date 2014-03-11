@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideos.net" }, urls = { "http://(www\\.)?moevideos?\\.net/((\\?page=video\\&uid=|video/|video\\.php\\?file=|swf/letplayerflx3\\.swf\\?file=)[0-9a-f\\.]+|online/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moevideos.net" }, urls = { "http://moevideosdecrypted\\.net/\\d+" }, flags = { 0 })
 public class MoeVideosNet extends PluginForHost {
 
     private String               DLLINK;
@@ -48,11 +48,13 @@ public class MoeVideosNet extends PluginForHost {
         return 1;
     }
 
-    private String uid = null;
+    private String               uid            = null;
+    private static final boolean DECRYPTER_ONLY = true;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([0-9a-f\\.]+)$").getMatch(0) + ".flv");
+        if (DECRYPTER_ONLY) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         setBrowserExclusive();
         br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
@@ -75,6 +77,7 @@ public class MoeVideosNet extends PluginForHost {
             if (iAmHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             iAmHuman.remove("enviar");
 
+            /* Waittime is still skippable */
             // String waittime = br.getRegex("var tiempo = (\\d+);").getMatch(0);
             // int wait = 5;
             // if (waittime != null) wait = Integer.parseInt(waittime);

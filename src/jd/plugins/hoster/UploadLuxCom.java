@@ -89,7 +89,9 @@ public class UploadLuxCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<b>File name:</b> <b title=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<span style=\"text\\-shadow: 1px 1px #06526e;\">([^<>\"]*?)</span>").getMatch(0);
         String filesize = br.getRegex("<b>File Size:</b> <b style=\"color:#2BB2E3\">([^<>\"]*?)</b><br").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("radius: 3px;border-radius: 3px;\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -105,7 +107,7 @@ public class UploadLuxCom extends PluginForHost {
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML(">Fichier privée\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fichier privée!");
         br.setFollowRedirects(false);
-        final String waittime = br.getRegex("style=\"font\\-size:30px; text\\-decoration:none;\">(\\d+)</span><br />").getMatch(0);
+        final String waittime = br.getRegex("id=\"timer\">(\\d+)</span>").getMatch(0);
         int wait = 60;
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
