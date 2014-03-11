@@ -475,7 +475,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             String errorID = result.getErrorID();
             if (errorID != null && !errorID.contains(dl.getCandidate().getPlugin())) {
-                errorID = dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "-" + errorID;
+                errorID = dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + errorID;
             }
             dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(errorID));
             dl.setTimestamp(System.currentTimeMillis());
@@ -496,7 +496,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (dl.getErrorID() != null) {
                 ErrorDetails error = errors.get(dl.getErrorID());
                 if (error == null) {
-                    ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID(), result));
+
+                    ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID()));
+                    error.setStacktrace(errorID);
                     if (error2 != null) {
                         error = error2;
                     }
