@@ -1,7 +1,5 @@
 package org.jdownloader.statistics;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
-
 import org.appwork.storage.Storable;
 
 public class ErrorDetails implements Storable {
@@ -29,8 +27,8 @@ public class ErrorDetails implements Storable {
 
     }
 
-    public ErrorDetails(String errorID, DownloadLinkCandidateResult result) {
-        this.stacktrace = result.getErrorID();
+    public ErrorDetails(String errorID) {
+
         this.id = errorID;
     }
 

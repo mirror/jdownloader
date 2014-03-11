@@ -40,7 +40,7 @@ public abstract class AbstractLogEntry extends AbstractJsonData {
         this.os = os;
     }
 
-    private long timestamp = 0;
+    private volatile long timestamp = 0;
 
     public long getTimestamp() {
         return timestamp;
