@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "top-protect.net" }, urls = { "http://(www\\.)?top\\-protect\\.net/linkidwoc\\.php\\?linkid=[a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "top-protect.net" }, urls = { "http://(www\\.)?top-protect(ion)?\\.net/linkidwoc\\.php\\?linkid=[a-z]+" }, flags = { 0 })
 public class TopProtectNet extends PluginForDecrypt {
 
     public TopProtectNet(PluginWrapper wrapper) {
@@ -37,14 +37,16 @@ public class TopProtectNet extends PluginForDecrypt {
     }
 
     // All similar: IleProtectCom, ExtremeProtectCom, TopProtectNet
+    // top-protect and top-protection uids are not transferable. Keep script independent from domain.
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.postPage("http://top-protect.net/linkid.php", "linkid=" + new Regex(parameter, "top\\-protect\\.net/linkidwoc\\.php\\?linkid=([a-z]+)").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
-        final String fpName = br.getRegex("Titre:[\t\n\r ]+</td>[\t\n\r ]+<td style=\\'border:1px\\'>([^<>\"/]+)</td>").getMatch(0);
-        String[] links = br.getRegex("target=_blank>(https?://[^<>\"\\']+)").getColumn(0);
+        br.getPage(parameter);
+        br.postPage("/linkid.php", "linkid=" + new Regex(parameter, "/linkidwoc\\.php\\?linkid=([a-z]+)").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
+        final String fpName = br.getRegex("Titre:[\t\n\r ]+</td>[\t\n\r ]+<td style='border:1px'>([^<>\"/]+)</td>").getMatch(0);
+        String[] links = br.getRegex("target=_blank>(https?://[^<>\"']+)").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML("href= target=_blank></a><br></br><a")) {
                 logger.info("Link offline: " + parameter);
@@ -54,7 +56,7 @@ public class TopProtectNet extends PluginForDecrypt {
             return null;
         }
         for (String singleLink : links)
-            if (!singleLink.contains("top-protect.net/")) decryptedLinks.add(createDownloadlink(singleLink));
+            if (!new Regex(singleLink, "top-protect(ion)?\\.net/").matches()) decryptedLinks.add(createDownloadlink(singleLink));
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
