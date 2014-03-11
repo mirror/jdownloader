@@ -957,6 +957,7 @@ VoteFinderWindow_VoteFinderWindow_msg_negative=Pressione [CTRL] & clique aqui se
 VoteFinderWindow_VoteFinderWindow_msg_positive=Pressione [CTRL] & clique aqui se você gosta:
 VoteFinderWindow_VoteFinderWindow_title_=Feedback direto
 VoteFinderWindow_runInEDT_thankyou_=Obrigado pelo feedback.
+VoteFinderWindow_runInEDT_thankyou_2=Obrigado por relatar o problema.\r\nPor favor, continue relatando problemas sempre que um download não funcionar como esperado.\r\nVocê poderá em breve ver as estatísticas do relatório em http://my.jdownloader.org.\r\n--- Quanto mais relatórios, mais rápido poderemos corrigir o plugin. ---
 WatchAsYouDownloadColumn_WatchAsYouDownloadColumn=Ver Enquanto Baixa
 WatchAsYouDownload_WatchAsYouDownloadAction_=Ver Enquanto Baixa
 YoutubeDashConfigPanel_MultiVariantBox_getLabel_=Qualidade: %s1
