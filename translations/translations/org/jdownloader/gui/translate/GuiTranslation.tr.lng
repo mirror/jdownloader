@@ -957,6 +957,7 @@ VoteFinderWindow_VoteFinderWindow_msg_negative=Eğer beğenmediyseniz [CTRL] tu�
 VoteFinderWindow_VoteFinderWindow_msg_positive=Eğer beğendiyseniz [CTRL] tuşuna basın ve buraya tıklayın:
 VoteFinderWindow_VoteFinderWindow_title_=Doğrudan Geri Bildirim
 VoteFinderWindow_runInEDT_thankyou_=Geri bildiriminiz için teşekkür ederiz.
+VoteFinderWindow_runInEDT_thankyou_2=Sorunu bildirdiğiniz için teşekkür ederiz.\nBir indirme beklendiği gibi çalışmadığında lütfen sorunları bildirmeye devam edin.\nYakında bildirme istatistiklerini http://my.jdownloader.org adresinde görebileceksiniz.\n --- Daha fazla bildirimlerle, Eklentiyi daha hızlı düzeltebiliriz. ---
 WatchAsYouDownloadColumn_WatchAsYouDownloadColumn=İndirdiğin Gibi İzle
 WatchAsYouDownload_WatchAsYouDownloadAction_=İndirdiğin Gibi İzle
 YoutubeDashConfigPanel_MultiVariantBox_getLabel_=Kalite: %s1
