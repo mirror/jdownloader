@@ -957,6 +957,7 @@ VoteFinderWindow_VoteFinderWindow_msg_negative=Kliknite [CTRL] & klik ako Vam se
 VoteFinderWindow_VoteFinderWindow_msg_positive=Kliknite [CTRL] & klik ako Vam se sviđa:
 VoteFinderWindow_VoteFinderWindow_title_=Izravna ocjena
 VoteFinderWindow_runInEDT_thankyou_=Zahvaljujemo na ocjeni.
+VoteFinderWindow_runInEDT_thankyou_2=Hvala vam što ste prijavili problem.\r\nMolimo da i dalje izvještavate o problemima kad god preuzimanje ne radi kako treba.\r\nMoći ćete uskoro vidjeti statistiku izvješća na http://my.jdownloader.org.\r\n --- Što više izvješća, brže možemo ispraviti problem sa dodatkom. ---
 WatchAsYouDownloadColumn_WatchAsYouDownloadColumn=Gledajte dok preuzimate
 WatchAsYouDownload_WatchAsYouDownloadAction_=Gledajte dok preuzimate
 YoutubeDashConfigPanel_MultiVariantBox_getLabel_=Kvaliteta: %s1
