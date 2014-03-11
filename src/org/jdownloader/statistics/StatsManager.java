@@ -29,6 +29,7 @@ import jd.controlling.downloadcontroller.event.DownloadWatchdogListener;
 import jd.gui.swing.jdgui.DirectFeedback;
 import jd.gui.swing.jdgui.DownloadFeedBack;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -613,7 +614,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             Thread.sleep(1 * 60 * 1000l);
                             logger.info("Try to send: \r\n" + JSonStorage.serializeToJson(sendRequest));
                             if (!config.isEnabled()) return;
-                            br.postPageRaw(getBase() + "stats/push", JSonStorage.serializeToJson(new TimeWrapper(sendTo)));
+                            br.postPageRaw(getBase() + "stats/push", Encoding.urlEncode(JSonStorage.serializeToJson(new TimeWrapper(sendTo))));
 
                             // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
 
@@ -804,13 +805,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private void sendLogDetails(LogDetails log) throws StorageException, IOException {
         Browser br = createBrowser();
-        br.postPageRaw(getBase() + "stats/sendLog", JSonStorage.serializeToJson(log));
+        br.postPageRaw(getBase() + "stats/sendLog", Encoding.urlEncode(JSonStorage.serializeToJson(log)));
 
     }
 
     private void sendErrorDetails(ErrorDetails error) throws StorageException, IOException {
         Browser br = createBrowser();
-        br.postPageRaw(getBase() + "stats/sendError", JSonStorage.serializeToJson(error));
+        br.postPageRaw(getBase() + "stats/sendError", Encoding.urlEncode(JSonStorage.serializeToJson(error)));
 
     }
 
@@ -881,7 +882,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         try {
             String feedbackjson = JSonStorage.serializeToJson(new TimeWrapper(sendTo));
 
-            br.postPageRaw(getBase() + "stats/push", feedbackjson);
+            br.postPageRaw(getBase() + "stats/push", Encoding.urlEncode(feedbackjson));
 
             // br.postPageRaw("http://localhost:8888/stats/push", JSonStorage.serializeToJson(sendTo));
 
@@ -969,7 +970,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     protected void sendMessage(String text, PostAction action) throws StorageException, IOException {
 
         Browser br = createBrowser();
-        br.postPageRaw(getBase() + "stats/sendMessage", JSonStorage.serializeToJson(new MessageData(text, action.getData())));
+        br.postPageRaw(getBase() + "stats/sendMessage", Encoding.urlEncode(JSonStorage.serializeToJson(new MessageData(text, action.getData()))));
 
     }
 }
