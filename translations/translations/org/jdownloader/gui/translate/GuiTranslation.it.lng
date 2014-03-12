@@ -957,6 +957,7 @@ VoteFinderWindow_VoteFinderWindow_msg_negative=Premi [CTRL] e clicca qui se non 
 VoteFinderWindow_VoteFinderWindow_msg_positive=Premi [CTRL] e clicca qui se ti piace:
 VoteFinderWindow_VoteFinderWindow_title_=Feedback diretto
 VoteFinderWindow_runInEDT_thankyou_=Grazie per il tuo feedback.
+VoteFinderWindow_runInEDT_thankyou_2=Grazie per aver segnalato il problema\r\n\Continua a segnalare problemi ogni volta che un download non ha funzionato come ti aspettavi.\r\nSarai presto in grado di vedere le statistiche dei report su http://my.jdownloader.org\r\n---Più problemi vengono segnalati, prima possiamo correggere il plugin.---
 WatchAsYouDownloadColumn_WatchAsYouDownloadColumn=Guarda cosa stai scaricando
 WatchAsYouDownload_WatchAsYouDownloadAction_=Controlla cosa stai scaricando
 YoutubeDashConfigPanel_MultiVariantBox_getLabel_=Qualità: %s1
