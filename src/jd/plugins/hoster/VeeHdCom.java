@@ -73,6 +73,7 @@ public class VeeHdCom extends PluginForHost {
             final String frame = br.getRegex("\"(/vpi\\?h=[^<>\"]*?)\"").getMatch(0);
             if (frame == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage("http://veehd.com" + frame);
+            if (br.containsHTML("Too Many Requests")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 5 * 60 * 1000l);
             dllink = getDirectlink();
             if (dllink == null) {
                 dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
@@ -109,8 +110,8 @@ public class VeeHdCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // More downloads possible but will cause server errors
-        return 3;
+        /* More downloads will cause server errors */
+        return 2;
     }
 
     @Override

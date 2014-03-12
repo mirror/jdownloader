@@ -54,22 +54,11 @@ public class OverThumbsCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<h1>404 \\- Not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/galleries/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("cdn\\.overthumbs\\.com/img/movieicon\\.jpg\" width=\"46\" height=\"43\" alt=\"\" /><h1>(.*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) tube clips at Over Thumbs</title>").getMatch(0);
         String vid = br.getRegex("var VideoID = \"(\\d+)\";").getMatch(0);
@@ -98,6 +87,17 @@ public class OverThumbsCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

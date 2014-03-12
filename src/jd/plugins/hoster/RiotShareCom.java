@@ -29,32 +29,29 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "packupload.com" }, urls = { "http://([a-z]+\\.)?packupload.com/[A-Z0-9]+" }, flags = { 0 })
-public class PackUploadCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "riotshare.com" }, urls = { "http://(www\\.)?riotshare\\.com/play/\\d+/" }, flags = { 0 })
+public class RiotShareCom extends PluginForHost {
 
-    public PackUploadCom(PluginWrapper wrapper) {
+    public RiotShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.packupload.com/cgu";
+        return "http://www.riotshare.com/terms";
     }
-
-    private static final String INVALIDLINKS = "http://([a-z]+\\.)?packupload.com/contact";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Oops, page non trouvée|La page que vous essayez d\\'afficher n\\'existe pas|>Fichier ou dossier indisponible<|>Unavailable file or folder<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<title>Download ([^<>\"]*?) for free \\- PackUpload</title>").getMatch(0);
-        final String filesize = br.getRegex(">Size :</span> <span style=\"[^<>\"]*?\">([^<>\"]*?)</span>").getMatch(0);
+        if (!br.getURL().contains("/play/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* Don't grab filename from below as it might happens that it is cut */
+        final String filename = br.getRegex("<div style=\"font\\-size:24px\"><b>([^<>\"]*?)</b></div>").getMatch(0);
+        final String filesize = br.getRegex("<b>Size:</b>([^<>\"]*?)</font>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim().replace(",", ".")));
+        link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -62,13 +59,10 @@ public class PackUploadCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getRegex("\"(http://s\\d+\\.packupload\\.com/[A-Z0-9]+)\"").getMatch(0);
+        br.postPage(br.getURL(), "dl=1");
+        final String dllink = br.getRegex("\"(http://(www\\.)?riotshare\\.com/adata/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int wait = 15;
-        final String waittime = br.getRegex("var delay = (\\d+);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "", false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

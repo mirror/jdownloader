@@ -232,7 +232,6 @@ public class AsFileCom extends PluginForHost {
                 br.getPage("http://asfile.com/en/profile");
                 if (br.containsHTML("Your account is: FREE<br")) {
                     logger.info("Free accounts are not supported!");
-
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {

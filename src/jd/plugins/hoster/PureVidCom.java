@@ -48,14 +48,7 @@ public class PureVidCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         String fuid = new Regex(downloadLink.getDownloadURL(), "/(\\?m=embed&id=|v/)([a-z0-9]+)").getMatch(1);
         br.getPage(downloadLink.getDownloadURL());
@@ -68,13 +61,19 @@ public class PureVidCom extends PluginForHost {
         fl.getHeaders().put("Cache-Control", null);
         fl.getPage("/?m=video_info_embed_dev&id=" + fuid);
         final String filename = fl.getRegex("\"titleHeader\":\"([^\"]+)").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String sid = fl.getRegex("\"sid\",\"value\":\"(\\d+)\"").getMatch(0);
         dllink = fl.getRegex("\"url\":\"(http[^\"]+purevid\\.com[^\"]+/get[^\"]+)").getMatch(0);
+        if (filename == null || sid == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\\\/", "/");
         final String ext = dllink.substring(dllink.lastIndexOf("."));
         downloadLink.setFinalFileName(filename + ext);
-        Browser br2 = br.cloneBrowser();
+        br.getPage("http://www.purevid.com/?m=statuscheck&token=&uid=&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)").getMatch(0) + "&sas=&sid=" + sid + "&cc=");
+        if (br.containsHTML("\\?m=upgrade")) {
+            downloadLink.getLinkStatus().setStatusText("Only downloadable for registered/premium users");
+            return AvailableStatus.TRUE;
+        }
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -94,6 +93,21 @@ public class PureVidCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML("\\?m=upgrade")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl.startDownload();
     }
 
     @Override

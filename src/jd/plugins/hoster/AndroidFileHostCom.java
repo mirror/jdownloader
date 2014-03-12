@@ -47,12 +47,12 @@ public class AndroidFileHostCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        final String filename = br.getRegex("id=\"filename\" value=\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("name=\"file_size\" id=\"file_size\" value=\"(\\d+)\"").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(Long.parseLong(filesize));
-        final String md5 = br.getRegex(">md5</span>([^<>\"]*?)</p>").getMatch(0);
+        final String md5 = br.getRegex("<h4>md5</h4>[\t\n\r ]+<p><code>([a-f0-9]{32})</code>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5.trim());
         return AvailableStatus.TRUE;
     }

@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "http://[\\w\\.]*?partage\\-facile\\.com/(?!forum|connexion|mentions|inscription|css|js)([0-9A-Z]+/.+|\\d+.*?\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "partage-facile.com" }, urls = { "http://[\\w\\.]*?partage\\-facile\\.com/([0-9A-Z]+/.+|\\d+.*?\\.html)" }, flags = { 0 })
 public class PartageFacileCom extends PluginForHost {
 
     public PartageFacileCom(PluginWrapper wrapper) {
@@ -45,8 +45,11 @@ public class PartageFacileCom extends PluginForHost {
         return -1;
     }
 
+    private static final String INVALIDLINKS = "http://[\\w\\.]*?partage\\-facile\\.com/(forum|connexion|mentions|inscription|css|js|vip|frauduleux|cgu)(.+)?";
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());

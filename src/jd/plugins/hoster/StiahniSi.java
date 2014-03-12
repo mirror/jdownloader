@@ -160,24 +160,23 @@ public class StiahniSi extends PluginForHost {
             throw e;
         }
         final String expire = br.getRegex("class=\"btn btn\\-info btn\\-sm\">(\\d+) Days</a>").getMatch(0);
-        if (expire == null) {
+        final String traffic = br.getRegex("class=\"btn btn\\-success btn\\-sm\" >([^<>\"]*?)</a>").getMatch(0);
+        if (expire == null && traffic == null) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-        } else {
-            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire) * 24 * 60 * 60 * 1001l);
         }
-        final String traffic = br.getRegex("class=\"btn btn\\-success btn\\-sm\" >([^<>\"]*?)</a>").getMatch(0);
-        if (traffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(traffic));
+        if (expire != null) {
+            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire) * 24 * 60 * 60 * 1001l);
+            ai.setStatus("Time premium account");
         } else {
-            ai.setUnlimitedTraffic();
+            ai.setTrafficLeft(SizeFormatter.getSize(traffic));
+            ai.setStatus("Traffic premium account");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
