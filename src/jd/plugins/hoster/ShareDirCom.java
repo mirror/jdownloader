@@ -279,6 +279,22 @@ public class ShareDirCom extends PluginForHost {
                 }
             }
         } catch (final PluginException e) {
+            /* This may happen if the downloads stops somewhere - a few retries usually help in this case - otherwise disable host */
+            if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                logger.info(NICE_HOST + ": DOWNLOAD_INCOMPLETE");
+                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", 0);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 5) {
+                    timesFailed++;
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", timesFailed);
+                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - Retrying!");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "timesfailed_dl_incomplete");
+                } else {
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", Property.NULL);
+                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - disabling current host!");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                }
+            }
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(ShareDirCom.NOCHUNKS, false) == false) {

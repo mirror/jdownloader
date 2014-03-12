@@ -21,6 +21,7 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -106,10 +107,16 @@ public class RTL2De extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /* Offline links should also have nice filenames */
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "rtl2\\.de/(.+)").getMatch(0));
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title>RTL2 \\- Seite nicht gefunden \\(404\\)</title>") || br.getURL().equals("http://www.rtl2.de/video/")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        final String jsredirect = br.getRegex("window\\.location\\.href = \"(/[^<>\"]*?)\";</script>").getMatch(0);
+        if (jsredirect != null) br.getPage("http://rtl2now.rtl2.de" + jsredirect);
+        if (br.containsHTML("<title>RTL2 \\- Seite nicht gefunden \\(404\\)</title>") || br.getURL().equals("http://www.rtl2.de/video/") || br.getURL().equals("http://www.rtl2.de/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* No free download possible --> Show as offline */
+        if (br.getURL().contains("productdetail=1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String param = br.getRegex("(vico_id=\\d+\\&vivi_id=\\d+)").getMatch(0);
         if (param == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final HashMap<String, String> ret = new HashMap<String, String>(jsonParser(param));
