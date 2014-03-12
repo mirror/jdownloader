@@ -62,6 +62,9 @@ import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.Scriptable;
 
 public class YoutubeHelper {
 
@@ -708,33 +711,38 @@ public class YoutubeHelper {
 
         String s = sig;
         // Debug code.
-        // Context cx = null;
-        // Object result = null;
-        // try {
-        //
-        // try {
-        // cx = ContextFactory.getGlobal().enterContext();
-        //
-        // } catch (java.lang.SecurityException e) {
-        // /* in case classshutter already set */
-        // }
-        // Scriptable scope = cx.initStandardObjects();
-        // String all = new Regex(js, Pattern.compile("function " + descrambler +
-        // "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
-        // result = cx.evaluateString(scope, all + " " + descrambler + "(\"" + sig + "\")", "<cmd>", 1, null);
-        //
-        // } finally {
-        // try {
-        // Context.exit();
-        // } catch (final Throwable e) {
-        // }
-        // }
-        for (final String line : new Regex(des, "[^;]+").getColumn(-1)) {
+        Context cx = null;
+        Object result = null;
+        try {
 
-            s = YoutubeHelper.handleRule(s, line);
+            try {
+                cx = ContextFactory.getGlobal().enterContext();
+
+            } catch (java.lang.SecurityException e) {
+                /* in case classshutter already set */
+            }
+            Scriptable scope = cx.initStandardObjects();
+            String all = new Regex(jsContent, Pattern.compile("function " + descrambler + "\\(([^)]+)\\)\\{(.+?return.*?)\\}.*?\\{.*?\\}")).getMatch(-1);
+            result = cx.evaluateString(scope, all + " " + descrambler + "(\"" + sig + "\")", "<cmd>", 1, null);
+
+        } finally {
+            try {
+                Context.exit();
+            } catch (final Throwable e) {
+            }
         }
+        if (result != null)
+            return result.toString();
+        else {
+            // fail over?
+            final String[] t = new Regex(des, "[^;]+").getColumn(-1);
+            for (final String line : t) {
 
-        return s;
+                s = YoutubeHelper.handleRule(s, line);
+            }
+
+            return s;
+        }
 
     }
 
