@@ -1,2 +1,6 @@
+gui_tab_title=%s1 Kanala
+jd_plugins_optional_jdchat_JDChat_topic_default=Eguneko mezua kargatzen
+jd_plugins_optional_jdchat_JDChat_topic_tooltip=Eguneko mezua
 jd_plugins_optional_jdchat_jdchat=Laguntza txat-a
-plugins_optional_jdchat_enternick=Zure gogoko izenordea
+plugins_optional_jdchat_enternick=Zure gogoko goitizena?
+settings_nick=Zure izena

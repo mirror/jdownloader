@@ -1,8 +1,11 @@
+LinkSource_PASTE_LINKS_ACTION=Itsatsi estekak
+MyJDownloaderController_onError_badlogins=Zure ' Nire JDownloader'  saioa ez da zuzena.\nMesedez egiaztatu erabiltzailea/posta edo pasahitza!
 controller_packages_defaultname=Zenbait
 decrypter_invalidaccount=Ez da balio duen konturik aurkitu
 decrypter_unknownerror=Errore ezezaguna
 decrypter_wrongcaptcha=Captcha okerra
 decrypter_wrongpassword=Pasa-hitz okerra
+dialog_optional_showRestartRequiredMessage_msg=Zure aldaketak gauzatzeko JDownloader berrabiarazi behar da. Berrabiarazi orain?
 download_connection_normal=Deskarga
 download_error_message_connectioncopyerror=Akatsa konexioa klonatzean
 download_error_message_incomplete=Deskarga amaitu gabe

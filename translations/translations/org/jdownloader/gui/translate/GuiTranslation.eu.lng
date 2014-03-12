@@ -1,3 +1,12 @@
+ConditionDialog_validate_object_=Zure baldintzak ez dira baliozkoak. Mesedez gainbegiratu adierazpideak markatutako eremuetan.
+MyJDownloaderSettingsPanel_runInEDT_account_badlogins=Zure kontua desaktibatua izan da zure Erabiltzaile/Posta edo Pasahitza oker daudelako.
+MyJDownloaderSettingsPanel_runInEDT_account_unknown=Zure kontua desaktibatua izan da errore bat gertatu delako:  %s1
+TestAction_actionPerformed_contains_=Zure %s1 sarrerak %s2 dauka!
+TestAction_actionPerformed_equals_=Zure %s1 sarrera %s2ren berdina da
+TestAction_actionPerformed_nomatch_=Zure %s1 sarrera %s2ren desberdina da
+TestAction_actionPerformed_nomatch_contain=Zure %s1 sarrerak ez dauka %s2
+TestAction_actionPerformed_object_=Zure %s1 sarrerak %s2 dauka.\nZernahirako ezkonketak:\n%s3
+TestAction_actionPerformed_object_matches=Zure sarrera %s1 %s2ren berdina da.\nZernahitarako ezkonketak:\n%s3
 action_exit=Irten
 action_settings_menu=Ezarpenak
 gui_btn_select=Hautatu
