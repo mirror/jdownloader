@@ -49,11 +49,12 @@ public class PCloudCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         else if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        prepBR();
         final String code = link.getStringProperty("plain_code", null);
         final String fileid = link.getStringProperty("plain_fileid", null);
-        if (link.getBooleanProperty("complete_folder", false)) {
+        if (isCompleteFolder(link)) {
+            br.getPage("http://api.pcloud.com/showpublink?code=" + code);
+            if (br.containsHTML("\"error\": \"Invalid link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             br.getPage("https://api.pcloud.com/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
             if (br.containsHTML("\"error\": \"Invalid link \\'code\\'\\.\"|\"error\": \"File not found\\.\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -69,8 +70,14 @@ public class PCloudCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = getdllink(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        final String dllink = getdllink(downloadLink);
+        boolean resume = true;
+        int maxchunks = 0;
+        if (isCompleteFolder(downloadLink)) {
+            resume = false;
+            maxchunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -86,7 +93,8 @@ public class PCloudCom extends PluginForHost {
 
     private String getdllink(final DownloadLink dl) throws PluginException {
         String dllink = null;
-        if (dl.getBooleanProperty("complete_folder", false)) {
+        if (isCompleteFolder(dl)) {
+            /* Select all IDs of the folder to download all as .zip */
             final String[] fileids = br.getRegex("\"fileid\": (\\d+)").getColumn(0);
             if (fileids == null || fileids.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = "https://api.pcloud.com/getpubzip?fileids=";
@@ -109,6 +117,19 @@ public class PCloudCom extends PluginForHost {
             dllink = "https://" + hosts[new Random().nextInt(hosts.length - 1)] + dllink;
         }
         return dllink;
+    }
+
+    private boolean isCompleteFolder(final DownloadLink dl) {
+        return dl.getBooleanProperty("complete_folder", false);
+    }
+
+    private void prepBR() {
+        br.setFollowRedirects(true);
+        br.getHeaders().put("Accept-Encoding", "gzip");
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept-Charset", null);
     }
 
     @Override

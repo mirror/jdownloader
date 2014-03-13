@@ -557,10 +557,15 @@ public class HulkShareCom extends PluginForHost {
                         if (dllink == null) {
                             dllink = br.getRegex("\"(http://[a-z0-9]+\\.hulkshare\\.com/hulkdl/[a-z0-9]+/.*?)\"").getMatch(0);
                             if (dllink == null) {
-                                Browser br2 = br.cloneBrowser();
+                                /* Don't use the existing browser here! */
+                                final Browser br2 = new Browser();
                                 br2.setFollowRedirects(false);
-                                br2.getPage("http://hulkshare.com/ap-" + new Regex(downloadLink.getDownloadURL(), "hulkshare\\.com/(.+)").getMatch(0) + ".mp3");
+                                br2.getPage("http://www.hulkshare.com/ap-" + new Regex(downloadLink.getDownloadURL(), "hulkshare\\.com/(.+)").getMatch(0) + ".mp3");
                                 dllink = br2.getRedirectLocation();
+                                if (dllink != null) {
+                                    br2.getPage(dllink);
+                                    dllink = br2.getRedirectLocation();
+                                }
                                 if (dllink == null) {
                                     String jsCrap = br.getRegex("style=\"width: 360px; height: 100px; margin: 0 10px; overflow: auto; float: left;\">[\t\n\r ]+<script language=\"JavaScript\">[\t\n\r ]+function [A-Za-z0-9]+\\(\\)[\t\n\r ]+\\{(.*?)window\\.").getMatch(0);
                                     if (jsCrap != null) dllink = execJS(jsCrap);

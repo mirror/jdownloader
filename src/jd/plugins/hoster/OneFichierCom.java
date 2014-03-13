@@ -142,7 +142,7 @@ public class OneFichierCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
         br.postPage("http://1fichier.com/check_links.pl", "links[]=" + Encoding.urlEncode(link.getDownloadURL()));
-        if (br.containsHTML(";;;NOT FOUND")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(";;;NOT FOUND|;;;BAD LINK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">Software error:<")) {
             link.getLinkStatus().setStatusText("Cannot check availibility because of a server error!");
             return AvailableStatus.UNCHECKABLE;
@@ -244,8 +244,8 @@ public class OneFichierCom extends PluginForHost {
                 }
             } else {
                 // base > submit:Free Download > submit:Show the download link + t:35140198 == link
-                Browser br2 = br.cloneBrowser();
-                Form a1 = br2.getForm(0);
+                final Browser br2 = br.cloneBrowser();
+                final Form a1 = br2.getForm(0);
                 if (a1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 sleep(2000, downloadLink);
@@ -516,7 +516,10 @@ public class OneFichierCom extends PluginForHost {
             if (pwProtected || br.containsHTML("password")) passCode = handlePassword(link, passCode);
             dllink = br.getRedirectLocation();
             if (dllink != null && br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
-            if (dllink == null) {
+            if (dllink == null && br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
+                logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

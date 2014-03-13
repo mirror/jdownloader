@@ -53,9 +53,11 @@ public class OneChannelCh extends PluginForDecrypt {
             if (br.getURL().equals("http://www.1channel.ch/")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
-            }
-            if (br.containsHTML(">No episodes listed<")) {
+            } else if (br.containsHTML(">No episodes listed<")) {
                 logger.info("Link offline (no downloadlinks available): " + parameter);
+                return decryptedLinks;
+            } else if (br.containsHTML("class=\"tv_container\"")) {
+                logger.info("Linktype (series overview) is not supported: " + parameter);
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\-  on 1Channel \\| [^<>\"]*?</title>").getMatch(0);

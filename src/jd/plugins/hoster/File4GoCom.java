@@ -57,9 +57,15 @@ public class File4GoCom extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
+        br.setCookie(MAINPAGE, "animesonline", "1");
+        br.setCookie(MAINPAGE, "musicasab", "1");
+        br.setCookie(MAINPAGE, "poup", "1");
+        br.setCookie(MAINPAGE, "noadvtday", "0");
+        br.setCookie(MAINPAGE, "hellpopab", "1");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE") || br.getURL().contains("file4go.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<b>Nome( do arquivo)?:</b>([^<>\"]*?)</span>").getMatch(1);
@@ -71,7 +77,7 @@ public class File4GoCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String reconnectWait = br.getRegex("var time = (\\d+)").getMatch(0);
         if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
@@ -84,7 +90,7 @@ public class File4GoCom extends PluginForHost {
         rc.load();
         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         final String c = getCaptchaCode(cf, downloadLink);
-        br.postPage("http://www.file4go.com/download", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&id=" + fid);
+        br.postPage("http://www.file4go.com/getdownload.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&id=" + fid);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.setFollowRedirects(false);
         final String dllink = getDllink();
@@ -112,7 +118,7 @@ public class File4GoCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -193,7 +199,7 @@ public class File4GoCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
@@ -213,8 +219,8 @@ public class File4GoCom extends PluginForHost {
     }
 
     private String getDllink() {
-        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.file4go\\.com:\\d+/dll\\.php\\?id=[^<>\"/]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<span id=\"boton_download\" ><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.file4go\\.com:\\d+/[^<>\"]+/dll/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<span id=\"boton_download\" ><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
 

@@ -215,6 +215,9 @@ public class SuperLoadCz extends PluginForHost {
             } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
                 logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
                 tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+            } else if (br.containsHTML("\"error\":\"Lack of credits\"")) {
+                logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             dllink = getJson("link");
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -253,7 +256,7 @@ public class SuperLoadCz extends PluginForHost {
         String token = null;
         try {
             br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
-            if (!getSuccess()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (!getSuccess()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             token = getJson("token");
             if (token != null) {
                 account.setProperty("token", token);

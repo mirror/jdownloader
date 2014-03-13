@@ -424,7 +424,11 @@ public class HugeFilesNet extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
-                if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
+                if (inValidate(dllink) && (getFormByKey(cbr, "op", "download1") == null || i == repeat)) {
+                    if (getFormByKey(cbr, "op", "download1") != null) {
+                        logger.info("Captcha wrong");
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                     if (i == repeat)
                         logger.warning("Exausted repeat count, after 'dllink == null'");
                     else

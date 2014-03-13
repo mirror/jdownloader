@@ -759,6 +759,7 @@ public class RapidGatorNet extends PluginForHost {
 
     private void handleErrors_api(final String session_id, final DownloadLink link, final Account account, URLConnectionAdapter con) throws PluginException, UnsupportedEncodingException, IOException {
         if (link != null && con.getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (link != null && con.getResponseCode() == 416) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
         if (link != null && con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
         if (con.getResponseCode() != 200) {
             synchronized (LOCK) {

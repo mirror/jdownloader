@@ -47,6 +47,9 @@ public class PanBaiduCom extends PluginForHost {
     private static final String NOCHUNKS                                   = "NOCHUNKS";
     private static final String USER_AGENT                                 = "netdisk;4.5.1.5;PC;PC-Windows;6.2.9200;WindowsBaiduYunGuanJia";
 
+    private static final String NICE_HOST                                  = "pan.baidu.com";
+    private static final String NICE_HOSTproperty                          = "panbaiducom";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -125,6 +128,9 @@ public class PanBaiduCom extends PluginForHost {
                 br.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
             }
             if (getJson("img") != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("\"errno\":112")) {
+                handlePluginBroken(downloadLink, "unknownerror112", 3);
+            }
             DLLINK = getJson("dlink");
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -187,6 +193,32 @@ public class PanBaiduCom extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
+     * error.
+     * 
+     * @param dl
+     *            : The DownloadLink
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handlePluginBroken(final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
+        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        dl.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Final download link not found");
+        } else {
+            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Plugin is broken");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override

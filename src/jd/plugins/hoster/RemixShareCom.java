@@ -49,6 +49,37 @@ public class RemixShareCom extends PluginForHost {
         this.setStartIntervall(3000l);
     }
 
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setCookie("http://remixshare.com", "lang_en", "english");
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(BLOCKED)) return AvailableStatus.UNCHECKABLE;
+        br.setFollowRedirects(false);
+        /*
+         * 400 = File deleted, maybe abused 500 = Wrong link or maybe deleted some time ago
+         */
+        if (br.containsHTML("Error Code: (400|500)\\.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title=\\'([0-9]{10}_)?(.*?)\\'>", Pattern.CASE_INSENSITIVE)).getMatch(1));
+        if (filename == null) filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filesize = br.getRegex("(>|\\.\\.\\.)\\&nbsp;\\((.*?)\\)<").getMatch(1);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(filename.trim());
+        if (filesize != null) {
+            filesize = Encoding.htmlDecode(filesize);
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
+        String md5Hash = br.getRegex("/>MD5:(.*?)<").getMatch(0);
+        if (md5Hash != null && md5Hash.trim().length() == 32) {
+            downloadLink.setMD5Hash(md5Hash.trim());
+        } else {
+            /* fix broken md5 sums */
+            downloadLink.setMD5Hash(null);
+        }
+        return AvailableStatus.TRUE;
+    }
+
     private String execJS() throws Exception {
         String fun = br.getRegex("/>Your Download has been started\\.[\t\n\r ]+</div>[\t\n\r ]+<script type=\"text/javascript\" language=\"Javascript\">(.*?)</script>").getMatch(0);
         if (fun == null) {
@@ -117,34 +148,6 @@ public class RemixShareCom extends PluginForHost {
         }
         dl.startDownload();
 
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://remixshare.com", "lang_en", "english");
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(BLOCKED)) return AvailableStatus.UNCHECKABLE;
-        br.setFollowRedirects(false);
-        if (br.containsHTML("Error Code: 500\\.") || br.containsHTML("Please check the downloadlink")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<span title=\\'([0-9]{10}_)?(.*?)\\'>", Pattern.CASE_INSENSITIVE)).getMatch(1));
-        if (filename == null) filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)Download at remiXshare Filehosting", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        String filesize = br.getRegex("(>|\\.\\.\\.)\\&nbsp;\\((.*?)\\)<").getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(filename.trim());
-        if (filesize != null) {
-            filesize = Encoding.htmlDecode(filesize);
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
-        }
-        String md5Hash = br.getRegex("/>MD5:(.*?)<").getMatch(0);
-        if (md5Hash != null && md5Hash.trim().length() == 32) {
-            downloadLink.setMD5Hash(md5Hash.trim());
-        } else {
-            /* fix broken md5 sums */
-            downloadLink.setMD5Hash(null);
-        }
-        return AvailableStatus.TRUE;
     }
 
     public void reset() {
