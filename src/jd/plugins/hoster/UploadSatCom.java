@@ -92,7 +92,7 @@ public class UploadSatCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.1
-    // mods:
+    // mods: correctBR
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
     // captchatype: 4dignum
@@ -461,7 +461,6 @@ public class UploadSatCom extends PluginForHost {
 
         // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
         for (String aRegex : regexStuff) {

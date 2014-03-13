@@ -134,6 +134,7 @@ public class MovPodIn extends PluginForHost {
                 scanInfo(fileInfo);
             }
         }
+        if (fileInfo[0] == null || fileInfo[0].equals("") && correctedBR.contains("file: \"")) fileInfo[0] = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0) + ".mp4";
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");

@@ -892,6 +892,7 @@ public class RedLoadNet extends PluginForHost {
                     checkErrors(downloadLink, account, true);
                     getDllink();
                     if (inValidate(dllink)) {
+                        checkErrors(downloadLink, account, true);
                         logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }

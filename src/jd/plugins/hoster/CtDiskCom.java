@@ -100,18 +100,15 @@ public class CtDiskCom extends PluginForHost {
         }
         if (dllink == null) {
             final Form free = br.getFormbyProperty("name", "user_form");
-            if (free == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2(_login)?\\.php\\?fid=" + uid + "&rand=)").getMatch(0);
-            if (captcha != null) {
-                captcha = captcha + new Random().nextInt(999999999);
-                String code = getCaptchaCode(captcha, downloadLink);
-                free.put("randcode", code);
-            } else {
-                logger.warning("Couldn't find the captcha image");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            if (free == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+            if (hash_key != null) free.put("hash_key", hash_key);
+            captcha = captcha + new Random().nextInt(999999999);
+            String code = getCaptchaCode(captcha, downloadLink);
+            free.put("randcode", code);
             br.submitForm(free);
-            if (br.containsHTML(">验证码输入错误，请返回页面重新输入")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(">验证码输入错误或<b>广告被拦截</b>")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (!br.getURL().matches(".+/downhtml/\\d+/.+")) {
                 String continueLink = br.getRegex("\"\\&downlink=(/downhtml/[^<>\"]*?)\";").getMatch(0);
                 if (continueLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -47,8 +47,8 @@ public class RockDizFileComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Probably empty folder: " + parameter);
+            return decryptedLinks;
         }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));

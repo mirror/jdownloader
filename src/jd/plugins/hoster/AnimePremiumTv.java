@@ -61,8 +61,9 @@ public class AnimePremiumTv extends PluginForHost {
         if (br.containsHTML("<title>404 Not Found</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Download (.*?)  \\|").getMatch(0);
         if (filename == null) filename = br.getRegex("<h2>Download File: (.*?)</h2>").getMatch(0);
-        DLLINK = br.getRegex("<a href=\"(https?://s\\d000\\.animepremium\\.tv/file/\\w+=/\\d+)&t=\\d+\">Download Now").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("https?://\\w+\\.tinyvid\\.net/\\w+/\\w+/\\d+/\\w+\\.mp4)").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"]*?)</title>").getMatch(0);
+        DLLINK = br.getRegex("\\'file\\'([\t\n\r ]+)?:([\t\n\r ]+)?\\'(http[^<>\"]*?)\\'").getMatch(2);
+        if (DLLINK == null) DLLINK = br.getRegex("(https?://\\w+\\.tinyvid\\.net[^<>\"]*?\\.mp4)").getMatch(0);
         if (filename == null && DLLINK == null)
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         else if (filename == null || filename.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

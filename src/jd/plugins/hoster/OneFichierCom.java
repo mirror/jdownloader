@@ -329,7 +329,7 @@ public class OneFichierCom extends PluginForHost {
              */
             try {
                 login(account, true);
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 ai.setStatus("Username/Password also invalid via site login!");
                 account.setProperty("type", Property.NULL);
                 account.setValid(false);

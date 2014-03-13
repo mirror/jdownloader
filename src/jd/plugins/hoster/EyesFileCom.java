@@ -48,7 +48,7 @@ public class EyesFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://eyesfile.ca";
+    private static final String COOKIE_HOST         = "http://eyesfile.com";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -61,8 +61,8 @@ public class EyesFileCom extends PluginForHost {
     // captchatype: recaptcha
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("http://eyesfile.ca/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://eyesfile.com" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
 
     }
 
@@ -92,9 +92,10 @@ public class EyesFileCom extends PluginForHost {
         // Correct old links
         correctDownloadLink(link);
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         doSomething();
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
