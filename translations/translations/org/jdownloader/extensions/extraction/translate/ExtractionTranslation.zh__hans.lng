@@ -6,6 +6,7 @@ ValidateArchiveAction_actionPerformed_=压缩文档有 %s1 个部分并且是完
 ValidateArchiveAction_actionPerformed_bad=压缩文档有 %s1 个部分并且是不完整。
 and=并且至少
 archive=压缩文档:
+archive_status=状态:
 archivename=压缩文档名称
 ask_for_password=压缩文档需要密码!
 bubblecontent_progress=进度图标
