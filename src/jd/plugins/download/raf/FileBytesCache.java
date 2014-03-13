@@ -15,18 +15,33 @@ public class FileBytesCache {
     protected final ArrayList<WriteCacheEntry> writeCacheEntries   = new ArrayList<WriteCacheEntry>();
     protected final int                        flushTimeout;
     
+    private class WriteThroughEntry extends WriteCacheEntry {
+        
+        private final byte[] buffer;
+        
+        protected final byte[] getBuffer() {
+            return buffer;
+        }
+        
+        private WriteThroughEntry(FileBytesCacheFlusher flusher, byte[] buffer, long fileWritePosition) {
+            super(flusher, 0, fileWritePosition);
+            this.buffer = buffer;
+        }
+        
+    }
+    
     private class WriteCacheEntry {
         private volatile int size;
         
-        private final int getSize() {
+        protected final int getSize() {
             return size;
         }
         
-        private final void increaseSize(int size) {
+        protected final void increaseSize(int size) {
             this.size += size;
         }
         
-        private final FileBytesCacheFlusher getFlusher() {
+        protected final FileBytesCacheFlusher getFlusher() {
             return flusher;
         }
         
@@ -34,11 +49,11 @@ public class FileBytesCache {
         private final int                   writeCachePosition;
         private final long                  fileWritePosition;
         
-        public long getFileWritePosition() {
+        protected long getFileWritePosition() {
             return fileWritePosition;
         }
         
-        public final int getWriteCachePosition() {
+        protected final int getWriteCachePosition() {
             return writeCachePosition;
         }
         
@@ -76,7 +91,20 @@ public class FileBytesCache {
     public synchronized void write(FileBytesCacheFlusher flusher, long fileWritePosition, byte[] readBuffer, int length) {
         final int writeCacheRemaining = writeCache.length - writeCachePosition;
         if (length > writeCacheRemaining || lastWriteCacheFlush > 0 && System.currentTimeMillis() > lastWriteCacheFlush) {
-            flush();
+            if (contains(flusher) || lastWriteCacheFlush > 0 && System.currentTimeMillis() > lastWriteCacheFlush) {
+                WriteThroughEntry writeThrough = new WriteThroughEntry(flusher, readBuffer, fileWritePosition);
+                writeThrough.increaseSize(length);
+                writeCacheEntries.add(writeThrough);
+                flush();
+            } else {
+                try {
+                    flusher.flush(readBuffer, 0, length, fileWritePosition);
+                    flusher.flushed();
+                } catch (final Throwable e) {
+                    LogController.CL().log(e);
+                }
+            }
+            return;
         }
         WriteCacheEntry entry = null;
         boolean add = false;
@@ -92,19 +120,18 @@ public class FileBytesCache {
         if (lastWriteCacheFlush < 0) lastWriteCacheFlush = System.currentTimeMillis() + flushTimeout;
     }
     
-    public synchronized void flushIfContains(FileBytesCacheFlusher flusher) {
-        boolean flush = false;
+    private synchronized boolean contains(FileBytesCacheFlusher flusher) {
         for (WriteCacheEntry writeCacheEntry : writeCacheEntries) {
-            if (writeCacheEntry.getFlusher() == flusher) {
-                flush = true;
-                break;
-            }
+            if (writeCacheEntry.getFlusher() == flusher) { return true; }
         }
-        if (flush) flush();
+        return false;
+    }
+    
+    public synchronized void flushIfContains(FileBytesCacheFlusher flusher) {
+        if (contains(flusher)) flush();
     }
     
     public synchronized void flush() {
-        System.out.println("FLUSH: " + writeCacheEntries.size() + "=" + writeCachePosition + "/" + writeCache.length);
         lastWriteCacheFlush = -1;
         writeCachePosition = 0;
         HashMap<FileBytesCacheFlusher, ArrayList<WriteCacheEntry>> writeEntries = new HashMap<FileBytesCacheFlusher, ArrayList<WriteCacheEntry>>();
@@ -124,7 +151,12 @@ public class FileBytesCache {
                 ArrayList<WriteCacheEntry> cacheEntries = writeEntry.getValue();
                 Collections.sort(cacheEntries, sorter);
                 for (WriteCacheEntry writeCacheEntry : cacheEntries) {
-                    flusher.flush(writeCache, writeCacheEntry.getWriteCachePosition(), writeCacheEntry.getSize(), writeCacheEntry.getFileWritePosition());
+                    if (writeCacheEntry instanceof WriteThroughEntry) {
+                        WriteThroughEntry writeThrough = (WriteThroughEntry) writeCacheEntry;
+                        flusher.flush(writeThrough.getBuffer(), writeCacheEntry.getWriteCachePosition(), writeCacheEntry.getSize(), writeCacheEntry.getFileWritePosition());
+                    } else {
+                        flusher.flush(writeCache, writeCacheEntry.getWriteCachePosition(), writeCacheEntry.getSize(), writeCacheEntry.getFileWritePosition());
+                    }
                 }
                 flusher.flushed();
             } catch (final Throwable e) {

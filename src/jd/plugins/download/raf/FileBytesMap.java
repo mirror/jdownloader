@@ -10,32 +10,48 @@ import org.appwork.storage.Storable;
 public class FileBytesMap {
     
     private final static class FileBytesMapEntry {
-        private final long begin;
-        private long       end;
+        private final long    begin;
+        private volatile long length;
         
         private FileBytesMapEntry(final long begin) {
             this(begin, 0);
         }
         
         private FileBytesMapEntry(final long begin, final long length) {
+            if (length < 0) throw new IllegalArgumentException("length is negative");
             this.begin = begin;
-            this.end = begin + length;
+            this.length = length;
         }
         
+        /**
+         * return the begin of the first byte(inclusive)
+         * 
+         * @return
+         */
         private final long getBegin() {
             return begin;
         }
         
+        /**
+         * return the end of the last byte(inclusive)
+         * 
+         * @return
+         */
         private final long getEnd() {
-            return end;
+            return begin + length - 1;
         }
         
+        /**
+         * return the length of this entry
+         * 
+         * @return
+         */
         private final long getLength() {
-            return end - begin;
+            return length;
         }
         
-        private final void increaseLength(long length) {
-            this.end += length;
+        private final void modifyLength(long length) {
+            this.length = Math.max(0, this.length + length);
         }
         
         @Override
@@ -71,6 +87,11 @@ public class FileBytesMap {
             this.finalSize = finalSize;
         }
         
+        /**
+         * return a list of begin/length entries of the map
+         * 
+         * @return
+         */
         public List<Long[]> getMarkedAreas() {
             return markedAreas;
         }
@@ -110,6 +131,11 @@ public class FileBytesMap {
         protected final long marked;
         protected final long size;
         
+        /**
+         * return a list of begin/length entries of the map
+         * 
+         * @return
+         */
         @Override
         public long[][] getMarkedAreas() {
             return markedAreas;
@@ -169,61 +195,100 @@ public class FileBytesMap {
         markedBytes = 0;
     }
     
-    public synchronized boolean mark(long begin, long length) {
+    public synchronized long mark(long markedAreaBegin, long markedAreaLength) {
+        if (markedAreaLength <= 0) throw new IllegalArgumentException("invalid length");
+        long markedAreaEnd = markedAreaBegin + markedAreaLength - 1;
         for (int index = 0; index < fileBytesMapEntries.size(); index++) {
             FileBytesMapEntry fileBytesMapEntry = fileBytesMapEntries.get(index);
-            if ((begin >= fileBytesMapEntry.getBegin()) && (begin <= fileBytesMapEntry.getEnd())) {
-                long beginOffset = begin - fileBytesMapEntry.getBegin();
-                long endOffset = beginOffset + length - fileBytesMapEntry.getLength();
-                if (endOffset <= 0) return true;
-                fileBytesMapEntry.increaseLength(endOffset);
-                markedBytes += endOffset;
-                if (index + 1 < fileBytesMapEntries.size()) {
-                    FileBytesMapEntry nextFileBytesMapEntry = fileBytesMapEntries.get(index + 1);
-                    long overlap = fileBytesMapEntry.getEnd() - nextFileBytesMapEntry.getBegin();
-                    if (overlap >= 0) {
-                        fileBytesMapEntries.remove(index + 1);
-                        long overlapLength = nextFileBytesMapEntry.getLength() - overlap;
-                        fileBytesMapEntry.increaseLength(overlapLength);
-                        markedBytes -= overlap;
-                        return true;
-                    }
-                    return false;
-                } else {
-                    return false;
+            long fileBytesMapEntryEnd = fileBytesMapEntry.getEnd();
+            if ((markedAreaBegin >= fileBytesMapEntry.getBegin()) && (markedAreaBegin <= fileBytesMapEntryEnd)) {
+                /* markedAreaBegin is inside fileBytesMapEntry */
+                if (markedAreaEnd <= fileBytesMapEntryEnd) {
+                    /* markedArea is completely within fileBytesMapEntry */
+                    return -markedAreaLength;
                 }
+                long endOffset = markedAreaEnd - fileBytesMapEntryEnd;
+                long lengthOffset = endOffset + 1;
+                fileBytesMapEntry.modifyLength(lengthOffset);
+                markedBytes += lengthOffset;
+                final int nextIndex = index + 1;
+                if (nextIndex < fileBytesMapEntries.size()) {
+                    /* check overlap of next fileBytesMapEntry */
+                    FileBytesMapEntry nextFileBytesMapEntry = fileBytesMapEntries.get(nextIndex);
+                    fileBytesMapEntryEnd = fileBytesMapEntry.getEnd();
+                    if (fileBytesMapEntryEnd >= nextFileBytesMapEntry.getBegin()) {
+                        /* overlapping */
+                        fileBytesMapEntries.remove(nextIndex);
+                        lengthOffset = nextFileBytesMapEntry.getEnd() - fileBytesMapEntryEnd - nextFileBytesMapEntry.getLength();
+                        if (lengthOffset <= 0) {
+                            markedBytes -= nextFileBytesMapEntry.getLength();
+                        } else {
+                            markedBytes += lengthOffset;
+                            fileBytesMapEntry.modifyLength(lengthOffset);
+                        }
+                        return lengthOffset;
+                    }
+                }
+                return lengthOffset;
+            } else if (markedAreaBegin == fileBytesMapEntry.getEnd() + 1) {
+                /* markedAreaBegin continues fileBytesMapEntry */
+                fileBytesMapEntry.modifyLength(markedAreaLength);
+                markedBytes += markedAreaLength;
+                final int nextIndex = index + 1;
+                if (nextIndex < fileBytesMapEntries.size()) {
+                    /* check overlap of next fileBytesMapEntry */
+                    FileBytesMapEntry nextFileBytesMapEntry = fileBytesMapEntries.get(nextIndex);
+                    fileBytesMapEntryEnd = fileBytesMapEntry.getEnd();
+                    if (fileBytesMapEntryEnd >= nextFileBytesMapEntry.getBegin()) {
+                        /* overlapping */
+                        fileBytesMapEntries.remove(nextIndex);
+                        long lengthOffset = nextFileBytesMapEntry.getEnd() - fileBytesMapEntryEnd - nextFileBytesMapEntry.getLength();
+                        if (lengthOffset <= 0) {
+                            markedBytes -= nextFileBytesMapEntry.getLength();
+                        } else {
+                            markedBytes += lengthOffset;
+                            fileBytesMapEntry.modifyLength(lengthOffset);
+                        }
+                        return lengthOffset;
+                    }
+                }
+                return markedAreaLength;
             }
         }
-        fileBytesMapEntries.add(new FileBytesMapEntry(begin, length));
-        markedBytes += length;
+        fileBytesMapEntries.add(new FileBytesMapEntry(markedAreaBegin, markedAreaLength));
+        markedBytes += markedAreaLength;
         Collections.sort(fileBytesMapEntries, sorter);
-        return false;
+        return markedAreaLength;
     }
     
     public synchronized List<Long[]> getUnMarkedAreas() {
         ArrayList<Long[]> ret = new ArrayList<Long[]>();
         for (int index = 0; index < fileBytesMapEntries.size(); index++) {
             FileBytesMapEntry currentMapEntry = fileBytesMapEntries.get(index);
+            final long unMarkedBegin = currentMapEntry.getEnd() + 1;
             if (index + 1 < fileBytesMapEntries.size()) {
+                /* next entry does exist */
                 FileBytesMapEntry nextMapEntry = fileBytesMapEntries.get(index + 1);
-                ret.add(new Long[] { currentMapEntry.getEnd(), nextMapEntry.getBegin() - currentMapEntry.getEnd() });
+                ret.add(new Long[] { unMarkedBegin, nextMapEntry.getBegin() - 1 });
             } else {
+                /* this is our last entry */
                 long finalSize = getFinalSize();
                 if (finalSize >= 0) {
-                    long length = finalSize - currentMapEntry.getEnd();
-                    if (finalSize == 0) return ret;
-                    ret.add(new Long[] { currentMapEntry.getEnd(), length });
+                    if (unMarkedBegin < finalSize) {
+                        ret.add(new Long[] { unMarkedBegin, finalSize - 1 });
+                    }
                 } else {
-                    ret.add(new Long[] { currentMapEntry.getEnd(), -1l });
+                    ret.add(new Long[] { unMarkedBegin, -1l });
                 }
             }
         }
-        if (ret.size() == 0) {
+        if (fileBytesMapEntries.size() == 0) {
+            /* nothing marked yet */
             long finalSize = getFinalSize();
             if (finalSize == 0) {
                 return ret;
             } else if (finalSize > 0) {
-                ret.add(new Long[] { 0l, finalSize });
+                ret.add(new Long[] { 0l, finalSize - 1 });
             } else {
                 ret.add(new Long[] { 0l, -1l });
             }
@@ -237,32 +302,51 @@ public class FileBytesMap {
         finalSize = 0;
     }
     
+    /**
+     * return known size of this map
+     * 
+     * @return
+     */
     public synchronized long getSize() {
         long size = getFinalSize();
         if (size >= 0) return size;
-        if (fileBytesMapEntries.size() > 0) { return fileBytesMapEntries.get(fileBytesMapEntries.size() - 1).getEnd(); }
+        if (fileBytesMapEntries.size() > 0) {
+            //
+            long end = fileBytesMapEntries.get(fileBytesMapEntries.size() - 1).getEnd();
+            /* array index starts at 0, end is last existing byte, so 0-end=size */
+            return end + 1;
+        }
         return -1;
     }
     
+    /**
+     * return size of unmarked area
+     * 
+     * @return
+     */
     public synchronized long getUnMarkedBytes() {
         return Math.max(0, getSize()) - getMarkedBytes();
     }
     
+    /**
+     * return a "live" size marked area
+     * 
+     * @return
+     */
     public long getMarkedBytesLive() {
         return markedBytes;
     }
     
+    /**
+     * return size of marked area
+     * 
+     * @return
+     */
     public synchronized long getMarkedBytes() {
         long ret = 0;
-        FileBytesMapEntry previousFileBytesMapEntry = null;
         for (int index = 0; index < fileBytesMapEntries.size(); index++) {
             FileBytesMapEntry fileBytesMapEntry = fileBytesMapEntries.get(index);
-            if (previousFileBytesMapEntry != null) {
-                long overlap = previousFileBytesMapEntry.getEnd() - fileBytesMapEntry.getBegin();
-                if (overlap > 0) ret -= overlap;
-            }
             ret += fileBytesMapEntry.getLength();
-            previousFileBytesMapEntry = fileBytesMapEntry;
         }
         return ret;
     }
