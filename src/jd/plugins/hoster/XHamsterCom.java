@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "https?://(www\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 0 })
 public class XHamsterCom extends PluginForHost {
 
     public XHamsterCom(PluginWrapper wrapper) {
@@ -58,7 +58,7 @@ public class XHamsterCom extends PluginForHost {
     private static final String MOBILELINK = "http://(www\\.)?m\\.xhamster\\.com/preview/\\d+";
 
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
         if (link.getDownloadURL().matches(MOBILELINK)) {
             link.setUrlDownload("http://xhamster.com/movies/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/" + System.currentTimeMillis() + new Random().nextInt(10000) + ".html");
         }
@@ -68,9 +68,9 @@ public class XHamsterCom extends PluginForHost {
      * NOTE: They also have .mp4 version of the videos in the html code -> For mobile devices Those are a bit smaller in size
      * */
     public String getDllink() throws IOException, PluginException {
-        String dllink = br.getRegex("\"(http://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            final Regex secondway = br.getRegex("\\&srv=(http%3A%2F%2F3\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
+            final Regex secondway = br.getRegex("\\&srv=(https?%3A%2F%2F3\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
             String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
             if (server == null) server = secondway.getMatch(0);
             String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
