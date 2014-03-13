@@ -957,6 +957,7 @@ VoteFinderWindow_VoteFinderWindow_msg_negative=Stiskněte [CTRL] a klikněte sem
 VoteFinderWindow_VoteFinderWindow_msg_positive=Stiskněte [CTRL] a klikněte sem, pokud se vám líbí:
 VoteFinderWindow_VoteFinderWindow_title_=Přímá zpětná vazba
 VoteFinderWindow_runInEDT_thankyou_=Děkujeme za vaši zpětnou vazbu.
+VoteFinderWindow_runInEDT_thankyou_2=Děkujeme za nahlášení problému.\nPokračujte v hlášení problémů, kdykoliv stahování nefunguje tak, jak je očekáváno.\nJiž brzy uvidíte statistiku hlášení na http://my.jdownloader.org.\n--- Čím více hlášení, tím rychleji můžeme opravit doplněk. ---
 WatchAsYouDownloadColumn_WatchAsYouDownloadColumn=Sledovat během stahování
 WatchAsYouDownload_WatchAsYouDownloadAction_=Sledovat během stahování
 YoutubeDashConfigPanel_MultiVariantBox_getLabel_=Kvalita: %s1
