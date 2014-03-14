@@ -57,13 +57,13 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class UserIO {
-
+    
     public static final int FILES_ONLY                     = JFileChooser.FILES_ONLY;
     public static final int DIRECTORIES_ONLY               = JFileChooser.DIRECTORIES_ONLY;
     public static final int FILES_AND_DIRECTORIES          = JFileChooser.FILES_AND_DIRECTORIES;
     public static final int OPEN_DIALOG                    = JFileChooser.OPEN_DIALOG;
     public static final int SAVE_DIALOG                    = JFileChooser.SAVE_DIALOG;
-
+    
     /**
      * do not display a countdown
      */
@@ -104,7 +104,7 @@ public class UserIO {
      * the textfield will be renderer as a passwordfield
      */
     public static final int STYLE_PASSWORD                 = 1 << 11;
-
+    
     /**
      * pressed ok
      */
@@ -129,14 +129,14 @@ public class UserIO {
     public static final int ICON_WARNING                   = 1;
     public static final int ICON_ERROR                     = 2;
     public static final int ICON_QUESTION                  = 3;
-
+    
     protected static UserIO INSTANCE                       = new UserIO();
-
+    
     public UserIO() {
         setCountdownTime(UserIO.getUserCountdownTime());
-
+        
     }
-
+    
     /**
      * @param countdownTime
      *            sets the countdown time or resets it to the user-selected value, if <code>countdownTime < 0</code>
@@ -149,21 +149,21 @@ public class UserIO {
             Dialog.getInstance().setDefaultTimeout(countdownTime * 1000);
         }
     }
-
+    
     @Deprecated
     private static int getUserCountdownTime() {
         return Math.max(2, JsonConfig.create(GraphicalUserInterfaceSettings.class).getDialogDefaultTimeoutInMS() / 1000);
     }
-
+    
     public static UserIO getInstance() {
         return UserIO.INSTANCE;
     }
-
+    
     public static void setInstance(UserIO userIO) {
         if (userIO == null) throw new RuntimeException("userIO must not be null");
         UserIO.INSTANCE = userIO;
     }
-
+    
     /**
      * Checks wether this answerfalg contains the ok option
      * 
@@ -173,7 +173,7 @@ public class UserIO {
     public static boolean isOK(final int answer) {
         return JDFlags.hasSomeFlags(answer, UserIO.RETURN_OK);
     }
-
+    
     /**
      * COnverts the flag mask of AW Dialogs to UserIO
      * 
@@ -202,7 +202,7 @@ public class UserIO {
         }
         return response;
     }
-
+    
     /**
      * The flags in org.appwork.utils.swing.dialog.Dialog are different, so we need a converter
      * 
@@ -211,7 +211,7 @@ public class UserIO {
      */
     private int convertFlagToAWDialog(final int flag) {
         int ret = 0;
-
+        
         if (BinaryLogic.containsNone(flag, UserIO.NO_COUNTDOWN)) {
             ret |= UIOManager.LOGIC_COUNTDOWN;
         }
@@ -244,32 +244,32 @@ public class UserIO {
         }
         return ret;
     }
-
-    private ImageIcon getDefaultIcon(final String text) {
+    
+    public static ImageIcon getDefaultIcon(final String text) {
         if (text.contains("?")) {
-            return this.getIcon(UserIO.ICON_QUESTION);
+            return getIcon(UserIO.ICON_QUESTION);
         } else if (text.matches(_GUI._.userio_errorregex())) {
-            return this.getIcon(UserIO.ICON_ERROR);
+            return getIcon(UserIO.ICON_ERROR);
         } else if (text.contains("!")) {
-            return this.getIcon(UserIO.ICON_WARNING);
+            return getIcon(UserIO.ICON_WARNING);
         } else {
-            return this.getIcon(UserIO.ICON_INFO);
+            return getIcon(UserIO.ICON_INFO);
         }
     }
-
-    public ImageIcon getIcon(final int iconInfo) {
+    
+    public static ImageIcon getIcon(final int iconInfo) {
         switch (iconInfo) {
-        case UserIO.ICON_ERROR:
-            return NewTheme.I().getIcon("stop", 32);
-        case UserIO.ICON_WARNING:
-            return NewTheme.I().getIcon("warning", 32);
-        case UserIO.ICON_QUESTION:
-            return NewTheme.I().getIcon("help", 32);
-        default:
-            return NewTheme.I().getIcon("info", 32);
+            case UserIO.ICON_ERROR:
+                return NewTheme.I().getIcon("stop", 32);
+            case UserIO.ICON_WARNING:
+                return NewTheme.I().getIcon("warning", 32);
+            case UserIO.ICON_QUESTION:
+                return NewTheme.I().getIcon("help", 32);
+            default:
+                return NewTheme.I().getIcon("info", 32);
         }
     }
-
+    
     public Point requestClickPositionDialog(final File imagefile, final String titleTemplate, final String explain) {
         Thread currentThread = Thread.currentThread();
         if (currentThread instanceof LinkCrawlerThread) {
@@ -281,28 +281,28 @@ public class UserIO {
             } else if (explain != null) {
                 title = title + " - " + explain;
             }
-
+            
             ClickCaptchaChallenge c = new ClickCaptchaChallenge(imagefile, title, plugin) {
-
+                
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
                     switch (skipRequest) {
-                    case STOP_CURRENT_ACTION:
-                        /* user wants to stop current action (eg crawling) */
-                        return true;
-                    case BLOCK_ALL_CAPTCHAS:
-                        /* user wants to block all captchas (current session) */
-                        return true;
-                    case BLOCK_HOSTER:
-                        /* user wants to block captchas from specific hoster */
-                        return plugin.getHost().equals(Challenge.getHost(challenge));
-                    case REFRESH:
-                    case SINGLE:
-                    default:
-                        return false;
+                        case STOP_CURRENT_ACTION:
+                            /* user wants to stop current action (eg crawling) */
+                            return true;
+                        case BLOCK_ALL_CAPTCHAS:
+                            /* user wants to block all captchas (current session) */
+                            return true;
+                        case BLOCK_HOSTER:
+                            /* user wants to block captchas from specific hoster */
+                            return plugin.getHost().equals(Challenge.getHost(challenge));
+                        case REFRESH:
+                        case SINGLE:
+                        default:
+                            return false;
                     }
                 }
-
+                
             };
             c.setTimeout(plugin.getCaptchaTimeout());
             plugin.invalidateLastChallengeResponse();
@@ -316,22 +316,22 @@ public class UserIO {
                 return null;
             } catch (SkipException e) {
                 switch (e.getSkipRequest()) {
-                case BLOCK_ALL_CAPTCHAS:
-                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
-                    break;
-                case BLOCK_HOSTER:
-                case BLOCK_PACKAGE:
-                case SINGLE:
-                case TIMEOUT:
-                    break;
-                case REFRESH:
-                    // refresh is not supported from the pluginsystem right now.
-                    return null;
-                case STOP_CURRENT_ACTION:
-                    LinkCollector.getInstance().abort();
-                    // Just to be sure
-                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
-                    throw new RuntimeDecrypterException(new DecrypterException(DecrypterException.CAPTCHA));
+                    case BLOCK_ALL_CAPTCHAS:
+                        CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
+                        break;
+                    case BLOCK_HOSTER:
+                    case BLOCK_PACKAGE:
+                    case SINGLE:
+                    case TIMEOUT:
+                        break;
+                    case REFRESH:
+                        // refresh is not supported from the pluginsystem right now.
+                        return null;
+                    case STOP_CURRENT_ACTION:
+                        LinkCollector.getInstance().abort();
+                        // Just to be sure
+                        CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
+                        throw new RuntimeDecrypterException(new DecrypterException(DecrypterException.CAPTCHA));
                 }
                 throw new RuntimeDecrypterException(new DecrypterException(DecrypterException.CAPTCHA));
             }
@@ -343,7 +343,7 @@ public class UserIO {
         }
         return null;
     }
-
+    
     /**
      * Shows a combobox dialog. returns the options id if the user confirmed, or -1 if the user canceled
      * 
@@ -362,16 +362,16 @@ public class UserIO {
     public int requestComboDialog(int flag, final String title, final String question, final Object[] options, final int defaultSelection, final ImageIcon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {
         try {
             flag = this.convertFlagToAWDialog(flag);
-
+            
             ComboBoxDialog d = new ComboBoxDialog(flag, title, question, options, defaultSelection, icon, okText, cancelText, renderer) {
-
+                
                 @Override
                 protected boolean isResizable() {
                     return true;
                 }
-
+                
             };
-
+            
             return Dialog.getInstance().showDialog(d);
         } catch (DialogClosedException e) {
             e.printStackTrace();
@@ -380,15 +380,15 @@ public class UserIO {
         }
         return -1;
     }
-
+    
     public int requestConfirmDialog(final int flag, final String question) {
-        return this.requestConfirmDialog(flag, _GUI._.jd_gui_userio_defaulttitle_confirm(), question, this.getDefaultIcon(question), null, null);
+        return this.requestConfirmDialog(flag, _GUI._.jd_gui_userio_defaulttitle_confirm(), question, getDefaultIcon(question), null, null);
     }
-
+    
     public int requestConfirmDialog(final int flag, final String title, final String question) {
-        return this.requestConfirmDialog(flag, title, question, this.getDefaultIcon(title + question), null, null);
+        return this.requestConfirmDialog(flag, title, question, getDefaultIcon(title + question), null, null);
     }
-
+    
     public int requestConfirmDialog(final int flag, final String title, final String message, final ImageIcon icon, final String okOption, final String cancelOption) {
         try {
             return this.convertAWAnswer(Dialog.getInstance().showConfirmDialog(this.convertFlagToAWDialog(flag), title, message, icon, okOption, cancelOption));
@@ -398,11 +398,11 @@ public class UserIO {
             return UserIO.RETURN_CANCEL;
         }
     }
-
+    
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection) {
         return this.requestFileChooser(id, title, fileSelectionMode, fileFilter, multiSelection, null, null);
     }
-
+    
     /**
      * Requests a FileChooserDialog.
      * 
@@ -423,9 +423,9 @@ public class UserIO {
      * @return an array of files or null if the user cancel the dialog
      */
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
-
+        
         FileChooserSelectionMode fsm = FileChooserSelectionMode.FILES_AND_DIRECTORIES;
-
+        
         for (final FileChooserSelectionMode f : FileChooserSelectionMode.values()) {
             if (f.getId() == fileSelectionMode) {
                 fsm = f;
@@ -441,7 +441,7 @@ public class UserIO {
                 }
             }
         }
-
+        
         ExtFileChooserDialog d = new ExtFileChooserDialog(0, title, null, null);
         d.setStorageID(id);
         d.setFileSelectionMode(fsm);
@@ -458,10 +458,10 @@ public class UserIO {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
+        
         return d.getSelection();
     }
-
+    
     /**
      * 
      * @param flag
@@ -475,7 +475,7 @@ public class UserIO {
     public String requestInputDialog(final int flag, final String question, final String defaultvalue) {
         return this.requestInputDialog(flag, _GUI._.jd_gui_userio_defaulttitle_input(), question, defaultvalue, this.getDefaultIcon(question), null, null);
     }
-
+    
     public String requestInputDialog(final int flag, final String title, final String message, final String defaultMessage, final ImageIcon icon, final String okOption, final String cancelOption) {
         try {
             return Dialog.getInstance().showInputDialog(this.convertFlagToAWDialog(flag), title, message, defaultMessage, icon, okOption, cancelOption);
@@ -486,27 +486,27 @@ public class UserIO {
         }
         return null;
     }
-
+    
     public String requestInputDialog(final String message) {
         return this.requestInputDialog(0, message, null);
     }
-
+    
     public void requestMessageDialog(final int flag, final String message) {
         this.requestMessageDialog(flag, _GUI._.gui_dialogs_message_title(), message);
     }
-
+    
     public void requestMessageDialog(final int flag, final String title, final String message) {
         this.requestConfirmDialog(UserIO.NO_CANCEL_OPTION | flag, title, message, this.getIcon(UserIO.ICON_INFO), null, null);
     }
-
+    
     public void requestMessageDialog(final String message) {
         this.requestMessageDialog(0, _GUI._.gui_dialogs_message_title(), message);
     }
-
+    
     public void requestMessageDialog(final String title, final String message) {
         this.requestMessageDialog(0, title, message);
     }
-
+    
     /**
      * Displays a Dialog with a title, a message, and an editable Textpane. USe it to give the user a dialog to enter Multilined text
      * 
@@ -525,7 +525,7 @@ public class UserIO {
         }
         return null;
     }
-
+    
     /**
      * Shows a multi-selection dialog.
      * 
@@ -541,5 +541,5 @@ public class UserIO {
         }
         return null;
     }
-
+    
 }
