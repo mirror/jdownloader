@@ -162,8 +162,6 @@ public class NowVideoEu extends PluginForHost {
             JDUtilities.getPluginForHost("mediafire.com");
             agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
-        /* Workaround for UA bug */
-        agent.string = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
         prepBr.getHeaders().put("User-Agent", agent.string);
         return prepBr;
     }

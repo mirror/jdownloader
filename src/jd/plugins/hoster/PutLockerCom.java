@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -51,24 +52,22 @@ import org.appwork.utils.logging2.LogSource;
 public class PutLockerCom extends PluginForHost {
 
     // TODO: fix premium, it's broken because of domainchange
-    private final String        MAINPAGE           = "http://www.firedrive.com";
-    private static Object       LOCK               = new Object();
-    private String              agent              = null;
-    private static final String NOCHUNKS           = "NOCHUNKS";
+    private final String                   MAINPAGE           = "http://www.firedrive.com";
+    private static Object                  LOCK               = new Object();
+    private static AtomicReference<String> agent              = new AtomicReference<String>(null);
+    private static final String            NOCHUNKS           = "NOCHUNKS";
 
-    private static final String PASSWORD_PROTECTED = "id=\"file_password_container\"";
+    private static final String            PASSWORD_PROTECTED = "id=\"file_password_container\"";
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://auth.firedrive.com/signup");
     }
 
-    @Override
     public boolean isPremiumEnabled() {
         return "firedrive.com".equalsIgnoreCase(getHost());
     }
 
-    @Override
     public Boolean rewriteHost(Account acc) {
         if ("putlocker.com".equals(getHost())) {
             if (acc != null && "putlocker.com".equals(acc.getHoster())) {
@@ -80,7 +79,6 @@ public class PutLockerCom extends PluginForHost {
         return null;
     }
 
-    @Override
     public Boolean rewriteHost(DownloadLink link) {
         if ("putlocker.com".equals(getHost())) {
             if (link != null && "putlocker.com".equals(link.getHost())) {
@@ -368,14 +366,11 @@ public class PutLockerCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("Accept-Charset", null);
-        if (agent == null) {
+        if (agent.get() == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        /* Temporary workaround for bug in random UAs */
-        agent = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
-        br.getHeaders().put("User-Agent", agent);
     }
 
     private void login(final Account account, final boolean fetchInfo) throws Exception {
