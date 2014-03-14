@@ -277,9 +277,16 @@ public class TbCmV2 extends PluginForDecrypt {
             HashMap<String, VariantInfo> idMap = new HashMap<String, VariantInfo>();
             Map<YoutubeITAG, YoutubeStreamData> vc = helper.loadVideo(vid);
             if (vc == null || StringUtils.isNotEmpty(vid.error)) {
-                getLogger().info("Error on " + vid.videoID + " (" + vid.title + "): " + vid.error);
+                getLogger().info("Error: " + vid.videoID + " (" + vid.title + "): " + vid.error);
+                // create a dumbie link so we know how many links are found and returned in tests!
+                DownloadLink e = createDownloadlink("youtubev2://offline/" + vid.videoID + "/");
+                e.setAvailable(false);
+                // as you can not set getLinkStatus().setStatusText within decrypter best bet is to add filename as error??
+                e.setName("Error " + vid.videoID + " - " + vid.error);
+                decryptedLinks.add(e);
+                if (vc == null) continue;
             }
-            if (vc == null) continue;
+
             YoutubeITAG bestVideoResolution = null;
             for (Entry<YoutubeITAG, YoutubeStreamData> es : vc.entrySet()) {
                 if (es.getKey().getQualityVideo() != null) {
@@ -717,10 +724,14 @@ public class TbCmV2 extends PluginForDecrypt {
             thislink.setLinkID("youtubev2://" + variantInfo.variant + "/" + clip.videoID + "/" + URLEncode.encodeRFC2396(filename));
             FilePackage fp = FilePackage.getInstance();
             YoutubeHelper helper = getCachedHelper();
-            fp.setName(helper.replaceVariables(thislink, helper.getConfig().getPackagePattern()));
-            // let the packagizer merge several packages that have the same name
-            fp.setProperty("ALLOW_MERGE", true);
-            fp.add(thislink);
+            final String fpName = helper.replaceVariables(thislink, helper.getConfig().getPackagePattern());
+            // req otherwise returned "" value = 'various', regardless of user settings for various!
+            if (StringUtils.isNotEmpty(fpName)) {
+                fp.setName(fpName);
+                // let the packagizer merge several packages that have the same name
+                fp.setProperty("ALLOW_MERGE", true);
+                fp.add(thislink);
+            }
 
             return thislink;
         } catch (Exception e) {
