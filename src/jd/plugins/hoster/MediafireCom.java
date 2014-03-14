@@ -124,8 +124,6 @@ public class MediafireCom extends PluginForHost {
                 // release: "Stable release         Stable release 27.0.1 (February 13, 2014; 12 days ago)"
                 // http://en.wikipedia.org/wiki/Firefox
                 // notes: version 27+
-                stringAgent.add("Mozilla/5.0 (Android; Mobile; rv:27.0) Gecko/27.0 Firefox/27.0");
-                stringAgent.add("Mozilla/5.0 (Android; Tablet; rv:27.0) Gecko/27.0 Firefox/27.0");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:27.0) Gecko/20100101 Firefox/27.0");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:27.0) Gecko/20100101 Firefox/27.0");
                 stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:27.0) Gecko/20100101 Firefox/27.0");
@@ -146,7 +144,7 @@ public class MediafireCom extends PluginForHost {
 
                 stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:29.0) Gecko/20100101 Firefox/29.0");
 
-                stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:30.0) Gecko/20100101 Firefox/30.0"); // 20
+                stringAgent.add("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:30.0) Gecko/20100101 Firefox/30.0"); // 18
 
                 // safari
                 // release:
