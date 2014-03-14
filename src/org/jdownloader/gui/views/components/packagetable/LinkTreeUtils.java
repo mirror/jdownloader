@@ -208,7 +208,10 @@ public class LinkTreeUtils {
                 }
             }
         }
-        if (links.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+        if (links.size() == 1 && (rawURL != null && (!rawURL.matches("((?-i)ftp|https?)://.+"))) && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
+            // for 'copy urls' and 'open in browser', when youtube type of prefixes are pointless within this context! Only open rawURL when
+            // URL are actually traditional browser URL structure.
+        } else if (links.size() == 1 && rawURL != null && JsonConfig.create(GeneralSettings.class).isCopySingleRealURL()) {
             urls.clear();
             urls.add(rawURL);
         }
