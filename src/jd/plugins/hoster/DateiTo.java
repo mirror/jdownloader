@@ -146,18 +146,17 @@ public class DateiTo extends PluginForHost {
                 br.postPage(APIPAGE, sb.toString());
                 for (final DownloadLink dllink : links) {
                     final String fid = getFID(dllink);
-                    if (br.containsHTML(fid + ";offline")) {
-                        dllink.setAvailable(false);
-                    } else {
-                        final String[][] linkInfo = br.getRegex(fid + ";online;([^<>\"/;]*?);(\\d+)").getMatches();
-                        if (linkInfo.length != 1) {
-                            logger.warning("Linkchecker for datei.to is broken!");
-                            return false;
-                        }
-                        dllink.setAvailable(true);
-                        dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[0][0]));
-                        dllink.setDownloadSize(Long.parseLong(linkInfo[0][1]));
+                    final String[] linkInfo = br.getRegex(fid + ";([^;]+);([^<>\"/;]*?);(\\d+)").getRow(0);
+                    if (linkInfo == null) {
+                        logger.warning("Linkchecker for datei.to is broken!");
+                        return false;
                     }
+                    if (!"online".equalsIgnoreCase(linkInfo[1]))
+                        dllink.setAvailable(false);
+                    else
+                        dllink.setAvailable(true);
+                    if (linkInfo[1] != null) dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[1]));
+                    if (linkInfo[2] != null) dllink.setDownloadSize(Long.parseLong(linkInfo[2]));
                 }
                 if (index == urls.length) {
                     break;
@@ -173,13 +172,26 @@ public class DateiTo extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
+    private String err_temp_unvail = ">Die Datei steht aus technischen Gründen leider nicht zur Verfügung\\.";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        /** Old linkcheck code can be found in rev 16195 */
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        return AvailableStatus.TRUE;
+        if (FREE_DOWNLOAD_API) {
+            checkLinks(new DownloadLink[] { downloadLink });
+            if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
+            if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            return AvailableStatus.TRUE;
+        } else {
+            prepbrowser_web(br);
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("<div id=\"Name\">Diese Datei existiert nicht mehr...</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String fname = br.getRegex("<div id=\"Name\">(.*?)</div>").getMatch(0);
+            String fsize = br.getRegex("<div id=\"Details\">.*?(\\d+,\\d+ ?(B|KB|MB|GB))</div>").getMatch(0);
+            if (fname != null) downloadLink.setName(fname);
+            if (fsize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fsize));
+            if (br.containsHTML(err_temp_unvail)) return AvailableStatus.UNCHECKABLE;
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override
@@ -188,8 +200,6 @@ public class DateiTo extends PluginForHost {
         if (FREE_DOWNLOAD_API) {
             doFree_api(downloadLink, DateiTo.FREE_RESUME_API, DateiTo.FREE_MAXCHUNKS_API);
         } else {
-            prepbrowser_web(this.br);
-            this.br.clearCookies(MAINPAGE);
             doFree_web(downloadLink, DateiTo.FREE_RESUME_WEB, DateiTo.FREE_MAXCHUNKS_WEB);
         }
     }
@@ -244,6 +254,8 @@ public class DateiTo extends PluginForHost {
 
     private void doFree_web(final DownloadLink downloadLink, boolean resume, int maxchunks) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(err_temp_unvail)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "File is unavailable for technical reasons ", 10 * 60 * 1000l);
+
         final String dlid = br.getRegex("<button id=\"([AS-Za-z0-9]+)\"").getMatch(0);
         if (dlid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage("http://datei.to/response/download", "Step=1&ID=" + dlid);
