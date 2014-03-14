@@ -382,6 +382,12 @@ public class BitShareCom extends PluginForHost {
         prepBR();
         br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML("#offline#")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        if (br.containsHTML("No htmlCode read")) {
+            link.getLinkStatus().setStatusText("Server error, uncheckable");
+            return AvailableStatus.UNCHECKABLE;
+        }
+
         final Regex fileInfo = br.getRegex("#online#[a-z0-9]{8}#([^<>\"]*?)#(\\d+)");
 
         if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -26,54 +27,60 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copy.com" }, urls = { "http://copydecrypted\\.com/\\d+" }, flags = { 0 })
-public class CopyCom extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
-    public CopyCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downloadandroidrom.com" }, urls = { "http://(www\\.)?downloadandroidrom\\.com/file/[^<>\"/]+/.+" }, flags = { 0 })
+public class DownloadAndroidRomCom extends PluginForHost {
+
+    public DownloadAndroidRomCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.copy.com/about/tos";
+        return "http://downloadandroidrom.com/about.php";
     }
-
-    private static final String TYPE_OLD = "https?://(www\\.)?copy\\.com/(s/)?[A-Za-z0-9]+(/[^<>\"/]+)?";
 
     private static final String NOCHUNKS = "NOCHUNKS";
 
-    /** They got an API: https://www.copy.com/developer/documentation */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        /* Filter links which have been added before the big change */
-        if (link.getDownloadURL().matches(TYPE_OLD)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.getPage(link.getStringProperty("mainlink", null));
-
-        if (br.containsHTML(">You\\&rsquo;ve found a page that doesn\\&rsquo;t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = link.getStringProperty("plain_name", null);
-        final String filesize = link.getStringProperty("plain_size", null);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">The file you are looking for doesn\\'t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)</p>").getMatch(0);
+        String filesize = br.getRegex("<b>File Size:</b>([^<>\"]*?)</p>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(filename);
-        link.setDownloadSize(Long.parseLong(filesize));
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        final String md5 = br.getRegex("<b>MD5 Checksum:</b> ([a-z0-9]{32})</p>").getMatch(0);
+        if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = downloadLink.getStringProperty("specified_link", null) + "?download=1";
+        String dllink = br.getRegex("\"http://(www\\.)?(downloadandroidrom\\.com/download/[^<>\"]*?)\"").getMatch(1);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // this.sleep(5 * 1001l, downloadLink);
+        br.postPage("http://downloadandroidrom.com/gettoken2.php", "");
+        String token = br.toString();
+        if (token.length() >= 50) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage("http://downloadandroidrom.com/testbusy.php", "");
+        final String server = br.toString();
+        if (server.length() >= 50) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        token = Encoding.htmlDecode(token.trim());
+        dllink = "http://mirror" + server + "." + dllink + token;
+        br.getPage("http://downloadandroidrom.com/ip/ip.php");
 
-        int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        int maxchunks = 0;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxchunks = 1;
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Cannot find requested object id")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            /* Link abused */
-            if (br.containsHTML("\"error_code\":\"1048\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {
@@ -83,16 +90,16 @@ public class CopyCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(CopyCom.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(CopyCom.NOCHUNKS, Boolean.valueOf(true));
+                if (downloadLink.getBooleanProperty(DownloadAndroidRomCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(DownloadAndroidRomCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(CopyCom.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(CopyCom.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(DownloadAndroidRomCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(DownloadAndroidRomCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }

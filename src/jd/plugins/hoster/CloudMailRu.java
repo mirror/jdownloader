@@ -40,6 +40,7 @@ public class CloudMailRu extends PluginForHost {
 
     private static final String TYPE_FROM_DECRYPTER = "http://clouddecrypted\\.mail\\.ru/\\d+";
     private static final String TYPE_HOTLINK        = "https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+";
+    private static final String NOCHUNKS            = "NOCHUNKS";
 
     @Override
     public String getAGBLink() {
@@ -93,13 +94,33 @@ public class CloudMailRu extends PluginForHost {
             resume = false;
             maxchunks = 1;
         }
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxchunks = 1;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("plain_directlink", dllink);
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(CloudMailRu.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(CloudMailRu.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(CloudMailRu.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(CloudMailRu.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     private String getdllink(final DownloadLink dl) throws PluginException, IOException {

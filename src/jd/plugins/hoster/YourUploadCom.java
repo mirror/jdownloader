@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.net.ConnectException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -66,12 +68,16 @@ public class YourUploadCom extends PluginForHost {
             if (dllink == null) dllink = br.getRegex("<meta property=\"og:video\" content=\"(https?://.*?)\"/>").getMatch(0);
             if (dllink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setFinalFileName(filename);
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(dllink);
+                try {
+                    con = br2.openGetConnection(dllink);
+                } catch (final ConnectException e) {
+                    return AvailableStatus.TRUE;
+                }
                 // only way to check for made up links... or offline is here
                 if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 if (!con.getContentType().contains("html")) {
@@ -102,7 +108,6 @@ public class YourUploadCom extends PluginForHost {
         } else {
             link.setName(filename);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }

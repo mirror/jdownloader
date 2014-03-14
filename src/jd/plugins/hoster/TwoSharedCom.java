@@ -134,6 +134,7 @@ public class TwoSharedCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getURL().getQuery() == null || !dl.getConnection().isContentDisposition()) {
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
+                if (br.containsHTML("id=\"leMsg\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             }
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

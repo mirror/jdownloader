@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -53,7 +54,8 @@ public class GigaDe extends PluginForDecrypt {
         }
         final String[][] links = br.getRegex("id=\"NVBPlayer(\\d+\\-\\d+)\">.*?<span property=\"media:title\" content=\"([^<>\"/]+)\".*?<source src=\"(http://video\\.giga\\.de/data/[a-z0-9\\-]+\\-normal\\.mp4)\"").getMatches();
         final String[] otherLinks = br.getRegex("rel=\"media:video\" resource=\"(http://(www\\.)?video\\.giga\\.de/data/[^<>/\"]*?\\.mp4)\"").getColumn(0);
-        if ((links == null || links.length == 0) && (otherLinks == null || otherLinks.length == 0) || fpName == null) {
+        final String[] api_links = br.getRegex("\"/api/video/#v=(\\d+)\\&p=\\d+\"").getColumn(0);
+        if ((links == null || links.length == 0) && (otherLinks == null || otherLinks.length == 0) && (api_links == null || api_links.length == 0) || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -80,12 +82,42 @@ public class GigaDe extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         }
+        if (api_links != null && api_links.length != 0) {
+            for (final String api_link : api_links) {
+                br.getPage("http://www.giga.de/api/syndication/video/video_id/" + api_link + "/playlist.json?content=syndication/key/368b5f151da4ae05ced7fa296bdff65a/");
+                final String[] qualities = br.getRegex("(\"\\d+\":\\{\"quality\".*?\\})").getColumn(0);
+                if (qualities != null && qualities.length != 0) {
+                    for (final String quality : qualities) {
+                        final String quali = getJson("quality", quality);
+                        String url = getJson("src", quality);
+                        if (url != null && quali != null) {
+                            url = url.replace("\\", "");
+                            final DownloadLink dl = createDownloadlink("directhttp://" + url);
+                            String ext = url.substring(url.lastIndexOf("."));
+                            if (ext == null || ext.length() > 5) ext = ".mp4";
+                            dl.setFinalFileName(fpName + ext);
+                            decryptedLinks.add(dl);
+                        }
+                    }
+                }
+            }
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String getJson(final String parameter, final String source) {
+        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
+        if (result == null) result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        return result;
     }
 
     /* NO OVERRIDE!! */

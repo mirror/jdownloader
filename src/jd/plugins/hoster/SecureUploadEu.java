@@ -68,6 +68,7 @@ public class SecureUploadEu extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static final String  NORESUME                     = "NORESUME";
 
     // DEV NOTES
     /**
@@ -193,7 +194,7 @@ public class SecureUploadEu extends PluginForHost {
         doFree(downloadLink, false, 1, "freelink");
     }
 
-    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -306,8 +307,21 @@ public class SecureUploadEu extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
+
+        if (downloadLink.getBooleanProperty(NORESUME, false)) resumable = false;
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 416) {
+                logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
+                if (downloadLink.getBooleanProperty(NORESUME, false)) {
+                    downloadLink.setProperty(NORESUME, Boolean.valueOf(false));
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                }
+                downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error 416 resume failed");
+            }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();

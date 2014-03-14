@@ -47,7 +47,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
 /** Works exactly like sockshare.com */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "http://(www\\.)?(putlocker|firedrive)\\.com/(file|embed|mobile/file)/[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "http://(www\\.)?(m\\.)?(putlocker|firedrive)\\.com/(file|embed|mobile/file)/[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
 public class PutLockerCom extends PluginForHost {
 
     // TODO: fix premium, it's broken because of domainchange
@@ -373,6 +373,8 @@ public class PutLockerCom extends PluginForHost {
             JDUtilities.getPluginForHost("mediafire.com");
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
+        /* Temporary workaround for bug in random UAs */
+        agent = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
         br.getHeaders().put("User-Agent", agent);
     }
 

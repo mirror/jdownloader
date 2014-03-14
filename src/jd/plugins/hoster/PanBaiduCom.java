@@ -118,13 +118,19 @@ public class PanBaiduCom extends PluginForHost {
             final String postLink = "http://pan.baidu.com/share/download?channel=chunlei&clienttype=0&web=1&uk=" + uk + "&shareid=" + shareid + "&timestamp=" + tsamp + "&sign=" + sign + "&bdstoken=null&channel=chunlei&clienttype=0&web=1";
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(postLink, "fid_list=%5B" + fsid + "%5D");
+            String code = null;
             for (int i = 1; i <= 3; i++) {
                 final String captchaLink = getJson("img");
                 if (captchaLink == null) {
                     break;
                 }
                 final String captchaid = new Regex(captchaLink, "([A-Z0-9]+)$").getMatch(0);
-                final String code = getCaptchaCode(captchaLink, downloadLink);
+                try {
+                    code = getCaptchaCode(captchaLink, downloadLink);
+                } catch (final Throwable e) {
+                    logger.info("Captcha download failed -> Retrying!");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Captcha download failed");
+                }
                 br.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
             }
             if (getJson("img") != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);

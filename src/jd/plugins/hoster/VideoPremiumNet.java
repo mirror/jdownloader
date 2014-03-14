@@ -30,7 +30,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -119,7 +118,7 @@ public class VideoPremiumNet extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
     }
 
     @Override
@@ -129,12 +128,12 @@ public class VideoPremiumNet extends PluginForHost {
         // Correct previously added links
         correctDownloadLink(link);
         prepBrowser();
+        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            getPage(br.getRedirectLocation());
-            final String continuelink = br.getRegex(">window\\.location = \\'(http[^<>\"]*?)\\'").getMatch(0);
-            if (continuelink != null) getPage(continuelink);
-        }
+        br.getPage("http://" + CURRENT_DOMAIN + "/main?%2F" + fid);
+        br.getPage("http://" + CURRENT_DOMAIN + "/" + fid);
+        final String continuelink = br.getRegex(">window\\.location = \\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (continuelink != null) getPage(continuelink);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File has been removed|>Page not found</h2>)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));

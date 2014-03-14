@@ -109,6 +109,7 @@ public class SaveTv extends PluginForHost {
     // If this != null, API is in use
     private String              SESSIONID                                                   = null;
     private static final String NOCHUNKS                                                    = "NOCHUNKS";
+    private static final String NORESUME                                                    = "NORESUME";
     private DownloadLink        DLINK                                                       = null;
 
     @SuppressWarnings("deprecation")
@@ -511,10 +512,12 @@ public class SaveTv extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting download...");
         int maxChunks = -4;
         boolean resume = true;
+        if (downloadLink.getBooleanProperty(NORESUME, false)) resume = false;
         if (downloadLink.getBooleanProperty(SaveTv.NOCHUNKS, false) || resume == false) {
             maxChunks = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("Save.tv: Received HTML code instead of the file!");
             br.followConnection();
@@ -549,6 +552,16 @@ public class SaveTv extends PluginForHost {
                 }
             }
         } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
+                if (downloadLink.getBooleanProperty(NORESUME, false)) {
+                    downloadLink.setProperty(NORESUME, Boolean.valueOf(false));
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                }
+                downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE");
+            }
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(SaveTv.NOCHUNKS, false) == false) {

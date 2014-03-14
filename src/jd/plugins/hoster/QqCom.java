@@ -47,6 +47,8 @@ public class QqCom extends PluginForHost {
 
     private static final String DECRYPTEDLINK = "http://qqdecrypted\\.com/\\d+";
 
+    private static final String NOCHUNKS      = "NOCHUNKS";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -77,12 +79,17 @@ public class QqCom extends PluginForHost {
         if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("User-Agent", "Mozilla/4.0 (compatible; MSIE 9.11; Windows NT 6.1; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)");
         br.postPage("http://fenxiang.qq.com/upload/index.php/share/handler_c/getComUrl", "filename=" + Encoding.urlEncode(downloadLink.getName()) + "&filehash=" + hash);
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         final String finallink = br.getRegex("\"com_url\":\"(htt[^<>\"]*?)\"").getMatch(0);
         final String cookie = br.getRegex("\"com_cookie\":\"([^<>\"]*?)\"").getMatch(0);
         if (finallink == null || cookie == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String finalhost = new Regex(finallink, "(https?://[A-Za-z0-9\\-\\.]+)(:|/)").getMatch(0);
         br.setCookie(finalhost, "FTN5K", cookie);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, maxChunks);
 
         if (dl.getConnection().getResponseCode() == 503) {
             if (dl.getConnection().getResponseMessage().equals("Service Unavailable")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, " Service Unavailable!");
@@ -92,7 +99,26 @@ public class QqCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(QqCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(QqCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(QqCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(QqCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override

@@ -127,10 +127,19 @@ public class MyMailRu extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(TYPE_VIDEO_ALL)) {
             maxChunks = 0;
         }
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty("noresume", false)) resume = false;
         // More chunks possible but not needed because we're only downloading
         // pictures here
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 416) {
+                if (downloadLink.getBooleanProperty("noresume", false)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error");
+                logger.info("Resume impossible, disabling it for the next try");
+                downloadLink.setChunksProgress(null);
+                downloadLink.setProperty("noresume", Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Resume failed");
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -371,19 +371,24 @@ public class RapidGatorNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             URLConnectionAdapter con1 = br.openGetConnection("http://rapidgator.net/download/captcha");
-            if (con1.getResponseCode() == 500) {
-                try {
-                    con1.disconnect();
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", 10 * 60 * 1000l);
-            }
             if (con1.getResponseCode() == 302) {
                 try {
                     con1.disconnect();
                 } catch (final Throwable e) {
                 }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 2 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 5 * 60 * 1000l);
+            } else if (con1.getResponseCode() == 403) {
+                try {
+                    con1.disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+            } else if (con1.getResponseCode() == 500) {
+                try {
+                    con1.disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", 10 * 60 * 1000l);
             }
             // wasn't needed for raz, but psp said something about a redirect)
             br.followConnection();

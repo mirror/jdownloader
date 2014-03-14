@@ -129,7 +129,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (PARAMETER.matches(TYPE_USER) || br.containsHTML("class=\"dmco_text user_fullname\"")) {
+        if (PARAMETER.matches(TYPE_USER) || br.containsHTML("class=\"mrg-end-sm user-screenname-inner\"")) {
             String username = new Regex(PARAMETER, "dailymotion\\.com/user/([A-Za-z0-9]+)").getMatch(0);
             if (username == null) username = new Regex(PARAMETER, "dailymotion\\.com/([A-Za-z0-9]+)").getMatch(0);
             br.getPage("http://www.dailymotion.com/" + username);
@@ -140,10 +140,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
-            String fpName = br.getRegex("class=\"dmco_text user_fullname\">([^<>\"]*?)</div>").getMatch(0);
+            String fpName = br.getRegex("class=\"mrg-end-sm user-screenname-inner\">([^<>\"]*?)</span>").getMatch(0);
             if (fpName == null) fpName = username;
             fpName = Encoding.htmlDecode(fpName.trim());
-            final String videosNum = br.getRegex("\">Videos \\((\\d+)\\)</a>").getMatch(0);
+            final String videosNum = br.getRegex("class=\"col span-2 link-on-hvr\">[\t\n\r ]+<span class=\"font-xl mrg-end-xs\">(\\d+)</span>").getMatch(0);
             if (videosNum == null) {
                 logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
                 return null;
@@ -166,6 +166,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in 0.9.581
                 }
+                logger.info("Decrypting page " + currentPage + " / " + pagesNum);
                 br.getPage("http://www.dailymotion.com/user/" + username + "/" + currentPage);
                 final String[] videos = br.getRegex("preview_link \"  href=\"(/video/[A-Za-z0-9\\-_]+)\"").getColumn(0);
                 if (videos == null || videos.length == 0) {

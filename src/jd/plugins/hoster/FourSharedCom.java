@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -63,6 +64,8 @@ public class FourSharedCom extends PluginForHost {
     private static Object          LOCK                                      = new Object();
     private final String           COOKIE_HOST                               = "http://4shared.com";
 
+    private static final boolean   TRY_FAST_FREE                             = true;
+
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.4shared.com/ref/14368016/1");
@@ -72,6 +75,11 @@ public class FourSharedCom extends PluginForHost {
     /**
      * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
      * */
+    /*
+     * Way to skip waittime (free mode):
+     * http://www.4shared-china.com/downloadhelper/flink?login=login&password=md5%3A667894etgn4e78gui&url=http
+     * %3A%2F%2Fdc357%2E4shared%2Dchina%2Ecom%2Fdownload%2FBO12jcNU%3Ftsid%xxxxxx%26forDownloadHelper%3Dtrue%26lgfp%3D11000
+     */
     private static final String DOWNLOADSTREAMS              = "DOWNLOADSTREAMS";
     private static final String DOWNLOADSTREAMSERRORHANDLING = "DOWNLOADSTREAMSERRORHANDLING";
     private static final String NOCHUNKS                     = "NOCHUNKS";
@@ -143,6 +151,7 @@ public class FourSharedCom extends PluginForHost {
 
     private String getNormalDownloadlink() {
         String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3.*?href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        if (url == null) url = br.getRegex("<a href=\"(https?://[^<>\"]*?)\" class=\"linkShowD3").getMatch(0);
         if (url == null) {
             url = br.getRegex("<input type=\"hidden\" name=\"d3torrent\" value=\"(http://dc\\d+\\.4shared\\.com/download\\-torrent/[^<>\"\\']+)\"").getMatch(0);
             if (url != null) url = url.replace("/download-torrent/", "/download/");
@@ -185,12 +194,27 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink downloadLink, final Account acc) throws Exception {
         String pass = handlePassword(downloadLink);
         String url = checkDirectLink(downloadLink, "direct_link");
+        /* Not always needed */
+        boolean wait = true;
+        if (url == null && acc != null && TRY_FAST_FREE) {
+            try {
+                final Browser cbr = new Browser();
+                cbr.getHeaders().put("User-Agent", "UniversalUserAgent(winHTTP)");
+                cbr.getPage("http://www.4shared-china.com/downloadhelper/flink?login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&forDownloadHelper%3Dtrue%26lgfp%3D" + new Random().nextInt(10000));
+                url = cbr.getRegex("<url>(http[^<>\"]*?)</url>").getMatch(0);
+                if (url != null) {
+                    url = Encoding.htmlDecode(url);
+                    wait = false;
+                }
+            } catch (final Throwable e) {
+            }
+        }
         if (url == null) {
             boolean downloadStreams = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMS);
             if (downloadLink.getStringProperty("streamDownloadDisabled") == null && downloadStreams) {
@@ -202,23 +226,24 @@ public class FourSharedCom extends PluginForHost {
                 }
             }
             if (url == null) {
-                // If file isn't available for free users we can still try to get the stream link
-                checkErrors(br);
-                url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+                String continueLink = null;
                 if (url == null) {
-                    url = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
+                    /* If file isn't available for free users we can still try to get the stream link */
+                    checkErrors(br);
+                    continueLink = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+                    if (continueLink == null) {
+                        continueLink = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
+                    }
                 }
-                if (url == null) {
-                    // Maybe direct download
+                if (continueLink == null) {
+                    /* Maybe direct download */
                     url = getDirectDownloadlink();
                     if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    br.getPage(url);
+                    br.getPage(continueLink);
                     checkErrors(br);
                     url = getNormalDownloadlink();
                     if (url == null) url = getDirectDownloadlink();
-                    /** Will be disabled if we use stream links */
-                    boolean wait = true;
                     boolean downloadStreamsErrorhandling = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMSERRORHANDLING);
                     if (url == null && downloadStreamsErrorhandling) {
                         url = getStreamLinks();
@@ -232,7 +257,8 @@ public class FourSharedCom extends PluginForHost {
                     if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     if (wait) {
                         // Ticket Time
-                        final String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
+                        String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
+                        if (ttt == null) ttt = br.getRegex("id=\"downloadDelayTimeSec\" class=\"sec alignCenter light\\-blue\">(\\d+)</div>").getMatch(0);
                         int tt = 20;
                         if (ttt != null) {
                             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
@@ -355,7 +381,7 @@ public class FourSharedCom extends PluginForHost {
         login(account, false);
         if (account.getStringProperty("nopremium") != null) {
             br.getPage(downloadLink.getDownloadURL());
-            doFree(downloadLink);
+            doFree(downloadLink, account);
         } else {
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());

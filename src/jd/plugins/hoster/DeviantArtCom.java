@@ -232,6 +232,7 @@ public class DeviantArtCom extends PluginForHost {
         // Disable chunks as we only download pictures or small files
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
+            handleServerErrors();
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -253,10 +254,15 @@ public class DeviantArtCom extends PluginForHost {
         // Disable chunks as we only download pictures
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
+            handleServerErrors();
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
     }
 
     private String getDllink() throws PluginException {
@@ -272,6 +278,7 @@ public class DeviantArtCom extends PluginForHost {
                     if (dllink == null) dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
                 } else {
                     dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+                    if (dllink == null) dllink = br.getRegex("<div class=\"dev\\-view\\-deviation\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http[^<>\"]*?)\"").getMatch(0);
                 }
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
