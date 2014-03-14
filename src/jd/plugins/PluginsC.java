@@ -49,24 +49,24 @@ import org.jdownloader.translate._JDT;
  */
 
 public abstract class PluginsC {
-
+    
     private Pattern     pattern;
-
+    
     private String      name;
-
+    
     private long        version;
-
+    
     protected LogSource logger = LogController.TRASH;
-
+    
     public LogSource getLogger() {
         return logger;
     }
-
+    
     public void setLogger(LogSource logger) {
         if (logger == null) logger = LogController.TRASH;
         this.logger = logger;
     }
-
+    
     public PluginsC(String name, String pattern, String rev) {
         this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         this.name = name;
@@ -77,51 +77,51 @@ public abstract class PluginsC {
             version = -1;
         }
     }
-
+    
     private static final int         STATUS_NOTEXTRACTED     = 0;
-
+    
     private static final int         STATUS_ERROR_EXTRACTING = 1;
-
+    
     protected ArrayList<CrawledLink> cls                     = new ArrayList<CrawledLink>();
-
+    
     protected String                 md5;
     protected byte[]                 k;
-
+    
     private int                      status                  = STATUS_NOTEXTRACTED;
     protected boolean                askFileDeletion         = true;
-
+    
     public abstract ContainerStatus callDecryption(File file);
-
+    
     // @Override
     public synchronized boolean canHandle(final String data) {
         if (data == null) { return false; }
         final String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
         return match != null && match.equalsIgnoreCase(data);
     }
-
+    
     public String createContainerString(ArrayList<DownloadLink> downloadLinks) {
         return null;
     }
-
+    
     public Pattern getSupportedLinks() {
         return pattern;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public long getVersion() {
         return version;
     }
-
+    
     /* hide links by default */
     public boolean hideLinks() {
         return true;
     }
-
+    
     public abstract String[] encrypt(String plain);
-
+    
     /**
      * Diese Methode liefert eine URL zurück, von der aus der Download gestartet werden kann
      * 
@@ -132,7 +132,7 @@ public abstract class PluginsC {
     public synchronized String extractDownloadURL(final DownloadLink downloadLink) {
         throw new WTFException("TODO: this should not happen at the moment");
     }
-
+    
     /**
      * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks zurück.
      * 
@@ -143,15 +143,15 @@ public abstract class PluginsC {
     public ArrayList<CrawledLink> getContainedDownloadlinks() {
         return cls == null ? new ArrayList<CrawledLink>() : cls;
     }
-
+    
     protected boolean askFileDeletion() {
         return askFileDeletion;
     }
-
+    
     public synchronized void initContainer(String filename, final byte[] bs) throws IOException {
         File file = new File(filename);
         if (filename == null || !file.exists() || !file.isFile()) return;
-
+        
         if (cls == null || cls.size() == 0) {
             logger.info("Init Container");
             if (bs != null) k = bs;
@@ -161,31 +161,31 @@ public abstract class PluginsC {
                     FileCreationManager.getInstance().delete(file, null);
                 } else if (cls.size() > 0 && askFileDeletion()) {
                     switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
-                    case ASK_FOR_DELETE:
-
-                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
-                            public String getDontShowAgainKey() {
-                                return null;
+                        case ASK_FOR_DELETE:
+                            
+                            ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
+                                public String getDontShowAgainKey() {
+                                    return null;
+                                }
+                            };
+                            
+                            org.appwork.uio.ConfirmDialogInterface io = d.show();
+                            if (io.getCloseReason() == CloseReason.OK) {
+                                FileCreationManager.getInstance().delete(file, null);
+                                if (io.isDontShowAgainSelected()) {
+                                    JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
+                                }
+                            } else {
+                                if (io.isDontShowAgainSelected()) {
+                                    JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DONT_DELETE);
+                                }
                             }
-                        };
-
-                        org.appwork.uio.ConfirmDialogInterface io = d.show();
-                        if (io.getCloseReason() == CloseReason.OK) {
+                            break;
+                        case DELETE:
                             FileCreationManager.getInstance().delete(file, null);
-                            if (io.isDontShowAgainSelected()) {
-                                JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
-                            }
-                        } else {
-                            if (io.isDontShowAgainSelected()) {
-                                JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DONT_DELETE);
-                            }
-                        }
-                        break;
-                    case DELETE:
-                        FileCreationManager.getInstance().delete(file, null);
-                        break;
-                    case DONT_DELETE:
-
+                            break;
+                        case DONT_DELETE:
+                            
                     }
                 }
                 // doDecryption(filename);
@@ -194,7 +194,7 @@ public abstract class PluginsC {
             }
         }
     }
-
+    
     public ArrayList<CrawledLink> decryptContainer(CrawledLink source) {
         if (source.getURL() == null) return null;
         ArrayList<CrawledLink> retLinks = null;
@@ -202,11 +202,11 @@ public abstract class PluginsC {
         try {
             /* extract filename from url */
             String file = new Regex(source.getURL(), "file://(.+)").getMatch(0);
-            file = Encoding.urlDecode(file, false);
+            file = Encoding.urlDecode(file, true);
             if (file != null && new File(file).exists()) {
                 CrawledLink origin = source.getSourceLink();
                 if (origin != null) {
-                    String originFile = Encoding.urlDecode(new Regex(origin.getURL(), "file://(.+)").getMatch(0), false);
+                    String originFile = Encoding.urlDecode(new Regex(origin.getURL(), "file://(.+)").getMatch(0), true);
                     if (originFile != null && !file.equalsIgnoreCase(originFile)) {
                         logger.fine("Do not ask - just delete: " + origin.getURL());
                         askFileDeletion = false;
@@ -229,7 +229,7 @@ public abstract class PluginsC {
             /*
              * damn, something must have gone really really bad, lets keep the log
              */
-
+            
             logger.log(e);
         }
         if (retLinks == null && showException) {
