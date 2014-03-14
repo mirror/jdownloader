@@ -28,6 +28,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.swing.exttable.columnmenu.LockColumnWidthAction;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
@@ -76,7 +77,34 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         setClickcount(0);
         hideSinglePackage = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
-        
+        this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
+            
+            public int compare(long x, long y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+            
+            @Override
+            public int compare(final AbstractNode o1, final AbstractNode o2) {
+                String o1s = getStringValue(o1);
+                String o2s = getStringValue(o2);
+                if (o1s == null) {
+                    o1s = "";
+                }
+                if (o2s == null) {
+                    o2s = "";
+                }
+                if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                    int ret = compare(o1s.length(), o2s.length());
+                    if (ret == 0) ret = o1s.compareToIgnoreCase(o2s);
+                    return ret;
+                } else {
+                    int ret = compare(o2s.length(), o1s.length());
+                    if (ret == 0) ret = o2s.compareToIgnoreCase(o1s);
+                    return ret;
+                }
+            }
+            
+        });
     }
     
     /**
