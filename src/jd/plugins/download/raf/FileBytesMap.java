@@ -221,6 +221,7 @@ public class FileBytesMap {
                         fileBytesMapEntries.remove(nextIndex);
                         lengthOffset = nextFileBytesMapEntry.getEnd() - fileBytesMapEntryEnd - nextFileBytesMapEntry.getLength();
                         if (lengthOffset <= 0) {
+                            /* nextFileBytesMapEntry is completely within fileBytesMapEntry */
                             markedBytes -= nextFileBytesMapEntry.getLength();
                         } else {
                             markedBytes += lengthOffset;
@@ -244,6 +245,7 @@ public class FileBytesMap {
                         fileBytesMapEntries.remove(nextIndex);
                         long lengthOffset = nextFileBytesMapEntry.getEnd() - fileBytesMapEntryEnd - nextFileBytesMapEntry.getLength();
                         if (lengthOffset <= 0) {
+                            /* nextFileBytesMapEntry is completely within fileBytesMapEntry */
                             markedBytes -= nextFileBytesMapEntry.getLength();
                         } else {
                             markedBytes += lengthOffset;

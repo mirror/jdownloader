@@ -64,41 +64,41 @@ import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.translate._JDT;
 
 public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
-
+    
     private static final long                                                    serialVersionUID = -7560087582989096645L;
-
+    
     private final HashMap<String, List<Account>>                                 ACCOUNTS;
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
-
+    
     private static AccountController                                             INSTANCE         = new AccountController();
-
+    
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-
+                                                                                                      
                                                                                                       @Override
                                                                                                       protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
                                                                                                           listener.onAccountControllerEvent(event);
                                                                                                       }
-
+                                                                                                      
                                                                                                   };
-
+    
     public Eventsender<AccountControllerListener, AccountControllerEvent> getBroadcaster() {
         return broadcaster;
     }
-
+    
     private AccountSettings config;
-
+    
     private DelayedRunnable delayedSaver;
-
+    
     private AccountController() {
         super();
         config = JsonConfig.create(AccountSettings.class);
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
+            
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
                 save();
             }
-
+            
             @Override
             public String toString() {
                 return "ShutdownEvent: Save AccountController";
@@ -107,12 +107,12 @@ public class AccountController implements AccountControllerListener, AccountProp
         ACCOUNTS = loadAccounts(config, true);
         MULTIHOSTER_ACCOUNTS = new HashMap<String, List<Account>>();
         delayedSaver = new DelayedRunnable(5000, 30000) {
-
+            
             @Override
             public String getID() {
                 return "AccountController";
             }
-
+            
             @Override
             public void delayedrun() {
                 save();
@@ -129,7 +129,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         broadcaster.addListener(this);
     }
-
+    
     protected void save() {
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
         synchronized (ACCOUNTS) {
@@ -146,7 +146,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         config.setAccounts(ret);
     }
-
+    
     private void updateInternalMultiHosterMap(Account account, AccountInfo ai) {
         synchronized (MULTIHOSTER_ACCOUNTS) {
             Iterator<Entry<String, List<Account>>> it = MULTIHOSTER_ACCOUNTS.entrySet().iterator();
@@ -178,7 +178,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             account.setProperty(Account.IS_MULTI_HOSTER_ACCOUNT, isMulti);
         }
     }
-
+    
     public AccountInfo updateAccountInfo(final Account account, final boolean forceupdate) {
         AccountInfo ai = account.getAccountInfo();
         final AccountError errorBefore = account.getError();
@@ -186,7 +186,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         final HashMap<AccountProperty.Property, AccountProperty> propertyChanges = new HashMap<AccountProperty.Property, AccountProperty>();
         try {
             final AccountPropertyChangeHandler handler = new AccountPropertyChangeHandler() {
-
+                
                 @Override
                 public boolean fireAccountPropertyChange(AccountProperty property) {
                     if (property != null) {
@@ -263,7 +263,6 @@ public class AccountController implements AccountControllerListener, AccountProp
                     ai.setExpired(false);
                     ai.setValidUntil(-1);
                 }
-                ClassLoader oldClassLoader = currentThread.getContextClassLoader();
                 long tempDisabledCounterBefore = account.getTmpDisabledTimeout();
                 try {
                     /*
@@ -274,7 +273,6 @@ public class AccountController implements AccountControllerListener, AccountProp
                     account.setAccountInfo(ai);
                 } finally {
                     account.setUpdateTime(System.currentTimeMillis());
-                    currentThread.setContextClassLoader(oldClassLoader);
                 }
                 if (account.isValid() == false) {
                     /* account is invalid */
@@ -396,11 +394,11 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
         }
     }
-
+    
     public static AccountController getInstance() {
         return INSTANCE;
     }
-
+    
     private synchronized HashMap<String, java.util.List<Account>> loadAccounts(AccountSettings config, boolean allowRestore) {
         HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
         if (dat == null) {
@@ -441,7 +439,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         return ret;
     }
-
+    
     /**
      * Restores accounts from old database
      * 
@@ -477,7 +475,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                                 ac.setUser((String) a.get("user"));
                                 ac.setPassword((String) a.get("pass"));
                                 ac.setEnabled(a.containsKey("enabled"));
-
+                                
                             }
                         }
                     }
@@ -487,13 +485,13 @@ public class AccountController implements AccountControllerListener, AccountProp
         config.setAccounts(ret);
         return ret;
     }
-
+    
     @Deprecated
     public void addAccount(final PluginForHost pluginForHost, final Account account) {
         account.setHoster(pluginForHost.getHost());
         addAccount(account);
     }
-
+    
     /* returns a list of all available accounts for given host */
     public ArrayList<Account> list(String host) {
         ArrayList<Account> ret = new ArrayList<Account>();
@@ -520,12 +518,12 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         return ret;
     }
-
+    
     /* returns a list of all available accounts */
     public List<Account> list() {
         return list(null);
     }
-
+    
     /* do we have accounts for this host */
     public boolean hasAccounts(String host) {
         if (StringUtils.isEmpty(host)) return false;
@@ -542,11 +540,11 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         return false;
     }
-
+    
     public void addAccount(final Account account) {
         addAccount(account, true);
     }
-
+    
     public void addAccount(final Account account, boolean forceCheck) {
         if (account == null) return;
         if (account.getPlugin() == null) {
@@ -557,7 +555,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 account.setPlugin(null);
             }
         }
-
+        
         synchronized (ACCOUNTS) {
             String host = account.getHoster();
             host = host.toLowerCase(Locale.ENGLISH);
@@ -574,7 +572,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
     }
-
+    
     public boolean removeAccount(final Account account) {
         if (account == null) { return false; }
         /* remove reference to AccountController */
@@ -589,53 +587,53 @@ public class AccountController implements AccountControllerListener, AccountProp
         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.REMOVED, account));
         return true;
     }
-
+    
     public void onAccountControllerEvent(final AccountControllerEvent event) {
         Account acc = event.getAccount();
         delayedSaver.resetAndStart();
         boolean forceRecheck = false;
         switch (event.getType()) {
-        case ADDED:
-            org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
-            updateInternalMultiHosterMap(acc, acc.getAccountInfo());
-            break;
-        case ACCOUNT_PROPERTY_UPDATE:
-            AccountProperty propertyChange = ((AccountPropertyChangedEvent) event).getProperty();
-            switch (propertyChange.getProperty()) {
-            case ENABLED:
-                if (Boolean.FALSE.equals(propertyChange.getValue())) return;
-                forceRecheck = true;
+            case ADDED:
+                org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(true);
+                updateInternalMultiHosterMap(acc, acc.getAccountInfo());
                 break;
-            case ERROR:
-                if (propertyChange.getValue() != null) return;
-                forceRecheck = true;
+            case ACCOUNT_PROPERTY_UPDATE:
+                AccountProperty propertyChange = ((AccountPropertyChangedEvent) event).getProperty();
+                switch (propertyChange.getProperty()) {
+                    case ENABLED:
+                        if (Boolean.FALSE.equals(propertyChange.getValue())) return;
+                        forceRecheck = true;
+                        break;
+                    case ERROR:
+                        if (propertyChange.getValue() != null) return;
+                        forceRecheck = true;
+                        break;
+                    case PASSWORD:
+                    case USERNAME:
+                        forceRecheck = true;
+                        break;
+                }
                 break;
-            case PASSWORD:
-            case USERNAME:
-                forceRecheck = true;
-                break;
-            }
-            break;
-        case ACCOUNT_CHECKED:
-            updateInternalMultiHosterMap(acc, acc.getAccountInfo());
-            return;
-        case REMOVED:
-            updateInternalMultiHosterMap(acc, null);
-            return;
+            case ACCOUNT_CHECKED:
+                updateInternalMultiHosterMap(acc, acc.getAccountInfo());
+                return;
+            case REMOVED:
+                updateInternalMultiHosterMap(acc, null);
+                return;
         }
-
+        
         if (acc == null || acc != null && acc.isEnabled() == false) return;
         if ((Thread.currentThread() instanceof AccountCheckerThread)) return;
         AccountChecker.getInstance().check(acc, forceRecheck);
     }
-
+    
     @Deprecated
     public Account getValidAccount(final PluginForHost pluginForHost) {
         ArrayList<Account> ret = getValidAccounts(pluginForHost.getHost());
         if (ret != null && ret.size() > 0) return ret.get(0);
         return null;
     }
-
+    
     public ArrayList<Account> getValidAccounts(String host) {
         if (StringUtils.isEmpty(host)) return null;
         host = host.toLowerCase(Locale.ENGLISH);
@@ -655,7 +653,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         return ret;
     }
-
+    
     public List<Account> getMultiHostAccounts(String host) {
         if (StringUtils.isEmpty(host)) return null;
         host = host.toLowerCase(Locale.ENGLISH);
@@ -666,7 +664,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             return retList;
         }
     }
-
+    
     public boolean hasMultiHostAccounts(String host) {
         if (StringUtils.isEmpty(host)) return false;
         host = host.toLowerCase(Locale.ENGLISH);
@@ -674,23 +672,23 @@ public class AccountController implements AccountControllerListener, AccountProp
             return MULTIHOSTER_ACCOUNTS.containsKey(host);
         }
     }
-
+    
     @Deprecated
     public ArrayList<Account> getAllAccounts(String string) {
         return list(string);
     }
-
+    
     public static String createFullBuyPremiumUrl(String buyPremiumUrl, String id) {
         return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + Encoding.urlEncode(buyPremiumUrl) + "&" + Encoding.urlEncode(id);
     }
-
+    
     @Override
     public boolean fireAccountPropertyChange(jd.plugins.AccountProperty propertyChange) {
         if (propertyChange.getAccount().isChecking()) return false;
         getBroadcaster().fireEvent(new AccountPropertyChangedEvent(propertyChange.getAccount(), propertyChange));
         return true;
     }
-
+    
     public List<Account> importAccounts(File f) {
         /* TODO: add cleanup to avoid memleak */
         AccountSettings cfg = JsonConfig.create(new File(f.getParent(), "org.jdownloader.settings.AccountSettings"), AccountSettings.class);
@@ -704,5 +702,5 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
         return added;
     }
-
+    
 }
