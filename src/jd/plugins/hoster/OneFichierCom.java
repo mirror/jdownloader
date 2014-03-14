@@ -260,7 +260,7 @@ public class OneFichierCom extends PluginForHost {
                 br3.submitForm(a2);
                 errorHandling(downloadLink, br3);
                 if (dllink == null) dllink = br3.getRedirectLocation();
-                if (dllink == null) dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.1fichier\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
+                if (dllink == null) dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
                 if (dllink == null) {
                     String wait = br3.getRegex(" var count = (\\d+);").getMatch(0);
                     if (wait != null && retried == false) {
