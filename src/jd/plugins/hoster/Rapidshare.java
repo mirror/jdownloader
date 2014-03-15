@@ -273,7 +273,7 @@ public class Rapidshare extends PluginForHost {
                 checkurls.removeAll(finishedurls);
                 for (final DownloadLink u : checkurls) {
                     idlist.append(",").append(Rapidshare.getID(u.getDownloadURL()));
-                    namelist.append(",").append(this.getName(u));
+                    namelist.append(",").append(encodeFilenameForAvailablecheck(getName(u)));
                 }
                 final String req = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
 
@@ -361,6 +361,18 @@ public class Rapidshare extends PluginForHost {
             }
             return false;
         }
+    }
+
+    private String encodeFilenameForAvailablecheck(String filename) {
+        /* Encode encoded comma to encoded encoded comma so that we don't actually decode it */
+        filename = filename.replace("%2C", "%252C");
+        filename = Encoding.htmlDecode(filename);
+        filename = filename.replace("%", "%25");
+        filename = filename.replace("+", "%2B");
+        filename = filename.replace(" ", "%20");
+        filename = filename.replace("&", "%26");
+        filename = filename.replace(",", "%2C");
+        return filename;
     }
 
     private boolean checkLinksIntern2(final ArrayList<DownloadLink> links) {
@@ -547,7 +559,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     /* get filename of link */
@@ -629,6 +641,9 @@ public class Rapidshare extends PluginForHost {
                 /* anti ddos protection */
                 sleep(Math.max(2, new Random().nextInt(10)) * 60 * 1000, link);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File owner's traffic exhausted", 60 * 60 * 1000l);
+            } else if (error.contains("Filename invalid")) {
+                /* Probably offline */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Filename invalid or file offline");
             } else {
                 logger.fine(br.toString());
                 throw new PluginException(LinkStatus.ERROR_FATAL, error);
@@ -710,7 +725,7 @@ public class Rapidshare extends PluginForHost {
             if (downloadLink.getDownloadSize() > 30 * 1024 * 1024 && oldStyle() && false) {
                 this.dl = this.createHackedDownloadInterface(this, this.br, downloadLink, dllink);
             } else {
-                this.dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+                this.dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             }
             final URLConnectionAdapter urlConnection = this.dl.getConnection();
             if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
@@ -718,7 +733,8 @@ public class Rapidshare extends PluginForHost {
                     this.br.followConnection();
                 } catch (final Throwable e) {
                 }
-                if (br.containsHTML("Download permission denied by uploader")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader"); }
+                if (br.containsHTML("Download permission denied by uploader")) throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader");
+                if (br.containsHTML("File ID invalid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 logger.severe(this.br.toString());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
