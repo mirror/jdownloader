@@ -64,10 +64,10 @@ public class SlutLoadCom extends PluginForHost {
         if (br.getURL().equals("http://www.slutload.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (!br.getURL().contains("slutload.com/")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String filename = br.getRegex("class=\"videoHD\"><b>([^<>\"]*?)</b>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<p><b>Title:</b>([^<>\"]*?)</p>").getMatch(0);
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) filename = br.getRegex("<p><b>Title:</b>([^<>\"]*?)</p>").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=\"tdhi\\-lft\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Slutload\\.com</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
         return AvailableStatus.TRUE;
