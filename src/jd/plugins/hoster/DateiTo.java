@@ -60,7 +60,7 @@ public class DateiTo extends PluginForHost {
 
     private static final boolean FREE_RESUME_WEB               = true;
     private static final int     FREE_MAXCHUNKS_WEB            = 0;
-    private static final int     FREE_MAXDOWNLOADS_WEB         = 20;
+    private static final int     FREE_MAXDOWNLOADS_WEB         = 1;
 
     private static final boolean ACCOUNT_FREE_RESUME_API       = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS_API    = 1;
