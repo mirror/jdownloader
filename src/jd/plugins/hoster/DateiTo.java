@@ -151,7 +151,7 @@ public class DateiTo extends PluginForHost {
                         logger.warning("Linkchecker for datei.to is broken!");
                         return false;
                     }
-                    if (!"online".equalsIgnoreCase(linkInfo[1]))
+                    if (!"online".equalsIgnoreCase(linkInfo[0]))
                         dllink.setAvailable(false);
                     else
                         dllink.setAvailable(true);
@@ -190,6 +190,7 @@ public class DateiTo extends PluginForHost {
             if (fname != null) downloadLink.setName(fname);
             if (fsize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fsize));
             if (br.containsHTML(err_temp_unvail)) return AvailableStatus.UNCHECKABLE;
+            downloadLink.setAvailable(true);
             return AvailableStatus.TRUE;
         }
     }

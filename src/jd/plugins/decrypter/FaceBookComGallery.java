@@ -587,11 +587,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Returning already decrypted links anyways...");
                     break;
                 }
-                // final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/" + controller + "?data=%7B%22collection_token%22%3A%22" +
-                // Encoding.urlEncode(appcollection) + "%3A5%22%2C%22cursor%22%3A%22" + cursor +
-                // "%22%2C%22tab_key%22%3A%22photos_all%22%2C%22profile_id%22%3A" + profileowner +
-                // "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%2C%22importer_state%22%3Anull%7D&__user="
-                // + user + "&__a=1&__dyn=7n8apij2qmumdDgDxyIJ3Ga58Ciq2W8GA8ABGeqheCu6po&__req=" + i + "&__rev=1162685";
                 final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotosStreamPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22tab_key%22%3A%22photos_stream%22%2C%22ajaxpipe%22%3A%221%22%2C%22ajaxpipe_token%22%3A%22" + ajaxpipe_token + "%22%2C%22quickling%22%3A%7B%22version%22%3A%221162685%3B0%3B1%3B0%3B%22%7D%2C%22__user%22%3A%22" + user + "%22%2C%22__a%22%3A%221%22%2C%22__dyn%22%3A%22" + dyn + "%22%2C%22__req%22%3A%22jsonp_2%22%2C%22__rev%22%3A%22" + rev + "%22%2C%22__adt%22%3A%222%22%2C%22sk%22%3A%22photos_stream%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=4";
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
