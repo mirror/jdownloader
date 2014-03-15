@@ -206,6 +206,7 @@ public class SimplyDebridCom extends PluginForHost {
                 String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
             }
+            if (br.containsHTML("SQLSTATE")) { throw new PluginException(LinkStatus.ERROR_RETRY, "SQL server error"); }
             logger.info("Error parsing Simply-Debrid download response: " + page);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

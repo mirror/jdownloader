@@ -213,6 +213,8 @@ public class PutLockerCom extends PluginForHost {
         doFree(downloadLink);
     }
 
+    private static final String NORESUME = "NORESUME";
+
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
@@ -227,13 +229,15 @@ public class PutLockerCom extends PluginForHost {
         checkForErrors();
 
         final String dllink = getDllink(downloadLink);
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(NORESUME, false)) resume = false;
         int chunks = 0;
-        if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false)) {
+        if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) || !resume) {
             chunks = 1;
         }
         br.setFollowRedirects(true);
         logger.info("firedrive.com: Download will start soon");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
                 /* unknown error, we disable multiple chunks */
@@ -281,6 +285,18 @@ public class PutLockerCom extends PluginForHost {
                 downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+
+            if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
+                if (downloadLink.getBooleanProperty(NORESUME, false)) {
+                    downloadLink.setProperty(NORESUME, Boolean.valueOf(false));
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                }
+                downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE");
+            }
+
             logger.warning("firedrive.com: Unknown error2");
             int timesFailed = downloadLink.getIntegerProperty("timesfailedfiredrivecom_unknown2", 0);
             downloadLink.getLinkStatus().setRetryCount(0);

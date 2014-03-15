@@ -204,6 +204,7 @@ public class FourSharedCom extends PluginForHost {
                 cbr.getPage("http://www.4shared-china.com/downloadhelper/flink?login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&forDownloadHelper%3Dtrue%26lgfp%3D" + new Random().nextInt(10000));
                 url = cbr.getRegex("<url>(http[^<>\"]*?)</url>").getMatch(0);
                 if (url != null) {
+                    logger.info("FAST-WAY worked|active!");
                     url = Encoding.htmlDecode(url);
                     wait = false;
                 }

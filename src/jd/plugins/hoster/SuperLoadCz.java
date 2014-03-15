@@ -53,6 +53,8 @@ public class SuperLoadCz extends PluginForHost {
     private static final String                            mAPI               = "http://api.superload.cz/a-p-i";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
+    private static final int                               MAX_SIMULTAN_DLS   = 5;
+
     public SuperLoadCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
@@ -277,7 +279,7 @@ public class SuperLoadCz extends PluginForHost {
         }
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        account.setMaxSimultanDownloads(-1);
+        account.setMaxSimultanDownloads(MAX_SIMULTAN_DLS);
         ai.setValidUntil(-1);
         ai.setStatus("Premium User");
         try {

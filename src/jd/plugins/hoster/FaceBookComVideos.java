@@ -22,9 +22,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -50,7 +54,7 @@ public class FaceBookComVideos extends PluginForHost {
     private String              FACEBOOKMAINPAGE           = "http://www.facebook.com";
     private String              PREFERHD                   = "PREFERHD";
     private static Object       LOCK                       = new Object();
-    public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.2) Gecko/20100101 Firefox/10.0.2";
+    public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
     private boolean             pluginloaded               = false;
     private static final String PHOTOLINK                  = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
 
@@ -444,6 +448,9 @@ public class FaceBookComVideos extends PluginForHost {
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
             account.setValid(true);
+            synchronized (LOCK) {
+                checkFeatureDialog();
+            }
         }
     }
 
@@ -471,6 +478,60 @@ public class FaceBookComVideos extends PluginForHost {
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    private void checkFeatureDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("featuredialog_Shown", Boolean.FALSE) == false) {
+                if (config.getProperty("featuredialog_Shown2") == null) {
+                    showFeatureDialogAll();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("featuredialog_Shown", Boolean.TRUE);
+                config.setProperty("featuredialog_Shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showFeatureDialogAll() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "Facebook.com Plugin";
+                        final String lang = System.getProperty("user.language");
+                        if ("de".equalsIgnoreCase(lang)) {
+                            message += "Du benutzt deinen Facebook Account zum ersten mal in JDownloader.\r\n";
+                            message += "Da JDownloader keine Facebook App ist loggt er sich genau wie du per Browser ein.\r\n";
+                            message += "Es gibt also keinen Austausch (privater) Facebook Daten mit JD.\r\n";
+                            message += "Wir wahren deine Privatsphäre!";
+                        } else {
+                            message += "You're using your Facebook account in JDownloader for the first time.\r\n";
+                            message += "Because JDownloader is not a Facebook App it logs in Facebook just like you via browser.\r\n";
+                            message += "There is no (private) data exchange between JD and Facebook!\r\n";
+                            message += "We respect your privacy!";
+                        }
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
     }
 
     @Override
