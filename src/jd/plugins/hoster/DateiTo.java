@@ -302,6 +302,10 @@ public class DateiTo extends PluginForHost {
         if (dl.getConnection() == null || dl.getConnection().getContentType().contains("html")) {
             logger.warning("The dllink doesn't seem to be a file...");
             br.followConnection();
+            if (br.containsHTML("error/ticketexpired\\'")) {
+                logger.info("error/ticketexpired --> Retrying");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Ticket expired");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         try {

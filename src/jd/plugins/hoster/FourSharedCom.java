@@ -75,11 +75,6 @@ public class FourSharedCom extends PluginForHost {
     /**
      * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
      * */
-    /*
-     * Way to skip waittime (free mode):
-     * http://www.4shared-china.com/downloadhelper/flink?login=login&password=md5%3A667894etgn4e78gui&url=http
-     * %3A%2F%2Fdc357%2E4shared%2Dchina%2Ecom%2Fdownload%2FBO12jcNU%3Ftsid%xxxxxx%26forDownloadHelper%3Dtrue%26lgfp%3D11000
-     */
     private static final String DOWNLOADSTREAMS              = "DOWNLOADSTREAMS";
     private static final String DOWNLOADSTREAMSERRORHANDLING = "DOWNLOADSTREAMSERRORHANDLING";
     private static final String NOCHUNKS                     = "NOCHUNKS";

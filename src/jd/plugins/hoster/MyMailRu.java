@@ -134,7 +134,10 @@ public class MyMailRu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
-                if (downloadLink.getBooleanProperty("noresume", false)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error");
+                if (downloadLink.getBooleanProperty("noresume", false)) {
+                    downloadLink.setProperty("noresume", Boolean.valueOf(false));
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error");
+                }
                 logger.info("Resume impossible, disabling it for the next try");
                 downloadLink.setChunksProgress(null);
                 downloadLink.setProperty("noresume", Boolean.valueOf(true));

@@ -121,7 +121,7 @@ public class UpToBoxCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         prepBrowser();
@@ -130,6 +130,10 @@ public class UpToBoxCom extends PluginForHost {
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
+        }
+        if (correctedBR.contains("No htmlCode read")) {
+            link.getLinkStatus().setStatusText("Server error -> Can't check status");
+            return AvailableStatus.UNCHECKABLE;
         }
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
@@ -366,12 +370,18 @@ public class UpToBoxCom extends PluginForHost {
     }
 
     private void getPage(String page) throws Exception {
-        br.getPage(page);
+        for (int i = 1; i <= 3; i++) {
+            br.getPage(page);
+            if (br.containsHTML("No htmlCode read")) continue;
+            break;
+        }
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         correctBR();
     }
 
     private void postPage(String page, String postdata) throws Exception {
         br.postPage(page, postdata);
+        if (correctedBR.contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         correctBR();
     }
 

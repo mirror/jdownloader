@@ -156,6 +156,7 @@ public class UlozTo extends PluginForHost {
         final Browser cbr = br.cloneBrowser();
         for (int i = 0; i <= 5; i++) {
             cbr.getPage("http://ulozto.net/reloadXapca.php?rnd=" + System.currentTimeMillis());
+            if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             final String hash = cbr.getRegex("\"hash\":\"([a-f0-9]+)\"").getMatch(0);
             final String timestamp = cbr.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             final String salt = cbr.getRegex("\"salt\":(\\d+)").getMatch(0);

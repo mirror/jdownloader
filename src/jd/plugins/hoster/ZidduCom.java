@@ -60,7 +60,7 @@ public class ZidduCom extends PluginForHost {
         if (br.containsHTML(FILEOFFLINE) || br.getURL().contains("msg=File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("top\\.document\\.title=\"Download (.*?) in Ziddu\"").getMatch(0);
         if (filename == null) filename = br.getRegex("download/\\d+/(.*?)\\.html").getMatch(0);
-        String filesize = br.getRegex(">File Size :</span></td>[\t\n\r ]+<td height=\"\\d+\" align=\"left\" class=\"fontfamilyverdana normal12blue\"><span class=\"fontfamilyverdana normal12black\">(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("File Size.*?class=\"fontfamilyverdana normal12black\">([^<>\"]*?)</tr>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(Encoding.htmlDecode(filename));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -69,14 +69,15 @@ public class ZidduCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.setDebug(true);
         Form form = br.getFormbyProperty("name", "dfrm");
-        Thread.sleep(500);
+        this.sleep(500, downloadLink);
         br.submitForm(form);
         if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Is too Busy,Please <br>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
         form = br.getFormbyProperty("name", "securefrm");
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String capurl = form.getRegex("(/CaptchaSecurityImages\\.php\\?width=\\d+&height=\\d+&characters=\\d)").getMatch(0);

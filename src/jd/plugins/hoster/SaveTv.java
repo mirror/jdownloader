@@ -108,8 +108,8 @@ public class SaveTv extends PluginForHost {
     private boolean             ISADSFREEAVAILABLE                                          = false;
     // If this != null, API is in use
     private String              SESSIONID                                                   = null;
-    private static final String NOCHUNKS                                                    = "NOCHUNKS";
     private static final String NORESUME                                                    = "NORESUME";
+    private static final String NOCHUNKS                                                    = "NOCHUNKS";
     private DownloadLink        DLINK                                                       = null;
 
     @SuppressWarnings("deprecation")
