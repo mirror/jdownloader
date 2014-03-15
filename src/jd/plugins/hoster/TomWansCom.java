@@ -58,11 +58,11 @@ public class TomWansCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Form humanform = br.getForm(3);
+        final Form humanform = br.getForm(4);
         if (humanform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(humanform);
-        String dllink = br.getRegex("<source type=\"video/flv\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.tomwans\\.com/files/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("file: \"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://f\\.tomwans.com/files/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
