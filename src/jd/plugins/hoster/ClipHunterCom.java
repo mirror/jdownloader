@@ -74,6 +74,7 @@ public class ClipHunterCom extends PluginForHost {
         DLLINK = downloadLink.getStringProperty("directlink");
 
         if (!linkOk(downloadLink)) {
+            br.getPage(downloadLink.getStringProperty("originallink"));
             if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             final LinkedHashMap<String, String> foundQualities = findAvailableVideoQualities();
             if (foundQualities == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -104,8 +105,6 @@ public class ClipHunterCom extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 dl.setDownloadSize(con.getLongContentLength());
                 linkOk = true;
-            } else {
-                br.getPage(dl.getStringProperty("originallink"));
             }
         } finally {
             try {
@@ -155,9 +154,16 @@ public class ClipHunterCom extends PluginForHost {
                 continue;
             }
             for (final String quality[] : qualities) {
-                if (tmpUrl.contains(quality[0])) {
-                    foundQualities.put(quality[0], tmpUrl);
-                    break;
+                if (quality.length == 3) {
+                    if (tmpUrl.contains(quality[1]) || tmpUrl.contains(quality[2])) {
+                        foundQualities.put(quality[0], tmpUrl);
+                        break;
+                    }
+                } else {
+                    if (tmpUrl.contains(quality[0])) {
+                        foundQualities.put(quality[0], tmpUrl);
+                        break;
+                    }
                 }
             }
         }

@@ -114,6 +114,7 @@ public class DateiTo extends PluginForHost {
 
     private void prepbrowser_web(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
+        br.setCustomCharset("utf-8");
     }
 
     @Override
@@ -260,7 +261,7 @@ public class DateiTo extends PluginForHost {
         final String dlid = br.getRegex("<button id=\"([AS-Za-z0-9]+)\"").getMatch(0);
         if (dlid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage("http://datei.to/response/download", "Step=1&ID=" + dlid);
-        if (br.containsHTML(">Ansonsten musst du warten, bis der aktuelle Download beendet ist")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many free downloads are active, please wait before starting new ones", 5 * 60 * 1000l);
+        if (br.containsHTML(">Ansonsten musst du warten, bis der aktuelle Download beendet ist")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
 
         final Regex reconWait = br.getRegex("Du musst noch <strong>(\\d+):(\\d+) min</strong> warten");
         final String reconMin = reconWait.getMatch(0);
@@ -284,12 +285,16 @@ public class DateiTo extends PluginForHost {
                 if (br.containsHTML("Eingabe war leider falsch")) continue;
                 break;
             }
-            if (br.containsHTML("Eingabe war leider falsch")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-            if (br.containsHTML("Das Download\\-Ticket ist abgelaufen")) throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
+            if (br.containsHTML("Eingabe war leider falsch"))
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            else if (br.containsHTML("Das Download\\-Ticket ist abgelaufen")) throw new PluginException(LinkStatus.ERROR_RETRY, "Downloadticket expired");
+
             br.postPage("http://datei.to/response/download", "Step=3&ID=" + dlid);
+            if (br.containsHTML(">Du lädst bereits eine Datei herunter")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
             dllink = br.getRegex("iframe src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 logger.warning(NICE_HOST + ": dllink is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // Limited if we have waittime & captcha
             resume = false;

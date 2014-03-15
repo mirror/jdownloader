@@ -54,7 +54,7 @@ public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
     private static final String  PASSWORDTEXT     = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
-    private static final String  IPBLOCKEDTEXTS   = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you can download only one file at a time)";
+    private static final String  IPBLOCKEDTEXTS   = "(/>Téléchargements en cours|En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you can download only one file at a time)";
     private static final String  FREELINK         = "freeLink";
     private static final String  PREMLINK         = "premLink";
     private static final String  SSL_CONNECTION   = "SSL_CONNECTION";

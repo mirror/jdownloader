@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -54,6 +55,9 @@ public class SuperLoadCz extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private static final int                               MAX_SIMULTAN_DLS   = 5;
+
+    private static Object                                  LOCK               = new Object();
+    private String                                         TOKEN              = null;
 
     public SuperLoadCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -195,19 +199,19 @@ public class SuperLoadCz extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
+    public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
         prepBrowser();
-        final String token = account.getStringProperty("token", null);
         final String pass = downloadLink.getStringProperty("pass", null);
-        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        TOKEN = account.getStringProperty("token", null);
+        if (TOKEN == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = checkDirectLink(downloadLink, "superloadczdirectlink");
         if (dllink == null) {
             showMessage(downloadLink, "Task 1: Generating Link");
             /* request Download */
             if (pass != null) {
-                br.postPage(mAPI + "/download-url", "token=" + token + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&password=" + Encoding.urlEncode(pass));
+                postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&password=" + Encoding.urlEncode(pass) + "&token=");
             } else {
-                br.postPage(mAPI + "/download-url", "token=" + token + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+                postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&token=");
             }
             if (br.containsHTML("\"error\":\"invalidLink\"")) {
                 logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
@@ -250,22 +254,14 @@ public class SuperLoadCz extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         prepBrowser();
-        String token = null;
         try {
-            br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
-            if (!getSuccess()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            token = getJson("token");
-            if (token != null) {
-                account.setProperty("token", token);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } catch (PluginException e) {
+            login(account);
+        } catch (final PluginException e) {
             account.setValid(false);
             account.setProperty("token", Property.NULL);
             ai.setProperty("multiHostSupport", Property.NULL);
@@ -284,7 +280,7 @@ public class SuperLoadCz extends PluginForHost {
         ai.setStatus("Premium User");
         try {
             // get the supported host list,
-            String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + token);
+            String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + TOKEN);
             String[] hosts = new Regex(hostsSup, "\"([^\", ]+\\.[^\", ]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
@@ -304,6 +300,17 @@ public class SuperLoadCz extends PluginForHost {
             logger.info("Could not fetch ServerList from " + mName + ": " + e.toString());
         }
         return ai;
+    }
+
+    private void login(final Account acc) throws IOException, PluginException {
+        br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
+        if (!getSuccess()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        TOKEN = getJson("token");
+        if (TOKEN != null) {
+            acc.setProperty("token", TOKEN);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     private void showMessage(DownloadLink link, String message) {
@@ -347,6 +354,34 @@ public class SuperLoadCz extends PluginForHost {
 
     private boolean getSuccess() {
         return br.getRegex("\"success\":true").matches();
+    }
+
+    private void postPageSafe(final Account acc, final String page, final String postData) throws Exception {
+        boolean failed = true;
+        for (int i = 1; i <= 5; i++) {
+            logger.info("Request try " + i + " of 5");
+            try {
+                br.postPage(page, postData + TOKEN);
+            } catch (final BrowserException e) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
+                    logger.info("Request failed (401) -> Re-newing token and trying again");
+                    try {
+                        synchronized (LOCK) {
+                            this.login(acc);
+                        }
+                    } catch (final Exception e_acc) {
+                        logger.warning("Failed to re-new token!");
+                        throw e_acc;
+                    }
+                    continue;
+                }
+                logger.info("Request failed (other BrowserException) -> Throwing BrowserException");
+                throw e;
+            }
+            failed = false;
+            break;
+        }
+        if (failed) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 10 * 60 * 1000l);
     }
 
     @Override
