@@ -64,6 +64,8 @@ public class IFileIt extends PluginForHost {
     private static AtomicBoolean UNDERMAINTENANCE         = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
 
+    private static final String  NICE_HOST                = "filecloud.io";
+
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filecloud.io/user-register.html");
@@ -202,8 +204,20 @@ public class IFileIt extends PluginForHost {
             dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
             if (dllink == null) {
+                if (br.containsHTML("in order to download any publicly shared file, please enter its unique download URL")) {
+                    int timesFailed = downloadLink.getIntegerProperty("timesfailedfilecloudit_dllinknull", 0);
+                    downloadLink.getLinkStatus().setRetryCount(0);
+                    if (timesFailed <= 2) {
+                        timesFailed++;
+                        downloadLink.setProperty("timesfailedfilecloudit_dllinknull", timesFailed);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started");
+                    } else {
+                        downloadLink.setProperty("timesfailedfilecloudit_dllinknull", Property.NULL);
+                        logger.info(NICE_HOST + ": dllink is null --> Plugin broken");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
                 logger.info("last try getting dllink failed, plugin must be defect!");
-                System.out.println(br.toString() + "n");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
