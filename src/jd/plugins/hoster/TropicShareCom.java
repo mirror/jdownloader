@@ -81,7 +81,7 @@ public class TropicShareCom extends PluginForHost {
                 final String seconds = br.getRegex("<span id=\"sec\">(\\d+)</span>").getMatch(0);
                 if (minutes != null && seconds != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001 + Integer.parseInt(seconds) * 1001l); }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            }
+            } else if (br.containsHTML("For parallel downloads please select one of Premium packages")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

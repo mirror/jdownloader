@@ -16,25 +16,22 @@
 
 package jd.plugins.decrypter;
 
+import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
+import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/download/\\d+/.{1}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "goldesel.to" }, urls = { "http://(www\\.)?goldesel\\.to/[a-z0-9]+/\\d+.{2}" }, flags = { 0 })
 public class GldSlTo extends PluginForDecrypt {
 
     public GldSlTo(PluginWrapper wrapper) {
@@ -44,59 +41,27 @@ public class GldSlTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        // Important: Does not work without this cookie!
-        br.setCookie("http://goldesel.to/", "goldesel_in", "1");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (!br.containsHTML("class=\"entry_box_head\">Direct\\-Downloads</div>") && !br.containsHTML("class=\"entry_box_head\">Streams \\-")) {
+        if (!br.containsHTML("<h2>DDL\\-Links</h2>") && !br.containsHTML("<h2>Stream\\-Links</h2>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final Browser br2 = br.cloneBrowser();
-        br2.getPage("http://goldesel.to/script/main1.js");
-        final String reCaptchaID = br2.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
-        String[] postInfo = getAjaxPost(br2);
-        if (br.containsHTML("class=\"recaptcha_only_if_image\"") && reCaptchaID != null) {
-            br.getHeaders().put("Referer", "");
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId(reCaptchaID);
-            for (int i = 1; i <= 5; i++) {
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, param);
-                br.postPage(parameter, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&Module=CCap");
-                if (br.containsHTML("class=\"recaptcha_only_if_image\"")) {
-                    continue;
-                }
-                break;
-            }
-            if (br.containsHTML("class=\"recaptcha_only_if_image\"")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
 
-        String fpName = br.getRegex("class=\"content_box_head\">Detailansicht von \"(.*?)\"</div>").getMatch(0);
-        if (fpName == null) {
-            fpName = br.getRegex("width=\"14\" height=\"14\" align=\"absbottom\" />\\&nbsp;\\&nbsp;(.*?)</span><div").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("style=\"float:left; margin:0px;\"><strong>\"(.*?)\"</strong>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("<title>(.*?) \\(Download\\) \\- GoldEsel</title>").getMatch(0);
-                }
-            }
-        }
-        String[] decryptIDs = br.getRegex("onClick=\"window\\.open\\(\\'http://goldesel\\.to/dl/\\', \\'(\\d+)\\'").getColumn(0);
-        if (decryptIDs == null || decryptIDs.length == 0) {
-            decryptIDs = br.getRegex("goD\\(\\'(\\d+)\\'\\);").getColumn(0);
-            if (decryptIDs == null || decryptIDs.length == 0) {
-                decryptIDs = br.getRegex("href=\"http://goldesel\\.to/dl/\" target=\"(.*?)\"").getColumn(0);
-            }
-        }
+        String fpName = br.getRegex("<title>([^<>\"]*?) \\&raquo; goldesel\\.to</title>").getMatch(0);
+        if (fpName == null) fpName = new Regex(br.getURL(), "goldesel\\.to/(.+)").getMatch(0);
+        fpName = Encoding.htmlDecode(fpName).trim();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName);
+        String[] decryptIDs = br.getRegex("data=\"([^<>\"]*?)\"").getColumn(0);
         if (decryptIDs == null || decryptIDs.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String[] streamIDs = br.getRegex("onClick=\"load_Stream\\(\\'(\\d+)\\'\\)").getColumn(0);
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final int maxc = decryptIDs.length;
+        int counter = 1;
         for (final String decryptID : decryptIDs) {
             try {
                 if (this.isAbort()) {
@@ -106,68 +71,89 @@ public class GldSlTo extends PluginForDecrypt {
             } catch (final Throwable e) {
                 // Not available in old 0.9.581 Stable
             }
-            br.postPage(postInfo[0], postInfo[1] + "=" + decryptID);
-            String finallink = br.toString();
-            if (finallink.contains("No input file specified")) {
-                continue;
-            }
-            if (finallink.equals("http://goldesel.to/dl/error.html")) {
-                logger.info("Failed to decrypt normal links");
-                break;
-            }
-            if (!finallink.startsWith("http") || finallink.length() > 500) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
-        }
-        if (streamIDs != null && streamIDs.length != 0) {
-            for (final String streamID : streamIDs) {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted by user: " + parameter);
-                        return decryptedLinks;
+            br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
+            boolean captchafailed = false;
+            if (br.containsHTML("Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet")) {
+                for (int i = 1; i <= 3; i++) {
+                    try {
+                        if (this.isAbort()) {
+                            logger.info("Decryption aborted by user: " + parameter);
+                            return decryptedLinks;
+                        }
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
                     }
+                    final String capLink = br.getRegex("\"(inc/cirlecaptcha\\.php[^<>\"]*?)\"").getMatch(0);
+                    if (capLink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    final File file = this.getLocalCaptchaFile();
+                    br.cloneBrowser().getDownload(file, "http://goldesel.to/" + capLink);
+                    final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Goldesel.to\r\nDecrypting: " + fpName + "\r\nClick-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID, "Klicke in den gestrichelten Kreis!");
+                    if (p == null) {
+                        logger.info("p = null");
+                        continue;
+                    }
+                    br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + p.x + "&yC=" + p.y);
+                    if (br.containsHTML("class=\"captchaWait\"")) {
+                        logger.info("We have to wait because the user entered too many wrong captchas...");
+                        int wait = 60;
+                        String waittime = br.getRegex("<strong>(\\d+) Sekunden</strong> warten\\.").getMatch(0);
+                        if (waittime != null) wait = Integer.parseInt(waittime);
+                        this.sleep(wait * 1001, param);
+                        continue;
+                    }
+                    if (br.containsHTML("Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet")) {
+                        captchafailed = true;
+                        continue;
+                    }
+                    captchafailed = false;
+                    break;
+                }
+                if (captchafailed) {
+                    logger.info("Captcha failed for decryptID: " + decryptID);
+                    continue;
+                }
+            }
+            final String[] finallinks = br.getRegex("url=\"(http[^<>\"]*?)\"").getColumn(0);
+            for (final String finallink : finallinks) {
+                final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(finallink));
+                dl._setFilePackage(fp);
+                try {
+                    distribute(dl);
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                br.postPage("http://goldesel.to/ajax/streams.php", "Stream=" + streamID);
-                String finallink = br.getRegex("<a href=\"(http[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null || finallink.length() > 500) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                if (finallink.equals("http://goldesel.to/dl/error.html")) {
-                    logger.info("Failed to decrypt stream links");
-                    break;
-                }
-                decryptedLinks.add(createDownloadlink(finallink));
+                decryptedLinks.add(dl);
             }
+            counter++;
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
-    private String[] getAjaxPost(final Browser br) {
-        String[] postInfo = new String[2];
-        final Regex postInfoRegex = br.getRegex("function [A-Za-z0-9\\-_]+\\(([A-Z0-9]+)\\) \\{ \\$\\.post\\(\"(ajax[^<>\"]*?)\"");
-        if (postInfoRegex.getMatches().length != 0) {
-            postInfo[0] = "http://goldesel.to/" + postInfoRegex.getMatch(1);
-            postInfo[1] = postInfoRegex.getMatch(0);
-        } else {
-            postInfo[0] = "http://goldesel.to/ajax/jDL.php";
-            postInfo[1] = "LNK";
-        }
-        return postInfo;
+    /* Prevent confusion */
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
+
+    // private String[] getAjaxPost(final Browser br) {
+    // String[] postInfo = new String[2];
+    // final Regex postInfoRegex = br.getRegex("function [A-Za-z0-9\\-_]+\\(([A-Z0-9]+)\\) \\{ \\$\\.post\\(\"(ajax[^<>\"]*?)\"");
+    // if (postInfoRegex.getMatches().length != 0) {
+    // postInfo[0] = "http://goldesel.to/" + postInfoRegex.getMatch(1);
+    // postInfo[1] = postInfoRegex.getMatch(0);
+    // } else {
+    // postInfo[0] = "http://goldesel.to/ajax/jDL.php";
+    // postInfo[1] = "LNK";
+    // }
+    // return postInfo;
+    // }
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

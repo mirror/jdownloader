@@ -398,7 +398,10 @@ public class SwankShareCom extends PluginForHost {
         }
         if (inValidate(dllink)) {
             Form dlForm = getFormByKey(cbr, "op", "download2");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlForm == null) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 302) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {

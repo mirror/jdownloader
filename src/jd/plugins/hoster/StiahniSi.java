@@ -70,7 +70,7 @@ public class StiahniSi extends PluginForHost {
         prepBr();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"row removed\\-file thumbnail\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Stiahni\\.si \\-([^<>\"]*?)\\- Damn good file\\-hosting</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"file_download_name\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) filename = br.getRegex("file\\-title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
