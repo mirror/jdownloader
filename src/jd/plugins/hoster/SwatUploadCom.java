@@ -53,7 +53,8 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swatupload.com" }, urls = { "https?://(www\\.)?swatupload\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+/** They moved to berofile.com (plugin already existed then) */
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swatupload.com" }, urls = { "dfgbhefroighefrg78789fnthkölewDELETE_ME6u5h65ev9hf43jnio" }, flags = { 2 })
 public class SwatUploadCom extends PluginForHost {
 
     private String               correctedBR                  = "";

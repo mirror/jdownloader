@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,6 +41,9 @@ public class OneDriveLiveCom extends PluginForHost {
         return "http://windows.microsoft.com/de-de/windows-live/microsoft-services-agreement";
     }
 
+    /* Use less than in the decrypter to not to waste traffic & time */
+    private static final int MAX_ENTRIES_PER_REQUEST = 50;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -45,12 +51,21 @@ public class OneDriveLiveCom extends PluginForHost {
         prepBR();
         final String cid = link.getStringProperty("plain_cid", null);
         final String id = link.getStringProperty("plain_id", null);
-        final String other = link.getStringProperty("plain_other", null);
-        final String api_request_url = link.getStringProperty("api_request_url", null);
+        final String authkey = link.getStringProperty("plain_authkey", null);
+        String data = "&id=" + Encoding.urlEncode(id) + "&cid=" + cid + "&ps=" + MAX_ENTRIES_PER_REQUEST;
+        if (authkey != null) data += "&authkey=" + Encoding.urlEncode(authkey);
         if (isCompleteFolder(link)) {
             /* Case is not yet present */
         } else {
-            br.getPage(api_request_url);
+            try {
+                accessItems_API(this.br, data);
+            } catch (final BrowserException e) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
+                    link.getLinkStatus().setStatusText("Server error 500");
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                throw e;
+            }
             if (br.containsHTML("\"code\":154")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = link.getStringProperty("plain_name", null);
@@ -64,6 +79,7 @@ public class OneDriveLiveCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 30 * 60 * 1000l);
         final String dllink = getdllink(downloadLink);
         boolean resume = true;
         int maxchunks = 0;
@@ -87,10 +103,8 @@ public class OneDriveLiveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\": (\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\": \"([^<>\"]*?)\"").getMatch(0);
-        return result;
+    private void accessItems_API(final Browser br, final String additionalData) throws IOException {
+        jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, additionalData);
     }
 
     private String getdllink(final DownloadLink dl) throws PluginException {

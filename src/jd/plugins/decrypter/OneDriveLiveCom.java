@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -38,12 +39,13 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_ALL               = "https?://(www\\.)?(onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+\\&id=[A-Za-z0-9]+\\!\\d+(\\&authkey=\\![A-Za-z0-9]+)?|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+\\&id=[A-Za-z0-9]+\\!\\d+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+)|sdrv\\.ms/[A-Za-z0-9]+)";
-    private static final String TYPE_DRIVE_ALL         = "https?://(www\\.)?(onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+\\&id=[A-Za-z0-9]+\\!\\d+(\\&authkey=\\![A-Za-z0-9]+)?|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+\\&id=[A-Za-z0-9]+\\!\\d+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+))";
-    private static final String TYPE_SKYDRIVE_REDIRECT = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
-    private static final String TYPE_SKYDRIVE_SHORT    = "https?://(www\\.)?sdrv\\.ms/[A-Za-z0-9]+";
-    private static final String TYPE_SKYDRIVE          = "https?://(www\\.)?skydrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
-    private static final String TYPE_ONEDRIVE          = "https?://(www\\.)?onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
+    private static final String TYPE_ALL                = "https?://(www\\.)?(onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+)|sdrv\\.ms/[A-Za-z0-9]+)";
+    private static final String TYPE_DRIVE_ALL          = "https?://(www\\.)?(onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+))";
+    private static final String TYPE_SKYDRIVE_REDIRECT  = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
+    private static final String TYPE_SKYDRIVE_SHORT     = "https?://(www\\.)?sdrv\\.ms/[A-Za-z0-9]+";
+    private static final String TYPE_SKYDRIVE           = "https?://(www\\.)?skydrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
+    private static final String TYPE_ONEDRIVE           = "https?://(www\\.)?onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
+    private static final int    MAX_ENTRIES_PER_REQUEST = 1000;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -51,7 +53,6 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         String cid = null;
         String id = null;
         String authkey = null;
-        String api_request_url = null;
         final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         try {
             if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
@@ -82,10 +83,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             param.setCryptedUrl(parameter);
 
             prepBrAPI(this.br);
-            api_request_url = "https://skyapi.onedrive.live.com/API/2/GetItems?id=" + Encoding.urlEncode(id) + "&cid=" + cid + "&group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&ps=100&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565";
-            if (authkey != null) api_request_url += "&authkey=" + Encoding.urlEncode(authkey);
-            /* Error 500 will happen on invalid API requests */
-            br.getPage(api_request_url);
+            String data = "&id=" + Encoding.urlEncode(id) + "&cid=" + cid + "&ps=" + MAX_ENTRIES_PER_REQUEST;
+            if (authkey != null) data += "&authkey=" + Encoding.urlEncode(authkey);
+            accessItems_API(this.br, data);
         } catch (final BrowserException e) {
             main.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
             main.setAvailable(false);
@@ -94,30 +94,38 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        String folderName = br.getRegex("\"group\":0,\"iconType\":\"NonEmptyDocumentFolder\".*?\"name\":\"([^<>\"]*?)\"").getMatch(0);
+        if (folderName == null) folderName = br.getRegex("\"name\":\"([^<>\"]*?)\",\"orderedFriendlyName\"").getMatch(0);
+        if (folderName == null) folderName = "onedrive.live.com content of user " + cid + " - folder - " + id;
+
         main.setProperty("mainlink", parameter);
-        main.setProperty("api_request_url", api_request_url);
         main.setProperty("plain_cid", cid);
         main.setProperty("plain_id", id);
         main.setProperty("plain_authkey", authkey);
 
         if (br.containsHTML("\"code\":154")) {
-            main.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
+            main.setFinalFileName(folderName);
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+            decryptedLinks.add(main);
+            return decryptedLinks;
+        } else if ("0".equals(getJson("totalCount", br.toString()))) {
+            main.setFinalFileName(folderName);
             main.setAvailable(false);
             main.setProperty("offline", true);
             decryptedLinks.add(main);
             return decryptedLinks;
         }
 
-        String folderName = br.getRegex("\"group\":0,\"iconType\":\"NonEmptyDocumentFolder\".*?\"name\":\"([^<>\"]*?)\"").getMatch(0);
         String linktext = br.getRegex("\"children\":\\[(.*?)\\],\"covers\":").getMatch(0);
         if (linktext == null) linktext = br.getRegex("\"children\":\\[(.*?)\\],\"defaultSort\":").getMatch(0);
-        if (linktext == null || folderName == null) {
+        if (linktext == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         folderName = Encoding.htmlDecode(folderName.trim());
 
-        final String[] links = linktext.split("\"userRole\":2\\},\\{\"commands\"");
+        final String[] links = linktext.split("\"userRole\":2\\},\\{\"");
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -153,7 +161,6 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 totalSize += cursize;
                 dl.setFinalFileName(filename);
                 dl.setProperty("mainlink", parameter);
-                dl.setProperty("api_request_url", api_request_url);
                 dl.setProperty("plain_name", filename);
                 dl.setProperty("plain_size", filesize);
                 dl.setProperty("plain_view_url", view_url);
@@ -198,6 +205,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         br.getHeaders().put("X-SkyApiOriginId", "0.9554840477898046");
         br.getHeaders().put("Referer", "https://skyapi.onedrive.live.com/api/proxy?v=3");
         br.getHeaders().put("AppId", "1141147648");
+        br.setCustomCharset("utf-8");
+    }
+
+    public static void accessItems_API(final Browser br, final String additionalData) throws IOException {
+        /* Error 500 will happen on invalid API requests */
+        br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565" + additionalData);
     }
 
 }

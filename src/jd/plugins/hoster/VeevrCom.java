@@ -63,6 +63,7 @@ public class VeevrCom extends PluginForHost {
         downloadLink.setName(null);
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9_\\-]+)$").getMatch(0) + ".flv");
         if (HDS) {
+            br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL().replace("/embed/", "/videos/"));
             if (br.containsHTML(">This video has been removed for violating the terms of use\\.<|>Page not found|id=\"not_found_404_page\"|id=\"deleted\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML(">This video is still being processed")) {
