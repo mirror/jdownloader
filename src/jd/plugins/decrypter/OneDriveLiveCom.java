@@ -22,6 +22,7 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -41,8 +42,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     private static final String TYPE_DRIVE_ALL         = "https?://(www\\.)?(onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+\\&id=[A-Za-z0-9]+\\!\\d+(\\&authkey=\\![A-Za-z0-9]+)?|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+\\&id=[A-Za-z0-9]+\\!\\d+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+))";
     private static final String TYPE_SKYDRIVE_REDIRECT = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
     private static final String TYPE_SKYDRIVE_SHORT    = "https?://(www\\.)?sdrv\\.ms/[A-Za-z0-9]+";
-    private static final String TYPE_SKYDRIVE          = "https?://(www\\.)?skydrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+\\&id=[A-Za-z0-9]+\\!\\d+(\\&authkey=\\![A-Za-z0-9]+)?";
-    private static final String TYPE_ONEDRIVE          = "https?://(www\\.)?onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+\\&id=[A-Za-z0-9]+\\!\\d+(\\&authkey=\\![A-Za-z0-9]+)?";
+    private static final String TYPE_SKYDRIVE          = "https?://(www\\.)?skydrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
+    private static final String TYPE_ONEDRIVE          = "https?://(www\\.)?onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -50,39 +51,49 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         String cid = null;
         String id = null;
         String authkey = null;
-        if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
-            cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = new Regex(parameter, "\\&resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
-        } else if (parameter.matches(TYPE_DRIVE_ALL)) {
-            cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = new Regex(parameter, "\\&id=([A-Za-z0-9]+\\!\\d+)(\\&authkey=\\![A-Za-z0-9]+)?$").getMatch(0);
-        } else if (parameter.matches(TYPE_SKYDRIVE_SHORT)) {
-            br.getPage(parameter);
-            String redirect = br.getRedirectLocation();
-            if (!redirect.contains("live")) {
-                br.getPage(redirect);
-                redirect = br.getRedirectLocation();
-            }
-            cid = new Regex(redirect, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = new Regex(redirect, "\\&resid=([A-Za-z0-9]+\\!\\d+)(\\&authkey=\\![A-Za-z0-9]+)?$").getMatch(0);
-        } else {
-            cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = new Regex(parameter, "\\&id=([A-Za-z0-9]+\\!\\d+)(\\&authkey=\\![A-Za-z0-9]+)?$").getMatch(0);
-        }
-        authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9]+)$").getMatch(0);
-        if (cid == null || id == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        parameter = "https://onedrive.live.com/?cid=" + cid + "&id=" + id;
-        param.setCryptedUrl(parameter);
-
-        prepBrAPI(this.br);
-        String api_request_url = "https://skyapi.onedrive.live.com/API/2/GetItems?id=" + Encoding.urlEncode(id) + "&cid=" + cid + "&group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&ps=100&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565";
-        if (authkey != null) api_request_url += "&authkey=" + Encoding.urlEncode(authkey);
-        br.getPage(api_request_url);
-
+        String api_request_url = null;
         final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        try {
+            if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
+                cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
+                id = new Regex(parameter, "\\&resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
+            } else if (parameter.matches(TYPE_DRIVE_ALL)) {
+                cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
+                id = new Regex(parameter, "\\&id=([A-Za-z0-9]+\\!\\d+)(\\&authkey=\\![A-Za-z0-9]+)?$").getMatch(0);
+            } else if (parameter.matches(TYPE_SKYDRIVE_SHORT)) {
+                br.getPage(parameter);
+                String redirect = br.getRedirectLocation();
+                if (!redirect.contains("live")) {
+                    br.getPage(redirect);
+                    redirect = br.getRedirectLocation();
+                }
+                cid = new Regex(redirect, "cid=([A-Za-z0-9]*)").getMatch(0);
+                id = new Regex(redirect, "\\&resid=([A-Za-z0-9]+\\!\\d+)(\\&authkey=\\![A-Za-z0-9]+)?$").getMatch(0);
+            } else {
+                cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
+                id = new Regex(parameter, "\\&id=([A-Za-z0-9]+\\!\\d+)(\\&authkey=\\![A-Za-z0-9]+)?$").getMatch(0);
+            }
+            authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9]+)$").getMatch(0);
+            if (cid == null || id == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            parameter = "https://onedrive.live.com/?cid=" + cid + "&id=" + id;
+            param.setCryptedUrl(parameter);
+
+            prepBrAPI(this.br);
+            api_request_url = "https://skyapi.onedrive.live.com/API/2/GetItems?id=" + Encoding.urlEncode(id) + "&cid=" + cid + "&group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&ps=100&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565";
+            if (authkey != null) api_request_url += "&authkey=" + Encoding.urlEncode(authkey);
+            /* Error 500 will happen on invalid API requests */
+            br.getPage(api_request_url);
+        } catch (final BrowserException e) {
+            main.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+            decryptedLinks.add(main);
+            return decryptedLinks;
+        }
+
         main.setProperty("mainlink", parameter);
         main.setProperty("api_request_url", api_request_url);
         main.setProperty("plain_cid", cid);
@@ -98,7 +109,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         }
 
         String folderName = br.getRegex("\"group\":0,\"iconType\":\"NonEmptyDocumentFolder\".*?\"name\":\"([^<>\"]*?)\"").getMatch(0);
-        final String linktext = br.getRegex("\"children\":\\[(.*?)\\],\"(covers|defaultSort)\":").getMatch(0);
+        String linktext = br.getRegex("\"children\":\\[(.*?)\\],\"covers\":").getMatch(0);
+        if (linktext == null) linktext = br.getRegex("\"children\":\\[(.*?)\\],\"defaultSort\":").getMatch(0);
         if (linktext == null || folderName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
