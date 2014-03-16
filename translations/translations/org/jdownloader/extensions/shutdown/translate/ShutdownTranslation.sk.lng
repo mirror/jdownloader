@@ -1,12 +1,16 @@
 action_tooltip=Povoľte pre vypnutie systému po dokončení sťahovania
 addons_jdshutdown_statusmessage_disabled=JDownloader NEvypne tento počítač
 addons_jdshutdown_statusmessage_enabled=JDownloader vypne tento počítač po ukončení sťahovaní
+config_active_by_default=Ponechať vypnutie povolené
 gui_config_jdshutdown_close=Zatvoriť JD
 gui_config_jdshutdown_forceshutdown=Vypnúť počítač (Nie všetky OS)
 gui_config_jdshutdown_hibernate=Hibernovať (Nie všetky OS)
 gui_config_jdshutdown_mode=Mód:
 gui_config_jdshutdown_shutdown=Vypnúť
 gui_config_jdshutdown_standby=Úsporný režim (Nie všetky OS)
+install_force=Nainštalovať vynútené vypnutie
+install_msg=Chcete pripraviť váš systém na funkciu vynúteného vypnutia?
+install_title=Nainštalovať vynútené vypnutie
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader sa zavrie!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Počítač prejde do režimu dlhodobého spánku!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Počítač sa vypne!</font></h2>
