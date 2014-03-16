@@ -56,6 +56,7 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private static final String MOBILELINK = "http://(www\\.)?m\\.xhamster\\.com/preview/\\d+";
+    private static final String NORESUME   = "NORESUME";
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
@@ -169,10 +170,26 @@ public class XHamsterCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for friends of " + onlyfor);
         }
         final String dllink = getDllink();
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(NORESUME, false)) resume = false;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+
+            if (dl.getConnection().getResponseCode() == 416) {
+                logger.info("Response code 416 --> Handling it");
+                if (downloadLink.getBooleanProperty(NORESUME, false)) {
+                    downloadLink.setProperty(NORESUME, Boolean.valueOf(false));
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 30 * 60 * 1000l);
+                }
+                downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error 416");
+            }
+
             br.followConnection();
-            if (br.containsHTML(">Video not found<")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l); }
+            if (br.containsHTML(">Video not found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             logger.info("xhamster.com: Unknown error -> Retrying!");
             int timesFailed = downloadLink.getIntegerProperty("timesfailedxhamstercom_unknown", 0);
             downloadLink.getLinkStatus().setRetryCount(0);

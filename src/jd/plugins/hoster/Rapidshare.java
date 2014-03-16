@@ -364,8 +364,9 @@ public class Rapidshare extends PluginForHost {
     }
 
     private String encodeFilenameForAvailablecheck(String filename) {
-        /* Encode encoded comma to encoded encoded comma so that we don't actually decode it */
+        /* Encode some things here so that they're decoded back to their original and can be encoded correctly below */
         filename = filename.replace("%2C", "%252C");
+        filename = filename.replace("+", "%2B");
         filename = Encoding.htmlDecode(filename);
         filename = filename.replace("%", "%25");
         filename = filename.replace("+", "%2B");

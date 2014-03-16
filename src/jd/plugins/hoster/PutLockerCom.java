@@ -55,6 +55,7 @@ public class PutLockerCom extends PluginForHost {
     private final String                   MAINPAGE           = "http://www.firedrive.com";
     private static Object                  LOCK               = new Object();
     private static AtomicReference<String> agent              = new AtomicReference<String>(null);
+    private static final String            NORESUME           = "NORESUME";
     private static final String            NOCHUNKS           = "NOCHUNKS";
 
     private static final String            PASSWORD_PROTECTED = "id=\"file_password_container\"";
@@ -212,8 +213,6 @@ public class PutLockerCom extends PluginForHost {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
-
-    private static final String NORESUME = "NORESUME";
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
