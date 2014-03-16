@@ -85,6 +85,7 @@ set_autoremovefiles_false=Onemogućeno je Automatsko uklanjanje Dokumenta arhive
 set_autoremovefiles_true=Sada je omogućeno automatsko uklanjanja Dokumenata
 set_autoremovelinks_false=Sada je onemogućeno automatsko uklanjanje Download linkova
 set_autoremovelinks_true=Sada je omogućeno automatsko uklanjanje Download linkova
+settings_auto_extract_default=Ekstraktuj Arhive nakon Download-a (Podrazumijevano)
 settings_blacklist=Ne otpakuj dokumente koji odgovaraju sljedećim uslovima (Jedan po liniji)
 settings_cpupriority=CPU Prioritet
 settings_cpupriority_high=Visok
