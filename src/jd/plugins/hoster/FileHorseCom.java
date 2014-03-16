@@ -53,6 +53,9 @@ public class FileHorseCom extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?) Download for").getMatch(0);
         String filesize = br.getRegex("id=\"btn_file_size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
         if (filesize == null) filesize = br.getRegex(">File size / license:</p><p>(\\d+(\\.\\d+)? [A-Za-z]{1,5})").getMatch(0);
+        if (filesize == null) filesize = br.getRegex(">Download Now</span></a><p>\\(([^<>\"]*?)\\) Safe").getMatch(0);
+        final String pagepiece = br.getRegex("<div id=\"sidebar\">(.*?)<\\!\\-\\- AddThis Button BEGIN \\-\\->").getMatch(0);
+        if (filesize == null && pagepiece != null) filesize = new Regex(pagepiece, "(\\d+(\\.{1,2})? (B|b|MB|KB|GB))").getMatch(0);
         if (filename == null || filesize == null) {
             if (!br.containsHTML("\"main_down_link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -63,7 +66,7 @@ public class FileHorseCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL() + "download/");
         final String dllink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+; url=(http://[^<>\"]*?)\"").getMatch(0);
@@ -73,6 +76,7 @@ public class FileHorseCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
