@@ -131,22 +131,22 @@ public class RemoteAPIController {
             }
             
             @Override
-            public void sendText(RemoteAPIRequest request, RemoteAPIResponse response, String text, boolean chunked) throws UnsupportedEncodingException, IOException {
+            public void sendText(RemoteAPIRequest request, RemoteAPIResponse response, String text) throws UnsupportedEncodingException, IOException {
                 try {
                     if (request instanceof SessionRemoteAPIRequest) {
                         if (((SessionRemoteAPIRequest) request).getApiRequest() instanceof DeprecatedRemoteAPIRequest) {
                             //
                             super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
-                            }, null), -1)), chunked);
+                            }, null), -1)));
                             return;
                             
                         }
                         MyJDownloaderRequestInterface ri = ((MyJDRemoteAPIRequest) ((SessionRemoteAPIRequest) request).getApiRequest()).getRequest();
                         if (ri.getApiVersion() > 0) {
                             super.sendText(request, response, JSonStorage.serializeToJson(new DataObject(JSonStorage.restoreFromString(text, new TypeRef<Object>() {
-                            }, null), ri.getRid())), chunked);
+                            }, null), ri.getRid())));
                         } else {
-                            super.sendText(request, response, text, chunked);
+                            super.sendText(request, response, text);
                         }
                     } else {
                         throw new WTFException();
