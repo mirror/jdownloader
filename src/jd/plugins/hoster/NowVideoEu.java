@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -41,6 +42,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowvideo.eu", "nowvideo.co" }, urls = { "http://(www\\.)?(nowvideo\\.(sx|eu|co|ch|ag|at)/(?!share\\.php)(video/|player\\.php\\?v=)|embed\\.nowvideo\\.(sx|eu|co|ch|ag|at)/embed\\.php\\?v=)[a-z0-9]+", "NEVERUSETHISSUPERDUBERREGEXATALL2013" }, flags = { 2, 0 })
 public class NowVideoEu extends PluginForHost {
@@ -191,10 +194,10 @@ public class NowVideoEu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         if (br.containsHTML(ISBEINGCONVERTED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*)\"").getMatch(0);
         if (fKey == null) fKey = br.getRegex("var fkzd=\"([^<>\"]*)\"").getMatch(0);
@@ -276,6 +279,13 @@ public class NowVideoEu extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.postPage(MAINPAGE.string + "/login.php?return=", "register=Login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getURL().contains("login.php?e=1") || !br.getURL().contains("panel.php?login=1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // free vs premium ?? unknown!
+                br.getPage("/premium.php");
+                if (br.containsHTML(expire)) {
+                    account.setProperty("free", false);
+                } else {
+                    account.setProperty("free", true);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE.string);
@@ -292,6 +302,8 @@ public class NowVideoEu extends PluginForHost {
         }
     }
 
+    private final String expire = ">You are a premium user\\. Your membership expires on (\\d{4}-[A-Za-z]+-\\d+)";
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -301,10 +313,16 @@ public class NowVideoEu extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        if (account.getBooleanProperty("free", false)) {
+            ai.setStatus("Free Account");
+        } else {
+            String expire_time = br.getRegex(expire).getMatch(0);
+            // 2014-Mar-22.
+            if (expire_time != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MMM-d", Locale.UK));
+            ai.setStatus("Premium Account");
+        }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        // Cannot differ between free- and premiumaccounts (yet)
-        ai.setStatus("Valid account");
         return ai;
     }
 
@@ -314,12 +332,12 @@ public class NowVideoEu extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\." + domains + "/dl/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            // Try free mode as we cannot differ between accounttypes (yet)
-            doFree(link);
+        if (account.getBooleanProperty("free", false)) {
+            doFree(link, account);
             return;
         }
+        br.getPage(link.getDownloadURL());
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\." + domains + "/dl/[^<>\"]*?)\"").getMatch(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
