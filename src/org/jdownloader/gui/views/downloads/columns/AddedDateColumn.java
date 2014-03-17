@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.JPopupMenu;
@@ -19,7 +21,7 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
      */
     private static final long serialVersionUID = -8841119846403017974L;
 
-    private final String      formatString     = _GUI._.added_date_column_dateformat();
+    private String            formatString     = _GUI._.added_date_column_dateformat();
     private final String      bad              = _GUI._.added_date_column_invalid();
 
     public JPopupMenu createHeaderPopup() {
@@ -31,6 +33,11 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
     public AddedDateColumn() {
         super(_GUI._.added_date_column_title());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
+
+        DateFormat sd = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT);
+        if (sd instanceof SimpleDateFormat) {
+            formatString = ((SimpleDateFormat) sd).toPattern();
+        }
 
     }
 

@@ -1,5 +1,7 @@
 package jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.JComponent;
@@ -94,6 +96,15 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
 
         this.addColumn(new ExtDateColumn<AccountInterface>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
+            private String            pattern;
+            {
+                pattern = _GUI._.PremiumAccountTableModel_getDateFormatString_();
+                DateFormat sd = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT);
+                if (sd instanceof SimpleDateFormat) {
+                    pattern = ((SimpleDateFormat) sd).toPattern();
+                }
+
+            }
 
             @Override
             public boolean isEnabled(AccountInterface obj) {
@@ -122,7 +133,7 @@ public class HosterPriorityTableModel extends ExtTreeTableModel<AccountInterface
 
             @Override
             protected String getDateFormatString() {
-                return _GUI._.PremiumAccountTableModel_getDateFormatString_();
+                return pattern;
             }
 
             @Override
