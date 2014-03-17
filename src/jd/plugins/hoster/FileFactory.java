@@ -56,7 +56,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)(file/[\\w]+/?|(trafficshare|digitalsales)/[a-z0-9]{32}/.+/?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)(file/[\\w]+/?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
 
     // DEV NOTES
@@ -146,7 +146,6 @@ public class FileFactory extends PluginForHost {
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
-        useAPI.set(true);
         if (useAPI.get()) {
             checkLinks_API(urls, null);
         }
@@ -250,9 +249,9 @@ public class FileFactory extends PluginForHost {
         // set trafficshare links like 'normal' links, this allows downloads to continue living if the uploader discontinues trafficshare
         // for that uid. Also re-format premium only links!
         if (link.getDownloadURL().contains(TRAFFICSHARELINK) || link.getDownloadURL().contains("/digitalsales/")) {
-            String[][] uid = new Regex(link.getDownloadURL(), "(https?://.*?filefactory\\.com/)(trafficshare|digitalsales)/[a-z0-9]{32}/([^/]+)/?").getMatches();
-            if (uid != null && (uid[0][0] != null || uid[0][2] != null)) {
-                link.setUrlDownload(uid[0][0] + "file/" + uid[0][2]);
+            String[] uid = new Regex(link.getDownloadURL(), "(https?://.*?filefactory\\.com/)(trafficshare|digitalsales)/[a-f0-9]{32}/([^/]+)/?").getRow(0);
+            if (uid != null && (uid[0] != null || uid[2] != null)) {
+                link.setUrlDownload(uid[0] + "file/" + uid[2]);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -401,10 +400,10 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
         if (useAPI.get()) {
             handleDownload_API(downloadLink, null);
         } else {
+            requestFileInformation(downloadLink);
             if (br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
                 handleTrafficShare(downloadLink);
             } else {
@@ -432,7 +431,7 @@ public class FileFactory extends PluginForHost {
                     if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
                 }
                 // new 20130911
-                String dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/get/[^<>\"]*?)\"").getMatch(0);
+                String dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                 String timer = br.getRegex("<div id=\"countdown_clock\" data-delay=\"(\\d+)").getMatch(0);
                 if (timer != null) sleep(Integer.parseInt(timer) * 1001, downloadLink);
                 if (dllink != null) {
@@ -452,7 +451,7 @@ public class FileFactory extends PluginForHost {
                     br.getPage(urlWithFilename);
 
                     // Sometimes there is an ad
-                    final String skipAds = br.getRegex("\"(http://(www\\.)?filefactory\\.com/dlf/[^<>\"]*?)\"").getMatch(0);
+                    final String skipAds = br.getRegex("\"(http://(www\\.)?filefactory\\.com/dlf/[^<>\"]+)\"").getMatch(0);
                     if (skipAds != null) br.getPage(skipAds);
                     checkErrors(true, false);
                     String wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
@@ -528,7 +527,7 @@ public class FileFactory extends PluginForHost {
                     // Directlink
                     String finallink = br.getRedirectLocation();
                     // No directlink
-                    if (finallink == null) finallink = br.getRegex("\"(http://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]*?)\"").getMatch(0);
+                    if (finallink == null) finallink = br.getRegex("\"(http://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                     if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     br.setFollowRedirects(true);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
@@ -562,7 +561,7 @@ public class FileFactory extends PluginForHost {
          * Unknown until proven otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
-        String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);
+        String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/get/t/[^\"]+)\"[^\r\n]*Download with FileFactory TrafficShare").getMatch(0);
         if (finalLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
@@ -691,7 +690,7 @@ public class FileFactory extends PluginForHost {
         } else if (br.containsHTML(SERVER_DOWN)) {
             return AvailableStatus.UNCHECKABLE;
         } else if (br.containsHTML(PASSWORDPROTECTED)) {
-            final String fileName = br.getRegex("<title>([^<>\"]*?)\\- FileFactory</title>").getMatch(0);
+            final String fileName = br.getRegex("<title>([^<>\"]*?)- FileFactory</title>").getMatch(0);
             if (fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setName(Encoding.htmlDecode(fileName.trim()));
             downloadLink.getLinkStatus().setStatusText("This link is password protected");
@@ -710,8 +709,9 @@ public class FileFactory extends PluginForHost {
                 String fileSize = null;
                 if (br.containsHTML("File Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 if (br.getURL().contains(TRAFFICSHARELINK)) {
-                    fileName = br.getRegex("<section class=\"file\" style=\"margin\\-top:20px;\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
-                    fileSize = br.getRegex("<p class=\"size\">[\r\n\t ]+([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
+                    fileName = br.getRegex("<section class=\"file\" style=\"margin-top:20px;\">[\t\n\r ]+<h2>([^<>\"]+)</h2>").getMatch(0);
+                    if (fileName == null) fileName = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+                    fileSize = br.getRegex("id=\"file_info\">([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
                 } else {
                     String regex = "<h2>([^\r\n]+)</h2>[\r\n\t ]+<div id=\"file_info\">\\s*([\\d\\.]+ (KB|MB|GB|TB))";
                     fileName = br.getRegex(regex).getMatch(0);
