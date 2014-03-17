@@ -238,6 +238,7 @@ public class EgoFilesCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        boolean extraTrafficPresent = false;
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -251,9 +252,16 @@ public class EgoFilesCom extends PluginForHost {
             return ai;
         }
         br.getPage(MAINPAGE);
-        if (br.containsHTML("Traffic left:")) {
-            String trafficLeft = br.getRegex("Traffic left: (.*?)[\t\n\r\f]").getMatch(0);
+        if (br.containsHTML("Traffic left:") && !br.containsHTML("Extra traffic:")) {
+            String trafficLeft = br.getRegex("Traffic left: (.*?[ \tMGkK]+?B)").getMatch(0);
             ai.setTrafficLeft(SizeFormatter.getSize(trafficLeft));
+        } else if (br.containsHTML("Traffic left:") && br.containsHTML("Extra traffic:")) {
+            String trafficLeft = br.getRegex("Traffic left: (.*?[ \tMGkK]+?B) /").getMatch(0);
+            long trafficLeftSize = SizeFormatter.getSize(trafficLeft);
+            String extraTraffic = br.getRegex("Extra traffic:[\t ]*?<a href=\".*\">(.*?[ \tMGkK]+?B)</a>").getMatch(0);
+            trafficLeftSize += SizeFormatter.getSize(extraTraffic);
+            ai.setTrafficLeft(trafficLeftSize);
+            extraTrafficPresent = true;
         } else
             ai.setUnlimitedTraffic();
 
@@ -273,7 +281,8 @@ public class EgoFilesCom extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
+        String PremiumUser = extraTrafficPresent ? "Premium User with Extra traffic" : "Premium User";
+        ai.setStatus(PremiumUser);
         return ai;
     }
 
@@ -307,7 +316,16 @@ public class EgoFilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "final dllink is null");
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        } catch (Exception e) {
+            if (e.getMessage().equals("connect timed out"))
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, e.getMessage());
+            else
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
+        }
+
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!\nGot response:\n" + dl.getConnection().getResponseMessage());
             br.followConnection();
