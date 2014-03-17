@@ -77,9 +77,11 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.tasks.PluginSubTask;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
-    private static final StatsManager INSTANCE = new StatsManager();
+    private static final StatsManager INSTANCE           = new StatsManager();
 
-    private static final boolean      DISABLED = false;
+    private static final boolean      DISABLED           = false;
+
+    public static final int           STACKTRACE_VERSION = 1;
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
@@ -450,6 +452,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             // dl.set
             HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
             });
+
             try {
                 dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
             } catch (Exception e) {
@@ -471,7 +474,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             String errorID = result.getErrorID();
             if (errorID != null) {
-                errorID = "IDV1:\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + account.getPlugin().getClass().getName() + "\r\n" + errorID;
+                errorID = "IDV" + STACKTRACE_VERSION + ":\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + account.getPlugin().getClass().getName() + "\r\n" + errorID;
             }
             dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(errorID));
             dl.setTimestamp(System.currentTimeMillis());
@@ -495,6 +498,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                     ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID()));
                     error.setStacktrace(errorID);
+                    try {
+
+                        dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
+                    } catch (Exception e) {
+                    }
                     if (error2 != null) {
                         error = error2;
                     }
