@@ -716,7 +716,6 @@ public abstract class PluginForHost extends Plugin {
         ret.add(new File(link.getFileOutput() + ".part"));
         ret.add(new File(link.getFileOutput()));
         ret.add(new File(link.getFileOutput(false, true)));
-        
         return ret;
     }
     
@@ -893,7 +892,7 @@ public abstract class PluginForHost extends Plugin {
         return DomainInfo.getInstance(host);
     }
     
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         try {
             File home = new File(Application.getRessourceURL(PluginForHost.class.getName().replace(".", "/") + ".class").toURI()).getParentFile().getParentFile().getParentFile().getParentFile();
             File hostPluginsDir = new File(home, "src/jd/plugins/hoster/");
