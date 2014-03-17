@@ -32,7 +32,7 @@ public class Fader implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         long timedif = System.currentTimeMillis() - start;
-        if (timedif > end - start) {
+        if (timedif > end - start || owner.isDisposed() || owner.isClosed()) {
             stop();
             return;
         }

@@ -83,6 +83,7 @@ public class Balloner implements ComponentListener {
             if (n.isDisposed()) {
                 // remove badly implemented ballons
                 removes.add(n);
+                n.removeComponentListener(this);
                 continue;
 
             }
@@ -269,6 +270,7 @@ public class Balloner implements ComponentListener {
 
         ScreenStack screenStack = getScreenStack();
         screenStack.remove(notify);
+        notify.removeComponentListener(this);
         layout(screenStack);
     }
 

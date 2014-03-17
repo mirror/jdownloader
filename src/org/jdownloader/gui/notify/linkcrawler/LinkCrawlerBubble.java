@@ -5,12 +5,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Timer;
 
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.CrawledLinkCrawler;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
+import jd.controlling.linkcollector.LinkCollectorEvent;
+import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.event.LinkCollectorCrawlerListener;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -27,46 +31,46 @@ import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
-public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleContent> implements LinkCollectorCrawlerListener {
-    
+public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleContent> implements LinkCollectorCrawlerListener, LinkCollectorListener {
+
     @Override
     protected void onMouseClicked(MouseEvent m) {
         super.onMouseClicked(m);
         JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-        
+
     }
-    
+
     protected void onSettings() {
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
-        
+
     }
-    
+
     private LinkCollectorCrawler crawler;
-    
-    private boolean              registered = false;
-    
+
+    private AtomicBoolean        registered = new AtomicBoolean(false);
+
     public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, LinkCollectorCrawler parameter) {
         super(linkCrawlerBubbleSupport, _GUI._.balloon_new_links(), new LinkCrawlerBubbleContent());
         this.crawler = parameter;
-        
+        LinkCollector.getInstance().getEventsender().addListener(this, true);
     }
-    
+
     @Override
     protected int getTimeout() {
         return 0;
     }
-    
+
     private void update() {
         LinkCrawlerBubbleContent panel = getContentComponent();
         if (crawler instanceof JobLinkCrawler) {
             JobLinkCrawler jlc = (JobLinkCrawler) crawler;
-            
+
             LinkOrigin src = jlc.getJob().getOrigin().getOrigin();
-            
+
             if (src == null) {
                 setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
             } else if (src == LinkOrigin.ADD_LINKS_DIALOG) {
@@ -83,73 +87,133 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
                 } else {
                     setHeaderText(_GUI._.LinkCrawlerBubble_update_header_from_Clipboard());
                 }
-                
+
             } else {
                 setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
             }
             getContentComponent().update(jlc);
-            
+
             pack();
             BubbleNotify.getInstance().relayout();
         } else if (crawler instanceof CrawledLinkCrawler) {
-            
+
         }
     }
-    
+
     @Override
     public void onProcessingCrawlerPlugin(final LinkCollectorCrawler caller, CrawledLink parameter) {
-        
         register(caller);
-        
     }
-    
+
     protected void register(final LinkCollectorCrawler caller) {
-        if (registered) return;
-        registered = true;
-        new EDTRunner() {
-            
-            @Override
-            protected void runInEDT() {
-                BubbleNotify.getInstance().show(LinkCrawlerBubble.this);
-                final Timer t = new Timer(1000, new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        if (isClosed() || isDisposed()) {
-                            getContentComponent().stop();
-                            ((Timer) e.getSource()).stop();
-                            return;
-                            
+        if (registered.compareAndSet(false, true)) {
+            crawler.getEventSender().removeListener(this);
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    BubbleNotify.getInstance().show(LinkCrawlerBubble.this);
+                    final Timer t = new Timer(1000, new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            if (isClosed() || isDisposed()) {
+                                getContentComponent().stop();
+                                ((Timer) e.getSource()).stop();
+                                return;
+
+                            }
+                            if (isVisible()) update();
+
+                            if (getContentComponent().askForClose(caller)) {
+
+                                getContentComponent().stop();
+                                ((Timer) e.getSource()).stop();
+                                startTimeout(LinkCrawlerBubble.super.getTimeout());
+
+                                return;
+
+                            }
+
                         }
-                        if (isVisible()) update();
-                        
-                        if (getContentComponent().askForClose(caller)) {
-                            
-                            getContentComponent().stop();
-                            ((Timer) e.getSource()).stop();
-                            startTimeout(LinkCrawlerBubble.super.getTimeout());
-                            
-                            return;
-                            
-                        }
-                        
-                    }
-                    
-                });
-                t.setInitialDelay(0);
-                t.setRepeats(true);
-                t.start();
-            }
-        };
+
+                    });
+                    t.setInitialDelay(0);
+                    t.setRepeats(true);
+                    t.start();
+                }
+            };
+        }
     }
-    
+
     @Override
     public void onProcessingHosterPlugin(LinkCollectorCrawler caller, CrawledLink parameter) {
         register(caller);
     }
-    
+
     @Override
     public void onProcessingContainerPlugin(LinkCollectorCrawler caller, CrawledLink parameter) {
         register(caller);
     }
-    
+
+    @Override
+    public void onLinkCollectorAbort(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksAvailable(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorFilteredLinksEmpty(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorDataRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorStructureRefresh(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentRemoved(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorContentAdded(LinkCollectorEvent event) {
+    }
+
+    @Override
+    public void onLinkCollectorLinkAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerAdded(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStarted(LinkCollectorCrawler parameter) {
+    }
+
+    @Override
+    public void onLinkCrawlerStopped(LinkCollectorCrawler parameter) {
+        if (parameter == crawler) {
+            if (registered.compareAndSet(false, true)) {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        onClose();
+                    }
+                };
+                crawler.getEventSender().removeListener(this);
+                LinkCollector.getInstance().getEventsender().removeListener(this);
+            }
+        }
+    }
+
 }
