@@ -500,7 +500,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     error.setStacktrace(errorID);
                     try {
 
-                        dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
+                        error2.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
                     } catch (Exception e) {
                     }
                     if (error2 != null) {
