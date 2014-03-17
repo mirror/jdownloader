@@ -28,45 +28,45 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleContent> implements LinkCollectorCrawlerListener {
-
+    
     @Override
     protected void onMouseClicked(MouseEvent m) {
         super.onMouseClicked(m);
         JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-
+        
     }
-
+    
     protected void onSettings() {
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
-
+        
     }
-
+    
     private LinkCollectorCrawler crawler;
-
+    
     private boolean              registered = false;
-
+    
     public LinkCrawlerBubble(LinkCrawlerBubbleSupport linkCrawlerBubbleSupport, LinkCollectorCrawler parameter) {
         super(linkCrawlerBubbleSupport, _GUI._.balloon_new_links(), new LinkCrawlerBubbleContent());
         this.crawler = parameter;
-
+        
     }
-
+    
     @Override
     protected int getTimeout() {
         return 0;
     }
-
+    
     private void update() {
         LinkCrawlerBubbleContent panel = getContentComponent();
         if (crawler instanceof JobLinkCrawler) {
             JobLinkCrawler jlc = (JobLinkCrawler) crawler;
-
+            
             LinkOrigin src = jlc.getJob().getOrigin().getOrigin();
-
+            
             if (src == null) {
                 setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
             } else if (src == LinkOrigin.ADD_LINKS_DIALOG) {
@@ -83,79 +83,78 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
                 } else {
                     setHeaderText(_GUI._.LinkCrawlerBubble_update_header_from_Clipboard());
                 }
-
+                
             } else {
                 setHeaderText(_GUI._.LinkCrawlerBubble_update_header());
             }
             getContentComponent().update(jlc);
-
+            
             pack();
             BubbleNotify.getInstance().relayout();
         } else if (crawler instanceof CrawledLinkCrawler) {
-
+            
         }
     }
-
+    
     @Override
     public void onProcessingCrawlerPlugin(final LinkCollectorCrawler caller, CrawledLink parameter) {
-
+        
         register(caller);
-
+        
     }
-
+    
     protected void register(final LinkCollectorCrawler caller) {
         if (registered) return;
         registered = true;
         new EDTRunner() {
-
+            
             @Override
             protected void runInEDT() {
+                BubbleNotify.getInstance().show(LinkCrawlerBubble.this);
                 if (!isVisible() && !isClosed()) {
-
-                    BubbleNotify.getInstance().show(LinkCrawlerBubble.this);
-
+                    
                     final Timer t = new Timer(1000, new ActionListener() {
-
+                        
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            if (!isVisible() || isClosed()) {
+                            if (isClosed() || isDisposed()) {
                                 getContentComponent().stop();
                                 ((Timer) e.getSource()).stop();
                                 return;
-
+                                
                             }
-                            update();
-
+                            if (isVisible()) update();
+                            
                             if (getContentComponent().askForClose(caller)) {
-
+                                
                                 getContentComponent().stop();
                                 ((Timer) e.getSource()).stop();
                                 startTimeout(LinkCrawlerBubble.super.getTimeout());
-
+                                
                                 return;
-
+                                
                             }
-
+                            
                         }
-
+                        
                     });
                     t.setInitialDelay(0);
                     t.setRepeats(true);
                     t.start();
-
+                    
                 }
             }
         };
     }
-
+    
     @Override
     public void onProcessingHosterPlugin(LinkCollectorCrawler caller, CrawledLink parameter) {
         register(caller);
     }
-
+    
     @Override
     public void onProcessingContainerPlugin(LinkCollectorCrawler caller, CrawledLink parameter) {
         register(caller);
     }
-
+    
 }
