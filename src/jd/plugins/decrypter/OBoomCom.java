@@ -13,7 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 21356 $", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/#share/[a-f0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/#share/[a-f0-9\\-]+" }, flags = { 0 })
 public class OBoomCom extends PluginForDecrypt {
     private final String APPID = "43340D9C23";
     
