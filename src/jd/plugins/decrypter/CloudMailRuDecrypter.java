@@ -29,27 +29,26 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://(www\\.)?cloud\\.mail\\.ru/public/[a-z0-9]+/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://(www\\.)?cloud\\.mail\\.ru(/|%2F)public(/|%2F)[a-z0-9]+(/|%2F)[^<>\"/]+(/|%2F)([^<>\"]+)?" }, flags = { 0 })
 public class CloudMailRuDecrypter extends PluginForDecrypt {
 
     public CloudMailRuDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public static final String  BUILD            = "hotfix-17-7.201403131547";
-    private static final String TYPE_SINGLE_FILE = "https?://(www\\.)?cloud\\.mail\\.ru/public/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+";
+    public static final String BUILD = "hotfix-17-7.201403131547";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://", "https://");
-        final String id = new Regex(parameter, "cloud\\.mail\\.ru/public/([a-z0-9]+/[^<>\"/]+)").getMatch(0);
+        final String parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
+        final String id = new Regex(parameter, "cloud\\.mail\\.ru/public/(.+)").getMatch(0);
         final DownloadLink main = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
         main.setProperty("plain_request_id", id);
         main.setProperty("mainlink", parameter);
         main.setName(new Regex(parameter, "public/[a-z0-9]+/(.+)").getMatch(0));
 
         prepBR();
-        br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + id + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=1&htmlencoded=false&build=" + BUILD);
+        br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + Encoding.urlEncode(id) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=1&htmlencoded=false&build=" + BUILD);
         if (br.containsHTML("\"status\":400")) {
             main.setAvailable(false);
             main.setProperty("offline", true);
@@ -58,59 +57,32 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         }
         // br.getPage(parameter);
 
-        String folderName = br.getRegex("\"url\":.*?\\},\"name\":\"([^<>\"]*?)\",\"id").getMatch(0);
-        if (folderName == null) folderName = new Regex(parameter, "public/([a-z0-9]+)/").getMatch(0);
-        folderName = Encoding.htmlDecode(folderName.trim());
-
+        String fpName = null;
+        String mainName = br.getRegex("\"url\":.*?\\},\"name\":\"([^<>\"]*?)\",\"id").getMatch(0);
+        if (mainName == null) mainName = new Regex(parameter, "public/([a-z0-9]+)/").getMatch(0);
+        final String detailedName = new Regex(parameter, "([^<>\"/]+)/?$").getMatch(0);
+        mainName = Encoding.htmlDecode(mainName.trim());
+        if (detailedName != null) {
+            fpName = mainName + " - " + detailedName;
+        } else {
+            fpName = mainName;
+        }
         final String[] links = getList();
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (parameter.matches(TYPE_SINGLE_FILE)) {
-            final String targetName = Encoding.htmlDecode(new Regex(parameter, "cloud\\.mail\\.ru/public/[a-z0-9]+/[^<>\"/]+/(.+)").getMatch(0));
-            for (final String singleinfo : links) {
-                final String filesize = getJson("size", singleinfo);
-                String filename = getJson("name", singleinfo);
-                final String directlink = getJson("get", singleinfo);
-                final String view = getJson("view", singleinfo);
-                final String mimetype = getJson("mimetype", singleinfo);
-                final String kind = getJson("kind", singleinfo);
-                if ("folder".equals(kind)) continue;
-                if (filesize == null || filename == null || directlink == null || view == null || mimetype == null) {
+        long totalSize = 0;
+        for (final String singleinfo : links) {
+            if ("folder".equals(getJson("kind", singleinfo))) {
+                String folder_url = getJson("web", singleinfo);
+                if (folder_url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                filename = Encoding.htmlDecode(filename.trim());
-                String ext = null;
-                if (directlink.contains(".")) ext = directlink.substring(directlink.lastIndexOf("."));
-                if (ext == null || ext.length() > 5) {
-                    if (mimetype.equals("image/jpeg")) ext = ".jpg";
-                }
-                if (ext != null && ext.length() <= 5 && !filename.endsWith(ext)) filename += ext;
-                if (filename.equals(targetName)) {
-                    final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                    final long cursize = Long.parseLong(filesize);
-                    dl.setDownloadSize(cursize);
-                    dl.setFinalFileName(filename);
-                    dl.setProperty("plain_name", filename);
-                    dl.setProperty("plain_size", filesize);
-                    dl.setProperty("mainlink", parameter);
-                    dl.setProperty("plain_view", view);
-                    dl.setProperty("plain_directlink", directlink);
-                    dl.setProperty("plain_request_id", id);
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
-                    break;
-                }
-            }
-            if (decryptedLinks.size() == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-        } else {
-            long totalSize = 0;
-            for (final String singleinfo : links) {
+                folder_url = "https://cloud.mail.ru" + Encoding.htmlDecode(folder_url);
+                decryptedLinks.add(createDownloadlink(folder_url));
+            } else {
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 final String filesize = getJson("size", singleinfo);
                 String filename = getJson("name", singleinfo);
@@ -134,20 +106,20 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
+        }
 
-            if (decryptedLinks.size() > 1) {
-                /* = all files (links) of the folder as .zip archive */
-                final String main_name = folderName + ".zip";
-                main.setFinalFileName(folderName);
-                main.setProperty("plain_name", main_name);
-                main.setProperty("plain_size", Long.toString(totalSize));
-                main.setProperty("complete_folder", true);
-                decryptedLinks.add(main);
-            }
+        if (decryptedLinks.size() > 1) {
+            /* = all files (links) of the folder as .zip archive */
+            final String main_name = fpName + ".zip";
+            main.setFinalFileName(fpName);
+            main.setProperty("plain_name", main_name);
+            main.setProperty("plain_size", Long.toString(totalSize));
+            main.setProperty("complete_folder", true);
+            decryptedLinks.add(main);
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(folderName);
+        fp.setName(fpName);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
