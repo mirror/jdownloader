@@ -280,8 +280,6 @@ public class FileFactory extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         if (useAPI.get()) {
             ai = fetchAccountInfo_API(account, ai);
         } else {
@@ -297,12 +295,7 @@ public class FileFactory extends PluginForHost {
                 ai.setStatus("Registered (free) User");
                 ai.setUnlimitedTraffic();
                 account.setProperty("free", true);
-                try {
-                    maxPrem.set(1);
-                    account.setMaxSimultanDownloads(1);
-                    account.setConcurrentUsePossible(false);
-                } catch (final Throwable e) {
-                }
+
             } else {
                 account.setProperty("free", false);
                 if (br.containsHTML(">Lifetime Member<")) {
@@ -339,12 +332,6 @@ public class FileFactory extends PluginForHost {
                     ai.setUnlimitedTraffic();
                 }
                 ai.setStatus("Premium User");
-                try {
-                    maxPrem.set(-1);
-                    account.setMaxSimultanDownloads(-1);
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                }
             }
         }
         return ai;
@@ -1093,24 +1080,13 @@ public class FileFactory extends PluginForHost {
         if ("premium".equalsIgnoreCase(type)) {
             account.setProperty("free", false);
             account.setProperty("totalMaxSim", 20);
+            ai.setStatus("Premium Account");
             if (expire != null) ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire));
-            try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
         } else {
             account.setProperty("free", true);
             account.setProperty("totalMaxSim", 20);
-            ai.setStatus("Registered (free) User");
+            ai.setStatus("Free Account");
             ai.setUnlimitedTraffic();
-            try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
         }
         return ai;
     }
