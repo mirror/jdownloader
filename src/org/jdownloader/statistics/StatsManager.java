@@ -141,7 +141,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
-        return config.isEnabled() && Application.isJared(StatsManager.class);
+        if (Application.isJared(StatsManager.class)) return false;
+        return config.isEnabled() /* && */;
 
     }
 
@@ -450,13 +451,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             //
 
             // dl.set
-            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
-            });
 
-            try {
-                dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
-            } catch (Exception e) {
-            }
+            dl.setBuildTime(readBuildTime());
+
             dl.setResume(downloadController.isResumed());
             dl.setCanceled(aborted);
             dl.setHost(link.getHost());
@@ -494,15 +491,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             if (dl.getErrorID() != null) {
                 ErrorDetails error = errors.get(dl.getErrorID());
+
                 if (error == null) {
 
                     ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID()));
                     error.setStacktrace(errorID);
-                    try {
 
-                        error2.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
-                    } catch (Exception e) {
-                    }
+                    error.setBuildTime(dl.getBuildTime());
+
                     if (error2 != null) {
                         error = error2;
                     }
@@ -852,13 +848,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setHost(link.getHost());
             dl.setCandidates(possibleAccounts);
             dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
-            try {
-                HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
-                });
 
-                dl.setBuildTime(Long.parseLong(map.get("buildTimestamp") + ""));
-            } catch (Exception e) {
-            }
+            dl.setBuildTime(readBuildTime());
 
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
@@ -879,6 +870,27 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             UIOManager.I().showMessageDialog(_GUI._.VoteFinderWindow_runInEDT_thankyou_2());
         }
 
+    }
+
+    private long readBuildTime() {
+        try {
+            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), new TypeRef<HashMap<String, Object>>() {
+            });
+            return readBuildTime(map);
+        } catch (Throwable e) {
+            return 0;
+        }
+    }
+
+    public long readBuildTime(HashMap<String, Object> map) {
+        try {
+            Object ret = map.get("buildTimestamp");
+            if (ret instanceof Number) { return ((Number) ret).longValue(); }
+
+            return Long.parseLong(ret + "");
+        } catch (Throwable e) {
+            return 0;
+        }
     }
 
     private void sendFeedback(AbstractFeedbackLogEntry dl) {
