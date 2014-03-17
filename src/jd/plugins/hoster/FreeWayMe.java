@@ -216,8 +216,8 @@ public class FreeWayMe extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        br.setConnectTimeout(90 * 1000);
-        br.setReadTimeout(90 * 1000);
+        br.setConnectTimeout(50 * 1000);
+        br.setReadTimeout(45 * 1000);
         String username = Encoding.urlTotalEncode(account.getUser());
         String pass = Encoding.urlTotalEncode(account.getPass());
         String hosts[] = null;
@@ -405,13 +405,12 @@ public class FreeWayMe extends PluginForHost {
 
         logger.info("{handleMultiHost} Try download with account " + acc.getUser() + " file: " + link.getDownloadURL());
 
-        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + "&encoded";
+        String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + "&encodedJD";
 
         // set timeout
-        br.setConnectTimeout(90 * 1000);
-        br.setReadTimeout(90 * 1000);
+        br.setConnectTimeout(60 * 1000);
+        br.setReadTimeout(55 * 1000);
 
-        /* Begin workaround for wrong encoding while redirect */
         br.setFollowRedirects(false);
         String page = br.getPage(dllink);
         if (page.contains("Invalid login")) {
@@ -419,9 +418,7 @@ public class FreeWayMe extends PluginForHost {
             acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        String location = br.getRedirectLocation();
-        dllink = location.substring(0, location.indexOf("?")) + dllink.substring(dllink.indexOf("?"), dllink.length()) + "&s=" + location.substring(location.length() - 1, location.length());
-        /* end workaround for wrong encoding while redirect */
+        dllink = br.getRedirectLocation();
 
         boolean resume = this.getPluginConfig().getBooleanProperty(ALLOWRESUME, false);
         if (link.getBooleanProperty(FreeWayMe.NORESUME, false)) {
@@ -589,7 +586,7 @@ public class FreeWayMe extends PluginForHost {
                 panelGenerator.addEntry(getPhrase("DETAILS_HOSTS_AMOUNT"), Integer.toString(hostList.size()));
 
                 panelGenerator.addTable(hostList);
-                // TODO: Add log...
+                // TO-DO: Add log...
                 // panelGenerator.addCategory("Error Log");
                 // JTextArea tf = new JTextArea("Test\n123\n Test");
                 // panelGenerator.addTextField(tf);
