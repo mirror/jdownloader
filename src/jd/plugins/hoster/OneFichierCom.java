@@ -323,11 +323,12 @@ public class OneFichierCom extends PluginForHost {
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
         String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         // Use site login/site download if either API is not working or API says that there are no credits available
-        if ("error".equalsIgnoreCase(timeStamp) || ("0".equals(timeStamp) && freeCredits == null)) {
+        if ("error".equalsIgnoreCase(br.toString()) || ("0".equals(timeStamp) && freeCredits == null)) {
             /**
              * Only used if the API fails and is wrong but that usually doesn't happen!
              */
             try {
+                br = new Browser();
                 login(account, true);
             } catch (final Exception e) {
                 ai.setStatus("Username/Password also invalid via site login!");
