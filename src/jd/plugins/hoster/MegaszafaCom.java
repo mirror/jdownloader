@@ -106,9 +106,10 @@ public class MegaszafaCom extends PluginForHost {
         br.setFollowRedirects(false);
 
         String dllink = MAINPAGE + "pobierzPlik," + fileId + ".html";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            logger.info("Megaszafa error: " + br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -191,7 +192,7 @@ public class MegaszafaCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 2;
+        return -1;
     }
 
     @Override
