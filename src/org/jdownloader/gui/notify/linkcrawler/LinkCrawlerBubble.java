@@ -111,38 +111,33 @@ public class LinkCrawlerBubble extends AbstractNotifyWindow<LinkCrawlerBubbleCon
             @Override
             protected void runInEDT() {
                 BubbleNotify.getInstance().show(LinkCrawlerBubble.this);
-                if (!isVisible() && !isClosed()) {
-                    
-                    final Timer t = new Timer(1000, new ActionListener() {
-                        
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            if (isClosed() || isDisposed()) {
-                                getContentComponent().stop();
-                                ((Timer) e.getSource()).stop();
-                                return;
-                                
-                            }
-                            if (isVisible()) update();
+                final Timer t = new Timer(1000, new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if (isClosed() || isDisposed()) {
+                            getContentComponent().stop();
+                            ((Timer) e.getSource()).stop();
+                            return;
                             
-                            if (getContentComponent().askForClose(caller)) {
-                                
-                                getContentComponent().stop();
-                                ((Timer) e.getSource()).stop();
-                                startTimeout(LinkCrawlerBubble.super.getTimeout());
-                                
-                                return;
-                                
-                            }
+                        }
+                        if (isVisible()) update();
+                        
+                        if (getContentComponent().askForClose(caller)) {
+                            
+                            getContentComponent().stop();
+                            ((Timer) e.getSource()).stop();
+                            startTimeout(LinkCrawlerBubble.super.getTimeout());
+                            
+                            return;
                             
                         }
                         
-                    });
-                    t.setInitialDelay(0);
-                    t.setRepeats(true);
-                    t.start();
+                    }
                     
-                }
+                });
+                t.setInitialDelay(0);
+                t.setRepeats(true);
+                t.start();
             }
         };
     }
