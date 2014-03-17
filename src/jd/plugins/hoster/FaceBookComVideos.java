@@ -130,7 +130,6 @@ public class FaceBookComVideos extends PluginForHost {
             // DLLINK = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             // }
             // If no downloadlink is there, simply try to find the directlink to the picture
-            if (DLLINK == null) DLLINK = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = DLLINK.replace("\\", "");

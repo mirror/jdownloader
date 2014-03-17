@@ -41,7 +41,7 @@ public class PackUploadCom extends PluginForHost {
         return "http://www.packupload.com/cgu";
     }
 
-    private static final String INVALIDLINKS = "http://([a-z]+\\.)?packupload.com/contact";
+    private static final String INVALIDLINKS = "http://([a-z]+\\.)?packupload.com/(contact|reportFile|register|functionalities|news|about|emptyPage|connect|donate|myfiles)";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -50,7 +50,7 @@ public class PackUploadCom extends PluginForHost {
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Oops, page non trouvée|La page que vous essayez d\\'afficher n\\'existe pas|>Fichier ou dossier indisponible<|>Unavailable file or folder<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.containsHTML(">Oops, page non trouvée|La page que vous essayez d\\'afficher n\\'existe pas|>Fichier ou dossier indisponible<|>Unavailable file or folder<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<title>Download ([^<>\"]*?) for free \\- PackUpload</title>").getMatch(0);
         final String filesize = br.getRegex(">Size :</span> <span style=\"[^<>\"]*?\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

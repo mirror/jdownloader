@@ -132,7 +132,8 @@ public class SoundcloudCom extends PluginForHost {
                 api_access += "&secret_token=" + secret_token;
             }
             br.getPage(api_access);
-            final String input = getJson("stream_url");
+            String input = getJson("download_url");
+            if (input == null) input = getJson("stream_url");
             if (input == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = getDirectlink(input);
         }
@@ -231,18 +232,20 @@ public class SoundcloudCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static final String TYPE_API_ALL    = "https?://api\\.soundcloud\\.com/tracks/\\d+/stream(\\?secret_token=[A-Za-z0-9\\-_]+)?";
-    public static final String TYPE_API_NORMAL = "https?://api\\.soundcloud\\.com/tracks/\\d+/stream";
-    public static final String TYPE_API_TOKEN  = "https?://api\\.soundcloud\\.com/tracks/\\d+/stream\\?secret_token=[A-Za-z0-9\\-_]+";
+    public static final String TYPE_API_ALL      = "https?://api\\.soundcloud\\.com/tracks/\\d+/(stream|download)(\\?secret_token=[A-Za-z0-9\\-_]+)?";
+    public static final String TYPE_API_STREAM   = "https?://api\\.soundcloud\\.com/tracks/\\d+/stream";
+    public static final String TYPE_API_DOWNLOAD = "https?://api\\.soundcloud\\.com/tracks/\\d+/download";
+    public static final String TYPE_API_TOKEN    = "https?://api\\.soundcloud\\.com/tracks/\\d+/stream\\?secret_token=[A-Za-z0-9\\-_]+";
 
     public static String getDirectlink(String input) {
         final Browser br2 = new Browser();
         String directlink = null;
         try {
-            if (input != null && (input.matches(TYPE_API_NORMAL) || input.matches(TYPE_API_TOKEN))) {
+            if (input != null && (input.matches(TYPE_API_ALL))) {
+                final String type = new Regex(input, "api\\.soundcloud\\.com/tracks/\\d+/(stream|download)").getMatch(0);
                 final String track_id = new Regex(input, "tracks/(\\d+)").getMatch(0);
                 final String token = new Regex(input, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
-                input = "https://api.soundcloud.com/tracks/" + track_id + "/stream" + "?format=json";
+                input = "https://api.soundcloud.com/tracks/" + track_id + "/" + type + "?format=json";
                 if (token != null) input += "&secret_token=" + token;
                 input += "&client_id=";
                 br2.getPage(input + SoundcloudCom.CLIENTID);
