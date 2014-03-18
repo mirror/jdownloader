@@ -216,10 +216,10 @@ public class FreeWayMe extends PluginForHost {
         AccountInfo ac = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        br.setConnectTimeout(50 * 1000);
-        br.setReadTimeout(45 * 1000);
-        String username = Encoding.urlTotalEncode(account.getUser());
-        String pass = Encoding.urlTotalEncode(account.getPass());
+        br.setConnectTimeout(70 * 1000);
+        br.setReadTimeout(65 * 1000);
+        String username = Encoding.urlTotalEncode(account.getUser().trim());
+        String pass = Encoding.urlTotalEncode(account.getPass().trim());
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
@@ -399,8 +399,8 @@ public class FreeWayMe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
 
-        String user = Encoding.urlTotalEncode(acc.getUser());
-        String pw = Encoding.urlTotalEncode(acc.getPass());
+        String user = Encoding.urlTotalEncode(acc.getUser().trim());
+        String pw = Encoding.urlTotalEncode(acc.getPass().trim());
         final String url = Encoding.urlTotalEncode(link.getDownloadURL());
 
         logger.info("{handleMultiHost} Try download with account " + acc.getUser() + " file: " + link.getDownloadURL());
@@ -408,8 +408,8 @@ public class FreeWayMe extends PluginForHost {
         String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url + "&encodedJD";
 
         // set timeout
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(55 * 1000);
+        br.setConnectTimeout(100 * 1000);
+        br.setReadTimeout(95 * 1000);
 
         br.setFollowRedirects(false);
         String page = br.getPage(dllink);
@@ -446,55 +446,61 @@ public class FreeWayMe extends PluginForHost {
                 acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_INVALID_LOGIN"));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (error.contains("ltige URL")) { // Ungültige URL
-                tempUnavailableHoster(acc, link, 2 * 60 * 1000l, getPhrase("ERROR_INVALID_URL"));
+                tempUnavailableHoster(acc, link, 1 * 60 * 1000l, getPhrase("ERROR_INVALID_URL"));
             } else if (error.contains("Sie haben nicht genug Traffic, um diesen Download durchzuf")) { // ühren
+                acc.setUpdateTime(-1);
                 tempUnavailableHoster(acc, link, 10 * 60 * 1000l, getPhrase("ERROR_TRAFFIC_LIMIT"));
             } else if (error.contains("nnen nicht mehr parallele Downloads durchf")) { // Sie kö... ...ühren
-                int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
+                int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", 0);
                 // first attempt -> update acc information
                 if (attempts == 0) acc.setUpdateTime(-1); // force update acc next try (to get new information about simultan connections)
-                link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
+                link.setProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", attempts + 1);
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_CONNECTIONS"), (12 + 20 * attempts) * 1000l);
             } else if (error.contains("ltiger Hoster")) { // Ungü...
-                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
+                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
             } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
-                tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
+                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
-            } else if (error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)") // free-way has no traffic
-                    || error.equalsIgnoreCase("Unbekannter Fehler #2") // ???
-                    || error.equalsIgnoreCase("Unbekannter Fehler #3") // internal routing problem?
-                    || error.equalsIgnoreCase("Unbekannter Fehler #5") // internal interface down
+            } else if (error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)") //
+                    || error.equalsIgnoreCase("Unbekannter Fehler #2") //
+                    || error.equalsIgnoreCase("Unbekannter Fehler #3") //
+                    || error.equalsIgnoreCase("Unbekannter Fehler #5") // internal
             ) {
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
-                if (link.getLinkStatus().getRetryCount() >= 3) {
+                //
+                int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
+                if (attempts >= 5) {
                     /* reset retrycounter */
-                    link.getLinkStatus().setRetryCount(0);
-                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l, error);
+                    link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
+                    tempUnavailableHoster(acc, link, 4 * 60 * 1000l, error);
                 }
-                String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 4 + ")";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_RETRY_SECONDS") + msg, 20 * 1000l);
+                link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
+                String msg = "(" + (attempts + 1) + "/ 5)";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_RETRY_SECONDS") + msg, 21 * 1000l);
             } else if (error.startsWith("Die Datei darf maximal")) {
                 logger.info("{handleMultiHost} File download limit");
                 tempUnavailableHoster(acc, link, 2 * 60 * 1000l, error);
             } else if (error.equalsIgnoreCase("Mehrere Computer haben in letzter Zeit diesen Account genutzt")) {
                 logger.info("{handleMultiHost} free-way ip ban");
                 acc.setError(AccountError.TEMP_DISABLED, getPhrase("ERROR_BAN"));
-                throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_BAN"));
+                throw new PluginException(LinkStatus.ERROR_RETRY, getPhrase("ERROR_BAN"), 16 * 60 * 1000l);
             } else if (br.containsHTML(">Interner Fehler bei Findung eines stabilen Accounts<")) {
                 /*
                  * after x retries we disable this host and retry with normal plugin --> This error means that the free-way system cannot
                  * find any working accounts for the current host at the moment
                  */
-                if (link.getLinkStatus().getRetryCount() >= 2) {
+                int attempts = link.getIntegerProperty("CONNECTIONS_RETRY_COUNT", 0);
+                if (attempts >= 3) {
                     /* reset retrycounter */
-                    link.getLinkStatus().setRetryCount(0);
+                    link.setProperty("CONNECTIONS_RETRY_COUNT", 0);
                     logger.info(getPhrase("ERROR_NO_STABLE_ACCOUNTS") + " --> Disabling current host for 15 minutes");
-                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l, getPhrase("ERROR_NO_STABLE_ACCOUNTS"));
+                    tempUnavailableHoster(acc, link, 5 * 60 * 1000l, getPhrase("ERROR_NO_STABLE_ACCOUNTS"));
                 }
-                String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
+                link.setProperty("CONNECTIONS_RETRY_COUNT", attempts + 1);
+                String msg = "(" + (attempts + 1) + "/ 3  )";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_NO_STABLE_ACCOUNTS") + msg);
             } else if (br.containsHTML("cURL\\-Error: Couldn\\'t resolve host")) {
                 int timesFailed = link.getIntegerProperty(ACC_PROPERTY_UNKOWN_FAILS, 0);
@@ -506,7 +512,7 @@ public class FreeWayMe extends PluginForHost {
                 } else {
                     link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
                     logger.info("curl_resolve_host_error: " + getPhrase("ERROR_SERVER") + " -> Disabling current host");
-                    tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l, getPhrase("ERROR_SERVER"));
+                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l, getPhrase("ERROR_SERVER"));
                 }
             }
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
