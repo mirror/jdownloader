@@ -381,7 +381,7 @@ public class FileMonkeyIn extends PluginForHost {
                     if (traffic_left != null) ai.setTrafficLeft(Long.parseLong(traffic_left));
                     final boolean is_premium = Boolean.parseBoolean(getJson("ispremium"));
                     if (is_premium && !ai.isExpired()) {
-                        // us ms to expire, works best with time zone difference and incorrect systemtime.
+                        // use ms to expire, works best with time zone difference and incorrect systemtime.
                         final String ms_expire = getJson("premium_mstoexpire");
                         if (ms_expire != null) ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(ms_expire));
                         account.setProperty("free", false);
@@ -442,8 +442,8 @@ public class FileMonkeyIn extends PluginForHost {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                         }
-                        api_key = getJson("apikey");
                     }
+                    api_key = getJson("apikey");
                 } finally {
                     if (api_key != null)
                         account.setProperty("apikey", api_key);
@@ -586,11 +586,13 @@ public class FileMonkeyIn extends PluginForHost {
     }
 
     private boolean isSuccess(final String source) {
-        return new Regex(source, "\"status\":\"(success)\"").matches();
+        boolean test = new Regex(source, "\"status\":\"(success)\"").matches();
+        return test;
     }
 
     private boolean isSuccess() {
-        return isSuccess(br.toString());
+        boolean test = isSuccess(br.toString());
+        return test;
     }
 
     @Override
