@@ -111,12 +111,8 @@ public class PivitLoad extends PluginForHost {
         }
 
         if (account.isValid()) {
+            ai.setStatus("Account valid");
             ai.setProperty("multiHostSupport", supportedHosts);
-            if (supportedHosts.size() == 0) {
-                ai.setStatus("Account valid: 0 Hosts via PivitLoad available");
-            } else {
-                ai.setStatus("Account valid: " + supportedHosts.size() + " Hosts via PivitLoad available");
-            }
         } else {
             account.setValid(false);
             ai.setProperty("multiHostSupport", Property.NULL);

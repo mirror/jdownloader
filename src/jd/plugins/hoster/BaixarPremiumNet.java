@@ -100,13 +100,8 @@ public class BaixarPremiumNet extends PluginForHost {
                 supportedHosts.add("uploaded.to");
             }
         }
-
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via baixarpremium.net available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via baixarpremium.net available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        ac.setStatus("Account valid");
+        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 

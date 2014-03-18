@@ -104,12 +104,8 @@ public class MegaDebridEu extends PluginForHost {
             }
         }
         account.setValid(true);
-        if (supportedHosts.isEmpty()) {
-            ac.setStatus("Account valid: 0 Hosts via available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        ac.setStatus("Account valid");
+        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 

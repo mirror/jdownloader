@@ -106,12 +106,8 @@ public class MyDownloaderNet extends PluginForHost {
         for (String host : hosters) {
             supportedHosts.add(host.trim());
         }
+        ac.setStatus("Account valid");
         ac.setProperty("multiHostSupport", supportedHosts);
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via MyDownloader.net available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via MyDownloader.net available");
-        }
         return ac;
     }
 

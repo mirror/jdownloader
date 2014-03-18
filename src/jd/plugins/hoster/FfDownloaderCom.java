@@ -210,13 +210,8 @@ public class FfDownloaderCom extends PluginForHost {
             hosts = new Regex(supportedhoststext, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         }
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        ai.setStatus("Account valid");
         ai.setProperty("multiHostSupport", supportedHosts);
-        if (supportedHosts.size() == 0) {
-            ai.setStatus("Account valid: 0 Hosts via " + NICE_HOST + " available");
-        } else {
-            ai.setStatus("Account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
-            ai.setProperty("multiHostSupport", supportedHosts);
-        }
         return ai;
     }
 

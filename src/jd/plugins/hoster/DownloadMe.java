@@ -115,13 +115,8 @@ public class DownloadMe extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via download.me available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via download.me available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        ac.setStatus("Account valid");
+        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 

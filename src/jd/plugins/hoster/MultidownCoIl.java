@@ -92,12 +92,7 @@ public class MultidownCoIl extends PluginForHost {
         if (supportedHosts.contains("uploaded.net")) {
             supportedHosts.add("uploaded.to");
         }
-
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via multihosters.com available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via multihosters.com available");
-        }
+        ac.setStatus("Account valid");
         ac.setProperty("multiHostSupport", new ArrayList<String>(supportedHosts));
         return ac;
     }

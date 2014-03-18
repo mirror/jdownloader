@@ -61,6 +61,32 @@ public class GuploadBiz extends PluginForHost {
         this.enablePremium(MAINPAGE + "/register.html");
     }
 
+    public boolean isPremiumEnabled() {
+        return "hoodload.com".equalsIgnoreCase(getHost());
+    }
+
+    public Boolean rewriteHost(Account acc) {
+        if ("gupload.biz".equals(getHost())) {
+            if (acc != null && "gupload.biz".equals(acc.getHoster())) {
+                acc.setHoster("hoodload.com");
+                return true;
+            }
+            return false;
+        }
+        return null;
+    }
+
+    public Boolean rewriteHost(DownloadLink link) {
+        if ("gupload.biz".equals(getHost())) {
+            if (link != null && "gupload.biz".equals(link.getHost())) {
+                link.setHost("hoodload.com");
+                return true;
+            }
+            return false;
+        }
+        return null;
+    }
+
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/terms.html";

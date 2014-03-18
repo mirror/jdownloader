@@ -120,13 +120,8 @@ public class OlgetCom extends PluginForHost {
                 supportedHosts.add(host.trim());
             }
         }
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via olget.com available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via olget.com available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
-
+        ac.setStatus("Account valid");
+        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 

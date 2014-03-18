@@ -298,13 +298,8 @@ public class OverLoadMe extends PluginForHost {
                 supportedHosts.add("uploaded.to");
             }
         }
+        ai.setStatus("Account valid");
         ai.setProperty("multiHostSupport", supportedHosts);
-        if (supportedHosts.size() == 0) {
-            ai.setStatus("Premium account valid: 0 Hosts via " + NICE_HOST + " available");
-        } else {
-            ai.setStatus("Premium account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
-            ai.setProperty("multiHostSupport", supportedHosts);
-        }
         return ai;
     }
 

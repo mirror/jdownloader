@@ -148,13 +148,8 @@ public class EasyFilesPl extends PluginForHost {
                 supportedHosts.add("uploaded.to");
             }
         }
-
-        if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via " + NICE_HOST + " available");
-        } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via " + NICE_HOST + " available");
-            ac.setProperty("multiHostSupport", supportedHosts);
-        }
+        ac.setStatus("Account valid");
+        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 
