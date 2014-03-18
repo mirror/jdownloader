@@ -21,7 +21,6 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
      */
     private static final long serialVersionUID = -8841119846403017974L;
 
-    private String            formatString     = _GUI._.added_date_column_dateformat();
     private final String      bad              = _GUI._.added_date_column_invalid();
 
     public JPopupMenu createHeaderPopup() {
@@ -33,11 +32,6 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
     public AddedDateColumn() {
         super(_GUI._.added_date_column_title());
         rendererField.setHorizontalAlignment(SwingConstants.CENTER);
-
-        DateFormat sd = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT);
-        if (sd instanceof SimpleDateFormat) {
-            formatString = ((SimpleDateFormat) sd).toPattern();
-        }
 
     }
 
@@ -69,7 +63,9 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
     }
 
     protected String getDateFormatString() {
-        return formatString;
+        DateFormat sd = SimpleDateFormat.getDateTimeInstance();
+        if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
+        return _GUI._.added_date_column_dateformat();
     }
 
     @Override

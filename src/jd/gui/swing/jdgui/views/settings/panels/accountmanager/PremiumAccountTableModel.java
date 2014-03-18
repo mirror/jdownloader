@@ -437,14 +437,8 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
         this.addColumn(new ExtDateColumn<AccountEntry>(_GUI._.premiumaccounttablemodel_column_expiredate()) {
             private static final long serialVersionUID = 5067606909520874358L;
-            private String            pattern;
 
             {
-                pattern = _GUI._.PremiumAccountTableModel_getDateFormatString_();
-                DateFormat sd = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT);
-                if (sd instanceof SimpleDateFormat) {
-                    pattern = ((SimpleDateFormat) sd).toPattern();
-                }
 
                 final ExtDefaultRowSorter<AccountEntry> oldSorter = getRowSorter();
                 setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
@@ -491,7 +485,10 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
             @Override
             protected String getDateFormatString() {
 
-                return pattern;
+                DateFormat sd = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT);
+                if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
+                return _GUI._.PremiumAccountTableModel_getDateFormatString_();
+
             }
 
             @Override
