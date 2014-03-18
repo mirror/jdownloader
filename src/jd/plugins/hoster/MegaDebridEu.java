@@ -37,6 +37,7 @@ public class MegaDebridEu extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private static Object                                  ACCLOCK            = new Object();
     private final String                                   mName              = "www.mega-debrid.eu";
     private final String                                   mProt              = "http://";
 
@@ -56,16 +57,19 @@ public class MegaDebridEu extends PluginForHost {
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         br.setFollowRedirects(true);
-
-        // account is valid, let's fetch account details:
-        br.getPage(mProt + mName + "/api.php?action=connectUser&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        final String token = login(account);
         if (!"ok".equalsIgnoreCase(getJson("response_code"))) {
             ac.setStatus("\r\nInvalid username/password!\r\nFalscher Benutzername/Passwort!");
             logger.severe("mega-debrid.eu: Error, can not parse left days. Account: " + account.getUser() + "\r\nAPI response:\r\n\r\n" + br.toString());
             account.setValid(false);
             return ac;
         }
-        account.setProperty("token", getJson("token"));
+        if (token != null)
+            account.setProperty("token", token);
+        else {
+            logger.warning("token could not be found");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         ac.setValidUntil(-1);
         final String daysLeft = getJson("vip_end");
         if (daysLeft != null && !"0".equals(daysLeft))
@@ -109,6 +113,14 @@ public class MegaDebridEu extends PluginForHost {
         return ac;
     }
 
+    private String login(Account account) throws Exception {
+        synchronized (ACCLOCK) {
+            br.getPage(mProt + mName + "/api.php?action=connectUser&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            final String token = getJson("token");
+            return token;
+        }
+    }
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         String url = link.getDownloadURL();
@@ -125,7 +137,27 @@ public class MegaDebridEu extends PluginForHost {
 
         showMessage(link, "Phase 1/2: Generate download link");
         br.setFollowRedirects(true);
-        br.postPage(mProt + mName + "/api.php?action=getLink&token=" + account.getStringProperty("token", null), "link=" + url);
+        String token = account.getStringProperty("token", null);
+        if (token == null) {
+            // this shouldn't happen!
+            token = login(account);
+            if (token == null) {
+                // big problem!
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n BIG PROBLEM_1", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        for (int i = 0; i != 3; i++) {
+            br.postPage(mProt + mName + "/api.php?action=getLink&token=" + token, "link=" + url);
+            if ("TOKEN_ERROR".equalsIgnoreCase(getJson("response_code")) && "Token error, please log-in".equalsIgnoreCase(getJson("response_text"))) {
+                if (i == 2) {
+                    // big problem!
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n BIG PROBLEM_2", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                token = login(account);
+                continue;
+            }
+            break;
+        }
         if (br.containsHTML("Erreur : Probl\\\\u00e8me D\\\\u00e9brideur")) {
             logger.warning("Unknown error, disabling current host for 3 hours!");
             tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
