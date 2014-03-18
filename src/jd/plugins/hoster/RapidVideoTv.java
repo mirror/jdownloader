@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidvideo.tv" }, urls = { "https?://(www\\.)?rapidvideo\\.tv/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidvideo.tv" }, urls = { "https?://(www\\.)?rapidvideo\\.tv/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class RapidVideoTv extends PluginForHost {
 
     private String                 correctedBR                  = "";
