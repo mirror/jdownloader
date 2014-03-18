@@ -945,17 +945,29 @@ public class YoutubeHelper {
         handleRentalVideos(vid);
 
         final String unavailableReason = this.br.getRegex("<div id=\"player-unavailable\" class=\"[^\"]*\">.*?<h. id=\"unavailable-message\"[^>]*?>([^<]+)").getMatch(0);
-        // this work around before private video, as it also shares the same regex as content wanting/age-gate
+        // this work around before private video, as it also shares the same regex as content warning/age-gate
         boolean getVideoInfoWorkaroundUsed = false;
         if (this.br.containsHTML("age-gate|verify_controversy\\?next_url=")) {
             vid.ageCheck = true;
+            Browser cw = this.br.cloneBrowser();
+            this.handleContentWarning(cw);
 
-            this.handleContentWarning(this.br);
-
-            if (this.br.containsHTML("age-gate")) {
+            if (cw.containsHTML("age-gate")) {
                 // try to bypass
                 getVideoInfoWorkaroundUsed = true;
-                this.br.getPage(this.base + "/get_video_info?video_id=" + vid.videoID);
+                cw.getPage(this.base + "/get_video_info?video_id=" + vid.videoID);
+                final String errorcode = cw.getRegex("errorcode=(\\d+)").getMatch(0);
+                if ("150".equals(errorcode)) {
+                    // http://www.youtube.com/watch?v=xxWHMmiOTVM
+                    // reason=This video contains content from WMG. It is restricted from playback on certain sites.<br/><u><a
+                    // href='...>Watch on YouTube</a>
+
+                    // the next error handling below will catch from the original browser and give correct feedback!
+                    logger.warning("getVideoInfoWorkaroundUsed has failed due to been restricted content.");
+                    getVideoInfoWorkaroundUsed = false;
+                } else {
+                    this.br = cw.cloneBrowser();
+                }
             }
         }
         if (unavailableReason != null && !getVideoInfoWorkaroundUsed) {
@@ -1002,12 +1014,13 @@ public class YoutubeHelper {
             dashmpd = JSonStorage.restoreFromString(dashmpd, new TypeRef<String>() {
             });
         }
-
-        for (final String line : html5_fmt_map.split("\\,")) {
-            final YoutubeStreamData match = this.parseLine(vid, line);
-            if (match != null) {
-                if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) continue;
-                ret.put(match.getItag(), match);
+        if (html5_fmt_map != null) {
+            for (final String line : html5_fmt_map.split("\\,")) {
+                final YoutubeStreamData match = this.parseLine(vid, line);
+                if (match != null) {
+                    if (!cfg.isExternMultimediaToolUsageEnabled() && match.getItag().name().contains("DASH_")) continue;
+                    ret.put(match.getItag(), match);
+                }
             }
         }
         if (dashFmt != null) {
