@@ -54,28 +54,28 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.PremiumStatusBarD
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class ServicePanel extends JPanel implements MouseListener, AccountTooltipOwner {
-
+    
     private static final long               serialVersionUID = 7290466989514173719L;
-
+    
     private DelayedRunnable                 redrawTimer;
-
+    
     private ArrayList<ServicePanelExtender> extender;
     private static ServicePanel             INSTANCE         = new ServicePanel();
     private AtomicBoolean                   redrawing        = new AtomicBoolean(false);
-
+    
     public static ServicePanel getInstance() {
         return INSTANCE;
     }
-
+    
     public void addExtender(ServicePanelExtender ex) {
         synchronized (extender) {
             extender.remove(ex);
             extender.add(ex);
-
+            
         }
         redrawTimer.delayedrun();
     }
-
+    
     public void requestUpdate(boolean immediately) {
         if (immediately) {
             redrawTimer.delayedrun();
@@ -83,66 +83,66 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             redraw();
         }
     }
-
+    
     public void removeExtender(ServicePanelExtender ex) {
         synchronized (extender) {
             extender.remove(ex);
         }
         redrawTimer.delayedrun();
     }
-
+    
     private ServicePanel() {
         super(new MigLayout("ins 0 2 0", "0[]0[]0[]0[]0", "0[]0"));
-
+        
         extender = new ArrayList<ServicePanelExtender>();
         this.setOpaque(false);
         final ScheduledExecutorService scheduler = DelayedRunnable.getNewScheduledExecutorService();
-
+        
         redrawTimer = new DelayedRunnable(scheduler, 1000, 5000) {
-
+            
             @Override
             public String getID() {
                 return "PremiumStatusRedraw";
             }
-
+            
             @Override
             public void delayedrun() {
-
+                
                 redraw();
             }
-
+            
         };
         redraw();
-
+        
         CFG_GUI.PREMIUM_STATUS_BAR_DISPLAY.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-
+            
             @Override
             public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
             }
-
+            
             @Override
             public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
                 redraw();
             }
         });
         org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
+            
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 redraw();
             }
-
+            
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
-
+            
             public void run() {
                 new Thread() {
-
+                    
                     @Override
                     public void run() {
                         scheduler.scheduleWithFixedDelay(new Runnable() {
-
+                            
                             public void run() {
                                 /*
                                  * this scheduleritem checks all enabled accounts every 5 mins
@@ -153,13 +153,12 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                     Log.exception(e);
                                 }
                             }
-
+                            
                         }, 1, 5, TimeUnit.MINUTES);
                         redrawTimer.run();
                         AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
-
+                            
                             public void onAccountControllerEvent(AccountControllerEvent event) {
-
                                 if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) redrawTimer.run();
                             }
                         });
@@ -169,7 +168,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             }
         });
     }
-
+    
     private void refreshAccountStats() {
         for (Account acc : AccountController.getInstance().list()) {
             if (acc.isEnabled() && acc.isValid() && acc.refreshTimeoutReached()) {
@@ -180,7 +179,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             }
         }
     }
-
+    
     public void redraw() {
         if (SecondLevelLaunch.ACCOUNTLIST_LOADED.isReached()) {
             if (redrawing.compareAndSet(false, true)) {
@@ -192,7 +191,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                             try {
                                 try {
                                     removeAll();
-
+                                    
                                     int max = services.size();
                                     // Math.min(, JsonConfig.create(GeneralSettings.class).getMaxPremiumIcons());
                                     StringBuilder sb = new StringBuilder();
@@ -206,7 +205,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                         if (c != null) {
                                             add(c, "gapleft 0,gapright 0");
                                         }
-
+                                        
                                     }
                                     revalidate();
                                     repaint();
@@ -226,17 +225,17 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             }
         }
     }
-
+    
     public LinkedList<ServiceCollection<?>> groupServices(PremiumStatusBarDisplay premiumStatusBarDisplay, boolean extend, String filter) {
         List<Account> accs = AccountController.getInstance().list();
-
+        
         // final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
         final HashMap<String, AccountServiceCollection> map = new HashMap<String, AccountServiceCollection>();
         final LinkedList<ServiceCollection<?>> services = new LinkedList<ServiceCollection<?>>();
         HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
         for (Account acc : accs) {
             AccountInfo ai = acc.getAccountInfo();
-
+            
             if (acc.getLastValidTimestamp() < 0 && acc.getError() != null) continue;
             if ((System.currentTimeMillis() - acc.getLastValidTimestamp()) < 14 * 7 * 24 * 60 * 60 * 1000 && acc.getError() != null) continue;
             PluginForHost plugin = acc.getPlugin();
@@ -244,39 +243,16 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
             if (plugin != null) {
                 domainInfo = plugin.getDomainInfo(null);
                 domainInfo.getFavIcon();
-
+                
                 AccountServiceCollection ac;
                 switch (premiumStatusBarDisplay) {
-                case DONT_GROUP:
-                    if (filter != null && !filter.equals(domainInfo.getTld())) continue;
-                    ac = new AccountServiceCollection(domainInfo);
-                    ac.add(acc);
-                    services.add(ac);
-                    break;
-                case GROUP_BY_ACCOUNT_TYPE:
-                    if (filter != null && !filter.equals(domainInfo.getTld())) continue;
-                    ac = map.get(domainInfo.getTld());
-                    if (ac == null) {
+                    case DONT_GROUP:
+                        if (filter != null && !filter.equals(domainInfo.getTld())) continue;
                         ac = new AccountServiceCollection(domainInfo);
-                        map.put(domainInfo.getTld(), ac);
+                        ac.add(acc);
                         services.add(ac);
-                    }
-                    ac.add(acc);
-                    break;
-
-                case GROUP_BY_SUPPORTED_HOSTS:
-
-                    ai = acc.getAccountInfo();
-                    if (ai == null) continue;
-                    Object supported = null;
-                    synchronized (ai) {
-                        /*
-                         * synchronized on accountinfo because properties are not threadsafe
-                         */
-                        supported = ai.getProperty("multiHostSupport", Property.NULL);
-                    }
-                    if (Property.NULL == supported || supported == null) {
-                        // dedicated account
+                        break;
+                    case GROUP_BY_ACCOUNT_TYPE:
                         if (filter != null && !filter.equals(domainInfo.getTld())) continue;
                         ac = map.get(domainInfo.getTld());
                         if (ac == null) {
@@ -285,74 +261,97 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                             services.add(ac);
                         }
                         ac.add(acc);
-                    } else {
-                        synchronized (supported) {
+                        break;
+                    
+                    case GROUP_BY_SUPPORTED_HOSTS:
+                        
+                        ai = acc.getAccountInfo();
+                        if (ai == null) continue;
+                        Object supported = null;
+                        synchronized (ai) {
                             /*
-                             * synchronized on list because plugins can change the list in runtime
+                             * synchronized on accountinfo because properties are not threadsafe
                              */
-
-                            if (supported instanceof ArrayList) {
-                                for (String sup : (java.util.List<String>) supported) {
-
-                                    LazyHostPlugin plg = HostPluginController.getInstance().get((String) sup);
-
-                                    if (plg != null) {
-                                        LazyHostPlugin cached = plugins.get(plg.getClassname());
-                                        if (cached != null) plg = cached;
-                                        plugins.put(plg.getClassname(), plg);
-                                        sup = plg.getHost();
-                                    } else {
-                                        //
-                                        System.out.println(plg);
-                                        continue;
+                            supported = ai.getProperty("multiHostSupport", Property.NULL);
+                        }
+                        if (Property.NULL == supported || supported == null) {
+                            // dedicated account
+                            if (filter != null && !filter.equals(domainInfo.getTld())) continue;
+                            ac = map.get(domainInfo.getTld());
+                            if (ac == null) {
+                                ac = new AccountServiceCollection(domainInfo);
+                                map.put(domainInfo.getTld(), ac);
+                                services.add(ac);
+                            }
+                            ac.add(acc);
+                        } else {
+                            synchronized (supported) {
+                                /*
+                                 * synchronized on list because plugins can change the list in runtime
+                                 */
+                                
+                                if (supported instanceof ArrayList) {
+                                    for (String sup : (java.util.List<String>) supported) {
+                                        
+                                        LazyHostPlugin plg = HostPluginController.getInstance().get((String) sup);
+                                        
+                                        if (plg != null) {
+                                            LazyHostPlugin cached = plugins.get(plg.getClassname());
+                                            if (cached != null) plg = cached;
+                                            plugins.put(plg.getClassname(), plg);
+                                            sup = plg.getHost();
+                                        } else {
+                                            //
+                                            System.out.println(plg);
+                                            continue;
+                                        }
+                                        if (filter != null && !filter.equals(sup)) continue;
+                                        ac = map.get(sup);
+                                        if (ac == null) {
+                                            ac = new AccountServiceCollection(DomainInfo.getInstance(sup));
+                                            map.put(sup, ac);
+                                            services.add(ac);
+                                        }
+                                        ac.add(acc);
                                     }
-                                    if (filter != null && !filter.equals(sup)) continue;
-                                    ac = map.get(sup);
-                                    if (ac == null) {
-                                        ac = new AccountServiceCollection(DomainInfo.getInstance(sup));
-                                        map.put(sup, ac);
-                                        services.add(ac);
-                                    }
-                                    ac.add(acc);
                                 }
                             }
                         }
-                    }
-
-                    break;
+                        
+                        break;
                 }
-
+                
             }
-
+            
             /* prefetch outside EDT */
-
+            
         }
         if (extend) {
             synchronized (extender) {
                 for (ServicePanelExtender bla : extender) {
                     bla.extendServicePabel(services);
                 }
-
+                
             }
         }
-
+        
         Collections.sort(services);
         return services;
     }
-
+    
     public void mouseClicked(MouseEvent e) {
     }
-
+    
     public void mouseEntered(MouseEvent e) {
     }
-
+    
     public void mouseExited(MouseEvent e) {
     }
-
+    
     public void mousePressed(MouseEvent e) {
     }
-
+    
     public void mouseReleased(MouseEvent e) {
     }
-
+    
 }
