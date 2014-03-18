@@ -24,15 +24,28 @@ import javax.swing.JPanel;
 import jd.config.ConfigContainer;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
+import org.appwork.storage.config.MinTimeWeakReference;
+import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
+
 public class AddonConfig extends ConfigPanel {
 
-    private static final long                   serialVersionUID = 5561326475681668634L;
+    private static final long                                         serialVersionUID = 5561326475681668634L;
 
-    private static HashMap<String, AddonConfig> MAP;
+    private static HashMap<String, MinTimeWeakReference<AddonConfig>> MAP              = new HashMap<String, MinTimeWeakReference<AddonConfig>>();
+    private static MinTimeWeakReferenceCleanup                        cleanup          = new MinTimeWeakReferenceCleanup() {
 
-    private final ConfigContainer               container;
+                                                                                           @Override
+                                                                                           public void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
+                                                                                               synchronized (MAP) {
+                                                                                                   MAP.values().remove(minTimeWeakReference);
+                                                                                               }
+                                                                                           }
 
-    private final boolean                       showGroups;
+                                                                                       };
+
+    private final ConfigContainer                                     container;
+
+    private final boolean                                             showGroups;
 
     private AddonConfig(ConfigContainer container, boolean showGroups) {
         super();
@@ -73,13 +86,12 @@ public class AddonConfig extends ConfigPanel {
      * @return
      */
     public synchronized static AddonConfig getInstance(ConfigContainer container, String ext, boolean showGroups) {
-        if (MAP == null) MAP = new HashMap<String, AddonConfig>();
-
-        AddonConfig p = MAP.get(container + "_" + ext);
-        if (p != null) return p;
-
-        MAP.put(container + "_" + ext, p = new AddonConfig(container, showGroups));
-        return p;
+        String id = container + "_" + ext;
+        MinTimeWeakReference<AddonConfig> weak = MAP.get(id);
+        AddonConfig config = null;
+        if (weak != null && (config = weak.get()) != null) return config;
+        config = new AddonConfig(container, showGroups);
+        MAP.put(container + "_" + ext, new MinTimeWeakReference<AddonConfig>(config, 30 * 1000l, id, cleanup));
+        return config;
     }
-
 }

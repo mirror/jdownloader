@@ -46,44 +46,44 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class LinkCrawler {
 
-    private static final String            DIRECT_HTTP                 = "DirectHTTP";
-    private static final String            HTTP_LINKS                  = "http links";
-    private LazyHostPlugin                 directHTTP                  = null;
-    private LazyHostPlugin                 ftp                         = null;
-    private java.util.List<CrawledLink>    crawledLinks                = new ArrayList<CrawledLink>();
-    private AtomicInteger                  crawledLinksCounter         = new AtomicInteger(0);
-    private java.util.List<CrawledLink>    filteredLinks               = new ArrayList<CrawledLink>();
-    private AtomicInteger                  filteredLinksCounter        = new AtomicInteger(0);
-    private java.util.List<CrawledLink>    brokenLinks                 = new ArrayList<CrawledLink>();
-    private AtomicInteger                  brokenLinksCounter          = new AtomicInteger(0);
-    private java.util.List<CrawledLink>    unhandledLinks              = new ArrayList<CrawledLink>();
-    private AtomicInteger                  unhandledLinksCounter       = new AtomicInteger(0);
-    private AtomicInteger                  processedLinksCounter       = new AtomicInteger(0);
+    private final String                      DIRECT_HTTP                 = "DirectHTTP";
+    private final String                      HTTP_LINKS                  = "http links";
+    private LazyHostPlugin                    directHTTP                  = null;
+    private LazyHostPlugin                    ftp                         = null;
+    private java.util.List<CrawledLink>       crawledLinks                = new ArrayList<CrawledLink>();
+    private AtomicInteger                     crawledLinksCounter         = new AtomicInteger(0);
+    private java.util.List<CrawledLink>       filteredLinks               = new ArrayList<CrawledLink>();
+    private AtomicInteger                     filteredLinksCounter        = new AtomicInteger(0);
+    private java.util.List<CrawledLink>       brokenLinks                 = new ArrayList<CrawledLink>();
+    private AtomicInteger                     brokenLinksCounter          = new AtomicInteger(0);
+    private java.util.List<CrawledLink>       unhandledLinks              = new ArrayList<CrawledLink>();
+    private AtomicInteger                     unhandledLinksCounter       = new AtomicInteger(0);
+    private AtomicInteger                     processedLinksCounter       = new AtomicInteger(0);
 
-    private AtomicInteger                  crawler                     = new AtomicInteger(0);
-    private static AtomicInteger           CRAWLER                     = new AtomicInteger(0);
-    private HashSet<String>                duplicateFinderContainer    = new HashSet<String>();
-    private HashSet<String>                duplicateFinderCrawler      = new HashSet<String>();
-    private HashSet<String>                duplicateFinderFinal        = new HashSet<String>();
-    private HashSet<String>                duplicateFinderDeep         = new HashSet<String>();
-    private LinkCrawlerHandler             handler                     = null;
-    protected static ThreadPoolExecutor    threadPool                  = null;
+    private AtomicInteger                     crawler                     = new AtomicInteger(0);
+    private final static AtomicInteger        CRAWLER                     = new AtomicInteger(0);
+    private HashSet<String>                   duplicateFinderContainer    = new HashSet<String>();
+    private HashSet<String>                   duplicateFinderCrawler      = new HashSet<String>();
+    private HashSet<String>                   duplicateFinderFinal        = new HashSet<String>();
+    private HashSet<String>                   duplicateFinderDeep         = new HashSet<String>();
+    private LinkCrawlerHandler                handler                     = null;
+    protected static final ThreadPoolExecutor threadPool;
 
-    private LinkCrawlerFilter              filter                      = null;
-    private volatile boolean               allowCrawling               = true;
-    private AtomicInteger                  crawlerGeneration           = new AtomicInteger(0);
-    private final LinkCrawler              parentCrawler;
-    private final long                     created;
+    private LinkCrawlerFilter                 filter                      = null;
+    private volatile boolean                  allowCrawling               = true;
+    private AtomicInteger                     crawlerGeneration           = new AtomicInteger(0);
+    private final LinkCrawler                 parentCrawler;
+    private final long                        created;
 
-    public static final String             PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
-    public static final String             PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
-    public static final String             PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
-    public static final UniqueAlltimeID    PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
-    private boolean                        doDuplicateFinderFinalCheck = true;
-    private final List<LazyHostPlugin>     pHosts;
-    private List<LazyCrawlerPlugin>        cHosts;
-    protected final PluginClassLoaderChild classLoader;
-    private boolean                        directHttpEnabled           = true;
+    private final String                      PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
+    private final String                      PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
+    private final String                      PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
+    public static final UniqueAlltimeID       PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
+    private boolean                           doDuplicateFinderFinalCheck = true;
+    private final List<LazyHostPlugin>        pHosts;
+    private List<LazyCrawlerPlugin>           cHosts;
+    protected final PluginClassLoaderChild    classLoader;
+    private boolean                           directHttpEnabled           = true;
 
     public void setDirectHttpEnabled(boolean directHttpEnabled) {
         this.directHttpEnabled = directHttpEnabled;
@@ -99,20 +99,23 @@ public class LinkCrawler {
     /*
      * customized comparator we use to prefer faster decrypter plugins over slower ones
      */
-    private static Comparator<Runnable>   comparator  = new Comparator<Runnable>() {
-                                                          public int compare(Runnable o1, Runnable o2) {
-                                                              if (o1 == o2) return 0;
-                                                              long l1 = ((LinkCrawlerRunnable) o1).getAverageRuntime();
-                                                              long l2 = ((LinkCrawlerRunnable) o2).getAverageRuntime();
-                                                              return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
-                                                          }
-                                                      };
 
     static {
-        int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
-        int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
-
-        threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, comparator), new ThreadFactory() {
+        final int maxThreads = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getMaxThreads(), 1);
+        final int keepAlive = Math.max(JsonConfig.create(LinkCrawlerConfig.class).getThreadKeepAlive(), 100);
+        /**
+         * PriorityBlockingQueue leaks last Item for some java versions
+         * 
+         * http://bugs.java.com/bugdatabase/view_bug.do?bug_id=7161229
+         */
+        threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
+            public int compare(Runnable o1, Runnable o2) {
+                if (o1 == o2) return 0;
+                long l1 = ((LinkCrawlerRunnable) o1).getAverageRuntime();
+                long l2 = ((LinkCrawlerRunnable) o2).getAverageRuntime();
+                return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
+            }
+        }), new ThreadFactory() {
 
             public Thread newThread(Runnable r) {
                 /*
@@ -223,7 +226,8 @@ public class LinkCrawler {
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
      * 
-     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this child
+     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
+     * child
      * 
      * @param thisGeneration
      * @return
@@ -318,8 +322,8 @@ public class LinkCrawler {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             if (insideCrawlerPlugin()) {
                 /*
-                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
-                 * results
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
                  */
                 distribute(possibleCryptedLinks);
                 return;
@@ -550,8 +554,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -596,8 +600,8 @@ public class LinkCrawler {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideCrawlerPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -676,7 +680,8 @@ public class LinkCrawler {
                     }
                     if (unnknownHandler != null) {
                         /*
-                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
+                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable
+                         * by a Plugin
                          */
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);

@@ -442,7 +442,11 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     public void setHidden() {
         if (configPanel != null) {
             configPanel.setHidden();
+            configPanel = null;
         }
+        if (card != null) card.removeAll();
+        currentItem = null;
+
     }
 
     public void setShown() {
