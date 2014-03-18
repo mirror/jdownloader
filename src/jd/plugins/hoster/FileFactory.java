@@ -72,7 +72,7 @@ public class FileFactory extends PluginForHost {
     private final String               NO_SLOT                      = ">All free download slots";
     private final String               NO_SLOT_USERTEXT             = "No free slots available";
     private final String               NOT_AVAILABLE                = "class=\"box error\"|have been deleted";
-    private final String               SERVERFAIL                   = "(<p>Your download slot has expired\\.|Unfortunately the file you have requested cannot be downloaded at this time|temporarily unavailable)";
+    private final String               SERVERFAIL                   = "(<p>Your download slot has expired\\.|temporarily unavailable)";
     private final String               LOGIN_ERROR                  = "The email or password you have entered is incorrect";
     private final String               SERVER_DOWN                  = "server hosting the file you are requesting is currently down";
     private final String               CAPTCHALIMIT                 = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
@@ -151,7 +151,13 @@ public class FileFactory extends PluginForHost {
             if (br.containsHTML(NO_SLOT) || br.getURL().contains("code=257")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NO_SLOT_USERTEXT, 10 * 60 * 1000l); }
             if (br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0) != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(br.getRegex("Please wait (\\d+) minutes to download more files, or").getMatch(0)) * 60 * 1001l); }
         }
-        if (br.containsHTML(SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+        if (br.getURL().contains("code=274")) {
+            // <h2>File Unavailable</h2>
+            // <p>
+            // This file cannot be downloaded at this time. Please let us know about this issue by using the contact link below. </p>
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file cannot be downloaded at this time.", 20 * 60 * 1000l);
+        }
+        if (br.containsHTML(SERVERFAIL)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
         if (br.containsHTML(NOT_AVAILABLE)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML(SERVER_DOWN)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
         if (br.containsHTML(DBCONNECTIONFAILED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l); }
