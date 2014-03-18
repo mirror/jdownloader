@@ -867,7 +867,7 @@ public class YoutubeHelper {
 
     }
 
-    protected void handleContentWarning(final Browser br) throws Exception {
+    protected void handleContentWarning(final Browser ibr) throws Exception {
         // not necessarily age related but violence/disturbing content?
         // https://www.youtube.com/watch?v=Wx9GxXYKx_8 gets you
         // <script>window.location = "http:\/\/www.youtube.com\/verify_controversy?next_url=\/watch%3Fv%3DWx9GxXYKx_8"</script>
@@ -882,10 +882,10 @@ public class YoutubeHelper {
         // or <a href="/">Cancel</a>
         // </p>
         // </form>
-        String vc = this.br.getRegex("\"([^\"]+verify_controversy\\?next_url[^\"]+)\"").getMatch(0);
+        String vc = ibr.getRegex("\"([^\"]+verify_controversy\\?next_url[^\"]+)\"").getMatch(0);
         if (vc != null) {
             vc = vc.replaceAll("\\\\/", "/");
-            this.br.getPage(vc);
+            ibr.getPage(vc);
         }
 
         // nsfw testlink https://www.youtube.com/watch?v=p7S_u5TzI-I
@@ -912,17 +912,17 @@ public class YoutubeHelper {
         // activating YouTube's <a href="//support.google.com/youtube/bin/answer.py?answer=174084&amp;hl=en-GB">Safety Mode</a>.</p>
         // </div>
 
-        final Form forms[] = br.getForms();
+        final Form forms[] = ibr.getForms();
         if (forms != null) {
             for (final Form form : forms) {
                 if (form.getAction() != null && form.getAction().contains("verify_age")) {
                     this.logger.info("Verify Age");
-                    br.submitForm(form);
+                    ibr.submitForm(form);
                     break;
                 }
                 if (form.getAction() != null && form.getAction().contains("verify_controversy")) {
                     this.logger.info("Verify Controversy");
-                    br.submitForm(form);
+                    ibr.submitForm(form);
                     break;
                 }
             }
@@ -968,6 +968,8 @@ public class YoutubeHelper {
                 } else {
                     this.br = cw.cloneBrowser();
                 }
+            } else {
+                this.br = cw.cloneBrowser();
             }
         }
         if (unavailableReason != null && !getVideoInfoWorkaroundUsed) {
