@@ -60,6 +60,7 @@ public class RealDebridCom extends PluginForHost {
     private final String                                   mName                 = "real-debrid.com";
     private final String                                   mProt                 = "https://";
     private int                                            maxChunks             = 0;
+    private boolean                                        resumes               = true;
     private static Object                                  LOCK                  = new Object();
     private static AtomicInteger                           RUNNING_DOWNLOADS     = new AtomicInteger(0);
     private static AtomicInteger                           MAX_DOWNLOADS         = new AtomicInteger(Integer.MAX_VALUE);
@@ -168,7 +169,7 @@ public class RealDebridCom extends PluginForHost {
         for (int i = 0; i <= repeat; i++) {
             final Browser br2 = br.cloneBrowser();
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, true, maxChunks);
+                dl = jd.plugins.BrowserAdapter.openDownload(br2, link, dllink, resumes, maxChunks);
                 if (dl.getConnection().isContentDisposition()) {
                     /* content disposition, lets download it */
                     RUNNING_DOWNLOADS.incrementAndGet();
@@ -285,6 +286,8 @@ public class RealDebridCom extends PluginForHost {
         if (chunks != null) {
             if ("-1".equals(chunks))
                 maxChunks = 0;
+            else if ("1".equals(chunks))
+                resumes = false;
             else
                 maxChunks = -Integer.parseInt(chunks);
         }
