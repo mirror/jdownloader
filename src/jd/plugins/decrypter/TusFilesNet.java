@@ -69,7 +69,7 @@ public class TusFilesNet extends PluginForDecrypt {
                     // Not available in old 0.9.581 Stable
                 }
                 if (i > 1) {
-                    br.getPage("https?://www.tusfiles.net/go/" + folderid + "/" + i + "/");
+                    br.getPage("/go/" + folderid + "/" + i + "/");
                     // Site bug
                     if (br.containsHTML(">No such folder<")) {
                         logger.info("Got all links, stopping...");

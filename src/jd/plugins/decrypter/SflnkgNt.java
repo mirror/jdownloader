@@ -219,7 +219,7 @@ public class SflnkgNt extends PluginForDecrypt {
             Form protectedForm = br.getFormbyProperty("id", "protected-form");
             if (protectedForm != null) {
                 boolean password = protectedForm.getRegex("type=\"password\" name=\"link-password\"").matches(); // password?
-                String captcha = br.getRegex("<div id=\"captcha\\-wrapper\">(.*?)</div></div></div>").getMatch(0); // captcha?
+                String captcha = br.getRegex("<div id=\"captcha\\-wrapper\">(.*?)</div></div>").getMatch(0); // captcha?
                 if (captcha != null) prepareCaptchaAdress(captcha, captchaRegex);
 
                 for (int i = 0; i <= 5; i++) {
