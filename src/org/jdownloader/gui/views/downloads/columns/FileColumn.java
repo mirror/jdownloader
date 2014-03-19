@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.columns;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.Comparator;
 import java.util.logging.Level;
 
 import javax.swing.BorderFactory;
@@ -20,6 +21,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.NaturalOrderComparator;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -79,9 +81,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
         CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.getEventSender().addListener(this, true);
         this.setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
             
-            public int compare(long x, long y) {
-                return (x < y) ? -1 : ((x == y) ? 0 : 1);
-            }
+            private Comparator<String> comp = new NaturalOrderComparator();
             
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
@@ -94,13 +94,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                     o2s = "";
                 }
                 if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
-                    int ret = compare(o1s.length(), o2s.length());
-                    if (ret == 0) ret = o1s.compareToIgnoreCase(o2s);
-                    return ret;
+                    return comp.compare(o1s, o2s);
                 } else {
-                    int ret = compare(o2s.length(), o1s.length());
-                    if (ret == 0) ret = o2s.compareToIgnoreCase(o1s);
-                    return ret;
+                    return comp.compare(o2s, o1s);
                 }
             }
             
