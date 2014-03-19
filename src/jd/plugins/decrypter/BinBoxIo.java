@@ -38,7 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "binbox.io" }, urls = { "http://(www\\.)?binbox\\.io/\\w+#\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "binbox.io" }, urls = { "https?://(www\\.)?binbox\\.io/\\w+#\\w+" }, flags = { 0 })
 public class BinBoxIo extends PluginForDecrypt {
 
     private static String sjcl;
@@ -49,7 +49,7 @@ public class BinBoxIo extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("https://", "http://");
         br.getPage(parameter);
         if (br.containsHTML(">Page Not Found<")) {
             logger.info("Link offline: " + parameter);

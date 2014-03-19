@@ -64,6 +64,7 @@ public class LnkPrtctrCm extends PluginForDecrypt {
                 link = br.getRegex("<form action=\"(.*?)\"").getMatch(0);
                 if (link == null) link = br.getRegex("window\\.location = \"(.*?)\"").getMatch(0);
             }
+            if (link == null) link = br.getRegex("METHOD=\"LINK\" ACTION=\"(http[^<>\"]*?)\"").getMatch(0);
             if (link == null || link.length() < 10) {
                 Form form = br.getForm(0);
                 if (form != null) {

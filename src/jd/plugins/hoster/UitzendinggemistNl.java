@@ -159,7 +159,10 @@ public class UitzendinggemistNl extends PluginForHost {
          */
         getfinalLink(episodeID);
 
-        if (finalURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (finalURL == null) {
+            NEEDSSILVERLIGHT = true;
+            return AvailableStatus.TRUE;
+        }
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {

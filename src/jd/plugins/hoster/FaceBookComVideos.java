@@ -133,6 +133,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (DLLINK == null) DLLINK = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = DLLINK.replace("\\", "");
+            DLLINK = Encoding.htmlDecode(DLLINK);
 
             // Try to change it to HD
             final Regex urlSplit = new Regex(DLLINK, "(https?://[a-z0-9\\-\\.]+/hphotos\\-ak\\-[a-z0-9]+)/(q\\d+/)?s\\d+x\\d+(/.+)");

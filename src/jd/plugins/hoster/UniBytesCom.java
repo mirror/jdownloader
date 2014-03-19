@@ -84,12 +84,12 @@ public class UniBytesCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
         }
-        String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
+        String filename = br.getRegex("Download file:</small><br/>([^<>\"]*?)<small>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
             if (filesize == null) {
-                filesize = br.getRegex("\\(([\\d\\.]+ ?(KB|MB|GB))\\)").getMatch(0);
+                filesize = br.getRegex("\\(([\\d\\.,]+ ?(KB|MB|GB|bytes))\\)").getMatch(0);
             }
         }
         if (filename == null) {
@@ -102,7 +102,10 @@ public class UniBytesCom extends PluginForHost {
         }
         // Set final name here because server sometimes sends bad filenames
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            filesize = filesize.replace(",", "").replace("bytes", "b");
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

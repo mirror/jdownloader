@@ -118,7 +118,7 @@ public class FileparadoxIn extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 1; // tested
+            chunks = 0; // tested
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";

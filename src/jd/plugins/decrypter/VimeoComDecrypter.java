@@ -57,7 +57,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String LINKTYPE_USER = "http://vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
+    private static final String LINKTYPE_USER = "https?://(www\\.)?vimeo\\.com/[A-Za-z0-9\\-_]+/videos";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {

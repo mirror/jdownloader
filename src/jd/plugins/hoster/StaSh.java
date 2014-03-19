@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "http://(www\\.)?sta\\.sh/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sta.sh" }, urls = { "http://(www\\.)?stadecrypted\\.sh/(zip/)?[a-z0-9]+" }, flags = { 0 })
 public class StaSh extends PluginForHost {
 
     public StaSh(PluginWrapper wrapper) {
@@ -53,62 +53,73 @@ public class StaSh extends PluginForHost {
     private final String        MATURECONTENTFILTER  = ">Mature Content Filter<";
 
     private final String        INVALIDLINKS         = "http://(www\\.)?sta\\.sh/(muro|writer|login)";
+    private final String        TYPE_ZIP             = "http://(www\\.)?sta\\.sh/zip/[a-z0-9]+";
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("stadecrypted.sh/", "sta.sh/"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final IllegalStateException e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.containsHTML("The page you wanted to visit doesn't exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final boolean loggedIn = false;
-        // Motionbooks are not supported (yet)
-        if (br.containsHTML(",target: \\'motionbooks/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
-        if (filename == null) filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-        filename = Encoding.htmlDecode(filename.trim());
+        String filename = null;
         String ext = null;
         String filesize = null;
-        if (br.containsHTML(">Download File<")) {
-            final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
-            ext = fInfo.getMatch(0);
-            filesize = fInfo.getMatch(1);
-            DLLINK = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
-            if (ext == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = Encoding.htmlDecode(DLLINK.trim());
-        } else if (br.containsHTML(TYPE_HTML)) {
-            HTMLALLOWED = true;
-            filename = findServerFilename(filename);
-            ext = "html";
+        br.setFollowRedirects(true);
+        if (isZip(link)) {
+            DLLINK = link.getDownloadURL();
+            ext = "zip";
         } else {
-            filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("<dt>Image Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
-            // Maybe its a video
-            if (filesize == null) filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
-
-            if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
-                link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
-                link.setName(filename);
-                if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
-                return AvailableStatus.TRUE;
+            try {
+                br.getPage(link.getDownloadURL());
+            } catch (final IllegalStateException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
-            ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
-            if (ext == null) ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
-            filename = findServerFilename(filename);
-            if (ext == null || ext.length() > 5) {
-                final String dllink = getCrippledDllink();
-                if (dllink != null) ext = dllink.substring(dllink.lastIndexOf(".") + 1);
-            }
-            /* Just download the html */
-            if (ext == null) {
+            if (br.containsHTML("/error\\-title\\-oops\\.png\\)") || br.containsHTML("The page you wanted to visit doesn't exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final boolean loggedIn = false;
+            // Motionbooks are not supported (yet)
+            if (br.containsHTML(",target: \\'motionbooks/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
+            if (filename == null) filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            filename = Encoding.htmlDecode(filename.trim());
+            if (br.containsHTML(">Download File<")) {
+                final Regex fInfo = br.getRegex("<strong>Download File</strong><br/>[\t\n\r ]+<small>([A-Za-z0-9]{1,5}), ([^<>\"]*?)</small>");
+                ext = fInfo.getMatch(0);
+                filesize = fInfo.getMatch(1);
+                DLLINK = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
+                if (ext == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                DLLINK = Encoding.htmlDecode(DLLINK.trim());
+            } else if (br.containsHTML(TYPE_HTML)) {
                 HTMLALLOWED = true;
+                filename = findServerFilename(filename);
                 ext = "html";
-                DLLINK = br.getURL();
+            } else {
+                filesize = br.getRegex("<label>Image Size:</label>([^<>\"]*?)<br>").getMatch(0);
+                if (filesize == null) filesize = br.getRegex("<dt>Image Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
+                // Maybe its a video
+                if (filesize == null) filesize = br.getRegex("<label>File Size:</label>([^<>\"]*?)<br/>").getMatch(0);
+
+                if (br.containsHTML(MATURECONTENTFILTER) && !loggedIn) {
+                    link.getLinkStatus().setStatusText("Mature content can only be downloaded via account");
+                    link.setName(filename);
+                    if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+                    return AvailableStatus.TRUE;
+                }
+
+                ext = br.getRegex("<strong>Download Image</strong><br><small>([A-Za-z0-9]{1,5}),").getMatch(0);
+                if (ext == null) ext = new Regex(filename, "\\.([A-Za-z0-9]{1,5})$").getMatch(0);
+                filename = findServerFilename(filename);
+                if (ext == null || ext.length() > 5) {
+                    final String dllink = getCrippledDllink();
+                    if (dllink != null) ext = dllink.substring(dllink.lastIndexOf(".") + 1);
+                }
+                /* Just download the html */
+                if (ext == null) {
+                    HTMLALLOWED = true;
+                    ext = "html";
+                    DLLINK = br.getURL();
+                }
             }
         }
         if (filesize != null) {
@@ -122,6 +133,7 @@ public class StaSh extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     link.setDownloadSize(con.getLongContentLength());
+                    if (isZip(link)) filename = getFileNameFromHeader(con);
                 }
             } finally {
                 try {
@@ -199,13 +211,19 @@ public class StaSh extends PluginForHost {
         if (DLLINK == null) {
             getDllink();
         }
+        boolean resume = true;
+        if (isZip(downloadLink)) resume = false;
         // Disable chunks as we only download pictures or small files
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean isZip(final DownloadLink dl) {
+        return dl.getDownloadURL().matches(TYPE_ZIP);
     }
 
     @Override
