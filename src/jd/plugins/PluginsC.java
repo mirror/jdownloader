@@ -201,12 +201,13 @@ public abstract class PluginsC {
         boolean showException = true;
         try {
             /* extract filename from url */
-            String file = new Regex(source.getURL(), "file://(.+)").getMatch(0);
-            file = Encoding.urlDecode(file, true);
+            String url = Encoding.urlDecode(source.getURL(), true);
+            String file = new Regex(url, "file://(.+)").getMatch(0);
             if (file != null && new File(file).exists()) {
                 CrawledLink origin = source.getSourceLink();
                 if (origin != null) {
-                    String originFile = Encoding.urlDecode(new Regex(origin.getURL(), "file://(.+)").getMatch(0), true);
+                    url = Encoding.urlDecode(origin.getURL(), true);
+                    String originFile = new Regex(url, "file://(.+)").getMatch(0);
                     if (originFile != null && !file.equalsIgnoreCase(originFile)) {
                         logger.fine("Do not ask - just delete: " + origin.getURL());
                         askFileDeletion = false;
