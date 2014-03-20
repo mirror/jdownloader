@@ -220,4 +220,10 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     void setLatestIfFileExistsAction(IfFileExistsAction action);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("Set the timeout for the 'Ask for archive password' dialog")
+    @DefaultIntValue(10 * 60 * 1000)
+    int getAskForPasswordDialogTimeoutInMS();
+
+    void setAskForPasswordDialogTimeoutInMS(int ms);
 }

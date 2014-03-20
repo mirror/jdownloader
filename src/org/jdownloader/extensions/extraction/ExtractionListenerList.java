@@ -71,7 +71,7 @@ public class ExtractionListenerList implements ExtractionListener {
         public ExtractPasswordDialog(int flag, String title, String message, String defaultMessage, ImageIcon icon, String okOption, String cancelOption, ExtractionController controller) {
             super(flag, title, message, defaultMessage, icon, okOption, cancelOption);
             this.controller = controller;
-            setTimeout(10 * 60 * 1000);
+            setTimeout(Math.max(1000, CFG_EXTRACTION.CFG.getAskForPasswordDialogTimeoutInMS()));
         }
 
         @Override
