@@ -263,131 +263,137 @@ public class UploadCCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // how many forms deep do you want to try.
-            int repeat = 2;
-            for (int i = 0; i <= repeat; i++) {
-                dlForm.remove(null);
-                final long timeBefore = System.currentTimeMillis();
-                boolean password = false;
-                boolean skipWaittime = false;
-                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                    password = true;
-                    logger.info("The downloadlink seems to be password protected.");
-                }
-                // md5 can be on the subsequent pages
-                if (downloadLink.getMD5Hash() == null) {
-                    String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
-                }
-                /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
-                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                    /** Captcha method by ManiacMansion */
-                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
-                    if (letters == null || letters.length == 0) {
-                        logger.warning("plaintext captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                    for (String[] letter : letters) {
-                        capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
-                    }
-                    final StringBuilder code = new StringBuilder();
-                    for (String value : capMap.values()) {
-                        code.append(value);
-                    }
-                    dlForm.put("code", code.toString());
-                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-                } else if (correctedBR.contains("/captchas/")) {
-                    logger.info("Detected captcha method \"Standard captcha\" for this host");
-                    final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-                    String captchaurl = null;
-                    if (sitelinks == null || sitelinks.length == 0) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (String link : sitelinks) {
-                        if (link.contains("/captchas/")) {
-                            captchaurl = link;
-                            break;
-                        }
-                    }
-                    if (captchaurl == null) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                    dlForm.put("code", code);
-                    logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                    logger.info("Detected captcha method \"Re Captcha\" for this host");
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.findID();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, downloadLink);
-                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
-                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    /** wait time is often skippable for reCaptcha handling */
-                    skipWaittime = true;
-                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
-                    logger.info("Detected captcha method \"solvemedia\" for this host");
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                        throw e;
-                    }
-                    final String code = getCaptchaCode(cf, downloadLink);
-                    final String chid = sm.getChallenge(code);
-                    dlForm.put("adcopy_challenge", chid);
-                    dlForm.put("adcopy_response", "manual_challenge");
-                } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-                    logger.info("Detected captcha method \"keycaptca\"");
-                    String result = null;
-                    final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    try {
-                        final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                        result = kc.showDialog(downloadLink.getDownloadURL());
-                    } catch (final Throwable e) {
-                        result = null;
-                    }
-                    if (result == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    if ("CANCEL".equals(result)) throw new PluginException(LinkStatus.ERROR_FATAL);
-                    dlForm.put("capcode", result);
-                    /** wait time is often skippable for reCaptcha handling */
-                    skipWaittime = false;
-                }
-                /* Captcha END */
-                if (password) passCode = handlePassword(dlForm, downloadLink);
-                if (!skipWaittime) waitTime(timeBefore, downloadLink);
-                sendForm(dlForm);
-                logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true);
+            Form dlForm = null;
+            String dl = br.getRegex("(https?://[^/]+" + NICE_HOST + "/download-" + fuid + "[^\"\\']+)").getMatch(0);
+            if (dl != null) {
+                getPage(dl);
                 dllink = getDllink();
-                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
+            } else {
+                dlForm = br.getFormbyProperty("name", "F1");
+                if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // how many forms deep do you want to try.
+                int repeat = 2;
+                for (int i = 0; i <= repeat; i++) {
+                    final long timeBefore = System.currentTimeMillis();
+                    boolean password = false;
+                    boolean skipWaittime = false;
+                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                        password = true;
+                        logger.info("The downloadlink seems to be password protected.");
                     }
-                    continue;
-                } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
+                    // md5 can be on the subsequent pages
+                    if (downloadLink.getMD5Hash() == null) {
+                        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+                        if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                     }
-                    break;
+                    /* Captcha START */
+                    if (correctedBR.contains(";background:#ccc;text-align")) {
+                        logger.info("Detected captcha method \"plaintext captchas\" for this host");
+                        /** Captcha method by ManiacMansion */
+                        final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                        if (letters == null || letters.length == 0) {
+                            logger.warning("plaintext captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                        for (String[] letter : letters) {
+                            capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+                        }
+                        final StringBuilder code = new StringBuilder();
+                        for (String value : capMap.values()) {
+                            code.append(value);
+                        }
+                        dlForm.put("code", code.toString());
+                        logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                    } else if (correctedBR.contains("/captchas/")) {
+                        logger.info("Detected captcha method \"Standard captcha\" for this host");
+                        final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                        String captchaurl = null;
+                        if (sitelinks == null || sitelinks.length == 0) {
+                            logger.warning("Standard captcha captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        for (String link : sitelinks) {
+                            if (link.contains("/captchas/")) {
+                                captchaurl = link;
+                                break;
+                            }
+                        }
+                        if (captchaurl == null) {
+                            logger.warning("Standard captcha captchahandling broken!");
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                        dlForm.put("code", code);
+                        logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
+                    } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                        logger.info("Detected captcha method \"Re Captcha\" for this host");
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.findID();
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String c = getCaptchaCode(cf, downloadLink);
+                        dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                        dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
+                        logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+                        /** wait time is often skippable for reCaptcha handling */
+                        skipWaittime = true;
+                    } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        logger.info("Detected captcha method \"solvemedia\" for this host");
+                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                        File cf = null;
+                        try {
+                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        } catch (final Exception e) {
+                            if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                            throw e;
+                        }
+                        final String code = getCaptchaCode(cf, downloadLink);
+                        final String chid = sm.getChallenge(code);
+                        dlForm.put("adcopy_challenge", chid);
+                        dlForm.put("adcopy_response", "manual_challenge");
+                    } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
+                        logger.info("Detected captcha method \"keycaptca\"");
+                        String result = null;
+                        final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        try {
+                            final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                            result = kc.showDialog(downloadLink.getDownloadURL());
+                        } catch (final Throwable e) {
+                            result = null;
+                        }
+                        if (result == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        if ("CANCEL".equals(result)) throw new PluginException(LinkStatus.ERROR_FATAL);
+                        dlForm.put("capcode", result);
+                        /** wait time is often skippable for reCaptcha handling */
+                        skipWaittime = false;
+                    }
+                    /* Captcha END */
+                    if (password) passCode = handlePassword(dlForm, downloadLink);
+                    if (!skipWaittime) waitTime(timeBefore, downloadLink);
+                    sendForm(dlForm);
+                    logger.info("Submitted DLForm");
+                    checkErrors(downloadLink, true);
+                    dllink = getDllink();
+                    if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                        logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                        dlForm = br.getFormbyProperty("name", "F1");
+                        try {
+                            invalidateLastChallengeResponse();
+                        } catch (final Throwable e) {
+                        }
+                        continue;
+                    } else {
+                        try {
+                            validateLastChallengeResponse();
+                        } catch (final Throwable e) {
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -515,6 +521,9 @@ public class UploadCCom extends PluginForHost {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
                     finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                    if (finallink == null) {
+                        finallink = new Regex(decoded, "document\\.location\\.href=('|\")(https?://[^/]+" + NICE_HOST + ".*?)\\1").getMatch(1);
+                    }
                 }
             }
         }
