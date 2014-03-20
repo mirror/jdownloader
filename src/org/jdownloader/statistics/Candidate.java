@@ -42,6 +42,7 @@ public class Candidate extends AbstractJsonData implements Storable {
     private long   revision;
     private String type = FREE;
     private String id;
+    private String clazz;
 
     public Candidate(/* storable */) {
 
@@ -57,7 +58,17 @@ public class Candidate extends AbstractJsonData implements Storable {
     public static Candidate create(CachedAccount account) {
         Candidate ret = new Candidate();
         ret.plugin = account.getAccount() == null ? account.getHost() : account.getPlugin().getHost();
+
         ret.revision = account.getPlugin().getVersion();
+
+        try {
+            ret.clazz = account.getPlugin().getClass().getName();
+            if (ret.clazz.startsWith("jd.plugins.hoster.")) {
+                ret.clazz = ret.clazz.substring("jd.plugins.hoster.".length());
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         switch (account.getType()) {
         case MULTI:
 
@@ -79,6 +90,14 @@ public class Candidate extends AbstractJsonData implements Storable {
         }
         ret.id = ret.plugin + "_" + ret.revision + "_" + ret.type;
         return ret;
+    }
+
+    public String getClazz() {
+        return clazz;
+    }
+
+    public void setClazz(String clazz) {
+        this.clazz = clazz;
     }
 
     public String toID() {

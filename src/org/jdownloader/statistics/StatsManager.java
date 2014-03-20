@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import jd.controlling.downloadcontroller.AccountCache;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
@@ -458,6 +459,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setCanceled(aborted);
             dl.setHost(link.getHost());
             dl.setCandidate(Candidate.create(account));
+
             dl.setCaptchaRuntime(captcha);
             dl.setFilesize(Math.max(0, link.getView().getBytesTotal()));
             dl.setPluginRuntime(pluginRuntime);
@@ -469,11 +471,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             dl.setOs(CrossSystem.getOSFamily().name());
             dl.setUtcOffset(TimeZone.getDefault().getOffset(System.currentTimeMillis()));
 
-            String errorID = result.getErrorID();
-            if (errorID != null) {
-                errorID = "IDV" + STACKTRACE_VERSION + ":\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + account.getPlugin().getClass().getName() + "\r\n" + errorID;
+            String stacktrace = result.getErrorID();
+            if (stacktrace != null) {
+                stacktrace = "IDV" + STACKTRACE_VERSION + ":\r\n" + dl.getCandidate().getPlugin() + "-" + dl.getCandidate().getType() + "\r\n" + account.getPlugin().getClass().getName() + "\r\n" + cleanErrorID(stacktrace);
             }
-            dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(errorID));
+
+            dl.setErrorID(result.getErrorID() == null ? null : Hash.getMD5(stacktrace));
             dl.setTimestamp(System.currentTimeMillis());
             dl.setSessionStart(sessionStart);
             // this linkid is only unique for you. it is not globaly unique, thus it cannot be mapped to the actual url or anything like
@@ -495,7 +498,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 if (error == null) {
 
                     ErrorDetails error2 = errors.putIfAbsent(dl.getErrorID(), error = new ErrorDetails(dl.getErrorID()));
-                    error.setStacktrace(errorID);
+                    error.setStacktrace(stacktrace);
 
                     error.setBuildTime(dl.getBuildTime());
 
@@ -504,6 +507,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     }
                 }
             }
+            logger.info("Tracker Package: \r\n" + JSonStorage.serializeToJson(dl));
+            logger.info("Error Details: \r\n" + JSonStorage.serializeToJson(errors.get(dl.getErrorID())));
+
+            if (result.getLastPluginHost() != null && StringUtils.equals(dl.getCandidate().getPlugin(), result.getLastPluginHost())) {
+                // the error did not happen in the plugin
+                logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
+
+            }
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
 
             log(dl);
@@ -511,6 +522,15 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             logger.log(e);
         }
 
+    }
+
+    private static String cleanErrorID(String errorID) {
+        if (errorID == null) return null;
+        if (errorID.contains("java.lang.NumberFormatException")) {
+            errorID = Pattern.compile("java.lang.NumberFormatException: For input string: \".*?\"\\s*[\r\n]{1,}", Pattern.DOTALL).matcher(errorID).replaceAll("java.lang.NumberFormatException: For input string: \"@See Log\"\r\n");
+
+        }
+        return errorID;
     }
 
     public static enum ActionID {
