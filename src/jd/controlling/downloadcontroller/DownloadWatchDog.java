@@ -142,16 +142,16 @@ import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.utils.JDFileUtils;
 
 public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, FileCreationListener {
-
+    
     private static class ReconnectThread extends Thread {
-
+        
         private AtomicBoolean                        finished = new AtomicBoolean(false);
         private volatile Reconnecter.ReconnectResult result   = null;
-
+        
         public Reconnecter.ReconnectResult waitForResult() throws InterruptedException {
             return waitForResult(-1);
         }
-
+        
         public Reconnecter.ReconnectResult waitForResult(long timeout) throws InterruptedException {
             synchronized (finished) {
                 if (finished.get() == false) {
@@ -165,7 +165,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
             return result;
         }
-
+        
         @Override
         public void run() {
             try {
@@ -180,54 +180,54 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
     }
-
+    
     public static final State                              IDLE_STATE            = new State("IDLE");
     public static final State                              RUNNING_STATE         = new State("RUNNING");
-
+    
     public static final State                              PAUSE_STATE           = new State("PAUSE");
     public static final State                              STOPPING_STATE        = new State("STOPPING");
     public static final State                              STOPPED_STATE         = new State("STOPPED_STATE");
     static {
         IDLE_STATE.addChildren(RUNNING_STATE);
-
+        
         RUNNING_STATE.addChildren(STOPPING_STATE, PAUSE_STATE);
         PAUSE_STATE.addChildren(RUNNING_STATE, STOPPING_STATE);
         STOPPING_STATE.addChildren(STOPPED_STATE);
     }
-
+    
     protected final NullsafeAtomicReference<Thread>        currentWatchDogThread = new NullsafeAtomicReference<Thread>(null);
     protected final NullsafeAtomicReference<Thread>        reconnectThread       = new NullsafeAtomicReference<Thread>(null);
     protected final NullsafeAtomicReference<Thread>        tempWatchDogJobThread = new NullsafeAtomicReference<Thread>(null);
     protected NullsafeAtomicReference<DownloadWatchDogJob> currentWatchDogJob    = new NullsafeAtomicReference<DownloadWatchDogJob>(null);
     private final LinkedBlockingDeque<DownloadWatchDogJob> watchDogJobs          = new LinkedBlockingDeque<DownloadWatchDogJob>();
-
+    
     private final StateMachine                             stateMachine;
     private final DownloadSpeedManager                     dsm;
-
+    
     private final GeneralSettings                          config;
-
+    
     private final static DownloadWatchDog                  INSTANCE              = new DownloadWatchDog();
-
+    
     private final LogSource                                logger;
     private final AtomicLong                               WATCHDOGWAITLOOP      = new AtomicLong(0);
     private final AtomicBoolean                            autoReconnectEnabled  = new AtomicBoolean(false);
     private final DownloadWatchdogEventSender              eventSender;
-
+    
     public DownloadWatchdogEventSender getEventSender() {
         return eventSender;
     }
-
+    
     public static DownloadWatchDog getInstance() {
         return INSTANCE;
     }
-
+    
     public void wakeUpWatchDog(boolean notify) {
         synchronized (WATCHDOGWAITLOOP) {
             WATCHDOGWAITLOOP.incrementAndGet();
             if (notify) WATCHDOGWAITLOOP.notifyAll();
         }
     }
-
+    
     private DownloadWatchDog() {
         logger = LogController.CL();
         config = JsonConfig.create(GeneralSettings.class);
@@ -237,55 +237,55 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         this.dsm = new DownloadSpeedManager();
         /* speed limit */
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
-
+            
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
                 dsm.setLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
             }
-
+            
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
             }
         }, false);
         this.dsm.setLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
         /* speed limiter enabled? */
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
+            
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
-
+            
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 dsm.setLimit(config.isDownloadSpeedLimitEnabled() ? config.getDownloadSpeedLimit() : 0);
             }
         }, false);
         /* changes in max simultan downloads */
         org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
-
+            
             @Override
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
                 enqueueJob(new DownloadWatchDogJob() {
-
+                    
                     @Override
                     public void execute(DownloadSession currentSession) {
                         currentSession.refreshCandidates();
                     }
-
+                    
                     @Override
                     public void interrupt() {
                     }
                 });
             }
-
+            
             @Override
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
             }
         }, false);
         /* changes in max simultan downloads per host */
         org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getEventSender().addListener(new GenericConfigEventListener<Integer>() {
-
+            
             @Override
             public void onConfigValueModified(KeyHandler<Integer> keyHandler, final Integer newValue) {
                 if (org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled()) {
                     enqueueJob(new DownloadWatchDogJob() {
-
+                        
                         @Override
                         public void execute(DownloadSession currentSession) {
                             if (newValue != null && org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled()) {
@@ -295,25 +295,25 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                             currentSession.refreshCandidates();
                         }
-
+                        
                         @Override
                         public void interrupt() {
                         }
                     });
                 }
             }
-
+            
             @Override
             public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
             }
         }, false);
         /* max simultan downloads per host enabled? */
         org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
+            
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, final Boolean newValue) {
                 enqueueJob(new DownloadWatchDogJob() {
-
+                    
                     @Override
                     public void execute(DownloadSession currentSession) {
                         if (newValue != null && Boolean.TRUE.equals(newValue)) {
@@ -323,13 +323,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         currentSession.refreshCandidates();
                     }
-
+                    
                     @Override
                     public void interrupt() {
                     }
                 });
             }
-
+            
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
@@ -339,12 +339,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         /* auto reconnect enabled? */
         CFG_RECONNECT.AUTO_RECONNECT_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
+            
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 autoReconnectEnabled.set(Boolean.TRUE.equals(newValue));
             }
-
+            
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
@@ -352,37 +352,37 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         autoReconnectEnabled.set(CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
         /* use account enabled? */
         CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
+            
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, final Boolean newValue) {
                 enqueueJob(new DownloadWatchDogJob() {
-
+                    
                     @Override
                     public void execute(DownloadSession currentSession) {
                         currentSession.setUseAccountsEnabled(Boolean.TRUE.equals(newValue));
                     }
-
+                    
                     @Override
                     public void interrupt() {
                     }
                 });
             }
-
+            
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         }, false);
         initSession.setUseAccountsEnabled(CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
         Reconnecter.getInstance().getEventSender().addListener(new ReconnecterListener() {
-
+            
             @Override
             public void onBeforeReconnect(ReconnecterEvent event) {
             }
-
+            
             @Override
             public void onAfterReconnect(final ReconnecterEvent event) {
                 enqueueJob(new DownloadWatchDogJob() {
-
+                    
                     @Override
                     public void execute(DownloadSession currentSession) {
                         if (event.getResult() == ReconnectResult.SUCCESSFUL) {
@@ -398,17 +398,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         currentSession.compareAndSetSessionState(DownloadSession.SessionState.RECONNECT_RUNNING, DownloadSession.SessionState.NORMAL);
                     }
-
+                    
                     @Override
                     public void interrupt() {
                     }
                 });
                 if (isAutoReconnectEnabled() && Reconnecter.getFailedCounter() > 5) {
                     switch (event.getResult()) {
-                    case FAILED:
-                        CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(false);
-                        UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());
-                        break;
+                        case FAILED:
+                            CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(false);
+                            UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());
+                            break;
                     }
                 }
             }
@@ -416,11 +416,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         stateMachine = new StateMachine(this, IDLE_STATE, STOPPED_STATE);
         startDownloadJobExecuter();
         stateMachine.addListener(new StateEventListener() {
-
+            
             @Override
             public void onStateUpdate(StateEvent event) {
             }
-
+            
             @Override
             public void onStateChange(StateEvent event) {
                 if (event.getNewState() == RUNNING_STATE) {
@@ -440,39 +440,39 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         ShutdownController.getInstance().addShutdownVetoListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
     }
-
+    
     public boolean isWatchDogThread() {
         Thread current = Thread.currentThread();
         return current == currentWatchDogThread.get() || current == tempWatchDogJobThread.get();
     }
-
+    
     private Thread getWatchDogThread() {
         Thread current = tempWatchDogJobThread.get();
         if (current != null) return current;
         return currentWatchDogThread.get();
     }
-
+    
     /**
      * reset linkstatus for files where it is usefull and needed
      */
     private void clearDownloadListStatus() {
         /* reset skipReasons */
         DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
+            
             @Override
             protected Void run() throws RuntimeException {
                 DownloadController.getInstance().set(new DownloadLinkWalker() {
-
+                    
                     @Override
                     public void handle(DownloadLink link) {
                         link.setConditionalSkipReason(null);
                     }
-
+                    
                     @Override
                     public boolean accept(FilePackage fp) {
                         return true;
                     }
-
+                    
                     @Override
                     public boolean accept(DownloadLink link) {
                         return true;
@@ -482,14 +482,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         });
     }
-
+    
     /**
      * try to force a downloadstart, will ignore maxperhost and maxdownloads limits
      */
     public void forceDownload(final List<DownloadLink> linksForce) {
         if (linksForce == null || linksForce.size() == 0) return;
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (DownloadWatchDog.this.stateMachine.isState(STOPPING_STATE)) {
@@ -498,16 +498,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                      */
                 }
                 unSkip(linksForce);
-
+                
                 if (DownloadWatchDog.this.stateMachine.isStartState() || DownloadWatchDog.this.stateMachine.isFinal()) {
                     /*
-                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced
-                     * link
+                     * no downloads are running, so we will force only the selected links to get started by setting stopmark to first forced link
                      */
-
+                    
                     // DownloadWatchDog.this.setStopMark(linksForce.get(0));
                     DownloadWatchDog.this.startDownloads(new Runnable() {
-
+                        
                         @Override
                         public void run() {
                             getSession().setForcedOnlyModeEnabled(true);
@@ -518,29 +517,29 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     enqueueForcedDownloads(linksForce);
                 }
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     private void enqueueForcedDownloads(final List<DownloadLink> linksForce) {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 Set<DownloadLink> oldList = new HashSet<DownloadLink>(currentSession.getForcedLinks());
                 oldList.addAll(linksForce);
                 currentSession.setForcedLinks(new CopyOnWriteArrayList<DownloadLink>(sortActivationRequests(oldList)));
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     private List<DownloadLink> sortActivationRequests(Iterable<DownloadLink> links) {
         HashMap<Priority, java.util.List<DownloadLink>> optimizedList = new HashMap<Priority, java.util.List<DownloadLink>>();
         int count = 0;
@@ -561,7 +560,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return newList;
     }
-
+    
     /**
      * returns how many downloads are currently watched by this DownloadWatchDog
      * 
@@ -570,7 +569,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public int getActiveDownloads() {
         return getSession().getControllers().size();
     }
-
+    
     /**
      * returns the ThrottledConnectionManager of this DownloadWatchDog
      * 
@@ -579,62 +578,62 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public DownloadSpeedManager getDownloadSpeedManager() {
         return dsm;
     }
-
+    
     public File validateDestination(File file) {
         if (!file.exists()) {
             File checking = null;
             try {
                 String[] folders;
                 switch (CrossSystem.getOSFamily()) {
-                case LINUX:
-                    folders = CrossSystem.getPathComponents(file);
-                    if (folders.length >= 3) {
-                        if ("media".equals(folders[1])) {
-                            /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/media/" + folders[2]);
-                        } else if ("mnt".equals(folders[1])) {
-                            /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/mnt/" + folders[2]);
-                        }
-                    }
-                    break;
-                case MAC:
-                    folders = CrossSystem.getPathComponents(file);
-                    if (folders.length >= 3) {
-                        if ("media".equals(folders[1])) {
-                            /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/media/" + folders[2]);
-                        } else if ("mnt".equals(folders[1])) {
-                            /* 0:/ | 1:media | 2:mounted volume */
-                            checking = new File("/mnt/" + folders[2]);
-                        } else if ("Volumes".equals(folders[1])) {
-                            /* 0:/ | 1:Volumes | 2:mounted volume */
-                            checking = new File("/Volumes/" + folders[2]);
-                        }
-                    }
-                    break;
-                case WINDOWS:
-                default:
-                    if (file.getAbsolutePath().length() > 259) {
-                        // old windows API does not allow pathes longer than that (this api is even used in the windows 7 explorer and other
-                        // tools like ffmpeg)
-                        checking = file;
-                    } else {
+                    case LINUX:
                         folders = CrossSystem.getPathComponents(file);
-                        if (folders.length > 0) {
-                            String root = folders[0];
-                            if (root.matches("^[a-zA-Z]{1}:\\\\$") || root.matches("^[a-zA-Z]{1}://$")) {
-                                /* X:/ or X:\ */
-                                checking = new File(folders[0]);
-                            } else if (root.equals("\\\\")) {
-                                if (folders.length >= 3) {
-                                    /* \\\\computer\\folder\\ in network */
-                                    checking = new File(folders[0] + folders[1] + "\\" + folders[2]);
-                                }
+                        if (folders.length >= 3) {
+                            if ("media".equals(folders[1])) {
+                                /* 0:/ | 1:media | 2:mounted volume */
+                                checking = new File("/media/" + folders[2]);
+                            } else if ("mnt".equals(folders[1])) {
+                                /* 0:/ | 1:media | 2:mounted volume */
+                                checking = new File("/mnt/" + folders[2]);
                             }
                         }
-
-                    }
+                        break;
+                    case MAC:
+                        folders = CrossSystem.getPathComponents(file);
+                        if (folders.length >= 3) {
+                            if ("media".equals(folders[1])) {
+                                /* 0:/ | 1:media | 2:mounted volume */
+                                checking = new File("/media/" + folders[2]);
+                            } else if ("mnt".equals(folders[1])) {
+                                /* 0:/ | 1:media | 2:mounted volume */
+                                checking = new File("/mnt/" + folders[2]);
+                            } else if ("Volumes".equals(folders[1])) {
+                                /* 0:/ | 1:Volumes | 2:mounted volume */
+                                checking = new File("/Volumes/" + folders[2]);
+                            }
+                        }
+                        break;
+                    case WINDOWS:
+                    default:
+                        if (file.getAbsolutePath().length() > 259) {
+                            // old windows API does not allow pathes longer than that (this api is even used in the windows 7 explorer and other
+                            // tools like ffmpeg)
+                            checking = file;
+                        } else {
+                            folders = CrossSystem.getPathComponents(file);
+                            if (folders.length > 0) {
+                                String root = folders[0];
+                                if (root.matches("^[a-zA-Z]{1}:\\\\$") || root.matches("^[a-zA-Z]{1}://$")) {
+                                    /* X:/ or X:\ */
+                                    checking = new File(folders[0]);
+                                } else if (root.equals("\\\\")) {
+                                    if (folders.length >= 3) {
+                                        /* \\\\computer\\folder\\ in network */
+                                        checking = new File(folders[0] + folders[1] + "\\" + folders[2]);
+                                    }
+                                }
+                            }
+                            
+                        }
                 }
                 if (checking != null && checking.exists() && checking.isDirectory()) checking = null;
             } catch (IOException e) {
@@ -647,7 +646,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return null;
     }
-
+    
     private DownloadLinkCandidate next(DownloadLinkCandidateSelector selector) {
         DownloadSession currentSession = selector.getSession();
         candidateLoop: while (newDLStartAllowed(currentSession)) {
@@ -656,26 +655,26 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             List<DownloadLinkCandidate> possibleCandidates = new ArrayList<DownloadLinkCandidate>();
             if (validateDestination(new File(allCandidates.get(0).getLink().getFilePackage().getDownloadDirectory())) != null) {
                 for (DownloadLinkCandidate candidate : allCandidates) {
-                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null));
+                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, candidate.getCachedAccount().getPlugin().getLazyP().getHost()));
                 }
                 continue candidateLoop;
             }
             for (DownloadLinkCandidate candidate : allCandidates) {
                 if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate.getLink()))) {
-                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null));
+                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, candidate.getCachedAccount().getPlugin().getLazyP().getHost()));
                 } else {
                     List<ProxyInfo> proxies = null;
                     if (selector.isDownloadLinkCandidateAllowed(candidate)) {
                         DownloadLink link = candidate.getLink();
                         switch (candidate.getCachedAccount().getType()) {
-                        case ORIGINAL:
-                        case MULTI:
-                            Account acc = candidate.getCachedAccount().getAccount();
-                            proxies = ProxyController.getInstance().getPossibleProxies(acc.getHoster(), true, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, acc));
-                            break;
-                        case NONE:
-                            proxies = ProxyController.getInstance().getPossibleProxies(link.getHost(), false, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, null));
-                            break;
+                            case ORIGINAL:
+                            case MULTI:
+                                Account acc = candidate.getCachedAccount().getAccount();
+                                proxies = ProxyController.getInstance().getPossibleProxies(acc.getHoster(), true, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, acc));
+                                break;
+                            case NONE:
+                                proxies = ProxyController.getInstance().getPossibleProxies(link.getHost(), false, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, null));
+                                break;
                         }
                     }
                     if (proxies != null && proxies.size() > 0) {
@@ -687,7 +686,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     } else {
                         if (selector.validateDownloadLinkCandidate(candidate)) {
-                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.CONNECTION_UNAVAILABLE, null));
+                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.CONNECTION_UNAVAILABLE, null, candidate.getCachedAccount().getPlugin().getLazyP().getHost()));
                         }
                     }
                 }
@@ -705,7 +704,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return null;
     }
-
+    
     private DownloadLinkCandidate findFinalCandidate(DownloadLinkCandidateSelector selector, final List<DownloadLinkCandidate> candidates) {
         if (candidates == null || candidates.size() == 0) return null;
         LinkedHashMap<DownloadLink, DownloadLinkCandidate> bestCandidates = new LinkedHashMap<DownloadLink, DownloadLinkCandidate>();
@@ -724,82 +723,82 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 final boolean bestHasCaptcha = bestCandidate.getCachedAccount().hasCaptcha(candidateLink);
                 final boolean nextHasCaptcha = nextCandidate.getCachedAccount().hasCaptcha(candidateLink);
                 switch (bestCandidate.getCachedAccount().getType()) {
-                case MULTI:
-                    /* our bestCandidate is a multihost one */
-                    switch (nextCandidate.getCachedAccount().getType()) {
-                    case ORIGINAL:
-                        if (nextHasCaptcha == false) {
-                            /* we always prefer originalAccount if it does not have a captcha */
-                            bestCandidates.put(candidateLink, nextCandidate);
+                    case MULTI:
+                        /* our bestCandidate is a multihost one */
+                        switch (nextCandidate.getCachedAccount().getType()) {
+                            case ORIGINAL:
+                                if (nextHasCaptcha == false) {
+                                    /* we always prefer originalAccount if it does not have a captcha */
+                                    bestCandidates.put(candidateLink, nextCandidate);
+                                }
+                                break;
+                            case MULTI:
+                                if (bestHasCaptcha && nextHasCaptcha == false) {
+                                    /* we replace our bestCandidate because nextCandidate does not have a captcha */
+                                    bestCandidates.put(candidateLink, nextCandidate);
+                                }
+                                break;
+                            case NONE:
+                                if (false && bestHasCaptcha && nextHasCaptcha == false) {
+                                    /* TODO */
+                                    /* disabled because needs to be discussed if we prefer captchaless none over captcha original/multihost */
+                                    /* we replace our bestCandidate with NONE because nextCandidate does not have a captcha */
+                                    bestCandidates.put(candidateLink, nextCandidate);
+                                }
+                                break;
                         }
                         break;
-                    case MULTI:
-                        if (bestHasCaptcha && nextHasCaptcha == false) {
-                            /* we replace our bestCandidate because nextCandidate does not have a captcha */
-                            bestCandidates.put(candidateLink, nextCandidate);
+                    case ORIGINAL:
+                        /* our bestCandidate is an original one */
+                        switch (nextCandidate.getCachedAccount().getType()) {
+                            case MULTI:
+                            case ORIGINAL:
+                                if (bestHasCaptcha && nextHasCaptcha == false) {
+                                    /* we only replace originalAccount in case bestCandidate does have a captcha and nextCandidate does not */
+                                    bestCandidates.put(candidateLink, nextCandidate);
+                                }
+                                break;
+                            case NONE:
+                                if (false && bestHasCaptcha && nextHasCaptcha == false) {
+                                    /* TODO */
+                                    /* disabled because needs to be discussed if we prefer captchaless none over captcha original/multihost */
+                                    /* we replace our bestCandidate with NONE because nextCandidate does not have a captcha */
+                                    bestCandidates.put(candidateLink, nextCandidate);
+                                }
+                                break;
                         }
                         break;
                     case NONE:
-                        if (false && bestHasCaptcha && nextHasCaptcha == false) {
-                            /* TODO */
-                            /* disabled because needs to be discussed if we prefer captchaless none over captcha original/multihost */
-                            /* we replace our bestCandidate with NONE because nextCandidate does not have a captcha */
-                            bestCandidates.put(candidateLink, nextCandidate);
+                        /* our bestCandidate is without an account */
+                        switch (nextCandidate.getCachedAccount().getType()) {
+                            case NONE:
+                                if (bestHasCaptcha && nextHasCaptcha == false) {
+                                    /* we replace our bestCandidate because nextCandidate does not have a captcha */
+                                    bestCandidates.put(candidateLink, nextCandidate);
+                                }
+                                break;
+                            case MULTI:
+                            case ORIGINAL:
+                                if (nextHasCaptcha == false) {
+                                    /* we replace our bestCandidate because nextCandidate does not have a captcha */
+                                    bestCandidates.put(candidateLink, nextCandidate);
+                                } else {
+                                    /* we replace our bestCandidate because nextCandidate is original/multihost */
+                                    bestCandidates.put(candidateLink, nextCandidate);
+                                }
+                                break;
                         }
                         break;
-                    }
-                    break;
-                case ORIGINAL:
-                    /* our bestCandidate is an original one */
-                    switch (nextCandidate.getCachedAccount().getType()) {
-                    case MULTI:
-                    case ORIGINAL:
-                        if (bestHasCaptcha && nextHasCaptcha == false) {
-                            /* we only replace originalAccount in case bestCandidate does have a captcha and nextCandidate does not */
-                            bestCandidates.put(candidateLink, nextCandidate);
-                        }
-                        break;
-                    case NONE:
-                        if (false && bestHasCaptcha && nextHasCaptcha == false) {
-                            /* TODO */
-                            /* disabled because needs to be discussed if we prefer captchaless none over captcha original/multihost */
-                            /* we replace our bestCandidate with NONE because nextCandidate does not have a captcha */
-                            bestCandidates.put(candidateLink, nextCandidate);
-                        }
-                        break;
-                    }
-                    break;
-                case NONE:
-                    /* our bestCandidate is without an account */
-                    switch (nextCandidate.getCachedAccount().getType()) {
-                    case NONE:
-                        if (bestHasCaptcha && nextHasCaptcha == false) {
-                            /* we replace our bestCandidate because nextCandidate does not have a captcha */
-                            bestCandidates.put(candidateLink, nextCandidate);
-                        }
-                        break;
-                    case MULTI:
-                    case ORIGINAL:
-                        if (nextHasCaptcha == false) {
-                            /* we replace our bestCandidate because nextCandidate does not have a captcha */
-                            bestCandidates.put(candidateLink, nextCandidate);
-                        } else {
-                            /* we replace our bestCandidate because nextCandidate is original/multihost */
-                            bestCandidates.put(candidateLink, nextCandidate);
-                        }
-                        break;
-                    }
-                    break;
                 }
             }
         }
         ArrayList<DownloadLinkCandidate> finalCandidates = new ArrayList<DownloadLinkCandidate>(bestCandidates.values());
         Collections.sort(finalCandidates, new Comparator<DownloadLinkCandidate>() {
-
+            
             public int compareDown(boolean x, boolean y) {
                 return (x == y) ? 0 : (x ? 1 : -1);
             }
-
+            
             @Override
             public int compare(DownloadLinkCandidate x, DownloadLinkCandidate y) {
                 int ret = x.getCachedAccount().getType().compareTo(y.getCachedAccount().getType());
@@ -810,11 +809,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 return ret;
             }
-
+            
         });
         return finalCandidates.get(0);
     }
-
+    
     private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate) {
         if (cachedLinkCandidateName == null) cachedLinkCandidateName = linkCandidate.getName();
         Boolean sameSizeResult = null;
@@ -825,21 +824,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             sameName = cachedLinkCandidateName.equals(mirrorCandidate.getName());
         }
         switch (config.getMirrorDetectionDecision()) {
-        case AUTO:
-            Boolean sameHashResult = hasSameHash(linkCandidate, mirrorCandidate);
-            if (sameHashResult != null) return sameHashResult;
-            sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate);
-            if (sameSizeResult != null && Boolean.FALSE.equals(sameSizeResult)) return false;
-            return sameName;
-        case FILENAME:
-            return sameName;
-        case FILENAME_FILESIZE:
-            sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate);
-            return sameName && sameSizeResult != null && Boolean.TRUE.equals(sameSizeResult);
+            case AUTO:
+                Boolean sameHashResult = hasSameHash(linkCandidate, mirrorCandidate);
+                if (sameHashResult != null) return sameHashResult;
+                sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate);
+                if (sameSizeResult != null && Boolean.FALSE.equals(sameSizeResult)) return false;
+                return sameName;
+            case FILENAME:
+                return sameName;
+            case FILENAME_FILESIZE:
+                sameSizeResult = hasSameSize(linkCandidate, mirrorCandidate);
+                return sameName && sameSizeResult != null && Boolean.TRUE.equals(sameSizeResult);
         }
         return false;
     }
-
+    
     private Boolean hasSameSize(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
         int fileSizeEquality = config.getMirrorDetectionFileSizeEquality();
         long sizeA = linkCandidate.getView().getBytesTotalVerified();
@@ -864,7 +863,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             return null;
         }
     }
-
+    
     private Boolean hasSameHash(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
         String hashA = linkCandidate.getMD5Hash();
         String hashB = mirrorCandidate.getMD5Hash();
@@ -874,13 +873,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (hashA != null && hashB != null) { return hashA.equalsIgnoreCase(hashB); }
         return null;
     }
-
+    
     private List<DownloadLink> findDownloadLinkMirrors(final DownloadLink link) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = link.getFilePackage();
         final String name = link.getName();
         fp.getModifyLock().runReadLock(new Runnable() {
-
+            
             @Override
             public void run() {
                 for (DownloadLink mirror : fp.getChildren()) {
@@ -893,7 +892,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         });
         return ret;
     }
-
+    
     private void setFinalLinkStatus(DownloadLinkCandidate candidate, DownloadLinkCandidateResult value, SingleDownloadController singleDownloadController) {
         DownloadSession currentSession = getSession();
         DownloadLink link = candidate.getLink();
@@ -901,185 +900,185 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         HashResult hashResult = null;
         if (onDetach) hashResult = singleDownloadController.getHashResult();
         switch (value.getResult()) {
-        case CONDITIONAL_SKIPPED:
-            logger.info(candidate + "->" + value.getResult() + "|" + value.getConditionalSkip());
-            break;
-        case SKIPPED:
-            logger.info(candidate + "->" + value.getResult() + "|" + value.getSkipReason());
-            break;
-        default:
-            logger.info(candidate + "->" + value.getResult());
-            break;
+            case CONDITIONAL_SKIPPED:
+                logger.info(candidate + "->" + value.getResult() + "|" + value.getConditionalSkip());
+                break;
+            case SKIPPED:
+                logger.info(candidate + "->" + value.getResult() + "|" + value.getSkipReason());
+                break;
+            default:
+                logger.info(candidate + "->" + value.getResult());
+                break;
         }
         ProxyInfoHistory proxyHistory = currentSession.getProxyInfoHistory();
         switch (value.getResult()) {
-        case PROXY_UNAVAILABLE:
-            if (!onDetach) {
-                ConditionalSkipReason conditionalSkipReason = proxyHistory.getConditionalSkipReason(candidate);
+            case PROXY_UNAVAILABLE:
+                if (!onDetach) {
+                    ConditionalSkipReason conditionalSkipReason = proxyHistory.getConditionalSkipReason(candidate);
+                    if (conditionalSkipReason != null) link.setConditionalSkipReason(conditionalSkipReason);
+                    return;
+                }
+                break;
+            case CONDITIONAL_SKIPPED:
+                ConditionalSkipReason conditionalSkipReason = value.getConditionalSkip();
                 if (conditionalSkipReason != null) link.setConditionalSkipReason(conditionalSkipReason);
                 return;
-            }
-            break;
-        case CONDITIONAL_SKIPPED:
-            ConditionalSkipReason conditionalSkipReason = value.getConditionalSkip();
-            if (conditionalSkipReason != null) link.setConditionalSkipReason(conditionalSkipReason);
-            return;
-        case IP_BLOCKED:
-            if (onDetach) {
-                long remainingTime = value.getRemainingTime();
-                if (remainingTime > 0) proxyHistory.putIntoHistory(candidate, new WaitingSkipReason(CAUSE.IP_BLOCKED, remainingTime, value.getMessage()));
-                return;
-            }
-            break;
-        case HOSTER_UNAVAILABLE:
-            if (onDetach) {
-                long remainingTime = value.getRemainingTime();
-                if (remainingTime > 0) proxyHistory.putIntoHistory(candidate, new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, remainingTime, value.getMessage()));
-                return;
-            }
-            break;
-        case FILE_UNAVAILABLE:
-            if (!onDetach) {
-                long remaining = value.getRemainingTime();
-                if (remaining > 0) link.setConditionalSkipReason(new WaitingSkipReason(CAUSE.FILE_TEMP_UNAVAILABLE, remaining, value.getMessage()));
-            }
-            return;
-        case CONNECTION_ISSUES:
-            if (!onDetach) {
-                long remaining = value.getRemainingTime();
-                if (remaining > 0) link.setConditionalSkipReason(new WaitingSkipReason(CAUSE.CONNECTION_TEMP_UNAVAILABLE, remaining, value.getMessage()));
-            }
-            return;
-        case SKIPPED:
-            currentSession.removeHistory(link);
-            candidate.getLink().setSkipReason(value.getSkipReason());
-            return;
-        case PLUGIN_DEFECT:
-            if (!onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setFinalLinkState(FinalLinkState.PLUGIN_DEFECT);
-            }
-            return;
-        case OFFLINE_UNTRUSTED:
-            if (!onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setFinalLinkState(FinalLinkState.OFFLINE);
-            }
-            return;
-        case OFFLINE_TRUSTED:
-            if (onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setFinalLinkState(FinalLinkState.OFFLINE);
-                return;
-            }
-            break;
-        case FINISHED_EXISTS:
-            if (onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setFinishedDate(value.getFinishTime());
-                candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_MIRROR);
-                return;
-            }
-            break;
-        case FINISHED:
-            if (onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setFinishedDate(value.getFinishTime());
-                if (hashResult != null) {
-                    switch (hashResult.getType()) {
-                    case CRC32:
-                        candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_CRC32);
-                        break;
-                    case MD5:
-                        candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_MD5);
-                        break;
-                    case SHA1:
-                        candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_SHA1);
-                        break;
-                    }
-                } else {
-                    candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED);
+            case IP_BLOCKED:
+                if (onDetach) {
+                    long remainingTime = value.getRemainingTime();
+                    if (remainingTime > 0) proxyHistory.putIntoHistory(candidate, new WaitingSkipReason(CAUSE.IP_BLOCKED, remainingTime, value.getMessage()));
+                    return;
+                }
+                break;
+            case HOSTER_UNAVAILABLE:
+                if (onDetach) {
+                    long remainingTime = value.getRemainingTime();
+                    if (remainingTime > 0) proxyHistory.putIntoHistory(candidate, new WaitingSkipReason(CAUSE.HOST_TEMP_UNAVAILABLE, remainingTime, value.getMessage()));
+                    return;
+                }
+                break;
+            case FILE_UNAVAILABLE:
+                if (!onDetach) {
+                    long remaining = value.getRemainingTime();
+                    if (remaining > 0) link.setConditionalSkipReason(new WaitingSkipReason(CAUSE.FILE_TEMP_UNAVAILABLE, remaining, value.getMessage()));
                 }
                 return;
-            }
-            break;
-        case FAILED_EXISTS:
-            if (onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_EXISTS);
-                return;
-            }
-            break;
-        case FAILED:
-            if (onDetach) {
-                currentSession.removeHistory(link);
-                if (hashResult != null) {
-                    switch (hashResult.getType()) {
-                    case CRC32:
-                        candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_CRC32);
-                        break;
-                    case MD5:
-                        candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_MD5);
-                        break;
-                    case SHA1:
-                        candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_SHA1);
-                        break;
-                    }
-                } else {
-                    candidate.getLink().setFinalLinkState(FinalLinkState.FAILED);
+            case CONNECTION_ISSUES:
+                if (!onDetach) {
+                    long remaining = value.getRemainingTime();
+                    if (remaining > 0) link.setConditionalSkipReason(new WaitingSkipReason(CAUSE.CONNECTION_TEMP_UNAVAILABLE, remaining, value.getMessage()));
                 }
                 return;
-            }
-            break;
-        case STOPPED:
-            if (onDetach) {
+            case SKIPPED:
                 currentSession.removeHistory(link);
+                candidate.getLink().setSkipReason(value.getSkipReason());
                 return;
-            }
-            break;
-        case ACCOUNT_INVALID:
-            if (onDetach) {
-                /* account has been recognized as valid and/or premium but now throws invalid messages */
-                candidate.getCachedAccount().getAccount().setError(AccountError.PLUGIN_ERROR, null);
+            case PLUGIN_DEFECT:
+                if (!onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setFinalLinkState(FinalLinkState.PLUGIN_DEFECT);
+                }
                 return;
-            }
-            break;
-        case ACCOUNT_UNAVAILABLE:
-            if (onDetach) {
-                candidate.getCachedAccount().getAccount().setTempDisabled(true);
+            case OFFLINE_UNTRUSTED:
+                if (!onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setFinalLinkState(FinalLinkState.OFFLINE);
+                }
                 return;
-            }
-            break;
-        case ACCOUNT_REQUIRED:
-            if (!onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setSkipReason(SkipReason.NO_ACCOUNT);
-            }
-            return;
-        case CAPTCHA:
-            if (!onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setSkipReason(SkipReason.CAPTCHA);
-            }
-            return;
-        case FATAL_ERROR:
-            if (!onDetach) {
-                currentSession.removeHistory(link);
-                candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_FATAL);
-                candidate.getLink().setProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, value.getMessage());
-            }
-            return;
-        default:
-            if (onDetach) {
-                /* todo */
-                logger.info("TODO: " + value.getResult());
+            case OFFLINE_TRUSTED:
+                if (onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setFinalLinkState(FinalLinkState.OFFLINE);
+                    return;
+                }
+                break;
+            case FINISHED_EXISTS:
+                if (onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setFinishedDate(value.getFinishTime());
+                    candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_MIRROR);
+                    return;
+                }
+                break;
+            case FINISHED:
+                if (onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setFinishedDate(value.getFinishTime());
+                    if (hashResult != null) {
+                        switch (hashResult.getType()) {
+                            case CRC32:
+                                candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_CRC32);
+                                break;
+                            case MD5:
+                                candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_MD5);
+                                break;
+                            case SHA1:
+                                candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_SHA1);
+                                break;
+                        }
+                    } else {
+                        candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED);
+                    }
+                    return;
+                }
+                break;
+            case FAILED_EXISTS:
+                if (onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_EXISTS);
+                    return;
+                }
+                break;
+            case FAILED:
+                if (onDetach) {
+                    currentSession.removeHistory(link);
+                    if (hashResult != null) {
+                        switch (hashResult.getType()) {
+                            case CRC32:
+                                candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_CRC32);
+                                break;
+                            case MD5:
+                                candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_MD5);
+                                break;
+                            case SHA1:
+                                candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_SHA1);
+                                break;
+                        }
+                    } else {
+                        candidate.getLink().setFinalLinkState(FinalLinkState.FAILED);
+                    }
+                    return;
+                }
+                break;
+            case STOPPED:
+                if (onDetach) {
+                    currentSession.removeHistory(link);
+                    return;
+                }
+                break;
+            case ACCOUNT_INVALID:
+                if (onDetach) {
+                    /* account has been recognized as valid and/or premium but now throws invalid messages */
+                    candidate.getCachedAccount().getAccount().setError(AccountError.PLUGIN_ERROR, null);
+                    return;
+                }
+                break;
+            case ACCOUNT_UNAVAILABLE:
+                if (onDetach) {
+                    candidate.getCachedAccount().getAccount().setTempDisabled(true);
+                    return;
+                }
+                break;
+            case ACCOUNT_REQUIRED:
+                if (!onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setSkipReason(SkipReason.NO_ACCOUNT);
+                }
                 return;
-            }
-            break;
+            case CAPTCHA:
+                if (!onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setSkipReason(SkipReason.CAPTCHA);
+                }
+                return;
+            case FATAL_ERROR:
+                if (!onDetach) {
+                    currentSession.removeHistory(link);
+                    candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_FATAL);
+                    candidate.getLink().setProperty(DownloadLink.PROPERTY_CUSTOM_MESSAGE, value.getMessage());
+                }
+                return;
+            default:
+                if (onDetach) {
+                    /* todo */
+                    logger.info("TODO: " + value.getResult());
+                    return;
+                }
+                break;
         }
         throw new WTFException("This should never happen!? " + value.getResult());
     }
-
+    
     private List<DownloadLinkCandidate> allPossibleDownloadLinkCandidates(DownloadLinkCandidateSelector selector) {
         DownloadLinkCandidate candidate = null;
         List<DownloadLinkCandidate> mirrors = new ArrayList<DownloadLinkCandidate>();
@@ -1109,29 +1108,29 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     /* this cachedAccount can handle our candidate */
                     switch (selector.getCachedAccountPermission(cachedAccount)) {
-                    case TEMP_DISABLED:
-                        if (tempDisabledCachedAccount == null) {
-                            tempDisabledCachedAccount = cachedAccount;
-                        } else if (tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
-                            tempDisabledCachedAccount = cachedAccount;
-                        }
-                        break;
-                    case FORBIDDEN:
-                        forbiddenCachedAccount = cachedAccount;
-                        break;
-                    case DISABLED:
-                        break;
-                    case OK:
-                        mirrors.add(new DownloadLinkCandidate(mirror, cachedAccount, accountCache.isCustomizedCache()));
-                        break;
+                        case TEMP_DISABLED:
+                            if (tempDisabledCachedAccount == null) {
+                                tempDisabledCachedAccount = cachedAccount;
+                            } else if (tempDisabledCachedAccount.getAccount().getTmpDisabledTimeout() > cachedAccount.getAccount().getTmpDisabledTimeout()) {
+                                tempDisabledCachedAccount = cachedAccount;
+                            }
+                            break;
+                        case FORBIDDEN:
+                            forbiddenCachedAccount = cachedAccount;
+                            break;
+                        case DISABLED:
+                            break;
+                        case OK:
+                            mirrors.add(new DownloadLinkCandidate(mirror, cachedAccount, accountCache.isCustomizedCache()));
+                            break;
                     }
                 }
                 if (mirrorsSize == mirrors.size()) {
                     /* even NONE cannot handle our candidate, so let's skip it */
                     if (tempDisabledCachedAccount != null) {
-                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null));
+                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null, tempDisabledCachedAccount.getPlugin().getLazyP().getHost()));
                     } else if (forbiddenCachedAccount == null) {
-                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(SkipReason.NO_ACCOUNT, null));
+                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(SkipReason.NO_ACCOUNT, null, forbiddenCachedAccount.getPlugin().getLazyP().getHost()));
                     }
                 }
             }
@@ -1139,7 +1138,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return null;
     }
-
+    
     private List<DownloadLinkCandidate> findDownloadLinkCandidateMirrors(DownloadLinkCandidateSelector selector, DownloadLinkCandidate candidate) {
         List<DownloadLinkCandidate> ret = new ArrayList<DownloadLinkCandidate>();
         if (candidate.isForced()) return ret;
@@ -1168,7 +1167,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         getSession().removeActivationRequests(removeList);
         return ret;
     }
-
+    
     private boolean canRemove(DownloadLink next, boolean isForced) {
         if (next.getDefaultPlugin() == null) {
             /* download has no plugin, we can remove it from downloadLinks because we will never be able to handle it */
@@ -1191,7 +1190,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return false;
     }
-
+    
     private boolean canIgnore(DownloadLinkCandidateSelector selector, DownloadLink next, boolean isForced) {
         if (!selector.isDownloadLinkCandidateAllowed(new DownloadLinkCandidate(next, isForced))) { return true; }
         if (next.getDownloadLinkController() != null) {
@@ -1205,7 +1204,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return false;
     }
-
+    
     private DownloadLinkCandidate nextDownloadLinkCandidate(DownloadLinkCandidateSelector selector) {
         ArrayList<DownloadLink> removeList = new ArrayList<DownloadLink>();
         try {
@@ -1247,7 +1246,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return null;
     }
-
+    
     private ProxyInfo getReplacement(ProxyInfo proxy) {
         // dirty hack to grab auth info from the updater Proxyselector
         try {
@@ -1258,7 +1257,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return proxy;
     }
-
+    
     /**
      * returns current pause state
      * 
@@ -1267,11 +1266,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public boolean isPaused() {
         return DownloadWatchDog.this.stateMachine.isState(PAUSE_STATE);
     }
-
+    
     private boolean isAutoReconnectEnabled() {
         return autoReconnectEnabled.get();
     }
-
+    
     /**
      * may the DownloadWatchDog start new Downloads?
      * 
@@ -1302,23 +1301,23 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return true;
     }
-
+    
     protected void setTempWatchDogJobThread(Thread thread) {
         tempWatchDogJobThread.set(thread);
     }
-
+    
     /**
      * pauses the DownloadWatchDog
      * 
      * @param value
      */
-
+    
     private Object                                     shutdownLock = new Object();
     protected NullsafeAtomicReference<DownloadSession> session      = new NullsafeAtomicReference<DownloadSession>(null);
-
+    
     public void pauseDownloadWatchDog(final boolean value) {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (value && !stateMachine.isState(DownloadWatchDog.RUNNING_STATE)) {
@@ -1348,16 +1347,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     public void notifyCurrentState(final DownloadWatchdogListener listener) {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (DownloadWatchDog.this.stateMachine.isState(RUNNING_STATE)) {
@@ -1373,13 +1372,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 listener.onDownloadWatchDogPropertyChange(new DownloadWatchDogProperty(DownloadWatchDogProperty.Property.STOPSIGN, currentSession.getStopMark()));
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     public long getDownloadSpeedbyFilePackage(FilePackage pkg) {
         long speed = -1;
         for (SingleDownloadController con : getSession().getControllers()) {
@@ -1390,7 +1389,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return speed;
     }
-
+    
     public int getDownloadsbyFilePackage(FilePackage pkg) {
         int ret = 0;
         for (SingleDownloadController con : getSession().getControllers()) {
@@ -1399,11 +1398,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return ret;
     }
-
+    
     public Set<SingleDownloadController> getRunningDownloadLinks() {
         return getSession().getControllers();
     }
-
+    
     public Set<FilePackage> getRunningFilePackages() {
         HashSet<FilePackage> ret = new HashSet<FilePackage>();
         for (SingleDownloadController con : getSession().getControllers()) {
@@ -1411,14 +1410,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return ret;
     }
-
+    
     public boolean hasRunningDownloads(FilePackage pkg) {
         for (SingleDownloadController con : getSession().getControllers()) {
             if (con.getDownloadLink().getFilePackage() == pkg) return true;
         }
         return false;
     }
-
+    
     /**
      * aborts all running SingleDownloadControllers, NOTE: DownloadWatchDog is still running, new Downloads will can started after this call
      */
@@ -1441,7 +1440,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
     }
-
+    
     public void enqueueJob(final DownloadWatchDogJob job) {
         watchDogJobs.offer(job);
         if (!isWatchDogThread()) {
@@ -1450,10 +1449,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             wakeUpWatchDog(false);
         }
     }
-
+    
     public void resume(final List<DownloadLink> resetLinks) {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 for (DownloadLink link : resetLinks) {
@@ -1463,16 +1462,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 return;
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     public void unSkip(final List<DownloadLink> resetLinks) {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 for (DownloadLink link : resetLinks) {
@@ -1482,17 +1481,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 return;
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     public void reset(final List<DownloadLink> resetLinks) {
         if (resetLinks == null || resetLinks.size() == 0) return;
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (currentSession != null) {
@@ -1507,11 +1506,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     } else {
                         /* link has a running singleDownloadController, abort it and reset it after */
                         con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
+                            
                             @Override
                             public void interrupt() {
                             }
-
+                            
                             @Override
                             public void execute(DownloadSession currentSession) {
                                 /* now we can reset the link */
@@ -1523,13 +1522,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 return;
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     private void resumeLink(DownloadLink link, DownloadSession session) {
         if (link.getDownloadLinkController() != null) throw new IllegalStateException("Link is in progress! cannot resume!");
         if (!FinalLinkState.CheckFinished(link.getFinalLinkState())) {
@@ -1539,7 +1538,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         link.resume();
     }
-
+    
     private void unSkipLink(DownloadLink link, DownloadSession session) {
         if (link.isSkipped()) {
             if (SkipReason.FFMPEG_MISSING.equals(link.getSkipReason()) || SkipReason.UPDATE_RESTART_REQUIRED.equals(link.getSkipReason())) {
@@ -1549,7 +1548,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         CaptchaBlackList.getInstance().addWhitelist(link);
     }
-
+    
     private void resetLink(DownloadLink link, DownloadSession session) {
         if (link.getDownloadLinkController() != null) throw new IllegalStateException("Link is in progress! cannot reset!");
         session.removeHistory(link);
@@ -1563,11 +1562,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         unSkipLink(link, session);
         link.reset();
     }
-
+    
     public void delete(final List<DownloadLink> deleteFiles, final DeleteOption deleteTo) {
         if (deleteFiles == null || deleteFiles.size() == 0) return;
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (currentSession != null) {
@@ -1602,7 +1601,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 }
                                 return;
                             }
-
+                            
                             @Override
                             public void interrupt() {
                             }
@@ -1611,13 +1610,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 return;
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     private void deleteFile(DownloadLink link, DeleteOption deleteTo) {
         if (deleteTo == null) deleteTo = DeleteOption.NULL;
         if (DeleteOption.NO_DELETE == deleteTo) return;
@@ -1636,21 +1635,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             link.setFinalFileOutput(null);
             for (File deleteFile : deleteFiles) {
                 switch (deleteTo) {
-                case NULL:
-                    if (deleteFile.delete() == false) {
-                        logger.info("Could not delete file: " + deleteFile + " for " + link);
-                    } else {
-                        logger.info("Deleted file: " + deleteFile + " for " + link);
-                    }
-                    break;
-                case RECYCLE:
-                    try {
-                        JDFileUtils.moveToTrash(deleteFile);
-                        logger.info("Recycled file: " + deleteFile + " for " + link);
-                    } catch (IOException e) {
-                        logger.info("Could not recycle file: " + deleteFile + " for " + link);
-                    }
-                    break;
+                    case NULL:
+                        if (deleteFile.delete() == false) {
+                            logger.info("Could not delete file: " + deleteFile + " for " + link);
+                        } else {
+                            logger.info("Deleted file: " + deleteFile + " for " + link);
+                        }
+                        break;
+                    case RECYCLE:
+                        try {
+                            JDFileUtils.moveToTrash(deleteFile);
+                            logger.info("Recycled file: " + deleteFile + " for " + link);
+                        } catch (IOException e) {
+                            logger.info("Could not recycle file: " + deleteFile + " for " + link);
+                        }
+                        break;
                 }
             }
             /* try to delete folder (if its empty and NOT the default downloadfolder */
@@ -1670,7 +1669,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
     }
-
+    
     /**
      * activates new Downloads as long as possible and returns how many got activated
      * 
@@ -1734,7 +1733,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return ret;
     }
-
+    
     private void finalize(DownloadLinkCandidateSelector selector) {
         DownloadSession session = selector.getSession();
         for (DownloadLink candidate : new ConcatIterator<DownloadLink>(session.getForcedLinks().iterator(), session.getActivationRequests().iterator())) {
@@ -1753,18 +1752,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             setFinalLinkStatus(candidate, result, null);
         }
     }
-
+    
     public void startDownloads() {
         startDownloads(null);
     }
-
+    
     /**
      * start the DownloadWatchDog
      */
     public void startDownloads(final Runnable runBeforeStartingDownloadWatchDog) {
-
+        
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (DownloadWatchDog.this.stateMachine.isFinal()) {
@@ -1791,17 +1790,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /* throw start event */
                 logger.info("DownloadWatchDog: start");
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     public DownloadSession getSession() {
         return session.get();
     }
-
+    
     /**
      * activates a new SingleDownloadController for the given SingleDownloadControllerActivator
      * 
@@ -1838,20 +1837,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STARTED, con, candidate));
         return con;
     }
-
+    
     protected void detach(final SingleDownloadController singleDownloadController, final SingleDownloadReturnState returnState) {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 LogSource logger = null;
                 try {
                     logger = new LogSource("Dummy") {
-
+                        
                         @Override
                         public synchronized void clear() {
                         }
-
+                        
                         public synchronized void log(java.util.logging.LogRecord record) {
                             DownloadWatchDog.this.logger.log(record);
                         };
@@ -1868,7 +1867,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     try {
                         try {
                             result = handleReturnState(logger, singleDownloadController, returnState);
-
+                            
                             result.setStartTime(singleDownloadController.getStartTimestamp());
                             result.setFinishTime(returnState.getTimeStamp());
                             setFinalLinkStatus(candidate, result, singleDownloadController);
@@ -1896,7 +1895,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             /* link can already be removed->nullpointer exception */
                         }
                         eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.LINK_STOPPED, singleDownloadController, candidate, result));
-
+                        
                         handleFinalLinkStates(finalLinkStateLinks, currentSession, logger, singleDownloadController);
                     } finally {
                         if (result != null) {
@@ -1911,13 +1910,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 return;
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     private void handleFinalLinkStates(HashSet<DownloadLink> links, DownloadSession session, final LogSource logger, final SingleDownloadController singleDownloadController) {
         if ((links == null || links.size() == 0) && singleDownloadController == null) return;
         if (links == null) links = new HashSet<DownloadLink>();
@@ -1929,7 +1928,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         Iterator<DownloadLink> it = links.iterator();
         final CleanAfterDownloadAction cleanupAction = org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction();
         final boolean cleanupFileExists = JsonConfig.create(GeneralSettings.class).getCleanupFileExists();
-
+        
         final ArrayList<DownloadLink> cleanupLinks = new ArrayList<DownloadLink>();
         final HashSet<FilePackage> cleanupPackages = new HashSet<FilePackage>();
         while (it.hasNext()) {
@@ -1941,12 +1940,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 it.remove();
                 if (cleanupFileExists) {
                     switch (cleanupAction) {
-                    case CLEANUP_IMMEDIATELY:
-                        cleanupLinks.add(next);
-                        break;
-                    case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
-                        cleanupPackages.add(next.getFilePackage());
-                        break;
+                        case CLEANUP_IMMEDIATELY:
+                            cleanupLinks.add(next);
+                            break;
+                        case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                            cleanupPackages.add(next.getFilePackage());
+                            break;
                     }
                 }
             } else if (FinalLinkState.CheckFinished(state)) {
@@ -1954,16 +1953,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 session.removeHistory(next);
                 it.remove();
                 switch (cleanupAction) {
-                case CLEANUP_IMMEDIATELY:
-                    cleanupLinks.add(next);
-                    break;
-                case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
-                    cleanupPackages.add(next.getFilePackage());
-                    break;
+                    case CLEANUP_IMMEDIATELY:
+                        cleanupLinks.add(next);
+                        break;
+                    case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                        cleanupPackages.add(next.getFilePackage());
+                        break;
                 }
                 if (next == singleDownloadControllerLink) {
                     TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
+                        
                         @Override
                         protected Void run() throws RuntimeException {
                             FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(singleDownloadController, FileCreationEvent.Type.NEW_FILES, new File[] { new File(next.getFileOutput()) }));
@@ -1973,53 +1972,53 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             }
         }
-
+        
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
+            
             @Override
             protected Void run() throws RuntimeException {
                 switch (cleanupAction) {
-                case CLEANUP_IMMEDIATELY:
-                    if (cleanupLinks.size() > 0) {
-                        DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                            @Override
-                            protected Void run() throws RuntimeException {
-                                for (DownloadLink cleanupLink : cleanupLinks) {
-                                    String name = cleanupLink.getName();
-                                    logger.info("Remove Link " + name + " because " + cleanupLink.getFinalLinkState() + " and CleanupImmediately!");
-                                    java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
-                                    remove.add(cleanupLink);
-                                    if (DownloadController.getInstance().askForRemoveVetos(remove)) {
-                                        DownloadController.getInstance().removeChildren(remove);
-                                    } else {
-                                        logger.info("Remove Link " + name + " failed because of removeVetos!");
+                    case CLEANUP_IMMEDIATELY:
+                        if (cleanupLinks.size() > 0) {
+                            DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+                                
+                                @Override
+                                protected Void run() throws RuntimeException {
+                                    for (DownloadLink cleanupLink : cleanupLinks) {
+                                        String name = cleanupLink.getName();
+                                        logger.info("Remove Link " + name + " because " + cleanupLink.getFinalLinkState() + " and CleanupImmediately!");
+                                        java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
+                                        remove.add(cleanupLink);
+                                        if (DownloadController.getInstance().askForRemoveVetos(remove)) {
+                                            DownloadController.getInstance().removeChildren(remove);
+                                        } else {
+                                            logger.info("Remove Link " + name + " failed because of removeVetos!");
+                                        }
                                     }
+                                    return null;
                                 }
-                                return null;
-                            }
-
-                        });
-                    }
-                    break;
-                case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
-                    if (cleanupPackages.size() > 0) {
-                        for (FilePackage filePackage : cleanupPackages) {
-                            DownloadController.removePackageIfFinished(logger, filePackage);
+                                
+                            });
                         }
-                    }
-                    break;
+                        break;
+                    case CLEANUP_AFTER_PACKAGE_HAS_FINISHED:
+                        if (cleanupPackages.size() > 0) {
+                            for (FilePackage filePackage : cleanupPackages) {
+                                DownloadController.removePackageIfFinished(logger, filePackage);
+                            }
+                        }
+                        break;
                 }
                 return null;
             }
         });
     }
-
+    
     private DownloadLinkCandidateResult handleReturnState(LogSource logger, SingleDownloadController singleDownloadController, SingleDownloadReturnState result) {
         Throwable throwable = result.getCaughtThrowable();
         DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
         DownloadLink link = candidate.getLink();
-
+        
         long sizeChange = Math.max(0, link.getView().getBytesLoaded() - singleDownloadController.getSizeBefore());
         Account account = singleDownloadController.getAccount();
         if (account != null && sizeChange > 0) {
@@ -2041,10 +2040,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         SkipReason skipReason = null;
         PluginException pluginException = null;
         ConditionalSkipReason conditionalSkipReason = null;
-        String pluginHost = null;
         PluginForHost latestPlugin = null;
+        final String pluginHost;
         if ((latestPlugin = result.getLatestPlugin()) != null) {
             pluginHost = latestPlugin.getLazyP().getHost();
+        } else {
+            pluginHost = candidate.getCachedAccount().getPlugin().getLazyP().getHost();
         }
         if (throwable != null) {
             if (throwable instanceof PluginException) {
@@ -2054,22 +2055,22 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             } else if (throwable instanceof ConditionalSkipReasonException) {
                 conditionalSkipReason = ((ConditionalSkipReasonException) throwable).getConditionalSkipReason();
             } else if (throwable instanceof NoInternetConnection) {
-                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable);
+                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 ret.setMessage(_JDT._.plugins_errors_nointernetconn());
                 return ret;
             } else if (throwable instanceof UnknownHostException) {
-                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable);
+                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 ret.setMessage(_JDT._.plugins_errors_nointernetconn());
                 return ret;
             } else if (throwable instanceof SocketTimeoutException) {
-                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable);
+                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 ret.setMessage(_JDT._.plugins_errors_hosteroffline());
                 return ret;
             } else if (throwable instanceof SocketException) {
-                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable);
+                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 ret.setMessage(_JDT._.plugins_errors_disconnect());
                 return ret;
@@ -2083,130 +2084,130 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     }
                 }
-                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable);
+                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
                 ret.setMessage(_JDT._.plugins_errors_proxy_auth());
                 return ret;
             } else if (throwable instanceof IOException) {
-                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable);
+                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
                 ret.setMessage(_JDT._.plugins_errors_hosterproblem());
                 return ret;
             } else if (throwable instanceof InterruptedException) {
-                if (result.getController().isAborting()) { return new DownloadLinkCandidateResult(RESULT.STOPPED, throwable); }
+                if (result.getController().isAborting()) { return new DownloadLinkCandidateResult(RESULT.STOPPED, throwable, pluginHost); }
                 pluginException = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT._.plugins_errors_error() + "Interrupted");
             } else {
                 pluginException = new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _JDT._.plugins_errors_error() + "Throwable");
             }
         }
-
+        
         if (skipReason != null) {
             switch (skipReason) {
-            case NO_ACCOUNT:
-                return new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, throwable);
-            default:
-                return new DownloadLinkCandidateResult(skipReason, throwable);
+                case NO_ACCOUNT:
+                    return new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, throwable, pluginHost);
+                default:
+                    return new DownloadLinkCandidateResult(skipReason, throwable, pluginHost);
             }
         }
-        if (conditionalSkipReason != null) { return new DownloadLinkCandidateResult(conditionalSkipReason, throwable); }
+        if (conditionalSkipReason != null) { return new DownloadLinkCandidateResult(conditionalSkipReason, throwable, pluginHost); }
         if (pluginException != null) {
             DownloadLinkCandidateResult ret = null;
             String message = null;
             long waitTime = -1;
             switch (pluginException.getLinkStatus()) {
-            case LinkStatus.ERROR_RETRY:
-                ret = new DownloadLinkCandidateResult(RESULT.RETRY, throwable);
-                message = pluginException.getErrorMessage();
-                break;
-            case LinkStatus.ERROR_CAPTCHA:
-                ret = new DownloadLinkCandidateResult(RESULT.CAPTCHA, throwable);
-                break;
-            case LinkStatus.FINISHED:
-                ret = new DownloadLinkCandidateResult(RESULT.FINISHED_EXISTS, throwable);
-                break;
-            case LinkStatus.ERROR_FILE_NOT_FOUND:
-                if (link.getHost().equals(pluginHost)) {
-                    ret = new DownloadLinkCandidateResult(RESULT.OFFLINE_TRUSTED, throwable);
-                } else {
-                    ret = new DownloadLinkCandidateResult(RESULT.OFFLINE_UNTRUSTED, throwable);
-                }
-                break;
-            case LinkStatus.ERROR_PLUGIN_DEFECT:
-                if (latestPlugin != null) latestPlugin.errLog(throwable, null, link);
-                ret = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, throwable);
-                break;
-            case LinkStatus.ERROR_FATAL:
-                ret = new DownloadLinkCandidateResult(RESULT.FATAL_ERROR, throwable);
-                message = pluginException.getErrorMessage();
-                break;
-            case LinkStatus.ERROR_IP_BLOCKED:
-                ret = new DownloadLinkCandidateResult(RESULT.IP_BLOCKED, throwable);
-                message = pluginException.getErrorMessage();
-                waitTime = 3600000l;
-                if (pluginException.getValue() > 0) waitTime = pluginException.getValue();
-                break;
-            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                ret = new DownloadLinkCandidateResult(RESULT.FILE_UNAVAILABLE, throwable);
-                message = pluginException.getErrorMessage();
-                if (pluginException.getValue() > 0) {
-                    waitTime = pluginException.getValue();
-                } else if (pluginException.getValue() <= 0) {
-                    waitTime = JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime();
-                }
-                break;
-            case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
-                ret = new DownloadLinkCandidateResult(RESULT.HOSTER_UNAVAILABLE, throwable);
-                message = pluginException.getErrorMessage();
-                if (pluginException.getValue() > 0) {
-                    waitTime = pluginException.getValue();
-                } else if (pluginException.getValue() <= 0) {
-                    waitTime = JsonConfig.create(GeneralSettings.class).getDownloadHostUnavailableRetryWaittime();
-                }
-                break;
-            case LinkStatus.ERROR_PREMIUM:
-                if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_ONLY) {
-                    ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, throwable);
-                } else if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
-                    ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_INVALID, throwable);
-                } else if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
-                    ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_UNAVAILABLE, throwable);
-                } else {
-                    ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_INVALID, throwable);
-                }
-                break;
-            case LinkStatus.ERROR_DOWNLOAD_FAILED:
-                if (pluginException.getValue() == LinkStatus.VALUE_LOCAL_IO_ERROR) {
-                    ret = new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, throwable);
-                } else if (pluginException.getValue() == LinkStatus.VALUE_TIMEOUT_REACHED) {
-                    ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable);
-                } else {
-                    ret = new DownloadLinkCandidateResult(RESULT.FAILED, throwable);
-                }
-                break;
-            case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
-                ret = new DownloadLinkCandidateResult(RESULT.FAILED_INCOMPLETE, throwable);
-                break;
-            case LinkStatus.ERROR_ALREADYEXISTS:
-                ret = new DownloadLinkCandidateResult(RESULT.FAILED_EXISTS, throwable);
-                break;
+                case LinkStatus.ERROR_RETRY:
+                    ret = new DownloadLinkCandidateResult(RESULT.RETRY, throwable, pluginHost);
+                    message = pluginException.getErrorMessage();
+                    break;
+                case LinkStatus.ERROR_CAPTCHA:
+                    ret = new DownloadLinkCandidateResult(RESULT.CAPTCHA, throwable, pluginHost);
+                    break;
+                case LinkStatus.FINISHED:
+                    ret = new DownloadLinkCandidateResult(RESULT.FINISHED_EXISTS, throwable, pluginHost);
+                    break;
+                case LinkStatus.ERROR_FILE_NOT_FOUND:
+                    if (link.getHost().equals(pluginHost)) {
+                        ret = new DownloadLinkCandidateResult(RESULT.OFFLINE_TRUSTED, throwable, pluginHost);
+                    } else {
+                        ret = new DownloadLinkCandidateResult(RESULT.OFFLINE_UNTRUSTED, throwable, pluginHost);
+                    }
+                    break;
+                case LinkStatus.ERROR_PLUGIN_DEFECT:
+                    if (latestPlugin != null) latestPlugin.errLog(throwable, null, link);
+                    ret = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, throwable, pluginHost);
+                    break;
+                case LinkStatus.ERROR_FATAL:
+                    ret = new DownloadLinkCandidateResult(RESULT.FATAL_ERROR, throwable, pluginHost);
+                    message = pluginException.getErrorMessage();
+                    break;
+                case LinkStatus.ERROR_IP_BLOCKED:
+                    ret = new DownloadLinkCandidateResult(RESULT.IP_BLOCKED, throwable, pluginHost);
+                    message = pluginException.getErrorMessage();
+                    waitTime = 3600000l;
+                    if (pluginException.getValue() > 0) waitTime = pluginException.getValue();
+                    break;
+                case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+                    ret = new DownloadLinkCandidateResult(RESULT.FILE_UNAVAILABLE, throwable, pluginHost);
+                    message = pluginException.getErrorMessage();
+                    if (pluginException.getValue() > 0) {
+                        waitTime = pluginException.getValue();
+                    } else if (pluginException.getValue() <= 0) {
+                        waitTime = JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime();
+                    }
+                    break;
+                case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+                    ret = new DownloadLinkCandidateResult(RESULT.HOSTER_UNAVAILABLE, throwable, pluginHost);
+                    message = pluginException.getErrorMessage();
+                    if (pluginException.getValue() > 0) {
+                        waitTime = pluginException.getValue();
+                    } else if (pluginException.getValue() <= 0) {
+                        waitTime = JsonConfig.create(GeneralSettings.class).getDownloadHostUnavailableRetryWaittime();
+                    }
+                    break;
+                case LinkStatus.ERROR_PREMIUM:
+                    if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_ONLY) {
+                        ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_REQUIRED, throwable, pluginHost);
+                    } else if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
+                        ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_INVALID, throwable, pluginHost);
+                    } else if (pluginException.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
+                        ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_UNAVAILABLE, throwable, pluginHost);
+                    } else {
+                        ret = new DownloadLinkCandidateResult(RESULT.ACCOUNT_INVALID, throwable, pluginHost);
+                    }
+                    break;
+                case LinkStatus.ERROR_DOWNLOAD_FAILED:
+                    if (pluginException.getValue() == LinkStatus.VALUE_LOCAL_IO_ERROR) {
+                        ret = new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, throwable, pluginHost);
+                    } else if (pluginException.getValue() == LinkStatus.VALUE_TIMEOUT_REACHED) {
+                        ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
+                    } else {
+                        ret = new DownloadLinkCandidateResult(RESULT.FAILED, throwable, pluginHost);
+                    }
+                    break;
+                case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
+                    ret = new DownloadLinkCandidateResult(RESULT.FAILED_INCOMPLETE, throwable, pluginHost);
+                    break;
+                case LinkStatus.ERROR_ALREADYEXISTS:
+                    ret = new DownloadLinkCandidateResult(RESULT.FAILED_EXISTS, throwable, pluginHost);
+                    break;
             }
-            if (ret == null) ret = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, throwable);
+            if (ret == null) ret = new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, throwable, pluginHost);
             ret.setWaitTime(waitTime);
             ret.setMessage(message);
-
+            
             return ret;
         }
         if (result.getController().isAborting()) {
             if (result.getController().getLinkStatus().getStatus() == LinkStatus.FINISHED) {
-                return new DownloadLinkCandidateResult(RESULT.FINISHED, throwable);
+                return new DownloadLinkCandidateResult(RESULT.FINISHED, throwable, pluginHost);
             } else {
-                return new DownloadLinkCandidateResult(RESULT.STOPPED, throwable);
+                return new DownloadLinkCandidateResult(RESULT.STOPPED, throwable, pluginHost);
             }
         }
-        if (result.getController().getLinkStatus().getStatus() == LinkStatus.FINISHED) { return new DownloadLinkCandidateResult(RESULT.FINISHED, throwable); }
-        return new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, throwable);
+        if (result.getController().getLinkStatus().getStatus() == LinkStatus.FINISHED) { return new DownloadLinkCandidateResult(RESULT.FINISHED, throwable, pluginHost); }
+        return new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, throwable, pluginHost);
     }
-
+    
     private HashSet<DownloadLink> finalizeConditionalSkipReasons(DownloadSession currentSession) {
         HashSet<DownloadLink> ret = new HashSet<DownloadLink>();
         boolean again = true;
@@ -2224,7 +2225,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return ret;
     }
-
+    
     private synchronized void startDownloadJobExecuter() {
         Thread thread = new Thread() {
             @Override
@@ -2263,7 +2264,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         currentWatchDogThread.set(thread);
         thread.start();
     }
-
+    
     private boolean isReconnectPossible(List<WaitingSkipReasonContainer> reconnectRequests) {
         if (CFG_RECONNECT.CFG.isReconnectAllowedToInterruptResumableDownloads()) {
             for (final SingleDownloadController con : getSession().getControllers()) {
@@ -2287,13 +2288,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             return getSession().getControllers().size() == 0;
         }
     }
-
+    
     private boolean isReconnectRequired(DownloadSession currentSession, WaitingSkipReasonContainer reconnectRequest) {
         if (!reconnectRequest.getProxyInfo().isReconnectSupported()) return false;
         HashSet<DownloadLink> alreadyChecked = new HashSet<DownloadLink>();
         for (DownloadLink link : currentSession.getForcedLinks()) {
             if (alreadyChecked.add(link) == false || canRemove(link, true)) continue;
-
+            
             ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
             if (conditionalSkipReason != null) {
                 if (conditionalSkipReason instanceof WaitWhileWaitingSkipReasonIsSet) {
@@ -2307,7 +2308,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (currentSession.isForcedOnlyModeEnabled() == false) {
             for (DownloadLink link : currentSession.getActivationRequests()) {
                 if (alreadyChecked.add(link) == false || canRemove(link, false)) continue;
-
+                
                 ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
                 if (conditionalSkipReason != null) {
                     if (conditionalSkipReason instanceof WaitWhileWaitingSkipReasonIsSet) {
@@ -2321,10 +2322,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return false;
     }
-
+    
     private void validateProxyInfoHistory() {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (isAutoReconnectEnabled()) {
@@ -2346,13 +2347,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 currentSession.compareAndSetSessionState(DownloadSession.SessionState.RECONNECT_REQUESTED, DownloadSession.SessionState.NORMAL);
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     private ReconnectThread invokeReconnect() {
         while (true) {
             Thread ret = reconnectThread.get();
@@ -2360,7 +2361,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             ret = new ReconnectThread();
             if (reconnectThread.compareAndSet(null, ret)) {
                 final DownloadWatchDogJob job = new DownloadWatchDogJob() {
-
+                    
                     @Override
                     public void execute(DownloadSession currentSession) {
                         currentSession.setSessionState(DownloadSession.SessionState.RECONNECT_RUNNING);
@@ -2375,7 +2376,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             reconnectThread.get().start();
                         }
                     }
-
+                    
                     @Override
                     public void interrupt() {
                     }
@@ -2384,34 +2385,34 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
     }
-
+    
     public Reconnecter.ReconnectResult requestReconnect(boolean waitForResult) throws InterruptedException {
         ReconnectThread thread = invokeReconnect();
         if (waitForResult) { return thread.waitForResult(); }
         return null;
     }
-
+    
     protected DownloadWatchDogJob getCurrentDownloadWatchDogJob() {
         return currentWatchDogJob.get();
     }
-
+    
     public void unSkipAllSkipped() {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void interrupt() {
             }
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 /* reset skipReasons */
                 List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
+                    
                     @Override
                     public int returnMaxResults() {
                         return 0;
                     }
-
+                    
                     @Override
                     public boolean acceptNode(DownloadLink node) {
                         return node.isSkipped();
@@ -2421,11 +2422,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         });
     }
-
+    
     private synchronized void startDownloadWatchDog() {
         stateMachine.setStatus(RUNNING_STATE);
         Thread thread = new Thread() {
-
+            
             protected void processJobs() {
                 try {
                     setTempWatchDogJobThread(Thread.currentThread());
@@ -2448,21 +2449,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     setTempWatchDogJobThread(null);
                 }
             }
-
+            
             final int maxWaitTimeout = 5000;
-
+            
             private void removeLink(final DownloadLink link, DownloadSession session) {
                 session.removeActivationRequest(link);
                 SingleDownloadController con = link.getDownloadLinkController();
                 if (con != null) {
                     con.getJobsAfterDetach().add(new DownloadWatchDogJob() {
-
+                        
                         @Override
                         public void execute(DownloadSession currentSession) {
                             link.setConditionalSkipReason(null);
                             currentSession.removeHistory(link);
                         }
-
+                        
                         @Override
                         public void interrupt() {
                         }
@@ -2473,7 +2474,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     session.removeHistory(link);
                 }
             }
-
+            
             @Override
             public void run() {
                 this.setName("WatchDog: downloadWatchDog");
@@ -2486,82 +2487,82 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 try {
                     unSkipAllSkipped();
                     HosterRuleController.getInstance().getEventSender().addListener(hrcListener = new HosterRuleControllerListener() {
-
+                        
                         private void removeAccountCache(final String host) {
                             if (host == null) return;
                             enqueueJob(new DownloadWatchDogJob() {
-
+                                
                                 @Override
                                 public void execute(DownloadSession currentSession) {
                                     currentSession.removeAccountCache(host);
                                 }
-
+                                
                                 @Override
                                 public void interrupt() {
                                 }
                             });
                         }
-
+                        
                         @Override
                         public void onRuleAdded(AccountUsageRule parameter) {
                             if (parameter == null) return;
                             removeAccountCache(parameter.getHoster());
                         }
-
+                        
                         @Override
                         public void onRuleDataUpdate(AccountUsageRule parameter) {
                             if (parameter == null) return;
                             removeAccountCache(parameter.getHoster());
                         }
-
+                        
                         @Override
                         public void onRuleRemoved(final AccountUsageRule parameter) {
                             if (parameter == null) return;
                             removeAccountCache(parameter.getHoster());
                         }
-
+                        
                     }, true);
-
+                    
                     AccountController.getInstance().getBroadcaster().addListener(accListener = new AccountControllerListener() {
-
+                        
                         @Override
                         public void onAccountControllerEvent(final AccountControllerEvent event) {
                             enqueueJob(new DownloadWatchDogJob() {
-
+                                
                                 @Override
                                 public void execute(DownloadSession currentSession) {
                                     currentSession.removeAccountCache(event.getAccount().getHoster());
                                 }
-
+                                
                                 @Override
                                 public void interrupt() {
                                 }
                             });
                         }
                     }, true);
-
+                    
                     DownloadController.getInstance().addListener(listener = new DownloadControllerListener() {
-
+                        
                         @Override
                         public void onDownloadControllerAddedPackage(FilePackage pkg) {
                             lastStructureChange.set(-1l);
                         }
-
+                        
                         @Override
                         public void onDownloadControllerStructureRefresh(FilePackage pkg) {
                             lastStructureChange.set(-1l);
                         }
-
+                        
                         @Override
                         public void onDownloadControllerStructureRefresh() {
                             lastStructureChange.set(-1l);
                         }
-
+                        
                         @Override
                         public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
                             lastStructureChange.set(-1l);
                         }
-
+                        
                         @Override
                         public void onDownloadControllerRemovedPackage(final FilePackage fp) {
                             lastStructureChange.set(-1l);
@@ -2570,13 +2571,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 public void execute(DownloadSession currentSession) {
                                     currentSession.setOnFileExistsAction(fp, null);
                                 }
-
+                                
                                 @Override
                                 public void interrupt() {
                                 }
                             });
                         }
-
+                        
                         @Override
                         public void onDownloadControllerRemovedLinklist(final List<DownloadLink> list) {
                             lastStructureChange.set(-1l);
@@ -2589,121 +2590,121 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         }
                                     }
                                 }
-
+                                
                                 @Override
                                 public void interrupt() {
                                 }
                             });
                         }
-
+                        
                         @Override
                         public void onDownloadControllerUpdatedData(DownloadLink dl, DownloadLinkProperty dlProperty) {
                             lastStructureChange.set(-1l);
-
+                            
                             if (dl != null) {
-
+                                
                                 final DownloadLink link = dlProperty.getDownloadLink();
                                 switch (dlProperty.getProperty()) {
-                                case PRIORITY:
-                                    enqueueJob(new DownloadWatchDogJob() {
-                                        @Override
-                                        public void execute(DownloadSession currentSession) {
-                                            if (link.isEnabled()) {
-                                                currentSession.incrementActivatorRebuildRequest();
+                                    case PRIORITY:
+                                        enqueueJob(new DownloadWatchDogJob() {
+                                            @Override
+                                            public void execute(DownloadSession currentSession) {
+                                                if (link.isEnabled()) {
+                                                    currentSession.incrementActivatorRebuildRequest();
+                                                }
                                             }
-                                        }
-
-                                        @Override
-                                        public void interrupt() {
-                                        }
-                                    });
-                                    break;
-                                case ENABLED:
-                                    enqueueJob(new DownloadWatchDogJob() {
-                                        @Override
-                                        public void execute(DownloadSession currentSession) {
-                                            if (!link.isEnabled()) {
-                                                removeLink(link, currentSession);
-                                            } else {
-                                                currentSession.incrementActivatorRebuildRequest();
+                                            
+                                            @Override
+                                            public void interrupt() {
                                             }
-                                        }
-
-                                        @Override
-                                        public void interrupt() {
-                                        }
-                                    });
-                                    break;
-                                case SKIPPED:
-                                    enqueueJob(new DownloadWatchDogJob() {
-                                        @Override
-                                        public void execute(DownloadSession currentSession) {
-                                            if (link.getSkipReason() != null) {
-                                                removeLink(link, currentSession);
-                                            } else {
-                                                currentSession.incrementActivatorRebuildRequest();
+                                        });
+                                        break;
+                                    case ENABLED:
+                                        enqueueJob(new DownloadWatchDogJob() {
+                                            @Override
+                                            public void execute(DownloadSession currentSession) {
+                                                if (!link.isEnabled()) {
+                                                    removeLink(link, currentSession);
+                                                } else {
+                                                    currentSession.incrementActivatorRebuildRequest();
+                                                }
                                             }
-                                        }
-
-                                        @Override
-                                        public void interrupt() {
-                                        }
-                                    });
-                                    break;
-                                case FINAL_STATE:
-                                    enqueueJob(new DownloadWatchDogJob() {
-                                        @Override
-                                        public void execute(DownloadSession currentSession) {
-                                            if (link.getFinalLinkState() != null) {
-                                                removeLink(link, currentSession);
-                                            } else {
-                                                currentSession.incrementActivatorRebuildRequest();
+                                            
+                                            @Override
+                                            public void interrupt() {
                                             }
-                                        }
-
-                                        @Override
-                                        public void interrupt() {
-                                        }
-                                    });
-                                    break;
+                                        });
+                                        break;
+                                    case SKIPPED:
+                                        enqueueJob(new DownloadWatchDogJob() {
+                                            @Override
+                                            public void execute(DownloadSession currentSession) {
+                                                if (link.getSkipReason() != null) {
+                                                    removeLink(link, currentSession);
+                                                } else {
+                                                    currentSession.incrementActivatorRebuildRequest();
+                                                }
+                                            }
+                                            
+                                            @Override
+                                            public void interrupt() {
+                                            }
+                                        });
+                                        break;
+                                    case FINAL_STATE:
+                                        enqueueJob(new DownloadWatchDogJob() {
+                                            @Override
+                                            public void execute(DownloadSession currentSession) {
+                                                if (link.getFinalLinkState() != null) {
+                                                    removeLink(link, currentSession);
+                                                } else {
+                                                    currentSession.incrementActivatorRebuildRequest();
+                                                }
+                                            }
+                                            
+                                            @Override
+                                            public void interrupt() {
+                                            }
+                                        });
+                                        break;
                                 }
                             }
-
+                            
                         }
-
+                        
                         @Override
                         public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
                             lastStructureChange.set(-1l);
                         }
-
+                        
                         @Override
                         public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
                             lastStructureChange.set(-1l);
                         }
-
+                        
                         @Override
                         public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
                             lastStructureChange.set(-1l);
                         }
-
+                        
                         @Override
                         public void onDownloadControllerUpdatedData(FilePackage pkg) {
                             lastStructureChange.set(-1l);
                         }
                     }, true);
                     while (DownloadWatchDog.this.stateMachine.isState(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.PAUSE_STATE)) {
-
+                        
                         long currentStructure = DownloadController.getInstance().getPackageControllerChanges();
                         long currentActivatorRequestRebuild = getSession().getActivatorRebuildRequest();
                         if (lastStructureChange.getAndSet(currentStructure) != currentStructure || lastActivatorRequestRebuild.getAndSet(currentActivatorRequestRebuild) != currentActivatorRequestRebuild) {
                             final AtomicInteger skippedLinksCounterTmp = new AtomicInteger(0);
                             List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
+                                
                                 @Override
                                 public int returnMaxResults() {
                                     return 0;
                                 }
-
+                                
                                 @Override
                                 public boolean acceptNode(DownloadLink node) {
                                     if (node.isSkipped()) {
@@ -2752,8 +2753,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     waitedForNewActivationRequests += System.currentTimeMillis() - currentTimeStamp;
                                     if ((getSession().isActivationRequestsWaiting() == false && DownloadWatchDog.this.getActiveDownloads() == 0)) {
                                         /*
-                                         * it's important that this if statement gets checked after wait!, else we will loop through without
-                                         * waiting for new links/user interaction
+                                         * it's important that this if statement gets checked after wait!, else we will loop through without waiting for new
+                                         * links/user interaction
                                          */
                                         break;
                                     }
@@ -2764,12 +2765,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     }
                     enqueueJob(new DownloadWatchDogJob() {
-
+                        
                         @Override
                         public void execute(DownloadSession currentSession) {
                             stateMachine.setStatus(STOPPING_STATE);
                         }
-
+                        
                         @Override
                         public void interrupt() {
                         }
@@ -2796,12 +2797,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 } catch (final Throwable e) {
                     logger.log(e);
                     enqueueJob(new DownloadWatchDogJob() {
-
+                        
                         @Override
                         public void execute(DownloadSession currentSession) {
                             stateMachine.setStatus(STOPPING_STATE);
                         }
-
+                        
                         @Override
                         public void interrupt() {
                         }
@@ -2815,7 +2816,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     /* clear session */
                     final DownloadSession latestSession = getSession();
                     enqueueJob(new DownloadWatchDogJob() {
-
+                        
                         @Override
                         public void execute(DownloadSession currentSession) {
                             stateMachine.setStatus(STOPPED_STATE);
@@ -2825,7 +2826,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             latestSession.getActivationRequests().clear();
                             latestSession.getForcedLinks().clear();
                         }
-
+                        
                         @Override
                         public void interrupt() {
                         }
@@ -2837,7 +2838,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         currentWatchDogThread.set(thread);
         thread.start();
     }
-
+    
     /**
      * tell the DownloadWatchDog to stop all running Downloads
      */
@@ -2845,7 +2846,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         DownloadWatchDogJob job = getCurrentDownloadWatchDogJob();
         if (job != null) job.interrupt();
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (DownloadWatchDog.this.stateMachine.isFinal() || DownloadWatchDog.this.stateMachine.isStartState()) {
@@ -2859,19 +2860,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /* we now want to stop all downloads */
                 stateMachine.setStatus(STOPPING_STATE);
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     /**
      * toggles between start/stop states
      */
     public void toggleStartStop() {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (stateMachine.isStartState() || stateMachine.isFinal()) {
@@ -2882,13 +2883,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     DownloadWatchDog.this.stopDownloads();
                 }
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     @Deprecated
     /**
      * @Deprecated: User getEventSender Instead
@@ -2896,10 +2897,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public StateMachine getStateMachine() {
         return this.stateMachine;
     }
-
+    
     public void onShutdown(boolean silent) {
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (stateMachine.isState(RUNNING_STATE, PAUSE_STATE)) {
@@ -2909,7 +2910,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
                 stopDownloads();
             }
-
+            
             @Override
             public void interrupt() {
             }
@@ -2923,13 +2924,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
     }
-
+    
     public void onNewFile(Object obj, final File[] list) {
         if (JsonConfig.create(GeneralSettings.class).isAutoOpenContainerAfterDownload()) {
             /* check if extracted files are container files */
-
+            
             new Thread() {
-
+                
                 @Override
                 public void run() {
                     StringBuilder sb = new StringBuilder();
@@ -2942,15 +2943,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.DOWNLOADED_CONTAINER, null), sb.toString()));
                 }
-
+                
             }.start();
         }
     }
-
+    
     public void localFileCheck(final SingleDownloadController controller, final ExceptionRunnable runOkay, final ExceptionRunnable runFailed) throws Exception {
         final NullsafeAtomicReference<Object> asyncResult = new NullsafeAtomicReference<Object>(null);
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             private void check(DownloadSession session, SingleDownloadController controller) throws Exception {
                 if (controller.isAborting()) throw new InterruptedException("Controller is aborted");
                 DownloadLink downloadLink = controller.getDownloadLink();
@@ -3043,77 +3044,77 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     }
                     switch (doAction) {
-                    case SKIP_FILE:
-                        switch (CFG_GENERAL.CFG.getOnSkipDueToAlreadyExistsAction()) {
-                        case SET_FILE_TO_SUCCESSFUL:
-                            throw new PluginException(LinkStatus.FINISHED);
-                        default:
-                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
-                        }
-                    case OVERWRITE_FILE:
-                        if (fileInProgress) {
-                            /* we cannot overwrite a file that is currently in progress */
-                            controller.getLogger().severe("Cannot not overwrite file in progress! " + fileOutput);
-                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
-                        }
-                        if (!fileOutput.delete()) {
-                            controller.getLogger().severe("Could not overwrite file! " + fileOutput);
-                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
-                        }
-                        break;
-                    case AUTO_RENAME:
-                        String splitName[] = CrossSystem.splitFileName(fileOutput.getName());
-                        String downloadPath = fileOutput.getParent();
-                        String extension = splitName[1];
-                        if (extension == null) {
-                            extension = "";
-                        } else {
-                            extension = "." + extension;
-                        }
-                        String name = splitName[0];
-                        long duplicateFilenameCounter = 2;
-                        String alreadyDuplicated = new Regex(name, ".*_(\\d+)$").getMatch(0);
-                        if (alreadyDuplicated != null) {
-                            /* it seems the file already got auto renamed! */
-                            duplicateFilenameCounter = Long.parseLong(alreadyDuplicated) + 1;
-                            name = new Regex(name, "(.*)_\\d+$").getMatch(0);
-                        }
-                        try {
-                            File check = null;
-                            String newName = null;
-                            while (true) {
-                                newName = name + "_" + (duplicateFilenameCounter++) + extension;
-                                check = new File(downloadPath, newName);
-                                if (check.exists()) {
-                                    check = null;
-                                } else {
-                                    for (SingleDownloadController downloadController : session.getControllers()) {
-                                        if (downloadController == controller) continue;
-                                        if (session.getFileAccessManager().isLockedBy(check, downloadController)) {
-                                            check = null;
-                                            break;
+                        case SKIP_FILE:
+                            switch (CFG_GENERAL.CFG.getOnSkipDueToAlreadyExistsAction()) {
+                                case SET_FILE_TO_SUCCESSFUL:
+                                    throw new PluginException(LinkStatus.FINISHED);
+                                default:
+                                    throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                            }
+                        case OVERWRITE_FILE:
+                            if (fileInProgress) {
+                                /* we cannot overwrite a file that is currently in progress */
+                                controller.getLogger().severe("Cannot not overwrite file in progress! " + fileOutput);
+                                throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                            }
+                            if (!fileOutput.delete()) {
+                                controller.getLogger().severe("Could not overwrite file! " + fileOutput);
+                                throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                            }
+                            break;
+                        case AUTO_RENAME:
+                            String splitName[] = CrossSystem.splitFileName(fileOutput.getName());
+                            String downloadPath = fileOutput.getParent();
+                            String extension = splitName[1];
+                            if (extension == null) {
+                                extension = "";
+                            } else {
+                                extension = "." + extension;
+                            }
+                            String name = splitName[0];
+                            long duplicateFilenameCounter = 2;
+                            String alreadyDuplicated = new Regex(name, ".*_(\\d+)$").getMatch(0);
+                            if (alreadyDuplicated != null) {
+                                /* it seems the file already got auto renamed! */
+                                duplicateFilenameCounter = Long.parseLong(alreadyDuplicated) + 1;
+                                name = new Regex(name, "(.*)_\\d+$").getMatch(0);
+                            }
+                            try {
+                                File check = null;
+                                String newName = null;
+                                while (true) {
+                                    newName = name + "_" + (duplicateFilenameCounter++) + extension;
+                                    check = new File(downloadPath, newName);
+                                    if (check.exists()) {
+                                        check = null;
+                                    } else {
+                                        for (SingleDownloadController downloadController : session.getControllers()) {
+                                            if (downloadController == controller) continue;
+                                            if (session.getFileAccessManager().isLockedBy(check, downloadController)) {
+                                                check = null;
+                                                break;
+                                            }
                                         }
                                     }
+                                    if (check != null) {
+                                        break;
+                                    }
                                 }
-                                if (check != null) {
-                                    break;
-                                }
+                                downloadLink.forceFileName(newName);
+                                downloadLink.setChunksProgress(null);
+                            } catch (Throwable e) {
+                                LogSource.exception(controller.getLogger(), e);
+                                downloadLink.forceFileName(null);
+                                throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                             }
-                            downloadLink.forceFileName(newName);
-                            downloadLink.setChunksProgress(null);
-                        } catch (Throwable e) {
-                            LogSource.exception(controller.getLogger(), e);
-                            downloadLink.forceFileName(null);
+                            break;
+                        default:
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
-                        }
-                        break;
-                    default:
-                        throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                     }
                 }
                 return;
             }
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 try {
@@ -3136,7 +3137,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
             }
-
+            
             @Override
             public void interrupt() {
                 Thread watchDogThread = getWatchDogThread();
@@ -3156,7 +3157,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (ret instanceof Exception) throw (Exception) ret;
         throw new WTFException("WTF? Result: " + ret);
     }
-
+    
     @Override
     public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
         if (request.getVetos().size() > 0) {
@@ -3165,7 +3166,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
              */
             return;
         }
-
+        
         String dialogTitle = null;
         synchronized (this.shutdownLock) {
             /*
@@ -3196,12 +3197,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
         }
     }
-
+    
     @Override
     public long getShutdownVetoPriority() {
         return 0;
     }
-
+    
     public long getNonResumableBytes(SelectionInfo<FilePackage, DownloadLink> selection) {
         long i = 0;
         if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
@@ -3214,7 +3215,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return i;
     }
-
+    
     public int getNonResumableRunningCount() {
         int i = 0;
         if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
@@ -3224,7 +3225,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return i;
     }
-
+    
     public long getNonResumableBytes() {
         long i = 0;
         if (this.stateMachine.isState(RUNNING_STATE, PAUSE_STATE, STOPPING_STATE)) {
@@ -3237,122 +3238,122 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
         return i;
     }
-
+    
     public boolean isLinkForced(DownloadLink dlLink) {
         List<DownloadLink> links = getSession().getForcedLinks();
         return links.size() > 0 && links.contains(dlLink);
     }
-
+    
     public boolean isRunning() {
         return stateMachine.isState(RUNNING_STATE, PAUSE_STATE);
     }
-
+    
     public boolean isIdle() {
         return stateMachine.isState(IDLE_STATE, STOPPED_STATE);
     }
-
+    
     public boolean isStopping() {
         return stateMachine.isState(STOPPING_STATE);
-
+        
     }
-
+    
     @Override
     public void onShutdown(ShutdownRequest request) {
     }
-
+    
     @Override
     public void onShutdownVeto(ShutdownRequest request) {
     }
-
+    
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
-
+        
     }
-
+    
     @Override
     public void onDownloadControllerStructureRefresh(FilePackage pkg) {
     }
-
+    
     @Override
     public void onDownloadControllerStructureRefresh() {
     }
-
+    
     @Override
     public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
     }
-
+    
     @Override
     public void onDownloadControllerRemovedPackage(final FilePackage pkg) {
         DownloadSession session = getSession();
         if (session.isStopMarkSet() == false) return;
         if (session.getStopMark() == STOPMARK.HIDDEN) return;
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (currentSession.isStopMarkSet() == false) return;
                 Object stopMark = currentSession.getStopMark();
                 if (stopMark == STOPMARK.HIDDEN) return;
-
+                
                 if (stopMark == pkg) {
                     /* now the stopmark is hidden */
                     currentSession.setStopMark(STOPMARK.HIDDEN);
                     return;
                 }
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     @Override
     public void onDownloadControllerRemovedLinklist(final List<DownloadLink> list) {
         DownloadSession session = getSession();
         if (session.isStopMarkSet() == false) return;
         if (session.getStopMark() == STOPMARK.HIDDEN) return;
         enqueueJob(new DownloadWatchDogJob() {
-
+            
             @Override
             public void execute(DownloadSession currentSession) {
                 if (currentSession.isStopMarkSet() == false) return;
                 Object stopMark = currentSession.getStopMark();
                 if (stopMark == STOPMARK.HIDDEN) return;
-
+                
                 for (DownloadLink l : list) {
                     if (stopMark == l) {
                         currentSession.setStopMark(STOPMARK.HIDDEN);
                         return;
                     }
                 }
-
+                
             }
-
+            
             @Override
             public void interrupt() {
             }
         });
     }
-
+    
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
     }
-
+    
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
     }
-
+    
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
     }
-
+    
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
     }
-
+    
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
     }
-
+    
 }
