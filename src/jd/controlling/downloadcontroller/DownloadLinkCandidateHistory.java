@@ -99,7 +99,7 @@ public class DownloadLinkCandidateHistory {
             }
         }
         int maxNumberOfDownloadLinkCandidates = selector.getMaxNumberOfDownloadLinkCandidatesResults(candidate);
-        if (maxNumberOfDownloadLinkCandidates > 0 && size() > maxNumberOfDownloadLinkCandidates) { return new DownloadLinkCandidateResult(SkipReason.TOO_MANY_RETRIES, null, candidate.getCachedAccount().getPlugin().getLazyP().getHost()); }
+        if (maxNumberOfDownloadLinkCandidates > 0 && size() > maxNumberOfDownloadLinkCandidates) { return new DownloadLinkCandidateResult(SkipReason.TOO_MANY_RETRIES, null, null); }
         return null;
     }
 }

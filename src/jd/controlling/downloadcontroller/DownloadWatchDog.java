@@ -655,13 +655,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             List<DownloadLinkCandidate> possibleCandidates = new ArrayList<DownloadLinkCandidate>();
             if (validateDestination(new File(allCandidates.get(0).getLink().getFilePackage().getDownloadDirectory())) != null) {
                 for (DownloadLinkCandidate candidate : allCandidates) {
-                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, candidate.getCachedAccount().getPlugin().getLazyP().getHost()));
+                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.INVALID_DESTINATION, null, null));
                 }
                 continue candidateLoop;
             }
             for (DownloadLinkCandidate candidate : allCandidates) {
                 if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate.getLink()))) {
-                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, candidate.getCachedAccount().getPlugin().getLazyP().getHost()));
+                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
                 } else {
                     List<ProxyInfo> proxies = null;
                     if (selector.isDownloadLinkCandidateAllowed(candidate)) {
@@ -686,7 +686,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     } else {
                         if (selector.validateDownloadLinkCandidate(candidate)) {
-                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.CONNECTION_UNAVAILABLE, null, candidate.getCachedAccount().getPlugin().getLazyP().getHost()));
+                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.CONNECTION_UNAVAILABLE, null, null));
                         }
                     }
                 }
@@ -1128,9 +1128,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (mirrorsSize == mirrors.size()) {
                     /* even NONE cannot handle our candidate, so let's skip it */
                     if (tempDisabledCachedAccount != null) {
-                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null, tempDisabledCachedAccount.getPlugin().getLazyP().getHost()));
+                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(new WaitForAccountSkipReason(tempDisabledCachedAccount.getAccount()), null, null));
                     } else if (forbiddenCachedAccount == null) {
-                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(SkipReason.NO_ACCOUNT, null, forbiddenCachedAccount.getPlugin().getLazyP().getHost()));
+                        selector.addExcluded(mirror, new DownloadLinkCandidateResult(SkipReason.NO_ACCOUNT, null, null));
                     }
                 }
             }
