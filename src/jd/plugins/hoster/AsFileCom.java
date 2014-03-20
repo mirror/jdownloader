@@ -74,8 +74,8 @@ public class AsFileCom extends PluginForHost {
             if (filename == null) filename = br.getRegex("<title>Free download ([^<>\"\\']+)</title>").getMatch(0);
             if (filename == null) filename = br.getRegex(">Download:</div><div class=\"div_variable\"><strong>(.*?)</strong>").getMatch(0);
             String filesize = br.getRegex(">File size:</div><div class=\"div_variable\">([^<>\"]*?)<").getMatch(0);
-            if (filesize == null) filename = br.getRegex(">File size:</div><div class=\"div_variable\">(.*?)</div>").getMatch(0);
-            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize == null) filesize = br.getRegex("File size: (.*?)</div>").getMatch(0);
+            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
