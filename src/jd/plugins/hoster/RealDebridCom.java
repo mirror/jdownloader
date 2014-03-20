@@ -119,23 +119,27 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (account == null) {
-            /* without account its not possible to download the link */
+        if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
+            // generated links do not require an account to download
+            return true;
+        } else if (account == null) {
+            // multihoster type links do require an account!
             return false;
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+        } else {
+            synchronized (hostUnavailableMap) {
+                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap != null) {
+                    Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                        return false;
+                    } else if (lastUnavailable != null) {
+                        unavailableMap.remove(downloadLink.getHost());
+                        if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    }
                 }
             }
+            return true;
         }
-        return true;
     }
 
     @Override
