@@ -63,8 +63,8 @@ public class TwitterCom extends PluginForDecrypt {
                 maxid = br.getRegex("\"max_id\":\"(\\d+)").getMatch(0);
             }
             if (maxid == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Either there is nothing to decrypt or the decrypter is broken: " + parameter);
+                return decryptedLinks;
             }
             int addedlinks_all = 0;
             final String[] embedurl_regexes = new String[] { "\"(https?://(www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://vine\\.co/v/[A-Za-z0-9]+)\"" };

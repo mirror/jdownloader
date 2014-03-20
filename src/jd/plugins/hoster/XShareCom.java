@@ -54,7 +54,7 @@ public class XShareCom extends PluginForHost {
         final String videoid = br.getRegex("video_id: (\\d+)").getMatch(0);
         if (videoid == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
-        DLLINK = br.getRegex("url=\"(http://[^<>\"]*?)\" type=\"video/x\\-flv\"").getMatch(0);
+        DLLINK = br.getRegex("url=\"(http://[^<>\"]*?)\" type=\"video/").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

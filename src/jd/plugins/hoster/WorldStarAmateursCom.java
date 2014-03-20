@@ -55,6 +55,7 @@ public class WorldStarAmateursCom extends PluginForHost {
         if (filename == null) filename = linkid;
         br.getPage("http://www.worldstaramateurs.com/modules/video/player/nuevo/config.php?id=" + linkid);
         DLLINK = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("<file><\\!\\[CDATA\\[(http[^<>\"]*?)\\]\\]></file>").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

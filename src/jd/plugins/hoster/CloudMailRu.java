@@ -114,6 +114,16 @@ public class CloudMailRu extends PluginForHost {
                 }
             }
         } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
+                if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+                    downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(false));
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                }
+                downloadLink.setProperty(NOCHUNKS, Boolean.valueOf(true));
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE");
+            }
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
             if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(CloudMailRu.NOCHUNKS, false) == false) {

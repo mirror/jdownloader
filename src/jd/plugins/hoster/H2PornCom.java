@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -66,9 +67,12 @@ public class H2PornCom extends PluginForHost {
         return 3;
     }
 
+    private boolean server_problems = false;
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (server_problems) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         if (br.containsHTML("This video is a private video uploaded by <")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -89,7 +93,12 @@ public class H2PornCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final SocketTimeoutException e) {
+            server_problems = true;
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<div class=\"video_view\">[\t\n\r ]+<h1 class=\"block_header\">(.*?)\\&nbsp;<g:plusone").getMatch(0);
         if (filename == null) {

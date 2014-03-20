@@ -71,12 +71,12 @@ public class XHamsterCom extends PluginForHost {
     public String getDllink() throws IOException, PluginException {
         String dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            final Regex secondway = br.getRegex("\\&srv=(https?%3A%2F%2F3\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
+            final Regex secondway = br.getRegex("\\&srv=(https?[A-Za-z0-9%]+\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
             String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
             if (server == null) server = secondway.getMatch(0);
             String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
             if (file == null) file = secondway.getMatch(1);
-            if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (server == null || file == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             if (file.startsWith("http")) {
                 // Examplelink (ID): 968106
                 dllink = file;
@@ -329,4 +329,17 @@ public class XHamsterCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
+/* NO OVERRIDE!! We need to stay 0.9*compatible */
+public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+if (acc == null) {
+/* no account, yes we can expect captcha */
+return true;
+}
+ if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+/* free accounts also have captchas */
+return true;
+}
+return false;
+}
 }

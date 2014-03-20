@@ -85,7 +85,7 @@ public class AlphaPornoCom extends PluginForHost {
         // Video offline
         if (br.containsHTML("(<h2>Sorry, this video is no longer available|<title></title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // 404
-        if (br.containsHTML(">Not Found<|The requested URL was not found on this server")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Not Found<|The requested URL was not found on this server|>Sorry, this video has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"description\" content=\"(.*?) \\- video on Alpha Porno \\- Porn Tube\"/>").getMatch(0);
