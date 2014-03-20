@@ -263,17 +263,18 @@ public class UploadCCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = null;
             String dl = br.getRegex("(https?://[^/]+" + NICE_HOST + "/download-" + fuid + "[^\"\\']+)").getMatch(0);
-            if (dl != null) {
-                getPage(dl);
-                dllink = getDllink();
-            } else {
-                dlForm = br.getFormbyProperty("name", "F1");
-                if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // how many forms deep do you want to try.
-                int repeat = 2;
-                for (int i = 0; i <= repeat; i++) {
+            Form dlForm = br.getFormbyProperty("name", "F1");
+            if (dlForm == null && dl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // how many forms deep do you want to try.
+            int repeat = 2;
+            for (int i = 0; i <= repeat; i++) {
+                if (dl != null) {
+                    getPage(dl);
+                    dllink = getDllink();
+
+                }
+                if (dllink == null) {
                     final long timeBefore = System.currentTimeMillis();
                     boolean password = false;
                     boolean skipWaittime = false;
@@ -377,23 +378,15 @@ public class UploadCCom extends PluginForHost {
                     logger.info("Submitted DLForm");
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
-                    if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
-                        logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                        dlForm = br.getFormbyProperty("name", "F1");
-                        try {
-                            invalidateLastChallengeResponse();
-                        } catch (final Throwable e) {
-                        }
-                        continue;
-                    } else {
-                        try {
-                            validateLastChallengeResponse();
-                        } catch (final Throwable e) {
-                        }
-                        break;
-                    }
+                }
+                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
+                    dlForm = br.getFormbyProperty("name", "F1");
+                    continue;
+                } else {
+                    break;
                 }
             }
         }
