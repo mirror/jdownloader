@@ -216,7 +216,7 @@ public class RapiduNet extends PluginForHost {
             break;
         }
 
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can't find final download link/Captcha errors!", -1l); }
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Can't find final download link/Captcha errors!", -1l); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -241,55 +241,76 @@ public class RapiduNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        requestFileInformation(downloadLink);
-        String loginInfo = login(account, false);
-        // (string) login - Login użytkownika
-        // (string) password - Hasło
-        // (string) id - Identyfikator pliku ( np: 7464459120 )
+        boolean retry;
+        String response = "";
 
-        br.setFollowRedirects(true);
-        br.postPage(MAINPAGE + "/api/getFileDownload/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + downloadLink.getProperty("FILEID"));
-        // response
-        // (string) [fileLocation] - Lokalizacja pliku ( link ważny jest 24h od momentu wygenerowania )
-        String response = br.toString();
+        // loop because wrong handling of
+        // LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE when Free user has waittime for the next
+        // downloads
+        do {
+            retry = false;
+            requestFileInformation(downloadLink);
+            String loginInfo = login(account, false);
+            // (string) login - Login użytkownika
+            // (string) password - Hasło
+            // (string) id - Identyfikator pliku ( np: 7464459120 )
 
-        String errors = checkForErrors(response, "error");
+            br.setFollowRedirects(true);
+            br.postPage(MAINPAGE + "/api/getFileDownload/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + downloadLink.getProperty("FILEID"));
+            // response
+            // (string) [fileLocation] - Lokalizacja pliku ( link ważny jest 24h od momentu wygenerowania )
+            response = br.toString();
 
-        // errorEmptyLoginOrPassword - Brak parametru Login lub Password
-        // errorAccountNotFound - Konto użytkownika nie zostało znalezione
-        // errorAccountBan - Konto użytkownika zostało zbanowane i nie ma możliwości zalogowania się na nie
-        // errorAccountNotHaveDayTransfer - Użytkownik nie posiada wystarczającej ilości transferu dziennego, aby pobrać dany plik (Premium
-        // 30Gb/dzień, Free 5Gb/dzień)
-        // errorDateNextDownload - Czas, po którym użytkownik Free może pobrać kolejny plik
-        // errorEmptyFileId - Brak parametru id lub parametr jest pusty
-        // errorFileNotFound - Nie znaleziono pliku
-        //
+            String errors = checkForErrors(response, "error");
 
-        if (errors != null) {
-            if (errors.contains("errorAccountFree")) {
-                setLoginData(account);
-                handleFree(downloadLink);
-                return;
-            } else {
-                if (errors.contains("errorDateNextDownload")) {
-                    String nextDownload = checkForErrors(response, "errorDateNextDownload");
+            // errorEmptyLoginOrPassword - Brak parametru Login lub Password
+            // errorAccountNotFound - Konto użytkownika nie zostało znalezione
+            // errorAccountBan - Konto użytkownika zostało zbanowane i nie ma możliwości zalogowania się na nie
+            // errorAccountNotHaveDayTransfer - Użytkownik nie posiada wystarczającej ilości transferu dziennego, aby pobrać dany plik
+            // (Premium
+            // 30Gb/dzień, Free 5Gb/dzień)
+            // errorDateNextDownload - Czas, po którym użytkownik Free może pobrać kolejny plik
+            // errorEmptyFileId - Brak parametru id lub parametr jest pusty
+            // errorFileNotFound - Nie znaleziono pliku
+            //
 
-                    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-                    Date newStartDate = df.parse(nextDownload);
-                    Date actualDate = new Date();
-                    long leftToWait = newStartDate.getTime() - actualDate.getTime();
-                    if (leftToWait > 0) sleep(leftToWait, downloadLink);
-                    String test = "wait is over";
+            if (errors != null) {
+                // probably it won't happen after changes in the API -
+                // getFileDownload now supports also Free Registered Users
+                if (errors.contains("errorAccountFree")) {
+                    setLoginData(account);
+                    handleFree(downloadLink);
+                    return;
                 } else {
+                    if (errors.contains("errorDateNextDownload")) {
+                        String nextDownload = checkForErrors(response, "errorDateNextDownload");
 
-                    logger.info("Hoster: RapiduNet reports:" + errors + " with link: " + downloadLink.getDownloadURL());
-                    if (errors.contains("errorFileNotFound"))
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    else
-                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, errors);
+                        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                        Date newStartDate = df.parse(nextDownload);
+                        Date actualDate = new Date();
+                        long leftToWait = newStartDate.getTime() - actualDate.getTime();
+                        if (leftToWait > 0) {
+                            // doesn't work correctly
+                            // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, leftToWait); }
+                            // temporary solution
+                            sleep(leftToWait, downloadLink);
+                            retry = true;
+                        }
+                    } else if (errors.contains("errorAccountNotHaveDayTransfer")) {
+                        logger.info("Hoster: RapiduNet reports: No traffic left!");
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No traffic left!");
+                    } else {
+
+                        logger.info("Hoster: RapiduNet reports:" + errors + " with link: " + downloadLink.getDownloadURL());
+                        if (errors.contains("errorFileNotFound"))
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        else
+                            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, errors);
+                    }
                 }
             }
-        }
+
+        } while (retry);
         String fileLocation = getJson("fileLocation", response);
         if (fileLocation == null) {
             logger.info("Hoster: RapiduNet reports: filelocation not found with link: " + downloadLink.getDownloadURL());
