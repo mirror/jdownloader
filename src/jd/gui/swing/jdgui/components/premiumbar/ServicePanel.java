@@ -20,6 +20,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -232,6 +233,17 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
         // final HashSet<DomainInfo> enabled = new HashSet<DomainInfo>();
         final HashMap<String, AccountServiceCollection> map = new HashMap<String, AccountServiceCollection>();
         final LinkedList<ServiceCollection<?>> services = new LinkedList<ServiceCollection<?>>();
+        Collections.sort(accs, new Comparator<Account>() {
+            public int compare(boolean x, boolean y) {
+                return (x == y) ? 0 : (x ? 1 : -1);
+            }
+            
+            @Override
+            public int compare(Account o1, Account o2) {
+                return compare(o1.isMulti(), o2.isMulti());
+            }
+            
+        });
         HashMap<String, LazyHostPlugin> plugins = new HashMap<String, LazyHostPlugin>();
         for (Account acc : accs) {
             AccountInfo ai = acc.getAccountInfo();

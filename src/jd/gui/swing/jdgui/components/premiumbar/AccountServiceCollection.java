@@ -6,7 +6,6 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 
 import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 
 import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -24,7 +23,7 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
     private boolean           enabled;
     private HashSet<Account>  hashSet;
     
-    private boolean           multi              = false;
+    private Boolean           multi              = null;
     private long              lastValidTimeStamp = -1;
     private int               invalid;
     private boolean           inuse;
@@ -57,10 +56,13 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
     @Override
     public boolean add(Account acc) {
         if (!hashSet.add(acc)) return false;
-        if (acc.isMulti()) {
-            multi = true;
+        if (multi == null) {
+            if (acc.isMulti()) {
+                multi = true;
+            } else {
+                multi = false;
+            }
         }
-        AccountInfo ai = acc.getAccountInfo();
         if (acc.isEnabled()) {
             enabled = true;
         }
@@ -68,15 +70,13 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
             invalid++;
         } else if (acc.isEnabled()) {
             inuse = true;
-            
         }
-        
         lastValidTimeStamp = Math.max(acc.getLastValidTimestamp(), lastValidTimeStamp);
         return super.add(acc);
     }
     
     public boolean isMulti() {
-        return multi;
+        return Boolean.TRUE.equals(multi);
     }
     
     @Override
