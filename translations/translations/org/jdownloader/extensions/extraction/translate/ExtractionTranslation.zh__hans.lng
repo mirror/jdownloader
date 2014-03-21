@@ -27,6 +27,7 @@ contextmenu_main=压缩文档
 contextmenu_password=设置压缩文档密码
 crash_title=JDownloader 崩溃!
 date=日期
+delete_to_trash=移到回收站
 description=提取全部常见的压缩文档类型 (zip,rar,7zip,...)
 downloadedbad=文件必须下载
 downloadedok=文件已存在
