@@ -51,10 +51,11 @@ public class VideoCnnturkCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if ("/".equals(br.getRedirectLocation()) || "http://video.cnnturk.com/".equals(br.getRedirectLocation())) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        }
+        br.setFollowRedirects(false);
+        if (br.containsHTML("class=\"mdm err html\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("http://video.cnnturk.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         final String xmlUrl = br.getRegex("\"FlashPlayerConfigUrl\": \"(http://[^<>\"]*?)\"").getMatch(0);
         String filename = null, server = null, playPath = null;
@@ -70,12 +71,15 @@ public class VideoCnnturkCom extends PluginForHost {
             filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
             DLLINK = server + "@" + playPath;
         } else {
-            filename = br.getRegex("<title>([^<>]*?) CNN TÜRK Video([\t\n\r ]+)?</title>").getMatch(0);
+            filename = br.getRegex("<title>([^<>]*?) CNN TÜRK?</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
             final Regex urlinfo = new Regex(downloadLink.getDownloadURL(), "video\\.cnnturk\\.com/(\\d+)/(\\w+)/(\\d+)/(\\d+)/([a-z0-9\\-]+)");
             final String playerURL = "http://video.cnnturk.com/actions/Video/NetDVideoPlayer?year=" + urlinfo.getMatch(0) + "&category=" + urlinfo.getMatch(1) + "&month=" + urlinfo.getMatch(2) + "&day=" + urlinfo.getMatch(3) + "&name=" + urlinfo.getMatch(4) + "&height=360";
+            br.setFollowRedirects(true);
             br.getPage(playerURL);
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             DLLINK = br.getRegex("path: \\'([^<>\"]*?)\\'").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (DLLINK.contains(".mp4")) {
