@@ -99,7 +99,8 @@ public class SoundcloudCom extends PluginForHost {
             } catch (final PluginException e) {
             }
         }
-        DLLINK = parameter.getStringProperty("directlink");
+        String apilink = parameter.getStringProperty("apilink", null);
+        if (apilink != null) DLLINK = getDirectlink(apilink);
         if (DLLINK != null) {
             checkDirectLink(parameter);
             if (DLLINK != null) {
@@ -132,10 +133,11 @@ public class SoundcloudCom extends PluginForHost {
                 api_access += "&secret_token=" + secret_token;
             }
             br.getPage(api_access);
-            String input = getJson("download_url");
-            if (input == null) input = getJson("stream_url");
-            if (input == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = getDirectlink(input);
+            apilink = getJson("download_url");
+            if (apilink == null) apilink = getJson("stream_url");
+            if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = getDirectlink(apilink);
+            if (DLLINK != null) parameter.setProperty("apilink", apilink);
         }
         checkDirectLink(parameter);
         return AvailableStatus.TRUE;

@@ -83,7 +83,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             final String user_id = new Regex(parameter, "vimeo\\.com/([A-Za-z0-9\\-_]+)/videos").getMatch(0);
             String userName = br.getRegex(">Here are all of the videos that <a href=\"/user\\d+\">([^<>\"]*?)</a> has uploaded to Vimeo").getMatch(0);
             if (userName == null) userName = user_id;
-            final String totalVideoNum = br.getRegex(">(\\d+) Total</a>").getMatch(0);
+            final String totalVideoNum = br.getRegex(">(\\d+(,\\d+)?) Total</a>").getMatch(0);
             int totalPages = 1;
             final String[] pages = br.getRegex("/videos/page:(\\d+)/").getColumn(0);
             if (pages != null && pages.length != 0) {
@@ -96,7 +96,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final int totalVids = Integer.parseInt(totalVideoNum);
+            final int totalVids = Integer.parseInt(totalVideoNum.replace(",", ""));
             for (int i = 1; i <= totalPages; i++) {
                 try {
                     if (this.isAbort()) {

@@ -63,7 +63,7 @@ public class VideoOnlineUa extends PluginForHost {
         br.getPage("http://video.online.ua/embed/" + fid);
         if (br.containsHTML(">Страница по данному адресу отсутствует<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // External sites - their videos don't even play via browser
-        if (br.containsHTML("stb\\.ua/embed/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("stb\\.ua/embed/|m1\\.tv/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String hash = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);

@@ -303,13 +303,15 @@ public class SuperLoadCz extends PluginForHost {
     }
 
     private void login(final Account acc) throws IOException, PluginException {
-        br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
-        if (!getSuccess()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        TOKEN = getJson("token");
-        if (TOKEN != null) {
-            acc.setProperty("token", TOKEN);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        synchronized (LOCK) {
+            br.postPage(mAPI + "/login", "username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + JDHash.getMD5(acc.getPass()));
+            if (!getSuccess()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            TOKEN = getJson("token");
+            if (TOKEN != null) {
+                acc.setProperty("token", TOKEN);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
     }
 
@@ -366,9 +368,7 @@ public class SuperLoadCz extends PluginForHost {
                 if (br.getRequest().getHttpConnection().getResponseCode() == 401) {
                     logger.info("Request failed (401) -> Re-newing token and trying again");
                     try {
-                        synchronized (LOCK) {
-                            this.login(acc);
-                        }
+                        this.login(acc);
                     } catch (final Exception e_acc) {
                         logger.warning("Failed to re-new token!");
                         throw e_acc;

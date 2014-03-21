@@ -124,7 +124,7 @@ public class VideoPremiumNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         // Correct previously added links
         correctDownloadLink(link);
         prepBrowser();

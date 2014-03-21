@@ -168,7 +168,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 }
                 logger.info("Decrypting page " + currentPage + " / " + pagesNum);
                 br.getPage("http://www.dailymotion.com/user/" + username + "/" + currentPage);
-                final String[] videos = br.getRegex("preview_link \"  href=\"(/video/[A-Za-z0-9\\-_]+)\"").getColumn(0);
+                final String[] videos = br.getRegex("preview_link \"  href=\"(/video/[^<>\"/]+)\"").getColumn(0);
                 if (videos == null || videos.length == 0) {
                     logger.info("Found no videos on page " + currentPage + " -> Stopping decryption");
                     break;
