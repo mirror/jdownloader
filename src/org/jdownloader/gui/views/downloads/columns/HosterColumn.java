@@ -226,7 +226,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
                 if (obj instanceof AbstractPackageChildrenNode) {
                     DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
                     
-                    LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_ACCOUNT_TYPE, false, di.getTld());
+                    LinkedList<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS, false, di.getTld());
                     if (services.size() > 0) {
                         ToolTipController.getInstance().show(services.get(0).createTooltip(null));
                         
