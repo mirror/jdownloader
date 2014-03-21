@@ -47,14 +47,14 @@ public class ShareRapidCz extends PluginForHost {
 
     private static AtomicInteger maxPrem                         = new AtomicInteger(1);
 
-    private static final String  MAINPAGE                        = "http://share-rapid.com/";
+    private static final String  MAINPAGE                        = "http://sharerapid.cz/";
     private static Object        LOCK                            = new Object();
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanPremiumDownload = new AtomicInteger(1);
 
     public ShareRapidCz(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://share-rapid.com/dobiti/?zeme=1");
+        this.enablePremium("http://sharerapid.cz/dobiti/?zeme=1");
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ShareRapidCz extends PluginForHost {
         br.setFollowRedirects(true);
         String filename = Encoding.htmlDecode(br.getRegex("style=\"padding: 12px 0px 0px 10px; display: block\">(.*?)</ br>").getMatch(0));
         if (filename == null) {
-            filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)- Share-Rapid</title>").getMatch(0));
+            filename = Encoding.htmlDecode(br.getRegex("<title>(.*?)\\- Share\\-Rapid</title>").getMatch(0));
         }
         final String filesize = Encoding.htmlDecode(br.getRegex("Velikost:</td>.*?<td class=\"h\"><strong>.*?(.*?)</strong></td>").getMatch(0));
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -94,11 +94,6 @@ public class ShareRapidCz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        if (true) {
-            account.setValid(false);
-            ai.setStatus("Host has financial issues, Please visit there homepage!");
-            return ai;
-        }
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
@@ -107,7 +102,7 @@ public class ShareRapidCz extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://share-rapid.com/mujucet/");
+        br.getPage(MAINPAGE + "mujucet/");
         long realTraffic = 0l;
         String trafficleft = null;
         /**
@@ -125,6 +120,7 @@ public class ShareRapidCz extends PluginForHost {
             return ai;
         } else {
             trafficleft = br.getMatch("<td>GB:</td><td>([^<>\"]*?)<a");
+            if (trafficleft == null) trafficleft = br.getRegex("<td>Kredit</td><td>([^<>\"]*?)</td>").getMatch(0);
             if (trafficleft != null) {
                 logger.info("Available traffic equals: " + trafficleft);
                 // Don't set the traffic
@@ -184,7 +180,7 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://share-rapid.com/informace/";
+        return MAINPAGE + "informace/";
     }
 
     @Override
@@ -225,7 +221,6 @@ public class ShareRapidCz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        if (true) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Host has financial issues, Please visit there homepage!"); }
         String dllink = null;
         // requestFileInformation(downloadLink);
         login(account, false);
@@ -237,7 +232,7 @@ public class ShareRapidCz extends PluginForHost {
             logger.info("share-rapid.cz: Not enough traffic left -> Temp disabling account!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
-        dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
+        dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.[a-z0-9\\-\\.]+/download.*?)\"").getMatch(0);
         boolean nonTrafficPremium = false;
         if (dllink == null) {
             if (br.containsHTML(">Stahování zdarma je možné jen přes náš")) {
@@ -263,12 +258,12 @@ public class ShareRapidCz extends PluginForHost {
             br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
             br2.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
 
-            br2.getPage("http://share-rapid.com/userinfo.php");
-            br2.getPage("http://share-rapid.com/login.php");
+            br2.getPage(MAINPAGE + "userinfo.php");
+            br2.getPage(MAINPAGE + "login.php");
 
             br2.getHeaders().put("Accept", "*/*");
 
-            br2.postPageRaw("http://share-rapid.com/checkfiles.php", "files=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+            br2.postPageRaw(MAINPAGE + "checkfiles.php", "files=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
             br = br2.cloneBrowser();
             dllink = downloadLink.getDownloadURL();
         }
@@ -303,8 +298,6 @@ public class ShareRapidCz extends PluginForHost {
         }
     }
 
-    private static final String COOKIE_HOST = "http://share-rapid.com/";
-
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -324,12 +317,13 @@ public class ShareRapidCz extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
+                            this.br.setCookie(MAINPAGE, key, value);
                         }
                         return;
                     }
                 }
-                br.getPage("http://share-rapid.com/prihlaseni/");
+                br.setFollowRedirects(true);
+                br.getPage(MAINPAGE + "prihlaseni/");
                 final String lang = System.getProperty("user.language");
                 final Form form = br.getForm(0);
                 if (form == null) {
@@ -339,12 +333,10 @@ public class ShareRapidCz extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                form.remove("remember");
                 form.put("login", Encoding.urlEncode(account.getUser()));
                 form.put("pass1", Encoding.urlEncode(account.getPass()));
-                form.put("remember", "1");
                 br.submitForm(form);
-                if (br.getCookie(COOKIE_HOST, "jablko") == null) {
+                if (!br.containsHTML("class=\"logged_in_nickname\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -353,7 +345,7 @@ public class ShareRapidCz extends PluginForHost {
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                final Cookies add = this.br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

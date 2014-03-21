@@ -205,6 +205,7 @@ public class OneFichierCom extends PluginForHost {
         String dllink = downloadLink.getStringProperty(FREELINK, null);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+        /* Maybe direct link */
         final String redirect = br.getRedirectLocation();
         if (redirect != null && redirect.length() > 35) dllink = redirect;
         if (dllink != null) {
