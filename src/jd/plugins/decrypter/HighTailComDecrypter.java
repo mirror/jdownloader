@@ -67,7 +67,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
             // Single link
             final DownloadLink dl = createDownloadlink(parameter.replace("yousendit.com/", "yousenditdecrypted.com/"));
             dl.setProperty("mainlink", parameter);
-            if (br.containsHTML("Download link is invalid|Download link is invalid|>Access has expired<")) {
+            if (br.containsHTML("Download link is invalid|Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"")) {
                 dl.setProperty("offline", true);
                 dl.setAvailable(false);
             } else {

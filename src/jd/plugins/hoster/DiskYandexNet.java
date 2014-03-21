@@ -63,6 +63,7 @@ public class DiskYandexNet extends PluginForHost {
     private static final String   MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
     private static final String   MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD = "MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD";
     private static final String   EMPTY_TRASH_AFTER_DOWNLOAD         = "EMPTY_TRASH_AFTER_DOWNLOAD";
+    private static final String   DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP";
 
     /* Some contants which they used in browser */
     private static final String   CLIENT_ID                          = "24f549192f9f2fac2d80c71dd7969442";
@@ -373,12 +374,14 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
-        final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1.Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
+        final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
         getConfig().addEntry(moveFilesToAcc);
-        final ConfigEntry moveFilesToTrash = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToTrashAfterSuccessfulDownload", "2.Move successfully downloaded files to trash after download?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false);
+        final ConfigEntry moveFilesToTrash = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToTrashAfterSuccessfulDownload", "2. Move successfully downloaded files to trash after download?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false);
         getConfig().addEntry(moveFilesToTrash);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.EMPTY_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "3.Empty trash after successful download?\r\n[Can only be used if setting #1 is active!]")).setEnabledCondidtion(moveFilesToTrash, true).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.EMPTY_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "3. Empty trash after successful download?\r\n[Can only be used if setting #1 is active!]")).setEnabledCondidtion(moveFilesToTrash, true).setDefaultValue(false));
     }
 
     private void checkFeatureDialog() {

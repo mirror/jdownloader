@@ -57,6 +57,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
 
         String linktext = br.getRegex("\"share\":null,\"children\":\\[(.*?)\\],\"children_count\":").getMatch(0);
+        /* For single links */
         if (linktext == null || linktext.equals("")) linktext = br.getRegex("var prefetchedObjects = (\\{\"id\":\"/s/[A-Za-z0-9]+\".*?\\})\\],\"stub\":false,\"children_count\":1").getMatch(0);
         if (linktext == null) {
             logger.warning("Decrypter broken for link: " + parameter);

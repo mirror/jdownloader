@@ -273,7 +273,7 @@ public class Rapidshare extends PluginForHost {
                 checkurls.removeAll(finishedurls);
                 for (final DownloadLink u : checkurls) {
                     idlist.append(",").append(Rapidshare.getID(u.getDownloadURL()));
-                    namelist.append(",").append(encodeFilenameForAvailablecheck(getName(u)));
+                    namelist.append(",").append(encodeFilename(getName(u)));
                 }
                 final String req = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=checkfiles&files=" + idlist.toString().substring(1) + "&filenames=" + namelist.toString().substring(1) + "&incmd5=1";
 
@@ -298,6 +298,14 @@ public class Rapidshare extends PluginForHost {
                     u.setDownloadSize(size = Long.parseLong(matches[i][2]));
                     if (size > 0) {
                         u.setProperty("VERIFIEDFILESIZE", size);
+                        if (matches[i][6].trim().length() == 32) {
+                            u.setMD5Hash(matches[i][6]);
+                        } else {
+                            u.setMD5Hash(null);
+                        }
+                    } else {
+                        /* Don't check hash if filesize is 0 */
+                        u.setMD5Hash(null);
                     }
                     String suggestedName = null;
                     String finalFilename = matches[i][1];
@@ -309,11 +317,6 @@ public class Rapidshare extends PluginForHost {
                         }
                     }
                     u.setFinalFileName(finalFilename);
-                    if (matches[i][6].trim().length() == 32) {
-                        u.setMD5Hash(matches[i][6]);
-                    } else {
-                        u.setMD5Hash(null);
-                    }
                     // 0=File not found 1=File OK 2=File OK (direct download)
                     // 3=Server down 4=File abused 5
                     switch (Integer.parseInt(matches[i][4])) {
@@ -363,7 +366,7 @@ public class Rapidshare extends PluginForHost {
         }
     }
 
-    private String encodeFilenameForAvailablecheck(String filename) {
+    private String encodeFilename(String filename) {
         /* Encode some things here so that they're decoded back to their original and can be encoded correctly below */
         filename = filename.replace("%2C", "%252C");
         filename = filename.replace("+", "%2B");
@@ -674,7 +677,7 @@ public class Rapidshare extends PluginForHost {
                 /* invalid link format */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String query = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download&try=1&fileid=" + link.getId() + "&filename=" + link.getName();
+            String query = "http://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download&try=1&fileid=" + link.getId() + "&filename=" + encodeFilename(link.getName());
             /* needed for secured links */
             if (link.getSecMD5() != null) {
                 query += "&seclinkmd5=" + link.getSecMD5();

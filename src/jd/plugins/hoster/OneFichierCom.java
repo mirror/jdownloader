@@ -203,6 +203,10 @@ public class OneFichierCom extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = downloadLink.getStringProperty(FREELINK, null);
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null && redirect.length() > 35) dllink = redirect;
         if (dllink != null) {
             /* try to resume existing file */
             br.setFollowRedirects(true);

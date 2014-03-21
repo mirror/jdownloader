@@ -58,7 +58,7 @@ public class YouSendItCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getStringProperty("mainlink", null));
         // File offline
-        if (br.containsHTML("Download link is invalid|>Access has expired<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (link.getStringProperty("fileurl", null) != null) {
             link.setFinalFileName(link.getStringProperty("directname", null));
             link.setDownloadSize(SizeFormatter.getSize(link.getStringProperty("directsize", null)));

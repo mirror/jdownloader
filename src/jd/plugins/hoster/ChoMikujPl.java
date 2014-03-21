@@ -51,6 +51,7 @@ public class ChoMikujPl extends PluginForHost {
 
     private static final String PREMIUMONLY         = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
     private static final String PREMIUMONLYUSERTEXT = "Download is only available for registered/premium users!";
+    private static final String ACCESSDENIED        = "Nie masz w tej chwili uprawnień do tego pliku lub dostęp do niego nie jest w tej chwili możliwy z innych powodów.";
     private static final String MAINPAGE            = "http://chomikuj.pl/";
     // private static final String FILEIDREGEX = "\\&id=(.*?)\\&";
     private boolean             videolink           = false;
@@ -178,8 +179,24 @@ public class ChoMikujPl extends PluginForHost {
             } else {
                 logger.info("Failed to set __RequestVerificationToken_Lw__ cookie inside getDllink");
             }
+
+            final String chomikID = theLink.getStringProperty("chomikID");
+
+            if (chomikID != null) {
+                final String folderPassword = theLink.getStringProperty("password");
+
+                if (folderPassword != null) {
+                    br.setCookie("http://chomikuj.pl/", "FoldersAccess", String.format("%s=%s", chomikID, folderPassword));
+                } else {
+                    logger.warning("Failed to set FoldersAccess cookie inside getDllink");
+                    // this link won't work without password
+                    return false;
+                }
+            }
+
             br.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             if (br.containsHTML(PREMIUMONLY)) return false;
+            if (br.containsHTML(ACCESSDENIED)) return false;
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("\"(http://[A-Za-z0-9\\-_\\.]+\\.chomikuj\\.pl/File\\.aspx[^<>\"]*?)\\\\\"").getMatch(0);

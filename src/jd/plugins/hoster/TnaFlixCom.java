@@ -75,8 +75,9 @@ public class TnaFlixCom extends PluginForHost {
             if (downloadLink.getDownloadURL().contains("viewkey=")) {
                 downloadLink.setUrlDownload(br.getRedirectLocation());
                 br.getPage(downloadLink.getDownloadURL());
-            } else
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         String filename = br.getRegex("<title>(.*?), Free Porn.*?</title>").getMatch(0);
         if (filename == null) {

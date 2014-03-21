@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -135,7 +136,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final boolean is_root_plus_zip = (!main_hash.contains("/") && decryptedLinks.size() > 0);
         /* If we did not find any other links it's probably a single link */
         final boolean is_single = (decryptedLinks.size() == 0);
-        if (is_root_plus_zip || is_single) {
+        if ((is_root_plus_zip || is_single) && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty("DOWNLOAD_ZIP", false)) {
             if (is_single) {
                 main.setFinalFileName(fpName);
                 main.setProperty("plain_filename", fpName);
