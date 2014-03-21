@@ -116,7 +116,7 @@ public class FilesMonsterCom extends PluginForHost {
                 /*
                  * we only have to load this once, to make sure its loaded
                  */
-                JDUtilities.getPluginForDecrypt("filesmonster.comDecrypt");
+                JDUtilities.getPluginForDecrypt("filesmonster.com");
 
             }
             String filename = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILENAMEREGEX).getMatch(0);
