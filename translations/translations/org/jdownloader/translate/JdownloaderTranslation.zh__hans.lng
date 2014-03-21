@@ -1,3 +1,7 @@
+AccountController_updateAccountInfo_status_logins_wrong=登录错误
+AccountController_updateAccountInfo_status_plugin_defect=插件过期
+AccountController_updateAccountInfo_status_traffic_reached=流量已满
+AccountController_updateAccountInfo_status_uncheckable=无法检查账户
 AddContainerAction_delete_container_title=删除容器文件？
 CaptchaQuickSettingsContainer_CaptchaQuickSettingsContainer=进入验证码设置
 DownloadLink_setSkipped_statusmessage=跳过
@@ -36,6 +40,8 @@ SetDownloadFolderAction_msg=更改整个包 %s1，或仅用于 %s2 个选择的�
 SetDownloadFolderAction_no=选择内容
 SetDownloadFolderAction_yes=包
 StartDownloadsAction_createTooltip_=开始下载
+YoutubeDash_GroupLogic_BY_FILE_TYPE=文件扩展名(MP4, AAC, MP3, ...
+YoutubeDash_GroupLogic_BY_MEDIA_TYPE=媒体类型 (视频, 音频, 图像, 字幕, ...
 YoutubeDash_IfUrlisAVideoAndPlaylistAction_ASK=问我
 YoutubeDash_IfUrlisAVideoAndPlaylistAction_NOTHING=不载入
 YoutubeDash_IfUrlisAVideoAndPlaylistAction_PLAYLIST_ONLY=载入整个播放列表
