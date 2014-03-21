@@ -274,7 +274,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                         }
                         ac.add(acc);
                         break;
-                    
+                    case GROUP_BY_SUPPORTED_ACCOUNTS:
                     case GROUP_BY_SUPPORTED_HOSTS:
                         
                         ai = acc.getAccountInfo();
@@ -296,6 +296,9 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                 services.add(ac);
                             }
                             ac.add(acc);
+                            if (premiumStatusBarDisplay.equals((PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS))) {
+                                ac.disableMulti();
+                            }
                         } else {
                             synchronized (supported) {
                                 /*
@@ -325,6 +328,9 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                                             services.add(ac);
                                         }
                                         ac.add(acc);
+                                        if (premiumStatusBarDisplay.equals((PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS))) {
+                                            ac.disableMulti();
+                                        }
                                     }
                                 }
                             }

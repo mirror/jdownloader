@@ -79,6 +79,10 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
         return Boolean.TRUE.equals(multi);
     }
     
+    protected void disableMulti() {
+        this.multi = false;
+    }
+    
     @Override
     public Icon getIcon() {
         if (!inuse && invalid > 0) { return new ExtMergedIcon(domainInfo.getFavIcon(), 0, 0).add(new AbstractIcon(IconKey.ICON_ERROR, 12), 6, 6); }
