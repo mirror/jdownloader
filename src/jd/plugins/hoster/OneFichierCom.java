@@ -53,12 +53,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
-    private static final String  PASSWORDTEXT     = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
-    private static final String  IPBLOCKEDTEXTS   = "(/>Téléchargements en cours|En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you can download only one file at a time)";
-    private static final String  FREELINK         = "freeLink";
-    private static final String  PREMLINK         = "premLink";
-    private static final String  SSL_CONNECTION   = "SSL_CONNECTION";
-    private static final String  PREFER_RECONNECT = "PREFER_RECONNECT";
+    private final String         PASSWORDTEXT     = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
+    private final String         IPBLOCKEDTEXTS   = "(/>Téléchargements en cours|En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you (can download only one file at a time|must wait up to \\d+ minutes between each downloads))";
+    private final String         FREELINK         = "freeLink";
+    private final String         PREMLINK         = "premLink";
+    private final String         SSL_CONNECTION   = "SSL_CONNECTION";
+    private final String         PREFER_RECONNECT = "PREFER_RECONNECT";
     private boolean              pwProtected      = false;
 
     public OneFichierCom(PluginWrapper wrapper) {
@@ -251,27 +251,30 @@ public class OneFichierCom extends PluginForHost {
                 sleep(2000, downloadLink);
                 br2.submitForm(a1);
                 errorHandling(downloadLink, br2);
-                sleep(2000, downloadLink);
-                Browser br3 = br.cloneBrowser();
-                Form a2 = br2.getForm(0);
-                if (a2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                sleep(2000, downloadLink);
-                br3.submitForm(a2);
-                errorHandling(downloadLink, br3);
-                if (dllink == null) dllink = br3.getRedirectLocation();
-                if (dllink == null) dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
+                dllink = br2.getRedirectLocation();
                 if (dllink == null) {
-                    String wait = br3.getRegex(" var count = (\\d+);").getMatch(0);
-                    if (wait != null && retried == false) {
-                        retried = true;
-                        sleep(1000 * Long.parseLong(wait), downloadLink);
-                        continue;
+                    sleep(2000, downloadLink);
+                    Browser br3 = br.cloneBrowser();
+                    Form a2 = br2.getForm(0);
+                    if (a2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                    sleep(2000, downloadLink);
+                    br3.submitForm(a2);
+                    errorHandling(downloadLink, br3);
+                    if (dllink == null) dllink = br3.getRedirectLocation();
+                    if (dllink == null) dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
+                    if (dllink == null) {
+                        String wait = br3.getRegex(" var count = (\\d+);").getMatch(0);
+                        if (wait != null && retried == false) {
+                            retried = true;
+                            sleep(1000 * Long.parseLong(wait), downloadLink);
+                            continue;
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                break;
             }
+            if (dllink != null) break;
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
