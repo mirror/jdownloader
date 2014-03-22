@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,6 +36,8 @@ public class PCloudComFolder extends PluginForDecrypt {
     public PCloudComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -91,7 +94,7 @@ public class PCloudComFolder extends PluginForDecrypt {
             decryptedLinks.add(dl);
         }
 
-        if (decryptedLinks.size() > 1) {
+        if (decryptedLinks.size() > 1 && SubConfiguration.getConfig("pcloud.com").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
             final String main_name = folderName + ".zip";
             main.setFinalFileName(folderName);

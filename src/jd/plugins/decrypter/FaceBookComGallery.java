@@ -61,6 +61,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   TYPE_PHOTOS_STREAM_LINK        = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream";
     private static final String   TYPE_PHOTOS_LINK               = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos";
 
+    private static final int      MAX_LOOPS_GENERAL              = 150;
+
     private String                MAINPAGE                       = "http://www.facebook.com";
 
     private static final String   CONTENTUNAVAILABLE             = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
@@ -120,7 +122,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 fpName = Encoding.htmlDecode(fpName.trim());
                 boolean dynamicLoadAlreadyDecrypted = false;
 
-                for (int i = 1; i <= 50; i++) {
+                for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
                     int currentMaxPicCount = 18;
 
                     String[] links;
@@ -194,7 +196,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 boolean dynamicLoadAlreadyDecrypted = false;
                 String lastfirstID = "";
 
-                for (int i = 1; i <= 50; i++) {
+                for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
                     int currentMaxPicCount = 20;
 
                     String[] links;
@@ -293,7 +295,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 boolean dynamicLoadAlreadyDecrypted = false;
                 String lastfirstID = "";
 
-                for (int i = 1; i <= 50; i++) {
+                for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
                     int currentMaxPicCount = 28;
 
                     String[] links;
@@ -424,7 +426,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
         prepBrPhotoGrab();
 
-        for (int i = 1; i <= 150; i++) {
+        for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
             try {
                 if (this.isAbort()) {
                     logger.info("Decryption stopped at request " + i);
@@ -559,7 +561,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
         prepBrPhotoGrab();
 
-        for (int i = 1; i <= 150; i++) {
+        for (int i = 1; i <= MAX_LOOPS_GENERAL; i++) {
             try {
                 if (this.isAbort()) {
                     logger.info("Decryption stopped at request " + i);

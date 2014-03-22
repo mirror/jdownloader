@@ -53,7 +53,7 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
-    
+
     private static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS         = new HashMap<Account, HashMap<String, String>>();
     private static Object                                    LOCK                 = new Object();
     private static HashMap<Long, Long>                       noFreeSlot           = new HashMap<Long, Long>();
@@ -68,30 +68,30 @@ public class ShareOnlineBiz extends PluginForHost {
     private final String                                     SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
     private final String                                     TRAFFIC_WORKAROUND   = "TRAFFIC_WORKAROUND";
     private final String                                     PREFER_HTTPS         = "PREFER_HTTPS";
-    
+
     public static class StringContainer {
         public String string = null;
-        
+
         public StringContainer(String string) {
             this.string = string;
         }
-        
+
         public void set(String string) {
             this.string = string;
         }
-        
+
         @Override
         public String toString() {
             return string;
         }
     }
-    
+
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.share-online.biz/service.php?p=31353834353B4A44616363");
         setConfigElements();
     }
-    
+
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
@@ -154,7 +154,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         return true;
     }
-    
+
     private String userProtocol() {
         if (userPrefersHttps()) {
             return "https";
@@ -162,15 +162,15 @@ public class ShareOnlineBiz extends PluginForHost {
             return "http";
         }
     }
-    
+
     private boolean userPrefersHttps() {
         return getPluginConfig().getBooleanProperty(PREFER_HTTPS, false);
     }
-    
+
     private boolean userTrafficWorkaround() {
         return getPluginConfig().getBooleanProperty(TRAFFIC_WORKAROUND, false);
     }
-    
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         // We do not have to change anything here, the regexp also works for egoshare links!
@@ -179,13 +179,13 @@ public class ShareOnlineBiz extends PluginForHost {
         link.setUrlDownload(protocol + "://www.share-online.biz/dl/" + getID(link));
         if (hideID) link.setName("download.php");
     }
-    
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SHARED_IP_WORKAROUND, JDL.L("plugins.hoster.shareonline.sharedipworkaround", "Enable shared IP workaround?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), TRAFFIC_WORKAROUND, JDL.L("plugins.hoster.shareonline.trafficworkaround", "Enable traffic workaround?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HTTPS, JDL.L("plugins.hoster.shareonline.preferhttps", "Prefer HTTPS communication? Not available for free download.")).setDefaultValue(false));
     }
-    
+
     private void errorHandling(Browser br, DownloadLink downloadLink, Account acc, HashMap<String, String> usedPremiumInfos) throws PluginException {
         /* file is offline */
         if (br.containsHTML("The requested file is not available")) {
@@ -309,7 +309,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         if (br.containsHTML("nput invalid, halting. please avoid more of these requests")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -333,7 +333,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (infos.containsKey("money")) ai.setAccountBalance(infos.get("money"));
         /* set account type */
         ai.setStatus(infos.get("group"));
-        
+
         if (userTrafficWorkaround()) {
             long max = 100 * 1024 * 1024 * 1024l;// 100 GB per day - 420 GB per week
             String traffic = infos.get("traffic_1d");// traffic_7d = week
@@ -342,19 +342,19 @@ public class ShareOnlineBiz extends PluginForHost {
             ai.setTrafficMax(Math.max(max, current));
             ai.setTrafficLeft((max - current));
         }
-        
+
         return ai;
     }
-    
+
     @Override
     public String getAGBLink() {
         return userProtocol() + "://share-online.biz/rules.php";
     }
-    
+
     private final String getID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "(id\\=|/dl/)([a-zA-Z0-9]+)").getMatch(1);
     }
-    
+
     /* parse the response from api into an hashmap */
     private HashMap<String, String> getInfos(String response, String seperator) throws PluginException {
         if (response == null || response.length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -374,12 +374,12 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         return ret;
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /*
@@ -387,7 +387,7 @@ public class ShareOnlineBiz extends PluginForHost {
          */
         return 10;
     }
-    
+
     protected void showFreeDialog(final String domain) {
         if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
@@ -395,7 +395,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-                
+
                 @Override
                 public void run() {
                     try {
@@ -425,7 +425,7 @@ public class ShareOnlineBiz extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-    
+
     private void checkShowFreeDialog() {
         SubConfiguration config = null;
         try {
@@ -452,7 +452,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         checkShowFreeDialog();
@@ -592,7 +592,7 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
-    
+
     @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         this.setBrowserExclusive();
@@ -653,13 +653,14 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
-    
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return false;
     }
-    
+
     public HashMap<String, String> loginAPI(Account account, boolean forceLogin) throws IOException, PluginException {
+        final String lang = System.getProperty("user.language");
         synchronized (LOCK) {
             HashMap<String, String> infos = ACCOUNTINFOS.get(account);
             if (infos == null || forceLogin) {
@@ -678,10 +679,22 @@ public class ShareOnlineBiz extends PluginForHost {
             String dl = infos.get("dl");
             String a = infos.get("a");
             if ("Sammler".equals(infos.get("group"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nEs werden nur share-online Premiumaccounts akzeptiert, dies ist ein Sammleraccount!\r\nJDownloader only accepts premium accounts, this is a collectors account!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
-            if (dl == null && a == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFalscher Benutzername/Passwort!\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (dl == null && a == null) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             boolean valid = dl != null && !"not_available".equalsIgnoreCase(dl);
             if (valid == false) valid = a != null && !"not_available".equalsIgnoreCase(a);
-            if (valid == false) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (valid == false) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             /*
              * check expire date, expire >0 (normal handling) expire<0 (never expire)
              */
@@ -690,7 +703,7 @@ public class ShareOnlineBiz extends PluginForHost {
             return infos;
         }
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         hideID = false;
@@ -723,30 +736,30 @@ public class ShareOnlineBiz extends PluginForHost {
         server = Long.parseLong(infos[5].trim());
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
         synchronized (noFreeSlot) {
             noFreeSlot.clear();
         }
     }
-    
+
     public String filterPackageID(String packageIdentifier) {
         return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
     }
-    
+
     public char[] getFilenameReplaceMap() {
         return FILENAMEREPLACES;
     }
-    
+
     public boolean isHosterManipulatesFilenames() {
         return true;
     }
-    
+
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {

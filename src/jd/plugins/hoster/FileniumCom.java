@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filenium.com" }, urls = { "http://\\w+\\.filenium\\.com/get/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filenium.com" }, urls = { "http://(\\w+\\.)?filenium\\.com/get/\\w+/.+" }, flags = { 2 })
 public class FileniumCom extends PluginForHost {
 
     /**
@@ -94,6 +94,7 @@ public class FileniumCom extends PluginForHost {
                 logger.info("No account present, Please add a premium account.");
                 for (DownloadLink dl : urls) {
                     /* no check possible */
+                    dl.setName(new Regex(dl.getDownloadURL(), "filenium\\.com/(.+)").getMatch(0));
                     dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 }
                 return false;
@@ -126,13 +127,13 @@ public class FileniumCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
         checkLinks(new DownloadLink[] { link });
         if (AvailableStatus.FALSE == getAvailableStatus(link)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return getAvailableStatus(link);
     }
 
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
+    private AvailableStatus getAvailableStatus(final DownloadLink link) {
         try {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
@@ -161,13 +162,18 @@ public class FileniumCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override

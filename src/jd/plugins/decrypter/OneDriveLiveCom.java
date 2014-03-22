@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -46,6 +47,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     private static final String TYPE_SKYDRIVE           = "https?://(www\\.)?skydrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,]+";
     private static final String TYPE_ONEDRIVE           = "https?://(www\\.)?onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,]+";
     private static final int    MAX_ENTRIES_PER_REQUEST = 1000;
+    private static final String DOWNLOAD_ZIP            = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -175,7 +177,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             }
         }
 
-        if (decryptedLinks.size() > 1) {
+        if (decryptedLinks.size() > 1 && SubConfiguration.getConfig("onedrive.live.com").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
             final String main_name = folderName + ".zip";
             main.setFinalFileName(folderName);

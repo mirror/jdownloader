@@ -41,8 +41,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String primaryURLs = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
-    private static final String shortURLs   = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
+    private static final String primaryURLs  = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
+    private static final String shortURLs    = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
+
+    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
@@ -50,6 +52,16 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash=");
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+
+        String main_hash = new Regex(parameter, "hash=(.+)").getMatch(0);
+        if (main_hash == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        main_hash = Encoding.htmlDecode(main_hash);
+
+        main.setProperty("hash_plain", main_hash);
+        main.setProperty("mainlink", parameter);
         if (parameter.matches("(" + shortURLs + ")")) {
             br.getPage(parameter);
             if (br.containsHTML("This link was removed or not found")) {
@@ -74,13 +86,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
             br.getPage(parameter);
         }
-
-        String main_hash = new Regex(parameter, "hash=(.+)").getMatch(0);
-        if (main_hash == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        main_hash = Encoding.htmlDecode(main_hash);
 
         if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) {
             main.setAvailable(false);
@@ -136,21 +141,19 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final boolean is_root_plus_zip = (!main_hash.contains("/") && decryptedLinks.size() > 0);
         /* If we did not find any other links it's probably a single link */
         final boolean is_single = (decryptedLinks.size() == 0);
-        if ((is_root_plus_zip || is_single) && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty("DOWNLOAD_ZIP", false)) {
-            if (is_single) {
-                main.setFinalFileName(fpName);
-                main.setProperty("plain_filename", fpName);
-                final String filesize = br.getRegex(">Size: ([^<>\"]*?)<br/").getMatch(0);
-                if (filesize != null) {
-                    main.setDownloadSize(SizeFormatter.getSize(filesize));
-                    main.setProperty("plain_size", filesize);
-                }
-            } else {
-                main.setFinalFileName(fpName + ".zip");
-                main.setProperty("plain_filename", fpName + ".zip");
+        if (is_single) {
+            main.setFinalFileName(fpName);
+            main.setProperty("plain_filename", fpName);
+            final String filesize = br.getRegex(">Size: ([^<>\"]*?)<br/").getMatch(0);
+            if (filesize != null) {
+                main.setDownloadSize(SizeFormatter.getSize(filesize));
+                main.setProperty("plain_size", filesize);
             }
-            main.setProperty("hash_plain", main_hash);
-            main.setProperty("mainlink", parameter);
+            main.setAvailable(true);
+            decryptedLinks.add(main);
+        } else if (is_root_plus_zip && SubConfiguration.getConfig("disk.yandex.net").getBooleanProperty(DOWNLOAD_ZIP, false)) {
+            main.setFinalFileName(fpName + ".zip");
+            main.setProperty("plain_filename", fpName + ".zip");
             main.setAvailable(true);
             decryptedLinks.add(main);
         }

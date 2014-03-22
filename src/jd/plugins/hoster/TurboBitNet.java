@@ -544,6 +544,7 @@ public class TurboBitNet extends PluginForHost {
             if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
         }
+        handleServerErrors();
         dl.startDownload();
     }
 
@@ -689,7 +690,12 @@ public class TurboBitNet extends PluginForHost {
             if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        handleServerErrors();
         dl.startDownload();
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, server sends empty file", 5 * 60 * 1000l);
     }
 
     // do not add @Override here to keep 0.* compatibility

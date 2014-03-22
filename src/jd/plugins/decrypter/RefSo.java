@@ -36,7 +36,7 @@ public class RefSo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">Wrong<|Url not Found<")) {
+        if (br.containsHTML(">Wrong<|Url not Found<") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

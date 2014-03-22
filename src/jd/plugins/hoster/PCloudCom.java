@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -27,12 +29,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "http://pclouddecrypted\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pcloud.com" }, urls = { "http://pclouddecrypted\\.com/\\d+" }, flags = { 2 })
 public class PCloudCom extends PluginForHost {
 
     public PCloudCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -40,7 +44,9 @@ public class PCloudCom extends PluginForHost {
         return "https://my.pcloud.com/#page=policies&tab=terms-of-service";
     }
 
-    private static final String TYPE_OLD = "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|pc\\.cd/)[A-Za-z0-9]+";
+    private static final String TYPE_OLD     = "https?://(www\\.)?(my\\.pcloud\\.com/#page=publink\\&code=|pc\\.cd/)[A-Za-z0-9]+";
+
+    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -130,6 +136,10 @@ public class PCloudCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("Accept-Charset", null);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PCloudCom.DOWNLOAD_ZIP, JDL.L("plugins.hoster.PCloudCom.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(true));
     }
 
     @Override

@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
@@ -28,12 +30,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" }, flags = { 2 })
 public class OneDriveLiveCom extends PluginForHost {
 
     public OneDriveLiveCom(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -42,7 +46,8 @@ public class OneDriveLiveCom extends PluginForHost {
     }
 
     /* Use less than in the decrypter to not to waste traffic & time */
-    private static final int MAX_ENTRIES_PER_REQUEST = 50;
+    private static final int    MAX_ENTRIES_PER_REQUEST = 50;
+    private static final String DOWNLOAD_ZIP            = "DOWNLOAD_ZIP";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -123,6 +128,10 @@ public class OneDriveLiveCom extends PluginForHost {
 
     private void prepBR() {
         jd.plugins.decrypter.OneDriveLiveCom.prepBrAPI(this.br);
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), OneDriveLiveCom.DOWNLOAD_ZIP, JDL.L("plugins.hoster.OneDriveLiveCom.DownloadZip", "Download .zip file of all files in the folder (not yet possible)?")).setDefaultValue(true).setEnabled(false));
     }
 
     @Override

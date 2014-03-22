@@ -109,7 +109,6 @@ public class FileBitPl extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    @SuppressWarnings("deprecation")
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
