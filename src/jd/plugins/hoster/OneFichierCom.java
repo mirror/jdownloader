@@ -320,7 +320,7 @@ public class OneFichierCom extends PluginForHost {
         for (int i = 1; i <= 3; i++) {
             logger.info("1fichier.com: API login try 1 / " + i);
             try {
-                br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
+                br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()));
             } catch (final ConnectException e) {
                 logger.info("1fichier.com: API login try 1 / " + i + " FAILED, trying again...");
                 Thread.sleep(3 * 1000l);
@@ -511,7 +511,7 @@ public class OneFichierCom extends PluginForHost {
             sleep(2 * 1000l, link);
             String url = link.getDownloadURL().replace("en/index.html", "");
             if (!url.endsWith("/")) url = url + "/";
-            url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(JDHash.getMD5(account.getPass()));
+            url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
 
             URLConnectionAdapter con = br.openGetConnection(url);
             if (con.getResponseCode() == 401) {
@@ -534,17 +534,24 @@ public class OneFichierCom extends PluginForHost {
             }
             String useDllink = dllink;
             if (useSSL) useDllink = useDllink.replaceFirst("http://", "https://");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, useDllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (int i = 0; i != 2; i++) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, useDllink, true, 0);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    if ("http://www.1fichier.com/?c=DB".equalsIgnoreCase(br.getURL())) {
+                        dl.getConnection().disconnect();
+                        continue;
+                    }
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (passCode != null) {
+                    link.setProperty("pass", passCode);
+                }
+                link.setProperty(PREMLINK, dllink);
+                dl.startDownload();
+                break;
             }
-            if (passCode != null) {
-                link.setProperty("pass", passCode);
-            }
-            link.setProperty(PREMLINK, dllink);
-            dl.startDownload();
         }
     }
 
