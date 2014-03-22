@@ -142,7 +142,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
-        if (!Application.isJared(StatsManager.class)) return false;
+        if (!Application.isJared(StatsManager.class) && false) return false;
         return config.isEnabled() /* && */;
 
     }
@@ -508,12 +508,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 }
             }
             logger.info("Tracker Package: \r\n" + JSonStorage.serializeToJson(dl));
-            logger.info("Error Details: \r\n" + JSonStorage.serializeToJson(errors.get(dl.getErrorID())));
+            if (dl.getErrorID() != null) {
+                logger.info("Error Details: \r\n" + JSonStorage.serializeToJson(errors.get(dl.getErrorID())));
+            }
 
             if (result.getLastPluginHost() != null && StringUtils.equals(dl.getCandidate().getPlugin(), result.getLastPluginHost())) {
                 // the error did not happen in the plugin
                 logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
-
+                return;
             }
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
 
