@@ -286,16 +286,19 @@ public class TusFilesNet extends PluginForHost {
                 if (inValidate(fileInfo[0])) {
                     fileInfo[0] = cbr.getRegex("<li>([^\r\n]+)</li>[\r\n\t ]+<li><b>Size").getMatch(0);
                     if (inValidate(fileInfo[0])) {
-                        // can cause new line finds, so check if it matches.
-                        // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
-                        // traits from download1 page below.
+                        fileInfo[0] = cbr.getRegex("<FONT.*?>([^\r\n]+)</FONT>").getMatch(0);
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
-                            // next two are details from sharing box
+                            // can cause new line finds, so check if it matches.
+                            // fileInfo[0] = cbr.getRegex("Download File:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                            // traits from download1 page below.
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("<input[^\r\n]+value='\\[[^\\]]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                fileInfo[0] = cbr.getRegex("Filename:? ?(<[^>]+> ?)+?([^<>\"']+)").getMatch(1);
+                                // next two are details from sharing box
                                 if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    fileInfo[0] = cbr.getRegex("<input[^\r\n]+value='\\[[^\\]]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+>[^\r\n]+\\]([^\r\n]+) - [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                    }
                                 }
                             }
                         }
