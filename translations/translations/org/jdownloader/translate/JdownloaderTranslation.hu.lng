@@ -38,6 +38,7 @@ LinkSource_ADD_LINKS_DIALOG=Link hozzáadása művelet
 LinkSource_CLIPBOARD=Vágólap
 LinkSource_CNL=Kattintson a 'n' töltéséhez
 LinkSource_DOWNLOADED_CONTAINER=Letöltöttek tárolója
+LinkSource_EXTENSION=Minden kiterjesztés
 LinkSource_FLASHGOT=Flashgot
 LinkSource_MAC_DOCK=Összekapcsoló (Csak Mac)
 LinkSource_MYJD=Az én JDownloaderem
