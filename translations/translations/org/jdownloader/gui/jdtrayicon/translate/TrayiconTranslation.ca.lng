@@ -15,6 +15,7 @@ jd_plugins_optional_jdtrayicon_jdlighttray_description=Permet minimitzar o tanca
 plugins_optional_JDLightTray_closetotray2=Acció en clicar 'Tanca <X>'
 plugins_optional_JDLightTray_hideifframevisible=Amaga l'icona de l'àrea de notificacions si la finestra és visible
 plugins_optional_JDLightTray_minimizetotray=Acció en clicar 'Minimitza <_>'
+plugins_optional_JDLightTray_passwordRequired=Requereix contrasenya per obrir des de l'àrea de notificacions
 plugins_optional_JDLightTray_singleClick=Alterna l'estat de la finestra amb un únic clic
 plugins_optional_JDLightTray_startMinimized=Inicia minimitzat
 plugins_optional_trayIcon_dl_running=En curs:
