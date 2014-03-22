@@ -42,6 +42,7 @@ public class FileBitPl extends PluginForHost {
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     private static final String                            NICE_HOST          = "filebit.pl";
+    private static final String                            NICE_HOSTproperty  = "filebitpl";
     private static String                                  SESSIONID          = null;
 
     public FileBitPl(PluginWrapper wrapper) {
@@ -121,15 +122,17 @@ public class FileBitPl extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
-                int timesFailed = link.getIntegerProperty("timesfailedfilebitpl_403dlerror", 0);
+                logger.info(NICE_HOST + ": 403dlerror");
+                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_403dlerror", 0);
                 link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 2) {
                     timesFailed++;
-                    link.setProperty("timesfailedfilebitpl_403dlerror", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started (403)");
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_403dlerror", timesFailed);
+                    logger.info(NICE_HOST + ": 403dlerror -> Retrying");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "403dlerror");
                 } else {
-                    link.setProperty("timesfailedfilebitpl_403dlerror", Property.NULL);
-                    logger.info(NICE_HOST + ": 403 download error - disabling current host!");
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_403dlerror", Property.NULL);
+                    logger.info(NICE_HOST + ": 403dlerror - disabling current host!");
                     tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 }
             }

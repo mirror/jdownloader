@@ -697,7 +697,7 @@ public class Rapidshare extends PluginForHost {
                 final String wait = this.br.getRegex("DL:(.*?),(.*?),(\\d+)").getMatch(2);
                 if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 this.sleep(Long.parseLong(wait) * 1000l, downloadLink);
-                dllink = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download&dlauth=" + auth + "&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName();
+                dllink = "http://" + host + "/cgi-bin/rsapi.cgi?sub=download&dlauth=" + auth + "&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + encodeFilename(link.getName());
                 /* needed for secured links */
                 if (link.getSecMD5() != null) {
                     dllink += "&seclinkmd5=" + link.getSecMD5();
@@ -737,8 +737,11 @@ public class Rapidshare extends PluginForHost {
                     this.br.followConnection();
                 } catch (final Throwable e) {
                 }
-                if (br.containsHTML("Download permission denied by uploader")) throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader");
-                if (br.containsHTML("File ID invalid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.containsHTML("Download permission denied by uploader"))
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by its uploader");
+                else if (br.containsHTML("File ID invalid"))
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                else if (br.containsHTML("Filename invalid")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
                 logger.severe(this.br.toString());
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
