@@ -159,6 +159,17 @@ public class DirectHTTP extends PluginForHost {
 
         public void load() throws IOException, PluginException {
             this.rcBr = this.br.cloneBrowser();
+            // recaptcha works off API key, and javascript. The imported browser session isn't actually needed.
+            /*
+             * Randomise user-agent to prevent tracking by google, each time we load(). Without this they could make the captchas images
+             * harder read, the more a user requests captcha'. Also algos could track captcha requests based on user-agent globally, which
+             * means JD default user-agent been very old (firefox 3.x) negatively biased to JD clients! Tracking takes place on based on IP
+             * address, User-Agent, and APIKey of request (site of APIKey), and combinations of those.
+             */
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            this.rcBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+
             // this prevents google/recaptcha group from seeing referrer
             try {
                 this.rcBr.setCurrentURL(null);
