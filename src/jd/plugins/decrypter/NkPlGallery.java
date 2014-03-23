@@ -88,17 +88,20 @@ public class NkPlGallery extends PluginForDecrypt {
                 br.setFollowRedirects(true);
                 if (br.containsHTML("<div class=\"blocked_album\">")) {
                     logger.warning("Gallery for url: " + parameter + " was blocked by the owner.");
-                    return null;
+                    return decryptedLinks;
                 }
                 final String galleryID = new Regex(parameter, "album=(\\d+)").getMatch(0);
-                final String galleryCount = br.getRegex("data-count=\"(\\d+)\" data-album-id=\"" + galleryID + "\"").getMatch(0);
+                final String profileNumber = new Regex(parameter, "nk.pl/#profile/(\\d+)").getMatch(0);
+                String profilName = br.getRegex("<h3><a href=\"/profile/" + profileNumber + "\">(.*?)</a></h3>").getMatch(0);
+                if (profilName == null) profilName = profileNumber;
+                profilName = Encoding.htmlDecode(profilName.trim());
+                prepBrAjax();
+                br.getPage("http://nk.pl/profile/" + profileNumber + "/gallery/album/" + galleryID + "/ajax/0/0?t=" + basicAuth);
+                final String galleryCount = br.getRegex("\"count\":(\\d+)").getMatch(0);
                 if (galleryCount == null) {
                     logger.warning("Gallery not found for url: " + parameter);
                     return null;
                 }
-                final String profileNumber = new Regex(parameter, "nk.pl/#profile/(\\d+)").getMatch(0);
-                String profilName = br.getRegex("<h3><a href=\"/profile/" + profileNumber + "\">(.*?)</a></h3>").getMatch(0);
-                profilName = Encoding.htmlDecode(profilName.trim());
                 String galleryName = br.getRegex("album_name\" title=\"(.*?)\"").getMatch(0);
                 galleryName = galleryName == null ? "Album" : galleryName;
                 if (profilName == null) {
@@ -201,6 +204,13 @@ public class NkPlGallery extends PluginForDecrypt {
             }
         }
         return false;
+    }
+
+    private void prepBrAjax() {
+        br.getHeaders().put("Accept", "application/json");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("X-Request", "JSON");
+        br.getHeaders().put("isAjaxy", "very");
     }
 
     /* NO OVERRIDE!! */

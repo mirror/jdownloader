@@ -17,11 +17,13 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -61,8 +63,12 @@ public class FlickrCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (br.containsHTML("Page Not Found<")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("Page Not Found<|>This member is no longer active")) {
+            final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            offline.setName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         /** Login is not always needed but we force it to get all pictures */
@@ -90,14 +96,15 @@ public class FlickrCom extends PluginForDecrypt {
             maxEntriesPerPage = 100;
         } else if (parameter.matches(FAVORITELINK)) {
             fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
-        } else {
+        } else if (parameter.matches(GROUPSLINK)) {
+            if (picCount == null) picCount = br.getRegex("<h1>(\\d+(,\\d+)?)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
         }
         if (picCount == null) {
             logger.warning("Couldn't find total number of pictures, aborting...");
             return null;
         }
 
-        final int totalEntries = Integer.parseInt(picCount);
+        final int totalEntries = Integer.parseInt(picCount.replace(",", ""));
 
         /**
          * Handling for albums/sets: Only decrypt all pages if user did NOT add a direct page link

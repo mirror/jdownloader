@@ -49,7 +49,8 @@ public class PCloudComFolder extends PluginForDecrypt {
 
         prepBR();
         br.getPage("http://api.pcloud.com/showpublink?code=" + getFID(parameter));
-        if (br.containsHTML("\"error\": \"Invalid link")) {
+        /* 7002 = deleted by the owner */
+        if (br.containsHTML("\"error\": \"Invalid link") || br.containsHTML("\"result\": 7002")) {
             main.setFinalFileName(new Regex(parameter, "copy\\.com/(.+)").getMatch(0));
             main.setAvailable(false);
             main.setProperty("offline", true);
@@ -58,7 +59,9 @@ public class PCloudComFolder extends PluginForDecrypt {
         }
 
         String folderName = getJson("name", br.toString());
-        final String linktext = br.getRegex("contents\": \\[(.*?)\\][\t\r\n ]+\\}").getMatch(0);
+        String linktext = br.getRegex("contents\": \\[(.*?)\\][\t\r\n ]+\\}").getMatch(0);
+        /* Single file */
+        if (linktext == null) linktext = br.getRegex("metadata\": (\\{.*?\\})").getMatch(0);
         if (linktext == null || folderName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

@@ -46,7 +46,7 @@ public class HotGooCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">This video had an error or could not be found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">This video had an error or could not be found<|>This video or page had an error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<td width=540><font size=3><b>([^<>\"]*?)</b></font").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Hot Goo</title>").getMatch(0);
         String filesize = br.getRegex("<b>Size</b>: ([^<>\"]*?)</li>").getMatch(0);

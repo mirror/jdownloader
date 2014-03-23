@@ -52,7 +52,7 @@ public class GoKuaiCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"error_wrp error_404\"") || br.getURL().contains("gokuai.com/error/expired")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"error_wrp error_404\"") || br.getURL().contains("gokuai.com/error/expired") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2><i class=\"icon\\_[a-z0-9]+\"></i><span>(.*?)</span></h2>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("filename:\"(.*?)\"").getMatch(0);

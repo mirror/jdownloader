@@ -60,7 +60,8 @@ public class PCloudCom extends PluginForHost {
         final String fileid = link.getStringProperty("plain_fileid", null);
         if (isCompleteFolder(link)) {
             br.getPage("http://api.pcloud.com/showpublink?code=" + code);
-            if (br.containsHTML("\"error\": \"Invalid link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* 7002 = deleted by the owner */
+            if (br.containsHTML("\"error\": \"Invalid link") || br.containsHTML("\"result\": 7002")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             br.getPage("https://api.pcloud.com/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
             if (br.containsHTML("\"error\": \"Invalid link \\'code\\'\\.\"|\"error\": \"File not found\\.\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

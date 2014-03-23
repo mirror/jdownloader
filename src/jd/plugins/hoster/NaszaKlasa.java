@@ -32,7 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nk.pl" }, urls = { "http://(www\\.)?nk\\.decryptednaszaplasa/profile/\\d+/gallery/album/\\d+/\\d+\\?naszaplasalink" }, flags = { 2 })
 public class NaszaKlasa extends PluginForHost {
@@ -72,7 +71,12 @@ public class NaszaKlasa extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.naszaklasa.only4registered", USERTEXT));
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, USERTEXT);
     }
 
     @Override

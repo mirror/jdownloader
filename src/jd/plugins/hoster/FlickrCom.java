@@ -61,6 +61,7 @@ public class FlickrCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.clearCookies(MAINPAGE);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {

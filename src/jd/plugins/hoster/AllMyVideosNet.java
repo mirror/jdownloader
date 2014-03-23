@@ -54,6 +54,7 @@ public class AllMyVideosNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         if (downloadLink.getDownloadURL().matches(TYPE_OLD)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setCookie("http://allmyvideos.net/", "lang", "english");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">File not found<|Reason of deletion:")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

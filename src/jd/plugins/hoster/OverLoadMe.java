@@ -154,18 +154,22 @@ public class OverLoadMe extends PluginForHost {
                     if (dl.externalDownloadStop()) return;
                 } catch (final Throwable e) {
                 }
+                logger.info("Download failed -> Maybe re-trying with only 1 chunk");
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(OverLoadMe.NOCHUNKS, false) == false) {
-                    link.setProperty(OverLoadMe.NOCHUNKS, Boolean.valueOf(true));
-                    link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+                disableChunkload(link);
+                logger.info("Download failed -> Retry with 1 chunk did not solve the problem");
             }
         } catch (final PluginException e) {
             link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
             /* This may happen if the downloads stops at 99,99% - a few retries usually help in this case */
             if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 logger.info(NICE_HOST + ": DOWNLOAD_INCOMPLETE");
+
+                logger.info("DOWNLOAD_INCOMPLETE -> Maybe re-trying with only 1 chunk");
+                /* unknown error, we disable multiple chunks */
+                disableChunkload(link);
+                logger.info("DOWNLOAD_INCOMPLETE -> Retry with 1 chunk did not solve the problem");
+
                 int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", 0);
                 link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 5) {
@@ -234,6 +238,15 @@ public class OverLoadMe extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private void disableChunkload(final DownloadLink dl) throws PluginException {
+        /* unknown error, we disable multiple chunks */
+        if (dl.getBooleanProperty(OverLoadMe.NOCHUNKS, false) == false) {
+            dl.setProperty(OverLoadMe.NOCHUNKS, Boolean.valueOf(true));
+            dl.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
     }
 
     @Override

@@ -76,8 +76,7 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
         }
         br.postPage("http://api.letitbit.net/", "r=[\"tVL0gjqo5\",[\"preview/flv_image\",{\"uid\":\"" + uid + "\"}],[\"preview/flv_link\",{\"uid\":\"" + uid + "\"}]]");
 
-        boolean status = br.getRegex("\"status\":\"OK\"").matches() ? true : false;
-        if (status == false) {
+        if (br.containsHTML("\"not_found\"")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         } else {

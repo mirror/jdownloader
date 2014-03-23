@@ -447,12 +447,12 @@ public class Uploadedto extends PluginForHost {
             return ai;
         }
         if (br.containsHTML("wrong password")) {
-            ai.setStatus("Wrong password");
+            ai.setStatus("Wrong password | Ungültiges Passwort");
             account.setValid(false);
             return ai;
         }
         if (br.containsHTML("wrong user")) {
-            ai.setStatus("Wrong username");
+            ai.setStatus("Wrong username | Ungültiger Benutzername");
             account.setValid(false);
             return ai;
         }
@@ -771,6 +771,7 @@ public class Uploadedto extends PluginForHost {
 
     /** API error handling **/
     private void handleErrorCode(Browser br, Account acc, String usedToken, boolean throwPluginDefect) throws Exception {
+        final String lang = System.getProperty("user.language");
         String errCode = br.getRegex("code\":\\s*?\"?(\\d+)").getMatch(0);
         if (errCode == null) errCode = br.getRegex("errCode\":\\s*?\"?(\\d+)").getMatch(0);
         String message = br.getRegex("message\":\"([^\"]+)").getMatch(0);
@@ -786,9 +787,14 @@ public class Uploadedto extends PluginForHost {
                 // {"err":{"code":1,"message":"Benutzer nicht vorhanden: e74ac48bef744497c56efaf45072579fbc945b45"}}
                 // user does not exist, when random username entered into login field.
             case 2:
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "User does not exist!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 3:
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!\r\n\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUser does not exist!\r\nBenutzername existiert nicht!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 3: {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             case 4:
                 if (acc != null) {
                     synchronized (acc) {

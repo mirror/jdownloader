@@ -89,6 +89,10 @@ public class LinkSnappyCom extends PluginForHost {
         final String expire = br.getRegex("\"expire\":\"([^<>\"]*?)\"").getMatch(0);
         if ("lifetime".equals(expire)) {
             accountType = "Lifetime Premium Account";
+        } else if ("expired".equals(expire)) {
+            /* Free account = also expired */
+            ac.setExpired(true);
+            return ac;
         } else {
             ac.setValidUntil(Long.parseLong(expire) * 1000);
             accountType = "Premium Account";
