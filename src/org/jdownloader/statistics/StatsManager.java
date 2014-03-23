@@ -512,7 +512,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 logger.info("Error Details: \r\n" + JSonStorage.serializeToJson(errors.get(dl.getErrorID())));
             }
 
-            if (result.getLastPluginHost() != null && StringUtils.equals(dl.getCandidate().getPlugin(), result.getLastPluginHost())) {
+            if (result.getLastPluginHost() != null && !StringUtils.equals(dl.getCandidate().getPlugin(), result.getLastPluginHost())) {
                 // the error did not happen in the plugin
                 logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
                 // return;
