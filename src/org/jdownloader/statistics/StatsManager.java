@@ -515,7 +515,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             if (result.getLastPluginHost() != null && StringUtils.equals(dl.getCandidate().getPlugin(), result.getLastPluginHost())) {
                 // the error did not happen in the plugin
                 logger.info("Do not track. " + result.getLastPluginHost() + "!=" + dl.getCandidate().getPlugin());
-                return;
+                // return;
             }
             // DownloadInterface instance = link.getDownloadLinkController().getDownloadInstance();
 
