@@ -439,6 +439,7 @@ NewRuleAction_getTooltipText_tt_=Pridať nové pravidlo
 NewSubMenuDialog_layoutDialogContent_name_=Zvoľte názov a ikonu...
 NinekwService_createPanel_apikey=Zadajte kľúč API
 NinekwService_createPanel_blacklist=Čierna listina
+NinekwService_createPanel_debug=Ladiť
 NinekwService_createPanel_enabled=Povoliť službu 9kw.eu
 NinekwService_createPanel_feedback=Spätná väzba
 NinekwService_createPanel_https=Https
