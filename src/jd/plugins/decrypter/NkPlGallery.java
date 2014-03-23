@@ -71,10 +71,9 @@ public class NkPlGallery extends PluginForDecrypt {
                 logger.info("Invalid or no username/password entered, cannot decrypt without account, stopping...");
                 return decryptedLinks;
             }
-            // Access the page
-            br.getPage(correctCryptedLink(parameter));
             final String basicAuth = br.getCookie("nk.pl", "basic_auth");
             if (parameter.matches(".*?nk\\.pl/#?profile/\\d+/gallery/([0-9]+|album/\\d+/\\d+)")) {
+                br.getPage(correctCryptedLink(parameter));
                 String finallink = br.getRegex(FINALLINKREGEX1).getMatch(0);
                 if (finallink == null || finallink.contains("other/std")) {
                     finallink = br.getRegex(FINALLINKREGEX2).getMatch(0);
@@ -85,6 +84,7 @@ public class NkPlGallery extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             } else if (parameter.matches(".*?nk\\.pl/#profile/\\d+/gallery#\\![q\\?]*?album=\\d+")) {
+                br.getPage(correctCryptedLink(parameter));
                 br.setFollowRedirects(true);
                 if (br.containsHTML("<div class=\"blocked_album\">")) {
                     logger.warning("Gallery for url: " + parameter + " was blocked by the owner.");
@@ -92,7 +92,8 @@ public class NkPlGallery extends PluginForDecrypt {
                 }
                 final String galleryID = new Regex(parameter, "album=(\\d+)").getMatch(0);
                 final String profileNumber = new Regex(parameter, "nk.pl/#profile/(\\d+)").getMatch(0);
-                String profilName = br.getRegex("<h3><a href=\"/profile/" + profileNumber + "\">(.*?)</a></h3>").getMatch(0);
+                br.getPage("http://nk.pl/profile/" + profileNumber + "/gallery?src=profile_button");
+                String profilName = br.getRegex("href=\"/profile/" + profileNumber + "\" title=\"([^<>\"]*?)\"").getMatch(0);
                 if (profilName == null) profilName = profileNumber;
                 profilName = Encoding.htmlDecode(profilName.trim());
                 prepBrAjax();
