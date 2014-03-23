@@ -41,7 +41,8 @@ public class DhSt extends PluginForHost {
         return "http://d-h.st/tos";
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users)";
+    private final String INVALIDLINKS  = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users)";
+    private final String tempSiteIssue = ">It appears something went wrong\\.{1,}</h\\d+>";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -50,14 +51,16 @@ public class DhSt extends PluginForHost {
         if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>File Not Found<|>The file you were looking for could not be found)") || br.getURL().equals("http://d-h.st/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // site issue?
+        if (br.containsHTML(tempSiteIssue)) { return AvailableStatus.UNCHECKABLE; }
         // For invalid links
         if (br.containsHTML(">403 Forbidden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Filename:</span> <div title=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Dev\\-Host \\- ([^<>\"]*?) \\- The Ultimate Free File Hosting / File Sharing Service</title>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+ bytes)\\)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         final String md5 = br.getRegex(">MD5 Sum:</span> ([a-z0-9]{32})</div>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
@@ -66,6 +69,10 @@ public class DhSt extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(tempSiteIssue)) {
+            logger.info("Hoster is having problems!");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster is having problems!");
+        }
         String dllink = getDllink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
