@@ -49,6 +49,7 @@ extractprogress_label=Rozbalených %s1: %s2 súborov
 failed=Rozbaľovanie zlyhalo: %s1
 failed_no_details=Rozbaľovanie zlyhalo
 file_exists=Súbor už existuje
+file_exists_message=Došlo k problému pri rozbaľovaní archívu.\nSúbor k rozbaleniu už na vašom disku existuje. Vyberte, čo sa má urobiť:
 file_exists_not=Súbor neexistuje
 filename=Názov súboru
 files2=súborov
