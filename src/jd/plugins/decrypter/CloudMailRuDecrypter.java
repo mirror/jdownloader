@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -36,7 +37,10 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final String BUILD = "hotfix-17-7.201403131547";
+    public static final String  BUILD            = "hotfix-17-7.201403131547";
+    /* Max .zip filesize = 4 GB */
+    private static final double MAX_ZIP_FILESIZE = 4194304;
+    private static final String DOWNLOAD_ZIP     = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -108,7 +112,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             }
         }
 
-        if (decryptedLinks.size() > 1) {
+        if (decryptedLinks.size() > 1 && totalSize <= MAX_ZIP_FILESIZE * 1024 && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
             final String main_name = fpName + ".zip";
             main.setFinalFileName(fpName);
