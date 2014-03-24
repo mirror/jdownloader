@@ -894,7 +894,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 } else {
                     account.setProperty("nopremium", false);
                 }
-                /** Save cookies */
+                /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
                 for (final Cookie c : add.getCookies()) {

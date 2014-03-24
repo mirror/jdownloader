@@ -396,9 +396,15 @@ public class OverLoadMe extends PluginForHost {
                 /* Everything ok */
                 break;
             case 1:
+                final String lang = System.getProperty("user.language");
                 /* Login or password missing -> disable account */
-                statusMessage = "\r\nInvalid account / Ungültiger Account";
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if ("de".equalsIgnoreCase(lang)) {
+                    statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Gehe sicher, dass du als Passwort den Auth-code eingegeben hast. Diesen findest du hier:\r\nover-load.me/account.php\r\n2. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n3. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. Make sure that you entered the Auth-code as password. You can find it here:\r\nover-load.me/account.php\r\n2. If your password contains special characters, change it (remove them) and try again!\r\n3. Type in your username/password by hand without copy & paste.";
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             case 2:
                 /* Invalid link -> Disable current host */
                 statusMessage = "\r\nCurrent host is not supported";
@@ -437,7 +443,8 @@ public class OverLoadMe extends PluginForHost {
                 tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
             case 11:
                 /* Account expired -> Disable account */
-                statusMessage = "Account expired";
+                statusMessage = "Account expired  |  Account abgelaufenF";
+                account.getAccountInfo().setExpired(true);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 12:
                 /* No API code sent -> Disable account */
@@ -468,7 +475,7 @@ public class OverLoadMe extends PluginForHost {
                 } else {
                     downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknownapierror", Property.NULL);
                     logger.info(NICE_HOST + ": Unknown API error - disabling current host!");
-                    tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+                    tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000l);
                 }
             }
         } catch (final PluginException e) {
