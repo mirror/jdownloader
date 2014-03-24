@@ -33,6 +33,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -47,6 +48,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "http://rapidu\\.net/(\\d+)/(.+)" }, flags = { 2 })
 public class RapiduNet extends PluginForHost {
+
+    private String userAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36 OPR/20.0.1387.77";
 
     public RapiduNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -156,11 +159,9 @@ public class RapiduNet extends PluginForHost {
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
 
         br.setCookiesExclusive(true);
-
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-
         br.setAcceptLanguage("pl-PL,pl;q=0.9,en;q=0.8");
-
+        br.getHeaders().put("User-Agent", userAgent);
         br.postPage(MAINPAGE + "/ajax.php?a=getLoadTimeToDownload", "_go=");
         String response = br.toString();
         Date actualDate = new Date();
@@ -184,23 +185,21 @@ public class RapiduNet extends PluginForHost {
         }
         String fileID = downloadLink.getProperty("FILEID").toString();
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        // Form dlForm = new Form();
+        Form dlForm = new Form();
 
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        // rc.setForm(dlForm);
+        dlForm.put("ajax", "1");
+        dlForm.put("cachestop", "0.7658682554028928");
+        rc.setForm(dlForm);
         // id for the hoster
         String id = "6Ld12ewSAAAAAHoE6WVP_pSfCdJcBQScVweQh8Io";
+
         rc.setId(id);
         String dllink = null;
         for (int i = 0; i < 5; i++) {
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            /*
-             * Form rcform = rc.getForm(); rcform.put("captcha1", rc.getChallenge()); rcform.put("captcha2", Encoding.urlEncode(c));
-             * rcform.put("fileid", fileID); rcform.put("k", id); rcform.put("_go", ""); logger.info("Put captchacode " + c +
-             * " obtained by captcha metod \"Re Captcha\" in the form and submitted it."); dlForm = rc.getForm();
-             */
             br.postPage(MAINPAGE + "/ajax.php?a=getCheckCaptcha", "captcha1=" + rc.getChallenge() + "&captcha2=" + Encoding.urlEncode(c) + "&fileId=" + fileID + "&_go=");
             response = br.toString();
             String message = checkForErrors(br.toString(), "error");
@@ -402,11 +401,11 @@ public class RapiduNet extends PluginForHost {
         int userPremium = Integer.parseInt(getJson("userPremium", accountResponse));
         String userPremiumDateEnd = getJson("userPremiumDateEnd", accountResponse);
         String userTraffic = getJson("userTrafficDay", accountResponse);
+        ai.setTrafficLeft(userTraffic);
         if (userPremium == 0) {
             ai.setStatus("Registered (free) user");
         } else {
             ai.setStatus("Premium user");
-            ai.setTrafficLeft(userTraffic);
 
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
             Date date;
