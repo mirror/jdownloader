@@ -265,19 +265,19 @@ public class OBoomCom extends PluginForHost {
                         String title = null;
                         String tab = "                        ";
                         if ("de".equalsIgnoreCase(lng)) {
-                            title = "Uploaded.to Free Download";
-                            message = "Du lädst im kostenlosen Modus von Uploaded.to.\r\n";
+                            title = domain + " Free Download";
+                            message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
                             message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
                             message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
                         } else {
-                            title = "Uploaded.to Free Download";
-                            message = "You are using the Uploaded.to Free Mode.\r\n";
+                            title = domain + " Free Download";
+                            message = "You are using the " + domain + " Free Mode.\r\n";
                             message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
                             message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?ul.to&freedialog"));
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
                         }
                     } catch (Throwable e) {
                     }
