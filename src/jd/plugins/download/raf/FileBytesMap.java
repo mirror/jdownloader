@@ -3,6 +3,7 @@ package jd.plugins.download.raf;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 import org.appwork.storage.Storable;
@@ -51,7 +52,8 @@ public class FileBytesMap {
         }
         
         private final void modifyLength(long length) {
-            this.length = Math.max(0, this.length + length);
+            if (length < 0) throw new IllegalArgumentException("length is negative");
+            this.length += length;
         }
         
         @Override
@@ -195,67 +197,65 @@ public class FileBytesMap {
         markedBytes = 0;
     }
     
+    /**
+     * return how much area got marked
+     * 
+     * if return value != markedAreaLength ->overlapping mark
+     * 
+     * @param markedAreaBegin
+     * @param markedAreaLength
+     * @return
+     */
     public synchronized long mark(long markedAreaBegin, long markedAreaLength) {
         if (markedAreaLength <= 0) throw new IllegalArgumentException("invalid length");
-        long markedAreaEnd = markedAreaBegin + markedAreaLength - 1;
+        final long markedAreaEnd = markedAreaBegin + markedAreaLength - 1;
+        int checkOverlapIndex = -1;
         for (int index = 0; index < fileBytesMapEntries.size(); index++) {
-            FileBytesMapEntry fileBytesMapEntry = fileBytesMapEntries.get(index);
-            long fileBytesMapEntryEnd = fileBytesMapEntry.getEnd();
-            if ((markedAreaBegin >= fileBytesMapEntry.getBegin()) && (markedAreaBegin <= fileBytesMapEntryEnd)) {
-                /* markedAreaBegin is inside fileBytesMapEntry */
-                if (markedAreaEnd <= fileBytesMapEntryEnd) {
-                    /* markedArea is completely within fileBytesMapEntry */
+            final FileBytesMapEntry currentFileBytesMapEntry = fileBytesMapEntries.get(index);
+            if ((markedAreaBegin >= currentFileBytesMapEntry.getBegin()) && (markedAreaBegin <= currentFileBytesMapEntry.getEnd())) {
+                /* markedAreaBegin is inside currentFileBytesMapEntry */
+                if (markedAreaEnd <= currentFileBytesMapEntry.getEnd()) {
+                    /* markedArea is completely within currentFileBytesMapEntry */
                     return -markedAreaLength;
                 }
-                long endOffset = markedAreaEnd - fileBytesMapEntryEnd;
-                long lengthOffset = endOffset + 1;
-                fileBytesMapEntry.modifyLength(lengthOffset);
-                markedBytes += lengthOffset;
-                final int nextIndex = index + 1;
-                if (nextIndex < fileBytesMapEntries.size()) {
-                    /* check overlap of next fileBytesMapEntry */
-                    FileBytesMapEntry nextFileBytesMapEntry = fileBytesMapEntries.get(nextIndex);
-                    fileBytesMapEntryEnd = fileBytesMapEntry.getEnd();
-                    if (fileBytesMapEntryEnd >= nextFileBytesMapEntry.getBegin()) {
-                        /* overlapping */
-                        fileBytesMapEntries.remove(nextIndex);
-                        lengthOffset = nextFileBytesMapEntry.getEnd() - fileBytesMapEntryEnd - nextFileBytesMapEntry.getLength();
-                        if (lengthOffset <= 0) {
-                            /* nextFileBytesMapEntry is completely within fileBytesMapEntry */
-                            markedBytes -= nextFileBytesMapEntry.getLength();
-                        } else {
-                            markedBytes += lengthOffset;
-                            fileBytesMapEntry.modifyLength(lengthOffset);
-                        }
-                        return lengthOffset;
-                    }
-                }
-                return lengthOffset;
-            } else if (markedAreaBegin == fileBytesMapEntry.getEnd() + 1) {
-                /* markedAreaBegin continues fileBytesMapEntry */
-                fileBytesMapEntry.modifyLength(markedAreaLength);
+                markedAreaLength = markedAreaEnd - currentFileBytesMapEntry.getEnd();
+                currentFileBytesMapEntry.modifyLength(markedAreaLength);
                 markedBytes += markedAreaLength;
-                final int nextIndex = index + 1;
-                if (nextIndex < fileBytesMapEntries.size()) {
-                    /* check overlap of next fileBytesMapEntry */
-                    FileBytesMapEntry nextFileBytesMapEntry = fileBytesMapEntries.get(nextIndex);
-                    fileBytesMapEntryEnd = fileBytesMapEntry.getEnd();
-                    if (fileBytesMapEntryEnd >= nextFileBytesMapEntry.getBegin()) {
-                        /* overlapping */
-                        fileBytesMapEntries.remove(nextIndex);
-                        long lengthOffset = nextFileBytesMapEntry.getEnd() - fileBytesMapEntryEnd - nextFileBytesMapEntry.getLength();
-                        if (lengthOffset <= 0) {
-                            /* nextFileBytesMapEntry is completely within fileBytesMapEntry */
+                checkOverlapIndex = index;
+                break;
+            } else if (markedAreaBegin == currentFileBytesMapEntry.getEnd() + 1) {
+                /* markedArea continues currentFileBytesMapEntry */
+                currentFileBytesMapEntry.modifyLength(markedAreaLength);
+                markedBytes += markedAreaLength;
+                checkOverlapIndex = index;
+                break;
+            }
+        }
+        if (checkOverlapIndex >= 0) {
+            if (checkOverlapIndex < fileBytesMapEntries.size() - 1) {
+                final FileBytesMapEntry baseFileBytesMapEntry = fileBytesMapEntries.get(checkOverlapIndex);
+                Iterator<FileBytesMapEntry> it = fileBytesMapEntries.subList(checkOverlapIndex + 1, fileBytesMapEntries.size()).iterator();
+                while (it.hasNext()) {
+                    FileBytesMapEntry nextFileBytesMapEntry = it.next();
+                    if (baseFileBytesMapEntry.getEnd() >= nextFileBytesMapEntry.getBegin()) {
+                        it.remove();
+                        if (nextFileBytesMapEntry.getEnd() <= baseFileBytesMapEntry.getEnd()) {
+                            /* nextFileBytesMapEntry is completely within baseFileBytesMapEntry */
                             markedBytes -= nextFileBytesMapEntry.getLength();
+                            markedAreaLength -= nextFileBytesMapEntry.getLength();
                         } else {
-                            markedBytes += lengthOffset;
-                            fileBytesMapEntry.modifyLength(lengthOffset);
+                            long markedBytesOffset = baseFileBytesMapEntry.getEnd() - nextFileBytesMapEntry.getBegin() + 1;
+                            markedBytes -= markedBytesOffset;
+                            long lengthOffset = nextFileBytesMapEntry.getEnd() - baseFileBytesMapEntry.getEnd();
+                            baseFileBytesMapEntry.modifyLength(lengthOffset);
+                            markedAreaLength += lengthOffset;
                         }
-                        return lengthOffset;
+                    } else {
+                        break;
                     }
                 }
-                return markedAreaLength;
             }
+            return markedAreaLength;
         }
         fileBytesMapEntries.add(new FileBytesMapEntry(markedAreaBegin, markedAreaLength));
         markedBytes += markedAreaLength;
