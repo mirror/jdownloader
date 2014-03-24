@@ -19,6 +19,7 @@ package jd.plugins;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +56,9 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.blacklist.BlockAllDownloadCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
@@ -766,7 +770,7 @@ public abstract class PluginForHost extends Plugin {
             long waitMax = 0;
             long waitCur = 0;
             old = downloadLink.setPluginProgress(progress);
-            while ((waitQueuePosition = queueItem.indexOf(downloadLink)) >= 0) {
+            while ((waitQueuePosition = queueItem.indexOf(downloadLink)) >= 0 && !downloadLink.getDownloadLinkController().isAborting()) {
                 if (waitQueuePosition != lastQueuePosition) {
                     waitMax = (queueItem.lastStartTimestamp.get() - System.currentTimeMillis()) + ((waitQueuePosition + 1) * wait);
                     waitCur = waitMax;
@@ -827,7 +831,7 @@ public abstract class PluginForHost extends Plugin {
         PluginProgress old = null;
         try {
             old = downloadLink.setPluginProgress(progress);
-            while (i > 0) {
+            while (i > 0 && !downloadLink.getDownloadLinkController().isAborting()) {
                 progress.setCurrent(i);
                 synchronized (this) {
                     wait(Math.min(1000, Math.max(0, i)));
@@ -1240,12 +1244,24 @@ public abstract class PluginForHost extends Plugin {
      * THIS IS JDOWNLOADER 2 ONLY!
      * 
      * @param domain
+     * @throws DialogCanceledException
+     * @throws DialogClosedException
      */
-    protected void showFreeDialog(String domain) {
-        
-        AskToUsePremiumDialog d = new AskToUsePremiumDialog(domain, this);
-        
-        UIOManager.I().show(AskToUsePremiumDialogInterface.class, d);
+    protected void showFreeDialog(final String domain) {
+        AskToUsePremiumDialog d = new AskToUsePremiumDialog(domain, this) {
+            @Override
+            public String getDontShowAgainKey() {
+                return "adsPremium_" + domain;
+            }
+        };
+        try {
+            UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
+            CrossSystem.openURL(new URL(d.getPremiumUrl()));
+        } catch (DialogNoAnswerException e) {
+            LogSource.exception(logger, e);
+        } catch (IOException e) {
+            LogSource.exception(logger, e);
+        }
         
     }
     

@@ -1,6 +1,9 @@
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
@@ -10,8 +13,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -22,9 +28,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision: 24660 $", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/#?[A-Z0-9]{8}" }, flags = { 2 })
 public class OBoomCom extends PluginForHost {
@@ -51,15 +59,11 @@ public class OBoomCom extends PluginForHost {
             long premiumUntil = TimeFormatter.getMilliSeconds(premium, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
             ai.setValidUntil(premiumUntil);
             if (!ai.isExpired()) {
-                account.setConcurrentUsePossible(true);
-                account.setMaxSimultanDownloads(0);
                 ai.setStatus("Premium account");
                 return ai;
             }
         }
         ai.setValidUntil(-1);
-        account.setConcurrentUsePossible(false);
-        account.setMaxSimultanDownloads(1);
         ai.setStatus("Free Account");
         return ai;
     }
@@ -79,9 +83,19 @@ public class OBoomCom extends PluginForHost {
                         if (value != null) infos.put(key, value);
                     }
                     String premium = infos.get("premium");
-                    if (premium == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported at the moment", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    long timeStamp = TimeFormatter.getMilliSeconds(premium, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
-                    if (timeStamp < System.currentTimeMillis()) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Free accounts are not supported at the moment", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (premium != null) {
+                        long timeStamp = TimeFormatter.getMilliSeconds(premium, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+                        if (timeStamp <= System.currentTimeMillis()) {
+                            infos.remove("premium");
+                        }
+                    }
+                    if (infos.get("premium") != null) {
+                        account.setConcurrentUsePossible(true);
+                        account.setMaxSimultanDownloads(0);
+                    } else {
+                        account.setConcurrentUsePossible(false);
+                        account.setMaxSimultanDownloads(1);
+                    }
                     ACCOUNTINFOS.put(account, infos);
                 }
                 return infos;
@@ -167,7 +181,13 @@ public class OBoomCom extends PluginForHost {
         String name = getValue(response, "name");
         String state = getValue(response, "state");
         if (name != null) link.setFinalFileName(name);
-        if (size != null) link.setVerifiedFileSize(Long.parseLong(size));
+        try {
+            if (size != null) {
+                link.setDownloadSize(Long.parseLong(size));
+                link.setVerifiedFileSize(Long.parseLong(size));
+            }
+        } catch (final Throwable e) {
+        }
         if (!"online".equals(state)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
@@ -175,18 +195,17 @@ public class OBoomCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         Map<String, String> infos = loginAPI(account, false);
+        if (!infos.containsKey("premium")) {
+            handleFree(link, account);
+            return;
+        }
         fetchFileInformation(link, infos.get("session"));
-        br.getPage("https://api.oboom.com/1.0/dl?token=" + infos.get("session") + "&item=" + getFileID(link));
+        br.getPage("https://api.oboom.com/1.0/dl?token=" + infos.get("session") + "&item=" + getFileID(link) + "&http_errors=0");
         String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
         if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String url = "https://" + urlInfos[0] + "/1.0/dlh?ticket=" + urlInfos[1];
         br.setFollowRedirects(true);
-        if (infos.containsKey("premium")) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
-        } else {
-            /* TODO: not yet supported */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -200,12 +219,127 @@ public class OBoomCom extends PluginForHost {
     
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Free Accounts are not supported at the moment");
+        handleFree(link, null);
+    }
+    
+    private void checkShowFreeDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
+                if (config.getProperty("premAdShown2") == null) {
+                    File checkFile = JDUtilities.getResourceFile("tmp/oboom");
+                    if (!checkFile.exists()) {
+                        checkFile.mkdirs();
+                        showFreeDialog("oboom.com");
+                    }
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("premAdShown", Boolean.TRUE);
+                config.setProperty("premAdShown2", "shown");
+                config.save();
+            }
+        }
+    }
+    
+    protected void showFreeDialog(final String domain) {
+        if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
+            super.showFreeDialog(domain);
+            return;
+        }
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        String tab = "                        ";
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = "Uploaded.to Free Download";
+                            message = "Du lädst im kostenlosen Modus von Uploaded.to.\r\n";
+                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
+                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
+                        } else {
+                            title = "Uploaded.to Free Download";
+                            message = "You are using the Uploaded.to Free Mode.\r\n";
+                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
+                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?ul.to&freedialog"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+    
+    @Override
+    public boolean hasCaptcha(DownloadLink link, Account acc) {
+        if (acc != null && acc.getMaxSimultanDownloads() == 0) return false;
+        return true;
+    }
+    
+    public void handleFree(DownloadLink link, Account account) throws Exception {
+        AtomicBoolean newSignal = new AtomicBoolean(false);
+        String session = getGuestSession(false, null, newSignal);
+        if (account != null) {
+            Map<String, String> infos = loginAPI(account, false);
+            session = infos.get("session");
+        }
+        fetchFileInformation(link, session);
+        checkShowFreeDialog();
+        br.setAllowedResponseCodes(421, 509);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        for (int i = 1; i <= 5; i++) {
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId("6LdqpO0SAAAAAJGHXo63HyalP7H4qlRs_vff0kJX");
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String code = getCaptchaCode("recaptcha", cf, link);
+            br.getPage("https://www.oboom.com/1.0/dl/ticket?token=" + session + "&download_id=" + getFileID(link) + "&source=" + APPID + "&recaptcha_challenge_field=" + URLEncoder.encode(rc.getChallenge(), "UTF-8") + "&recaptcha_response_field=" + URLEncoder.encode(code, "UTF-8") + "&http_errors=0");
+            if (br.containsHTML("incorrect-captcha-sol")) continue;
+            break;
+        }
+        if (br.containsHTML("incorrect-captcha-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String waitTime = br.getRegex("403,(\\d+)").getMatch(0);
+        if (waitTime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l); }
+        String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
+        if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        sleep(30 * 1000l, link);
+        br.getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + getFileID(link) + "&auth=" + urlInfos[1] + "&http_errors=0");
+        waitTime = br.getRegex("421,\".*?\",(\\d+)").getMatch(0);
+        if (waitTime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l); }
+        urlInfos = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
+        if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String url = "https://" + urlInfos[0] + "/1.0/dlh?ticket=" + urlInfos[1];
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
     
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        return account != null;
+        if (account != null && account.getMaxSimultanDownloads() == 0) return true;
+        if (downloadLink.getVerifiedFileSize() >= 0) return downloadLink.getVerifiedFileSize() < 1024 * 1024 * 1024l;
+        return true;
     }
     
     @Override
