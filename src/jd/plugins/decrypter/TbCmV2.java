@@ -31,6 +31,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -46,6 +47,7 @@ import jd.plugins.components.YoutubeVariantInterface;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAVideoAndPlaylistAction;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.exceptions.WTFException;
@@ -767,28 +769,54 @@ public class TbCmV2 extends PluginForDecrypt {
         // this returns the html5 player
         ArrayList<YoutubeClipData> ret = new ArrayList<YoutubeClipData>();
         if (StringUtils.isNotEmpty(playlistID)) {
-            int page = 1;
+            Browser pbr = new Browser();
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("youtube.com");
+            JDUtilities.getPluginForHost("mediafire.com");
+            br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+            br.getHeaders().put("Accept-Charset", null);
+            br.getPage(getBase() + "/playlist?list=" + playlistID);
+
+            final String yt_page_cl = br.getRegex("'PAGE_CL': (\\d+)").getMatch(0);
+            final String yt_page_ts = br.getRegex("'PAGE_BUILD_TIMESTAMP': \"(.*?)\"").getMatch(0);
+            pbr = br.cloneBrowser();
             int counter = 1;
             while (true) {
                 if (this.isAbort()) { throw new InterruptedException(); }
 
-                br.getPage(getBase() + "/playlist?list=" + playlistID + "&page=" + page);
-                checkErrors(br);
-                String[] videos = br.getRegex("href=\"(/watch\\?v=[A-Za-z0-9\\-_]+)\\&amp;list=[A-Z0-9]+").getColumn(0);
+                checkErrors(pbr);
+                String[] videos = pbr.getRegex("href=(\"|')(/watch\\?v=[A-Za-z0-9\\-_]+.*?)\\1").getColumn(1);
                 if (videos != null) {
                     for (String relativeUrl : videos) {
-                        String id = getVideoIDByUrl(relativeUrl);
-                        if (dupeCheckSet.add(id)) {
-                            ret.add(new YoutubeClipData(id, counter++));
+                        if (relativeUrl.contains("list=" + playlistID)) {
+                            String id = getVideoIDByUrl(relativeUrl);
+                            if (dupeCheckSet.add(id)) {
+                                ret.add(new YoutubeClipData(id, counter++));
+                            }
                         }
                     }
                 }
                 // Several Pages: http://www.youtube.com/playlist?list=FL9_5aq5ZbPm9X1QH0K6vOLQ
-                String nextPage = br.getRegex("<a href=\"/playlist\\?list=" + playlistID + "\\&amp;page=(\\d+)\"[^\r\n]+>Next").getMatch(0);
-                if (nextPage != null) {
-                    page = Integer.parseInt(nextPage);
+                String jsonPage = pbr.getRegex("/browse_ajax\\?action_continuation=\\d+&amp;continuation=[a-zA-Z0-9%]+").getMatch(-1);
+                String nextPage = pbr.getRegex("<a href=(\"|')(/playlist\\?list=" + playlistID + "\\&amp;page=\\d+)\\1[^\r\n]+>Next").getMatch(1);
+                if (jsonPage != null) {
+                    jsonPage = HTMLEntities.unhtmlentities(jsonPage);
+                    pbr = br.cloneBrowser();
+                    if (yt_page_cl != null) pbr.getHeaders().put("X-YouTube-Page-CL", yt_page_cl);
+                    if (yt_page_ts != null) pbr.getHeaders().put("X-YouTube-Page-Timestamp", yt_page_ts);
                     // anti ddos
-                    Thread.sleep(500);
+                    Thread.sleep(1000);
+                    pbr.getPage(jsonPage);
+                    String output = pbr.toString().replace("\\n", " ");
+                    output = jd.plugins.hoster.Youtube.unescape(output);
+                    output = output.replaceAll("[ ]{2,}", "");
+                    pbr.getRequest().setHtmlCode(output);
+                } else if (nextPage != null) {
+                    // OLD! doesn't always present. Depends on server playlist backend code.!
+                    nextPage = HTMLEntities.unhtmlentities(nextPage);
+                    // anti ddos
+                    Thread.sleep(1000);
+                    pbr.getPage(nextPage);
                 } else {
                     break;
                 }
