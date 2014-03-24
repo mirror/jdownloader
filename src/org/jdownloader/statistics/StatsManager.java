@@ -142,7 +142,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public boolean isEnabled() {
-        if (!Application.isJared(StatsManager.class) && false) return false;
+        if (!Application.isJared(StatsManager.class)) return false;
         return config.isEnabled() /* && */;
 
     }
