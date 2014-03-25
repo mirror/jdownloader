@@ -84,7 +84,7 @@ public class VideoOneCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            if (externID.contains("hardsextube.com/video/")) { // Fix for crypted version 
+            if (externID.contains("hardsextube.com/video/")) { // Fix for crypted version
                 decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + embedID + "/"));
                 return decryptedLinks;
             }
@@ -125,7 +125,8 @@ public class VideoOneCom extends PluginForDecrypt {
         }
         externID = br.getRegex("(\"|\\')(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)(\"|\\')").getMatch(1);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
+            final String id = new Regex(externID, "([0-9]{2,12})").getMatch(0);
+            decryptedLinks.add(createDownloadlink("http://www.tube8.com/amateur/" + System.currentTimeMillis() + "/" + id));
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);

@@ -57,20 +57,22 @@ public class SoundcloudCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    public final static String   CLIENTID                      = "b45b1aa10f1ac2941910a7f0d10f8e28";
-    public final static String   CLIENTID_8TRACKS              = "3904229f42df3999df223f6ebf39a8fe";
-    public final static String   APP_VERSION                   = "87a698ff";
+    public final static String   CLIENTID                        = "b45b1aa10f1ac2941910a7f0d10f8e28";
+    public final static String   CLIENTID_8TRACKS                = "3904229f42df3999df223f6ebf39a8fe";
+    /* Another way to get final links: http://api.soundcloud.com/tracks/11111xxx_test_track_ID1111111/streams?format=json&consumer_key= */
+    public final static String   CONSUMER_KEY_MYCLOUDPLAYERS_COM = "PtMyqifCQMKLqwP0A6YQ";
+    public final static String   APP_VERSION                     = "87a698ff";
 
-    private static final boolean ENABLE_TYPE_PRIVATE           = false;
+    private static final boolean ENABLE_TYPE_PRIVATE             = false;
 
-    private static final String  CUSTOM_DATE                   = "CUSTOM_DATE";
-    private static final String  CUSTOM_FILENAME_2             = "CUSTOM_FILENAME_2";
-    private static final String  GRAB500THUMB                  = "GRAB500THUMB";
-    private static final String  GRABORIGINALTHUMB             = "GRABORIGINALTHUMB";
-    private static final String  CUSTOM_PACKAGENAME            = "CUSTOM_PACKAGENAME";
-    private static final String  SETS_ADD_POSITION_TO_FILENAME = "SETS_ADD_POSITION_TO_FILENAME";
+    private static final String  CUSTOM_DATE                     = "CUSTOM_DATE";
+    private static final String  CUSTOM_FILENAME_2               = "CUSTOM_FILENAME_2";
+    private static final String  GRAB500THUMB                    = "GRAB500THUMB";
+    private static final String  GRABORIGINALTHUMB               = "GRABORIGINALTHUMB";
+    private static final String  CUSTOM_PACKAGENAME              = "CUSTOM_PACKAGENAME";
+    private static final String  SETS_ADD_POSITION_TO_FILENAME   = "SETS_ADD_POSITION_TO_FILENAME";
 
-    private static boolean       pluginloaded                  = false;
+    private static boolean       pluginloaded                    = false;
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));

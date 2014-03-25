@@ -1351,17 +1351,17 @@ public class Uploadedto extends PluginForHost {
         if ("de".equalsIgnoreCase(lang)) {
             dmcmenutext = "Aktiviere Download DMCA gesperrter Links?\r\n";
             dmcmenutext += "Bedenke folgendes:\r\n";
+            dmcmenutext += "-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können\r\n";
             dmcmenutext += "-Diese Funktion führt dazu, dass Links, die öffentlich den Status 'offline' haben, stattdessen den Status 'nicht überprüft' bekommen\r\n";
             dmcmenutext += "--> Falls diese wirklich offline sind, wird der korrekte Status erst beim Downloadstart angezeigt\r\n";
-            dmcmenutext += "--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt\r\n";
-            dmcmenutext += "-Diese Funktion erlaubt es Uploadern, ihre eigenen mit 'legacy takedown' Status versehenen Links in dem vom Hoster gegebenen Zeitraum noch herunterladen zu können";
+            dmcmenutext += "--> Falls diese noch ladbar sind, werden deren Dateiname- und Größe beim Downloadstart angezeigt";
         } else {
             dmcmenutext = "Activate download of DMCA blocked links?";
             dmcmenutext += "Note the following:\r\n";
+            dmcmenutext += "-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them\r\n";
             dmcmenutext += "-When activated, links which have the public status 'offline' will get an 'uncheckable' status instead\r\n";
             dmcmenutext += "--> If they're really offline, the correct status will be shown on downloadstart\r\n";
-            dmcmenutext += "--> If they're still downloadable, their filename- and size will be shown on downloadstart\r\n";
-            dmcmenutext += "-This function enabled uploaders to download their own links which have a 'legacy takedown' status till uploaded irrevocably deletes them";
+            dmcmenutext += "--> If they're still downloadable, their filename- and size will be shown on downloadstart";
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, JDL.L("plugins.hoster.uploadedto.downloadAbused", dmcmenutext)).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
 

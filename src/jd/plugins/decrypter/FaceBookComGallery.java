@@ -379,9 +379,12 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 logger.warning("Unsupported linktype: " + parameter);
                 return null;
             }
-            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            if (decryptedLinks == null) {
                 logger.warning("Decrypter broken for link: " + PARAMETER);
                 return null;
+            } else if (decryptedLinks.size() == 0) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
             return decryptedLinks;
         }
@@ -395,7 +398,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
             return;
         }
         getpagefirsttime(PARAMETER);
-        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
+        /* temporarily unavailable || empty album (link) */
+        if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</") || br.containsHTML("class=\"fbStarGridBlankContent\"")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
             return;
         }
