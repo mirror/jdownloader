@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "http://rapidu\\.net/(\\d+)/(.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidu.net" }, urls = { "http://rapidu\\.net/(\\d+)(/)?" }, flags = { 2 })
 public class RapiduNet extends PluginForHost {
 
     private String userAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36 OPR/20.0.1387.77";
@@ -68,7 +68,7 @@ public class RapiduNet extends PluginForHost {
         for (DownloadLink link : urls) {
             if (link.getProperty("FILEID") == null) {
                 String downloadUrl = link.getDownloadURL();
-                String fileID = new Regex(downloadUrl, MAINPAGE + "/([0-9]+)/.+").getMatch(0);
+                String fileID = new Regex(downloadUrl, MAINPAGE + "/([0-9]+)").getMatch(0);
                 link.setProperty("FILEID", fileID);
             }
         }
