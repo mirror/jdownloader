@@ -33,6 +33,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -60,29 +61,29 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     /* Settings values */
-    private static final String   MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
-    private static final String   MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD = "MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD";
-    private static final String   EMPTY_TRASH_AFTER_DOWNLOAD         = "EMPTY_TRASH_AFTER_DOWNLOAD";
-    private static final String   DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP";
+    private final String        MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
+    private final String        MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD = "MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD";
+    private final String        EMPTY_TRASH_AFTER_DOWNLOAD         = "EMPTY_TRASH_AFTER_DOWNLOAD";
+    private final String        DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP";
 
     /* Some contants which they used in browser */
-    private static final String   CLIENT_ID                          = "24f549192f9f2fac2d80c71dd7969442";
-    private static final String   VERSION                            = "1.0.20";
-    private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
+    private final String        CLIENT_ID                          = "24f549192f9f2fac2d80c71dd7969442";
+    private final String        VERSION                            = "1.0.20";
+    private static final String STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Connection limits */
-    private static final boolean  FREE_RESUME                        = false;
-    private static final int      FREE_MAXCHUNKS                     = 1;
-    private static final boolean  ACCOUNT_RESUME                     = true;
-    private static final int      ACCOUNT_MAXCHUNKS                  = 0;
+    private final boolean       FREE_RESUME                        = false;
+    private final int           FREE_MAXCHUNKS                     = 1;
+    private final boolean       ACCOUNT_RESUME                     = true;
+    private final int           ACCOUNT_MAXCHUNKS                  = 0;
 
     /* Domain & other login stuff */
-    private static final String   MAIN_DOMAIN                        = "https://yandex.com";
-    private static final String[] domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
-    private static Object         LOCK                               = new Object();
+    private final String        MAIN_DOMAIN                        = "https://yandex.com";
+    private final String[]      domains                            = new String[] { "https://yandex.ru", "https://yandex.com", "https://disk.yandex.ru/", "https://disk.yandex.com/", "https://disk.yandex.net/" };
+    private static Object       LOCK                               = new Object();
 
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
-    private String                ACCOUNT_SK                         = null;
+    private String              ACCOUNT_SK                         = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -118,7 +119,7 @@ public class DiskYandexNet extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.startsWith("//")) dllink = "http:" + dllink;
         /* Don't do htmldecode because the link will be invalid then */
-        dllink = dllink.replace("amp;", "");
+        dllink = HTMLEntities.unhtmlentities(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -374,14 +375,14 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
-        final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
+        final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);
         getConfig().addEntry(moveFilesToAcc);
-        final ConfigEntry moveFilesToTrash = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToTrashAfterSuccessfulDownload", "2. Move successfully downloaded files to trash after download?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false);
+        final ConfigEntry moveFilesToTrash = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToTrashAfterSuccessfulDownload", "2. Move successfully downloaded files to trash after download?")).setEnabledCondidtion(moveFilesToAcc, true).setDefaultValue(false);
         getConfig().addEntry(moveFilesToTrash);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DiskYandexNet.EMPTY_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "3. Empty trash after successful download?\r\n[Can only be used if setting #1 is active!]")).setEnabledCondidtion(moveFilesToTrash, true).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EMPTY_TRASH_AFTER_DOWNLOAD, JDL.L("plugins.hoster.DiskYandexNet.EmptyTrashAfterSuccessfulDownload", "3. Empty trash after successful download?\r\n[Can only be used if setting #1 is active!]")).setEnabledCondidtion(moveFilesToTrash, true).setDefaultValue(false));
     }
 
     private void checkFeatureDialog() {

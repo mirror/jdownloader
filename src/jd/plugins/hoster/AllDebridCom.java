@@ -171,10 +171,13 @@ public class AllDebridCom extends PluginForHost {
             if (genlink.contains("Hoster unsupported or under maintenance.")) {
                 // disable host for 4h
                 tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
-            }
-            if (genlink.contains("_limit")) {
+            } else if (genlink.contains("_limit")) {
                 /* limit reached for this host, wait 4h */
                 tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
+            } else if (genlink.contains("\"error\":\"Ip not allowed.\"")) {
+                // dedicated server/colo ip range, not allowed!
+                logger.info("Dedicated server detected, account disabled");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             /*
              * after x retries we disable this host and retry with normal plugin

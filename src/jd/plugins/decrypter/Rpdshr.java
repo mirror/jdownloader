@@ -80,6 +80,7 @@ public class Rpdshr extends PluginForDecrypt {
                 String size = properties[5];
                 final DownloadLink newLink = new DownloadLink(JDUtilities.getPluginForHost("rapidshare.com"), fileName, getHost(), "http://rapidshare.com/files/" + fileID + "/" + fileName, true);
                 newLink.setAvailable(true);
+                newLink.setProperty("fastAdd", true);
                 newLink.setBrowserUrl(param.getCryptedUrl());
                 newLink.setFinalFileName(fileName);
                 newLink.setProperty("shareid", shareID);

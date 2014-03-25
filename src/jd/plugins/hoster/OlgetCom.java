@@ -207,6 +207,10 @@ public class OlgetCom extends PluginForHost {
             /* file offline */
             dl.getConnection().disconnect();
             tempUnavailableHoster(acc, link, 20 * 60 * 1000l);
+        } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("error_400.html")) {
+            // <h1>Link is probably expired or dead in filehost</h1>
+            // TODO: Fix when Jiaz fixes current ERROR_TEMPORARILY_UNAVAILABLE design flaw. No need to remove from supported array!
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         showMessage(link, "Phase 3/3: Begin download");
         dl.startDownload();

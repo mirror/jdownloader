@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://(www\\.)?extreme\\-protect\\.com/(linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "extreme-protect.com" }, urls = { "http://(www\\.)?extreme\\-protect\\.com/(mylink|linkcheck|linkidwoc)\\.php\\?linkid=[a-z]+" }, flags = { 0 })
 public class ExtremeProtectCom extends PluginForDecrypt {
 
     public ExtremeProtectCom(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class ExtremeProtectCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("linkidwoc", "linkcheck");
+        String parameter = param.toString().replaceAll("linkidwoc|mylink", "linkcheck");
         br.getPage(parameter);
         boolean failed = true;
         for (int i = 0; i <= 5; i++) {

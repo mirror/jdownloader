@@ -123,7 +123,7 @@ public class RealDebridCom extends PluginForHost {
             // generated links do not require an account to download
             return true;
         } else if (account == null) {
-            // multihoster type links do require an account!
+            // no non account handleMultiHost support.
             return false;
         } else {
             synchronized (hostUnavailableMap) {
@@ -313,10 +313,12 @@ public class RealDebridCom extends PluginForHost {
                 logger.info("Dedicated server detected, account disabled");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (br.containsHTML("\"error\":4,")) {
+                // {"error":4,"message":"This hoster is not included in our free offer"}
                 // {"error":4,"message":"Unsupported link format or unsupported hoster"}
                 logger.info("Unsupported link format or unsupported hoster");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             } else if (br.containsHTML("\"error\":5,")) {
+                // {"error":5,"message":"Non sei utente premium, puoi utilizzare il servizio premium gratuito solo durante la fascia oraria \"Happy Hours\". Aggiorna il tuo Account acquistando il servizio premium."}
                 /* no happy hour */
                 logger.info("It's not happy hour, free account, you need premium!.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -451,6 +453,7 @@ public class RealDebridCom extends PluginForHost {
         String acctype = br.getRegex("<type>(\\w+)</type>").getMatch(0).toLowerCase();
         if (acctype.equals("premium")) {
             ai.setStatus("Premium User");
+            account.setProperty("free", false);
         } else {
             // non supported account type here.
             logger.warning("Sorry we do not support this account type at this stage.");
@@ -461,6 +464,7 @@ public class RealDebridCom extends PluginForHost {
         if ("01/01/1970 01:00:00".equals(expire)) {
             ai.setValidUntil(-1);
             ai.setStatus("Free User");
+            account.setProperty("free", true);
         }
         try {
             String hostsSup = null;

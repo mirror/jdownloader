@@ -24,6 +24,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -56,13 +57,13 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com/files|fp\\.io)/[a-z0-9]+" }, flags = { 2 })
 public class FilePostCom extends PluginForHost {
 
-    private static final String ua                 = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36";
-    private boolean             showAccountCaptcha = false;
-    private static final String FILEIDREGEX        = "filepost\\.com/files/(.+)";
-    private static final String MAINPAGE           = "https://filepost.com/";
-    private static Object       LOCK               = new Object();
-    private static final String FREEBLOCKED        = "(>The file owner has limited free downloads of this file|premium membership is required to download this file\\.<)";
-    private static final String NOCHUNKS           = "NOCHUNKS";
+    private static AtomicReference<String> agent              = new AtomicReference<String>(null);
+    private boolean                        showAccountCaptcha = false;
+    private static final String            FILEIDREGEX        = "filepost\\.com/files/(.+)";
+    private static final String            MAINPAGE           = "https://filepost.com/";
+    private static Object                  LOCK               = new Object();
+    private static final String            FREEBLOCKED        = "(>The file owner has limited free downloads of this file|premium membership is required to download this file\\.<)";
+    private static final String            NOCHUNKS           = "NOCHUNKS";
 
     public FilePostCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,7 +96,7 @@ public class FilePostCom extends PluginForHost {
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
-                br.getHeaders().put("User-Agent", ua);
+                prepBrowser(br);
                 br.postPage("http://filepost.com/files/checker/?JsHttpRequest=" + System.currentTimeMillis() + "-xml", sb.toString());
                 String correctedBR = br.toString().replace("\\", "");
                 for (DownloadLink dl : links) {
@@ -249,13 +250,24 @@ public class FilePostCom extends PluginForHost {
         return -1;
     }
 
+    private void prepBrowser(final Browser prepBr) {
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            while (agent.get() == null || !agent.get().contains("Chrome/")) {
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+            }
+        }
+        prepBr.getHeaders().put("User-Agent", agent.get());
+        prepBr.setCookie("http://filepost.com", "lang", "1");
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         checkShowFreeDialog();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", ua);
-        br.setCookie("http://filepost.com", "lang", "1");
+        prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         String premiumlimit = br.getRegex("Files over (.*?) can be downloaded by premium").getMatch(0);
         if (premiumlimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filepostcom.only4premium", "Files over " + premiumlimit + " are only downloadable for premium users"));
@@ -387,7 +399,6 @@ public class FilePostCom extends PluginForHost {
         // Force login because of cookie bug
         login(account, true);
         br.setFollowRedirects(true);
-        br.setCookie("http://filepost.com", "lang", "1");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("We are sorry, the server where this file is")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverissue", 60 * 60 * 1000l);
         if (br.containsHTML("(>Sorry, you have reached the daily download limit|>Please contact our support team if you have questions about this limit)")) {
@@ -468,9 +479,9 @@ public class FilePostCom extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies, because no multiple downloads possible when always
-            // loggin in for every download
+            // login in for every download
             br.setCookiesExclusive(true);
-            br.setCookie("http://filepost.com", "lang", "1");
+            prepBrowser(br);
             try {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals((account.getStringProperty("name", Encoding.urlEncode(account.getUser()))));

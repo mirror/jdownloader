@@ -32,6 +32,7 @@ import java.util.logging.Level;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
@@ -217,6 +218,10 @@ public class Rapidshare extends PluginForHost {
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int size = 0;
             for (final DownloadLink u : urls) {
+                if (u.getBooleanProperty("fastAdd", false)) {
+                    u.setProperty("fastAdd", Property.NULL);
+                    continue;
+                }
                 if (size > 3000) {
                     logger.finest("OnlineCheck: SplitCheck " + links.size() + "/" + urls.length + " links");
                     /* do not stop here because we are not finished yet */

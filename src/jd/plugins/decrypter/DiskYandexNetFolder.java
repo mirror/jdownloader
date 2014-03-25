@@ -41,10 +41,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String primaryURLs  = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
-    private static final String shortURLs    = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
+    private final String primaryURLs  = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
+    private final String shortURLs    = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
 
-    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
+    private final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
@@ -52,17 +52,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash=");
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-
-        String main_hash = new Regex(parameter, "hash=(.+)").getMatch(0);
-        if (main_hash == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        main_hash = Encoding.htmlDecode(main_hash);
-
-        main.setProperty("hash_plain", main_hash);
+        String hashID = null;
         main.setProperty("mainlink", parameter);
-        if (parameter.matches("(" + shortURLs + ")")) {
+        if (parameter.matches(shortURLs)) {
             br.getPage(parameter);
             if (br.containsHTML("This link was removed or not found")) {
                 main.setAvailable(false);
@@ -75,14 +67,17 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            parameter = new Regex(newUrl, "(" + primaryURLs + ")").getMatch(0);
-        } else {
+            parameter = new Regex(newUrl, primaryURLs).getMatch(-1);
+        }
+        if (parameter.matches(primaryURLs)) {
             String protocol = new Regex(parameter, "(https?)://").getMatch(0);
-            String hashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
+            hashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
             if (protocol == null || hashID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            // stored hash should not be urldecoded as it changes chars.
+            main.setProperty("hash_plain", hashID);
             parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
             br.getPage(parameter);
         }
@@ -138,7 +133,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
         }
         /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip with a wrong filename */
-        final boolean is_root_plus_zip = (!main_hash.contains("/") && decryptedLinks.size() > 0);
+        final boolean is_root_plus_zip = (!hashID.contains("/") && decryptedLinks.size() > 0);
         /* If we did not find any other links it's probably a single link */
         final boolean is_single = (decryptedLinks.size() == 0);
         if (is_single) {
