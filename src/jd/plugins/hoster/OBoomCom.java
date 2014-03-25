@@ -75,6 +75,8 @@ public class OBoomCom extends PluginForHost {
                 Map<String, String> infos = ACCOUNTINFOS.get(account);
                 if (infos == null || forceLogin) {
                     br.setFollowRedirects(true);
+                    if (account.getUser() == null || account.getUser().trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (account.getPass() == null || account.getPass().trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     String response = br.getPage("https://www.oboom.com/1.0/login?auth=" + Encoding.urlEncode(account.getUser()) + "&pass=" + PBKDF2Key(account.getPass()) + "&source=" + APPID);
                     infos = new HashMap<String, String>();
                     String keys[] = getKeys(response);
