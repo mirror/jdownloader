@@ -578,10 +578,10 @@ public class SecureUploadEu extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
+        String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD>.*?<td>([^<>\"\\']+)</").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase("&nbsp; Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
