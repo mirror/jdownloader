@@ -346,6 +346,26 @@ public class FileBytesMap {
         return markedBytes;
     }
     
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        synchronized (this) {
+            sb.append("FileBytesMap: " + getMarkedBytesLive() + "/" + getSize());
+            sb.append("\r\n");
+            sb.append("Marked:");
+            sb.append(fileBytesMapEntries.toString());
+            sb.append("\r\n");
+            sb.append("UnMarked:");
+            ArrayList<FileBytesMapEntry> unMarkedAreas = new ArrayList<FileBytesMapEntry>();
+            for (Long[] unMarkedArea : getUnMarkedAreas()) {
+                if (unMarkedArea[0] >= unMarkedArea[1]) continue;
+                unMarkedAreas.add(new FileBytesMapEntry(unMarkedArea[0], unMarkedArea[1] - unMarkedArea[0] + 1));
+            }
+            sb.append(unMarkedAreas);
+        }
+        return sb.toString();
+    }
+    
     /**
      * return size of marked area
      * 
