@@ -94,7 +94,7 @@ public class TriLuLiLuRo extends PluginForHost {
         if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
         String filename = null;
         if (downloadLink.getDownloadURL().matches(TYPE_IMAGE) || br.getURL().matches(TYPE_IMAGE)) {
-            filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Imagini  \\- Trilulilu\"").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Imagini  \\- Trilulilu").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             DLLINK = br.getRegex("<div class=\"img_player\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?\\.jpg)\"").getMatch(0);
             if (DLLINK != null) DLLINK += "?size=original";
