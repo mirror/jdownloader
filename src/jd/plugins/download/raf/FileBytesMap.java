@@ -238,9 +238,11 @@ public class FileBytesMap {
                 while (it.hasNext()) {
                     FileBytesMapEntry nextFileBytesMapEntry = it.next();
                     if (baseFileBytesMapEntry.getEnd() >= nextFileBytesMapEntry.getBegin()) {
+                        /* baseFileBytesMapEntry overlaps into nextFileBytesMapEntry */
                         it.remove();
                         if (nextFileBytesMapEntry.getEnd() <= baseFileBytesMapEntry.getEnd()) {
                             /* nextFileBytesMapEntry is completely within baseFileBytesMapEntry */
+                            /* TODO: maybe +1 needed here! */
                             markedBytes -= nextFileBytesMapEntry.getLength();
                             markedAreaLength -= nextFileBytesMapEntry.getLength();
                         } else {
@@ -250,6 +252,11 @@ public class FileBytesMap {
                             baseFileBytesMapEntry.modifyLength(lengthOffset);
                             markedAreaLength += lengthOffset;
                         }
+                    } else if (nextFileBytesMapEntry.getBegin() == baseFileBytesMapEntry.getEnd() + 1) {
+                        /* nextFileBytesMapEntry continues baseFileBytesMapEntry */
+                        it.remove();
+                        baseFileBytesMapEntry.modifyLength(nextFileBytesMapEntry.getLength());
+                        markedAreaLength += nextFileBytesMapEntry.getLength();
                     } else {
                         break;
                     }
