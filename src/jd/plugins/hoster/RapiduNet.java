@@ -168,19 +168,20 @@ public class RapiduNet extends PluginForHost {
 
         Date eventDate = new Date(Long.parseLong(getJson("timeToDownload", response)) * 1000l);
 
-        long pozostalyCzas = eventDate.getTime() - actualDate.getTime();
+        long timeLeft = eventDate.getTime() - actualDate.getTime();
 
-        if (pozostalyCzas > 0) {
-            long seconds = pozostalyCzas / 1000l;
+        if (timeLeft > 0) {
+            long seconds = timeLeft / 1000l;
             long minutes = seconds / 60;
             long hours = minutes / 60;
             seconds = (long) Math.floor(seconds % 60);
             minutes = (long) Math.floor(minutes % 60);
             hours = (long) Math.floor(hours);
 
-            logger.info("Waittime =" + hours + " godzin, " + minutes + " minut, " + seconds + " sekund");
+            logger.info("Waittime =" + hours + " hours, " + minutes + " minutes, " + seconds + " seconds!");
 
-            sleep(seconds * 1000l + minutes * 60l * 1000l + hours * 3600l * 1000l, downloadLink);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time!", seconds * 1000l + minutes * 60l * 1000l + hours * 3600l * 1000l);
+            // sleep(seconds * 1000l + minutes * 60l * 1000l + hours * 3600l * 1000l, downloadLink);
 
         }
         String fileID = downloadLink.getProperty("FILEID").toString();
