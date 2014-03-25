@@ -35,7 +35,7 @@ public class FapduCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINK = "http://(www\\.)?fapdu\\.com/(search|embed|sitemaps|rss|hd|register|community|pornstars|videos|pics|emo|channels).*?";
+    private static final String INVALIDLINK = "http://(www\\.)?fapdu\\.com/(search|embed|sitemaps|rss|hd|register|community|pornstars|videos|pics|emo|channels|upload).*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

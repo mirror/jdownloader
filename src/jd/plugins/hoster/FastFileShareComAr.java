@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -84,8 +85,9 @@ public class FastFileShareComAr extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">This file has been password protected by the uploader")) throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not supported yet");
         br.setFollowRedirects(false);
         String dllink = null;
         boolean captcha = true;
@@ -125,6 +127,7 @@ public class FastFileShareComAr extends PluginForHost {
 
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
+        if (br.containsHTML(">This file has been password protected by the uploader")) throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not supported yet");
         login(account);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
@@ -170,11 +173,16 @@ public class FastFileShareComAr extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        link.setName(new Regex(link.getDownloadURL(), "hash=([A-Za-z0-9]+)").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("('File Not Found|The specified file can not found in our servers)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">This file has been password protected by the uploader")) {
+            link.getLinkStatus().setStatusText("Link is password protected");
+            return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex("<strong>Filename:</strong></div></td>.*?<td width=\"\\d+%\"><div align=\"left\" class=\"style47\">(.*?)<img").getMatch(0);
         String filesize = br.getRegex("<strong>Filesize:</strong></div></td>.*?<td><div align=\"left\"  class=\"style47\">(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

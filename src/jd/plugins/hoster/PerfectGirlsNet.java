@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -30,10 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xshare.com" }, urls = { "http://(www\\.)?xshare\\.com/video/[A-Za-z0-9\\-]+" }, flags = { 0 })
-public class XShareCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://(www\\.)?perfectgirlsdecrypted\\.net/\\d+/.{1}" }, flags = { 0 })
+public class PerfectGirlsNet extends PluginForHost {
 
-    public XShareCom(PluginWrapper wrapper) {
+    public PerfectGirlsNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -41,27 +40,29 @@ public class XShareCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://xshare.com/terms.php";
+        return "http://www.perfectgirls.net/";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("perfectgirlsdecrypted.net/", "perfectgirls.net/"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(downloadLink.getDownloadURL());
-        } catch (final BrowserException e) {
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.containsHTML(">404 - Page not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?)\\- xshare\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"seperatorvideo\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
-        final String videoid = br.getRegex("video_id: (\\d+)").getMatch(0);
-        if (videoid == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
-        DLLINK = br.getRegex("url=\"(http://[^<>\"]*?)\" type=\"video/").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("").getMatch(0);
+        DLLINK = br.getRegex("file: \"(/get/\\d+\\.mp4)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        DLLINK = "http://perfectgirls.net" + Encoding.htmlDecode(DLLINK);
+        br.getPage(DLLINK);
+        DLLINK = br.toString();
+        if (DLLINK == null || !DLLINK.startsWith("http") || DLLINK.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
@@ -80,7 +81,7 @@ public class XShareCom extends PluginForHost {
         } finally {
             try {
                 con.disconnect();
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
             }
         }
     }

@@ -807,7 +807,7 @@ public class Rapidshare extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
-            String query = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download&try=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + cookie;
+            String query = "https://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=download&try=1&fileid=" + link.getId() + "&filename=" + this.encodeFilename(link.getName()) + "&cookie=" + cookie;
             /* needed for secured links */
             if (link.getSecMD5() != null) {
                 query += "&seclinkmd5=" + link.getSecMD5();
@@ -833,7 +833,7 @@ public class Rapidshare extends PluginForHost {
                         logger.log(Level.SEVERE, e.getMessage(), e);
                     }
                 }
-                String directurl = "https://" + host + "/cgi-bin/rsapi.cgi?sub=download&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + cookie;
+                String directurl = "https://" + host + "/cgi-bin/rsapi.cgi?sub=download&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + this.encodeFilename(link.getName()) + "&cookie=" + cookie;
                 if (dllink != null) {
                     directurl = dllink + "&cookie=" + cookie;
                 } else if (host == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }

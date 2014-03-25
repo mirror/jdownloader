@@ -80,6 +80,7 @@ public class EltrecetvComAr extends PluginForHost {
         setBrowserExclusive();
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\|.*?</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\\s+<h1>(.*?)</h1>").getMatch(0);
@@ -89,7 +90,7 @@ public class EltrecetvComAr extends PluginForHost {
         String streamer = br.getRegex("<jwplayer:streamer>(rtmp.*?)</jwplayer:streamer>").getMatch(0);
         String playpath = br.getRegex("<media:content bitrate=\"\\d+\" url=\"([^\"]+)").getMatch(0);
 
-        if (filename == null || streamer == null || playpath == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null || streamer == null || playpath == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = streamer + "@" + playpath + "@http://cdn.eltrecetv.com.ar/sites/all/libraries/jwplayer/player.swf@" + downloadLink.getDownloadURL();
         downloadLink.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;

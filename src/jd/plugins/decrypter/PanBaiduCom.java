@@ -110,7 +110,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         // Check if we have a single link here
         final String fsid = br.getRegex("disk\\.util\\.ViewShareUtils\\.fsId=\"(\\d+)\"").getMatch(0);
         if (fsid != null) {
-            final DownloadLink fina = generateDownloadLink(null, parameter, null, fsid);
+            final DownloadLink fina = generateDownloadLink(null, parameter, null, fsid, null);
             final String filename = br.getRegex("var server_filename=\"([^<>\"]*?)\"").getMatch(0);
             final String filesize = br.getRegex("\\\\\"size\\\\\":\\\\\"(\\d+)\\\\\"").getMatch(0);
             if (filename == null || filesize == null) {
@@ -156,7 +156,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 dir = ret.get("parent_path") + "%2F" + dir;
                 if (singleFolder != null && !singleFolder.equals(dir)) continue;// only selected folder
                 if (ret.containsKey("md5") && !"".equals(ret.get("md5"))) {// file in root
-                    final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null);
+                    final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null, values[0]);
                     decryptedLinks.add(dl);
                 } else {
                     getDownloadLinks(decryptedLinks, parameter, ret.get("path"), dir);// folder in root
@@ -203,7 +203,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                     final String shareid = new Regex(parameter, "shareid=(\\d+)").getMatch(0);
                     final String uk = new Regex(parameter, "uk=(\\d+)").getMatch(0);
                     if (shareid != null && uk != null) {
-                        final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null);
+                        final DownloadLink dl = generateDownloadLink(ret, parameter, dir, null, null);
                         fp.add(dl);
                         try {
                             distribute(dl);
@@ -239,7 +239,7 @@ public class PanBaiduCom extends PluginForDecrypt {
     }
 
     /** @description: Differ between subfolders & downloadlinks and add them */
-    private DownloadLink generateDownloadLink(final HashMap<String, String> ret, final String parameter, final String dir, String fsid) {
+    private DownloadLink generateDownloadLink(final HashMap<String, String> ret, final String parameter, final String dir, String fsid, final String json) {
         DownloadLink dl = null;
         String isdir = "0";
         if (ret != null) isdir = ret.get("isdir");
@@ -263,6 +263,14 @@ public class PanBaiduCom extends PluginForDecrypt {
                     dl.setProperty(next.getKey(), next.getValue());
                 }
             }
+
+            /* Workaround for bad code before */
+            String filename = null;
+            if (json != null) filename = new Regex(json, "\"server_filename\":\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) filename = dl.getStringProperty("server_filename");
+            filename = Encoding.htmlDecode(unescape(filename));
+            dl.setProperty("server_filename", filename);
+
             if (dl.getStringProperty("server_filename") != null) dl.setFinalFileName(Encoding.htmlDecode(unescape(dl.getStringProperty("server_filename"))));
             if (dl.getStringProperty("size") != null) dl.setDownloadSize(Long.parseLong(dl.getStringProperty("size")));
             dl.setProperty("mainLink", getPlainLink(parameter));

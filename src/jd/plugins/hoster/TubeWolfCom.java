@@ -35,8 +35,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubewolf.com" }, urls = { "http://(www\\.)?tubewolf\\.com/movies/[\\w\\-]+" }, flags = { 0 })
 public class TubeWolfCom extends PluginForHost {
 
-    private String DLLINK = null;
-    private String AHV    = "MTEyYjA4ZTBiOGU0MWIxNmU2ZjFiZjMxYzZjZTEyNWQ=";
+    private String               DLLINK               = null;
+    private String               AHV                  = "MTEyYjA4ZTBiOGU0MWIxNmU2ZjFiZjMxYzZjZTEyNWQ=";
+    private static final boolean ENABLE_HIGH_SECURITY = false;
 
     public TubeWolfCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -86,9 +87,11 @@ public class TubeWolfCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + "." + ext);
 
-        final String time = checkTM();
-        final String ahv = checkMD(DLLINK, time);
-        DLLINK = DLLINK + "?time=" + time + "&ahv=" + ahv + "&cv=" + checkMD2(time);
+        if (ENABLE_HIGH_SECURITY) {
+            final String time = checkTM();
+            final String ahv = checkMD(DLLINK, time);
+            DLLINK = DLLINK + "?time=" + time + "&ahv=" + ahv + "&cv=" + checkMD2(time);
+        }
 
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

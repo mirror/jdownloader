@@ -57,7 +57,7 @@ public class AllMyVideosNet extends PluginForHost {
         br.setCookie("http://allmyvideos.net/", "lang", "english");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File not found<|Reason of deletion:")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found<|Reason of deletion:|Reason for deletion")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("type=\"hidden\" name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final Form download1 = getFormByKey("op", "download1");

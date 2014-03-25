@@ -35,8 +35,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/videos/[\\w\\-]+/" }, flags = { 0 })
 public class AlphaPornoCom extends PluginForHost {
 
-    private String DLLINK = null;
-    private String AHV    = "YzMwZWI0YTA5MWEwNjQwNjNlYmY1MTgyMDA5YzQ1Mjc=";
+    private String               DLLINK               = null;
+    private String               AHV                  = "YzMwZWI0YTA5MWEwNjQwNjNlYmY1MTgyMDA5YzQ1Mjc=";
+    private static final boolean ENABLE_HIGH_SECURITY = false;
 
     public AlphaPornoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -102,9 +103,11 @@ public class AlphaPornoCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + "." + ext);
 
-        final String time = checkTM();
-        final String ahv = checkMD(DLLINK, time);
-        DLLINK = DLLINK + "?time=" + time + "&ahv=" + ahv + "&cv=" + checkMD2(time);
+        if (ENABLE_HIGH_SECURITY) {
+            final String time = checkTM();
+            final String ahv = checkMD(DLLINK, time);
+            DLLINK = DLLINK + "?time=" + time + "&ahv=" + ahv + "&cv=" + checkMD2(time);
+        }
 
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink

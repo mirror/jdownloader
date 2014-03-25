@@ -41,7 +41,10 @@ public class PerfectGirlsNet extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("No htmlCode read")) {
-            logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("http://perfectgirlsdecrypted.net/" + System.currentTimeMillis() + "/x");
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
@@ -230,12 +233,23 @@ public class PerfectGirlsNet extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"")) {
-            logger.info("Link offline: " + parameter);
+        externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        logger.warning("Decrypter broken for link: " + parameter);
-        return null;
+        final DownloadLink main = createDownloadlink(parameter.replace("perfectgirls.net/", "perfectgirlsdecrypted.net/"));
+        if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"")) {
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+        } else {
+            main.setAvailable(true);
+            main.setName(filename + ".mp4");
+        }
+        decryptedLinks.add(main);
+        return decryptedLinks;
     }
 
     /* NO OVERRIDE!! */
