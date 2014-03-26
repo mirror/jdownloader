@@ -1,1 +1,5 @@
+gui_config_antistandby_whiledl2=Deskarga martxan dago
+gui_config_antistandby_whilejd2=JDownloader martxan dago
 jd_plugins_optional_antistandby_jdantistandby=StandBy-aurkakoa
+jd_plugins_optional_antistandby_jdantistandby_description=Ekidin zure ordenagailua Stand By edo Lo egoeran jartzeko , deskarga aktiboak gordetzeko.
+mode=Ekidin standby/lo halakoetan

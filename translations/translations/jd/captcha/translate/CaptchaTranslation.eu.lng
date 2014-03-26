@@ -23,6 +23,7 @@ easycaptcha_loadcaptchas_loaddirect=Karga zuzena ahal bada (Nahiko azkarragoa)
 easycaptcha_loadcaptchas_threaded=irudia threaded moduan jaitsi (Oso azkarra)
 easycaptcha_loadcaptchas_title=Captcha-ak kargatu
 easycaptcha_mask=Maskara:
+easycaptcha_openCaptchaFolder=Ireki Captcha karpeta
 easycaptcha_orginal=Jatorrizkoa:
 easycaptcha_remove=Ezabatu:
 easycaptcha_settings=Aukerak:

@@ -1,0 +1,4 @@
+interaction_batchreconnect_batch=Batch scripta
+interaction_batchreconnect_executein=Hasi  (aplikazio karpetan)
+interaction_batchreconnect_terminal=Interpretatzailea
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=Kanpoko Batch birkonektatu

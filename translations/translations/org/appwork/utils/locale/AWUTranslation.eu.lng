@@ -6,6 +6,7 @@ AccountNew_AccountNew_title=Sartu erabiltzaileak
 AccountNew_layoutDialogContent_accountname=Erabiltzailea
 AccountNew_layoutDialogContent_password=Pasahitza
 AccountNew_layoutDialogContent_save=Gogoratu
+AppWorkUtils_Graph_getAverageSpeedString=Ø %s1/s |
 AppWorkUtils_Graph_getSpeedString=Unekoa: %s1/s
 COMMANDLINEAPP_COMMAND=Komandoa -> -
 COPYCUTPASTE_COPY=Kopiatu\n
