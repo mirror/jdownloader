@@ -37,7 +37,7 @@ public class PCloudComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
+    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

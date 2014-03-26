@@ -64,7 +64,7 @@ public class DiskYandexNet extends PluginForHost {
     private final String        MOVE_FILES_TO_ACCOUNT              = "MOVE_FILES_TO_ACCOUNT";
     private final String        MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD = "MOVE_FILES_TO_TRASH_AFTER_DOWNLOAD";
     private final String        EMPTY_TRASH_AFTER_DOWNLOAD         = "EMPTY_TRASH_AFTER_DOWNLOAD";
-    private final String        DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP";
+    private final String        DOWNLOAD_ZIP                       = "DOWNLOAD_ZIP_2";
 
     /* Some contants which they used in browser */
     private final String        CLIENT_ID                          = "24f549192f9f2fac2d80c71dd7969442";
@@ -375,7 +375,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ZIP, JDL.L("plugins.hoster.DiskYandexNet.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Account settings:"));
         final ConfigEntry moveFilesToAcc = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MOVE_FILES_TO_ACCOUNT, JDL.L("plugins.hoster.DiskYandexNet.MoveFilesToAccount", "1. Move files to account before downloading them to get higher download speeds?")).setDefaultValue(false);

@@ -47,7 +47,7 @@ public class OneDriveLiveCom extends PluginForHost {
 
     /* Use less than in the decrypter to not to waste traffic & time */
     private static final int    MAX_ENTRIES_PER_REQUEST = 50;
-    private static final String DOWNLOAD_ZIP            = "DOWNLOAD_ZIP";
+    private static final String DOWNLOAD_ZIP            = "DOWNLOAD_ZIP_2";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -131,7 +131,7 @@ public class OneDriveLiveCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), OneDriveLiveCom.DOWNLOAD_ZIP, JDL.L("plugins.hoster.OneDriveLiveCom.DownloadZip", "Download .zip file of all files in the folder (not yet possible)?")).setDefaultValue(true).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), OneDriveLiveCom.DOWNLOAD_ZIP, JDL.L("plugins.hoster.OneDriveLiveCom.DownloadZip", "Download .zip file of all files in the folder (not yet possible)?")).setDefaultValue(false).setEnabled(false));
     }
 
     @Override

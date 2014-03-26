@@ -48,7 +48,7 @@ public class VideoBashCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -60,6 +60,13 @@ public class VideoBashCom extends PluginForHost {
                 filename = br.getRegex("act\\.setTitle\\(\\'(.*?)\\'\\)").getMatch(0);
             }
         }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML(">You must be logged in to view this video")) {
+            downloadLink.setName(filename + ".mp4");
+            downloadLink.getLinkStatus().setStatusText("Only downloadable for registered users");
+            return AvailableStatus.TRUE;
+        }
         DLLINK = br.getRegex("\\&video_url=(http://[^\"\\']+)\\&related_url").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("file=\".*?'(http://.*?)';").getMatch(0);
@@ -69,10 +76,9 @@ public class VideoBashCom extends PluginForHost {
         }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -95,6 +101,14 @@ public class VideoBashCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">You must be logged in to view this video")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

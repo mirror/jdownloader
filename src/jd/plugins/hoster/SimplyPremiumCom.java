@@ -26,7 +26,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -36,27 +35,31 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebit.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class FileBitPl extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+public class SimplyPremiumCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
-    private static final String                            NICE_HOST          = "filebit.pl";
-    private static final String                            NICE_HOSTproperty  = "filebitpl";
-    private static String                                  SESSIONID          = null;
+    private static final String                            NICE_HOST          = "simply-premium.com";
+    private static final String                            NICE_HOSTproperty  = "simplypremiumcom";
+    private static String                                  APIKEY             = null;
+    private static Object                                  LOCK               = new Object();
 
-    /* Default value is 10 */
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(10);
+    /* = plugin defect errors possible */
+    private static final boolean                           TEST_MODE          = true;
 
-    public FileBitPl(PluginWrapper wrapper) {
+    /* Default value is 3 */
+    private static AtomicInteger                           maxPrem            = new AtomicInteger(3);
+
+    public SimplyPremiumCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://filebit.pl/oferta");
+        this.enablePremium("http://www.simply-premium.com/vip.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://filebit.pl/regulamin";
+        return "http://www.simply-premium.com/terms_and_conditions.php";
     }
 
     private Browser newBrowser() {
@@ -68,7 +71,6 @@ public class FileBitPl extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        br.setAllowedResponseCodes(new int[] { 401, 204, 403, 404, 497, 500, 503 });
         return br;
     }
 
@@ -117,44 +119,18 @@ public class FileBitPl extends PluginForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        br.setCurrentURL(null);
-        int maxChunks = -10;
-        maxChunks = (int) account.getLongProperty("maxconnections", 1);
-        if (maxChunks > 20) maxChunks = 0;
+        int maxChunks = 1;
         if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
-        link.setProperty("filebitpldirectlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
+        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                logger.info(NICE_HOST + ": 403dlerror");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_403dlerror", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_403dlerror", timesFailed);
-                    logger.info(NICE_HOST + ": 403dlerror -> Retrying");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "403dlerror");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_403dlerror", Property.NULL);
-                    logger.info(NICE_HOST + ": 403dlerror - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
-            }
             br.followConnection();
-            if (br.containsHTML("<title>FileBit\\.pl \\- Error</title>")) {
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", Property.NULL);
-                    logger.info(NICE_HOST + ": Known error - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
+            if (br.containsHTML(">Errormessage: You have too many simultaneous connections<")) {
+                logger.info(NICE_HOST + ": Too many simultan connections");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
             }
             logger.info(NICE_HOST + ": Unknown download error");
+            if (TEST_MODE) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
@@ -174,16 +150,16 @@ public class FileBitPl extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(FileBitPl.NOCHUNKS, false) == false) {
-                    link.setProperty(FileBitPl.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(SimplyPremiumCom.NOCHUNKS, false) == false) {
+                    link.setProperty(SimplyPremiumCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FileBitPl.NOCHUNKS, false) == false) {
-                link.setProperty(FileBitPl.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(SimplyPremiumCom.NOCHUNKS, false) == false) {
+                link.setProperty(SimplyPremiumCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
@@ -192,30 +168,29 @@ public class FileBitPl extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
+        getapikey(account);
         showMessage(link, "Task 1: Generating Link");
-        String dllink = checkDirectLink(link, "filebitpldirectlink");
+        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* request Download */
-            this.login(account);
-            br.getPage("http://filebit.pl/api/index.php?a=getFile&sessident=" + SESSIONID + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
-            handleAPIErrors(br, account, link);
-            // final String expires = getJson("expires");
-            dllink = getJson("downloadurl");
+            br.setFollowRedirects(false);
+            br.getPage("http://www.simply-premium.com/premium.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
+            dllink = br.getRedirectLocation();
             if (dllink == null) {
-                logger.info(NICE_HOST + ": Unknown error");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknown", 0);
+                if (TEST_MODE) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info(NICE_HOST + ": dllinknull");
+                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dllinknull", 0);
                 link.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 2) {
                     timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_unknown", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknull", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "dllinknull");
                 } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_unknown", Property.NULL);
-                    logger.info(NICE_HOST + ": Unknown error - disabling current host!");
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknull", Property.NULL);
+                    logger.info(NICE_HOST + ": dllinknull - disabling current host!");
                     tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 }
             }
-            dllink = dllink.replaceAll("\\\\/", "/");
         }
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, dllink);
@@ -244,13 +219,20 @@ public class FileBitPl extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        login(account);
-        br.getPage("http://filebit.pl/api/index.php?a=accountStatus&sessident=" + SESSIONID);
-        handleAPIErrors(br, account, null);
+        getapikey(account);
+        br.getPage("http://simply-premium.com/api/user.php?apikey=" + APIKEY);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        final String premium = getJson("premium");
-        if (premium != null && !premium.matches("0|1")) {
+        final String acctype = getXML("account_typ");
+        if (acctype == null) {
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        if (!acctype.matches("1|2") || !br.containsHTML("<vip>1</vip>")) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -258,22 +240,20 @@ public class FileBitPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        final String expire = getJson("expires");
-        if (expire != null) {
-            final Long expirelng = Long.parseLong(expire);
-            if (expirelng == -1) {
-                ai.setValidUntil(expirelng);
-            } else {
+        String accdesc = null;
+        if ("1".equals(acctype)) {
+            ai.setUnlimitedTraffic();
+            final String expire = getXML("timeend");
+            if (expire != null) {
+                final Long expirelng = Long.parseLong(expire);
                 ai.setValidUntil(System.currentTimeMillis() + expirelng);
             }
-        }
-        final String trafficleft_bytes = getJson("transferLeft");
-        if (trafficleft_bytes != null) {
-            ai.setTrafficLeft(trafficleft_bytes);
+            accdesc = "Time account";
         } else {
-            ai.setUnlimitedTraffic();
+            ai.setTrafficLeft(getXML("maxtraffic"));
+            accdesc = "Volume account";
         }
-        int maxSimultanDls = Integer.parseInt(getJson("maxsin"));
+        int maxSimultanDls = Integer.parseInt(getXML("max_downloads"));
         if (maxSimultanDls < 1) {
             maxSimultanDls = 1;
         } else if (maxSimultanDls > 20) {
@@ -281,18 +261,12 @@ public class FileBitPl extends PluginForHost {
         }
         account.setMaxSimultanDownloads(maxSimultanDls);
         maxPrem.set(maxSimultanDls);
-        long maxChunks = Integer.parseInt(getJson("maxcon"));
-        if (maxChunks > 1) maxChunks = -maxChunks;
-        account.setProperty("maxconnections", maxChunks);
-        br.getPage("http://filebit.pl/api/index.php?a=getHostList");
-        handleAPIErrors(br, account, null);
+        /* online=1 == show only working hosts */
+        br.getPage("http://www.simply-premium.com/api/hosts.php?online=1");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] hostDomains = br.getRegex("\"hostdomains\":\\[(.*?)\\]").getColumn(0);
-        for (final String domains : hostDomains) {
-            final String[] realDomains = new Regex(domains, "\"(.*?)\"").getColumn(0);
-            for (final String realDomain : realDomains) {
-                supportedHosts.add(realDomain);
-            }
+        final String[] hostDomains = br.getRegex("<host>([^<>\"]*?)</host>").getColumn(0);
+        for (final String domain : hostDomains) {
+            supportedHosts.add(domain);
         }
         if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
             if (!supportedHosts.contains("uploaded.net")) {
@@ -305,35 +279,38 @@ public class FileBitPl extends PluginForHost {
                 supportedHosts.add("uploaded.to");
             }
         }
-        if (!"1".equals(premium)) {
-            account.setProperty("free", true);
-            ai.setStatus("Free Account");
-        } else {
-            account.setProperty("free", false);
-            ai.setStatus("Premium Account");
-        }
+        ai.setStatus(accdesc + " - " + supportedHosts.size() + " hosts available");
         ai.setProperty("multiHostSupport", supportedHosts);
         return ai;
     }
 
-    private void login(final Account account) throws IOException, PluginException {
-        br.getPage("http://filebit.pl/api/index.php?a=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        handleAPIErrors(br, account, null);
-        SESSIONID = getJson("sessident");
-        if (SESSIONID == null) {
-            // This should never happen
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private void getapikey(final Account acc) throws IOException, PluginException {
+        synchronized (LOCK) {
+            APIKEY = acc.getStringProperty(NICE_HOSTproperty + "apikey", null);
+            if (APIKEY != null) {
+                br.setCookie("http://simply-premium.com/", "apikey", APIKEY);
+            } else {
+                login(acc);
+            }
         }
+    }
+
+    private void login(final Account account) throws IOException, PluginException {
+        br.postPage("http://www.simply-premium.com/login.php", "login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()));
+        APIKEY = br.getCookie("http://simply-premium.com/", "apikey");
+        if (APIKEY == null) {
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        account.setProperty(NICE_HOSTproperty + "apikey", APIKEY);
     }
 
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
-    }
-
-    private String getJson(final String parameter) {
-        String result = br.getRegex("\"" + parameter + "\":((\\-)?\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        return result;
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
@@ -350,63 +327,13 @@ public class FileBitPl extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException {
-        String statusCode = br.getRegex("\"errno\":(\\d+)").getMatch(0);
-        if (statusCode == null && br.containsHTML("\"result\":true"))
-            statusCode = "999";
-        else if (statusCode == null) statusCode = "0";
-        String statusMessage = null;
-        try {
-            int status = Integer.parseInt(statusCode);
-            switch (status) {
-            case 0:
-                /* Everything ok */
-                break;
-            case 2:
-                /* Login or password missing -> disable account */
-                statusMessage = "\r\nInvalid account / Ungültiger Account";
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 3:
-                /* Account invalid -> disable account. */
-                statusMessage = "\r\nInvalid account / Ungültiger Account";
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 10:
-                /* Link offline */
-                statusMessage = "Link offline";
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            case 11:
-                /* Host not supported -> Remove it from hostList */
-                statusMessage = "Host not supported";
-                tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000l);
-            case 12:
-                /* Host offline -> Disable for 5 minutes */
-                statusMessage = "Host offline";
-                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
-            default:
-                /* unknown error, do not try again with this multihoster */
-                statusMessage = "Unknown API error code, please inform JDownloader Development Team";
-                logger.info(NICE_HOST + ": Unknown error");
-                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknown_api", 0);
-                downloadLink.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_api", timesFailed);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-                } else {
-                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_api", Property.NULL);
-                    logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-        } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statusCode + " statusMessage: " + statusMessage);
-            throw e;
-        }
+    private String getXML(final String parameter) {
+        return br.getRegex("<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
+        return 10;
     }
 
     @Override

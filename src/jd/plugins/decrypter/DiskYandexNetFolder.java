@@ -44,7 +44,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     private final String primaryURLs  = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\&]+|#[A-Za-z0-9%\\/+=]+)";
     private final String shortURLs    = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
 
-    private final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
+    private final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);

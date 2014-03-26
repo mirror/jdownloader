@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/videos/[\\w\\-]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/((de|ru)/)?videos/[\\w\\-]+/" }, flags = { 0 })
 public class AlphaPornoCom extends PluginForHost {
 
     private String               DLLINK               = null;
@@ -41,6 +42,11 @@ public class AlphaPornoCom extends PluginForHost {
 
     public AlphaPornoCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Make sure to use the english version */
+        link.setUrlDownload("http://www.alphaporno.com/videos/" + new Regex(link.getDownloadURL(), "videos/(.+)").getMatch(0));
     }
 
     private String checkMD(final String videoUrl, final String time) {

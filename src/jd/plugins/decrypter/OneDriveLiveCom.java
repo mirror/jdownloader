@@ -47,7 +47,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     private static final String TYPE_SKYDRIVE           = "https?://(www\\.)?skydrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,]+";
     private static final String TYPE_ONEDRIVE           = "https?://(www\\.)?onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,]+";
     private static final int    MAX_ENTRIES_PER_REQUEST = 1000;
-    private static final String DOWNLOAD_ZIP            = "DOWNLOAD_ZIP";
+    private static final String DOWNLOAD_ZIP            = "DOWNLOAD_ZIP_2";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

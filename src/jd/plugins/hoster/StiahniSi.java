@@ -73,7 +73,7 @@ public class StiahniSi extends PluginForHost {
         if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"row removed\\-file thumbnail\"|class=\"row removed\\-file make\\-money\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Stiahni\\.si \\-([^<>\"]*?)\\- Damn good file\\-hosting</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"file_download_name\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) filename = br.getRegex("file\\-title\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex("Size: ([^<>\"]*?)<br/>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());

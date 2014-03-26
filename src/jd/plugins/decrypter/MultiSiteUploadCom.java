@@ -64,11 +64,8 @@ public class MultiSiteUploadCom extends PluginForDecrypt {
         String[] redirectLinks = br.getRegex("(/(redirect|rd)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0 || adfLink == null) {
-            if (br.containsHTML("<td><img src=/images/Failed\\.gif />")) {
-                logger.info("All links are unavailable: " + parameter);
-                return decryptedLinks;
-            }
-            return null;
+            logger.info("No links are available: " + parameter);
+            return decryptedLinks;
         }
         progress.setRange(redirectLinks.length);
         String nicelookinghost = host.replaceAll("(www\\.|http://|/)", "");

@@ -143,7 +143,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             String fpName = br.getRegex("class=\"mrg-end-sm user-screenname-inner\">([^<>\"]*?)</span>").getMatch(0);
             if (fpName == null) fpName = username;
             fpName = Encoding.htmlDecode(fpName.trim());
-            final String videosNum = br.getRegex("class=\"col span-2 link-on-hvr\">[\t\n\r ]+<span class=\"font-xl mrg-end-xs\">(\\d+)</span>").getMatch(0);
+            final String videosNum = br.getRegex("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+)</span>[\t\n\r ]+Videos[\t\n\r ]+</div>").getMatch(0);
             if (videosNum == null) {
                 logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
                 return null;
@@ -151,6 +151,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
             final int videoCount = Integer.parseInt(videosNum);
+            if (videoCount == 0) {
+                /* User has 0 videos */
+                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
+                dl.setFinalFileName(username);
+                dl.setProperty("offline", true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             String desiredPage = new Regex(PARAMETER, "/user/[A-Za-z0-9]+/(\\d+)$").getMatch(0);
             if (desiredPage == null) desiredPage = "1";
             boolean parsePageOnly = false;

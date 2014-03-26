@@ -37,9 +37,10 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if ("http://www.badjojo.com/".equals(br.getRedirectLocation())) {
+        if ("http://www.badjojo.com/".equals(br.getRedirectLocation()) || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             final DownloadLink dl = createDownloadlink(parameter.replace("badjojo.com", "decryptedbadjojo.com"));
             dl.setAvailable(false);
+            dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
