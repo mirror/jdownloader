@@ -124,10 +124,10 @@ public class UploadHeroCom extends PluginForHost {
         final String captchaLink = br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0);
         if (captchaLink == null) {
             generalErrorhandling();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            String code = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
+            br.getPage(downloadLink.getDownloadURL() + "?code=" + code);
         }
-        String code = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
-        br.getPage(downloadLink.getDownloadURL() + "?code=" + code);
         String dllink = getDllink();
         if (dllink == null) {
             if (!br.containsHTML("\"dddl\"") || br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0) != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
