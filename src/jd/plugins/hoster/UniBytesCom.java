@@ -141,6 +141,8 @@ public class UniBytesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String offer = br.getRegex("<a href=\"/([^\"]+&referer=)").getMatch(0); // Russian only
+        if (offer != null) br.postPage(MAINPAGE + offer, "");
         if (br.containsHTML(SECURITYCAPTCHA)) {
             final Form captchaForm = br.getForm(0);
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -155,7 +157,6 @@ public class UniBytesCom extends PluginForHost {
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
             dllink = dllink == null ? br.getRegex(freeDlLink).getMatch(0) : dllink;
-            dllink = dllink == null ? br.getRegex("<a href=\"(/[^\"]+&referer=)").getMatch(0) : dllink;
             if (dllink != null) {
                 /* Waittime is skippable but maybe forced for russians */
                 int wait = 60;
