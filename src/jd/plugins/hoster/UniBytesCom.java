@@ -155,6 +155,7 @@ public class UniBytesCom extends PluginForHost {
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
             dllink = dllink == null ? br.getRegex(freeDlLink).getMatch(0) : dllink;
+            dllink = dllink == null ? br.getRegex("<a href=\"(/[^\"]+&referer=)").getMatch(0) : dllink;
             if (dllink != null) {
                 /* Waittime is skippable but maybe forced for russians */
                 int wait = 60;
