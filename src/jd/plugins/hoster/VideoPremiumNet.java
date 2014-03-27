@@ -208,6 +208,7 @@ public class VideoPremiumNet extends PluginForHost {
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (correctedBR.contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 1000l);
         String passCode = null;
+        checkErrors(downloadLink, false, passCode);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (VIDEOHOSTER && !downloadLink.getBooleanProperty("http_failed", false)) {
             try {
@@ -229,6 +230,7 @@ public class VideoPremiumNet extends PluginForHost {
                 if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
+                checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             downloadLink.setProperty(directlinkproperty, dllink);
