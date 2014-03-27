@@ -80,7 +80,7 @@ public class TusFilesNet extends PluginForHost {
     private final String               COOKIE_HOST                  = "http://tusfiles.net";
     // domain names used within download links.
     private final String               DOMAINS                      = "(tusfiles\\.(net|com))";
-    private final String               PASSWORDTEXT                 = ">Passwor(d|t):</small> <input";
+    private final String               PASSWORDTEXT                 = ">Passwor(d|t):</small> <input|lock\\.png\" border=\"0\"";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = false;

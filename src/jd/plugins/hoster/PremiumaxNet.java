@@ -56,7 +56,6 @@ public class PremiumaxNet extends PluginForHost {
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.premiumax.net/premium.html");
-        this.setStartIntervall(5 * 1000l);
     }
 
     @Override
@@ -156,7 +155,22 @@ public class PremiumaxNet extends PluginForHost {
             } else if (br.containsHTML("You only can download")) {
                 /* We're too fast - usually this should not happen */
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Too many connections active, try again in some seconds...");
+            } else if (br.containsHTML("> Our server can\\'t connect to")) {
+                logger.info(NICE_HOST + ": cantconnect");
+                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_cantconnect", 0);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 10) {
+                    timesFailed++;
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_cantconnect", timesFailed);
+                    logger.info(NICE_HOST + ": cantconnect -> Retrying");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "cantconnect");
+                } else {
+                    link.setProperty(NICE_HOSTproperty + "timesfailed_cantconnect", Property.NULL);
+                    logger.info(NICE_HOST + ": cantconnect - disabling current host!");
+                    tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+                }
             }
+
             dllink = br.getRegex("\"(http://(www\\.)?premiumax\\.net/dl/[a-z0-9]+/?)\"").getMatch(0);
             if (dllink == null) {
                 logger.info(NICE_HOST + ": dllinknullerror");
@@ -169,7 +183,7 @@ public class PremiumaxNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "dllinknullerror");
                 } else {
                     link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknullerror", Property.NULL);
-                    logger.info(NICE_HOST + ": 403dlerror - disabling current host!");
+                    logger.info(NICE_HOST + ": dllinknullerror - disabling current host!");
                     tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
                 }
             }

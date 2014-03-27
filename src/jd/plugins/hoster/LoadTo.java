@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -61,20 +61,20 @@ public class LoadTo extends PluginForHost {
 
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
     // fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch the following!
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
+    private final String                   INVALIDLINKS                 = "http://(www\\.)?load\\.to/(news|imprint|faq)/";
 
-    private final String         INVALIDLINKS                 = "http://(www\\.)?load\\.to/(news|imprint|faq)/";
+    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         workAroundTimeOut(br);
+        prepareBrowser();
         br.setFollowRedirects(true);
-        // Needed to get parallel downloads
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Can\\'t find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = Encoding.htmlDecode(br.getRegex("<title>([^<>\"]*?) // Load\\.to</title>").getMatch(0));
@@ -86,19 +86,19 @@ public class LoadTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         /* Link holen */
         String linkurl = getLinkurl();
         br.setFollowRedirects(true);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            // Captcha
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.findID();
-            rc.load();
             for (int i = 1; i <= 5; i++) {
+                /* Captcha */
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.findID();
+                rc.load();
                 linkurl = getLinkurl();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
@@ -107,7 +107,10 @@ public class LoadTo extends PluginForHost {
                 if (dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
                     if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                        rc.reload();
+                        br.clearCookies("http://load.to/");
+                        br.getPage(downloadLink.getDownloadURL());
+                        /* Try to avoid block (loop) on captcha reload */
+                        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
                         continue;
                     }
                 }
@@ -147,6 +150,15 @@ public class LoadTo extends PluginForHost {
         if (linkurl == null) linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<form method=\"post\" action=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return linkurl;
+    }
+
+    private void prepareBrowser() throws IOException {
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", agent.get());
     }
 
     /**
