@@ -52,6 +52,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        final String original_link = parameter;
         String cid = null;
         String id = null;
         String authkey = null;
@@ -86,11 +87,10 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             }
             parameter = "https://onedrive.live.com/?cid=" + cid + "&id=" + id;
             param.setCryptedUrl(parameter);
-
             prepBrAPI(this.br);
             String additional_data = "&ps=" + MAX_ENTRIES_PER_REQUEST;
             if (authkey != null) additional_data += "&authkey=" + Encoding.urlEncode(authkey);
-            accessItems_API(this.br, cid, id, additional_data);
+            accessItems_API(this.br, original_link, cid, id, additional_data);
         } catch (final BrowserException e) {
             main.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
             main.setAvailable(false);
@@ -99,11 +99,15 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        /* Improvised way to get foldername */
+        final String[] names = br.getRegex("\"modifiedDate\":\\d+,\"name\":\"([^<>\"]*?)\"").getColumn(0);
         String folderName = br.getRegex("\"group\":0,\"iconType\":\"NonEmptyDocumentFolder\".*?\"name\":\"([^<>\"]*?)\"").getMatch(0);
+        if (folderName == null && names != null && names.length > 0) folderName = names[names.length - 1];
         if (folderName == null) folderName = br.getRegex("\"name\":\"([^<>\"]*?)\",\"orderedFriendlyName\"").getMatch(0);
         if (folderName == null) folderName = "onedrive.live.com content of user " + cid + " - folder - " + id;
 
         main.setProperty("mainlink", parameter);
+        main.setProperty("original_link", original_link);
         main.setProperty("plain_cid", cid);
         main.setProperty("plain_id", id);
         main.setProperty("plain_authkey", authkey);
@@ -114,7 +118,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             main.setProperty("offline", true);
             decryptedLinks.add(main);
             return decryptedLinks;
-        } else if ("0".equals(getJson("totalCount", br.toString()))) {
+        } else if ("0".equals(getJson("totalCount", br.toString())) && "0".equals(getJson("childCount", br.toString()))) {
             main.setFinalFileName(folderName);
             main.setAvailable(false);
             main.setProperty("offline", true);
@@ -138,7 +142,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         for (final String singleinfo : links) {
             /* Check if it's a folder */
             if ("32".equals(getJson("itemType", singleinfo))) {
-                final String folder_id = new Regex(singleinfo, "\"(NonEmptyDocumentFolder|NonEmptyAlbum)\",\"id\":\"([^<>\"]*?)\"").getMatch(1);
+                final String folder_id = new Regex(singleinfo, "\"((Non)?EmptyDocumentFolder|NonEmptyAlbum)\",\"id\":\"([^<>\"]*?)\"").getMatch(2);
                 final String folder_cid = getJson("creatorCid", singleinfo);
                 if (folder_id == null || folder_cid == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -165,6 +169,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 totalSize += cursize;
                 dl.setFinalFileName(filename);
                 dl.setProperty("mainlink", parameter);
+                dl.setProperty("original_link", original_link);
                 dl.setProperty("plain_name", filename);
                 dl.setProperty("plain_size", filesize);
                 dl.setProperty("plain_view_url", view_url);
@@ -225,26 +230,32 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         br.setCustomCharset("utf-8");
     }
 
-    public static void accessItems_API(final Browser br, final String cid, final String id, final String additional) throws IOException {
-        String data = "&cid=" + Encoding.urlEncode(cid) + "&id=" + Encoding.urlEncode(id) + additional;
-        boolean failed = false;
-        try {
-            br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565" + data);
-        } catch (final BrowserException e) {
-            if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
-                failed = true;
-            } else {
-                throw e;
-            }
-        }
-        /* Maybe the folder is empty but we can move one up and get its contents... */
-        if (failed || getLinktext(br) == null) {
-            br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.4213298695524278" + data);
-            final String parentID = getJson("parentId", br.toString());
-            if (parentID != null) {
-                /* Error 500 will happen on invalid API requests */
-                data = "&cid=" + Encoding.urlEncode(cid) + "&id=" + Encoding.urlEncode(parentID) + "&sid=" + Encoding.urlEncode(id) + additional;
+    public static void accessItems_API(final Browser br, final String original_link, final String cid, final String id, final String additional) throws IOException {
+        String data = null;
+        if (original_link.contains("ithint=")) {
+            data = "&cid=" + Encoding.urlEncode(cid) + additional;
+            br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=root&group=0&qt=&ft=&sb=1&sd=1&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565" + data);
+        } else {
+            data = "&cid=" + Encoding.urlEncode(cid) + "&id=" + Encoding.urlEncode(id) + additional;
+            boolean failed = false;
+            try {
                 br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565" + data);
+            } catch (final BrowserException e) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
+                    failed = true;
+                } else {
+                    throw e;
+                }
+            }
+            /* Maybe the folder is empty but we can move one up and get its contents... */
+            if (failed || getLinktext(br) == null) {
+                br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.4213298695524278" + data);
+                final String parentID = getJson("parentId", br.toString());
+                if (parentID != null) {
+                    /* Error 500 will happen on invalid API requests */
+                    data = "&cid=" + Encoding.urlEncode(cid) + "&id=" + Encoding.urlEncode(parentID) + "&sid=" + Encoding.urlEncode(id) + additional;
+                    br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565" + data);
+                }
             }
         }
     }

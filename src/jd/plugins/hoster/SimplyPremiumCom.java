@@ -119,10 +119,17 @@ public class SimplyPremiumCom extends PluginForHost {
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
+
+        final boolean resume_allowed = account.getBooleanProperty("resume_allowed", false);
+
         int maxChunks = 1;
+        maxChunks = (int) account.getLongProperty("maxconnections", 1);
+        if (maxChunks > 20) maxChunks = 0;
         if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (!resume_allowed) maxChunks = 1;
+
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_allowed, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">Errormessage: You have too many simultaneous connections<")) {
@@ -244,15 +251,14 @@ public class SimplyPremiumCom extends PluginForHost {
         if ("1".equals(acctype)) {
             ai.setUnlimitedTraffic();
             final String expire = getXML("timeend");
-            if (expire != null) {
-                final Long expirelng = Long.parseLong(expire);
-                ai.setValidUntil(System.currentTimeMillis() + expirelng);
-            }
+            final Long expirelng = Long.parseLong(expire);
+            ai.setValidUntil(expirelng * 1000);
             accdesc = "Time account";
         } else {
             ai.setTrafficLeft(getXML("maxtraffic"));
             accdesc = "Volume account";
         }
+
         int maxSimultanDls = Integer.parseInt(getXML("max_downloads"));
         if (maxSimultanDls < 1) {
             maxSimultanDls = 1;
@@ -260,6 +266,14 @@ public class SimplyPremiumCom extends PluginForHost {
             maxSimultanDls = 20;
         }
         account.setMaxSimultanDownloads(maxSimultanDls);
+
+        long maxChunks = Integer.parseInt(getXML("chunks"));
+        if (maxChunks > 1) maxChunks = -maxChunks;
+        account.setProperty("maxconnections", maxChunks);
+
+        final boolean resumeAllowed = "1".equals(getXML("resume"));
+        account.setProperty("resume_allowed", resumeAllowed);
+
         maxPrem.set(maxSimultanDls);
         /* online=1 == show only working hosts */
         br.getPage("http://www.simply-premium.com/api/hosts.php?online=1");

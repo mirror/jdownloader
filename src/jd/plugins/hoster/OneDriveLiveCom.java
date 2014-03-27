@@ -57,13 +57,14 @@ public class OneDriveLiveCom extends PluginForHost {
         final String cid = link.getStringProperty("plain_cid", null);
         final String id = link.getStringProperty("plain_id", null);
         final String authkey = link.getStringProperty("plain_authkey", null);
+        final String original_link = link.getStringProperty("original_link", null);
         String additional_data = "&ps=" + MAX_ENTRIES_PER_REQUEST;
         if (authkey != null) additional_data += "&authkey=" + Encoding.urlEncode(authkey);
         if (isCompleteFolder(link)) {
             /* Case is not yet present */
         } else {
             try {
-                accessItems_API(this.br, cid, id, additional_data);
+                accessItems_API(this.br, original_link, cid, id, additional_data);
             } catch (final BrowserException e) {
                 if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
                     link.getLinkStatus().setStatusText("Server error 500");
@@ -108,8 +109,8 @@ public class OneDriveLiveCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void accessItems_API(final Browser br, final String cid, final String id, final String additional) throws IOException {
-        jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, cid, id, additional);
+    private void accessItems_API(final Browser br, final String original_link, final String cid, final String id, final String additional) throws IOException {
+        jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional);
     }
 
     private String getdllink(final DownloadLink dl) throws PluginException {
