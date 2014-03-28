@@ -1,0 +1,5 @@
+gui_config_antistandby_whiledl2=процес скачування запущений
+gui_config_antistandby_whilejd2=Jdownloader працює
+jd_plugins_optional_antistandby_jdantistandby=AntiStandBy
+jd_plugins_optional_antistandby_jdantistandby_description=Запобігає вашому компютеру піти в "сплячий режим" або в "режим очікування" і залишає процес скачування активним
+mode=Режим очікування /заснути коли

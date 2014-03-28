@@ -1,0 +1,11 @@
+DataCompareDialog_layoutDialogContent_name_help=Ведіть імя свого маршрутизатора
+DataCompareDialog_layoutDialogContent_password=Пароль
+gui_btn_cancel=Відмінити
+gui_btn_help=Допомога
+gui_btn_no=Ні
+gui_btn_start=Почати
+gui_btn_yes=Так
+gui_config_jdrr_success=Успіх!
+jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=Зберегти
+literally_password=Пароль
+literally_username=Логін
