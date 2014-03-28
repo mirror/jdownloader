@@ -60,6 +60,7 @@ public class VideoPremiumNet extends PluginForHost {
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://videopremium.me";
     private static final String  CURRENT_DOMAIN               = "videopremium.me";
+    private static final String  NICE_HOSTproperty            = "videopremiumnet";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -251,7 +252,23 @@ public class VideoPremiumNet extends PluginForHost {
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             this.sleep(10 * 1000, downloadLink);
-            rtmpDownload(downloadLink, dllink);
+            try {
+                rtmpDownload(downloadLink, dllink);
+            } catch (final Throwable e) {
+                logger.info(CURRENT_DOMAIN + ": 403dlerror");
+                int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknown_rtmp_error", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 5) {
+                    timesFailed++;
+                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_rtmp_error", timesFailed);
+                    logger.info(CURRENT_DOMAIN + ": timesfailed_unknown_rtmp_error -> Retrying");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "timesfailed_unknown_rtmp_error");
+                } else {
+                    downloadLink.setProperty(NICE_HOSTproperty + "timesfailed_unknown_rtmp_error", Property.NULL);
+                    logger.info(CURRENT_DOMAIN + ": timesfailed_unknown_rtmp_error - disabling current host!");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown fatal server error", 5 * 60 * 1000l);
+                }
+            }
         }
     }
 

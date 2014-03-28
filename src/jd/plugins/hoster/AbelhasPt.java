@@ -25,6 +25,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -38,28 +39,28 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://(www\\.)?lolabits\\.es/[^<>\"/]+/[^<>\"/]+/[^<>\"/]+" }, flags = { 2 })
-public class LolaBitsEs extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abelhas.pt" }, urls = { "http://(www\\.)?abelhas\\.pt/[^<>\"/]+/[^<>\"/]+/[^<>\"]+" }, flags = { 2 })
+public class AbelhasPt extends PluginForHost {
 
-    public LolaBitsEs(PluginWrapper wrapper) {
+    public AbelhasPt(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://lolabits.es/action/Registration/Create");
+        this.enablePremium("http://abelhas.pt/action/Registration/Create");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://lolabits.es/TerminosCondiciones.aspx";
+        return "http://abelhas.pt/TerminosCondiciones.aspx";
     }
 
     private static boolean pluginloaded = false;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getDownloadURL().contains("lolabits.es/action/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().contains("abelhas.pt/action/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://lolabits.es/cherokin/Prova") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("Descargar: <b>([^<>\"]*?)</b>").getMatch(0);
+        if (br.getURL().equals("http://abelhas.pt/cherokin/Prova") || !br.containsHTML("class=\"downloadFileFid\"") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
         final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -70,15 +71,28 @@ public class LolaBitsEs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+        /* Free users can only download low quality streams */
+        String dllink = br.getRegex("\"(http://(www\\.)?abelhas\\.pt/Video\\.ashx\\?e=[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+        dllink = Encoding.htmlDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            /* Whatever happens here, always show server error... */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
+        /* Low quality stream = always .mp4 -> (Might) need to change filename */
+        fixFilename(downloadLink);
+        dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://lolabits.es";
+    private static final String MAINPAGE = "http://abelhas.pt";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -102,10 +116,10 @@ public class LolaBitsEs extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("http://lolabits.es/");
+                br.getPage("http://abelhas.pt/");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://lolabits.es/action/login/loginWindow", "irect=true");
-                br.postPage("http://lolabits.es/action/login/login", "RememberMe=true&__RequestVerificationToken=undefined&RedirectUrl=&Redirect=True&FileId=0&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://abelhas.pt/action/login/loginWindow", "Redirect=true");
+                br.postPage("http://abelhas.pt/action/login/login", "RememberMe=true&__RequestVerificationToken=undefined&RedirectUrl=&Redirect=True&FileId=0&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "RememberMe") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -154,8 +168,16 @@ public class LolaBitsEs extends PluginForHost {
         final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (fileid == null || requestvtoken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://lolabits.es/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
+        br.postPage("http://abelhas.pt/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
         String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+            final String orgfile = br.getRegex("name=\"orgFile\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String userSelection = br.getRegex("name=\"userSelection\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (orgfile == null || userSelection == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage("http://abelhas.pt/action/License/acceptLargeTransfer", "fileId=" + fileid + "&orgFile=" + Encoding.urlEncode(orgfile) + "&userSelection=" + Encoding.urlEncode(userSelection) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
+            dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = unescape(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
@@ -174,6 +196,50 @@ public class LolaBitsEs extends PluginForHost {
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    private void fixFilename(final DownloadLink downloadLink) {
+        String orgName = null;
+        String orgExt = null;
+        String servName = null;
+        String servExt = null;
+        String orgNameExt = downloadLink.getFinalFileName();
+        if (orgNameExt == null) orgNameExt = downloadLink.getName();
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        if (!inValidate(orgExt))
+            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+        else
+            orgName = orgNameExt;
+        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
+        String servNameExt = ".mp4";
+        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
+            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+        }
+        String FFN = null;
+        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            FFN = servNameExt;
+        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+            FFN = orgName + servExt;
+        else
+            FFN = orgNameExt;
+        downloadLink.setFinalFileName(FFN);
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     * 
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+            return true;
+        else
+            return false;
     }
 
     @Override

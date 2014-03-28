@@ -102,7 +102,14 @@ public class CtDiskCom extends PluginForHost {
             final Form free = br.getFormbyProperty("name", "user_form");
             String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2(_login)?\\.php\\?fid=" + uid + "&rand=)").getMatch(0);
             if (free == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+            String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+            if (hash_key == null) {
+                String tmp = free.getInputFieldByName("hash_info").getValue();
+                if (tmp != null) {
+                    tmp = Encoding.htmlDecode(tmp);
+                    hash_key = Encoding.Base64Decode(tmp);
+                }
+            }
             if (hash_key != null) free.put("hash_key", hash_key);
             captcha = captcha + new Random().nextInt(999999999);
             String code = getCaptchaCode(captcha, downloadLink);

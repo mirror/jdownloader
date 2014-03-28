@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class SimplyPremiumCom extends PluginForHost {
@@ -65,7 +67,7 @@ public class SimplyPremiumCom extends PluginForHost {
     private Browser newBrowser() {
         br = new Browser();
         br.setCookiesExclusive(true);
-        // define custom browser headers and language settings.
+        /* define custom browser headers and language settings. */
         br.getHeaders().put("Accept", "application/json");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
@@ -176,10 +178,35 @@ public class SimplyPremiumCom extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
         getapikey(account);
-        showMessage(link, "Task 1: Generating Link");
+        showMessage(link, "Task 1: Checking link");
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
-            /* request Download */
+            /* request download information */
+            br.setFollowRedirects(true);
+            br.getPage("http://www.simply-premium.com/premium.php?info=&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            if (br.containsHTML("<error>NOTFOUND</error>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(" <error>hostererror</error>")) {
+                logger.info(NICE_HOST + ": Host is unavailable at the moment -> Disabling it");
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+            } else if (br.containsHTML(" <error>maxconnection</error>")) {
+                logger.info(NICE_HOST + ": Too many simultan connections");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            } else if (br.containsHTML("<error>notvalid</error>")) {
+                logger.info(NICE_HOST + ": Account invalid -> Disabling it");
+                final String lang = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } else if (br.containsHTML("<error>trafficlimit</error>")) {
+                logger.info(NICE_HOST + ": Traffic limit reached -> Temp. disabling account");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+
+            /* request download */
+            showMessage(link, "Task 2: Generating downloadlink");
             br.setFollowRedirects(false);
             br.getPage("http://www.simply-premium.com/premium.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = br.getRedirectLocation();
@@ -199,7 +226,7 @@ public class SimplyPremiumCom extends PluginForHost {
                 }
             }
         }
-        showMessage(link, "Task 2: Download begins!");
+        showMessage(link, "Task 3: Download begins!");
         handleDL(account, link, dllink);
     }
 
@@ -310,10 +337,40 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     private void login(final Account account) throws IOException, PluginException {
-        br.postPage("http://www.simply-premium.com/login.php", "login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()));
+        final String lang = System.getProperty("user.language");
+        br.getPage("http://simply-premium.com/login.php?login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()));
+        if (br.containsHTML("<error>captcha_required</error>")) {
+            final DownloadLink dummyLink = new DownloadLink(this, "Account", "simply-premium.com", "http://simply-premium.com", true);
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId("6LfBs-8SAAAAAKRWHd9j-sq-qpoOnjwoZlA4s3Ix");
+            rc.load();
+            for (int i = 1; i <= 3; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, dummyLink);
+                br.getPage("http://simply-premium.com/login.php?login_name=" + Encoding.urlEncode(account.getUser()) + "&login_pass=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                if (br.containsHTML("<error>captcha_required</error>")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            if (br.containsHTML("<error>captcha_required</error>")) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, ungültiges Passwort und/oder ungültiges Login-Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password and/or invalid login-captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+        }
+        /* TODO: Add correct handling for this case */
+        if (br.containsHTML("<error>not_valid_ip</error>")) {
+            /* TODO: Add correct texts here */
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid / Ungültig", PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+        }
         APIKEY = br.getCookie("http://simply-premium.com/", "apikey");
-        if (APIKEY == null) {
-            final String lang = System.getProperty("user.language");
+        if (APIKEY == null || br.containsHTML("<error>not_valid</error>")) {
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
