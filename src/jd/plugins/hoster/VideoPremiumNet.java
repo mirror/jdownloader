@@ -255,7 +255,7 @@ public class VideoPremiumNet extends PluginForHost {
             try {
                 rtmpDownload(downloadLink, dllink);
             } catch (final Throwable e) {
-                logger.info(CURRENT_DOMAIN + ": 403dlerror");
+                logger.info(CURRENT_DOMAIN + ": timesfailed_unknown_rtmp_error");
                 int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknown_rtmp_error", 0);
                 downloadLink.getLinkStatus().setRetryCount(0);
                 if (timesFailed <= 5) {

@@ -34,6 +34,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -85,6 +86,12 @@ public class DiskYandexNet extends PluginForHost {
     /* Important constant which seems to be unique for every account. It's needed for most of the requests when logged in. */
     private String              ACCOUNT_SK                         = null;
 
+    /* Make sure we always use our main domain */
+    private String fixMainlink(String mainlink) {
+        mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[a-z]+/(.+)").getMatch(0);
+        return mainlink;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -92,7 +99,7 @@ public class DiskYandexNet extends PluginForHost {
         setBrowserExclusive();
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.setFollowRedirects(true);
-        br.getPage(link.getStringProperty("mainlink", null));
+        br.getPage(fixMainlink(link.getStringProperty("mainlink", null)));
         if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = link.getStringProperty("plain_filename", null);
         final String filesize = link.getStringProperty("plain_size", null);
@@ -112,6 +119,7 @@ public class DiskYandexNet extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, String ckey) throws Exception, PluginException {
         final String hash = downloadLink.getStringProperty("hash_plain", null);
         if (ckey == null) ckey = getCkey();
+        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("https://disk.yandex.com/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(hash));
         if (br.containsHTML("\"title\":\"invalid ckey\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -219,7 +227,7 @@ public class DiskYandexNet extends PluginForHost {
         String dllink = checkDirectLink(link, "directlink_account");
 
         if (dllink == null) {
-            br.getPage(link.getStringProperty("mainlink", null));
+            br.getPage(fixMainlink(link.getStringProperty("mainlink", null)));
             final String hash = link.getStringProperty("hash_plain", null);
             final String ckey = getCkey();
             ACCOUNT_SK = account.getStringProperty("saved_sk", null);

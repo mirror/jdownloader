@@ -53,7 +53,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         parameter = parameter.replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash=");
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
         String hashID = null;
-        main.setProperty("mainlink", parameter);
         if (parameter.matches(shortURLs)) {
             br.getPage(parameter);
             if (br.containsHTML("This link was removed or not found")) {
@@ -81,6 +80,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             parameter = protocol + "://disk.yandex.com/public/?hash=" + hashID;
             br.getPage(parameter);
         }
+
+        main.setProperty("mainlink", parameter);
 
         if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) {
             main.setAvailable(false);

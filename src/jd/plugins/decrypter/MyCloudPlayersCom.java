@@ -34,21 +34,38 @@ public class MyCloudPlayersCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String TYPE_SINGLE_SONG = "http://(www\\.)?mycloudplayers\\.com/\\?id=\\d+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = Encoding.htmlDecode(param.toString());
         final String ids = new Regex(parameter, "\\&ids=([0-9,]+)\\&").getMatch(0);
-        if (ids == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+        if (ids != null) {
+            final String[] links = ids.split(",");
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String singleID : links) {
+                decryptedLinks.add(createDownloadlink("http://api.soundcloud.com/tracks/" + singleID));
+            }
+        } else if (parameter.matches(TYPE_SINGLE_SONG)) {
+            // br.getPage(parameter);
+            // if (br.containsHTML("Track+Not+Found+on")) {
+            // logger.info("Link offline: " + parameter);
+            // return decryptedLinks;
+            // }
+            // final String finallink =
+            // br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[a-z0-9\\-_]+)?)\"").getMatch(0);
+            // if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+            decryptedLinks.add(createDownloadlink("http://api.soundcloud.com/tracks/" + new Regex(parameter, "(\\d+)$").getMatch(0)));
+        } else {
+            logger.warning("Unknown linktype: " + parameter);
             return null;
         }
-        final String[] links = ids.split(",");
-        if (links == null || links.length == 0) {
+        if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
-        }
-        for (final String singleID : links) {
-            decryptedLinks.add(createDownloadlink("http://api.soundcloud.com/tracks/" + singleID));
         }
 
         return decryptedLinks;
