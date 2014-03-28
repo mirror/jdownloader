@@ -1,0 +1,17 @@
+SettingsSidebarModel_audio=Аудіо
+SettingsSidebarModel_video=Відео
+categories=Категорії
+enter_password=Ведіть паоль щоб відкрити %s1
+gui_video_album=Альбом
+gui_video_artist=Виконавець
+gui_video_duration=Тривалість
+gui_video_format=Формат
+gui_video_name=Заголовок
+gui_video_size=Розмір
+gui_video_status=Статус
+mediatable_rly_remove_title=Ви впевненні ?
+nodename_audio=Аудіо
+nodename_image=Зображення
+nodename_video=Відео
+popup_streaming_playvlc=Відтворити
+wrong_password=Невірний пароль !

@@ -1,0 +1,12 @@
+ChatExtensionGuiToggleAction_deselected=Відкрити Чат
+ChatExtensionGuiToggleAction_deselected_tt=Відкрити вкладку для чату
+ChatExtensionGuiToggleAction_selected=Закрити Чат
+ChatExtensionGuiToggleAction_selected_tt=Закрити  вкладку для чату
+description=Звяжіться з службою пітримки JDownloader
+gui_tab_title=%s1 Каннал
+jd_plugins_optional_jdchat_closeTab=Закрити вкладку
+jd_plugins_optional_jdchat_jdchat=Чат
+plugins_optional_jdchat_enternick=Бажаєте нікнейм ?
+settings_nick=Ваше імя
+settings_userlist_position_left=Ліва сторона
+settings_userlist_position_right=Права сторона
