@@ -121,7 +121,7 @@ public class Zippysharecom extends PluginForHost {
                 result = ((Double) engine.eval(fun)).intValue();
             }
         } catch (final Throwable e) {
-            throw new Exception(e);
+            throw new Exception("JS Problem in Rev" + getVersion(), e);
 
         }
         return result == null ? null : result.toString();
