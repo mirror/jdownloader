@@ -410,7 +410,12 @@ public class SaveTv extends PluginForHost {
         }
         // http://svn.jdownloader.org/issues/10306
         logger.warning("Downloading as premium in free mode as a workaround for bug #10306");
-        handlePremium(downloadLink, aa);
+        try {
+            handlePremium(downloadLink, aa);
+        } catch (final PluginException e) {
+            /* Catch premium errors - usually the account would be deactivated then -> Wait */
+            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "FATAL server error", 30 * 60 * 1000l); }
+        }
     }
 
     @Override
