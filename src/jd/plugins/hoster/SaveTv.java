@@ -676,7 +676,7 @@ public class SaveTv extends PluginForHost {
             final long lastUse = getLongProperty(account, "lastuse", -1l);
             // Only generate new sessionID if we have none or it's older than 6 hours
             if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
-                prepBrowser_api(this.br);
+                prepBrowser_api(br);
                 br.getHeaders().put("SOAPAction", "http://tempuri.org/ISession/CreateSession");
                 br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><CreateSession xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><apiKey i:type=\"d:string\">" + Encoding.Base64Decode(APIKEY) + "</apiKey></CreateSession></v:Body></v:Envelope>");
                 SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
@@ -711,7 +711,7 @@ public class SaveTv extends PluginForHost {
                 }
             }
         } else {
-            prepBrowser_web(this.br);
+            prepBrowser_web(br);
             synchronized (LOCK) {
                 try {
                     /* Load cookies */
@@ -739,6 +739,8 @@ public class SaveTv extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
+                    final String acc_count_archive_entries = br.getRegex("id=\"archiv_countentries\">(\\d+) Sendungen im Archiv</li>").getMatch(0);
+                    if (acc_count_archive_entries != null) account.setProperty("acc_count_archive_entries", acc_count_archive_entries);
                     /* Save cookies & account data */
                     saveCookies(account);
                 } catch (final PluginException e) {
@@ -754,35 +756,35 @@ public class SaveTv extends PluginForHost {
      */
     @SuppressWarnings("deprecation")
     private void loginSafe(final Browser br, final Account acc, final boolean force) throws Exception {
+        boolean success = false;
         try {
-            login(this.br, acc, true);
-        } catch (final PluginException e) {
+            for (int i = 1; i <= MAX_RETRIES_LOGIN; i++) {
+                logger.info("Login try " + i + " of " + MAX_RETRIES_LOGIN);
+                try {
+                    login(br, acc, true);
+                } catch (final Exception e) {
+                    if (e instanceof UnknownHostException || e instanceof BrowserException) {
+                        logger.info("Login " + i + " of " + MAX_RETRIES_LOGIN + " failed because of server error or timeout");
+                        continue;
+                    } else {
+                        throw e;
+                    }
+                }
+                logger.info("Login " + i + " of " + MAX_RETRIES_LOGIN + " was successful");
+                success = true;
+                break;
+            }
+        } catch (final PluginException ep) {
             logger.info("save.tv Account ist ungültig!");
             acc.setValid(false);
-            throw e;
-        } catch (final Exception e) {
-            if (e instanceof UnknownHostException || e instanceof BrowserException) {
-                boolean success = false;
-                for (int i = 1; i <= MAX_RETRIES_LOGIN; i++) {
-                    try {
-                        login(this.br, acc, true);
-                    } catch (final BrowserException ebr) {
-                        logger.info(i + "von " + MAX_RETRIES_LOGIN + ": save.tv Login failed because of server error or timeout");
-                        continue;
-                    }
-                    success = true;
-                    break;
-                }
-                final String lang = System.getProperty("user.language");
-                if (!success) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin wegen Serverfehler oder Timeout fehlgeschlagen!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin failed because of server error or timeout!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
+            throw ep;
+        }
+        if (!success) {
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin wegen Serverfehler oder Timeout fehlgeschlagen!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else {
-                throw e;
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin failed because of server error or timeout!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
     }
@@ -1379,13 +1381,15 @@ public class SaveTv extends PluginForHost {
     public void showAccountDetailsDialog(final Account account) {
         final AccountInfo ai = account.getAccountInfo();
         if (ai != null) {
-            String windowTitleLangText = "Account Zusatzinformationen";
+            final String windowTitleLangText = "Account Zusatzinformationen";
             final String accType = account.getStringProperty("acc_type", "Premium Account");
             final String acc_expire = account.getStringProperty("acc_expire", "?");
             final String acc_package = account.getStringProperty("acc_package", "?");
             final String acc_price = account.getStringProperty("acc_price", "?");
             final String acc_capacity = account.getStringProperty("acc_capacity", "?");
             final String acc_runtime = account.getStringProperty("acc_runtime", "?");
+            final String acc_count_archive_entries = account.getStringProperty("acc_count_archive_entries", "?");
+            final String acc_count_telecast_ids = account.getStringProperty("acc_count_telecast_ids", "?");
 
             /* it manages new panel */
             final PanelGenerator panelGenerator = new PanelGenerator();
@@ -1398,7 +1402,7 @@ public class SaveTv extends PluginForHost {
             try {
                 String[] revisions = revision.split(":");
                 revision = revisions[1].replace('$', ' ').trim();
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 logger.info("save.tv revision number error: " + e);
             }
 
@@ -1410,6 +1414,8 @@ public class SaveTv extends PluginForHost {
             panelGenerator.addEntry("Ablaufdatum:", acc_expire);
             panelGenerator.addEntry("Preis:", acc_price);
             panelGenerator.addEntry("Aufnahmekapazität:", acc_capacity);
+            panelGenerator.addEntry("Sendungen im Archiv:", acc_count_archive_entries);
+            panelGenerator.addEntry("Ladbare Sendungen im Archiv (telecast-IDs):", acc_count_telecast_ids);
 
             panelGenerator.addCategory("Download");
             panelGenerator.addEntry("Max. Anzahl gleichzeitiger Downloads:", "20");

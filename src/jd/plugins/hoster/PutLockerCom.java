@@ -287,13 +287,26 @@ public class PutLockerCom extends PluginForHost {
 
             if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 logger.info("ERROR_DOWNLOAD_INCOMPLETE --> Handling it");
-                if (downloadLink.getBooleanProperty(NORESUME, false)) {
-                    downloadLink.setProperty(NORESUME, Boolean.valueOf(false));
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                int timesFailed = downloadLink.getIntegerProperty("timesfailedfiredrivecom_download_incomplete", 0);
+                downloadLink.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    downloadLink.setProperty("timesfailedfiredrivecom_download_incomplete", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "download_incomplete");
+                } else {
+                    downloadLink.setProperty("timesfailedfiredrivecom_download_incomplete", Property.NULL);
+                    logger.info("firedrive.com: timesfailedfiredrivecom_download_incomplete");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
                 }
-                downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
-                downloadLink.setChunksProgress(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE");
+
+                /* Removed to test */
+                // if (downloadLink.getBooleanProperty(NORESUME, false)) {
+                // downloadLink.setProperty(NORESUME, Boolean.valueOf(false));
+                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+                // }
+                // downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
+                // downloadLink.setChunksProgress(null);
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE");
             }
 
             logger.warning("firedrive.com: Unknown error2");

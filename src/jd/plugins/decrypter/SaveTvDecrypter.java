@@ -52,14 +52,17 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* Settings stuff */
     private static final String           USEAPI                            = "USEAPI";
+    private static final String           PREFERH264MOBILE                  = "PREFERH264MOBILE";
+
     private static final String           CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
     private static final String           CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
     private static final String           CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
     private static final String           CRAWLER_LASTDAYS_COUNT            = "CRAWLER_LASTDAYS_COUNT";
 
     private static final double           QUALITY_H264_NORMAL_MB_PER_MINUTE = 12.605;
-    private static final double           QUALITY_H264_MOBILE_MB_PER_MINUTE = 8;
+    private static final double           QUALITY_H264_MOBILE_MB_PER_MINUTE = 4.64;
 
     private static final SubConfiguration cfg                               = SubConfiguration.getConfig("save.tv");
     private static final boolean          FAST_LINKCHECK                    = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
@@ -86,6 +89,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             logger.info("save.tv: Cannot decrypt the archive while the API is enabled.");
             return decryptedLinks;
         }
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("save.tv");
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         if (!getUserLogin(false)) {
             logger.info("Failed to decrypt link because account is missing: " + parameter);
             return decryptedLinks;
@@ -114,6 +119,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return decryptedLinks;
             }
+            /* Save on account to display in account information */
+            aa.setProperty("acc_count_telecast_ids", totalLinks);
             totalLinksNum = Integer.parseInt(totalLinks);
             final DecimalFormat df = new DecimalFormat("0000");
             final DecimalFormat df2 = new DecimalFormat("0000000000000");
@@ -156,7 +163,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         }
                     }
 
-                    final String[] directIDs = br.getRegex("(<tr name=\"archive\\-list\\-row\\-\\d+\".*?</tr>)").getColumn(0);
+                    final String[] directIDs = get_telecast_ids();
                     if (directIDs != null && directIDs.length != 0) {
                         for (final String singleid : directIDs) {
                             addID(singleid);
@@ -202,7 +209,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                             final String dlname = Encoding.htmlDecode(info.getMatch(1));
                             br.postPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchiveLoadEntries.cfm?null.GetVideoEntries", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetVideoEntries&c0-id=" + random_one + "_" + random_two + "&c0-param0=string:1&c0-param1=string:&c0-param2=string:1&c0-param3=string:984899&c0-param4=string:1&c0-param5=string:0&c0-param6=string:1&c0-param7=string:0&c0-param8=string:1&c0-param9=string:&c0-param10=string:" + Encoding.urlEncode(dlname) + "&c0-param11=string:" + dlid + "&c0-param12=string:toggleSerial&xml=true&extend=function (object) for (property in object) { this[property] = object[property]; } return this;}&");
                             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                            final String[] directIDs = br.getRegex("(<tr name=\"archive\\-list\\-row\\-\\d+\".*?</tr>)").getColumn(0);
+                            final String[] directIDs = get_telecast_ids();
                             if (directIDs == null || directIDs.length == 0) {
                                 logger.warning("Decrypter broken for link: " + parameter);
                                 return decryptedLinks;
@@ -284,6 +291,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private String[] get_telecast_ids() {
+        return br.getRegex("(<tr name=\"archive\\-list\\-row\\-\\d+\".*?</tr>)").getColumn(0);
+    }
+
     private void addID(final String id_info) throws ParseException {
         final String telecast_id = new Regex(id_info, "name=\"lTelecastID\" value=\"(\\d+)\"").getMatch(0);
         final String telecast_url = "https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecast_id;
@@ -291,7 +302,17 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String date = dateRegex.getMatch(0);
         final String time = dateRegex.getMatch(1);
         final int duration_minutes = Integer.parseInt(dateRegex.getMatch(2));
-        final double filesize = QUALITY_H264_NORMAL_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
+        double filesize;
+        /* User doesn't prefer the mobile version */
+        if (!mobilePreferred()) {
+            filesize = QUALITY_H264_NORMAL_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
+            /* User prefers mobile version & it's available */
+        } else if (mobilePreferred() && id_info.contains("class=\"rec4\"")) {
+            filesize = QUALITY_H264_MOBILE_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
+        } else {
+            /* User prefers mobile version but it's not available -> Don't set filesize */
+            filesize = 0;
+        }
         final Regex nameRegex = new Regex(id_info, "class=\"normal\">([^<>\"]*?)</a>([^<>\"]*?)</td>");
         String name = nameRegex.getMatch(0);
         if (name == null) name = new Regex(id_info, "class=\"child\">([^<>\"]*?)</a>").getMatch(0);
@@ -377,6 +398,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             break;
         }
+    }
+
+    private boolean mobilePreferred() {
+        return cfg.getBooleanProperty(PREFERH264MOBILE, false);
     }
 
     private static final String ENERVED_DIALOGS = "\r\n\r\nGenervt von diesen Info-Dialogen? In den Plugin Einstellung kannst du sie deaktivieren ;)";

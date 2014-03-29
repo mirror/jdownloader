@@ -206,10 +206,7 @@ public class SimplyPremiumCom extends PluginForHost {
             }
 
             /* request download */
-            showMessage(link, "Task 2: Generating downloadlink");
-            br.setFollowRedirects(false);
-            br.getPage("http://www.simply-premium.com/premium.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = br.getRedirectLocation();
+            dllink = getXML("download");
             if (dllink == null) {
                 if (TEST_MODE) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 logger.info(NICE_HOST + ": dllinknull");
@@ -226,7 +223,7 @@ public class SimplyPremiumCom extends PluginForHost {
                 }
             }
         }
-        showMessage(link, "Task 3: Download begins!");
+        showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, dllink);
     }
 
