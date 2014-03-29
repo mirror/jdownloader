@@ -396,14 +396,21 @@ public class SaveTv extends PluginForHost {
         return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa == null) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+        // http://svn.jdownloader.org/issues/10306
+        logger.warning("Downloading as premium in free mode as a workaround for bug #10306");
+        handlePremium(downloadLink, aa);
     }
 
     @Override
