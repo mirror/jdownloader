@@ -226,7 +226,7 @@ public class SaveTv extends PluginForHost {
             site_title = correctSiteTitle(site_title);
 
             /* Find custom filename stuff */
-            date = br.getRegex("<b>Datum:</b>[\t\n\r ]+[A-Za-z]{1,3}\\.,([^<>\"]*?)</p>").getMatch(0);
+            date = br.getRegex("<b>Datum:</b>[\t\n\r ]+[A-Za-z]{1,3}\\., (\\d{2}\\.\\d{02})\\.([\t\n\r ]+)?</p>").getMatch(0);
             if (date != null) {
                 date = date.trim();
                 date += +Calendar.getInstance().get(Calendar.YEAR);
@@ -1434,7 +1434,7 @@ public class SaveTv extends PluginForHost {
             panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", "4");
             panelGenerator.addEntry("Abgebrochene Downloads fortsetzbar:", "Ja");
 
-            panelGenerator.addEntry("Revision", revision);
+            panelGenerator.addEntry("Plugin Version:", revision);
 
             ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, "Schließen", "");
             try {
