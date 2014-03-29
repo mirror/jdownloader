@@ -16,7 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -27,7 +32,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
@@ -52,8 +60,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ContainerDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.DomainInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?(save\\.tv|free\\.save\\.tv)/STV/M/obj/user/usShowVideoArchiveDetail\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
@@ -68,6 +81,8 @@ public class SaveTv extends PluginForHost {
     private final String        COOKIE_HOST                                         = "http://save.tv";
     private static final String NICE_HOST                                           = "save.tv";
     private static final String NICE_HOSTproperty                                   = "savetv";
+    private static final int    MAX_RETRIES_LOGIN                                   = 10;
+    private static final int    MAX_RETRIES_SAFE_REQUEST                            = 3;
 
     /** Settings stuff */
     private static final String USEORIGINALFILENAME                                 = "USEORIGINALFILENAME";
@@ -145,7 +160,6 @@ public class SaveTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         DLINK = link;
-        prepBrowser(br);
         br.setFollowRedirects(true);
         // Show id in case it is offline or plugin is broken
         if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(".mp4") || link.getName().contains("usShowVideoArchiveDetail.cfm"))) link.setName(getTelecastId(link) + ".mp4");
@@ -161,8 +175,8 @@ public class SaveTv extends PluginForHost {
             link.getLinkStatus().setStatusText("Linkcheck deaktiviert - korrekter Dateiname erscheint erst beim Downloadstart");
             return AvailableStatus.TRUE;
         }
-        br.setFollowRedirects(true);
         login(this.br, aa, false);
+
         final boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
         String site_title = null;
         String filesize = null;
@@ -177,7 +191,7 @@ public class SaveTv extends PluginForHost {
         String genre = null;
         String producecountry = null;
         String produceyear = null;
-        if (SESSIONID != null || this.getPluginConfig().getBooleanProperty(USEAPI, false)) {
+        if (SESSIONID != null || is_API_enabled()) {
             if (SESSIONID == null) login(this.br, aa, true);
             // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
             // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
@@ -211,7 +225,7 @@ public class SaveTv extends PluginForHost {
             }
             site_title = correctSiteTitle(site_title);
 
-            // Find custom filename stuff
+            /* Find custom filename stuff */
             date = br.getRegex("<b>Datum:</b>[\t\n\r ]+[A-Za-z]{1,3}\\.,([^<>\"]*?)</p>").getMatch(0);
             if (date != null) {
                 date = date.trim();
@@ -293,7 +307,7 @@ public class SaveTv extends PluginForHost {
                     genre = new Regex(musicdata, "([A-Za-z]+ / [A-Za-z, ]+)").getMatch(0);
                 }
             } else if (br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat1\\.jpg\"") || br.containsHTML("<label>Kategorie:</label>[\t\n\r ]+Film") || br.containsHTML(GENERAL_REGEX)) {
-                // For movies
+                /* For movies */
                 final Regex movieInfo = br.getRegex(INFOREGEX);
                 String moviesdata = movieInfo.getMatch(1);
                 if (moviesdata != null) {
@@ -301,7 +315,7 @@ public class SaveTv extends PluginForHost {
                     final String[] dataArray = moviesdata.split(" ");
                     if (dataArray != null) {
                         genre = dataArray[0];
-                        // Maybe the media was produced over multiple years
+                        /* Maybe the media was produced over multiple years */
                         produceyear = new Regex(moviesdata, "(\\d{4} / \\d{4})").getMatch(0);
                         if (produceyear == null) produceyear = new Regex(moviesdata, "(\\d{4})").getMatch(0);
                         if (produceyear != null) {
@@ -309,7 +323,7 @@ public class SaveTv extends PluginForHost {
                         } else {
                             producecountry = new Regex(moviesdata, genre + "(.+)").getMatch(0);
                         }
-                        // A little errorhandling but this should never happen
+                        /* A little errorhandling but this should never happen */
                         if (producecountry != null) producecountry = Encoding.htmlDecode(producecountry).trim();
                         if (producecountry != null && producecountry.equals("")) producecountry = null;
 
@@ -323,7 +337,7 @@ public class SaveTv extends PluginForHost {
 
             /* Add time to date */
             if (broadcastTime != null) {
-                // Add missing time - Also add one hour because otherwise one is missing
+                /* Add missing time - Also add one hour because otherwise one is missing */
                 datemilliseconds += TimeFormatter.getMilliSeconds(broadcastTime, "HH:mm", Locale.GERMAN) + (60 * 60 * 1000l);
             }
         }
@@ -332,15 +346,15 @@ public class SaveTv extends PluginForHost {
             filesize = filesize.replace(".", "");
             link.setDownloadSize(SizeFormatter.getSize(filesize.replace(".", "")));
         }
-        /** Set properties which are needed for filenames */
-        // Add series information
+        /* Set properties which are needed for filenames */
+        /* Add series information */
         if (episodenumber != null) link.setProperty("episodenumber", Integer.parseInt(episodenumber));
         link.setProperty("seriestitle", seriestitle);
         if (episodename != null) {
             episodename = episodename.replace("/", getPluginConfig().getStringProperty(CUSTOM_FILENAME_SERIES2_EPISODENAME_SEPERATION_MARK, defaultCustomSeperationMark));
             link.setProperty("episodename", episodename);
         }
-        // Add movie information
+        /* Add movie information */
         if (produceyear != null) {
             produceyear = produceyear.replace("/", "-");
             link.setProperty("produceyear", produceyear);
@@ -349,11 +363,11 @@ public class SaveTv extends PluginForHost {
         link.setProperty("genre", Encoding.htmlDecode(genre.trim()));
         if (producecountry == null) producecountry = "-";
         link.setProperty("producecountry", producecountry);
-        // Add remaining information
+        /* Add remaining information */
         link.setProperty("plainfilename", site_title);
         link.setProperty("type", ".mp4");
         link.setProperty("originaldate", datemilliseconds);
-        // No custom filename if not all required tags are given
+        /* No custom filename if not all required tags are given */
         final boolean force_original_general = (datemilliseconds == 0 || getPluginConfig().getBooleanProperty(USEORIGINALFILENAME) || SESSIONID != null || getLongProperty(link, "category", 0l) == 0);
         boolean force_original_series = false;
         try {
@@ -403,8 +417,8 @@ public class SaveTv extends PluginForHost {
         requestFileInformation(downloadLink);
         login(this.br, account, false);
 
-        // Check if ads-free version is available
-        if (SESSIONID != null || this.getPluginConfig().getBooleanProperty(USEAPI, false)) {
+        /* Check if ads-free version is available */
+        if (SESSIONID != null || is_API_enabled()) {
             if (SESSIONID == null) login(this.br, account, true);
             // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
             // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
@@ -433,8 +447,10 @@ public class SaveTv extends PluginForHost {
         }
 
         String dllink = null;
-        // User wants ads-free but it's not available -> Wait 12 hours, status can still change but probably won't -> If defined by user,
-        // force version with ads after a user defined amount of retries
+        /*
+         * User wants ads-free but it's not available -> Wait 12 hours, status can still change but probably won't -> If defined by user,
+         * force version with ads after a user defined amount of retries
+         */
         if (this.getPluginConfig().getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
             final boolean preferadsfreeOverride = cfg.getBooleanProperty(PREFERADSFREE_OVERRIDE, false);
             final long maxRetries = getLongProperty(cfg, PREFERADSFREE_OVERRIDE_MAXRETRIES, defaultIgnoreOnlyAdsFreeAfterRetries_maxRetries);
@@ -442,7 +458,7 @@ public class SaveTv extends PluginForHost {
             final boolean load_with_ads = (preferadsfreeOverride && currentTryCount >= maxRetries);
 
             if (!load_with_ads) {
-                // Only increase the counter when the option is activated
+                /* Only increase the counter when the option is activated */
                 if (preferadsfreeOverride) {
                     currentTryCount++;
                     downloadLink.setProperty("curren_no_ads_free_available_retries", currentTryCount);
@@ -466,7 +482,7 @@ public class SaveTv extends PluginForHost {
             if (preferMobileVids) preferMobileVideos = "c0-param1=number:1";
             postDownloadPage(downloadLink, preferMobileVideos, downloadWithoutAds);
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, PREFERREDFORMATNOTAVAILABLETEXT, 4 * 60 * 60 * 1000l); }
-            // Ads-Free version not available - handle it
+            /* Ads-Free version not available - handle it */
             if (br.containsHTML("\\'Leider enthält Ihre Aufnahme nur Werbung\\.\\'") && preferAdsFree) {
                 this.ISADSFREEAVAILABLE = false;
                 if (cfg.getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, 12 * 60 * 60 * 1000l); }
@@ -562,7 +578,7 @@ public class SaveTv extends PluginForHost {
      *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
      */
     private void postDownloadPage(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
-        br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + this.getTelecastId(dl) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
+        br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + getTelecastId(dl) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
     }
 
     /**
@@ -576,7 +592,7 @@ public class SaveTv extends PluginForHost {
     private void postDownloadPageAPI(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
         br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
         br.getHeaders().put("Content-Type", "text/xml");
-        br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + this.getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds
+        br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds
                 + "</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
     }
 
@@ -588,7 +604,6 @@ public class SaveTv extends PluginForHost {
      */
     @SuppressWarnings("unused")
     private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
-        System.out.println(soapPost);
         br.getHeaders().put("SOAPAction", soapAction);
         br.getHeaders().put("Content-Type", "text/xml");
         br.postPageRaw("http://api.save.tv/v2/Api.svc", soapAction);
@@ -597,35 +612,55 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(this.br, account, true);
-        } catch (final PluginException e) {
-            logger.info("save.tv Account ist ungültig!");
-            account.setValid(false);
-            throw e;
-        } catch (final BrowserException eb) {
-            boolean success = false;
-            for (int i = 1; i <= 3; i++) {
-                try {
-                    login(this.br, account, true);
-                } catch (final BrowserException ebr) {
-                    logger.info(i + "von 3: save.tv Login failed because of server error or timeout");
-                    continue;
-                }
-                success = true;
-                break;
-            }
-            final String lang = System.getProperty("user.language");
-            if (!success) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin wegen Serverfehler oder Timeout fehlgeschlagen!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        final AccountInfo ai = new AccountInfo();
+        loginSafe(this.br, account, true);
+        /* We're logged in - don't fail here! */
+        String acctype = null;
+        if (!is_API_enabled()) {
+            try {
+                String long_cookie = br.getCookie("http://save.tv/", "SLOCO");
+                if (long_cookie == null || long_cookie.trim().equals("bAutoLoginActive=1")) {
+                    logger.info("Long session cookie does not exist yet - enabling it");
+                    br.postPage("https://www.save.tv/STV/M/obj/user/usEditAutoLogin.cfm?", "bAutoLoginActive=1");
+                    long_cookie = br.getCookie("http://save.tv/", "SLOCO");
+                    if (long_cookie == null || long_cookie.trim().equals("")) {
+                        logger.info("Failed to get long session cookie");
+                    } else {
+                        logger.info("Successfully received long session cookie and saved cookies");
+                        this.saveCookies(account);
+                    }
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin failed because of server error or timeout!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    logger.info("Long session cookie exists");
                 }
+                br.getPage("https://www.save.tv/STV/M/obj/user/contract/coUpgrade.cfm");
+                if (br.containsHTML(">XL-Status:</label></span>[\t\n\r ]+Ja<br")) {
+                    acctype = "XL Account";
+                } else {
+                    acctype = "Basis Account";
+                }
+                String expireDate = br.getRegex("<label>Laufzeit:</label></span> [0-9\\.]+ \\- (\\d{2}\\.\\d{2}\\.\\d{4})<br />").getMatch(0);
+                if (expireDate != null) {
+                    expireDate = Encoding.htmlDecode(expireDate.trim());
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", Locale.GERMANY));
+                    account.setProperty("acc_expire", expireDate);
+                }
+                final String package_name = br.getRegex("<label>Name:</label></span>([^<>\"]*?)<br").getMatch(0);
+                final String price = br.getRegex("<label>Preis:</label></span>([^<>\"]*?)<br").getMatch(0);
+                final String capacity = br.getRegex("<label>Kapazität Videoarchiv:</label></span>([^<>\"]*?)<br").getMatch(0);
+                final String runtime = br.getRegex("<label>Laufzeit:</label></span>([^<>\"]*?)<br").getMatch(0);
+                if (package_name != null) account.setProperty("acc_package", Encoding.htmlDecode(package_name.trim()));
+                if (price != null) account.setProperty("acc_price", Encoding.htmlDecode(price.trim()));
+                if (capacity != null) account.setProperty("acc_capacity", Encoding.htmlDecode(capacity.trim()));
+                if (runtime != null) account.setProperty("acc_runtime", Encoding.htmlDecode(runtime.trim()));
+            } catch (final Throwable e) {
+                logger.info("Extended account check failed");
             }
+        } else {
+            acctype = "Premium Account";
         }
-        ai.setStatus("Premium save.tv User");
+        ai.setStatus(acctype);
+        account.setProperty("acc_type", acctype);
+
         ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
@@ -634,17 +669,14 @@ public class SaveTv extends PluginForHost {
     @SuppressWarnings({ "unchecked" })
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
         this.setBrowserExclusive();
-        prepBrowser(br);
         br.setFollowRedirects(true);
         final String lang = System.getProperty("user.language");
-        final boolean useAPI = getPluginConfig().getBooleanProperty(USEAPI);
-        if (useAPI) {
+        if (is_API_enabled()) {
             SESSIONID = account.getStringProperty("sessionid", null);
             final long lastUse = getLongProperty(account, "lastuse", -1l);
             // Only generate new sessionID if we have none or it's older than 6 hours
             if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
-                br.getHeaders().put("User-Agent", "kSOAP/2.0");
-                br.getHeaders().put("Content-Type", "text/xml");
+                prepBrowser_api(this.br);
                 br.getHeaders().put("SOAPAction", "http://tempuri.org/ISession/CreateSession");
                 br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><CreateSession xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><apiKey i:type=\"d:string\">" + Encoding.Base64Decode(APIKEY) + "</apiKey></CreateSession></v:Body></v:Envelope>");
                 SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
@@ -679,9 +711,10 @@ public class SaveTv extends PluginForHost {
                 }
             }
         } else {
+            prepBrowser_web(this.br);
             synchronized (LOCK) {
                 try {
-                    /** Load cookies */
+                    /* Load cookies */
                     br.setCookiesExclusive(true);
                     final Object ret = account.getProperty("cookies", null);
                     boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -706,15 +739,8 @@ public class SaveTv extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
-                    /** Save cookies */
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies add = br.getCookies(COOKIE_HOST);
-                    for (final Cookie c : add.getCookies()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                    account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                    account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                    account.setProperty("cookies", cookies);
+                    /* Save cookies & account data */
+                    saveCookies(account);
                 } catch (final PluginException e) {
                     account.setProperty("cookies", Property.NULL);
                     throw e;
@@ -723,36 +749,111 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    // Sync this with the decrypter
-    private void getPageSafe(final String url, final Account acc) throws Exception {
-        // Limits made by me:
-        // Max 6 logins possible
-        // Max 3 accesses of the link possible
-        // -> Max 9 total requests
-        for (int i = 0; i <= 2; i++) {
-            br.getPage(url);
-            if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
-                for (int i2 = 0; i2 <= 1; i2++) {
-                    logger.info("Link redirected to login page, logging in again to retry this: " + url);
-                    logger.info("Try " + i2 + " of 1");
+    /*
+     * Log in, handle all kinds of timeout- and browser errors - as long as we know that the account is valid it should stay active!
+     */
+    @SuppressWarnings("deprecation")
+    private void loginSafe(final Browser br, final Account acc, final boolean force) throws Exception {
+        try {
+            login(this.br, acc, true);
+        } catch (final PluginException e) {
+            logger.info("save.tv Account ist ungültig!");
+            acc.setValid(false);
+            throw e;
+        } catch (final Exception e) {
+            if (e instanceof UnknownHostException || e instanceof BrowserException) {
+                boolean success = false;
+                for (int i = 1; i <= MAX_RETRIES_LOGIN; i++) {
                     try {
                         login(this.br, acc, true);
-                    } catch (final BrowserException e) {
-                        logger.info("Login " + i2 + "of 1 failed, re-trying...");
+                    } catch (final BrowserException ebr) {
+                        logger.info(i + "von " + MAX_RETRIES_LOGIN + ": save.tv Login failed because of server error or timeout");
                         continue;
                     }
-                    logger.info("Re-Login " + i2 + "of 1 successful...");
+                    success = true;
                     break;
                 }
+                final String lang = System.getProperty("user.language");
+                if (!success) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin wegen Serverfehler oder Timeout fehlgeschlagen!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin failed because of server error or timeout!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    /* Always compare to the decrypter */
+    private void getPageSafe(final String url, final Account acc) throws Exception {
+        /*
+         * Max 30 logins possible Max 3 accesses of the link possible -> Max 33 total requests
+         */
+        for (int i = 1; i <= MAX_RETRIES_SAFE_REQUEST; i++) {
+            br.getPage(url);
+            if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
+                logger.info("Refreshing cookies to continue downloading " + i + " of " + MAX_RETRIES_SAFE_REQUEST);
+                loginSafe(br, acc, true);
                 continue;
             }
             break;
         }
     }
 
-    private void prepBrowser(final Browser br) {
+    private void postPageSafe(final Browser br, final String url, final String postData) throws IOException, PluginException {
+        for (int i = 1; i <= 3; i++) {
+            try {
+                br.postPage(url, postData);
+            } catch (final BrowserException e) {
+                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
+                    logger.info("503 BrowserException occured, retry " + i + " of 3");
+                    sleep(3000l, DLINK);
+                    continue;
+                }
+                logger.info("Unhandled BrowserException occured...");
+                throw e;
+            }
+            break;
+        }
+    }
+
+    private void prepBrowser_web(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
+    }
+
+    private void prepBrowser_api(final Browser br) {
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.getHeaders().put("User-Agent", "kSOAP/2.0");
+        br.getHeaders().put("Content-Type", "text/xml");
+    }
+
+    private void saveCookies(final Account acc) {
+        /* Save cookies */
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies add = br.getCookies(COOKIE_HOST);
+        for (final Cookie c : add.getCookies()) {
+            cookies.put(c.getKey(), c.getValue());
+        }
+        acc.setProperty("name", Encoding.urlEncode(acc.getUser()));
+        acc.setProperty("pass", Encoding.urlEncode(acc.getPass()));
+        acc.setProperty("cookies", cookies);
+    }
+
+    private boolean is_API_enabled() {
+        return getPluginConfig().getBooleanProperty(USEAPI);
+    }
+
+    private String getRegexSafe(final String input, final String regex, final int match) {
+        final String regexFixedInput = input.replace("(", "65788jdclipopenjd4684").replace(")", "65788jdclipclosejd4684");
+        String result = new Regex(regexFixedInput, regex).getMatch(match);
+        if (result != null) result = result.replace("65788jdclipopenjd4684", "(").replace("65788jdclipclosejd4684", ")");
+        return result;
     }
 
     private boolean isSeries(final String testTitle) {
@@ -774,30 +875,6 @@ public class SaveTv extends PluginForHost {
             }
         }
         return output;
-    }
-
-    private String getRegexSafe(final String input, final String regex, final int match) {
-        final String regexFixedInput = input.replace("(", "65788jdclipopenjd4684").replace(")", "65788jdclipclosejd4684");
-        String result = new Regex(regexFixedInput, regex).getMatch(match);
-        if (result != null) result = result.replace("65788jdclipopenjd4684", "(").replace("65788jdclipclosejd4684", ")");
-        return result;
-    }
-
-    private void postPageSafe(final Browser br, final String url, final String postData) throws IOException, PluginException {
-        for (int i = 1; i <= 3; i++) {
-            try {
-                br.postPage(url, postData);
-            } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
-                    logger.info("503 BrowserException occured, retry " + i + " of 3");
-                    sleep(3000l, DLINK);
-                    continue;
-                }
-                logger.info("Unhandled BrowserException occured...");
-                throw e;
-            }
-            break;
-        }
     }
 
     private static String getTelecastId(final DownloadLink link) {
@@ -1025,7 +1102,7 @@ public class SaveTv extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
-        final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind folgende Einstellungsen ohne Funktion:\r\n-Benutzerdefinierte Dateinamen\r\n-Archiv-Crawler\r\n-Nur Aufnahmen mit angewandter Schnittliste laden\r\nAus technischen Gründen ist es (noch) nicht möglich, alle genannten Einstellungen bei aktivierter API auszugrauen um dem Benutzer visuelles Feedback zu geben, sorry!")).setDefaultValue(false);
+        final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, entfallen folgende Features:\r\n-Benutzerdefinierte Dateinamen\r\n-Archiv-Crawler\r\n-Nur Aufnahmen mit angewandter Schnittliste laden\r\n-Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\nAus technischen Gründen ist es (noch) nicht möglich, alle dann Inaktiven Einstellungen bei aktivierter API auszugrauen um dem Benutzer visuelles Feedback zu geben, sorry!")).setDefaultValue(false);
         getConfig().addEntry(useMobileAPI);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren?\r\nVorteile:\r\n-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\nNachteile:\r\n-Im Linkgrabber werden zunächst nur die telecast-IDs als Dateinamen angezeigt\r\n-Korrekte Dateinamen werden erst beim Downloadstart angezeigt")).setDefaultValue(false));
@@ -1298,4 +1375,125 @@ public class SaveTv extends PluginForHost {
         } catch (Throwable e) {
         }
     }
+
+    public void showAccountDetailsDialog(final Account account) {
+        final AccountInfo ai = account.getAccountInfo();
+        if (ai != null) {
+            String windowTitleLangText = "Account Zusatzinformationen";
+            final String accType = account.getStringProperty("acc_type", "Premium Account");
+            final String acc_expire = account.getStringProperty("acc_expire", "?");
+            final String acc_package = account.getStringProperty("acc_package", "?");
+            final String acc_price = account.getStringProperty("acc_price", "?");
+            final String acc_capacity = account.getStringProperty("acc_capacity", "?");
+            final String acc_runtime = account.getStringProperty("acc_runtime", "?");
+
+            /* it manages new panel */
+            final PanelGenerator panelGenerator = new PanelGenerator();
+
+            JLabel hostLabel = new JLabel("<html><b>" + account.getHoster() + "</b></html>");
+            hostLabel.setIcon(DomainInfo.getInstance(account.getHoster()).getFavIcon());
+            panelGenerator.addLabel(hostLabel);
+
+            String revision = "$Revision$";
+            try {
+                String[] revisions = revision.split(":");
+                revision = revisions[1].replace('$', ' ').trim();
+            } catch (Exception e) {
+                logger.info("save.tv revision number error: " + e);
+            }
+
+            panelGenerator.addCategory("Account");
+            panelGenerator.addEntry("Name:", account.getUser());
+            panelGenerator.addEntry("Account Typ:", accType);
+            panelGenerator.addEntry("Paket:", acc_package);
+            panelGenerator.addEntry("Laufzeit:", acc_runtime);
+            panelGenerator.addEntry("Ablaufdatum:", acc_expire);
+            panelGenerator.addEntry("Preis:", acc_price);
+            panelGenerator.addEntry("Aufnahmekapazität:", acc_capacity);
+
+            panelGenerator.addCategory("Download");
+            panelGenerator.addEntry("Max. Anzahl gleichzeitiger Downloads:", "20");
+            panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", "4");
+            panelGenerator.addEntry("Abgebrochene Downloads fortsetzbar:", "Ja");
+
+            panelGenerator.addEntry("Revision", revision);
+
+            ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, "Schließen", "");
+            try {
+                Dialog.getInstance().showDialog(dialog);
+            } catch (DialogNoAnswerException e) {
+            }
+        }
+
+    }
+
+    public class PanelGenerator {
+        private JPanel panel = new JPanel();
+        private int    y     = 0;
+
+        public PanelGenerator() {
+            panel.setLayout(new GridBagLayout());
+            panel.setMinimumSize(new Dimension(270, 200));
+        }
+
+        public void addLabel(JLabel label) {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(label, c);
+            y++;
+        }
+
+        public void addCategory(String categoryName) {
+            JLabel category = new JLabel("<html><u><b>" + categoryName + "</b></u></html>");
+
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(10, 5, 0, 5);
+            panel.add(category, c);
+            y++;
+        }
+
+        public void addEntry(String key, String value) {
+            GridBagConstraints c = new GridBagConstraints();
+            JLabel keyLabel = new JLabel(key);
+            // keyLabel.setFont(keyLabel.getFont().deriveFont(Font.BOLD));
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.weightx = 0.9;
+            c.gridx = 0;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(keyLabel, c);
+
+            JLabel valueLabel = new JLabel(value);
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 1;
+            panel.add(valueLabel, c);
+
+            y++;
+        }
+
+        public void addTextField(JTextArea textfield) {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(textfield, c);
+            y++;
+        }
+
+        public JPanel getPanel() {
+            return panel;
+        }
+
+    }
+
 }
