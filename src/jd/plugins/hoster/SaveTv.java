@@ -1373,7 +1373,7 @@ public class SaveTv extends PluginForHost {
                         title = "28.03.14 - Save.tv Plugin - Neue Crawler Features";
                         message += "Hallo lieber save.tv Nutzer/liebe save.tv Nutzerin\r\n";
                         message += "Das save.tv Crawler Plugin bietet folgende neue Features:\r\n";
-                        message += "- Genauere Dialoge\r\n";
+                        message += "- Genauere Info-Dialoge\r\n";
                         message += "- Weniger Seitenzugriffe -> Schnellerer Crawl-Vorgang\r\n";
                         message += "- Mehr Dateiinfos auch bei aktiviertem schnellen Linkcheck\r\n";
                         message += "- Eigene Dateinamen auch bei aktiviertem schnellen Linkcheck (eingeschränkt)\r\n";

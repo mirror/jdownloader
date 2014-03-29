@@ -406,14 +406,6 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return cfg.getBooleanProperty(PREFERH264MOBILE, false);
     }
 
-    private String getDialogEnd() {
-        final long crawl_duration = System.currentTimeMillis() - time_crawl_started;
-        String message = "\r\n";
-        message += "Dauer des Crawlvorganges: " + TimeFormatter.formatMilliSeconds(crawl_duration, 0);
-        message += "\r\n\r\nGenervt von diesen Info-Dialogen? In den Plugin Einstellung kannst du sie deaktivieren ;)";
-        return message;
-    }
-
     private void handleEndDialogs() {
         if (!crawler_DialogsDisabled) {
             if (grab_specified_page_only && grab_last_days_num > 0 && decryptedLinks.size() == 0) {
@@ -424,9 +416,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                             try {
                                 String title = "Save.tv Archiv-Crawler - nichts gefunden";
                                 String message = "Save.tv - leider wurden keine Links gefunden!\r\n";
-                                message += "Bedenke, dass du nur alle Einträge der Seite " + maxPage + " deines\r\n";
-                                message += "und außerdem nur die der letzten " + grab_last_days_num + " wolltest!\r\n";
-                                message += "Vermutlich gab es auf dieser Archivseite/in diesem Zeitraum keine Aufnahmen!";
+                                message += "Bedenke, dass du nur alle Aufnahmen der Seite " + maxPage + " deines\r\n";
+                                message += "und außerdem nur die der letzten " + grab_last_days_num + " Tage wolltest!\r\n";
+                                message += "Vermutlich gab es auf dieser Archivseite und/oder in diesem Zeitraum keine Aufnahmen!";
                                 message += getDialogEnd();
                                 JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.ERROR_MESSAGE, null);
                             } catch (final Throwable e) {
@@ -460,8 +452,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         @Override
                         public void run() {
                             try {
-                                String title = "Save.tv Archiv-Crawler - alle Einträge aus Seite " + maxPage + " deines Archives und der letzten " + grab_last_days_num + " Tage wurden gefunden!";
-                                String message = "Save.tv Archiv-Crawler - alle Einträge aus Seite " + maxPage + "deines Archives und der letzten " + grab_last_days_num + " Tage wurden gefunden!\r\n";
+                                String title = "Save.tv Archiv-Crawler - alle Aufnahmen aus Seite " + maxPage + " deines Archives und der letzten " + grab_last_days_num + " Tage wurden gefunden!";
+                                String message = "Save.tv Archiv-Crawler - alle Aufnahmen aus Seite " + maxPage + "deines Archives und der letzten " + grab_last_days_num + " Tage wurden gefunden!\r\n";
                                 message += "Es wurden " + decryptedLinks.size() + " Links gefunden!";
                                 message += getDialogEnd();
                                 JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
@@ -478,8 +470,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         @Override
                         public void run() {
                             try {
-                                String title = "Save.tv Archiv-Crawler - alle Einträge der letzten " + grab_last_days_num + " Tage wurden gefunden";
-                                String message = "Save.tv Archiv-Crawler - alle Einträge der letzten " + grab_last_days_num + " Tage wurden ergolgreich gefunden!\r\n";
+                                String title = "Save.tv Archiv-Crawler - alle Aufnahmen der letzten " + grab_last_days_num + " Tage wurden gefunden";
+                                String message = "Save.tv Archiv-Crawler - alle Aufnahmen der letzten " + grab_last_days_num + " Tage wurden ergolgreich gefunden!\r\n";
                                 message += "Es wurden " + decryptedLinks.size() + " Links gefunden!";
                                 message += getDialogEnd();
                                 JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
@@ -496,7 +488,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         @Override
                         public void run() {
                             try {
-                                String title = "Save.tv Archiv-Crawler - Archivseite komplett gefunden";
+                                String title = "Save.tv Archiv-Crawler - Aufnahmen der Archivseite komplett gefunden";
                                 String message = "Save.tv - alle Links der eingefügten Archivseite Nummer " + maxPage + " wurden erfolgreich gefunden!\r\n";
                                 message += "Es wurden " + decryptedLinks.size() + " Links gefunden!";
                                 message += getDialogEnd();
@@ -514,7 +506,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         @Override
                         public void run() {
                             try {
-                                String title = "Save.tv Archiv-Crawler - Archiv komplett gefunden";
+                                String title = "Save.tv Archiv-Crawler -Alle Aufnahmen des Archives gefunden";
                                 String message = "Save.tv - alle Links des Archives wurden erfolgreich gefunden!\r\n";
                                 message += "Es wurden " + decryptedLinks.size() + " von " + totalLinksNum + " Links gefunden!";
                                 message += getDialogEnd();
@@ -531,7 +523,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         @Override
                         public void run() {
                             try {
-                                String title = "Save.tv Archiv-Crawler - Archiv nicht komplett gefunden";
+                                String title = "Save.tv Archiv-Crawler - Fehler beim Crawlen des kompletten Archives";
                                 String message = "Save.tv - leider wurden nicht alle Links des Archives gefunden!\r\n";
                                 message += "Es wurden nur " + decryptedLinks.size() + " von " + totalLinksNum + " Links (telecastIDs) gefunden!";
                                 message += getDialogEnd();
@@ -544,6 +536,14 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 }
             }
         }
+    }
+
+    private String getDialogEnd() {
+        final long crawl_duration = System.currentTimeMillis() - time_crawl_started;
+        String message = "\r\n";
+        message += "Dauer des Crawlvorganges: " + TimeFormatter.formatMilliSeconds(crawl_duration, 0);
+        message += "\r\n\r\nGenervt von diesen Info-Dialogen? In den Plugin Einstellung kannst du sie deaktivieren ;)";
+        return message;
     }
 
     private static long getLongProperty(final Property link, final String key, final long def) {
