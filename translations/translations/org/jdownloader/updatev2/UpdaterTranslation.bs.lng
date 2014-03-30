@@ -17,6 +17,7 @@ error_last_chance_connection_title=Nema Internet Konekcije!
 error_last_chance_title=Greška pri nadgradnji!
 errordialog_cannot_write2=Nedostaju prava pisanja da bi bila instalirana nadgradnja. Molimo kontaktirajte svoju podršku!
 errordialog_frametitle=Nastala je Greška
+errordialog_not_enough_space=Na vašem disku C: nema dovoljno slobodnog mjesta. Obezbijedite barem %s1 slobodnog prostora (potrebno je još %s2) i restartujte nadgradnju.
 guiless_you_are_up2date=Već imate posljednju verziju
 installframe_frametitle=JDownloader Nadgrađivač
 installframe_statusmsg_checkselfupdate=Kontaktiranje Servera

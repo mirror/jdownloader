@@ -35,6 +35,7 @@ LinkSource_DOWNLOADED_CONTAINER=Download-ovani Kontejner
 LinkSource_MYJD=MojJDownloader
 LinkSource_PASTE_LINKS_ACTION=Akcije Lijepljenja Linkova
 LinkSource_START_PARAMETER=Pokreni Parametar
+LinkSource_TOOLBAR=Alatna traka
 LinkgrabberFilterRule_duplicate=%s1 (kopija)
 Main_run_autostart_=Pokretanje Download-a
 Main_run_autostart_msg=Download-i će startati za nekoliko sekundi...

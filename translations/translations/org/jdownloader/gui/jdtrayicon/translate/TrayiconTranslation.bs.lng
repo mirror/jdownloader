@@ -14,6 +14,7 @@ getName=Tray ikonica
 jd_plugins_optional_jdtrayicon_jdlighttray=Lagani Tray
 plugins_optional_JDLightTray_hideifframevisible=Sakrij Tray ako je Prozor vidljiv
 plugins_optional_JDLightTray_passwordRequired=Unesite šifru za otvaranje iz Tray-a
+plugins_optional_JDLightTray_singleClick=Izmijeni status prozora jednim klikom miša
 plugins_optional_JDLightTray_startMinimized=Startaj minimizirano
 plugins_optional_JDLightTray_tooltip=Prikaži Tooltip
 plugins_optional_trayIcon_dl_finished=Završeno:

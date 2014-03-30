@@ -66,6 +66,7 @@ online_tt=Link je dostupan
 packagename=Ime paketa
 password_required=Potrebna je šifra!
 password_search=Traženje Šifre...
+plugins_optional_extraction_askForPassword2=Potrebna je šifra za ekstraktovanje arhive!
 plugins_optional_extraction_error_extrfailedcrc=Ekstrakcija nije uspjela (CRC u nepoznatom dokumentu)
 plugins_optional_extraction_filefilter=Svi podržani formati
 plugins_optional_extraction_filenotfound=Ekstrakcija nije uspjela (Dokument nije pronađen)
