@@ -186,10 +186,10 @@ public class SimplyPremiumCom extends PluginForHost {
             br.getPage("http://www.simply-premium.com/premium.php?info=&link=" + Encoding.urlEncode(link.getDownloadURL()));
             if (br.containsHTML("<error>NOTFOUND</error>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML(" <error>hostererror</error>")) {
+            } else if (br.containsHTML("<error>hostererror</error>")) {
                 logger.info(NICE_HOST + ": Host is unavailable at the moment -> Disabling it");
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            } else if (br.containsHTML(" <error>maxconnection</error>")) {
+            } else if (br.containsHTML("<error>maxconnection</error>")) {
                 logger.info(NICE_HOST + ": Too many simultan connections");
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
             } else if (br.containsHTML("<error>notvalid</error>")) {

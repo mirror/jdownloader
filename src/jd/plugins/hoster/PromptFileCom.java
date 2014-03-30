@@ -60,6 +60,7 @@ public class PromptFileCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (isStable()) throw new PluginException(LinkStatus.ERROR_FATAL, "Only supported in the JDownloader 2 BETA!");
         final String cHash = br.getRegex("name=\"chash\" value=\"([a-z0-9]+)\"").getMatch(0);
         if (cHash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(br.getURL(), "chash=" + cHash);
@@ -73,6 +74,13 @@ public class PromptFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean isStable() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null)
+            return true;
+        else
+            return false;
     }
 
     @Override
