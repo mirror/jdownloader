@@ -337,7 +337,7 @@ public class QueenShareCom extends PluginForHost {
         // cloudflare initial support is within getPage.. otherwise not needed.
         alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
         alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
-        String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
+        String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+).*?</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
             if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) fileInfo[1] = linkInformation[1];
@@ -356,6 +356,7 @@ public class QueenShareCom extends PluginForHost {
         } else {
             logger.info("Guest @ " + acctype + " -> Free Download");
         }
+        if (br.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 60 * 60 * 1000l);
         // redirects need to be disabled for getDllink
         br.setFollowRedirects(false);
         // First, bring up saved final links
