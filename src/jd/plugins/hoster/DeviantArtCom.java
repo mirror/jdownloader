@@ -274,7 +274,9 @@ public class DeviantArtCom extends PluginForHost {
             if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?deviantart\\.com/download/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 if (br.containsHTML(">Mature Content</span>")) {
-                    dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    /* Prefer HQ */
+                    dllink = br.getRegex("class=\"dev\\-content\\-normal\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
                 } else {
                     dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);

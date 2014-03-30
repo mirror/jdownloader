@@ -193,13 +193,9 @@ public class SaveTv extends PluginForHost {
         String produceyear = null;
         if (SESSIONID != null || is_API_enabled()) {
             if (SESSIONID == null) login(this.br, aa, true);
-            // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
-            // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
             String preferMobileVideosString = "5";
             if (preferMobileVids) preferMobileVideosString = "4";
-            br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
-            br.getHeaders().put("Content-Type", "text/xml");
-            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideosString + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
+            doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideosString + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified>");
             String apifilename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
             filesize = br.getRegex("<a:SizeMB>(\\d+)</a:SizeMB>").getMatch(0);
             if (apifilename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -226,7 +222,7 @@ public class SaveTv extends PluginForHost {
             site_title = correctSiteTitle(site_title);
 
             /* Find custom filename stuff */
-            date = br.getRegex("<b>Datum:</b>[\t\n\r ]+[A-Za-z]{1,3}\\., (\\d{2}\\.\\d{02})\\.([\t\n\r ]+)?</p>").getMatch(0);
+            date = br.getRegex("<b>Datum:</b>[\t\n\r ]+[A-Za-z]{1,3}\\., (\\d{2}\\.\\d{02}\\.)([\t\n\r ]+)?</p>").getMatch(0);
             if (date != null) {
                 date = date.trim();
                 date += +Calendar.getInstance().get(Calendar.YEAR);
@@ -434,9 +430,7 @@ public class SaveTv extends PluginForHost {
             if (SESSIONID == null) login(this.br, account, true);
             // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
             // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
-            br.getHeaders().put("SOAPAction", "http://tempuri.org/IVideoArchive/GetAdFreeState");
-            br.getHeaders().put("Content-Type", "text/xml");
-            br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetAdFreeState xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified></GetAdFreeState></v:Body></v:Envelope>");
+            doSoapRequest("http://tempuri.org/IVideoArchive/GetAdFreeState", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
             if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
                 downloadLink.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
@@ -602,23 +596,7 @@ public class SaveTv extends PluginForHost {
      *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
      */
     private void postDownloadPageAPI(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
-        br.getHeaders().put("SOAPAction", "http://tempuri.org/IDownload/GetStreamingUrl");
-        br.getHeaders().put("Content-Type", "text/xml");
-        br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetStreamingUrl xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds
-                + "</adFreeSpecified></GetStreamingUrl></v:Body></v:Envelope>");
-    }
-
-    /**
-     * @param soapAction
-     *            : The soap link which should be accessed
-     * @param soapPost
-     *            : The soap post data
-     */
-    @SuppressWarnings("unused")
-    private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
-        br.getHeaders().put("SOAPAction", soapAction);
-        br.getHeaders().put("Content-Type", "text/xml");
-        br.postPageRaw("http://api.save.tv/v2/Api.svc", soapAction);
+        doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds + "</adFreeSpecified>");
     }
 
     @SuppressWarnings("deprecation")
@@ -628,8 +606,11 @@ public class SaveTv extends PluginForHost {
         loginSafe(this.br, account, true);
         /* We're logged in - don't fail here! */
         String acctype = null;
-        if (!is_API_enabled()) {
-            try {
+        try {
+            if (is_API_enabled()) {
+                // doSoapRequest("http://tempuri.org/IUser/GetUserStatus", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId>");
+                acctype = "XL Account";
+            } else {
                 String long_cookie = br.getCookie("http://save.tv/", "SLOCO");
                 if (long_cookie == null || long_cookie.trim().equals("bAutoLoginActive=1")) {
                     logger.info("Long session cookie does not exist yet - enabling it");
@@ -664,11 +645,9 @@ public class SaveTv extends PluginForHost {
                 if (price != null) account.setProperty("acc_price", Encoding.htmlDecode(price.trim()));
                 if (capacity != null) account.setProperty("acc_capacity", Encoding.htmlDecode(capacity.trim()));
                 if (runtime != null) account.setProperty("acc_runtime", Encoding.htmlDecode(runtime.trim()));
-            } catch (final Throwable e) {
-                logger.info("Extended account check failed");
             }
-        } else {
-            acctype = "Premium Account";
+        } catch (final Throwable e) {
+            logger.info("Extended account check failed");
         }
         ai.setStatus(acctype);
         account.setProperty("acc_type", acctype);
@@ -689,8 +668,7 @@ public class SaveTv extends PluginForHost {
             // Only generate new sessionID if we have none or it's older than 6 hours
             if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
                 prepBrowser_api(br);
-                br.getHeaders().put("SOAPAction", "http://tempuri.org/ISession/CreateSession");
-                br.postPage(APIPAGE, "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><CreateSession xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><apiKey i:type=\"d:string\">" + Encoding.Base64Decode(APIKEY) + "</apiKey></CreateSession></v:Body></v:Envelope>");
+                doSoapRequest("http://tempuri.org/ISession/CreateSession", "<apiKey i:type=\"d:string\">" + Encoding.Base64Decode(APIKEY) + "</apiKey>");
                 SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
                 if (SESSIONID == null) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -699,22 +677,10 @@ public class SaveTv extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                /** TODO: Save and use session expiry date */
-                // // Get expiry date
-                // br.getHeaders().put("Content-Type", "text/xml");
-                // br.getHeaders().put("SOAPAction", "http://tempuri.org/ISession/GetSessionExpiry");
-                // br.postPage(APIPAGE,
-                // "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><GetSessionExpiry xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">"
-                // + SaveTv.SESSIONID + "</sessionId></GetSessionExpiry></v:Body></v:Envelope>");
-                // // Example: 2013-05-07T21:39:21.07275Z
-                // final String sessionExpiry = br.getRegex("<GetSessionExpiryResult>([^<>\"]*?)</GetSessionExpiryResult>").getMatch(0);
                 account.setProperty("lastuse", System.currentTimeMillis());
                 account.setProperty("sessionid", SESSIONID);
             }
-            br.getHeaders().put("SOAPAction", "http://tempuri.org/IUser/Login");
-            br.getHeaders().put("Content-Type", "text/xml");
-            final String postData = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><Login xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\"><sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><username i:type=\"d:string\">" + account.getUser() + "</username><password i:type=\"d:string\">" + account.getPass() + "</password></Login></v:Body></v:Envelope>";
-            br.postPage(APIPAGE, postData);
+            doSoapRequest("http://tempuri.org/IUser/Login", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><username i:type=\"d:string\">" + account.getUser() + "</username><password i:type=\"d:string\">" + account.getPass() + "</password>");
             if (!br.containsHTML("<a:HasPremiumStatus>true</a:HasPremiumStatus>")) {
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -845,6 +811,20 @@ public class SaveTv extends PluginForHost {
         br.setConnectTimeout(3 * 60 * 1000);
         br.getHeaders().put("User-Agent", "kSOAP/2.0");
         br.getHeaders().put("Content-Type", "text/xml");
+    }
+
+    /**
+     * @param soapAction
+     *            : The soap link which should be accessed
+     * @param soapPost
+     *            : The soap post data
+     */
+    private void doSoapRequest(final String soapAction, final String soapPost) throws IOException {
+        final String method = new Regex(soapAction, "([A-Za-z0-9]+)$").getMatch(0);
+        br.getHeaders().put("SOAPAction", soapAction);
+        br.getHeaders().put("Content-Type", "text/xml");
+        final String postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + soapPost + "</" + method + "></v:Body></v:Envelope>";
+        br.postPageRaw("http://api.save.tv/v2/Api.svc", postdata);
     }
 
     private void saveCookies(final Account acc) {

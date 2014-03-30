@@ -61,6 +61,7 @@ public class MyStoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (isStable()) throw new PluginException(LinkStatus.ERROR_FATAL, "Only supported in the JDownloader 2 BETA!");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://mystore.to/api/download", "FID=" + getFID(downloadLink));
         final String dllink = br.toString();
@@ -71,6 +72,7 @@ public class MyStoreTo extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
             if (dl.getConnection().getResponseCode() == 416) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -95,6 +97,13 @@ public class MyStoreTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
+    }
+
+    private boolean isStable() {
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null)
+            return true;
+        else
+            return false;
     }
 
     private String getFID(final DownloadLink dl) {

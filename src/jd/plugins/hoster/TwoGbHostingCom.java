@@ -64,13 +64,16 @@ public class TwoGbHostingCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String k = br.getRegex("name=\"k\" value=\"(\\d+)\"").getMatch(0);
+        final String k = br.getRegex("name=\"key\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (k == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(downloadLink.getDownloadURL(), "submit=Continue&k=" + k);
-        final String js = br.getRegex("<script type=\\'text/javascript\\'>[\t\n\r ]+(eval\\(function.*?)</script>").getMatch(0);
-        if (js == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String dllink = decodeDownloadLink(js);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage(br.getURL(), "key=" + k);
+        String dllink = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            final String js = br.getRegex("<script type=\\'text/javascript\\'>[\t\n\r ]+(eval\\(function.*?)</script>").getMatch(0);
+            if (js == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = decodeDownloadLink(js);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

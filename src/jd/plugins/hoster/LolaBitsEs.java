@@ -25,6 +25,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -70,12 +71,25 @@ public class LolaBitsEs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+        /* Free users can only download low quality streams */
+        String dllink = br.getRegex("\"(http://(www\\.)?lolabits\\.es/Video\\.ashx\\?e=[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+        dllink = Encoding.htmlDecode(dllink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            /* Whatever happens here, always show server error... */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
+        /* Low quality stream = always .mp4 -> (Might) need to change filename */
+        fixFilename(downloadLink);
+        dl.startDownload();
     }
 
     private static final String MAINPAGE = "http://lolabits.es";
@@ -174,6 +188,50 @@ public class LolaBitsEs extends PluginForHost {
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    private void fixFilename(final DownloadLink downloadLink) {
+        String orgName = null;
+        String orgExt = null;
+        String servName = null;
+        String servExt = null;
+        String orgNameExt = downloadLink.getFinalFileName();
+        if (orgNameExt == null) orgNameExt = downloadLink.getName();
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        if (!inValidate(orgExt))
+            orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
+        else
+            orgName = orgNameExt;
+        // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
+        String servNameExt = ".mp4";
+        if (!inValidate(servNameExt) && servNameExt.contains(".")) {
+            servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
+            servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
+        }
+        String FFN = null;
+        if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            FFN = servNameExt;
+        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+            FFN = orgName + servExt;
+        else
+            FFN = orgNameExt;
+        downloadLink.setFinalFileName(FFN);
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     * 
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+            return true;
+        else
+            return false;
     }
 
     @Override
