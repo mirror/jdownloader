@@ -53,32 +53,32 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /* Settings stuff */
-    private static final String           USEAPI                            = "USEAPI";
-    private static final String           PREFERH264MOBILE                  = "PREFERH264MOBILE";
+    private final String           USEAPI                            = "USEAPI";
+    private final String           PREFERH264MOBILE                  = "PREFERH264MOBILE";
 
-    private static final String           CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
-    private static final String           CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
-    private static final String           CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
-    private static final String           CRAWLER_LASTDAYS_COUNT            = "CRAWLER_LASTDAYS_COUNT";
+    private final String           CRAWLER_ACTIVATE                  = "CRAWLER_ACTIVATE";
+    private final String           CRAWLER_ENABLE_FASTER             = "CRAWLER_ENABLE_FASTER";
+    private final String           CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
+    private final String           CRAWLER_LASTDAYS_COUNT            = "CRAWLER_LASTDAYS_COUNT";
 
-    private static final double           QUALITY_H264_NORMAL_MB_PER_MINUTE = 12.605;
-    private static final double           QUALITY_H264_MOBILE_MB_PER_MINUTE = 4.64;
+    private static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE = 12.605;
+    private static final double    QUALITY_H264_MOBILE_MB_PER_MINUTE = 4.64;
 
-    private static final SubConfiguration cfg                               = SubConfiguration.getConfig("save.tv");
-    private static final boolean          FAST_LINKCHECK                    = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
+    private final SubConfiguration cfg                               = SubConfiguration.getConfig("save.tv");
+    private final boolean          FAST_LINKCHECK                    = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
 
-    private final String                  CONTAINSPAGE                      = "https?://(www\\.)?save\\.tv/STV/M/obj/user/usShowVideoArchive\\.cfm\\?iPageNumber=\\d+";
+    private final String           CONTAINSPAGE                      = "https?://(www\\.)?save\\.tv/STV/M/obj/user/usShowVideoArchive\\.cfm\\?iPageNumber=\\d+";
 
-    private boolean                       crawler_DialogsDisabled           = false;
+    private boolean                crawler_DialogsDisabled           = false;
 
-    final ArrayList<DownloadLink>         decryptedLinks                    = new ArrayList<DownloadLink>();
-    private long                          grab_last_days_num                = 0;
-    private long                          tdifference_milliseconds          = 0;
+    final ArrayList<DownloadLink>  decryptedLinks                    = new ArrayList<DownloadLink>();
+    private long                   grab_last_days_num                = 0;
+    private long                   tdifference_milliseconds          = 0;
 
-    private int                           totalLinksNum                     = 0;
-    private int                           maxPage                           = 1;
-    private long                          time_crawl_started                = 0;
-    private boolean                       grab_specified_page_only          = false;
+    private int                    totalLinksNum                     = 0;
+    private int                    maxPage                           = 1;
+    private long                   time_crawl_started                = 0;
+    private boolean                grab_specified_page_only          = false;
 
     // TODO: Find a better solution than "param3=string:984899" -> Maybe try to use API if it has a function to get the whole archive
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

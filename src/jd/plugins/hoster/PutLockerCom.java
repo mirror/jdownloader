@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -26,7 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -96,69 +94,73 @@ public class PutLockerCom extends PluginForHost {
         link.setUrlDownload("http://www.firedrive.com/file/" + new Regex(link.getDownloadURL(), "/([A-Z0-9]+)$").getMatch(0));
     }
 
-    @Override
-    public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            final Browser br = new Browser();
-            prepBrowser();
-            br.setCookiesExclusive(true);
-            final StringBuilder sb = new StringBuilder();
-            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            while (true) {
-                links.clear();
-                while (true) {
-                    /* we test 50 links at once - limit is unknown */
-                    if (index == urls.length || links.size() > 50) {
-                        break;
-                    }
-                    links.add(urls[index]);
-                    index++;
-                }
-                sb.delete(0, sb.capacity());
-                for (final DownloadLink dl : links) {
-                    sb.append(getFID(dl) + "-");
-                }
-                /*
-                 * They use this to show many IDs as a folder - we use this to check links. This way, we can even get filename & size for
-                 * password protected links!
-                 */
-                br.getPage("http://www.firedrive.com/share/" + sb.toString());
-                for (final DownloadLink dllink : links) {
-                    final String fid = getFID(dllink);
-                    final Regex finfo = br.getRegex("public=\\'" + fid + "\\' data\\-name=\"([^<>\"]*?)\" data\\-type=\"([^<>\"]*?)\" data\\-size=\"(\\d+)\"");
-                    final String filename = finfo.getMatch(0);
-                    final String filesize = finfo.getMatch(2);
-                    if (filename == null || filesize == null) {
-                        dllink.setName(fid);
-                        dllink.setAvailable(false);
-                    } else {
-                        dllink.setName(Encoding.htmlDecode(filename.trim()));
-                        dllink.setDownloadSize(Long.parseLong(filesize));
-                        dllink.setAvailable(true);
-                    }
-                }
-                if (index == urls.length) {
-                    break;
-                }
-            }
-        } catch (final Exception e) {
-            return false;
-        }
-        return true;
-    }
+    /* Don't use it as it doesn't work for private links */
+    // @Override
+    // public boolean checkLinks(final DownloadLink[] urls) {
+    // if (urls == null || urls.length == 0) { return false; }
+    // try {
+    // final Browser br = new Browser();
+    // prepBrowser();
+    // br.setCookiesExclusive(true);
+    // final StringBuilder sb = new StringBuilder();
+    // final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+    // int index = 0;
+    // while (true) {
+    // links.clear();
+    // while (true) {
+    // /* we test 50 links at once - limit is unknown */
+    // if (index == urls.length || links.size() > 50) {
+    // break;
+    // }
+    // links.add(urls[index]);
+    // index++;
+    // }
+    // sb.delete(0, sb.capacity());
+    // for (final DownloadLink dl : links) {
+    // sb.append(getFID(dl) + "-");
+    // }
+    // /*
+    // * They use this to show many IDs as a folder - we use this to check links. This way, we can even get filename & size for
+    // * password protected links!
+    // */
+    // br.getPage("http://www.firedrive.com/share/" + sb.toString());
+    // for (final DownloadLink dllink : links) {
+    // final String fid = getFID(dllink);
+    // final Regex finfo = br.getRegex("public=\\'" + fid +
+    // "\\' data\\-name=\"([^<>\"]*?)\" data\\-type=\"([^<>\"]*?)\" data\\-size=\"(\\d+)\"");
+    // final String filename = finfo.getMatch(0);
+    // final String filesize = finfo.getMatch(2);
+    // if (filename == null || filesize == null) {
+    // dllink.setName(fid);
+    // dllink.setAvailable(false);
+    // } else {
+    // dllink.setName(Encoding.htmlDecode(filename.trim()));
+    // dllink.setDownloadSize(Long.parseLong(filesize));
+    // dllink.setAvailable(true);
+    // }
+    // }
+    // if (index == urls.length) {
+    // break;
+    // }
+    // }
+    // } catch (final Exception e) {
+    // return false;
+    // }
+    // return true;
+    // }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
         prepBrowser();
         br.setFollowRedirects(true);
         correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"sad_face_image\"|This file might have been moved, replaced or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("This file might have been moved, replaced or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             link.getLinkStatus().setStatusText("This link is password protected");
+            return AvailableStatus.TRUE;
+        } else if (br.containsHTML("This file is private and only viewable by the owner")) {
+            link.getLinkStatus().setStatusText("Private file - only downloadable by the owner");
             return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)<br>").getMatch(0);
@@ -216,6 +218,7 @@ public class PutLockerCom extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("This file is private and only viewable by the owner")) throw new PluginException(LinkStatus.ERROR_FATAL, "Private file - only downloadable by the owner");
         br.setFollowRedirects(false);
         String passCode = null;
         // 10 MB trash-testfile: http://www.firedrive.com/file/54F8207A5D669183 PW: 12345
@@ -369,6 +372,7 @@ public class PutLockerCom extends PluginForHost {
         if (account.getBooleanProperty("freeacc", false)) {
             doFree(link);
         } else {
+            if (br.containsHTML("This file is private and only viewable by the owner")) throw new PluginException(LinkStatus.ERROR_FATAL, "Private file - only downloadable by the owner");
             String passCode = null;
             // 10 MB trash-testfile: http://www.firedrive.com/file/54F8207A5D669183 PW: 12345
             if (br.containsHTML(PASSWORD_PROTECTED)) {
@@ -390,7 +394,6 @@ public class PutLockerCom extends PluginForHost {
     }
 
     public void prepBrowser() {
-        br.setCookiesExclusive(true);
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         br.getHeaders().put("Accept-Charset", null);

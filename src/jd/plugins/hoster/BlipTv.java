@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
@@ -57,22 +58,16 @@ public class BlipTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         final String dllink = link.getDownloadURL();
-        br.getPage(dllink);
+        try {
+            br.getPage(dllink);
+        } catch (final BrowserException eb) {
+            final long response = br.getRequest().getHttpConnection().getResponseCode();
+            if (response == 404 || response == 410) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw eb;
+        }
         if (!new Regex(dllink, "http://(.*?)/file/get/(.*?)\\.\\w{3}$").matches()) {
             /* 0.95xx comp */
             if (br.getRedirectLocation() != null) {
@@ -84,7 +79,7 @@ public class BlipTv extends PluginForHost {
             if (id == null) {
                 id = br.getRegex("\tdata-episode=\"(\\d+)").getMatch(0);
             }
-            if (id == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (id == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("<title>(.*?)\\s\\|").getMatch(0);
             br.getPage("http://blip.tv/rss/flash/" + id);
             if (filename == null) {
@@ -154,6 +149,18 @@ public class BlipTv extends PluginForHost {
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

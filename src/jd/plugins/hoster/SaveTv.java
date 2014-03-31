@@ -411,6 +411,7 @@ public class SaveTv extends PluginForHost {
         } catch (final PluginException e) {
             /* Catch premium errors - usually the account would be deactivated then -> Wait */
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "FATAL server error", 30 * 60 * 1000l); }
+            throw e;
         }
     }
 
