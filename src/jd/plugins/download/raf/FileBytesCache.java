@@ -131,6 +131,10 @@ public class FileBytesCache {
         if (contains(flusher)) flush();
     }
     
+    public synchronized void execute(Runnable task) {
+        if (task != null) task.run();
+    }
+    
     public synchronized void flush() {
         lastWriteCacheFlush = -1;
         writeCachePosition = 0;

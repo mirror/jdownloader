@@ -308,7 +308,7 @@ public class FileBytesMap {
     public synchronized void reset() {
         fileBytesMapEntries.clear();
         markedBytes = 0;
-        finalSize = 0;
+        finalSize = -1;
     }
     
     /**
@@ -358,7 +358,10 @@ public class FileBytesMap {
             sb.append("UnMarked:");
             ArrayList<FileBytesMapEntry> unMarkedAreas = new ArrayList<FileBytesMapEntry>();
             for (Long[] unMarkedArea : getUnMarkedAreas()) {
-                if (unMarkedArea[0] >= unMarkedArea[1]) continue;
+                if (unMarkedArea[0] >= unMarkedArea[1]) {
+                    /* filter out invalid unMarkedAreas that can happen during debugging(breakpoint) */
+                    continue;
+                }
                 unMarkedAreas.add(new FileBytesMapEntry(unMarkedArea[0], unMarkedArea[1] - unMarkedArea[0] + 1));
             }
             sb.append(unMarkedAreas);
