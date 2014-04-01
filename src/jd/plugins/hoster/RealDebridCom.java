@@ -184,14 +184,16 @@ public class RealDebridCom extends PluginForHost {
                     }
                     if (link.getLinkStatus().getErrorMessage().contains("Unexpected rangeheader format:")) {
                         logger.warning("Bad Range Header! Resuming isn't possible without resetting");
-                        new PluginException(LinkStatus.ERROR_FATAL);
-                        break;
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+
                         // logger.warning("BAD HEADER RANGES!, auto resetting");
                         // link.reset();
                     }
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     // unhandled error!
-                    break;
+                    br2.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
                 } else {
                     /* download is not content disposition. */
                     br2.followConnection();
@@ -260,7 +262,7 @@ public class RealDebridCom extends PluginForHost {
         for (int retry = 0; retry < 3; retry++) {
             try {
                 if (retry != 0) sleep(3000l, link);
-                br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + (link.getStringProperty("pass", null) != null ? "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : ""));
+                br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + ((link.getStringProperty("pass", null) != null ? "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : "")));
                 if (br.containsHTML("\"error\":4,")) {
                     if (retry != 2) {
                         if (dllink.contains("https://")) {
