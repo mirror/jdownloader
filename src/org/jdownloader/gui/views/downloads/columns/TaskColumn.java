@@ -41,74 +41,74 @@ import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class TaskColumn extends ExtTextColumn<AbstractNode> {
-    
+
     public static class ColumnHelper {
         private Icon icon = null;
-        
+
         public Icon getIcon() {
             return icon;
         }
-        
+
         public void setIcon(Icon icon) {
             this.icon = icon;
         }
-        
+
         public String getString() {
             return string;
         }
-        
+
         public void setString(String string) {
             this.string = string;
         }
-        
+
         private String string = null;
         public String  tooltip;
     }
-    
+
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
-    
+
     private ImageIcon         trueIcon;
     private ImageIcon         falseIcon;
     private ImageIcon         infoIcon;
-    
+
     private ImageIcon         iconWait;
-    
+
     private ImageIcon         trueIconExtracted;
-    
+
     private ImageIcon         trueIconExtractedFailed;
-    
+
     private ImageIcon         extracting;
-    
+
     private ColumnHelper      columnHelper     = new ColumnHelper();
-    
+
     private String            finishedText     = _GUI._.TaskColumn_getStringValue_finished_();
     private String            runningText      = _GUI._.TaskColumn_getStringValue_running_();
-    
+
     private String            startingString;
-    
+
     private ImageIcon         startingIcon;
-    
+
     private ImageIcon         skippedIcon;
-    
+
     @Override
     public int getDefaultWidth() {
         return 180;
     }
-    
+
     @Override
     public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
     }
-    
+
     public JPopupMenu createHeaderPopup() {
-        
+
         return FileColumn.createColumnPopup(this, getMinWidth() == getMaxWidth() && getMaxWidth() > 0);
-        
+
     }
-    
+
     public TaskColumn() {
         super(_GUI._.StatusColumn_StatusColumn());
         this.trueIcon = NewTheme.I().getIcon("true", 16);
@@ -122,7 +122,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         trueIconExtractedFailed = new ImageIcon(ImageProvider.merge(trueIconExtracted.getImage(), NewTheme.I().getImage("error", 10), 0, 0, trueIcon.getIconWidth() + 12, trueIconExtracted.getIconHeight() - 10));
         startingString = _GUI._.TaskColumn_fillColumnHelper_starting();
         setRowSorter(new ExtDefaultRowSorter<AbstractNode>() {
-            
+
             @Override
             public int compare(final AbstractNode o1, final AbstractNode o2) {
                 fillColumnHelper(columnHelper, o1);
@@ -140,16 +140,16 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 } else {
                     return o2s.compareToIgnoreCase(o1s);
                 }
-                
+
             }
-            
+
         });
     }
-    
+
     public boolean onSingleClick(final MouseEvent e, final AbstractNode value) {
         return handleIPBlockCondition(e, value);
     }
-    
+
     public static boolean handleIPBlockCondition(final MouseEvent e, final AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink dl = (DownloadLink) value;
@@ -166,27 +166,31 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                         if (conditionalSkipReason instanceof WaitWhileWaitingSkipReasonIsSet) {
                             WaitWhileWaitingSkipReasonIsSet waitCondition = (WaitWhileWaitingSkipReasonIsSet) conditionalSkipReason;
                             if (waitCondition.getCause() == CAUSE.IP_BLOCKED && !waitCondition.getConditionalSkipReason().isConditionReached()) {
-                                
-                                PremiumInfoDialog dialog;
-                                UIOManager.I().show(null, dialog = new PremiumInfoDialog(((DownloadLink) value).getDomainInfo(), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
-                                    protected String getDescription(DomainInfo info2) {
-                                        return _GUI._.TaskColumn_getDescription_object_(info2.getTld());
+                                // modeless dialog
+                                new Thread() {
+                                    public void run() {
+                                        PremiumInfoDialog dialog;
+                                        UIOManager.I().show(null, dialog = new PremiumInfoDialog(((DownloadLink) value).getDomainInfo(), _GUI._.TaskColumn_onSingleClick_object_(((DownloadLink) value).getHost()), "TaskColumnReconnect") {
+                                            protected String getDescription(DomainInfo info2) {
+                                                return _GUI._.TaskColumn_getDescription_object_(info2.getTld());
+                                            }
+
+                                            @Override
+                                            public String getDontShowAgainKey() {
+                                                return null;
+                                            }
+
+                                            @Override
+                                            public ModalityType getModalityType() {
+                                                return ModalityType.MODELESS;
+                                            }
+                                        });
+                                        if (dialog.isDontShowAgainSelected()) {
+                                            JsonConfig.create(GraphicalUserInterfaceSettings.class).setPremiumAlertTaskColumnEnabled(false);
+                                        }
                                     }
-                                    
-                                    @Override
-                                    public String getDontShowAgainKey() {
-                                        return null;
-                                    }
-                                    
-                                    @Override
-                                    public ModalityType getModalityType() {
-                                        return ModalityType.MODELESS;
-                                    }
-                                });
-                                if (dialog.isDontShowAgainSelected()) {
-                                    JsonConfig.create(GraphicalUserInterfaceSettings.class).setPremiumAlertTaskColumnEnabled(false);
-                                }
-                                
+                                }.start();
+
                                 return true;
                             }
                         }
@@ -196,12 +200,12 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         }
         return false;
     }
-    
+
     @Override
     protected void prepareColumn(AbstractNode value) {
         fillColumnHelper(columnHelper, value);
     }
-    
+
     @Override
     public ExtTooltip createToolTip(Point position, AbstractNode value) {
         PluginStateCollection ps = null;
@@ -218,9 +222,9 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             return new MultiLineLabelTooltip(lbls);
         }
         return super.createToolTip(position, value);
-        
+
     }
-    
+
     public void fillColumnHelper(ColumnHelper columnHelper, AbstractNode value) {
         if (value instanceof DownloadLink) {
             DownloadLink link = (DownloadLink) value;
@@ -240,7 +244,7 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             }
             SkipReason skipReason = link.getSkipReason();
             if (skipReason != null) {
-                
+
                 columnHelper.icon = skipReason.getIcon(this, 18);
                 columnHelper.string = skipReason.getExplanation(this);
                 columnHelper.tooltip = null;
@@ -257,25 +261,25 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
                 ExtractionStatus extractionStatus = link.getExtractionStatus();
                 if (extractionStatus != null) {
                     switch (extractionStatus) {
-                        case ERROR:
-                        case ERROR_PW:
-                        case ERROR_CRC:
-                        case ERROR_NOT_ENOUGH_SPACE:
-                        case ERRROR_FILE_NOT_FOUND:
-                            columnHelper.icon = trueIconExtractedFailed;
-                            columnHelper.string = extractionStatus.getExplanation();
-                            columnHelper.tooltip = null;
-                            return;
-                        case SUCCESSFUL:
-                            columnHelper.icon = trueIconExtracted;
-                            columnHelper.string = extractionStatus.getExplanation();
-                            columnHelper.tooltip = null;
-                            return;
-                        case RUNNING:
-                            columnHelper.icon = extracting;
-                            columnHelper.string = extractionStatus.getExplanation();
-                            columnHelper.tooltip = null;
-                            return;
+                    case ERROR:
+                    case ERROR_PW:
+                    case ERROR_CRC:
+                    case ERROR_NOT_ENOUGH_SPACE:
+                    case ERRROR_FILE_NOT_FOUND:
+                        columnHelper.icon = trueIconExtractedFailed;
+                        columnHelper.string = extractionStatus.getExplanation();
+                        columnHelper.tooltip = null;
+                        return;
+                    case SUCCESSFUL:
+                        columnHelper.icon = trueIconExtracted;
+                        columnHelper.string = extractionStatus.getExplanation();
+                        columnHelper.tooltip = null;
+                        return;
+                    case RUNNING:
+                        columnHelper.icon = extracting;
+                        columnHelper.string = extractionStatus.getExplanation();
+                        columnHelper.tooltip = null;
+                        return;
                     }
                 }
                 columnHelper.icon = trueIcon;
@@ -295,12 +299,12 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         } else {
             FilePackage fp = (FilePackage) value;
             FilePackageView view = fp.getView();
-            
+
             PluginStateCollection ps = view.getPluginStates();
             if (ps.size() > 0) {
                 columnHelper.icon = ps.getMergedIcon();
                 columnHelper.string = ps.isMultiline() ? "" : ps.getText();
-                
+
                 columnHelper.tooltip = ps.getText();
                 return;
             }
@@ -318,10 +322,10 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
             columnHelper.tooltip = null;
             columnHelper.icon = null;
             columnHelper.string = "";
-            
+
         }
     }
-    
+
     @Override
     protected String getTooltipText(AbstractNode obj) {
         fillColumnHelper(columnHelper, obj);
@@ -329,17 +333,17 @@ public class TaskColumn extends ExtTextColumn<AbstractNode> {
         if (ret == null) ret = columnHelper.string;
         return ret;
     }
-    
+
     @Override
     public boolean isSortable(AbstractNode obj) {
         return true;
     }
-    
+
     @Override
     protected Icon getIcon(AbstractNode value) {
         return columnHelper.icon;
     }
-    
+
     @Override
     public String getStringValue(AbstractNode value) {
         return columnHelper.string;
