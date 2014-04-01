@@ -171,37 +171,60 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = strName.replace("", "-");
         strName = strName.replace("", "'");
         strName = strName.replace(":", ",");
+        strName = strName.replace("/", "&");
+        strName = strName.replace("\\", "&");
+        strName = strName.replace("’", "'");
 
         strName = strName.replace("VA - ", "");
+        strName = strName.replace("Various Artists - ", "");
 
-        Pattern pattern = null;
-        Matcher matcher = null;
         // Remove the exact words mp3, flac, lossless and ape
-        pattern = Pattern.compile("(?<!\\p{L})mp3(?!\\p{L})|(?<!\\p{L})ape(?!\\p{L})|(?<!\\p{L})flac(?!\\p{L})|(?<!\\p{L})lossless(?!\\p{L})", Pattern.CASE_INSENSITIVE);
-        matcher = pattern.matcher(strName);
-        strName = matcher.replaceAll("");
+        strName = ReplacePattern(strName, "(?<!\\p{L})mp3(?!\\p{L})|(?<!\\p{L})ape(?!\\p{L})|(?<!\\p{L})flac(?!\\p{L})|(?<!\\p{L})lossless(?!\\p{L})");
 
-        // Replace Vol ou Vol. par 0
-        pattern = Pattern.compile("Vol(\\. |\\.| )", Pattern.CASE_INSENSITIVE);
-        matcher = pattern.matcher(strName);
-        strName = matcher.replaceAll("0");
+        // Remove the box set information
+        strName = ReplacePattern(strName, "- [0-9]+ *CD Box Set");
+        strName = ReplacePattern(strName, "Box Set");
 
-        // Replace the [ ] with nothing because the string in this bracket has
-        // been removed
-        pattern = Pattern.compile("\\[ *\\]", Pattern.CASE_INSENSITIVE);
-        matcher = pattern.matcher(strName);
-        strName = matcher.replaceAll("");
+        // Remove the number of CD
+        strName = ReplacePattern(strName, "[0-9]+ *CD");
 
-        // Replace the ( ) with nothing because the string in this parenthesis
-        // has been removed
-        pattern = Pattern.compile("\\( *\\)", Pattern.CASE_INSENSITIVE);
-        matcher = pattern.matcher(strName);
-        strName = matcher.replaceAll("");
+        // Replace Vol ou Vol. with 0
+        strName = ReplacePattern(strName, "Vol(\\. |\\.| )", "0");
+
+        // Replace the [ ] with nothing because the string in this bracket has been removed
+        strName = ReplacePattern(strName, "\\[ *\\]");
+
+        // Replace the ( ) with nothing because the string in this parenthesis has been removed
+        strName = ReplacePattern(strName, "^\\[.*\\] ");
+
+        // Replace the ( ) with nothing because the string in this parenthesis has been removed
+        strName = ReplacePattern(strName, "\\( *\\)");
 
         // Replace several space characters in one
-        pattern = Pattern.compile("\\s{2,}", Pattern.CASE_INSENSITIVE);
-        matcher = pattern.matcher(strName);
-        strName = matcher.replaceAll(" ");
+        strName = ReplacePattern(strName, "\\s{2,}", " ");
+
+        // Remove the encoding information
+        strName = ReplacePattern(strName, "[0-9]+ Kbps itunes");
+        strName = ReplacePattern(strName, "[0-9]+ Kbps *&");
+        strName = ReplacePattern(strName, "[0-9]+ Kbps\\.");
+        strName = ReplacePattern(strName, "[0-9]+ Kbps");
+        strName = ReplacePattern(strName, "[0-9]+Kbps");
+        strName = ReplacePattern(strName, "320 *&");
+        strName = ReplacePattern(strName, "& 320");
+        strName = ReplacePattern(strName, "\\s{2,}");
+        strName = ReplacePattern(strName, "\\s{2,}");
+        strName = ReplacePattern(strName, "\\s{2,}");
+        strName = ReplacePattern(strName, "\\s{2,}");
+
+        strName = strName.trim();
+        if (strName.endsWith("320")) strName = strName.substring(0, strName.length() - 3);
+
+        // Replace brackets with parenthesis
+        strName = strName.replace("[", "(");
+        strName = strName.replace("]", ")");
+
+        // Add a space between two parenthesis
+        strName = strName.replace(")(", ") (");
 
         return strName;
     }
@@ -209,80 +232,118 @@ public class SrBoxCom extends PluginForDecrypt {
     /**
      * Allows to put a capital letter on each words of the title
      * 
-     * @param strName
-     *            The name of the package
-     * @return the name of the package with a capital letter on each words.
+     * @param strText
+     *            The text that we want to be capitalize
+     * @return the text with a capital letter on each words.
      */
-    private String CapitalLetterForEachWords(String strName) {
-        String strResult = "";
-        List<String> FirstCaracException = new ArrayList<String>();
-        FirstCaracException.add("(");
-        FirstCaracException.add("[");
+    private String CapitalLetterForEachWords(String strText) {
+        if (strText == null || strText == "") return "";
 
-        List<String> InExpressionCaracException = new ArrayList<String>();
-        InExpressionCaracException.add("-");
-        InExpressionCaracException.add(".");
+        String strReturn = "";
+        try {
+            String strTemp = "";
+            String strFirstChar = "";
 
-        String[] AllWord = strName.split(" ");
-        for (String strWord : AllWord) {
-            // strWord = strWord.toLowerCase();
-            String strTemp = strWord;
-            Boolean bFind = false;
-            Boolean bFindExpression = false;
-            Boolean bRemoveLastExpression = true;
-            for (String strInExpression : InExpressionCaracException) {
-                if (bFindExpression) strWord = strTemp;
-                bFindExpression = false;
-                strTemp = "";
-                if (strWord.contains(strInExpression)) {
-                    String[] AllCarac = strWord.split("\\" + strInExpression);
-                    for (String strCarac : AllCarac) {
-                        if (strCarac.length() > 1) {
-                            String strFirstCarac = strCarac.substring(0, 1);
-                            try {
-                                strFirstCarac = strFirstCarac.toUpperCase();
-                            } catch (Exception e) {
+            List<String> CapitalFirstCharacterException = new ArrayList<String>();
+            CapitalFirstCharacterException.add("(");
+            CapitalFirstCharacterException.add("[");
+
+            List<String> CapitalCharacterInException = new ArrayList<String>();
+            CapitalCharacterInException.add("-");
+            CapitalCharacterInException.add(".");
+            // CapitalCharacterInException.add("'");
+            CapitalCharacterInException.add("\"");
+            CapitalCharacterInException.add("/");
+            CapitalCharacterInException.add("\\");
+            CapitalCharacterInException.add("(");
+            CapitalCharacterInException.add("[");
+
+            String[] strAllWord = strText.split(" ");
+            for (String strWord : strAllWord) {
+                if (strWord.length() > 0) {
+                    strFirstChar = strWord.substring(0, 1);
+                    String strRemain = strWord.substring(1, strWord.length());
+                    String strCharacter = strFirstChar;
+                    if (CapitalFirstCharacterException.contains(strCharacter)) {
+                        if (strWord.length() > 1) {
+                            strCharacter += strWord.substring(1, 2).toUpperCase();
+                            strRemain = strWord.substring(2, strWord.length());
+                        } else
+                            strCharacter = strWord;
+                    } else
+                        strCharacter = strFirstChar.toUpperCase();
+
+                    String strCharacterIn = "";
+                    strTemp = "";
+                    for (String strInException : CapitalCharacterInException) {
+                        strTemp = "";
+                        if (strRemain.contains(strInException)) {
+                            String[] AllCharacter = strRemain.split(strInException);
+                            for (int iIndex = 0; iIndex < AllCharacter.length; iIndex++) {
+                                String strAllCarac = AllCharacter[iIndex];
+                                if (iIndex > 0 && strAllCarac.length() > 0) {
+                                    strFirstChar = strAllCarac.substring(0, 1);
+                                    strRemain = strAllCarac.substring(1, strAllCarac.length());
+                                    strCharacterIn = strFirstChar;
+                                    if (CapitalFirstCharacterException.contains(strCharacterIn)) {
+                                        if (strAllCarac.length() > 1) {
+                                            strCharacterIn += strAllCarac.substring(1, 1).toUpperCase();
+                                            strRemain = strAllCarac.substring(2, strAllCarac.length());
+                                        } else
+                                            strCharacterIn = strAllCarac;
+                                    } else
+                                        strCharacterIn = strFirstChar.toUpperCase();
+
+                                    strTemp += strCharacterIn + strRemain;
+                                    boolean bSpaceAtTheEnd = strTemp.endsWith(" ");
+                                    strTemp = strTemp.trim();
+                                    strTemp += strInException;
+                                    if (bSpaceAtTheEnd) strTemp += " ";
+                                } else
+                                    strTemp += strAllCarac + strInException;
                             }
-                            strTemp += strFirstCarac + strCarac.substring(strFirstCarac.length(), strCarac.length());
+                            if (strTemp.endsWith(strInException)) strTemp = strTemp.substring(0, strTemp.length());
+                            strRemain = strTemp;
                         }
-                        strTemp += strInExpression;
-                        bFind = true;
-                        bFindExpression = true;
-
                     }
-                    if (AllCarac.length > 0 && strInExpression == ".") {
-                        bRemoveLastExpression = AllCarac[AllCarac.length - 1].length() > 1;
-                    }
-                    if (bFindExpression && bRemoveLastExpression) {
-                        strTemp = strTemp.substring(0, strTemp.length() - strInExpression.length());
-                    }
-                    if (bFindExpression) strWord = strTemp;
-                }
+                    strReturn += strCharacter + strRemain + " ";
+                } else
+                    strReturn += " ";
             }
-
-            if (strWord.length() > 0) {
-                String strFirstCarac = strWord.substring(0, 1);
-
-                if (FirstCaracException.contains(strFirstCarac)) {
-                    if (strWord.length() > 1) {
-                        strFirstCarac += strWord.substring(1, 2);
-                    }
-                }
-
-                try {
-                    strFirstCarac = strFirstCarac.toUpperCase();
-                } catch (Exception e) {
-                }
-                strResult += strFirstCarac + strWord.substring(strFirstCarac.length(), strWord.length()) + " ";
-            }
+        } catch (Exception e) {
+            strReturn = strText;
         }
-        if (strResult != "")
-            // Remove the last space introduces in the loop
-            strResult = strResult.substring(0, strResult.length() - 1);
-        else
-            // If no result, we return the name pass to the function
-            strResult = strName;
-        return strResult;
+        return strReturn.trim();
+    }
+
+    /**
+     * Allows to replace text using a regular expression pattern
+     * 
+     * @param strText
+     *            Text to replace
+     * @param strPattern
+     *            Pattern to use for replacing
+     * @return Text replaced
+     */
+    private String ReplacePattern(String strText, String strPattern) {
+        return ReplacePattern(strText, strPattern, "");
+    }
+
+    /**
+     * Allows to replace text using a regular expression pattern
+     * 
+     * @param strText
+     *            Text to replace
+     * @param strPattern
+     *            Pattern to use for replacing
+     * @param strReplace
+     *            Text use to replace
+     * @return Text replaced
+     */
+    private String ReplacePattern(String strText, String strPattern, String strReplace) {
+        Pattern pattern = Pattern.compile(strPattern, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(strText);
+        return matcher.replaceAll(strReplace);
     }
 
     /* NO OVERRIDE!! */
