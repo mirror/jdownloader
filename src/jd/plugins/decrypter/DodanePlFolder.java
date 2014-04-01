@@ -36,19 +36,9 @@ public class DodanePlFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private boolean isJDStable() {
-        String jdRevision = System.getProperty("jd.revision.jdownloaderrevision");
-
-        if (jdRevision == null || Integer.parseInt(jdRevision) <= 9581)
-            return true;
-        else
-            return false;
-    }
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        boolean isJDStableActive = isJDStable();
         int numberOfFolders = 0;
         int numberOfFiles = 0;
         br.setFollowRedirects(true);
@@ -77,23 +67,20 @@ public class DodanePlFolder extends PluginForDecrypt {
                 String currentFolderId = new Regex(folderInfo, "<h1 class=\"current-folder \" folderid=\"(\\d+)\">").getMatch(0);
                 String packageName = findFoldersNames(currentFolderId, folderClass);
                 fp.setName(packageName);
-                if (!isJDStableActive) fp.setProperty("ALLOW_MERGE", true);
+                fp.setProperty("ALLOW_MERGE", true);
 
                 for (String[] file : files) {
                     String link = MAIN_PAGE + file[0].replace("/file", "file");
                     DownloadLink dl = createDownloadlink(link);
-                    if (!isJDStableActive) dl._setFilePackage(fp);
-
                     try {
-                        if (!isJDStableActive) distribute(dl);
-                    } catch (final Exception e) {
+                        distribute(dl);
+                    } catch (final Throwable e) {
                         // Not available in old Stable
                     }
                     decryptedLinks.add(dl);
-
+                    fp.add(dl);
                     numberOfFiles++;
                 }
-                if (isJDStableActive) fp.addLinks(decryptedLinks);
             }
         }
         return decryptedLinks;

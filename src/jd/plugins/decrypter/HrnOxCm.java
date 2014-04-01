@@ -129,8 +129,7 @@ public class HrnOxCm extends PluginForDecrypt {
             decryptedLinks.add(link);
             try {
                 distribute(link);
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (final Throwable e) {
             }
         }
     }

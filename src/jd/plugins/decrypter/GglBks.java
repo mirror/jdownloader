@@ -130,7 +130,10 @@ public class GglBks extends PluginForDecrypt {
             }
             link.setAvailable(true);
             fp.add(link);
-            distribute(link);
+            try {
+                distribute(link);
+            } catch (final Throwable e) {
+            }
             decryptedLinks.add(link);
         }
 
