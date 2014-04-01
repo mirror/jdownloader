@@ -503,7 +503,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             url = url.substring(0, url.indexOf("media?c="));
             verify.setAction((url == null ? "" : url) + verify.getAction());
 
-            verify.put("adcopy_response", code);
+            verify.put("adcopy_response", Encoding.urlEncode(code));
             smBr.submitForm(verify);
             String verifyUrl = smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
             if (verifyUrl == null) return null;

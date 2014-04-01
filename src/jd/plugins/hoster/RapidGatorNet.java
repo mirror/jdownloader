@@ -423,8 +423,10 @@ public class RapidGatorNet extends PluginForHost {
                         final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         code = getCaptchaCode(cf, downloadLink);
                         final String chid = sm.getChallenge(code);
+
+                        // if (chid == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         captcha.put("adcopy_challenge", chid);
-                        captcha.put("adcopy_response", code);
+                        captcha.put("adcopy_response", Encoding.urlEncode(code));
 
                     } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
                         String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
@@ -442,12 +444,13 @@ public class RapidGatorNet extends PluginForHost {
                         if (challenge == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         challenge = getCaptchaCode(challenge, downloadLink);
                         captcha.put("adscaptcha_response_field", challenge);
-                        captcha.put("adscaptcha_challenge_field", code);
+                        captcha.put("adscaptcha_challenge_field", Encoding.urlEncode(code));
                     }
                     br.submitForm(captcha);
                 }
             }
-            if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) {
+            // Set-Cookie: failed_on_captcha=1; path=/ response if the captcha expired.
+            if ("1".equals(br.getCookie("http://rapidgator.net", "failed_on_captcha")) || br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) {
                 try {
                     invalidateLastChallengeResponse();
                 } catch (final Throwable e) {
