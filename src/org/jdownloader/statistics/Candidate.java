@@ -71,8 +71,8 @@ public class Candidate extends AbstractJsonData implements Storable {
         }
         switch (account.getType()) {
         case MULTI:
-
-            if (account.getAccount().getBooleanProperty("free", false)) {
+            // nopremium z.b. 4shared.com
+            if (account.getAccount().getBooleanProperty("free", false) || account.getAccount().getBooleanProperty("nopremium", false)) {
                 ret.type = ACCOUNT_MULTI_FREE;
             } else {
                 ret.type = ACCOUNT_MULTI_PREMIUM;
@@ -80,7 +80,8 @@ public class Candidate extends AbstractJsonData implements Storable {
             break;
 
         case ORIGINAL:
-            if (account.getAccount().getBooleanProperty("free", false)) {
+            // nopremium z.b. 4shared.com
+            if (account.getAccount().getBooleanProperty("free", false) || account.getAccount().getBooleanProperty("nopremium", false)) {
                 ret.type = ACCOUNT_FREE;
             } else {
                 ret.type = ACCOUNT_PREMIUM;
