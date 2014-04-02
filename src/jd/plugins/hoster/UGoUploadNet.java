@@ -117,7 +117,7 @@ public class UGoUploadNet extends PluginForHost {
         final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", RESUME, MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?pt=2", RESUME, MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
             if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             br.followConnection();
