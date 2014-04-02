@@ -39,7 +39,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaszafa.com" }, urls = { "http://(www\\.)*?(en\\.)*?megaszafa\\.com/plik,(\\d+?)\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaszafa.com" }, urls = { "http://(www\\.)*?(en\\.)*?megaszafa\\.com/(plik,(\\d+?)\\.html|[0-9A-Za-z]+/.*)" }, flags = { 2 })
 public class MegaszafaCom extends PluginForHost {
 
     public MegaszafaCom(PluginWrapper wrapper) {
@@ -59,10 +59,19 @@ public class MegaszafaCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
 
         String browserUrl = link.getBrowserUrl();
-        String fileId = new Regex(browserUrl, "plik,(\\d+?)\\.html").getMatch(0);
+        String fileId = "";
+        if (browserUrl.contains("plik,"))
+            fileId = new Regex(browserUrl, "plik,(\\d+?)\\.html").getMatch(0);
+        else {
+
+            fileId = new Regex(browserUrl, "megaszafa\\.com/([0-9A-Za-z]+)/").getMatch(0);
+            fileId = new Regex(fileId, "(\\d+)").getMatch(0);
+        }
+
         if (fileId == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "File Id is incorrect!"); }
 
         String fileSize = br.getRegex("<div class=\"size\" id=\"" + fileId + "Size\">(.*?)</div>").getMatch(0);
+        if (fileSize == null) fileSize = br.getRegex("<tr><td>Rozmiar:</td><td id=\"" + fileId + "Size\"><b>(.*?)</b></td></tr>").getMatch(0);
 
         br.postPage(MAINPAGE + "plikInformacje.html", "id=" + fileId);
         String fileStatus = getJson("status", br);
@@ -108,8 +117,8 @@ public class MegaszafaCom extends PluginForHost {
         String dllink = MAINPAGE + "pobierzPlik," + fileId + ".html";
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.info("Megaszafa error: " + dl.getConnection().getContentType());
             br.followConnection();
-            logger.info("Megaszafa error: " + br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -127,6 +136,13 @@ public class MegaszafaCom extends PluginForHost {
                 if (force) {
                     br.setFollowRedirects(true);
                     br.postPage(MAINPAGE + "zaloguj.html", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false");
+                    if (br.containsHTML("error")) {
+                        String error = getJson("error", br);
+                        if (error != null) {
+                            account.setProperty("cookies", Property.NULL);
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, error);
+                        }
+                    }
                 }
 
                 // Load cookies
