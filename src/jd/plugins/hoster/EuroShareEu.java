@@ -146,7 +146,9 @@ public class EuroShareEu extends PluginForHost {
         }
         account.setValid(true);
         final String expire = getJson("unlimited_download_until");
-        if (expire.equals("0")) {
+        // Not sure if this behaviour is correct
+        final String availableTraffic = getJson("credit");
+        if (expire.equals("0") && availableTraffic.equals("0")) {
             ai.setStatus("Free (registered) User");
             try {
                 maxPrem.set(1);
@@ -157,14 +159,13 @@ public class EuroShareEu extends PluginForHost {
             account.setProperty("FREE", true);
             ai.setUnlimitedTraffic();
         } else {
-            // Not sure if this behaviour is correct
-            final String availableTraffic = getJson("credit");
-            if (availableTraffic.equals("0")) {
+            /* There are traffic and volume accounts and both combined. For combined accounts they have unlimited traffic till they expire. */
+            if (!expire.equals("0")) {
+                ai.setValidUntil(Long.parseLong(expire) * 1000);
                 ai.setUnlimitedTraffic();
             } else {
                 ai.setTrafficLeft(Long.parseLong(availableTraffic));
             }
-            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire));
             ai.setStatus("Premium User");
             try {
                 maxPrem.set(-1);

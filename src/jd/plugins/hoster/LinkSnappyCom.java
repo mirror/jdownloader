@@ -52,11 +52,12 @@ public class LinkSnappyCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return 20;
+        return -1;
     }
 
-    private DownloadLink currentLink = null;
-    private Account      currentAcc  = null;
+    private DownloadLink        currentLink = null;
+    private Account             currentAcc  = null;
+    private static final String NOCHUNKS    = "NOCHUNKS";
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -162,8 +163,12 @@ public class LinkSnappyCom extends PluginForHost {
                 }
             }
             dllink = dllink.replace("\\", "");
+
+            int maxChunks = 0;
+            if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
             } catch (final SocketTimeoutException e) {
                 final boolean timeoutedBefore = link.getBooleanProperty("sockettimeout");
                 if (timeoutedBefore) {
@@ -198,7 +203,26 @@ public class LinkSnappyCom extends PluginForHost {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
-        this.dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(LinkSnappyCom.NOCHUNKS, false) == false) {
+                    link.setProperty(LinkSnappyCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(LinkSnappyCom.NOCHUNKS, false) == false) {
+                link.setProperty(LinkSnappyCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     private String encode(String value) {

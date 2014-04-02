@@ -101,6 +101,11 @@ public class SoundcloudCom extends PluginForHost {
             } catch (final PluginException e) {
             }
         }
+        br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
+        final String sid = br.getRegex("<id type=\"integer\">(\\d+)</id>").getMatch(0);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final AvailableStatus status = checkStatus(parameter, this.br.toString(), true);
+        if (status.equals(AvailableStatus.FALSE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String apilink = parameter.getStringProperty("apilink", null);
         if (apilink != null) DLLINK = getDirectlink(apilink);
         if (DLLINK != null) {
@@ -110,11 +115,6 @@ public class SoundcloudCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         }
-        br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
-        final String sid = br.getRegex("<id type=\"integer\">(\\d+)</id>").getMatch(0);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final AvailableStatus status = checkStatus(parameter, this.br.toString(), true);
-        if (status.equals(AvailableStatus.FALSE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Other handling for private links
         if (br.containsHTML("<sharing>private</sharing>") && ENABLE_TYPE_PRIVATE) {

@@ -134,10 +134,7 @@ public class SimplyPremiumCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_allowed, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">Errormessage: You have too many simultaneous connections<")) {
-                logger.info(NICE_HOST + ": Too many simultan connections");
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
-            }
+            downloadErrorhandling(account, link);
             logger.info(NICE_HOST + ": Unknown download error");
             if (TEST_MODE) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
@@ -184,26 +181,7 @@ public class SimplyPremiumCom extends PluginForHost {
             /* request download information */
             br.setFollowRedirects(true);
             br.getPage("http://www.simply-premium.com/premium.php?info=&link=" + Encoding.urlEncode(link.getDownloadURL()));
-            if (br.containsHTML("<error>NOTFOUND</error>")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("<error>hostererror</error>")) {
-                logger.info(NICE_HOST + ": Host is unavailable at the moment -> Disabling it");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            } else if (br.containsHTML("<error>maxconnection</error>")) {
-                logger.info(NICE_HOST + ": Too many simultan connections");
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
-            } else if (br.containsHTML("<error>notvalid</error>")) {
-                logger.info(NICE_HOST + ": Account invalid -> Disabling it");
-                final String lang = System.getProperty("user.language");
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            } else if (br.containsHTML("<error>trafficlimit</error>")) {
-                logger.info(NICE_HOST + ": Traffic limit reached -> Temp. disabling account");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
+            downloadErrorhandling(account, link);
 
             /* request download */
             dllink = getXML("download");
@@ -225,6 +203,29 @@ public class SimplyPremiumCom extends PluginForHost {
         }
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, dllink);
+    }
+
+    private void downloadErrorhandling(final Account account, final DownloadLink link) throws PluginException {
+        if (br.containsHTML("<error>NOTFOUND</error>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<error>hostererror</error>")) {
+            logger.info(NICE_HOST + ": Host is unavailable at the moment -> Disabling it");
+            tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+        } else if (br.containsHTML("<error>maxconnection</error>")) {
+            logger.info(NICE_HOST + ": Too many simultan connections");
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+        } else if (br.containsHTML("<error>notvalid</error>")) {
+            logger.info(NICE_HOST + ": Account invalid -> Disabling it");
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        } else if (br.containsHTML("<error>trafficlimit</error>")) {
+            logger.info(NICE_HOST + ": Traffic limit reached -> Temp. disabling account");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

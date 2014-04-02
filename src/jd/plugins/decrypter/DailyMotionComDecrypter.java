@@ -143,7 +143,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             String fpName = br.getRegex("class=\"mrg-end-sm user-screenname-inner\">([^<>\"]*?)</span>").getMatch(0);
             if (fpName == null) fpName = username;
             fpName = Encoding.htmlDecode(fpName.trim());
-            final String videosNum = br.getRegex("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+)</span>[\t\n\r ]+Videos[\t\n\r ]+</div>").getMatch(0);
+            final String videosNum = br.getRegex("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+)</span>[\t\n\r ]+Videos?[\t\n\r ]+</div>").getMatch(0);
             if (videosNum == null) {
                 logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
                 return null;

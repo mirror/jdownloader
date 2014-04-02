@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freefuckvidz.com" }, urls = { "http://(www\\.)?freefuckvidz\\.com/free\\-porn/\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freefuckvidz.com" }, urls = { "http://(www\\.)?freefuckvidz\\.com/free\\-porn/\\d+" }, flags = { 0 })
 public class FreeFuckVidzCom extends PluginForHost {
 
     public FreeFuckVidzCom(PluginWrapper wrapper) {

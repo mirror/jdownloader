@@ -200,6 +200,7 @@ public class QKupNet extends PluginForHost {
                 }
             }
         }
+        if (fileInfo[0] == null) fileInfo[0] = br.getRegex(">Download File <span style=\"font-size:20px\">\"([^<>\"]*?)\"").getMatch(0);
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {

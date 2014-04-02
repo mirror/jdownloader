@@ -136,7 +136,7 @@ public class MegaszafaCom extends PluginForHost {
                 if (force) {
                     br.setFollowRedirects(true);
                     br.postPage(MAINPAGE + "zaloguj.html", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false");
-                    if (br.containsHTML("error")) {
+                    if (br.containsHTML("\"error\":")) {
                         String error = getJson("error", br);
                         if (error != null) {
                             account.setProperty("cookies", Property.NULL);
@@ -164,7 +164,7 @@ public class MegaszafaCom extends PluginForHost {
                 String profileUrl = br.getRegex("\"url\":\".*?/(profil,.*?\\.html)\"").getMatch(0);
 
                 br.getPage(MAINPAGE + profileUrl);
-                if (br.containsHTML("Taki profil nie istnieje.")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nMegaszafa.com: Invalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (br.containsHTML("Taki profil nie istnieje\\.")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nMegaszafa.com: Invalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);

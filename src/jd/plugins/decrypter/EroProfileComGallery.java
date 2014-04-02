@@ -67,6 +67,10 @@ public class EroProfileComGallery extends PluginForDecrypt {
             logger.info("No cookies, login maybe failed: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML(">Album not found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
         final String[] pages = br.getRegex("\\?pnum=(\\d+)\"").getColumn(0);
         if (pages != null && pages.length != 0) {

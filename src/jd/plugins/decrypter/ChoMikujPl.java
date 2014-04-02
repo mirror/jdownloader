@@ -93,7 +93,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             String tempExt = null;
             if (linkending.contains(".")) tempExt = linkending.substring(linkending.lastIndexOf("."));
             final boolean isLinkendingWithoutID = (!linkending.contains(",") && tempExt != null && new Regex(tempExt, Pattern.compile(ENDINGS, Pattern.CASE_INSENSITIVE & Pattern.CANON_EQ)).matches());
-            if (linkending.matches(",\\d+\\.[A-Za-z0-9]{1,5}") || isLinkendingWithoutID) {
+            if (new Regex(linkending, Pattern.compile("\\d+\\.[A-Za-z0-9]{1,5}", Pattern.CASE_INSENSITIVE)).matches() || isLinkendingWithoutID) {
                 /**
                  * If the ID is missing but it's a single link we have to access the link to get it's read link and it's download ID.
                  */
@@ -129,8 +129,13 @@ public class ChoMikujPl extends PluginForDecrypt {
                 if (!folderCheck) {
                     final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
                     final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\..+)$");
-                    final String filename = Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2);
-                    final String fileid = info.getMatch(1);
+                    String filename = Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2);
+                    if (filename.equals("nullnull")) filename = parameter.substring(parameter.lastIndexOf("/") + 1);
+                    String fileid = info.getMatch(1);
+                    if (fileid == null) {
+                        br.getPage(parameter);
+                        fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
+                    }
                     String ext = null;
                     if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
 

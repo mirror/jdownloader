@@ -172,8 +172,9 @@ public class PornRabbitComDecrypter extends PluginForDecrypt {
         }
         // filename needed for all IDs below here
         if (filename == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            // No extern link found->Add to hosterplugin
+            decryptedLinks.add(createDownloadlink(parameter.replace("pornrabbit.com/", "pornrabbitdecrypted.com/")));
+            return decryptedLinks;
         }
         filename = Encoding.htmlDecode(filename.trim());
         externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);

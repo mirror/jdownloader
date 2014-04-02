@@ -53,7 +53,7 @@ public class TheAmateurZoneInfo extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if ("http://www.theamateurzone.info/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("http://www.theamateurzone.info/".equals(br.getURL()) || br.getURL().contains("/error/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"video\\-title\\-nf\" style=\"height:35px;\"><h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Free Porn Movies").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

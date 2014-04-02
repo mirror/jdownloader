@@ -57,7 +57,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     @SuppressWarnings("static-access")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        PARAMETER = "http://www.playvid.com/watch/" + new Regex(param.toString(), "([A-Za-z0-9]+)$").getMatch(0);
+        PARAMETER = "http://www.playvid.com/watch/" + new Regex(param.toString(), "([A-Za-z0-9\\-]+)$").getMatch(0);
         br.setFollowRedirects(true);
         // Log in if possible to get 720p quality
         getUserLogin(false);
@@ -69,11 +69,12 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        /** Decrypt start */
+        /* Decrypt start */
         FILENAME = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (FILENAME == null) {
             FILENAME = br.getRegex("<title>([^<>\"]*?)\\- PlayVid</title>").getMatch(0);
         }
+        if (FILENAME == null) FILENAME = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (FILENAME == null) {
             logger.warning("Playvid.com decrypter failed..." + PARAMETER);
             return null;

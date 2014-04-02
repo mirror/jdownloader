@@ -54,10 +54,9 @@ public class BornCashOrg extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("http\\-equiv=\"REFRESH\" content=\"\\d+;url=http://www\\.borncash\\.org/dw/del\\.php\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex dlInfo = br.getRegex("face=\"Tahoma\" color=\"#996633\" size=\"3\">([^<>\"]*?)</font></b><b><font face=\"Tahoma\" color=\"#666666\" size=\"2\">\\(([^<>\"]*?)\\)</font>");
-        final String filename = dlInfo.getMatch(0);
-        final String filesize = dlInfo.getMatch(1);
+        if (br.containsHTML("borncash\\.org/dw/del") || br.containsHTML("redirectfiles\\.ru/error/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("File name:.*?title=\"([^<>\"]+)\" >").getMatch(0);
+        final String filesize = br.getRegex("title=\"Размер файла\" >([^<>\"]*?)</a>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -70,7 +69,8 @@ public class BornCashOrg extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             br.postPage(br.getURL(), "form_1=");
-            br.postPage(br.getURL(), "form_3=");
+            // br.postPage(br.getURL(), "form_3=");
+            br.postPage(br.getURL(), "off_free=");
             int wait = 60;
             final String waittime = br.getRegex("sec=(\\d+);").getMatch(0);
             if (waittime != null) wait = Integer.parseInt(waittime);

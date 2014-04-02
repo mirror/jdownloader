@@ -65,7 +65,7 @@ public class EPornerCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("\\'File has been removed due to copyright owner request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.eporner.com/") || br.containsHTML("\\'File has been removed due to copyright owner request|eprncdn\\.com/new/delete\\.ico\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
         final String correctedBR = br.toString().replace("\\", "");
         String continueLink = new Regex(correctedBR, "(\"|\\')(/config\\d+/\\d+/[0-9a-f]+(/)?)(\"|\\')").getMatch(1);

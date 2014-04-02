@@ -79,7 +79,7 @@ public class PornativeCom extends PluginForHost {
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String filename = br.getRegex("<title>Pornative.com \\- (.*?)</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        DLLINK = br.getRegex("\"flashvars\",\"file=(rtmp.*?)\\&type=rtmp").getMatch(0);
+        DLLINK = br.getRegex("netConnectionUrl: \"(rtmp://[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;

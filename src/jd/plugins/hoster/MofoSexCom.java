@@ -53,7 +53,7 @@ public class MofoSexCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<h2>The porn you are looking for has been removed|<title>Free Porn Videos, Porn Tube, Sex Videos, Sex \\&amp; Free XXX Porno Clips</title>|>Page Not Found<|This video is no longer available)") || br.getURL().contains("/404.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(<h2>The porn you are looking for has been removed|<title>Free Porn Videos, Porn Tube, Sex Videos, Sex \\&amp; Free XXX Porno Clips</title>|>Page Not Found<|This video is no longer available|video\\-removed\\-tos\\.png\")") || br.getURL().contains("/404.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<div id=\"videotitle\">(.*?)</div>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
