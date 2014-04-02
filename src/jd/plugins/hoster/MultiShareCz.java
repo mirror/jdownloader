@@ -113,6 +113,11 @@ public class MultiShareCz extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        return -1;
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);

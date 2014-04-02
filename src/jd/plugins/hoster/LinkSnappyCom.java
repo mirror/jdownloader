@@ -52,7 +52,7 @@ public class LinkSnappyCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return -1;
+        return 20;
     }
 
     private DownloadLink        currentLink = null;

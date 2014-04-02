@@ -405,7 +405,7 @@ public class FileBitPl extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return maxPrem.get();
     }
 

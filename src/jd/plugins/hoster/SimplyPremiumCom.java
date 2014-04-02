@@ -399,8 +399,8 @@ public class SimplyPremiumCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return 10;
+    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
+        return maxPrem.get();
     }
 
     @Override
