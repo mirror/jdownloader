@@ -1,14 +1,25 @@
 action_tooltip=Baimendu itzaltzeko ordenagailua deskargak amaitu ondoren
 addons_jdshutdown_statusmessage_disabled=Jdownloaderrek EZ du Sistema itzaliko
 addons_jdshutdown_statusmessage_enabled=Jdownloaderrek zure sistema itzaliko du deskkargak amaitzean!
+config_active_by_default=Gorde itzaltzea gaituta
+config_toolbarbutton=Tresna-barraren botoia bistaratuta
 gui_config_jdshutdown_close=Jdownloader Itxi
 gui_config_jdshutdown_forceshutdown=Itzaltzera behartu (Sistema eragile batzuetarako)
 gui_config_jdshutdown_hibernate=Hibernatu (Sistema eragile batzuetarako)
 gui_config_jdshutdown_mode=Modua:
 gui_config_jdshutdown_shutdown=Itzali
 gui_config_jdshutdown_standby=Standby (Sistema eragile batzuetarako)
+install_force=Instalatu behartutako itzaltzea
+install_msg=Nahi duzu zure sistema behartutako itzaltzearen ezaugarrirako prestatzea?
+install_title=Instalatu behartutako itzaltzea
+interaction_shutdown_dialog_msg_closejd=<h2><font color="red"> JDownloade itxi egingo da!</font></h2>
+interaction_shutdown_dialog_msg_shutdown=<h2><fon color="red"> Sistema itzaliko da!</font></h2>
 interaction_shutdown_dialog_title_closejd=JDownloader itxi
 interaction_shutdown_dialog_title_hibernate=Hibernatu?
 interaction_shutdown_dialog_title_shutdown=Itzali?
 interaction_shutdown_dialog_title_standby=Standby-n utzi?
 jd_plugins_optional_jdshutdown=JD itzaltzea
+jd_plugins_optional_jdshutdown_description=Automatikoki itzali, eseki, hibernatu zure PCa edo itxi JDownloader deskargak amaitutatukoan.
+lit_shutdownn=Itzali
+shutdown_toggle_action_disabled2=Itzali deskargen ondoren
+shutdown_toggle_action_enabled2=Itzali deskargen ondoren

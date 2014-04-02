@@ -1,6 +1,6 @@
 DuplicateAction_DuplicateAction_=Bikoiztutako araua
 ExportAction_ExportAction_tt=Gorde arauak fitxategi batean.\n- Backup\n- Besteekin partekatu
-ImportAction_tt=Ekarri arauak *.jdfilter (*.jdregexfilter) fitxategietatik
+ImportAction_tt=Inportatu arauak *.jdfilter (*.jdregexfilter) fitxategietatik
 LinkCollector_archiv=%s1
 LinkSource_PASTE_LINKS_ACTION=Itsatsi estekak
 LinkgrabberFilterRule_duplicate=%s1 (kopia)
@@ -18,7 +18,7 @@ decrypter_wrongcaptcha=Captcha okerra
 decrypter_wrongpassword=Pasa-hitz okerra
 dialog_optional_showRestartRequiredMessage_msg=Zure aldaketak gauzatzeko JDownloader berrabiarazi behar da. Berrabiarazi orain?
 download_connection_normal=Deskarga
-download_error_message_connectioncopyerror=Akatsa konexioa klonatzean
+download_error_message_connectioncopyerror=Akatsa konexioa klonatzerakoan
 download_error_message_incomplete=Deskarga amaitu gabe
 download_error_message_iopermissions=Disko gogorrera idazteko baimenik gabe
 download_error_message_localio=%s1 fitxategira ezin izan da idatzi
