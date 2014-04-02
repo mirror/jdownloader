@@ -89,11 +89,7 @@ public class DailyMotionCom extends PluginForHost {
             getRTMPlink();
         } else {
             dllink = downloadLink.getStringProperty("directlink", null);
-            if (dllink == null) {
-                logger.warning("dllink is null...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!checkDirectLink(downloadLink)) {
+            if (!checkDirectLink(downloadLink) || dllink == null) {
                 dllink = findFreshDirectlink(downloadLink);
                 if (dllink == null) {
                     logger.warning("dllink is null...");
@@ -187,8 +183,9 @@ public class DailyMotionCom extends PluginForHost {
             } catch (final Exception e) {
                 return false;
             }
+            return true;
         }
-        return true;
+        return false;
     }
 
     @Override
