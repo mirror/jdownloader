@@ -62,7 +62,7 @@ import org.jdownloader.plugins.tasks.PluginProgressTask;
 import org.jdownloader.plugins.tasks.PluginSubTask;
 
 public class SingleDownloadController extends BrowserSettingsThread implements DownloadControllerListener {
-    
+
     /**
      * signals that abort request has been received
      */
@@ -75,27 +75,27 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
      * signals the activity of the plugin in use
      */
     private NullsafeAtomicReference<PluginForHost> processingPlugin = new NullsafeAtomicReference<PluginForHost>(null);
-    
+
     public static class WaitingQueueItem {
         public final AtomicLong                          lastStartTimestamp      = new AtomicLong(System.currentTimeMillis());
         public final AtomicLong                          lastConnectionTimestamp = new AtomicLong(System.currentTimeMillis());
         private final CopyOnWriteArrayList<DownloadLink> queueLinks              = new CopyOnWriteArrayList<DownloadLink>();
-        
+
         public int indexOf(DownloadLink link) {
             return queueLinks.indexOf(link);
         }
     }
-    
+
     private static final HashMap<String, WaitingQueueItem> LAST_DOWNLOAD_START_TIMESTAMPS = new HashMap<String, WaitingQueueItem>();
-    
+
     private final DownloadLink                             downloadLink;
     private final Account                                  account;
-    
+
     private long                                           startTimestamp                 = -1;
     private final DownloadLinkCandidate                    candidate;
     private final DownloadWatchDog                         watchDog;
     private final LinkStatus                               linkStatus;
-    
+
     private HashResult                                     hashResult                     = null;
     private CopyOnWriteArrayList<DownloadWatchDogJob>      jobsAfterDetach                = new CopyOnWriteArrayList<DownloadWatchDogJob>();
     private WaitingQueueItem                               queueItem;
@@ -103,58 +103,58 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     private ArrayList<PluginSubTask>                       tasks;
     private HTTPProxy                                      usedProxy;
     private boolean                                        resumed;
-    
+
     public WaitingQueueItem getQueueItem() {
         return queueItem;
     }
-    
+
     public CopyOnWriteArrayList<DownloadWatchDogJob> getJobsAfterDetach() {
         return jobsAfterDetach;
     }
-    
+
     @Override
     public synchronized void start() {
         super.start();
     }
-    
+
     public HashResult getHashResult() {
         return hashResult;
     }
-    
+
     public void setHashResult(HashResult hashResult) {
         this.hashResult = hashResult;
     }
-    
+
     public LinkStatus getLinkStatus() {
         return linkStatus;
     }
-    
+
     public DownloadInterface getDownloadInstance() {
         PluginForHost plugin = processingPlugin.get();
         if (plugin != null) return plugin.getDownloadInterface();
         return null;
     }
-    
+
     public DownloadLinkCandidate getDownloadLinkCandidate() {
         return candidate;
     }
-    
+
     public long getStartTimestamp() {
         return startTimestamp;
     }
-    
+
     public void lockFile(File file) throws FileIsLockedException {
         DownloadWatchDog.getInstance().getSession().getFileAccessManager().lock(file, this);
     }
-    
+
     public boolean unlockFile(File file) {
         return DownloadWatchDog.getInstance().getSession().getFileAccessManager().unlock(file, this);
     }
-    
+
     public DownloadSpeedManager getConnectionHandler() {
         return watchDog.getDownloadSpeedManager();
     }
-    
+
     protected SingleDownloadController(DownloadLinkCandidate candidate, DownloadWatchDog watchDog) {
         super("Download");
         tasks = new ArrayList<PluginSubTask>();
@@ -174,36 +174,36 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         queueItem.queueLinks.add(downloadLink);
         linkStatus = new LinkStatus(downloadLink);
         setName("Download: " + downloadLink.getName() + "_" + downloadLink.getHost());
-        
+
     }
-    
+
     @Override
     public void setCurrentProxy(final HTTPProxy proxy) {
         /* we dont allow external changes */
     }
-    
+
     @Override
     public boolean isDebug() {
         return true;
     }
-    
+
     @Override
     public boolean isVerbose() {
         return true;
     }
-    
+
     public Account getAccount() {
         return account;
     }
-    
+
     public boolean isAborting() {
         return abortFlag.get();
     }
-    
+
     public boolean isActive() {
         return activityFlag.get();
     }
-    
+
     protected void abort() {
         if (activityFlag.get() == false) {
             /* this singleDownloadController is no longer active */
@@ -212,7 +212,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         if (abortFlag.compareAndSet(false, true)) {
             /* this is our initial abort request */
             Thread abortThread = new Thread() {
-                
+
                 @Override
                 public void run() {
                     while (activityFlag.get()) {
@@ -233,18 +233,18 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                         }
                     }
                 }
-                
+
             };
             abortThread.setDaemon(true);
             abortThread.setName("Abort: " + downloadLink.getName() + "_" + downloadLink.getUniqueID());
             abortThread.start();
         }
     }
-    
+
     public DownloadLink getDownloadLink() {
         return candidate.getLink();
     }
-    
+
     private SingleDownloadReturnState download(LogSource downloadLogger) {
         PluginForHost livePlugin = null;
         PluginForHost originalPlugin = null;
@@ -267,56 +267,56 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             livePlugin.setDownloadLink(downloadLink);
             originalPlugin = livePlugin;
             switch (candidate.getCachedAccount().getType()) {
-                case MULTI:
-                    originalPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(cl);
-                    originalPlugin.setBrowser(new Browser());
-                    originalPlugin.setLogger(downloadLogger);
-                    originalPlugin.setDownloadLink(downloadLink);
-                    break;
+            case MULTI:
+                originalPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(cl);
+                originalPlugin.setBrowser(new Browser());
+                originalPlugin.setLogger(downloadLogger);
+                originalPlugin.setDownloadLink(downloadLink);
+                break;
             }
             downloadLink.setLivePlugin(livePlugin);
             watchDog.localFileCheck(this, new ExceptionRunnable() {
-                
+
                 @Override
                 public void run() throws Exception {
                     final File partFile = new File(getDownloadLink().getFileOutput() + ".part");
                     long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), getDownloadLink().getView().getBytesLoaded());
                     final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
                     DISKSPACERESERVATIONRESULT result = watchDog.getSession().getDiskSpaceManager().check(new DiskSpaceReservation() {
-                        
+
                         @Override
                         public File getDestination() {
                             return partFile;
                         }
-                        
+
                         @Override
                         public long getSize() {
                             return remainingSize;
                         }
-                        
+
                     });
                     switch (result) {
-                        case FAILED:
-                            throw new SkipReasonException(SkipReason.DISK_FULL);
-                        case INVALIDDESTINATION:
-                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                    case FAILED:
+                        throw new SkipReasonException(SkipReason.DISK_FULL);
+                    case INVALIDDESTINATION:
+                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                     }
                 }
             }, null);
             try {
                 startTimestamp = System.currentTimeMillis();
                 switch (candidate.getCachedAccount().getType()) {
-                    case MULTI:
-                        processingPlugin.set(originalPlugin);
-                        originalPlugin.init();
-                        if (AvailableStatus.FALSE == originalPlugin.requestFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        break;
+                case MULTI:
+                    processingPlugin.set(originalPlugin);
+                    originalPlugin.init();
+                    if (AvailableStatus.FALSE == originalPlugin.requestFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    break;
                 }
                 processingPlugin.set(livePlugin);
                 livePlugin.init();
-                
+
                 livePlugin.handle(downloadLink, account);
-                
+
                 SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, processingPlugin.getAndSet(null));
                 return ret;
             } catch (BrowserException browserException) {
@@ -338,20 +338,20 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 validateChallenge = false;
             } else if (e instanceof PluginException) {
                 switch (((PluginException) e).getLinkStatus()) {
-                    case LinkStatus.ERROR_RETRY:
-                    case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                        // we might be offline
-                        BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
-                        try {
-                            onlineCheck.getExternalIP();
-                        } catch (final OfflineException e2) {
-                            e = new NoInternetConnection(e);
-                        } catch (final IPCheckException e2) {
-                        }
+                case LinkStatus.ERROR_RETRY:
+                case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+                    // we might be offline
+                    BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(true);
+                    try {
+                        onlineCheck.getExternalIP();
+                    } catch (final OfflineException e2) {
+                        e = new NoInternetConnection(e);
+                    } catch (final IPCheckException e2) {
+                    }
                 }
-                
+
             }
-            
+            downloadLogger.info("Exception: ");
             downloadLogger.log(e);
             SingleDownloadReturnState ret = new SingleDownloadReturnState(this, e, processingPlugin.getAndSet(null));
             return ret;
@@ -364,68 +364,68 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             finalizePlugins(downloadLogger, originalPlugin, livePlugin, validateChallenge);
             if (downloadLink.getFilePackage() != null) {
                 // if we remove link without stopping them.. the filepackage may be the default package already here.
-                
+
                 FilePackageView view = downloadLink.getFilePackage().getView();
                 if (view != null) {
                     view.requestUpdate();
                 }
             }
-            
+
         }
     }
-    
+
     public PluginForHost getProcessingPlugin() {
         return processingPlugin.get();
     }
-    
+
     public boolean isResumed() {
         return resumed;
     }
-    
+
     public HTTPProxy getUsedProxy() {
         return usedProxy;
     }
-    
+
     private void finalizePlugins(LogSource logger, PluginForHost originalPlugin, PluginForHost livePlugin, boolean valid) {
         switch (candidate.getCachedAccount().getType()) {
-            case MULTI:
-                if (originalPlugin != null) {
-                    try {
-                        if (valid) {
-                            originalPlugin.validateLastChallengeResponse();
-                        } else {
-                            originalPlugin.invalidateLastChallengeResponse();
-                        }
-                    } catch (final Throwable ignore) {
-                        logger.log(ignore);
+        case MULTI:
+            if (originalPlugin != null) {
+                try {
+                    if (valid) {
+                        originalPlugin.validateLastChallengeResponse();
+                    } else {
+                        originalPlugin.invalidateLastChallengeResponse();
                     }
-                    try {
-                        originalPlugin.clean();
-                    } catch (final Throwable ignore) {
-                        logger.log(ignore);
-                    }
+                } catch (final Throwable ignore) {
+                    logger.log(ignore);
                 }
-            case ORIGINAL:
-            case NONE:
-                if (livePlugin != null) {
-                    try {
-                        if (valid) {
-                            livePlugin.validateLastChallengeResponse();
-                        } else {
-                            livePlugin.invalidateLastChallengeResponse();
-                        }
-                    } catch (final Throwable ignore) {
-                        logger.log(ignore);
-                    }
-                    try {
-                        livePlugin.clean();
-                    } catch (final Throwable ignore) {
-                        logger.log(ignore);
-                    }
+                try {
+                    originalPlugin.clean();
+                } catch (final Throwable ignore) {
+                    logger.log(ignore);
                 }
+            }
+        case ORIGINAL:
+        case NONE:
+            if (livePlugin != null) {
+                try {
+                    if (valid) {
+                        livePlugin.validateLastChallengeResponse();
+                    } else {
+                        livePlugin.invalidateLastChallengeResponse();
+                    }
+                } catch (final Throwable ignore) {
+                    logger.log(ignore);
+                }
+                try {
+                    livePlugin.clean();
+                } catch (final Throwable ignore) {
+                    logger.log(ignore);
+                }
+            }
         }
     }
-    
+
     @Override
     public void run() {
         LogSource downloadLogger = null;
@@ -438,7 +438,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             downloadLogger = LogController.getFastPluginLogger(logID);
             downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
             super.setLogger(downloadLogger);
-            
+
             task.open();
             addTask(task);
             SingleDownloadReturnState returnState = download(downloadLogger);
@@ -456,66 +456,66 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             }
         }
     }
-    
+
     @Override
     public void setLogger(Logger logger) {
         /* we dont allow external changes */
     }
-    
+
     /**
      * @return the sizeBefore
      */
     public long getSizeBefore() {
         return sizeBefore;
     }
-    
+
     public void addTask(PluginSubTask subTask) {
         synchronized (tasks) {
-            
+
             tasks.add(subTask);
         }
     }
-    
+
     public void onDetach(DownloadLink downloadLink) {
         DownloadController.getInstance().getEventSender().removeListener(this);
-        
+
         synchronized (tasks) {
             for (PluginSubTask t : tasks) {
                 t.close();
-                
+
             }
         }
     }
-    
+
     public void onAttach(DownloadLink downloadLink) {
         DownloadController.getInstance().getEventSender().addListener(this, true);
-        
+
     }
-    
+
     @Override
     public void onDownloadControllerAddedPackage(FilePackage pkg) {
     }
-    
+
     @Override
     public void onDownloadControllerStructureRefresh(FilePackage pkg) {
     }
-    
+
     @Override
     public void onDownloadControllerStructureRefresh() {
     }
-    
+
     @Override
     public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
     }
-    
+
     @Override
     public void onDownloadControllerRemovedPackage(FilePackage pkg) {
     }
-    
+
     @Override
     public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
     }
-    
+
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
         try {
@@ -545,31 +545,31 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         } catch (Throwable e) {
             // TODO: handle exception
         }
-        
+
     }
-    
+
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
         System.out.println(property);
     }
-    
+
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
     }
-    
+
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
     }
-    
+
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
     }
-    
+
     public List<PluginSubTask> getTasks() {
         synchronized (tasks) {
             return new ArrayList<PluginSubTask>(tasks);
         }
-        
+
     }
-    
+
 }

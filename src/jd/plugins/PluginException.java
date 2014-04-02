@@ -16,46 +16,60 @@
 
 package jd.plugins;
 
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
+
 public class PluginException extends Exception {
-    
+
     private static final long serialVersionUID              = -413339039711789194L;
-    
+
     public static int         VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
     public static int         VALUE_ID_PREMIUM_DISABLE      = 1;
     /* do not final it, as the compiler will replace Reference with value, no more Exceptions but broken ErrorHandling in stable */
     public static int         VALUE_ID_PREMIUM_ONLY         = 2;
-    
+
     private final int         linkStatus;
     private final String      errorMessage;
     private final long        value;
-    
+
     public PluginException(int linkStatus) {
         this(linkStatus, null, -1);
     }
-    
+
     public PluginException(int linkStatus, String errorMessage, long value) {
         super(errorMessage);
         this.linkStatus = linkStatus;
+
         this.errorMessage = errorMessage;
         this.value = value;
+        try {
+            LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
+            if (logger == null) logger = LogController.getInstance().getLogger(PluginException.class.getName());
+            logger.log(new Exception("CReated Plugin_defect linkStatus"));
+            logger.info("Self: ");
+            logger.log(this);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
     }
-    
+
     public PluginException(int linkStatus, String errorMessage) {
         this(linkStatus, errorMessage, -1);
     }
-    
+
     public PluginException(int linkStatus, long value) {
         this(linkStatus, null, value);
     }
-    
+
     public String getErrorMessage() {
         return errorMessage;
     }
-    
+
     public long getValue() {
         return value;
     }
-    
+
     /**
      * JD2Only
      * 
@@ -64,5 +78,5 @@ public class PluginException extends Exception {
     public int getLinkStatus() {
         return linkStatus;
     }
-    
+
 }
