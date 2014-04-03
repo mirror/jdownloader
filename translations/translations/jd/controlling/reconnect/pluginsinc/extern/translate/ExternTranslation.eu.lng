@@ -1,0 +1,4 @@
+interaction_externreconnect_command=Komandoa (erabili katalogoen bide absolutuak)
+interaction_externreconnect_dummybat=Windowserako exekutatzaile berezia erabili
+interaction_externreconnect_parameter=Parametroa (Parametro 1 ilara bakoitzeko)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Kanpo-tresna birkonektatua

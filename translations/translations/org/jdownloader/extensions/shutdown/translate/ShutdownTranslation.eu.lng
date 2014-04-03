@@ -21,5 +21,6 @@ interaction_shutdown_dialog_title_standby=Standby-n utzi?
 jd_plugins_optional_jdshutdown=JD itzaltzea
 jd_plugins_optional_jdshutdown_description=Automatikoki itzali, eseki, hibernatu zure PCa edo itxi JDownloader deskargak amaitutatukoan.
 lit_shutdownn=Itzali
+show_admin=Administratzaile baimena behar da JDownloader instalatzeko ordenagailua hibernatzen edo Standby moduan dagoenean
 shutdown_toggle_action_disabled2=Itzali deskargen ondoren
 shutdown_toggle_action_enabled2=Itzali deskargen ondoren
