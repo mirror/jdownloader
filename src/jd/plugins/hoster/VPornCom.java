@@ -64,6 +64,8 @@ public class VPornCom extends PluginForHost {
         // Prefer high quality
         DLLINK = br.getRegex("flashvars\\.videoUrlMedium  = \"(http://[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("flashvars\\.videoUrlLow  = \"(http://[^<>\"]*?)\"").getMatch(0);
+        /* Try to get download-link */
+        if (DLLINK == null) DLLINK = br.getRegex("initDownload\\(\\'\\', \\'(http://[^<>\"]*?)\\'\\)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

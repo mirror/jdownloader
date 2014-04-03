@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -214,6 +215,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
         } catch (final BrowserException e) {
             logger.info("Server error, couldn't decrypt link: " + parameter);
+            return decryptedLinks;
+        } catch (final UnknownHostException eu) {
+            logger.info("UnknownHostException, couldn't decrypt link: " + parameter);
             return decryptedLinks;
         }
         return decryptedLinks;

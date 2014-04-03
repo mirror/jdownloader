@@ -64,8 +64,8 @@ public class XArtCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
 
-        final String name = new Regex(parameter.getDownloadURL(), "([^/]+\\.(mov|mp4|wmv))").getMatch(0);
-        if (name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String name = new Regex(parameter.getDownloadURL(), "([^/]+\\.(mov|mp4|wmv))").getMatch(0);
+        if (name == null) name = new Regex(parameter.getDownloadURL(), "x\\-art.com/(.+)").getMatch(0);
 
         parameter.setName(name);
 

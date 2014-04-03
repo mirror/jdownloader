@@ -68,7 +68,7 @@ public class YuvutuCom extends PluginForHost {
         br.followConnection();
         conf.disconnect();
         // Link offline
-        if (br.containsHTML(">The video you requested does not exist<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">The video you requested does not exist<|video_noexist\\.png\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
         final String embedlink = br.getRegex("\"(/embed_video\\.php\\?uri=[^<>\"]*?)\"").getMatch(0);
         if (embedlink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -332,8 +332,8 @@ public class QKupNet extends PluginForHost {
                     dlForm.put("recaptcha_challenge_field", rc.getChallenge());
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    /** wait time is often skippable for reCaptcha handling */
-                    skipWaittime = true;
+                    /* wait time is usually skippable for reCaptcha handling */
+                    skipWaittime = false;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
@@ -362,7 +362,7 @@ public class QKupNet extends PluginForHost {
                     if (result == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     if ("CANCEL".equals(result)) throw new PluginException(LinkStatus.ERROR_FATAL);
                     dlForm.put("capcode", result);
-                    /** wait time is often skippable for reCaptcha handling */
+                    /* wait time is often skippable for reCaptcha handling */
                     skipWaittime = false;
                 }
                 /* Captcha END */
@@ -559,13 +559,15 @@ public class QKupNet extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        int tt = 30;
+        final String ttt = new Regex(correctedBR, ">Wait <b><span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
+            tt = Integer.parseInt(ttt);
         }
+        tt -= passedTime;
+        logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+        if (tt > 0) sleep(tt * 1000l, downloadLink);
+
     }
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
