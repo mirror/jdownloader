@@ -42,14 +42,16 @@ public class PluginException extends Exception {
 
         this.errorMessage = errorMessage;
         this.value = value;
-        try {
-            LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
-            if (logger == null) logger = LogController.getInstance().getLogger(PluginException.class.getName());
-            logger.log(new Exception("CReated Plugin_defect linkStatus"));
-            logger.info("Self: ");
-            logger.log(this);
-        } catch (Throwable e) {
-            e.printStackTrace();
+        if (linkStatus == LinkStatus.ERROR_PLUGIN_DEFECT) {
+            try {
+                LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
+                if (logger == null) logger = LogController.getInstance().getLogger(PluginException.class.getName());
+                logger.log(new Exception("CReated Plugin_defect linkStatus"));
+                logger.info("Self: ");
+                logger.log(this);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
         }
 
     }
