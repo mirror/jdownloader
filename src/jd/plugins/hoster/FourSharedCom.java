@@ -317,6 +317,7 @@ public class FourSharedCom extends PluginForHost {
                 downloadLink.setProperty(FourSharedCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 
