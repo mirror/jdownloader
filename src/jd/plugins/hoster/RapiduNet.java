@@ -35,6 +35,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -115,7 +116,11 @@ public class RapiduNet extends PluginForHost {
                     String source = new Regex(response, "\"" + fileNumber + "\":\\{(.+?)\\}").getMatch(0);
                     String fileStatus = getJson("fileStatus", source);
                     String fileName = getJson("fileName", source);
+                    String fileUrl = getJson("fileUrl", source).replace("\\", "");
+                    if (fileName == null) fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+
                     if (fileName == null) fileName = dllink.getName();
+
                     String fileSize = getJson("fileSize", source);
 
                     if (fileStatus.equals("0")) {
@@ -164,9 +169,14 @@ public class RapiduNet extends PluginForHost {
         br.getHeaders().put("User-Agent", userAgent);
         br.postPage(MAINPAGE + "/ajax.php?a=getLoadTimeToDownload", "_go=");
         String response = br.toString();
+        if (response == null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Host busy!", 1 * 60l * 1000l);
+
         Date actualDate = new Date();
 
-        Date eventDate = new Date(Long.parseLong(getJson("timeToDownload", response)) * 1000l);
+        String timeToDownload = getJson("timeToDownload", response);
+        if (timeToDownload.equals("stop")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP Blocked!", 10 * 60l * 1000l);
+
+        Date eventDate = new Date(Long.parseLong(timeToDownload) * 1000l);
 
         long timeLeft = eventDate.getTime() - actualDate.getTime();
 
@@ -204,8 +214,8 @@ public class RapiduNet extends PluginForHost {
             br.postPage(MAINPAGE + "/ajax.php?a=getCheckCaptcha", "captcha1=" + rc.getChallenge() + "&captcha2=" + Encoding.urlEncode(c) + "&fileId=" + fileID + "&_go=");
             response = br.toString();
             String message = checkForErrors(br.toString(), "error");
-            if (message.equals("error")) {
-
+            if (message == null || message.equals("error")) {
+                logger.info("RapiduNet: ReCaptcha challenge reports: " + response);
                 rc.reload();
                 continue;
 
@@ -342,8 +352,12 @@ public class RapiduNet extends PluginForHost {
 
             br.postPage(MAINPAGE + "/api/getAccountDetails/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             String response = br.toString();
+
             String error = checkForErrors(response, "error");
-            if (error != null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account is invalid: " + error);
+            if (error == null && response.contains("Trwaja prace techniczne")) error = "Hoster in Maintenance Mode";
+            if (error != null) {
+                logger.info("Hoster RapiduNet reports: " + error);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, error);
 
             }
             br.postPage(MAINPAGE + "/ajax.php?a=getUserLogin", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&remember=1&_go=");
@@ -379,9 +393,19 @@ public class RapiduNet extends PluginForHost {
         try {
             accountResponse = login(account, true);
         } catch (PluginException e) {
-            ai.setStatus("Login failed");
-            UserIO.getInstance().requestMessageDialog(0, "RapiduNet Login Error", "Login failed!\r\nPlease check your Username and Password!");
-            account.setValid(false);
+
+            String errorMessage = e.getErrorMessage();
+
+            if (errorMessage.contains("Maintenance")) {
+                ai.setStatus(errorMessage);
+                account.setError(AccountError.TEMP_DISABLED, errorMessage);
+
+            } else {
+                ai.setStatus("Login failed");
+                UserIO.getInstance().requestMessageDialog(0, "RapiduNet Login Error", "Login failed: " + errorMessage);
+                account.setValid(false);
+            }
+
             account.setProperty("cookies", Property.NULL);
             return ai;
 
