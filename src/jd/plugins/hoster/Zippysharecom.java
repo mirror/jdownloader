@@ -35,7 +35,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogSource;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://www\\d{0,}\\.zippyshare\\.com/(d/\\d+/\\d+/.|v/\\d+/[^<>\"/]*?\\.html?|.*?key=\\d+|downloadMusic\\?key=\\d+|swf/player_local\\.swf\\?file=\\d+)" }, flags = { 0 })
 public class Zippysharecom extends PluginForHost {
@@ -256,8 +255,7 @@ public class Zippysharecom extends PluginForHost {
             dl.startDownload();
         } catch (final PluginException e) {
             if (e.getLinkStatus() != LinkStatus.ERROR_ALREADYEXISTS && downloadLink.getVerifiedFileSize() >= 0 && downloadLink.getDownloadCurrent() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server sends empty file)");
-            LogSource.exception(logger, e);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            throw e;
         }
     }
 

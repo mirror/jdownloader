@@ -126,6 +126,7 @@ public class DeviantArtCom extends PluginForHost {
             HTMLALLOWED = true;
             filename = findServerFilename(filename);
             ext = "html";
+            filesize = br.getRegex("<dt>File Size</dt><dd>([^<>\"]*?)</dd>").getMatch(0);
         } else if (br.containsHTML(TYPEDOWNLOADFORBIDDEN_HTML)) {
             HTMLALLOWED = true;
             // Download whole html site

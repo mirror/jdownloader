@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/contentset/[A-Za-z0-9/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/contentset/[A-Za-z0-9/\\-]+" }, flags = { 0 })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {

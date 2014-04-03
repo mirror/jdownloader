@@ -598,7 +598,14 @@ public class VKontakteRu extends PluginForDecrypt {
             final String finallink = foundQualities.get(selectedQualityValue);
             if (finallink != null) {
                 final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-                final String finalfilename = filename + "_" + selectedQualityValue + finallink.substring(finallink.lastIndexOf("."));
+                String ext = finallink.substring(finallink.lastIndexOf("."));
+                if (ext.length() > 5 && finallink.contains(".mp4"))
+                    ext = ".mp4";
+                else if (ext.length() > 5 && finallink.contains(".flv"))
+                    ext = ".flv";
+                else
+                    ext = ".mp4";
+                final String finalfilename = filename + "_" + selectedQualityValue + ext;
                 dl.setFinalFileName(finalfilename);
                 dl.setProperty("directfilename", finalfilename);
                 dl.setProperty("directlink", finallink);

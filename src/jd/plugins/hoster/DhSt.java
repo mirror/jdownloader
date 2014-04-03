@@ -41,8 +41,9 @@ public class DhSt extends PluginForHost {
         return "http://d-h.st/tos";
     }
 
-    private final String INVALIDLINKS  = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users)";
-    private final String tempSiteIssue = ">It appears something went wrong\\.{1,}</h\\d+>";
+    private final String        INVALIDLINKS  = "http://(www\\.)?d\\-h\\.st/(donate|search|forgot|support|faq|news|register|tos|users)";
+    private final String        tempSiteIssue = ">It appears something went wrong\\.{1,}</h\\d+>";
+    private static final String NOCHUNKS      = "NOCHUNKS";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -67,7 +68,7 @@ public class DhSt extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(tempSiteIssue)) {
             logger.info("Hoster is having problems!");
@@ -75,12 +76,35 @@ public class DhSt extends PluginForHost {
         }
         String dllink = getDllink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(DhSt.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(DhSt.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(DhSt.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(DhSt.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     private String getDllink() {
