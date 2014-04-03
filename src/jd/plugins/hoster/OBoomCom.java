@@ -157,32 +157,21 @@ public class OBoomCom extends PluginForHost {
     
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
-        AtomicBoolean newSignal = new AtomicBoolean(false);
-        String session = getGuestSession(false, null, newSignal);
-        int maxLoop = 2;
-        while (maxLoop-- >= 0) {
-            AvailableStatus ret = fetchFileInformation(parameter, session);
-            switch (ret) {
-                case TRUE:
-                    return ret;
-                case UNCHECKABLE:
-                    if (newSignal.get()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    session = getGuestSession(false, session, newSignal);
-                    continue;
-                default:
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return fetchFileInformation(parameter, null);
     }
     
     protected AvailableStatus fetchFileInformation(DownloadLink link, String session) throws Exception {
-        String response = br.getPage("https://api.oboom.com/1.0/ls?token=" + session + "&item=" + getFileID(link));
+        final String response;
+        if (session != null) {
+            response = br.getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + getFileID(link));
+        } else {
+            response = br.getPage("https://api.oboom.com/1.0/info?items=" + getFileID(link));
+        }
         if (response.contains("404,\"token")) { return AvailableStatus.UNCHECKABLE; }
         String size = getValue(response, "size");
         String name = getValue(response, "name");
         String state = getValue(response, "state");
-        if (name != null) link.setFinalFileName(name);
+        if (name != null) link.setFinalFileName(unescape(name));
         try {
             if (size != null) {
                 link.setDownloadSize(Long.parseLong(size));
@@ -192,6 +181,64 @@ public class OBoomCom extends PluginForHost {
         }
         if (!"online".equals(state)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
+    }
+    
+    public String unescape(String s) {
+        if (s == null) return null;
+        char ch;
+        char ch2;
+        final StringBuilder sb = new StringBuilder();
+        int ii;
+        int i;
+        for (i = 0; i < s.length(); i++) {
+            ch = s.charAt(i);
+            // prevents StringIndexOutOfBoundsException with ending char equals case trigger
+            if (s.length() != i + 1) {
+                switch (ch) {
+                    case '%':
+                    case '\\':
+                        ch2 = ch;
+                        ch = s.charAt(++i);
+                        StringBuilder sb2 = null;
+                        switch (ch) {
+                            case 'u':
+                                /* unicode */
+                                sb2 = new StringBuilder();
+                                i++;
+                                ii = i + 4;
+                                for (; i < ii; i++) {
+                                    ch = s.charAt(i);
+                                    if (sb2.length() > 0 || ch != '0') {
+                                        sb2.append(ch);
+                                    }
+                                }
+                                i--;
+                                sb.append((char) Long.parseLong(sb2.toString(), 16));
+                                continue;
+                            case 'x':
+                                /* normal hex coding */
+                                sb2 = new StringBuilder();
+                                i++;
+                                ii = i + 2;
+                                for (; i < ii; i++) {
+                                    ch = s.charAt(i);
+                                    sb2.append(ch);
+                                }
+                                i--;
+                                sb.append((char) Long.parseLong(sb2.toString(), 16));
+                                continue;
+                            default:
+                                if (ch2 == '%') {
+                                    sb.append(ch2);
+                                }
+                                sb.append(ch);
+                                continue;
+                        }
+                }
+            }
+            sb.append(ch);
+        }
+        return sb.toString();
     }
     
     @Override
