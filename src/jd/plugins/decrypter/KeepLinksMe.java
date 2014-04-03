@@ -128,10 +128,9 @@ public class KeepLinksMe extends SaveLinksNet {
                 case 2:
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
-                    final String rcID = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    String rcID = "6LeuAc4SAAAAAOSry8eo2xW64K1sjHEKsQ5CaS10";
                     if (id == null) return;
                     rc.setId(rcID);
-                    rc.load();
                     rc.load();
                     File cfRe = rc.downloadCaptcha(getLocalCaptchaFile());
                     data += "&captchatype=Re&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + getCaptchaCode(cfRe, param);

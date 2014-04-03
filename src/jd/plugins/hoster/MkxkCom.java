@@ -28,7 +28,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mkxk.com" }, urls = { "http://(www\\.)?mkxk\\.com/?/\\w+/play/\\d+\\.html" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mkxk.com" }, urls = { "http://(www\\.)?mkxk\\.com/dance/play/id/\\d+" }, flags = { 0 })
 public class MkxkCom extends PluginForHost {
 
     public MkxkCom(PluginWrapper wrapper) {
@@ -47,9 +49,11 @@ public class MkxkCom extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">We\\'re sorry but the page your are looking for is Not") || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("class=\"jp\\-title split\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".m4a");
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        final String filesize = br.getRegex(">大小：([^<>\"]*?)</li>").getMatch(0);
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -57,6 +61,14 @@ public class MkxkCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         final String fuid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
         requestFileInformation(downloadLink);
+        if (true) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         // player, download not possible without an account.. best I could do..
         br.getPage("/play/flash.php?id=" + fuid);
         final String m4a = br.getRegex("\"(https?://[\\w\\d]+\\.mkxk\\.com[^\"<>]+\\.m4a)\"").getMatch(0);

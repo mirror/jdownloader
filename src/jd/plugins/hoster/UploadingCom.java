@@ -46,14 +46,14 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://(www\\.)?uploading\\.com/files/(get/|thankyou/)?\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://(www\\.)?uploading\\.com/\\w+/\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
 
     private static AtomicInteger simultanpremium = new AtomicInteger(1);
     private static Object        PREMLOCK        = new Object();
     private String               agent           = null;
     private boolean              free            = false;
-    private static final String  CODEREGEX       = "uploading\\.com/files/get/(\\w+)";
+    private static final String  CODEREGEX       = "uploading\\.com/(\\w+)";
     private static Object        LOCK            = new Object();
     private static final String  MAINPAGE        = "http://uploading.com/";
     private static final String  PASSWORDTEXT    = "Please Enter Password:<";
