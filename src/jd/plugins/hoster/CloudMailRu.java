@@ -45,7 +45,7 @@ public class CloudMailRu extends PluginForHost {
     private static final String TYPE_FROM_DECRYPTER = "http://clouddecrypted\\.mail\\.ru/\\d+";
     private static final String TYPE_HOTLINK        = "https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+";
     private static final String NOCHUNKS            = "NOCHUNKS";
-    private static final String DOWNLOAD_ZIP        = "DOWNLOAD_ZIP";
+    private static final String DOWNLOAD_ZIP        = "DOWNLOAD_ZIP_2";
 
     @Override
     public String getAGBLink() {
@@ -198,7 +198,7 @@ public class CloudMailRu extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CloudMailRu.DOWNLOAD_ZIP, JDL.L("plugins.hoster.CloudMailRu.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CloudMailRu.DOWNLOAD_ZIP, JDL.L("plugins.hoster.CloudMailRu.DownloadZip", "Download .zip file of all files in the folder?")).setDefaultValue(false));
     }
 
     @Override

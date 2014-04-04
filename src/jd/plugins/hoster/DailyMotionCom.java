@@ -32,10 +32,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
@@ -131,10 +129,9 @@ public class DailyMotionCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(dl.getStringProperty("mainlink", null));
             br.setFollowRedirects(false);
-            final PluginForDecrypt decryptPlugin = JDUtilities.getPluginForDecrypt("dailymotion.com");
-            final String videosource = ((jd.plugins.decrypter.DailyMotionComDecrypter) decryptPlugin).getVideosource(this.br);
+            final String videosource = jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(this.br);
             if (videosource == null) return null;
-            LinkedHashMap<String, String[]> foundqualities = ((jd.plugins.decrypter.DailyMotionComDecrypter) decryptPlugin).findVideoQualities(this.br, dl.getDownloadURL(), videosource);
+            LinkedHashMap<String, String[]> foundqualities = jd.plugins.decrypter.DailyMotionComDecrypter.findVideoQualities(this.br, dl.getDownloadURL(), videosource);
             final String qualityvalue = dl.getStringProperty("qualityvalue", null);
             final String directlinkinfo[] = foundqualities.get(qualityvalue);
             dllink = Encoding.htmlDecode(directlinkinfo[0]);
@@ -249,7 +246,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private void prepBrowser() {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         br.getHeaders().put("Accept-Encoding", "gzip");

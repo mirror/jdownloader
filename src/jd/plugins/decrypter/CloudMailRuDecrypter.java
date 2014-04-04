@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://(www\\.)?cloud\\.mail\\.ru(/|%2F)public(/|%2F)[a-z0-9]+(/|%2F)[^<>\"/]+(/|%2F)([^<>\"]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://(www\\.)?cloud\\.mail\\.ru(/|%2F)public(/|%2F)[a-z0-9]+(/|%2F)[^<>\"]+" }, flags = { 0 })
 public class CloudMailRuDecrypter extends PluginForDecrypt {
 
     public CloudMailRuDecrypter(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
     public static final String  BUILD            = "hotfix-17-7.201403131547";
     /* Max .zip filesize = 4 GB */
     private static final double MAX_ZIP_FILESIZE = 4194304;
-    private static final String DOWNLOAD_ZIP     = "DOWNLOAD_ZIP";
+    private static final String DOWNLOAD_ZIP     = "DOWNLOAD_ZIP_2";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

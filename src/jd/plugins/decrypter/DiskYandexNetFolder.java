@@ -82,6 +82,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
 
         main.setProperty("mainlink", parameter);
+        main.setName(hashID);
 
         if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) {
             main.setAvailable(false);
@@ -137,7 +138,13 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final boolean is_root_plus_zip = (!hashID.contains("/") && decryptedLinks.size() > 0);
         /* If we did not find any other links it's probably a single link */
         final boolean is_single = (decryptedLinks.size() == 0);
-        if (is_single) {
+        /* Empty folder --> Offline */
+        if (is_single && br.containsHTML("class=\"file file_empty\">Empty folder")) {
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+            decryptedLinks.add(main);
+            return decryptedLinks;
+        } else if (is_single) {
             main.setFinalFileName(fpName);
             main.setProperty("plain_filename", fpName);
             final String filesize = br.getRegex(">Size: ([^<>\"]*?)<br/").getMatch(0);
