@@ -140,7 +140,7 @@ public class MooShareBiz extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|>Video Not Found or Deleted)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
@@ -224,10 +224,18 @@ public class MooShareBiz extends PluginForHost {
             final Browser brv = br.cloneBrowser();
             brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             dllink = brv.getRedirectLocation();
+            if (dllink != null) {
+                /* thx to raztoki, correct invalid vidembed directlinks */
+                final String h = new Regex(dllink, "h=([a-z0-9]{58})").getMatch(0);
+                if (h != null) {
+                    dllink = "http://93.115.86.10:8777/" + h + "/video.mp4";
+                }
+            }
         }
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
+            waitTime(System.currentTimeMillis(), downloadLink);
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
@@ -456,9 +464,10 @@ public class MooShareBiz extends PluginForHost {
                         if (dllink != null) break;
                     }
                 }
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "streamer: \"(rtmp://[^<>\"]*?)\"").getMatch(0);
-                }
+                /* thx to raztoki */
+                String a = new Regex(correctedBR, "image:\\s*\"(https?://[^/]+/)").getMatch(0);
+                String b = new Regex(correctedBR, "(vod|\\.mp4)\\?h=([a-z0-9]{58})\"").getMatch(1);
+                if (a != null && b != null) dllink = a + b + "/video.mp4";
             }
         }
         return dllink;
@@ -534,8 +543,8 @@ public class MooShareBiz extends PluginForHost {
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        /** Ticket Time */
-        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds<").getMatch(2);
+        /* Ticket Time */
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\"> <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

@@ -50,6 +50,8 @@ public class TuDouCom extends PluginForHost {
         return -1;
     }
 
+    private static final boolean HDS = true;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -68,6 +70,7 @@ public class TuDouCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
         downloadLink.setFinalFileName(filename + ".flv");
+        if (HDS) return AvailableStatus.TRUE;
         String videoID = new Regex(downloadLink.getDownloadURL(), "tudou\\.com/programs/view/(.+)").getMatch(0);
         String iid = br.getRegex("iid: (\\d+)").getMatch(0);
         if (videoID == null || iid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -104,6 +107,7 @@ public class TuDouCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (HDS) throw new PluginException(LinkStatus.ERROR_FATAL, "HDS protocol is not (yet) supported");
         if (br.containsHTML("error=\\'ip is forbidden\\'")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable in your country");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
