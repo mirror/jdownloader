@@ -54,6 +54,7 @@ public class MegaYoupornCc extends PluginForHost {
         if (br.getURL().equals("http://mega-youporn.cc/") || br.getURL().equals("http://www.mega-filmx.com/") || br.containsHTML("\\'%2Fhome%2F%0D\\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
         DLLINK = br.getRegex("\\'file\\'[\t\r\n ]+:\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("<source type=\"video/.*?\" src=(\"|')(https?://.*?)\\1").getMatch(1);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK).trim();
         filename = filename.trim();
