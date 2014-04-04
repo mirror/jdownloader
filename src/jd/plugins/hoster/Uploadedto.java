@@ -94,8 +94,10 @@ public class Uploadedto extends PluginForHost {
     private static final String    PREFER_PREMIUM_DOWNLOAD_API  = "PREFER_PREMIUM_DOWNLOAD_API_V2";
     private static final String    DOWNLOAD_ABUSED              = "DOWNLOAD_ABUSED";
     private boolean                PREFERSSL                    = false;
+    private boolean                avoidHTTPS                   = false;
     
     private String getProtocol() {
+        if (avoidHTTPS) return "http://";
         if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL)) {
             return "https://";
         } else {
@@ -117,15 +119,18 @@ public class Uploadedto extends PluginForHost {
         boolean red = br.isFollowingRedirects();
         br.setFollowRedirects(false);
         try {
-            getPage(br, getProtocol() + "uploaded.net/file/" + id + "/status", true);
+            getPage(br, getProtocol() + "uploaded.net/file/" + id + "/status");
             String ret = br.getRedirectLocation();
-            if (ret != null && ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (ret != null && ret.contains("/410")) {
-                if (dmcaDlEnabled()) {
-                    return AvailableStatus.UNCHECKABLE;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "The requested file isn't available anymore (410)!");
+            if (ret != null) {
+                if (ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (ret.contains("/410")) {
+                    if (dmcaDlEnabled()) {
+                        return AvailableStatus.UNCHECKABLE;
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "The requested file isn't available anymore (410)!");
+                    }
                 }
+                br.getPage(ret);
             }
             String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
             String size = br.getRegex("[\r\n]([0-9\\, TGBMK]+)").getMatch(0);
@@ -141,24 +146,29 @@ public class Uploadedto extends PluginForHost {
         return AvailableStatus.TRUE;
     }
     
-    private String getPage(Browser br, String url, boolean exceptionOnrealRedirect) throws IOException, PluginException, InterruptedException {
-        
-        String ret = br.getPage(url);
+    private void getPage(Browser br, String url) throws IOException, PluginException, InterruptedException {
+        br.getPage(url);
         for (int i = 0; i < 50; i++) {
+            boolean isHTTPS = url.startsWith("https");
             String redirect = br.getRedirectLocation();
+            boolean followRedirect = false;
             if (redirect != null) {
-                if (ret.startsWith("Not HTML Code. Redirect to") || !br.getURL().equals(redirect)) {
-                    Thread.sleep(100 + (i / 10) * 200);
-                    ret = br.getPage(redirect);
-                } else {
-                    return ret;
+                String urlA = br.getURL().replaceFirst("https:", "http:");
+                String urlB = redirect.replaceFirst("https:", "http:");
+                followRedirect = urlA.equals(urlB);
+            }
+            if (followRedirect) {
+                if (isHTTPS && !redirect.startsWith("https")) {
+                    logger.info("Downgrading https to http!");
+                    avoidHTTPS = true;
                 }
+                Thread.sleep(100 + (i / 10) * 200);
+                br.getPage(redirect);
             } else {
-                return ret;
+                return;
             }
         }
-        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
-        
+        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
     }
     
     public boolean canHandle(DownloadLink downloadLink, Account account) {
@@ -315,7 +325,7 @@ public class Uploadedto extends PluginForHost {
                      * workaround for api issues, retry 5 times when content length is only 20 bytes
                      */
                     if (retry == 5) return false;
-                    postPage(br, getProtocol() + "uploaded.net/api/filemultiple", sb.toString(), true);
+                    postPage(br, getProtocol() + "uploaded.net/api/filemultiple", sb.toString());
                     if (br.getHttpConnection().getLongContentLength() != 20) {
                         break;
                     } else {
@@ -442,7 +452,7 @@ public class Uploadedto extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         prepBrowser();
-        postPage(br, getProtocol() + "uploaded.net/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()), true);
+        postPage(br, getProtocol() + "uploaded.net/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("blocked")) {
             ai.setStatus("Too many failed logins! Wait 15 mins");
             account.setTempDisabled(true);
@@ -490,26 +500,30 @@ public class Uploadedto extends PluginForHost {
         return ai;
     }
     
-    private String postPage(Browser br, String url, String data, boolean exceptionOnRealRedirect) throws IOException, PluginException, InterruptedException {
-        String ret = br.postPage(url, data);
-        
+    private void postPage(Browser br, String url, String data) throws IOException, PluginException, InterruptedException {
+        br.postPage(url, data);
         for (int i = 0; i < 25; i++) {
+            boolean isHTTPS = url.startsWith("https");
             String redirect = br.getRedirectLocation();
+            boolean followRedirect = false;
             if (redirect != null) {
+                String urlA = br.getURL().replaceFirst("https:", "http:");
+                String urlB = redirect.replaceFirst("https:", "http:");
+                followRedirect = urlA.equals(urlB);
+            }
+            if (followRedirect) {
+                if (isHTTPS && !redirect.startsWith("https")) {
+                    logger.info("Downgrading https to http!");
+                    avoidHTTPS = true;
+                }
                 logger.info("Redirect Wait");
                 Thread.sleep(100);
-                
-                String lastUrl = br.getURL();
-                if (!lastUrl.equals(redirect)) { return ret;
-                
-                }
-                ret = br.postPage(redirect, data);
+                br.postPage(redirect, data);
             } else {
-                return ret;
+                return;
             }
         }
-        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
-        
+        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
     }
     
     @Override
@@ -621,7 +635,7 @@ public class Uploadedto extends PluginForHost {
             }
             
             final String addedDownloadlink = baseURL + "file/" + id;
-            getPage(br, addedDownloadlink, true);
+            getPage(br, addedDownloadlink);
             String dllink = null;
             String redirect = br.getRedirectLocation();
             if (redirect != null) {
@@ -636,7 +650,7 @@ public class Uploadedto extends PluginForHost {
                     logger.info("Password protected link");
                     passCode = getPassword(downloadLink);
                     if (passCode == null || passCode.equals("")) { throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!"); }
-                    postPage(br, br.getURL(), "pw=" + Encoding.urlEncode(passCode), true);
+                    postPage(br, br.getURL(), "pw=" + Encoding.urlEncode(passCode));
                     if (br.containsHTML("<h2>Authentification</h2>")) {
                         downloadLink.setProperty("pass", null);
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
@@ -648,7 +662,7 @@ public class Uploadedto extends PluginForHost {
                     dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
                 }
                 final Browser brc = br.cloneBrowser();
-                getPage(brc, baseURL + "js/download.js", true);
+                getPage(brc, baseURL + "js/download.js");
                 final String rcID = brc.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
                 int wait = 30;
                 final String waitTime = br.getRegex("<span>Current waiting period: <span>(\\d+)</span> seconds</span>").getMatch(0);
@@ -658,7 +672,7 @@ public class Uploadedto extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage(br, baseURL + "io/ticket/slot/" + getID(downloadLink), "", true);
+                postPage(br, baseURL + "io/ticket/slot/" + getID(downloadLink), "");
                 if (!br.containsHTML("\\{succ:true\\}")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 final long timebefore = System.currentTimeMillis();
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -672,7 +686,7 @@ public class Uploadedto extends PluginForHost {
                     if (i == 0 && passedTime < wait) {
                         sleep((wait - passedTime) * 1001l, downloadLink);
                     }
-                    postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, true);
+                    postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                     if (br.containsHTML("\"err\":\"captcha\"")) {
                         try {
                             invalidateLastChallengeResponse();
@@ -874,7 +888,7 @@ public class Uploadedto extends PluginForHost {
                 if (token != null && liveToken == false) return token;
                 /** URLDecoder can make the password invalid or throw an IllegalArgumentException */
                 // JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH))
-                postPage(br, getProtocol() + "api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + getLoginSHA1Hash(account.getPass()) + "&ishash=1&app=JDownloader", true);
+                postPage(br, getProtocol() + "api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + getLoginSHA1Hash(account.getPass()) + "&ishash=1&app=JDownloader");
                 token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
                 if (token == null) {
                     //
@@ -908,7 +922,7 @@ public class Uploadedto extends PluginForHost {
             try {
                 String tokenType = account.getStringProperty("tokenType", null);
                 if (tokenType != null && liveToken == false) return tokenType;
-                getPage(br, getProtocol() + "api.uploaded.net/api/user/jdownloader?access_token=" + token, true);
+                getPage(br, getProtocol() + "api.uploaded.net/api/user/jdownloader?access_token=" + token);
                 tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
                 
                 if (tokenType == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
@@ -958,16 +972,16 @@ public class Uploadedto extends PluginForHost {
                 String id = getID(downloadLink);
                 String passCode = downloadLink.getStringProperty("pass", null);
                 if (downloadLink.getBooleanProperty("preDlPass", false) && passCode != null) {
-                    getPage(br, baseURL + "file/" + id + "/ddl?pw=" + Encoding.urlEncode(passCode), true);
+                    getPage(br, baseURL + "file/" + id + "/ddl?pw=" + Encoding.urlEncode(passCode));
                 } else {
-                    getPage(br, baseURL + "file/" + id + "/ddl", true);
+                    getPage(br, baseURL + "file/" + id + "/ddl");
                 }
                 if (br.containsHTML("<title>uploaded.net - Maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l); }
                 if (br.containsHTML("<h2>Authentification</h2>")) {
                     logger.info("Password protected link");
                     passCode = getPassword(downloadLink);
                     if (passCode == null || passCode.equals("")) { throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!"); }
-                    postPage(br, br.getURL(), "pw=" + Encoding.urlEncode(passCode), true);
+                    postPage(br, br.getURL(), "pw=" + Encoding.urlEncode(passCode));
                     if (br.containsHTML("<h2>Authentification</h2>")) {
                         downloadLink.setProperty("pass", null);
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
@@ -1086,7 +1100,7 @@ public class Uploadedto extends PluginForHost {
         }
         logger.info("Premium Account, API download method in use!");
         String id = getID(downloadLink);
-        postPage(br, getProtocol() + "api.uploaded.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id, true);
+        postPage(br, getProtocol() + "api.uploaded.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
         if (br.containsHTML("\"err\":\\{\"code\":403")) {
             downloadLink.setProperty("preDlPass", true);
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -1192,7 +1206,7 @@ public class Uploadedto extends PluginForHost {
         boolean red = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(false);
-            getPage(br, getProtocol() + "uploaded.net/language/en", false);
+            getPage(br, getProtocol() + "uploaded.net/language/en");
         } finally {
             br.setFollowRedirects(red);
         }
@@ -1210,7 +1224,7 @@ public class Uploadedto extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 /* login method always returns empty body */
-                postPage(br, getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()), true);
+                postPage(br, getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
                 if (br.containsHTML("User and password do not match")) {
                     final AccountInfo ai = account.getAccountInfo();
                     if (ai != null) ai.setStatus("User and password do not match");
@@ -1228,30 +1242,6 @@ public class Uploadedto extends PluginForHost {
                 br.getHeaders().put("X-Prototype-Version", null);
                 br.getHeaders().put("X-Requested-With", null);
             }
-        }
-    }
-    
-    private void postPageSafe(final String page, final String postdata) throws IOException, InterruptedException, PluginException {
-        for (int i = 1; i <= 3; i++) {
-            postPage(br, page, postdata, true);
-            if (br.containsHTML("No htmlCode read")) {
-                logger.info("Uploaded.to: Request failed, retrying " + i + " of 3");
-                Thread.sleep(1000);
-                continue;
-            }
-            break;
-        }
-    }
-    
-    private void getPageSafe(final String page) throws IOException, InterruptedException, PluginException {
-        for (int i = 1; i <= 3; i++) {
-            getPage(br, page, true);
-            if (br.containsHTML("No htmlCode read")) {
-                logger.info("Uploaded.to: Request failed, retrying " + i + " of 3");
-                Thread.sleep(1000);
-                continue;
-            }
-            break;
         }
     }
     
