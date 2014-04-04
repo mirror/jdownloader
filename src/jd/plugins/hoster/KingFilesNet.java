@@ -1019,7 +1019,7 @@ public class KingFilesNet extends PluginForHost {
                     // set upper limit
                     logger.warning("Connection upper limit reached!");
                     controlSimHost(account);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, 15000);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 5 * 60 * 1000l);
                 } else {
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();

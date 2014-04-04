@@ -475,6 +475,8 @@ public class BillionUploadsCom extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
+
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
             } else {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -967,6 +969,8 @@ public class BillionUploadsCom extends PluginForHost {
                 if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
                     controlSimHost(account);
                     controlHost(account, downloadLink, false);
+
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
                 } else {
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();

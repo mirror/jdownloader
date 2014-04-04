@@ -466,12 +466,13 @@ public class MaskFileCom extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
-                try {
-                    controlSimHost(account);
-                    controlHost(account, downloadLink, false);
-                } catch (final PluginException e) {
-                    if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, waiting till new downloads can be started!", 5 * 60 * 1000l);
-                }
+
+                controlSimHost(account);
+                controlHost(account, downloadLink, false);
+
+                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, waiting till new downloads can be started!", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 5 * 60 * 1000l);
+
             } else {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();

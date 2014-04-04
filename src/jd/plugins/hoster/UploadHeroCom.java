@@ -40,26 +40,26 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /**
- * They have a linkchecker but it's only available for registered users (well maybe it also works so) but it doesn't show the filenames of the links:
- * http://uploadhero.com/api/linktester.php postvalues: "linktest=" + links to check
+ * They have a linkchecker but it's only available for registered users (well maybe it also works so) but it doesn't show the filenames of
+ * the links: http://uploadhero.com/api/linktester.php postvalues: "linktest=" + links to check
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadhero.co", "uploadhero.com" }, urls = { "http://(www\\.)?uploadhero\\.com?/(dl|v)/[A-Za-z0-9]+", "http://NULL_REGEX_BLAAAH12312321" }, flags = { 2, 0 })
 public class UploadHeroCom extends PluginForHost {
-    
+
     private static final String  MAINPAGE = "http://uploadhero.co";
     private static Object        LOCK     = new Object();
     private static AtomicInteger maxPrem  = new AtomicInteger(1);
-    
+
     public UploadHeroCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE + "/premium");
     }
-    
+
     @Override
     public boolean isPremiumEnabled() {
         return "uploadhero.co".equals(getHost());
     }
-    
+
     public Boolean rewriteHost(final DownloadLink link) {
         if ("uploadhero.co".equals(getHost())) {
             if (link != null && "uploadhero.com".equals(link.getHost())) {
@@ -70,7 +70,7 @@ public class UploadHeroCom extends PluginForHost {
         }
         return null;
     }
-    
+
     public Boolean rewriteHost(final Account acc) {
         if ("uploadhero.co".equals(getHost())) {
             if (acc != null && "uploadhero.com".equals(acc.getHoster())) {
@@ -81,16 +81,16 @@ public class UploadHeroCom extends PluginForHost {
         }
         return null;
     }
-    
+
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/tos";
     }
-    
+
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("http://(www\\.)?uploadhero\\.com?/(dl|v)/", MAINPAGE + "/dl/"));
     }
-    
+
     // They got a linkchecker but it's only available for registered users: http://uploadhero.co/link-checker
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -109,13 +109,13 @@ public class UploadHeroCom extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
-    
+
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         final Regex blockRegex = br.getRegex("/lightbox_block_download\\.php\\?min=(\\d+)\\&sec=(\\d+)\"");
         final String blockmin = blockRegex.getMatch(0);
@@ -145,13 +145,13 @@ public class UploadHeroCom extends PluginForHost {
         }
         dl.startDownload();
     }
-    
+
     private String getDllink() {
         String dllink = br.getRegex("var magicomfg = \\'<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://storage\\d+\\.uploadhero\\.com?/\\?d=[A-Za-z0-9]+/[^<>\"/]+)\"").getMatch(0);
         return dllink;
     }
-    
+
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
@@ -194,7 +194,7 @@ public class UploadHeroCom extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         maxPrem.set(1);
@@ -239,7 +239,7 @@ public class UploadHeroCom extends PluginForHost {
         account.setValid(true);
         return ai;
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -280,35 +280,35 @@ public class UploadHeroCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
-                
+
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
     }
-    
+
     private void generalErrorhandling() throws PluginException {
         if (br.getURL().contains("/optmizing") || br.containsHTML(">UploadHero is on maintenance") || br.containsHTML("Maintenance en cours")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 30 * 60 * 1000l);
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return maxPrem.get();
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {

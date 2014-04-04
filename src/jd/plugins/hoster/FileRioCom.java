@@ -52,7 +52,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filerio.in", "filerio.com", "filekeen.com" }, urls = { "http://(www\\.)?(filerio\\.in|filekeen\\.com|filerio\\.com)/[a-z0-9]{12}", "vSGzhkIKEfRUhbUNUSED_REGEXfdgrtjRET36fdfjhtwe85t7459zghwghior", "vSGzhkIKEfRUhbUNUSED_REGEXfdgdadadrtjRET36fdfjhtwe85t7459zghwghior1" }, flags = { 2, 0, 0 })
 public class FileRioCom extends PluginForHost {
-    
+
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://filerio.in";
@@ -60,21 +60,21 @@ public class FileRioCom extends PluginForHost {
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static Object       LOCK                = new Object();
-    
+
     // XfileSharingProBasic Version 2.5.4.6, modified fnf-texts
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replaceAll("(filerio|filekeen)\\.com/", "filerio.in/"));
     }
-    
+
     public boolean isPremiumEnabled() {
         /*
-         * we only want to show filerio.in,so controller sees filerio.com and filekeen.com accounts but plugin no longer exists/supports account, then the
-         * rewriteHost stuff takes over
+         * we only want to show filerio.in,so controller sees filerio.com and filekeen.com accounts but plugin no longer exists/supports
+         * account, then the rewriteHost stuff takes over
          */
         return "filerio.in".equalsIgnoreCase(getHost());
     }
-    
+
     public Boolean rewriteHost(final Account acc) {
         if ("filerio.in".equals(getHost())) {
             if (acc != null && ("filekeen".equals(acc.getHoster()) || "filerio.com".equalsIgnoreCase(getHost()))) {
@@ -85,7 +85,7 @@ public class FileRioCom extends PluginForHost {
         }
         return null;
     }
-    
+
     public Boolean rewriteHost(final DownloadLink link) {
         if ("filerio.in".equals(getHost())) {
             if (link != null && ("filerio.com".equals(getHost()) || "filekeen.com".equalsIgnoreCase(getHost()))) {
@@ -96,27 +96,27 @@ public class FileRioCom extends PluginForHost {
         }
         return null;
     }
-    
+
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
-    
+
     public FileRioCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
-    
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return false;
     }
-    
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -157,13 +157,13 @@ public class FileRioCom extends PluginForHost {
         if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, true, -2, "freelink");
     }
-    
+
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -172,7 +172,7 @@ public class FileRioCom extends PluginForHost {
             logger.info("Found md5hash: " + md5hash);
             downloadLink.setMD5Hash(md5hash);
         }
-        
+
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
          * Video links can already be found here, if a link is found here we can skip wait times and captchas
@@ -196,7 +196,7 @@ public class FileRioCom extends PluginForHost {
                 password = true;
                 logger.info("The downloadlink seems to be password protected.");
             }
-            
+
             /* Captcha START */
             if (correctedBR.contains(";background:#ccc;text-align")) {
                 logger.info("Detected captcha method \"plaintext captchas\" for this host");
@@ -280,12 +280,12 @@ public class FileRioCom extends PluginForHost {
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     /** Remove HTML code which could break the plugin */
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
@@ -306,7 +306,7 @@ public class FileRioCom extends PluginForHost {
             correctedBR = correctedBR.replace(fun, "");
         }
     }
-    
+
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
@@ -338,22 +338,22 @@ public class FileRioCom extends PluginForHost {
         }
         return dllink;
     }
-    
+
     private void getPage(String page) throws Exception {
         br.getPage(page);
         correctBR();
     }
-    
+
     private void postPage(String page, String postdata) throws Exception {
         br.postPage(page, postdata);
         correctBR();
     }
-    
+
     private void sendForm(Form form) throws Exception {
         br.submitForm(form);
         correctBR();
     }
-    
+
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
@@ -415,7 +415,7 @@ public class FileRioCom extends PluginForHost {
         }
         if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
     }
-    
+
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
@@ -423,27 +423,27 @@ public class FileRioCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
-    
+
     private String decodeDownloadLink(String s) {
         String decoded = null;
-        
+
         try {
             Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-            
+
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-            
+
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
             }
-            
+
             decoded = p;
         } catch (Exception e) {
         }
-        
+
         String finallink = null;
         if (decoded != null) {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
@@ -456,7 +456,7 @@ public class FileRioCom extends PluginForHost {
         }
         return finallink;
     }
-    
+
     private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         passCode = thelink.getStringProperty("pass", null);
         if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
@@ -464,7 +464,7 @@ public class FileRioCom extends PluginForHost {
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return Encoding.urlEncode(passCode);
     }
-    
+
     private String checkDirectLink(DownloadLink downloadLink, String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -490,7 +490,7 @@ public class FileRioCom extends PluginForHost {
         }
         return dllink;
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -533,7 +533,7 @@ public class FileRioCom extends PluginForHost {
         }
         return ai;
     }
-    
+
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
@@ -577,7 +577,7 @@ public class FileRioCom extends PluginForHost {
             dl.startDownload();
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
@@ -629,20 +629,20 @@ public class FileRioCom extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
@@ -654,7 +654,7 @@ public class FileRioCom extends PluginForHost {
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
     }
-    
+
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
