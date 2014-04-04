@@ -48,9 +48,6 @@ public class SimplyPremiumCom extends PluginForHost {
     private static String                                  APIKEY             = null;
     private static Object                                  LOCK               = new Object();
 
-    /* = plugin defect errors possible */
-    private static final boolean                           TEST_MODE          = true;
-
     /* Default value is 3 */
     private static AtomicInteger                           maxPrem            = new AtomicInteger(3);
 
@@ -136,7 +133,6 @@ public class SimplyPremiumCom extends PluginForHost {
             br.followConnection();
             downloadErrorhandling(account, link);
             logger.info(NICE_HOST + ": Unknown download error");
-            if (TEST_MODE) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
@@ -186,7 +182,6 @@ public class SimplyPremiumCom extends PluginForHost {
             /* request download */
             dllink = getXML("download");
             if (dllink == null) {
-                if (TEST_MODE) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 logger.info(NICE_HOST + ": dllinknull");
                 int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dllinknull", 0);
                 link.getLinkStatus().setRetryCount(0);

@@ -55,7 +55,7 @@ public class MixtureCloudCom extends PluginForHost {
 
     public MixtureCloudCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.mixturecloud.com/price");
+        this.enablePremium("http://www.mixture-cloud.com/pricing");
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -160,7 +160,7 @@ public class MixtureCloudCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://mixturecloud.com";
+    private static final String MAINPAGE = "http://mixture-cloud.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -185,10 +185,10 @@ public class MixtureCloudCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("https://www.mixturecloud.com/");
+                br.getPage("https://www.mixture-cloud.com/");
                 final String secCode = br.getRegex("type=\"hidden\" name=\"securecode\" value=\"([^<>\"]{8})\"").getMatch(0);
                 if (secCode == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                String postData = "back=&securecode=" + Encoding.urlEncode(secCode) + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login=1";
+                String postData = "login=1&back=&securecode=" + Encoding.urlEncode(secCode) + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 // Check if we have to enter a login captcha
                 final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
                 if (rcID != null) {
@@ -201,7 +201,7 @@ public class MixtureCloudCom extends PluginForHost {
                     final String c = getCaptchaCode(cf, dummyLink);
                     postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                 }
-                br.postPage("/login", postData);
+                br.postPage("http://www.mixture-cloud.com/login", postData);
                 if (br.getCookie(MAINPAGE, "mx") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
 
                 // Save cookies
@@ -244,7 +244,7 @@ public class MixtureCloudCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("https://www.mixturecloud.com/account");
+        br.getPage("https://www.mixture-cloud.com/account");
         ai.setUnlimitedTraffic();
         account.setValid(true);
         if (br.containsHTML("<\\!\\-\\- PREMIUM \\-\\->")) {

@@ -50,7 +50,7 @@ public class OneChannelCh extends PluginForDecrypt {
             for (String singleLink : episodes)
                 decryptedLinks.add(createDownloadlink("http://www.1channel.ch" + singleLink));
         } else {
-            if (br.getURL().equals("http://www.1channel.ch/")) {
+            if (br.getURL().equals("http://www.1channel.ch/") || br.getURL().contains("/index.php")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             } else if (br.containsHTML(">No episodes listed<")) {
