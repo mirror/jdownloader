@@ -23,7 +23,6 @@ import jd.controlling.linkcrawler.CrawledPackageProperty;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
-import jd.plugins.DownloadLinkProperty.Property;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatusProperty;
@@ -592,6 +591,28 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     @Override
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
+        DownloadLink dl = candidate.getLink();
+        if (dl != null) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("linkID", dl.getUniqueID().getID());
+            data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+            data.put("action", "Stopped");
+            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_STOPPED" + dl.getUniqueID().getID());
+
+            if (FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
+                data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+                data.put("linkID", dl.getUniqueID().getID());
+                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                data.put("action", "Finished");
+                publishEvent(EVENTID.LINKCHANGED, data);
+                if (dl.getFilePackage().getFinishedDate() > 0) {
+                    data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+                    data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                    data.put("action", "PackageFinished");
+                    publishEvent(EVENTID.PACKAGEFINISHED, data);
+                }
+            }
+        }
     }
 
     @Override
@@ -610,102 +631,6 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     @Override
     public void onDownloadControllerStructureRefresh(final AbstractNode node, Object param) {
-        if (node instanceof DownloadLink) {
-            DownloadLink dl = (DownloadLink) node;
-            if (dl != null) {
-                org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-
-                if (param instanceof DownloadLinkProperty) {
-
-                    if (((DownloadLinkProperty) param).getProperty() == Property.RESET) {
-                        data.put("linkID", dl.getUniqueID().getID());
-                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                        data.put("action", "Reset");
-                        publishEvent(EVENTID.LINKCHANGED, data, "DOWNLOADLINK_RESET_" + dl.getUniqueID().getID());
-                    } else if (((DownloadLinkProperty) param).getProperty() == Property.PLUGIN_PROGRESS || ((DownloadLinkProperty) param).getProperty() == Property.CONDITIONAL_SKIPPED || ((DownloadLinkProperty) param).getProperty() == Property.SKIPPED) {
-                        String lastMessage = linkStatusMessages.get(dl.getUniqueID().getID());
-                        if (lastMessage == null) {
-                            lastMessage = "";
-                        }
-                        String newMessage = Helper.getMessage(dl);
-                        if (newMessage == null) {
-                            newMessage = "";
-                        }
-                        if (!lastMessage.equals(newMessage)) {
-                            linkStatusMessages.remove(dl.getUniqueID().getID());
-                            linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
-                            data.put("action", "MessageChanged");
-                            data.put("linkID", dl.getUniqueID().getID());
-
-                            data.put("NewValue", newMessage);
-                            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_MESSAGE_AVAILABILITY" + dl.getUniqueID().getID());
-                        }
-                    } else if (((DownloadLinkProperty) param).getProperty() == Property.FINAL_STATE) {
-                        if (FinalLinkState.CheckFinished(dl.getFinalLinkState())) {
-                            data.put("linkID", dl.getUniqueID().getID());
-                            data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                            data.put("action", "Finished");
-                            publishEvent(EVENTID.LINKCHANGED, data);
-                            if (dl.getFilePackage().getFinishedDate() > 0) {
-                                data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                                data.put("action", "PackageFinished");
-                                publishEvent(EVENTID.PACKAGEFINISHED, data);
-                            }
-                        } else {
-
-                        }
-                    } else {
-                        data.put("linkID", dl.getUniqueID().getID());
-                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
-                        data.put("NewValue", ((DownloadLinkProperty) param).getValue());
-                        switch (((DownloadLinkProperty) param).getProperty()) {
-                        case NAME:
-                            data.put("action", "NameChanged");
-                            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_NAME_" + dl.getUniqueID().getID());
-                            break;
-                        case PRIORITY:
-                            data.put("action", "PriorityChanged");
-                            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_PRIORITY_" + dl.getUniqueID().getID());
-                            break;
-                        case ENABLED:
-                            data.put("action", "EnabledChanged");
-                            data.put("packageValue", GetFilePackageEnbled(dl.getFilePackage()));
-                            publishEvent(EVENTID.LINKENABLEDCHANGED, data, "DOWNLOADLINK_ENABLED_" + dl.getUniqueID().getID());
-                            break;
-                        case AVAILABILITY:
-                            data.put("action", "AvailabilityChanged");
-                            publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_RESET_AVAILABILITY" + dl.getUniqueID().getID());
-                            break;
-                        }
-
-                    }
-                } else {
-
-                }
-            }
-
-        } else if (node instanceof FilePackage) {
-            FilePackage dl = (FilePackage) node;
-            if (dl != null) {
-                org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-
-                if (param instanceof FilePackageProperty) {
-                    data.put("packageID", dl.getUniqueID().toString());
-                    data.put("NewValue", ((FilePackageProperty) param).getValue());
-                    switch (((FilePackageProperty) param).getProperty()) {
-                    case NAME:
-                        data.put("action", "NameChanged");
-                        publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data, "FILEPACKAGE_NAME_" + dl.getUniqueID().toString());
-                        break;
-                    case FOLDER:
-                        data.put("action", "FolderChanged");
-                        publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data, "FILEPACKAGE_FOLDER_" + dl.getUniqueID().toString());
-                        break;
-                    }
-                }
-            }
-        }
     }
 
     @Override
@@ -722,11 +647,96 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
     }
 
     @Override
-    public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
+    public void onDownloadControllerUpdatedData(DownloadLink dl, DownloadLinkProperty dlProperty) {
+        if (dl != null) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            // final DownloadLink dl = dlProperty.getDownloadLink();
+
+            switch (dlProperty.getProperty()) {
+
+            case AVAILABILITY:
+                data.put("linkID", dl.getUniqueID().getID());
+                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                data.put("NewValue", dlProperty.getValue());
+                data.put("action", "AvailabilityChanged");
+                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_RESET_AVAILABILITY" + dl.getUniqueID().getID());
+                break;
+            case ARCHIVE:
+            case CONDITIONAL_SKIPPED:
+            case EXTRACTION_STATUS:
+            case PLUGIN_PROGRESS:
+            case SKIPPED:
+                String lastMessage = linkStatusMessages.get(dl.getUniqueID().getID());
+                if (lastMessage == null) {
+                    lastMessage = "";
+                }
+                String newMessage = Helper.getMessage(dl);
+                if (newMessage == null) {
+                    newMessage = "";
+                }
+                if (!lastMessage.equals(newMessage)) {
+                    linkStatusMessages.remove(dl.getUniqueID().getID());
+                    linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
+                    data.put("action", "MessageChanged");
+                    data.put("linkID", dl.getUniqueID().getID());
+                    data.put("NewValue", newMessage);
+                    publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_MESSAGE_AVAILABILITY" + dl.getUniqueID().getID());
+                }
+                break;
+            case ENABLED:
+                data.put("linkID", dl.getUniqueID().getID());
+                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                data.put("NewValue", dlProperty.getValue());
+                data.put("action", "EnabledChanged");
+                data.put("packageValue", GetFilePackageEnbled(dl.getFilePackage()));
+                publishEvent(EVENTID.LINKENABLEDCHANGED, data, "DOWNLOADLINK_ENABLED_" + dl.getUniqueID().getID());
+                break;
+            case FINAL_STATE:
+                break;
+            case NAME:
+                data.put("linkID", dl.getUniqueID().getID());
+                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                data.put("NewValue", dlProperty.getValue());
+                data.put("action", "NameChanged");
+                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_NAME_" + dl.getUniqueID().getID());
+                break;
+            case PRIORITY:
+                data.put("linkID", dl.getUniqueID().getID());
+                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                data.put("NewValue", dlProperty.getValue());
+                data.put("action", "PriorityChanged");
+                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_PRIORITY_" + dl.getUniqueID().getID());
+                break;
+            case RESET:
+                data.put("linkID", dl.getUniqueID().getID());
+                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                data.put("action", "Reset");
+                publishEvent(EVENTID.LINKCHANGED, data, "DOWNLOADLINK_RESET_" + dl.getUniqueID().getID());
+                break;
+            default:
+                break;
+            }
+        }
     }
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
+
+        if (pkg != null) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("packageID", pkg.getUniqueID().toString());
+            data.put("NewValue", property.getValue());
+            switch (property.getProperty()) {
+            case NAME:
+                data.put("action", "NameChanged");
+                publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data, "FILEPACKAGE_NAME_" + pkg.getUniqueID().toString());
+                break;
+            case FOLDER:
+                data.put("action", "FolderChanged");
+                publishEvent(EVENTID.FILEPACKAGESTATUSCHANGED, data, "FILEPACKAGE_FOLDER_" + pkg.getUniqueID().toString());
+                break;
+            }
+        }
     }
 
     @Override
