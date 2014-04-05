@@ -351,8 +351,9 @@ public class OBoomCom extends PluginForHost {
         }
         fetchFileInformation(link, session);
         checkShowFreeDialog();
+        if (session == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setAllowedResponseCodes(421, 509);
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         for (int i = 1; i <= 5; i++) {
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId("6LdqpO0SAAAAAJGHXo63HyalP7H4qlRs_vff0kJX");

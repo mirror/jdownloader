@@ -75,12 +75,18 @@ public class VideoCnnturkCom extends PluginForHost {
             if (filename == null) filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
-            final Regex urlinfo = new Regex(downloadLink.getDownloadURL(), "video\\.cnnturk\\.com/(\\d+)/(\\w+)/(\\d+)/(\\d+)/([a-z0-9\\-]+)");
-            final String playerURL = "http://video.cnnturk.com/actions/Video/NetDVideoPlayer?year=" + urlinfo.getMatch(0) + "&category=" + urlinfo.getMatch(1) + "&month=" + urlinfo.getMatch(2) + "&day=" + urlinfo.getMatch(3) + "&name=" + urlinfo.getMatch(4) + "&height=360";
-            br.setFollowRedirects(true);
-            br.getPage(playerURL);
-            if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            DLLINK = br.getRegex("path: \\'([^<>\"]*?)\\'").getMatch(0);
+            final String itemID = br.getRegex("itemId: \\'([a-z0-9]+)\\'").getMatch(0);
+            if (itemID != null) {
+                br.getPage("http://www.cnnturk.com/player/embed/" + itemID);
+                DLLINK = br.getRegex("path: \\'(http[^<>\"]*?)\\'").getMatch(0);
+            } else {
+                final Regex urlinfo = new Regex(downloadLink.getDownloadURL(), "video\\.cnnturk\\.com/(\\d+)/(\\w+)/(\\d+)/(\\d+)/([a-z0-9\\-]+)");
+                final String playerURL = "http://video.cnnturk.com/actions/Video/NetDVideoPlayer?year=" + urlinfo.getMatch(0) + "&category=" + urlinfo.getMatch(1) + "&month=" + urlinfo.getMatch(2) + "&day=" + urlinfo.getMatch(3) + "&name=" + urlinfo.getMatch(4) + "&height=360";
+                br.setFollowRedirects(true);
+                br.getPage(playerURL);
+                if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                DLLINK = br.getRegex("path: \\'([^<>\"]*?)\\'").getMatch(0);
+            }
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (DLLINK.contains(".mp4")) {
                 filename = filename + ".mp4";
