@@ -52,7 +52,7 @@ public class VideoBashCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Page Not Found<|exist or has been moved\\.<|>If you think you have found this page in error|>Please make sure you have the right URL|<title>Videobash:Funny Videos Tube,Viral Clips,Free Jokes \\& Funny Pictures</title>|>Video was removed due to violation of our terms)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Page Not Found<|exist or has been moved\\.<|>If you think you have found this page in error|>Please make sure you have the right URL|<title>Videobash:Funny Videos Tube,Viral Clips,Free Jokes \\& Funny Pictures</title>|>Video was removed due to violation of our terms|>Video no longer exists)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\" itemprop=\"itemreviewed\">(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("var title = \\'(.*?)\\';").getMatch(0);

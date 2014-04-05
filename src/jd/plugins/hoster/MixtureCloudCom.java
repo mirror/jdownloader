@@ -197,12 +197,13 @@ public class MixtureCloudCom extends PluginForHost {
                     rc.setId(rcID);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "mixturecloud.com", "http://mixturecloud.com", true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "mixturecloud.com", "http://mixture-cloud.com", true);
                     final String c = getCaptchaCode(cf, dummyLink);
                     postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                 }
                 br.postPage("http://www.mixture-cloud.com/login", postData);
-                if (br.getCookie(MAINPAGE, "mx") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final String mx_m = br.getCookie(MAINPAGE, "mx_m");
+                if (br.getCookie(MAINPAGE, "mx") == null && (mx_m == null || !mx_m.contains("connected"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
 
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();

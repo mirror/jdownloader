@@ -53,7 +53,18 @@ public class VideoBashComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://recordsetter.com/world-record/x/" + externID));
             return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink(parameter.replace("videobash.com/", "videobashdecrypted.com/")));
+        if (br.containsHTML("player\\.anyclip\\.com/embed")) {
+            externID = br.getRegex("\\{clipID: \"([A-Za-z0-9]+)\"").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink("http://www.anyclip.com/movies/" + System.currentTimeMillis() + "/" + externID));
+            return decryptedLinks;
+        }
+        final DownloadLink main = createDownloadlink(parameter.replace("videobash.com/", "videobashdecrypted.com/"));
+        if (br.containsHTML(">Video no longer exists")) main.setAvailable(false);
+        decryptedLinks.add(main);
         return decryptedLinks;
     }
 

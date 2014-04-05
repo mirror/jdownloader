@@ -29,6 +29,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -76,7 +77,12 @@ public class TriLuLiLuRo extends PluginForHost {
         // THIS TYPE OF FUNCTION WITHIN A HOSTER PLUGIN, PREVENTS DEEP ANALYSE FROM WORKING! BEST NOT TO USE IT!
         // if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw e;
+        }
         // Link offline
         if (br.getURL().equals("http://www.trilulilu.ro/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(COUNTRYBLOCK)) {

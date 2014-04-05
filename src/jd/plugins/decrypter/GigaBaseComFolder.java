@@ -37,7 +37,12 @@ public class GigaBaseComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (!br.getURL().contains("/folder/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String[] links = br.getRegex("<li><a href=\"(http://(www\\.)?gigabase\\.com/getfile/[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

@@ -51,11 +51,10 @@ public class EmoHottiesCom extends PluginForHost {
         if (br.getURL().equals("http://emohotties.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Emo Hotties</title>").getMatch(0);
-        DLLINK = br.getRegex("(http://emohotties\\.com/playerConfig\\.php\\?[^<>\"/]+\\.(flv|mp4)(\\|\\d+)?)\"").getMatch(0);
+        // DLLINK = br.getRegex("(http://emohotties\\.com/playerConfig\\.php\\?[^<>\"/]+\\.(flv|mp4)(\\|\\d+)?)\"").getMatch(0);
+        /* Important: Remember that: http://jdownloader.net:8081/pastebin/123271 */
+        DLLINK = br.getRegex("itemprop=\"contentURL\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(DLLINK);
-        DLLINK = br.getRegex("flvMask:(http://[^<>\"]*?);").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));

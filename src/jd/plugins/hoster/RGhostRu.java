@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -58,8 +59,9 @@ public class RGhostRu extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
+        if (br.getHttpConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server maintenance");
         br.setFollowRedirects(false);
         String dllink = br.getRegex("class=\"header_link\">.*?<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<a href=\"([^\"]*?/download/(private/)?\\d+.*?)\"").getMatch(0);
@@ -103,10 +105,18 @@ public class RGhostRu extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 503) {
+                link.getLinkStatus().setStatusText("Server maintenance");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw e;
+        }
         // error clause for offline links
         if (br.containsHTML(">[\r\n]+File is deleted\\.[\r\n]+<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("rel=\"alternate\" title=\"Comments for the file ([^<>\"]*?)\"").getMatch(0);

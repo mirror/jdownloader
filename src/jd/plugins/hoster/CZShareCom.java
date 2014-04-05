@@ -42,28 +42,36 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?(czshare\\.com/((files/)?\\d+/[A-Za-z0-9_\\.\\-]+(/.{1})?|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9\\-]+)|www\\d+\\.czshare\\.com/profi\\.php\\?id=\\d+\\&kod=[A-Za-z0-9\\-]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz", "czshare.com" }, urls = { "http://(www\\.)?sdilej\\.cz/\\d+/.{1}", "fhirtogjnrogjmrogowcertvntzjuilthbfrwefdDELETE_MErvrgjzjz7ef" }, flags = { 0, 2 })
 public class CZShareCom extends PluginForHost {
 
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
     private static Object        LOCK                 = new Object();
-    private static final String  MAINPAGE             = "http://czshare.com/";
+    private static final String  MAINPAGE             = "http://sdilej.cz/";
     private static final String  CAPTCHATEXT          = "captcha\\.php";
 
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://czshare.com/create_user.php");
+        this.enablePremium("http://sdilej.cz/registrace");
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        Regex linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/download_file\\.php\\?id=(\\d+)\\&code=([A-Za-z0-9]+)");
-        if (linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) {
-            linkInfo = new Regex(link.getDownloadURL(), "czshare\\.com/(\\d+)/([A-Za-z0-9_]+)/");
-            if (linkInfo.getMatch(0) == null && linkInfo.getMatch(1) == null) {
-                linkInfo = new Regex(link.getDownloadURL(), ".*?czshare\\.com/profi\\.php\\?id=(\\d+)\\&kod=([A-Za-z0-9]+)");
-            }
-        }
-        if (linkInfo.getMatch(0) != null && linkInfo.getMatch(1) != null) link.setUrlDownload("http://czshare.com/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/x");
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        /* Mark old links as offline */
+        if (downloadLink.getDownloadURL().contains("czshare.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>([^<>\"]*?)<span>\\&nbsp;</span>").getMatch(0);
+        final String filesize = br.getRegex("Velikost: (.*?)<").getMatch(0);
+        if (filename == null || filesize == null || "0 B".equals(filesize)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Set final filename here because server sends html encoded filenames
+        downloadLink.setFinalFileName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -73,12 +81,22 @@ public class CZShareCom extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         String trafficleft = br.getRegex("kredit: <strong>(.*?)</").getMatch(0);
         // Regex probably broken
         String expires = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>.*?<td>(.*?)</td>").getMatch(0);
-        if (expires != null && !"neomezená".equals(expires)) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
+        if (expires != null && !"neomezená".equals(expires)) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
+        } else if (expires == null) {
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+
+        }
         if (trafficleft != null) ai.setTrafficLeft(trafficleft.replace(",", "."));
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -87,7 +105,7 @@ public class CZShareCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.czshare.com/pravidla.html";
+        return "http://sdilej.cz/VOP.pdf";
     }
 
     @Override
@@ -113,18 +131,18 @@ public class CZShareCom extends PluginForHost {
         String freeLink = br.getRegex("allowTransparency=\"true\"></iframe><a href=\"(/.*?)\"").getMatch(0);
         if (freeLink == null) freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+.*?code=.*?)\"").getMatch(0);
         if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://czshare.com" + Encoding.htmlDecode(freeLink));
+        br.getPage("http://sdilej.cz" + Encoding.htmlDecode(freeLink));
         handleErrors();
         String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
         String size = br.getRegex("name=\"size\" value=\"(\\d+)\"").getMatch(0);
         String server = br.getRegex("name=\"server\" value=\"(.*?)\"").getMatch(0);
         if (!br.containsHTML(CAPTCHATEXT) || file == null || size == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String code = getCaptchaCode("http://czshare.com/captcha.php", downloadLink);
-        br.postPage("http://czshare.com/download.php", "id=" + new Regex(downloadLink.getDownloadURL(), "czshare\\.com/(\\d+)/.*?").getMatch(0) + "&file=" + file + "&size=" + size + "&server=" + server + "&captchastring2=" + Encoding.urlEncode(code) + "&freedown=Ov%C4%9B%C5%99it+a+st%C3%A1hnout");
+        String code = getCaptchaCode("http://sdilej.cz/captcha.php", downloadLink);
+        br.postPage("http://sdilej.cz/download.php", "id=" + new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/.*?").getMatch(0) + "&file=" + file + "&size=" + size + "&server=" + server + "&captchastring2=" + Encoding.urlEncode(code) + "&freedown=Ov%C4%9B%C5%99it+a+st%C3%A1hnout");
         if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
         if (br.containsHTML(">Zadaný ověřovací kód nesouhlasí") || br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = br.getRegex("<p class=\"button2\" id=\"downloadbtn\" style=\"display:none\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.czshare\\.com/download\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.sdilej\\.cz/download\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /** Waittime can be skipped */
         // int wait = 50;
@@ -151,9 +169,9 @@ public class CZShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         String code = br.getRegex("<input type=\"hidden\" name=\"code\" value=\"(.*?)\"").getMatch(0);
         if (code == null) code = br.getRegex("\\&amp;code=(.*?)\"").getMatch(0);
-        String linkID = new Regex(downloadLink.getDownloadURL(), "czshare\\.com/(\\d+)/").getMatch(0);
+        String linkID = new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/").getMatch(0);
         if (linkID == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://czshare.com/profi_down.php", "id=" + linkID + "&code=" + code);
+        br.postPage("http://sdilej.cz/profi_down.php", "id=" + linkID + "&code=" + code);
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("dllink is null...");
@@ -196,8 +214,15 @@ public class CZShareCom extends PluginForHost {
                 }
 
                 br.setFollowRedirects(true);
-                br.postPage("http://czshare.com/index.php", "login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()) + "&trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit");
-                if (br.getCookie(MAINPAGE, "trvale") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("https://sdilej.cz/index.php", "trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit+SSL&login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "trvale") == null) {
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -212,29 +237,6 @@ public class CZShareCom extends PluginForHost {
                 throw e;
             }
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        /** First regex is only for video links */
-        String filename = br.getRegex("onmouseover=\"video_thumb_start\\(this,\\'http://www\\d+\\.czshare\\.com/images_velke\\',\\'\\d+\\'\\)\" title=\"([^<>\"/]+)\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("page-download\"><img src.*?alt=\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = Encoding.htmlDecode(br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>(.*?)<span>\\&nbsp;</span></h1>").getMatch(0));
-            if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) CZshare\\.com download</title>").getMatch(0));
-        }
-        String filesize = br.getRegex("Velikost: (.*?)<").getMatch(0);
-        if (filename == null || filesize == null || "0 B".equals(filesize)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Set final filename here because server sends html encoded filenames
-        downloadLink.setFinalFileName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
-        return AvailableStatus.TRUE;
     }
 
     @Override

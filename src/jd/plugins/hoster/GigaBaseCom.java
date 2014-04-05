@@ -63,14 +63,9 @@ public class GigaBaseCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
         }
-        Regex fileInfo = br.getRegex("<div id=\"fileName\" style=\"[^<>\"]+\">(.*?)</div>[\t\n\r ]+\\(([^<>\"\\']+)\\)[\t\n\r ]+<a href=\"");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) {
-            fileInfo = br.getRegex("<span title=\"(.*?)\" id=\"fileName\" style=\"[^<>\"]+\">.*?</span>[ \t\r\n]+\\(([^<>\"\\']+)\\)</h3>");
-            filename = fileInfo.getMatch(0);
-            filesize = fileInfo.getMatch(1);
-        }
+        final Regex fileInfo = br.getRegex("<small>Download file:</small><br/>([^<>\"]*?)<small>\\(([^<>\"]*?)\\)</small>");
+        final String filename = fileInfo.getMatch(0);
+        final String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));

@@ -307,7 +307,7 @@ public class GrabItShareCom extends PluginForHost {
         String expires = getData("Vaše članstvo istiće");
         if (expires != null) {
             expires = expires.trim();
-            if (!expires.equals("Never")) {
+            if (!expires.equals("Never") && !expires.equals("Nikada")) {
                 String[] e = expires.split("/");
                 Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[0]) - 1, Integer.parseInt(e[1]));
                 ai.setValidUntil(cal.getTimeInMillis());

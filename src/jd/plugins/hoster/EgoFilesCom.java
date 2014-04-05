@@ -76,7 +76,7 @@ public class EgoFilesCom extends PluginForHost {
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
         // (Invalid link | Link offline, this also means country block!)
-        if (br.containsHTML("(>404 \\- Not Found<|>404 File not found<)") || br.containsHTML("Ten link jest niepoprawny, sprawdź czy nie ma jakiegoś błędu\\.") || br.containsHTML("File size: 0 KB | Upload date:          </div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>404 \\- Not Found<|>404 File not found<)") || br.containsHTML("Ten link jest niepoprawny, sprawdź czy nie ma jakiegoś błędu\\.") || br.containsHTML("File size: 0 KB | Upload date:          </div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         final String filename = br.getRegex("<div class=\"down\\-file\">([^<>\"]*?)<div").getMatch(0);
         final String filesize = br.getRegex("File size: ([^<>\"]*?) \\|").getMatch(0);
