@@ -245,7 +245,7 @@ public class MixtureCloudCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("https://www.mixture-cloud.com/account");
+        br.getPage("http://www.mixture-cloud.com/account");
         ai.setUnlimitedTraffic();
         account.setValid(true);
         if (br.containsHTML("<\\!\\-\\- PREMIUM \\-\\->")) {
@@ -267,7 +267,6 @@ public class MixtureCloudCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setCookie(MAINPAGE, "mx_l", "en");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         if (account.getBooleanProperty("free")) {
