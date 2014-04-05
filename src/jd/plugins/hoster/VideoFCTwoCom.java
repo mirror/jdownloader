@@ -92,10 +92,10 @@ public class VideoFCTwoCom extends PluginForHost {
                 br.getHeaders().put("Cache-Control", null);
                 br.getHeaders().put("Pragma", null);
                 br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                br.getHeaders().put("Referer", "http://fc2.com/en/login.php?ref=video");
+                br.getHeaders().put("Referer", "http://fc2.com/en/login.php");
                 br.setCookie(br.getHost(), "language", "en");
-                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&done=&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&done=video");
-                String loginDone = br.getRegex("(http://id\\.fc2\\.com/\\?mode=redirect&login=done)").getMatch(0);
+                br.postPage("https://secure.id.fc2.com/index.php?mode=login&switch_language=en", "email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&done=&image.x=" + (int) (200 * Math.random() + 1) + "&image.y=" + (int) (47 * Math.random() + 1) + "&keep_login=1&image=Log+in&done=");
+                String loginDone = br.getRegex("(http://id\\.fc2\\.com/\\?.*?login=done.*?)").getMatch(0);
                 if (loginDone == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage(loginDone);
                 // Save cookies
@@ -136,7 +136,7 @@ public class VideoFCTwoCom extends PluginForHost {
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
             ai.setStatus("Premium User");
-        } else if (br.containsHTML(">Paying Member</span>")) {
+        } else if (br.containsHTML(">Paying Member</span>|>Type</li><li[^>]*>Premium Member</li>")) {
             ai.setStatus("Premium User");
         } else if (br.containsHTML("Free Member")) {
             ai.setValidUntil(-1);
