@@ -261,6 +261,7 @@ public class BillionUploadsCom extends PluginForHost {
             if (inValidate(fileInfo[0]) && inValidate(fileInfo[1])) {
                 logger.warning("Possible plugin error, trying fail over!");
                 altAvailStat(downloadLink, fileInfo);
+                if (cbr.containsHTML("META NAME=\"robots\"")) return AvailableStatus.UNCHECKABLE;
             }
         }
         if (inValidate(fileInfo[0])) {
