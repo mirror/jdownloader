@@ -46,7 +46,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
 /** Works exactly like sockshare.com */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "http://(www\\.)?(m\\.)?(putlocker|firedrive)\\.com/(file|embed|mobile/file)/[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrive.com", "putlocker.com" }, urls = { "https?://(www\\.)?(m\\.)?(putlocker|firedrive)\\.com/(file|embed|mobile/file)/[A-Z0-9]+", "dg56i8zg3ufgrheiugrio9gh59zjder9gjKILL_ME_V2_frh6ujtzj" }, flags = { 2, 0 })
 public class PutLockerCom extends PluginForHost {
 
     // TODO: fix premium, it's broken because of domainchange
@@ -89,9 +89,13 @@ public class PutLockerCom extends PluginForHost {
         return null;
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(DownloadLink link) throws PluginException {
         // Correct all because firedrive doesn't have the embed links though users use them anyways
-        link.setUrlDownload("http://www.firedrive.com/file/" + new Regex(link.getDownloadURL(), "/([A-Z0-9]+)$").getMatch(0));
+        // respect users protocol import
+        final String prot = new Regex(link.getDownloadURL(), "https?://").getMatch(-1);
+        final String fuid = new Regex(link.getDownloadURL(), "/([A-Z0-9]+)$").getMatch(0);
+        if (prot == null || fuid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setUrlDownload(prot + "www.firedrive.com/file/" + fuid);
     }
 
     /* Don't use it as it doesn't work for private links */
@@ -151,9 +155,9 @@ public class PutLockerCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         prepBrowser();
         br.setFollowRedirects(true);
-        correctDownloadLink(link);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("This file might have been moved, replaced or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORD_PROTECTED)) {
@@ -166,11 +170,11 @@ public class PutLockerCom extends PluginForHost {
         String filename = br.getRegex("<b>Name:</b>([^<>\"]*?)<br>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\| Firedrive</title>").getMatch(0);
         final String filesize = br.getRegex("<b>Size:</b>([^<>\"]*?)<br>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // User sometimes adds random stuff to filenames when downloading so we
         // better set the final name here
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -217,7 +221,6 @@ public class PutLockerCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
         if (br.containsHTML("This file is private and only viewable by the owner")) throw new PluginException(LinkStatus.ERROR_FATAL, "Private file - only downloadable by the owner");
         br.setFollowRedirects(false);
         String passCode = null;
@@ -402,6 +405,7 @@ public class PutLockerCom extends PluginForHost {
             JDUtilities.getPluginForHost("mediafire.com");
             agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
+        br.getHeaders().put("User-Agent", agent.get());
     }
 
     private void login(final Account account, final boolean fetchInfo) throws Exception {
