@@ -108,6 +108,7 @@ public class TriLuLiLuRo extends PluginForHost {
             downloadLink.setFinalFileName(filename);
         } else if (isTypeMusic(downloadLink)) {
             filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\\- Muzică.*? \\- Trilulilu\"").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>(.*?)\\s*-\\s*Muzică\\s*-\\s*Trilulilu</title>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
         } else {
