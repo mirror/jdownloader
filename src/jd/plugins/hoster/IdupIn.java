@@ -479,7 +479,6 @@ public class IdupIn extends PluginForHost {
         if (dllink == null) {
             final String t = new Regex(correctedBR, "(\"|')(https?://download\\.idup\\.in/.*?)\\1").getMatch(1);
             if (t != null) {
-                JDUtilities.getPluginForDecrypt("adf.ly");
                 final PluginForDecrypt assfly = JDUtilities.getPluginForDecrypt("adf.ly");
                 final jd.plugins.decrypter.AdfLy.adfly ass = ((jd.plugins.decrypter.AdfLy) assfly).Adfly();
                 ass.addHost(t);
