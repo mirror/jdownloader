@@ -87,7 +87,7 @@ public class IdupIn extends PluginForHost {
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: 4dignum!
     // other:
 
     @Override
@@ -362,12 +362,6 @@ public class IdupIn extends PluginForHost {
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
-                final String adslink = new Regex(correctedBR, "\"(http://download\\.idup\\.in/[A-Za-z0-9]+)\"").getMatch(0);
-                if (adslink != null) {
-                    // Not implemented yet
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    // getPage(adslink);
-                }
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -480,6 +474,22 @@ public class IdupIn extends PluginForHost {
                         if (dllink != null) break;
                     }
                 }
+            }
+        }
+        if (dllink == null) {
+            final String t = new Regex(correctedBR, "(\"|')(https?://download\\.idup\\.in/.*?)\\1").getMatch(1);
+            if (t != null) {
+                JDUtilities.getPluginForDecrypt("adf.ly");
+                final PluginForDecrypt assfly = JDUtilities.getPluginForDecrypt("adf.ly");
+                final jd.plugins.decrypter.AdfLy.adfly ass = ((jd.plugins.decrypter.AdfLy) assfly).Adfly();
+                ass.addHost(t);
+                ArrayList<String> lnk = new ArrayList<String>();
+                try {
+                    lnk = ass.decryptThis(t);
+                } catch (Exception e) {
+                }
+                // should only ever return single link for hoster based results
+                if (lnk != null && !lnk.isEmpty()) return lnk.get(0);
             }
         }
         return dllink;
