@@ -95,7 +95,9 @@ public class Tb7Pl extends PluginForHost {
         }
 
         // unfortunatelly there is no list with supported hosts anywhere on the page
-        final List<String> supportedHostsList = asList("egofiles.com", "catshare.net", "turbobit.net", "rapidgator.net", "rg.to", "netload.in", "uploaded.to", "uploaded.net", "ul.to", "bitshare.com", "freakshare.net", "freakshare.com");
+        // only PNG image at the main page
+        final List<String> supportedHostsList = asList("egofiles.com", "catshare.net", "turbobit.net", "rapidgator.net", "rg.to", "netload.in",
+                "uploaded.to", "uploaded.net", "ul.to", "bitshare.com", "freakshare.net", "freakshare.com", "rapidu.net");
         final ArrayList<String> supportedHosts = new ArrayList<String>(supportedHostsList.size());
         supportedHosts.addAll(supportedHostsList);
 
