@@ -59,6 +59,9 @@ public class UGoUploadNet extends PluginForHost {
     private final String        MAINPAGE                 = "http://ugoupload.net";
     private final boolean       RESUME                   = false;
     private final int           MAXCHUNKS                = 1;
+
+    private static final String INVALIDLINKS             = "http://(www\\.)?ugoupload\\.net/(login|register|report)";
+
     private static final String PREMIUMONLY              = "?e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
     private static final String PREMIUMONLYUSERTEXT      = "Only downloadable for premium users";
     private static final String SIMULTANDLSLIMIT         = "?e=You+have+reached+the+maximum+concurrent+downloads";
@@ -72,6 +75,7 @@ public class UGoUploadNet extends PluginForHost {
     /** Uses same script as filegig.com */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -90,7 +94,7 @@ public class UGoUploadNet extends PluginForHost {
             link.getLinkStatus().setStatusText(DLSLIMITUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (br.getURL().contains("ugoupload.net/index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("ugoupload.net/index.html") || br.containsHTML("<title>Index of")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[][] fileInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>[\r\n\t ]+(.+)\\(([\\d\\.]+ (KB|MB|GB))\\)<br/>").getMatches();
         if (fileInfo == null || fileInfo.length == 0) {
             fileInfo = br.getRegex("(.*?) \\(([\\d\\.]+ (KB|MB|GB))\\)").getMatches();
@@ -107,6 +111,7 @@ public class UGoUploadNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+
         if (br.getURL().contains(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         if (br.getURL().contains(SIMULTANDLSLIMIT)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
         if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
@@ -119,8 +124,30 @@ public class UGoUploadNet extends PluginForHost {
         sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?pt=2", RESUME, MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
-            if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            if (br.getURL().contains(ERRORFILE) || br.containsHTML("Error: Could not open file for reading\\.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             br.followConnection();
+
+            /* Untested! */
+            String wait_long = br.getRegex("<a class=\"link btn\\-free\" href=\"#\" onClick=\"display\\(\\); return false;\">([^<>\"]*?)</a>").getMatch(0);
+            if (wait_long != null && !wait_long.contains("DOWNLOAD")) {
+                wait_long = wait_long.trim();
+                String tmphrs = new Regex(wait_long, "(\\d+)\\s+hours?").getMatch(0);
+                String tmpmin = new Regex(wait_long, "(\\d+)\\s+minutes?").getMatch(0);
+                String tmpsec = new Regex(wait_long, "(\\d+)\\s+seconds?").getMatch(0);
+                if (tmphrs == null && tmpmin == null && tmpsec == null) {
+                    logger.info("Waittime regexes seem to be broken");
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
+                } else {
+                    int minutes = 0, seconds = 0, hours = 0, days = 0;
+                    if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+                    if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+                    if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+                    int waittime_long = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
+                    logger.info("Detected waittime #2, waiting " + waittime_long + "milliseconds");
+                    /* Not enough wait time to reconnect -> Wait short and retry */
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime_long);
+                }
+            }
 
             final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
             final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);

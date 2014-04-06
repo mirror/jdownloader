@@ -46,7 +46,7 @@ public class AdriveCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 10;
     }
 
     private static final String NOCHUNKS = "NOCHUNKS";
@@ -86,7 +86,7 @@ public class AdriveCom extends PluginForHost {
         /* Link holen */
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int maxChunks = 0;
+        int maxChunks = -10;
         if (downloadLink.getBooleanProperty(AdriveCom.NOCHUNKS, false)) {
             maxChunks = 1;
         }

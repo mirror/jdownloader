@@ -74,7 +74,12 @@ public class TwisTysCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
 
     @Override
@@ -134,7 +139,10 @@ public class TwisTysCom extends PluginForHost {
         // We need to log in to get the file status
         synchronized (MAP) {
             Account aa = AccountController.getInstance().getValidAccount(this);
-            if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a premium account is entered!");
+            if (aa == null) {
+                link.getLinkStatus().setStatusText("Links are only checkable if a premium account is entered!");
+                return AvailableStatus.UNCHECKABLE;
+            }
             login(aa, false);
             URLConnectionAdapter con = null;
             try {

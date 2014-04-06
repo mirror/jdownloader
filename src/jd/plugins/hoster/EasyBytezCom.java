@@ -688,6 +688,7 @@ public class EasyBytezCom extends PluginForHost {
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (cbr.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (cbr.containsHTML("Wrong IP")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - server says 'Wrong IP'", 5 * 60 * 1000l);
     }
 
     @Override
@@ -804,7 +805,10 @@ public class EasyBytezCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
+                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()));
+                String loginPage = br.getRegex("class=\"login\"><a href=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (loginPage == null) loginPage = "http://www.easybytez.com/login2.html";
+                getPage(loginPage);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(language)) {
@@ -848,6 +852,9 @@ public class EasyBytezCom extends PluginForHost {
             }
         }
     }
+
+    private static final String NICE_HOST         = "easybytez.com";
+    private static final String NICE_HOSTproperty = "easybytezcom";
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
@@ -918,6 +925,23 @@ public class EasyBytezCom extends PluginForHost {
                     checkErrors(downloadLink, account, true);
                     getDllink();
                     if (inValidate(dllink)) {
+                        /* Maybe server error */
+                        if (cbr.containsHTML(">File Download Link Generated<")) {
+                            logger.info(NICE_HOST + ": dllinknull_hmm");
+                            int timesFailed = downloadLink.getIntegerProperty(NICE_HOSTproperty + "dllinknull_hmm", 0);
+                            downloadLink.getLinkStatus().setRetryCount(0);
+                            if (timesFailed <= 2) {
+                                timesFailed++;
+                                downloadLink.setProperty(NICE_HOSTproperty + "dllinknull_hmm", timesFailed);
+                                logger.info(NICE_HOST + ": dllinknull_hmm -> Retrying");
+                                throw new PluginException(LinkStatus.ERROR_RETRY, "dllinknull_hmm");
+                            } else {
+                                downloadLink.setProperty(NICE_HOSTproperty + "dllinknull_hmm", Property.NULL);
+                                logger.info(NICE_HOST + ": dllinknull_hmm - Plugin might be defect!");
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                        /* Something went really wrong */
                         logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }

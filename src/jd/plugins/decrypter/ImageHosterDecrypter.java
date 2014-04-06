@@ -163,7 +163,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            finallink = br.getRegex("ref=\"nofollow\" target=\"_blank\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            finallink = br.getRegex("rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("picsapart.com/")) {
             finallink = parameter.replace("/photo/", "/download/");
             finalfilename = new Regex(parameter, "picsapart\\.com/photo/(\\d+)").getMatch(0) + ".jpg";

@@ -61,6 +61,14 @@ public class VDiskCn extends PluginForDecrypt {
         }
         int lastPage = Integer.parseInt(allPages.get(allPages.size() - 1));
         for (int i = 1; i <= lastPage; i++) {
+            try {
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user: " + parameter);
+                    return decryptedLinks;
+                }
+            } catch (final Throwable e) {
+                // Not available in old 0.9.581 Stable
+            }
             logger.info("Decrypting page " + i + " of " + lastPage);
             String currentPage = parameter;
             try {
@@ -84,6 +92,11 @@ public class VDiskCn extends PluginForDecrypt {
                 link.setName(singleLink[1]);
                 link.setDownloadSize(SizeFormatter.getSize(singleLink[2].trim()));
                 link.setAvailable(true);
+                try {
+                    distribute(link);
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
                 decryptedLinks.add(link);
             }
         }

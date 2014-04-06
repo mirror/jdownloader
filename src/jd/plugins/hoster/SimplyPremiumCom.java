@@ -286,6 +286,7 @@ public class SimplyPremiumCom extends PluginForHost {
             maxSimultanDls = 20;
         }
         account.setMaxSimultanDownloads(maxSimultanDls);
+        maxPrem.set(maxSimultanDls);
 
         long maxChunks = Integer.parseInt(getXML("chunks"));
         if (maxChunks > 1) maxChunks = -maxChunks;
@@ -294,7 +295,6 @@ public class SimplyPremiumCom extends PluginForHost {
         final boolean resumeAllowed = "1".equals(getXML("resume"));
         account.setProperty("resume_allowed", resumeAllowed);
 
-        maxPrem.set(maxSimultanDls);
         /* online=1 == show only working hosts */
         br.getPage("http://www.simply-premium.com/api/hosts.php?online=1");
         final ArrayList<String> supportedHosts = new ArrayList<String>();

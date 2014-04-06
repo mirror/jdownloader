@@ -777,9 +777,17 @@ public class VKontakteRu extends PluginForDecrypt {
                 try {
                     singleVideo = singleVideo.replace(", ", "_");
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
-                    String completeVideolink = "http://vk.com/video" + singleVideo;
-                    br.getPage(completeVideolink);
-                    decryptSingleVideo(completeVideolink);
+                    final String completeVideolink = "http://vk.com/video" + singleVideo;
+                    try {
+                        br.getPage(completeVideolink);
+                        decryptSingleVideo(completeVideolink);
+                    } catch (final DecrypterException e) {
+                        /* Catch offline case and handle it */
+                        final DownloadLink offline = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+                        offline.setProperty("offline", true);
+                        offline.setName(singleVideo);
+                        decryptedLinks2.add(offline);
+                    }
                     if (decryptedLinks2 == null) {
                         logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL + "\n");
                         logger.warning("stopped at: " + completeVideolink);
