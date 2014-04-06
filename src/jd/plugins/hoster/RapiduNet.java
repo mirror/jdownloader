@@ -428,8 +428,10 @@ public class RapiduNet extends PluginForHost {
         String userTraffic = getJson("userTrafficDay", accountResponse);
         ai.setTrafficLeft(userTraffic);
         if (userPremium == 0) {
+            ai.setTrafficMax(SizeFormatter.getSize("5 GB"));
             ai.setStatus("Registered (free) user");
         } else {
+            ai.setTrafficMax(SizeFormatter.getSize("30 GB"));
             ai.setStatus("Premium user");
 
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
