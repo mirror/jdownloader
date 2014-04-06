@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import static java.util.Arrays.asList;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -94,7 +95,9 @@ public class Tb7Pl extends PluginForHost {
         }
 
         // unfortunatelly there is no list with supported hosts anywhere on the page
-        List<String> supportedHosts = asList("egofiles.com", "catshare.net", "turbobit.net", "rapidgator.net", "rg.to", "netload.in", "uploaded.to", "uploaded.net", "ul.to", "bitshare.com", "freakshare.net", "freakshare.com");
+        final List<String> supportedHostsList = asList("egofiles.com", "catshare.net", "turbobit.net", "rapidgator.net", "rg.to", "netload.in", "uploaded.to", "uploaded.net", "ul.to", "bitshare.com", "freakshare.net", "freakshare.com");
+        final ArrayList<String> supportedHosts = new ArrayList<String>(supportedHostsList.size());
+        supportedHosts.addAll(supportedHostsList);
 
         if (expired) {
             ai.setExpired(true);
