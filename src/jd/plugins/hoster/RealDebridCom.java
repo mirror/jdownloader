@@ -196,14 +196,41 @@ public class RealDebridCom extends PluginForHost {
                     // });</script>
 
                     br2.followConnection();
+                    String msg = br2.getRegex("msgbox\\(\"([^\"]+)").getMatch(0);
+                    if (msg != null) {
+                        logger.info(this.getHost() + ": " + msg);
+                        if (msg.contains("You can not download this file because you have exceeded your traffic on this hoster")) {
 
-                    if (br2.containsHTML("You can not download this file because you have exceeded your traffic on this hoster")) {
-                        logger.info(this.getHost() + ": You can not download this file because you have exceeded your traffic on this hoster");
-                        tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+
+                        // <script type="text/javascript">$(document).ready(function() {
+                        // $.msgbox("Your code is not or no longer valid ! Possible reasons :<br/><br/>Your download code does not exist in our database<br/>A Premium account for the hoster is missing or inactive<br/>The traffic of the Premium account for the hoster is exceeded",
+                        // {type: "error"}); });</script>
+
+                        if (msg.contains("The traffic of the Premium account for the hoster is exceeded")) {
+
+                            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+
+                        // <script type="text/javascript">$(document).ready(function() {
+                        // $.msgbox("An error occured while generating a premium link, please contact an Administrator with these following informations :<br/><br/>Link: http://rapidgator.net/file/e1e8957be6a02dbfbe28b4b8f8ec465e<br/>Server: 31<br/>Code: 64i4u284w2v293333033",
+                        // {type: "error"}); });</script>
+                        // <script type="text/javascript">$(document).ready(function() {
+                        // $.msgbox("An error occured while generating a premium link, please contact an Administrator with these following informations :<br/><br/>Link: http://rapidgator.net/file/170bb859202bf1f5927f6b5a22f8a6ac<br/>Server: 31<br/>Code: 64i4u284w23383634237",
+                        // {type: "error"}); });</script>
+
+                        if (msg.contains("An error occured while generating a premium link")) {
+
+                            tempUnavailableHoster(acc, link, 15 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+
                     }
 
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, msg);
 
                 } else {
                     /* download is not content disposition. */
