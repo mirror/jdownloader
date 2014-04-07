@@ -34,7 +34,7 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/#?[A-Z0-9]{8}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?)?[A-Z0-9]{8}" }, flags = { 2 })
 public class OBoomCom extends PluginForHost {
 
     private static Map<Account, Map<String, String>> ACCOUNTINFOS = new HashMap<Account, Map<String, String>>();
@@ -263,7 +263,7 @@ public class OBoomCom extends PluginForHost {
     }
 
     private String getFileID(DownloadLink link) {
-        return new Regex(link.getDownloadURL(), "oboom\\.com/#?([A-Z0-9]{8})").getMatch(0);
+        return new Regex(link.getDownloadURL(), "oboom\\.com/(#(id=)?)?([A-Z0-9]{8})").getMatch(2);
     }
 
     @Override
