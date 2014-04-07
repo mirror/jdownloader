@@ -30,16 +30,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+// DEV NOTES:
+// 190.93.240/20 cloudflare
+// 162.158.0.0/15 cloudflare
+// 198.41.128.0/17 cloudflare
+// INFORELAY-LAX2-02   (NET-173-205-128-0-1) 173.205.128.0 - 173.205.255.255
+// LINKBUCKS LINKBUCKS (NET-173-205-185-80-1) 173.205.185.80 - 173.205.185.95
+// www.uid.domain redirects to linkbucks homepage on https.
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2,
 
-names = { "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "miniurls.co", "tinylinks.co", "yyv.co", "realfiles.net", "youfap.com", "linkgalleries.net", "thesefiles.com", "urlpulse.net", "viraldatabase.com", "seriousfiles.com", "ubucks.net", "thesegalleries.com", "seriousurls.com", "baberepublic.com", "qvvo.com", "linkbucks.com", "linkseer.net", "ubervidz.com", "zxxo.net", "ugalleries.net", "picturesetc.net", "allanalpass.com" },
-// note: www.uid.domain redirects to linkbucks homepage on https.
-urls = { "http://([a-f0-9]{8}\\.tubeviral\\.com|(www\\.)?tubeviral\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.whackyvidz\\.com|(www\\.)?whackyvidz\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.kbabes\\.com|(www\\.)?linkbabes\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.gs|(www\\.)?dyo\\.gs/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.filesonthe\\.net|(www\\.)?filesonthe\\.net/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.cash4files\\.com|(www\\.)?cash4files\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.seriousdeals\\.net|(www\\.)?seriousdeals\\.net/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.any\\.gs|(www\\.)?any\\.gs/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.goneviral\\.com|(www\\.)?goneviral\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.ultrafiles\\.net|(www\\.)?ultrafiles\\.net/(link/)?[a-f0-9]{8})",
-        "http://([a-f0-9]{8}\\.miniurls\\.co|(www\\.)?miniurls\\.co/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.tinylinks\\.co|(www\\.)?tinylinks\\.co/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.yyv\\.co|(www\\.)?yyv\\.co/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.realfiles\\.net|(www\\.)?realfiles\\.net/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.youfap\\.com|(www\\.)?youfap\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.linkgalleries\\.net|(www\\.)?linkgalleries\\.net/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.thesefiles\\.com|(www\\.)?thesefiles\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.urlpulse\\.net|(www\\.)?urlpulse\\.net/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.viraldatabase\\.com|(www\\.)?viraldatabase\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.seriousfiles\\.com|(www\\.)?seriousfiles\\.com/(link/)?[a-f0-9]{8})",
-        "http://([a-f0-9]{8}\\.ubucks\\.net|(www\\.)?ubucks\\.net/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.thesegalleries\\.com|(www\\.)?thesegalleries\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.seriousurls\\.com|(www\\.)?seriousurls\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.baberepunlic\\.com/|(www\\.)?baberepunlic\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.qvvo\\.com|(www\\.)?qvvo\\.com/(link/)?[a-f0-9]{8})", "http://([a-z0-9]{8}\\.linkseer\\.net|(www\\.)?linkseer\\.net/(link/)?[a-f0-9]{8})", "http://([a-z0-9]{8}\\.ubervidz\\.com|(www\\.)?ubervidz\\.com/(link/)?[a-f0-9]{8})", "http://([a-z0-9]{8}\\.zxxo\\.net|(www\\.)?zxxo\\.net/(link/)?[a-f0-9]{8})", "http://([a-z0-9]{8}\\.ugalleries\\.net|(www\\.)?ugalleries\\.net/(link/)?[a-f0-9]{8})", "http://([a-z0-9]{8}\\.picturesetc\\.net|(www\\.)?picturesetc\\.net/(link/)?[a-f0-9]{8})",
-        "http://([a-z0-9]{8}\\.allanalpass\\.com|(www\\.)?allanalpass\\.com/(link/)?[a-f0-9]{8})", "http://(www\\.)?(linkbucks\\.com/((/\\d+)?|url/.+|[0-9a-f]{8})|[a-z0-9]{8}\\.linkbucks\\.com)" },
+names = { "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "miniurls.co", "tinylinks.co", "yyv.co", "allanalpass.com", "linkbucks.com" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+urls = { "http://([a-f0-9]{8}\\.tubeviral\\.com|(www\\.)?tubeviral\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.whackyvidz\\.com|(www\\.)?whackyvidz\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.linkbabes\\.com|(www\\.)?linkbabes\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.gs|(www\\.)?dyo\\.gs/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.filesonthe\\.net|(www\\.)?filesonthe\\.net/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.cash4files\\.com|(www\\.)?cash4files\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.seriousdeals\\.net|(www\\.)?seriousdeals\\.net/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.any\\.gs|(www\\.)?any\\.gs/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.goneviral\\.com|(www\\.)?goneviral\\.com/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.ultrafiles\\.net|(www\\.)?ultrafiles\\.net/(link/)?[a-f0-9]{8})",
+        "http://([a-f0-9]{8}\\.miniurls\\.co|(www\\.)?miniurls\\.co/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.tinylinks\\.co|(www\\.)?tinylinks\\.co/(link/)?[a-f0-9]{8})", "http://([a-f0-9]{8}\\.yyv\\.co|(www\\.)?yyv\\.co/(link/)?[a-f0-9]{8})", "http://([a-z0-9]{8}\\.allanalpass\\.com|(www\\.)?allanalpass\\.com/(link/)?[a-f0-9]{8})", "http://(www\\.)?(linkbucks\\.com/((/\\d+)?|url/.+|[0-9a-f]{8})|[a-z0-9]{8}\\.linkbucks\\.com)" },
+
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class LnkBcks extends PluginForDecrypt {
 
     public LnkBcks(PluginWrapper wrapper) {
