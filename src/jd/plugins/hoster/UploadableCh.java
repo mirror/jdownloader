@@ -57,7 +57,9 @@ public class UploadableCh extends PluginForHost {
         return "http://www.uploadable.ch/terms.php";
     }
 
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger maxPrem        = new AtomicInteger(1);
+
+    private static final long    FREE_SIZELIMIT = 1073741824;
 
     // TODO: Maybe implement mass linkchecker: http://www.uploadable.ch/check.php
     @Override
@@ -70,7 +72,11 @@ public class UploadableCh extends PluginForHost {
         final String filesize = br.getRegex("class=\"filename_normal\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        final long fsize = SizeFormatter.getSize(filesize);
+        if (fsize > 0) {
+            link.setProperty("VERIFIEDFILESIZE", fsize);
+        }
+        link.setDownloadSize(fsize);
         return AvailableStatus.TRUE;
     }
 
@@ -254,6 +260,13 @@ public class UploadableCh extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getVerifiedFileSize() > FREE_SIZELIMIT)
+            return false;
+        else
+            return true;
     }
 
     @Override

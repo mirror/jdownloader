@@ -35,6 +35,8 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String   INVALIDLINKS     = "http://(www\\.)?akatsuki\\-subs\\.net/projekte/(laufend|abgeschlossen)/diverses/";
+
     private static final String   PROJECTLINK      = "http://(www\\.)?akatsuki\\-subs\\.net/projekte/(laufend|abgeschlossen)/[a-z0-9\\-]+/";
     private static final String   RELEASELINK      = "http://(www\\.)?akatsuki\\-subs\\.net/\\d+/releases/op/[a-z0-9\\-]+\\-\\d+/";
     private static final String[] QUALITIES        = { "hd", "ru boxvideo", "sd", "rs", "bt" };
@@ -43,6 +45,10 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">Seite nicht gefunden")) {
@@ -89,7 +95,7 @@ public class AkatsukiSubsNet extends PluginForDecrypt {
         } else {
             // Get all tables
             final String fpName = br.getRegex("<title>([^<>\"]*?)\\| Akatsuki\\-Subs</title>").getMatch(0);
-            final String[] tables = br.getRegex("<table id=\"dl_[a-z0-9]+\"(.*?)</table>").getColumn(0);
+            final String[] tables = br.getRegex("<table id=\"dl(_[a-z0-9]+)?\"(.*?)</table>").getColumn(1);
             for (final String table : tables) {
                 // Get entries of each table
                 final String[] tableEntries = new Regex(table, "<tr(.*?)</tr>").getColumn(0);

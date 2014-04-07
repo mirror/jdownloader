@@ -58,10 +58,10 @@ public class AtvAt extends PluginForDecrypt {
             logger.info("Video temporarily unavailable: " + parameter);
             return decryptedLinks;
         }
-        final String activeClipID = br.getRegex("active_clip_id%22%3A(\\d+)%2C").getMatch(0);
+        final String activeClipID = br.getRegex("active_clip_id%22%3A(\\d+)%").getMatch(0);
         if (activeClipID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Link probably offline (no clip id found): " + parameter);
+            return decryptedLinks;
         }
         br.getPage("http://atv.at/getclip/" + activeClipID);
         if (br.containsHTML("\"duration\":0")) {

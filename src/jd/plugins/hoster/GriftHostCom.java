@@ -515,7 +515,7 @@ public class GriftHostCom extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            finallink = new Regex(decoded, "file:\"(http.*?)\"").getMatch(0);
+            finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(mp4|flv))(\"|\\')").getMatch(1);
         }
         return finallink;
     }

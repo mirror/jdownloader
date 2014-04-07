@@ -72,6 +72,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String    PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String    PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean   VIDEOHOSTER                  = false;
+    private static final boolean   VIDEOHOSTER_2                = false;
     private static final boolean   SUPPORTSHTTPS                = false;
     private final boolean          ENABLE_RANDOM_UA             = false;
     private static StringContainer agent                        = new StringContainer();
@@ -94,7 +95,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                 fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.4.7
+    // XfileSharingProBasic Version 2.6.5.7
     // mods:
     // limit-info:
     // protocol: no https
@@ -220,6 +221,22 @@ public class XFileSharingProBasic extends PluginForHost {
             } catch (final Throwable e) {
                 logger.info("Failed to get link via vidembed");
             }
+        }
+        if (dllink == null && VIDEOHOSTER_2) {
+            try {
+                logger.info("Trying to get link via embed");
+                final String embed_access = "http://" + COOKIE_HOST.replace("http://", "") + "/embed-" + fuid + ".html";
+                this.postPage(embed_access, "op=video_embed3&usr_login=&id2=" + fuid + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&file_code=" + fuid + "&method_free=Click+here+to+watch+the+Video");
+                // brv.getPage("http://grifthost.com/embed-" + fuid + ".html");
+                dllink = getDllink();
+                if (dllink == null)
+                    logger.info("Failed to get link via embed");
+                else
+                    logger.info("Successfully found link via embed");
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via embed");
+            }
+            if (dllink == null) getPage(downloadLink.getDownloadURL());
         }
         /* Fourth, continue like normal */
         if (dllink == null) {
@@ -513,13 +530,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-                }
-            }
+            finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(mp4|flv))(\"|\\')").getMatch(1);
         }
         return finallink;
     }

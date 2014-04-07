@@ -36,9 +36,10 @@ public class WorldOfFilesNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">File was removed from filehosting")) {
+        br.setFollowRedirects(false);
+        if (br.containsHTML(">File was removed from filehosting|class=\"deleted\"")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
