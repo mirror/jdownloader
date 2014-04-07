@@ -228,6 +228,12 @@ public class RealDebridCom extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         }
 
+                        if (msg.contains("An error occured while attempting to download the file")) {
+
+                            tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+
                     }
 
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, msg);
