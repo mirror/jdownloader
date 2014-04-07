@@ -63,6 +63,8 @@ public class PornHubCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /* Offline links should also have nice filenames */
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0));
         requestVideo(downloadLink);
         setBrowserExclusive();
         br.setFollowRedirects(true);

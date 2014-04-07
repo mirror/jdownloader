@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "http://download\\.microsoft\\.com/download/\\d+/[A-Z0-9]+/[A-Z0-9]+/[A-Za-z0-9\\-]+/[^<>\"/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "http://download\\.microsoft\\.com/download/[^<>\"]+" }, flags = { 0 })
 public class MicrosoftCom extends PluginForHost {
 
     public MicrosoftCom(PluginWrapper wrapper) {

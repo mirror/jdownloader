@@ -99,6 +99,8 @@ public class RyuShareCom extends PluginForHost {
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
 
+    private static final boolean       HOST_DOWN                    = true;
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -212,6 +214,7 @@ public class RyuShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
         correctDownloadLink(downloadLink);
+        if (HOST_DOWN) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{10,12})$").getMatch(0);
         br.setFollowRedirects(true);
         prepBrowser(br);

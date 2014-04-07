@@ -58,6 +58,8 @@ public class FlStbCm extends PluginForDecrypt {
         }
         // Allows us to get age restricted videos
         br.setCookie("http://" + NICE_HOST, "adultChecked", "1");
+        br.setCookie("http://filestube.com/", "adultChecked", "1");
+        br.setCookie("http://video.filestube.com/", "adultChecked", "1");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
@@ -143,7 +145,7 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://slutload.com/watch/" + externID));
                 return decryptedLinks;
             }
-            externID = br.getRegex("123video\\.nl/123videoPlayer\\.swf\\?mediaSrc=(\\d+)\"").getMatch(0);
+            externID = br.getRegex("123video\\.nl/123video_share\\.swf\\?mediaSrc=(\\d+)\"").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.123video.nl/playvideos.asp?MovieID=" + externID));
                 return decryptedLinks;

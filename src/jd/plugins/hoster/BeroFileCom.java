@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /** IMPORTANT: If this goes down, also delete the swatupload.com plugin! */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "berofile.com" }, urls = { "https?://(www\\.)?(berofile|swatupload)\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "berofile.com", "swatupload.com" }, urls = { "https?://(www\\.)?(berofile|swatupload)\\.com/(vidembed\\-)?[a-z0-9]{12}", "dfgbhefroighefrg78789fnthkölewDELETE_ME6u5h65ev9hf43jnio" }, flags = { 0, 0 })
 public class BeroFileCom extends PluginForHost {
 
     private String               correctedBR                  = "";

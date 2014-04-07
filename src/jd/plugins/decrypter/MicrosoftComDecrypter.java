@@ -44,9 +44,7 @@ public class MicrosoftComDecrypter extends PluginForDecrypt {
         final String dlid = new Regex(param.toString(), "(\\d+)$").getMatch(0);
         final String parameter = "http://www.microsoft.com/en-us/download/details.aspx?id=" + dlid;
         br.getPage(parameter);
-        if (br.containsHTML(">We are sorry, the page you requested cannot be found")) {
-
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(">We are sorry, the page you requested cannot be found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         br.getPage("http://www.microsoft.com/en-us/download/confirmation.aspx?id=" + dlid);
         String fpName = br.getRegex("<h2 class=\"title\">([^<>\"]*?)</h2>").getMatch(0);
         if (fpName == null) fpName = "Microsoft.com download " + dlid;
@@ -59,7 +57,7 @@ public class MicrosoftComDecrypter extends PluginForDecrypt {
         for (final String dlentry : entries) {
             final String filename = new Regex(dlentry, "<td>([^<>\"]*?)(<span class=\"green-sniff-recommend\">\\(recommended\\)</span>)?</td>").getMatch(0);
             final String filesize = new Regex(dlentry, "<td>(\\d+(\\.\\d{1,2})? [A-Za-z]{1,5})</td>").getMatch(0);
-            final String dllink = new Regex(dlentry, "<td><a href=\"(http://download\\.microsoft\\.com/download/\\d+/[A-Z0-9]+/[A-Z0-9]+/[A-Za-z0-9\\-]+/[^<>\"/]+)\"").getMatch(0);
+            final String dllink = new Regex(dlentry, "href=\"(http://download\\.microsoft\\.com/download/[^<>\"]+)\"").getMatch(0);
             if (filename != null && filesize != null && dllink != null) {
                 final DownloadLink dl = createDownloadlink(dllink);
                 dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
