@@ -116,7 +116,7 @@ public class FileOmCom extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0;
+            chunks = -2;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -772,7 +772,8 @@ public class FileOmCom extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 10);
+            account.setMaxSimultanDownloads(10);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }
