@@ -198,6 +198,7 @@ public class RealDebridCom extends PluginForHost {
                     br2.followConnection();
                     String msg = br2.getRegex("msgbox\\(\"([^\"]+)").getMatch(0);
                     if (msg != null) {
+                        link.getLinkStatus().setErrorMessage(msg);
                         logger.info(this.getHost() + ": " + msg);
                         if (msg.contains("You can not download this file because you have exceeded your traffic on this hoster")) {
 
@@ -233,7 +234,11 @@ public class RealDebridCom extends PluginForHost {
                             tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         }
+                        if (msg.contains("An error occured while read your file on the remote host")) {
 
+                            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
                     }
 
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, msg);
