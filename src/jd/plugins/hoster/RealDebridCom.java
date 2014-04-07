@@ -191,7 +191,18 @@ public class RealDebridCom extends PluginForHost {
                     }
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     // unhandled error!
+                    // <script type="text/javascript">$(document).ready(function() {
+                    // $.msgbox("You can not download this file because you have exceeded your traffic on this hoster !", {type: "error"});
+                    // });</script>
+
                     br2.followConnection();
+
+                    if (br2.containsHTML("You can not download this file because you have exceeded your traffic on this hoster")) {
+                        logger.info(this.getHost() + ": You can not download this file because you have exceeded your traffic on this hoster");
+                        tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
                 } else {
