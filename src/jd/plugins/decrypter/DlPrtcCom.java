@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -32,7 +32,6 @@ import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -50,35 +49,37 @@ public class DlPrtcCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String         CAPTCHATEXT    = ">Security Code";
-    private final String         CAPTCHAFAILED  = ">The security code is incorrect";
-    private final String         PASSWORDTEXT   = ">Password :";
-    private final String         PASSWORDFAILED = ">The password is incorrect";
-    private final String         JDDETECTED     = "JDownloader is prohibited.";
-    private String               agent          = null;
-    private static AtomicInteger maxConProIns   = new AtomicInteger(1);
-    private boolean              coLoaded       = false;
-    private Browser              cbr            = new Browser();
+    private final String                   CAPTCHATEXT    = ">Security Code";
+    private final String                   CAPTCHAFAILED  = ">The security code is incorrect";
+    private final String                   PASSWORDTEXT   = ">Password :";
+    private final String                   PASSWORDFAILED = ">The password is incorrect";
+    private final String                   JDDETECTED     = "JDownloader is prohibited.";
+    private static AtomicReference<String> agent          = new AtomicReference<String>(null);
+    private static AtomicReference<Object> cookieMonster  = new AtomicReference<Object>();
+    private static AtomicInteger           maxConProIns   = new AtomicInteger(1);
+    private boolean                        coLoaded       = false;
+    private Browser                        cbr            = new Browser();
 
     @SuppressWarnings("unchecked")
     private Browser prepBrowser(final Browser prepBr) {
-        // load previous agent, could be referenced with cookie session. (not tested)
-        if (agent == null) agent = this.getPluginConfig().getStringProperty("agent", null);
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        prepBr.getHeaders().put("User-Agent", agent);
         // loading previous cookie session results in less captchas
-        final Object ret = this.getPluginConfig().getProperty("cookies", null);
-        if (ret != null) {
-            final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-            for (Map.Entry<String, String> entry : cookies.entrySet()) {
-                prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
+        synchronized (cookieMonster) {
+            // link agent to cookieMonster via synchronized
+            if (agent.get() == null) {
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
-            coLoaded = true;
+            if (cookieMonster.get() != null && cookieMonster.get() instanceof HashMap<?, ?>) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) cookieMonster.get();
+                for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                    prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
+                }
+                coLoaded = true;
+            }
         }
+        prepBr.getHeaders().put("User-Agent", agent.get());
+
         // Prefer English language
         if (!coLoaded) prepBr.setCookie(this.getHost(), "l", "en");
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -101,45 +102,66 @@ public class DlPrtcCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(CAPTCHATEXT)) {
-            for (int i = 0; i <= 5; i++) {
+            int repeat = 2;
+            for (int i = 0; i != repeat; i++) {
                 Form importantForm = getForm();
-                final String idkey = cbr.getRegex("name=\"id_key\" value=\"([A-Za-z0-9]+)\"").getMatch(0);
-                if (importantForm == null || idkey == null) {
+                if (importantForm == null) {
                     logger.warning("Decrypter broken 1 for link: " + parameter);
                     return null;
                 }
-                String postData = "id_key=" + idkey + "&i=_" + Encoding.urlEncode(Encoding.Base64Encode(String.valueOf(System.currentTimeMillis()))) + "&submitform=&submitform=Decrypt+link";
                 if (cbr.containsHTML(PASSWORDTEXT)) {
                     final String pwd = getUserInput(null, param);
                     importantForm.put("pwd", pwd);
-                    postData += "&pwd=" + Encoding.urlEncode(pwd);
                 }
                 if (cbr.containsHTML(CAPTCHATEXT)) {
+                    String[] test = cbr.getRegex("<img[^>]+src=\"(/template/images/[^\"]+)").getColumn(0);
+                    if (test != null) {
+                        for (final String t : test) {
+                            final Browser brAds = br.cloneBrowser();
+                            try {
+                                brAds.openGetConnection(t);
+                            } catch (final Exception e) {
+                            }
+                        }
+                    }
+
                     String captchaLink = getCaptchaLink(importantForm.getHtmlCode());
                     if (captchaLink == null) {
                         logger.warning("Decrypter broken 2 for link: " + parameter);
                         return null;
                     }
                     captchaLink = "http://www.dl-protect.com" + captchaLink;
-                    String code = getCaptchaCode(captchaLink, param);
-                    String formName = "secure";
+                    String code = null;
+                    if (true) {
+                        Browser obr = br.cloneBrowser();
+                        br.getHeaders().put("Accept", "text/html, application/xml;q=0.9, application/xhtml+xml, image/png, image/webp, image/jpeg, image/gif, image/x-xbitmap, */*;q=0.1");
+                        code = getCaptchaCode(captchaLink, param);
+                        br = obr.cloneBrowser();
+                    }
+                    br.cloneBrowser().getPage("/pub_footer.html");
+                    String formName = "securek";
                     importantForm.put(formName, code);
-                    importantForm.remove("secures");
-                    postData += "&secure=" + code;
+                    importantForm.put("secure", "");
+                    importantForm.put("submitform", "");
                 }
-                importantForm.put("i", Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())));
-                // sendForm(importantForm);
-                postPage(br.getURL(), postData);
-                if (getCaptchaLink(cbr.toString()) != null || cbr.containsHTML(CAPTCHAFAILED) || cbr.containsHTML(PASSWORDFAILED) || cbr.containsHTML(PASSWORDTEXT)) continue;
-                break;
+                importantForm.put("i", ""/* Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())) */);
+                sendForm(importantForm);
+                if ((getCaptchaLink(cbr.toString()) != null && cbr.containsHTML(CAPTCHAFAILED)) || (cbr.containsHTML(PASSWORDFAILED) || cbr.containsHTML(PASSWORDTEXT))) {
+                    if (i + 1 == repeat) {
+                        // dump session
+                        nullSession(parameter);
+                        throw new DecrypterException("Excausted Retry!");
+                    } else {
+                        continue;
+                    }
+                } else {
+                    break;
+                }
             }
-            if (cbr.containsHTML(CAPTCHAFAILED) && cbr.containsHTML(CAPTCHAFAILED)) throw new DecrypterException("Wrong captcha and password entered!");
-            if (getCaptchaLink(cbr.toString()) != null || cbr.containsHTML(CAPTCHAFAILED) || cbr.containsHTML(CAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
-            if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(PASSWORDFAILED)) throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        if (cbr.containsHTML("No htmlCode read")) {
-            getPage(parameter);
-        }
+        // if (cbr.containsHTML("No htmlCode read")) {
+        // getPage(parameter);
+        // }
 
         if (cbr.containsHTML(">Please click on continue to see")) {
             Form continueForm = getContinueForm();
@@ -154,7 +176,8 @@ public class DlPrtcCom extends PluginForDecrypt {
             sendForm(continueForm);
         }
         if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
-            rmCookie(parameter);
+            nullSession(parameter);
+            throw new DecrypterException("D-TECTED!");
         }
         String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)</table>").getMatch(0);
         if (linktext == null) {
@@ -179,9 +202,9 @@ public class DlPrtcCom extends PluginForDecrypt {
         for (final Cookie c : add.getCookies()) {
             cookies.put(c.getKey(), c.getValue());
         }
-        this.getPluginConfig().setProperty("cookies", cookies);
-        this.getPluginConfig().setProperty("agent", agent);
-        this.getPluginConfig().save();
+        synchronized (cookieMonster) {
+            cookieMonster.set((Object) cookies);
+        }
 
         // once the first session is saved, lets ramp things up!
         // if (maxConProIns.equals(1)) maxConProIns.set(4);
@@ -256,11 +279,12 @@ public class DlPrtcCom extends PluginForDecrypt {
         cleanupBrowser(cbr, toClean);
     }
 
-    private void rmCookie(String parameter) {
+    private void nullSession(String parameter) {
         logger.warning("No longer using previously saved session information!, please try adding the link again! : " + parameter);
-        this.getPluginConfig().setProperty("cookies", Property.NULL);
-        this.getPluginConfig().setProperty("agent", Property.NULL);
-        this.getPluginConfig().save();
+        synchronized (cookieMonster) {
+            agent.set(null);
+            cookieMonster.set(new Object());
+        }
         maxConProIns.set(1);
         coLoaded = false;
     }
