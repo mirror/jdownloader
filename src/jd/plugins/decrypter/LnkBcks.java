@@ -17,15 +17,18 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "miniurls.co", "tinylinks.co", "yyv.co", "realfiles.net", "youfap.com", "linkgalleries.net", "thesefiles.com", "urlpulse.net", "viraldatabase.com", "seriousfiles.com", "ubucks.net", "thesegalleries.com", "seriousurls.com", "baberepublic.com", "qvvo.com", "linkbucks.com", "linkseer.net", "ubervidz.com", "zxxo.net", "ugalleries.net", "picturesetc.net", "allanalpass.com" }, urls = { "http://(([0-9a-fA-F]+(\\d+)?)\\.tubeviral\\.com/?|(www\\.)?tubeviral\\.com/[a-f0-9]{8})", "http://(([0-9a-fA-F]+(\\d+)?)\\.whackyvidz\\.com/?|(www\\.)?whackyvidz\\.com/[a-f0-9]{8})",
         "http://(([0-9a-fA-F]+(\\d+)?)\\.linkbabes\\.com/?|(www\\.)?linkbabes\\.com/[a-f0-9]{8})", "http://(([0-9a-fA-F]+(\\d+)?)\\.dyo\\.gs/?|(www\\.)?dyo\\.gs/[a-f0-9]{8})", "http://(([0-9a-fA-F]+(\\d+)?)\\.filesonthe\\.net/?|(www\\.)?filesonthe\\.net/[a-f0-9]{8})", "http://(([0-9a-fA-F]+(\\d+)?)\\.cash4files\\.com/?|(www\\.)?cash4files\\.com/[a-f0-9]{8})", "http://(([0-9a-fA-F]+(\\d+)?)\\.seriousdeals\\.net/?|(www\\.)?seriousdeals\\.net/[a-f0-9]{8})", "http://(([0-9a-fA-F]+(\\d+)?)\\.any\\.gs/?|(www\\.)?any\\.gs/[a-f0-9]{8})", "http://(([0-9a-fA-F]+(\\d+)?)\\.goneviral\\.com/?|(www\\.)?goneviral\\.com/[a-f0-9]{8})", "http://((www\\.)?[a-z0-9]+\\.ultrafiles\\.net/?|(www\\.)?ultrafiles\\.net/[a-f0-9]{8})", "http://((www\\.)?[a-z0-9]+\\.miniurls\\.co/?|(www\\.)?miniurls\\.co/[a-f0-9]{8})",
@@ -38,9 +41,20 @@ public class LnkBcks extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        br.getHeaders().put("User-Agent", agent.get());
+        br.getHeaders().put("Accept-Language", "en,en-GB;q=0.8");
+        br.getHeaders().put("Accept-Charset", null);
+
         br.setFollowRedirects(false);
         br.getPage(parameter);
         sleep(5 * 1000l, param);
@@ -74,14 +88,40 @@ public class LnkBcks extends PluginForDecrypt {
             link = br.getRegex(Pattern.compile("id=\"content\" src=\"([^\"]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
         if (inValidate(link)) {
-            String token = br.getRegex("Token : '([a-f0-9]{40})'").getMatch(0);
-            if (token == null) token = br.getRegex("\\?t=([a-f0-9]{40})").getMatch(0);
+            // thx FRD, slightly adapted to JD
+            // scan for js, they repeat, usually last wins (in browser...)
+            String[] jss = br.getRegex("(<script type=\"text/javascript\">[^<]+</script>)").getColumn(0);
+            if (jss == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            String js = null;
+            for (String j : jss) {
+                // cleanup
+                j = j.replaceAll("[\r\n\\s]+\\/\\/\\s*[^\r\n]+", "");
+                if (new Regex(j, "\\s*var\\s*f\\s*=\\s*window\\['init'\\s*\\+\\s*'Lb'\\s*\\+\\s*'js'\\s*\\+\\s*''\\];[\r\n\\s]+").matches()) js = j;
+            }
+            if (js == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            String token = new Regex(js, "Token\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
+            if (token == null) token = new Regex(js, "\\?t=([a-f0-9]{40})").getMatch(0);
+            final String authKeyMatchStr = "A(?:'\\s*\\+\\s*')?u(?:'\\s*\\+\\s*')?t(?:'\\s*\\+\\s*')?h(?:'\\s*\\+\\s*')?K(?:'\\s*\\+\\s*')?e(?:'\\s*\\+\\s*')?y";
+            final String l1 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s*(\\d+?);").getMatch(0);
+            final String l2 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s?params\\['" + authKeyMatchStr + "'\\]\\s*\\+\\s*(\\d+?);").getMatch(0);
+            if (l1 == null || l2 == null || token == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final long authKey = Long.parseLong(l1) + Long.parseLong(l2);
+
             Browser br2 = br.cloneBrowser();
             br2.getPage("/director/?t=" + token);
-            // not needed though might be worth while
-            sleep(5 * 1000l, param);
+            // not needed, sleep in beginning of plugin
             Browser br3 = br.cloneBrowser();
-            br3.getPage("/intermission/loadTargetUrl?t=" + token);
+
+            br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey);
             link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);
 
         }
