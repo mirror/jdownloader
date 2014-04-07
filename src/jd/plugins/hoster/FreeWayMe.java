@@ -23,9 +23,12 @@ import java.awt.Insets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -81,13 +84,14 @@ public class FreeWayMe extends PluginForHost {
 
     public final String                                    ACC_PROPERTY_CONNECTIONS            = "parallel";
     public final String                                    ACC_PROPERTY_TRAFFIC_REDUCTION      = "ACC_TRAFFIC_REDUCTION";
+    public final String                                    ACC_PROPERTY_DROSSEL_ACTIVE         = "ACC_PROPERTY_DROSSEL_ACTIVE";
     public final String                                    ACC_PROPERTY_REST_FULLSPEED_TRAFFIC = "ACC_PROPERTY_REST_FULLSPEED_TRAFFIC";
     public final String                                    ACC_PROPERTY_UNKOWN_FAILS           = "timesfailedfreewayme_unknown";
     public final String                                    ACC_PROPERTY_CURL_FAIL_RESOLVE_HOST = "timesfailedfreewayme_curl_resolve_host";
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(2 * 1000l);
+        setStartIntervall(1 * 1000l);
         setConfigElements();
         this.enablePremium("https://www.free-way.me/premium");
     }
@@ -207,7 +211,16 @@ public class FreeWayMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return maxPrem.get();
+        boolean drosselActive = account.getBooleanProperty(ACC_PROPERTY_DROSSEL_ACTIVE, false);
+        int connections = account.getIntegerProperty(ACC_PROPERTY_CONNECTIONS, 1);
+
+        if (!drosselActive) return connections;
+        // else it is limited
+        List<String> limitedHosts = Arrays.asList("uploaded.to", "ul.to", "uploaded.net", "share-online.biz", "freakshare.com", "datei.to", "uploading.com", "rapidgator.net", "filemonkey.in", "oboom.com");
+
+        if (limitedHosts.contains(link.getHost().toLowerCase(Locale.ENGLISH))) return Math.min(connections, 2);
+        // or not a limited host
+        return connections;
     }
 
     @Override
@@ -252,10 +265,9 @@ public class FreeWayMe extends PluginForHost {
         final String maxPremApi = getJson("parallel", accInfoAPIResp);
         if (maxPremApi != null) {
             maxPremi = Integer.parseInt(maxPremApi);
-            account.setProperty(ACC_PROPERTY_CONNECTIONS, maxPremApi);
         }
+        account.setProperty(ACC_PROPERTY_CONNECTIONS, maxPremi);
         maxPrem.set(maxPremi);
-        account.setMaxSimultanDownloads(maxPremi);
 
         // get available fullspeed traffic
         account.setProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, getJson("restgb", accInfoAPIResp));
@@ -268,6 +280,7 @@ public class FreeWayMe extends PluginForHost {
 
             if (trafficPerc > 95.0f) {
                 // todays traffic limit reached...
+                account.setProperty(ACC_PROPERTY_DROSSEL_ACTIVE, Boolean.TRUE);
                 String lastNotification = account.getStringProperty("LAST_SPEEDLIMIT_NOTIFICATION", "default");
                 if (lastNotification != null) {
                     DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd");
@@ -306,6 +319,9 @@ public class FreeWayMe extends PluginForHost {
                         }
                     }
                 }
+            } else {
+                // 'drossel' not active
+                account.setProperty(ACC_PROPERTY_DROSSEL_ACTIVE, Boolean.FALSE);
             }
         }
         account.setProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, ((int) trafficPerc * 100));
@@ -319,7 +335,6 @@ public class FreeWayMe extends PluginForHost {
             ac.setUnlimitedTraffic(); // workaround
         }
         try {
-            account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
         } catch (final Throwable e) {
             // not available in old Stable 0.9.581
@@ -457,9 +472,9 @@ public class FreeWayMe extends PluginForHost {
                 link.setProperty("CONNECTIONS_RETRY_COUNT_PARALLEL", attempts + 1);
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, getPhrase("ERROR_CONNECTIONS"), (12 + 20 * attempts) * 1000l);
             } else if (error.contains("ltiger Hoster")) { // Ungü...
-                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
+                tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_INAVLID_HOST_URL"));
             } else if (error.equalsIgnoreCase("Dieser Hoster ist aktuell leider nicht aktiv.")) {
-                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
+                tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_HOST_TMP_DISABLED"));
             } else if (error.equalsIgnoreCase("Diese Datei wurde nicht gefunden.")) {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l, "File not found");
             } else if (error.equals("Es ist ein unbekannter Fehler aufgetreten (#1)") //
@@ -512,7 +527,7 @@ public class FreeWayMe extends PluginForHost {
                 } else {
                     link.setProperty(ACC_PROPERTY_UNKOWN_FAILS, Property.NULL);
                     logger.info("curl_resolve_host_error: " + getPhrase("ERROR_SERVER") + " -> Disabling current host");
-                    tempUnavailableHoster(acc, link, 15 * 60 * 1000l, getPhrase("ERROR_SERVER"));
+                    tempUnavailableHoster(acc, link, 8 * 60 * 1000l, getPhrase("ERROR_SERVER"));
                 }
             }
             logger.severe("{handleMultiHost} Unhandled download error on free-way.me: " + br.toString());
@@ -543,7 +558,7 @@ public class FreeWayMe extends PluginForHost {
                 String windowTitleLangText = null;
                 ArrayList<String> supportedHosts = (ArrayList<String>) supported;
                 final String accType = account.getStringProperty("acctype", null);
-                final String maxSimultanDls = account.getStringProperty(ACC_PROPERTY_CONNECTIONS, null);
+                final Integer maxSimultanDls = account.getIntegerProperty(ACC_PROPERTY_CONNECTIONS, 1);
                 final String notifications = account.getStringProperty("notifications", "0");
                 final float trafficUsage = ((float) account.getIntegerProperty(ACC_PROPERTY_TRAFFIC_REDUCTION, -1)) / 100f;
                 final String restFullspeedTraffic = account.getStringProperty(ACC_PROPERTY_REST_FULLSPEED_TRAFFIC, "?");
@@ -580,7 +595,7 @@ public class FreeWayMe extends PluginForHost {
                 panelGenerator.addEntry(getPhrase("DETAILS_ACCOUNT_NAME"), account.getUser());
                 panelGenerator.addEntry(getPhrase("DETAILS_ACCOUNT_TYPE"), accType);
 
-                if (maxSimultanDls != null) panelGenerator.addEntry(getPhrase("DETAILS_SIMULTAN_DOWNLOADS"), maxSimultanDls);
+                panelGenerator.addEntry(getPhrase("DETAILS_SIMULTAN_DOWNLOADS"), maxSimultanDls.toString());
 
                 panelGenerator.addEntry(getPhrase("DETAILS_FULLSPEED_TRAFFIC"), (trafficUsage == -1) ? getPhrase("DETAILS_FULLSPEED_UNKOWN") : ((trafficUsage >= 100) ? getPhrase("DETAILS_FULLSPEED_REDUCED") : trafficUsage + "%"));
 
