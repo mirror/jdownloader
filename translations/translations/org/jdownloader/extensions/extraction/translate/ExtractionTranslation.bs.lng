@@ -44,6 +44,7 @@ exists=Status Linka
 extract_to2=Eskstraktuj Arhive u...
 extracting_archive=Ekstrakcija Arhive: %s1
 extracting_in_progress=Ekstrakcija...
+extracting_wait=Molimo sačekajte: Otpakivanje Arhive: %s1
 extraction_failed=Ekstrakcija %s1 nije uspjela
 extractprogress_label=Ekstraktovano %s1: %s2 dokumenata
 failed=Nije uspjelo ekstraktovanje: %s1
