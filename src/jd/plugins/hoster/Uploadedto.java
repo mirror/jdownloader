@@ -1191,7 +1191,7 @@ public class Uploadedto extends PluginForHost {
 
             if (dl.getConnection().getResponseCode() == 406) {
 
-                resetDownloadlink(downloadLink);
+                downloadLink.reset();
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
