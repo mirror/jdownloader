@@ -202,7 +202,23 @@ public class EuroShareEu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            // ip is already loading
             if (br.containsHTML("Z Vasej IP uz prebieha stahovanie")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max simultan free downloads-limit reached!", 5 * 60 * 1000l);
+
+            // HTTP/1.1 403 Forbidden
+            // Server: nginx/1.2.5
+            // Date: Thu, 03 Apr 2014 07:08:04 GMT
+            // Content-Type: text/html
+            // Transfer-Encoding: chunked
+            // Connection: close
+            // X-Powered-By: PHP/5.3.19-1~dotdeb.0
+            // Content-Encoding: gzip
+            // ------------------------------------------------
+            //
+            //
+            // 403 Forbidden<br><br>Server overloaded. Use PREMIUM downloading.
+            if (br.containsHTML("Server overloaded")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server Busy. Try again later", 5 * 60 * 1000l); }
+
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
