@@ -76,13 +76,106 @@ public class MegaCrypterCom extends PluginForHost {
     private final String USE_TMP   = "USE_TMP";
     private final String encrypted = ".encrypted";
 
+    private static enum MegaCrypterComApiErrorCodes {
+        FILE_NOT_FOUND(3),
+        MC_EMETHOD(1),
+        MC_EREQ(2),
+        MC_INTERNAL_ERROR(21),
+        MC_LINK_ERROR(22),
+        MC_BLACKLISTED_LINK(23),
+        MC_EXPIRED_LINK(24),
+        MEGA_EINTERNAL(-1),
+        MEGA_EARGS(-2),
+        MEGA_EAGAIN(-3),
+        MEGA_ERATELIMIT(-4),
+        MEGA_EFAILED(-5),
+        MEGA_ETOOMANY(-6),
+        MEGA_ERANGE(-7),
+        MEGA_EEXPIRED(-8),
+        MEGA_ENOENT(-9),
+        MEGA_ECIRCULAR(-10),
+        MEGA_EACCESS(-11),
+        MEGA_EEXIST(-12),
+        MEGA_EINCOMPLETE(-13),
+        MEGA_EKEY(-14),
+        MEGA_ESID(-15),
+        MEGA_EBLOCKED(-16),
+        MEGA_EOVERQUOTA(-17),
+        MEGA_ETEMPUNAVAIL(-18),
+        MEGA_ETOOMANYCONNECTIONS(-19),
+        MEGA_EWRITE(-20),
+        MEGA_EREAD(-21),
+        MEGA_EAPPKEY(-22),
+        MEGA_EDLURL(-101);
+        private int code;
+
+        private MegaCrypterComApiErrorCodes(int code) {
+            this.code = code;
+        }
+    }
+
+    private void checkError(Browser br) throws PluginException {
+        String code = br.getRegex("\"error\"\\s*\\:\\s*(\\d+)").getMatch(0);
+        if (code != null) {
+            int codeInt = Integer.parseInt(code);
+            for (MegaCrypterComApiErrorCodes v : MegaCrypterComApiErrorCodes.values()) {
+                if (v.code == codeInt) {
+                    switch (v) {
+                    case FILE_NOT_FOUND:
+                    case MC_BLACKLISTED_LINK:
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    case MC_EXPIRED_LINK:
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    case MEGA_ETOOMANY:
+                    case MEGA_ETOOMANYCONNECTIONS:
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server busy. Try again later", 5 * 60 * 1000l);
+                    case MC_INTERNAL_ERROR:
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error. Try again later", 15 * 60 * 1000l);
+
+                    case MC_EMETHOD:
+                    case MC_EREQ:
+                    case MC_LINK_ERROR:
+                    case MEGA_EACCESS:
+                    case MEGA_EAGAIN:
+                    case MEGA_EAPPKEY:
+                    case MEGA_EARGS:
+                    case MEGA_EBLOCKED:
+                    case MEGA_ECIRCULAR:
+                    case MEGA_EDLURL:
+                    case MEGA_EEXIST:
+                    case MEGA_EEXPIRED:
+                    case MEGA_EFAILED:
+                    case MEGA_EINCOMPLETE:
+                    case MEGA_EINTERNAL:
+                    case MEGA_EKEY:
+                    case MEGA_ENOENT:
+                    case MEGA_EOVERQUOTA:
+                    case MEGA_ERANGE:
+                    case MEGA_ERATELIMIT:
+                    case MEGA_EREAD:
+                    case MEGA_ESID:
+                    case MEGA_ETEMPUNAVAIL:
+                    case MEGA_EWRITE:
+
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error:" + v + ". Try again later", 15 * 60 * 1000l);
+
+                    default:
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error " + code);
+                    }
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         LINKPART = new Regex(link.getDownloadURL(), "megacrypter\\.com/(.+)").getMatch(0);
         br.postPageRaw("http://megacrypter.com/api", "{\"m\": \"info\", \"link\":\"" + LINKPART + "\"}");
-        if (br.containsHTML("\\{\"error\":3\\}")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        checkError(br);
+
         final String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("\"size\":(\\d+)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -98,6 +191,7 @@ public class MegaCrypterCom extends PluginForHost {
         if (key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("Content-Type", "application/json");
         br.postPageRaw("http://megacrypter.com/api", "{\"m\": \"dl\", \"link\":\"" + LINKPART + "\"}");
+        checkError(br);
         String dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
