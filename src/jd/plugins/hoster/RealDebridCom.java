@@ -200,6 +200,14 @@ public class RealDebridCom extends PluginForHost {
                     if (msg != null) {
                         link.getLinkStatus().setErrorMessage(msg);
                         logger.info(this.getHost() + ": " + msg);
+                        // PluginException: You can not download this file because you already have download(s) currently downloading and
+                        // this hoster is limited.(ERROR_PLUGIN_DEFECT)
+                        if (msg.contains("You can not download this file because you already have download(s) currently downloading and this hoster is limited")) {
+
+                            tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+
                         if (msg.contains("You can not download this file because you have exceeded your traffic on this hoster")) {
 
                             tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
@@ -231,14 +239,31 @@ public class RealDebridCom extends PluginForHost {
 
                         if (msg.contains("An error occured while attempting to download the file")) {
 
-                            tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
+                            tempUnavailableHoster(acc, link, 15 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         }
+                        if (msg.contains("An error occured while read your file on the remote host")) {
+
+                            tempUnavailableHoster(acc, link, 15 * 60 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+                        // PluginException: You are not allowed to download this file !<br/>Your current IP adress is: ****
+
+                        if (msg.contains("You are not allowed to download this file")) {
+
+                            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        }
+
+                        // PluginException: An error occured while read your file on the remote host ! Timeout of 90s exceeded !<br/>The
+                        // download server is down or ban from our server, please contact an Administrator with these following informations
+                        // :<br/><br/>Link:*****)
                         if (msg.contains("An error occured while read your file on the remote host")) {
 
                             tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         }
+
                     }
 
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, msg);
