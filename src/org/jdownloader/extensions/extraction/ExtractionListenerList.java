@@ -154,7 +154,9 @@ public class ExtractionListenerList implements ExtractionListener {
                     ArrayList<AbstractNode> links = new ArrayList<AbstractNode>();
 
                     for (ArchiveFile faf : controller.getArchiv().getArchiveFiles()) {
-                        links.addAll(((DownloadLinkArchiveFile) faf).getDownloadLinks());
+                        if (faf instanceof DownloadLinkArchiveFile) {
+                            links.addAll(((DownloadLinkArchiveFile) faf).getDownloadLinks());
+                        }
                     }
                     SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, links, true);
 
