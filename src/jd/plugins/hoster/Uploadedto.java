@@ -66,16 +66,16 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
-    
+
     // DEV NOTES:
     // other: respects https in download methods, even though final download
     // link isn't https (free tested).
-    
+
     public static class StringContainer {
         //
         public String string = null;
     }
-    
+
     private static AtomicInteger   maxPrem                      = new AtomicInteger(1);
     private char[]                 FILENAMEREPLACES             = new char[] { '_' };
     private final String           ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
@@ -95,7 +95,7 @@ public class Uploadedto extends PluginForHost {
     private static final String    DOWNLOAD_ABUSED              = "DOWNLOAD_ABUSED";
     private boolean                PREFERSSL                    = false;
     private boolean                avoidHTTPS                   = false;
-    
+
     private String getProtocol() {
         if (avoidHTTPS) return "http://";
         if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL)) {
@@ -104,14 +104,14 @@ public class Uploadedto extends PluginForHost {
             return "http://";
         }
     }
-    
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         String protocol = new Regex(link.getDownloadURL(), "(https?)://").getMatch(0);
         String id = getID(link);
         link.setUrlDownload(protocol + "://uploaded.net/file/" + id);
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.correctDownloadLink(downloadLink);
@@ -145,7 +145,7 @@ public class Uploadedto extends PluginForHost {
         }
         return AvailableStatus.TRUE;
     }
-    
+
     private void getPage(Browser br, String url) throws IOException, PluginException, InterruptedException {
         br.getPage(url);
         for (int i = 0; i < 50; i++) {
@@ -170,21 +170,21 @@ public class Uploadedto extends PluginForHost {
         }
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
     }
-    
+
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getVerifiedFileSize() > 1073741824)
             return false;
         else
             return true;
     }
-    
+
     static class Sec {
         public static String d(final byte[] b, final byte[] key) {
             Cipher cipher;
             try {
                 final IvParameterSpec ivSpec = new IvParameterSpec(key);
                 final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-                
+
                 cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
                 cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                 return new String(cipher.doFinal(b), "UTF-8");
@@ -192,36 +192,36 @@ public class Uploadedto extends PluginForHost {
                 e.printStackTrace();
                 final IvParameterSpec ivSpec = new IvParameterSpec(key);
                 final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-                
+
                 try {
                     cipher = Cipher.getInstance("AES/CBC/nopadding");
-                    
+
                     cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                     return new String(cipher.doFinal(b), "UTF-8");
                 } catch (final Exception e1) {
                     e.printStackTrace();
                 }
-                
+
             }
             return null;
         }
-        
+
         private byte[] key;
-        
+
         private byte[] prep;
-        
+
         public Sec() {
             key = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
             prep = Base64.decode("MC8O21gQXUaeSgMxxiOGugSrROkQHTbadlwDeJqHOpU4Q2o38bGWkm3/2zfS0N0s");
         }
-        
+
         public String run() {
-            
+
             return new String(new byte[] { 97, 112, 105, 107, 101, 121 }) + "=" + d(prep, key);
-            
+
         }
     }
-    
+
     private static void workAroundTimeOut(final Browser br) {
         try {
             if (br != null) {
@@ -231,7 +231,7 @@ public class Uploadedto extends PluginForHost {
         } catch (final Throwable e) {
         }
     }
-    
+
     protected void showFreeDialog(final String domain) {
         if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
@@ -239,7 +239,7 @@ public class Uploadedto extends PluginForHost {
         }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-                
+
                 @Override
                 public void run() {
                     try {
@@ -269,28 +269,28 @@ public class Uploadedto extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-    
+
     private static String[] IPCHECK = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    
+
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         this.enablePremium("http://uploaded.to/");
         this.setStartIntervall(2000l);
     }
-    
+
     public String filterPackageID(String packageIdentifier) {
         return packageIdentifier.replaceAll("([^a-zA-Z0-9]+)", "");
     }
-    
+
     public char[] getFilenameReplaceMap() {
         return FILENAMEREPLACES;
     }
-    
+
     public boolean isHosterManipulatesFilenames() {
         return true;
     }
-    
+
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
@@ -381,7 +381,7 @@ public class Uploadedto extends PluginForHost {
         }
         return true;
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
@@ -392,7 +392,7 @@ public class Uploadedto extends PluginForHost {
             return fetchAccountInfo_Website(account);
         }
     }
-    
+
     public AccountInfo fetchAccountInfo_API(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
@@ -446,7 +446,7 @@ public class Uploadedto extends PluginForHost {
         }
         return ai;
     }
-    
+
     public AccountInfo fetchAccountInfo_Website(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
@@ -499,7 +499,7 @@ public class Uploadedto extends PluginForHost {
         }
         return ai;
     }
-    
+
     private void postPage(Browser br, String url, String data) throws IOException, PluginException, InterruptedException {
         br.postPage(url, data);
         for (int i = 0; i < 25; i++) {
@@ -525,12 +525,12 @@ public class Uploadedto extends PluginForHost {
         }
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://uploaded.net/legal";
     }
-    
+
     private String getID(final DownloadLink downloadLink) {
         String id = new Regex(downloadLink.getDownloadURL(), "/file/([\\w]+)/?").getMatch(0);
         if (id != null) return id;
@@ -539,29 +539,29 @@ public class Uploadedto extends PluginForHost {
         id = new Regex(downloadLink.getDownloadURL(), "(\\.net|\\.to)/([\\w]+)/?").getMatch(1);
         return id;
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     private String getPassword(final DownloadLink downloadLink) throws Exception {
         String passCode = downloadLink.getStringProperty("pass", null);
         if (passCode == null) passCode = getUserInput(null, downloadLink);
         return passCode;
     }
-    
+
     @Override
     public int getTimegapBetweenConnections() {
         return 400;
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         doFree(downloadLink, null);
     }
-    
+
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null) {
             logger.info("Free, WEB download method in use!");
@@ -592,12 +592,12 @@ public class Uploadedto extends PluginForHost {
                     config.save();
                 }
             }
-            
+
             workAroundTimeOut(br);
             String id = getID(downloadLink);
             br.setFollowRedirects(false);
             prepBrowser();
-            
+
             /**
              * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
              */
@@ -633,7 +633,7 @@ public class Uploadedto extends PluginForHost {
                     if (result < RECONNECTWAIT && result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - result);
                 }
             }
-            
+
             final String addedDownloadlink = baseURL + "file/" + id;
             getPage(br, addedDownloadlink);
             String dllink = null;
@@ -755,7 +755,7 @@ public class Uploadedto extends PluginForHost {
             setIP(currentIP, downloadLink, account);
         }
     }
-    
+
     private void generalFreeErrorhandling(final Account account) throws PluginException {
         if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         if (br.containsHTML("\"err\":\"This file exceeds the max")) {
@@ -781,9 +781,9 @@ public class Uploadedto extends PluginForHost {
             }
         }
         if (br.containsHTML("<title>uploaded.net - Maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l); }
-        
+
     }
-    
+
     /** API error handling **/
     private void handleErrorCode(Browser br, Account acc, String usedToken, boolean throwPluginDefect) throws Exception {
         final String lang = System.getProperty("user.language");
@@ -798,72 +798,72 @@ public class Uploadedto extends PluginForHost {
             logger.info("ErrorCode: " + errCode);
             int code = Integer.parseInt(errCode);
             switch (code) {
-                case 1:
-                    // {"err":{"code":1,"message":"Benutzer nicht vorhanden: e74ac48bef744497c56efaf45072579fbc945b45"}}
-                    // user does not exist, when random username entered into login field.
-                case 2:
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUser does not exist!\r\nBenutzername existiert nicht!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                case 3: {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 1:
+                // {"err":{"code":1,"message":"Benutzer nicht vorhanden: e74ac48bef744497c56efaf45072579fbc945b45"}}
+                // user does not exist, when random username entered into login field.
+            case 2:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUser does not exist!\r\nBenutzername existiert nicht!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 3: {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            case 4:
+                if (acc != null) {
+                    synchronized (acc) {
+                        String savedToken = acc.getStringProperty("token", null);
+                        if (usedToken != null && usedToken.equals(savedToken)) {
+                            acc.setProperty("token", null);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "LoginToken invalid", 60 * 1000l);
                     }
                 }
-                case 4:
-                    if (acc != null) {
-                        synchronized (acc) {
-                            String savedToken = acc.getStringProperty("token", null);
-                            if (usedToken != null && usedToken.equals(savedToken)) {
-                                acc.setProperty("token", null);
-                            }
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "LoginToken invalid", 60 * 1000l);
-                        }
+            case 16:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 18:
+                // {"err":{"code":18,"message":"Das \u00fcbergebene Passwort ist vom Typ sha1, erwartet wurde md5"}}
+                // messaged unescaped: Das übergebene Passwort ist vom Typ sha1, erwartet wurde md5
+                // effectively they are saying wrong hash value provided, sha1 provided and expected md5. been reported by users, seems
+                // random for some users and not others, when sha1 was used
+            case 19:
+                // {"err":{"code":19,"message":"Das \u00fcbergebene Passwort ist vom Typ md5, erwartet wurde sha1"}}
+                // message unescaped: Das übergebene Passwort ist vom Typ md5, erwartet wurde sha1
+                // effectively they are saying wrong hash value provided, md5 provided and expected sha1. It also seems to throws this been
+                // given randomly for some users and not others, when md5 was used (only used for a day to test)
+            case 20:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 404:
+            case 410:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 500:
+                logger.info("Received unknown API response error 500!\nIf this happened during the login process, the account was not accepted!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "API doesn't accept account (error 500).", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 8000:
+                //
+
+                /* traffic exhausted */
+                if (acc != null) {
+                    String reset = br.getRegex("reset\":\\s*?\"?(\\d+)").getMatch(0);
+                    if (reset != null) {
+                        acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Long.parseLong(reset) * 1000);
+                    } else {
+                        acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
                     }
-                case 16:
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                case 18:
-                    // {"err":{"code":18,"message":"Das \u00fcbergebene Passwort ist vom Typ sha1, erwartet wurde md5"}}
-                    // messaged unescaped: Das übergebene Passwort ist vom Typ sha1, erwartet wurde md5
-                    // effectively they are saying wrong hash value provided, sha1 provided and expected md5. been reported by users, seems
-                    // random for some users and not others, when sha1 was used
-                case 19:
-                    // {"err":{"code":19,"message":"Das \u00fcbergebene Passwort ist vom Typ md5, erwartet wurde sha1"}}
-                    // message unescaped: Das übergebene Passwort ist vom Typ md5, erwartet wurde sha1
-                    // effectively they are saying wrong hash value provided, md5 provided and expected sha1. It also seems to throws this been
-                    // given randomly for some users and not others, when md5 was used (only used for a day to test)
-                case 20:
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                case 404:
-                case 410:
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                case 500:
-                    logger.info("Received unknown API response error 500!\nIf this happened during the login process, the account was not accepted!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "API doesn't accept account (error 500).", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                case 8000:
-                    //
-                    
-                    /* traffic exhausted */
-                    if (acc != null) {
-                        String reset = br.getRegex("reset\":\\s*?\"?(\\d+)").getMatch(0);
-                        if (reset != null) {
-                            acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Long.parseLong(reset) * 1000);
-                        } else {
-                            acc.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
-                        }
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                case 8011:
-                    /* direct download but upload user deleted */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Upload User deleted");
-                case 8013:
-                    // {"err":["Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt. Sie k&#246;nnen f&#252;r den heutigen Tag leider keine Premium-Downloads mehr starten."],"errCode":8013}
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                case 8016:
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
-                case 8017:
-                    /* file is probably prohibited */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 8011:
+                /* direct download but upload user deleted */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Upload User deleted");
+            case 8013:
+                // {"err":["Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt. Sie k&#246;nnen f&#252;r den heutigen Tag leider keine Premium-Downloads mehr starten."],"errCode":8013}
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 8016:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
+            case 8017:
+                /* file is probably prohibited */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         if (throwPluginDefect) {
@@ -871,15 +871,15 @@ public class Uploadedto extends PluginForHost {
             logger.info("ErrorCode: unknown\r\n" + br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        
+
     }
-    
+
     // Attention!! Do not use Override here for stable compatibility reasons
     // @Override
     public void showAccountDetailsDialog(Account account) {
         jd.gui.UserIO.getInstance().requestMessageDialog("Uploaded.to Account", "Account type: Premium");
     }
-    
+
     private String api_getAccessToken(Account account, boolean liveToken) throws Exception {
         synchronized (account) {
             try {
@@ -903,7 +903,7 @@ public class Uploadedto extends PluginForHost {
             }
         }
     }
-    
+
     public static String getLoginSHA1Hash(String arg) throws PluginException {
         try {
             arg = URLDecoder.decode(arg, "ISO-8859-1");
@@ -916,7 +916,7 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
-    
+
     private String api_getTokenType(Account account, String token, boolean liveToken) throws Exception {
         synchronized (account) {
             try {
@@ -924,9 +924,9 @@ public class Uploadedto extends PluginForHost {
                 if (tokenType != null && liveToken == false) return tokenType;
                 getPage(br, getProtocol() + "api.uploaded.net/api/user/jdownloader?access_token=" + token);
                 tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
-                
+
                 if (tokenType == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API Error. Please contact Uploaded.to Support.", 5 * 60 * 1000l);
-                
+
                 }
                 account.setProperty("tokenType", tokenType);
                 if ("premium".equals(tokenType)) {
@@ -953,7 +953,7 @@ public class Uploadedto extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         usePremiumDownloadAPI = this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
@@ -1037,7 +1037,7 @@ public class Uploadedto extends PluginForHost {
                     ((RAFDownload) dl).getRequest().setReadTimeout(60000);
                 } catch (final Throwable ee) {
                 }
-                
+
                 if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
                     try {
                         br.followConnection();
@@ -1088,7 +1088,7 @@ public class Uploadedto extends PluginForHost {
             }
         }
     }
-    
+
     public void handlePremium_API(DownloadLink downloadLink, Account account) throws Exception {
         correctDownloadLink(downloadLink);
         String token = api_getAccessToken(account, false);
@@ -1177,17 +1177,27 @@ public class Uploadedto extends PluginForHost {
             usePremiumAPI.set(false);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.getConnection().getResponseCode() == 404) {
-            try {
-                br.followConnection();
-            } catch (final Throwable e) {
-                logger.severe(e.getMessage());
+        try {
+            if (dl.getConnection().getResponseCode() == 404) {
+                try {
+                    br.followConnection();
+                } catch (final Throwable e) {
+                    logger.severe(e.getMessage());
+                }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            dl.startDownload();
+        } catch (IOException e) {
+
+            if (dl.getConnection().getResponseCode() == 406) {
+
+                resetDownloadlink(downloadLink);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
         }
-        dl.startDownload();
     }
-    
+
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(DownloadLink link, Account acc) {
         if (acc == null) {
@@ -1201,7 +1211,7 @@ public class Uploadedto extends PluginForHost {
         }
         return false;
     }
-    
+
     private void changeToEnglish(Browser br) throws IOException, PluginException, InterruptedException {
         boolean red = br.isFollowingRedirects();
         try {
@@ -1211,7 +1221,7 @@ public class Uploadedto extends PluginForHost {
             br.setFollowRedirects(red);
         }
     }
-    
+
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         workAroundTimeOut(br);
@@ -1244,13 +1254,13 @@ public class Uploadedto extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
     }
-    
+
     private void prepBrowser() throws IOException, PluginException, InterruptedException {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
@@ -1266,7 +1276,7 @@ public class Uploadedto extends PluginForHost {
             br.setFollowRedirects(red);
         }
     }
-    
+
     private String getIP() throws PluginException {
         Browser ip = new Browser();
         String currentIP = null;
@@ -1288,7 +1298,7 @@ public class Uploadedto extends PluginForHost {
         }
         return currentIP;
     }
-    
+
     private boolean setIP(String IP, final DownloadLink link, final Account account) throws PluginException {
         synchronized (IPCHECK) {
             if (IP != null && !new Regex(IP, IPREGEX).matches()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1305,7 +1315,7 @@ public class Uploadedto extends PluginForHost {
             }
         }
     }
-    
+
     private boolean ipChanged(String IP, DownloadLink link) throws PluginException {
         String currentIP = null;
         if (IP != null && new Regex(IP, IPREGEX).matches()) {
@@ -1318,17 +1328,17 @@ public class Uploadedto extends PluginForHost {
         if (lastIP == null) lastIP = Uploadedto.lastIP.string;
         return !currentIP.equals(lastIP);
     }
-    
+
     private boolean dmcaDlEnabled() {
         final SubConfiguration thiscfg = this.getPluginConfig();
         return (!thiscfg.getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda) && thiscfg.getBooleanProperty(DOWNLOAD_ABUSED, false));
     }
-    
+
     private final boolean default_ppda   = true;
     private final boolean default_aaeh   = false;
     private final boolean default_eh     = false;
     private final boolean default_abused = false;
-    
+
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Reconnect and switch between free accounts (to get more dl speed), also prevents having to enter captchas in between downloads.")).setDefaultValue(default_aaeh));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(default_eh));
@@ -1355,25 +1365,25 @@ public class Uploadedto extends PluginForHost {
             dmcmenutext += "--> If they're still downloadable, their filename- and size will be shown on downloadstart";
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, JDL.L("plugins.hoster.uploadedto.downloadAbused", dmcmenutext)).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
-        
+
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
     @Override
     public void resetPluginGlobals() {
     }
-    
+
     private String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         JDUtilities.getPluginForHost("youtube.com");
         return jd.plugins.hoster.Youtube.unescape(s);
     }
-    
+
 }
