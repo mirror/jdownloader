@@ -154,9 +154,21 @@ public class SockShareCom extends PluginForHost {
         if (downloadLink.getBooleanProperty(SockShareCom.NOCHUNKS, false)) {
             chunks = 1;
         }
+        long[] cp = downloadLink.getChunksProgress();
+        if (cp != null && cp.length > 0) {
+
+        }
+
+        fixChunks(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+
+            if (dl.getConnection().getResponseCode() == 406) {
+
+                resetDownloadlink(downloadLink);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("pass", passCode);
@@ -171,6 +183,9 @@ public class SockShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
+    }
+
+    private void fixChunks(DownloadLink downloadLink) {
     }
 
     @Override
