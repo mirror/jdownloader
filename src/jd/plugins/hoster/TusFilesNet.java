@@ -239,7 +239,9 @@ public class TusFilesNet extends PluginForHost {
                 altAvailStat(downloadLink, fileInfo);
             }
         }
-
+        // 8th april 2014: <td align="left" colspan="2"><h1><span class="label label-danger">The file you are trying to download is no
+        // longer available</span></h1></td>
+        if (cbr.containsHTML("The file you are trying to download is no longer available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
@@ -387,6 +389,7 @@ public class TusFilesNet extends PluginForHost {
                 cbr = obrc;
             }
         }
+
         // Fourth, continue like normal.
         if (inValidate(dllink)) {
             checkErrors(downloadLink, account, false);
@@ -1217,8 +1220,22 @@ public class TusFilesNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, null);
+        AvailableStatus availableStatus = requestFileInformation(downloadLink);
+        if (availableStatus != null) {
+            switch (availableStatus) {
+            case FALSE:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case UNCHECKABLE:
+            case UNCHECKED:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+            case TRUE:
+                doFree(downloadLink, null);
+
+            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+        }
+
     }
 
     /**
