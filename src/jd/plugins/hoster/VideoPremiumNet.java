@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv", "videopremium.net" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/[a-z0-9]{12}", "r489e0zu0564hjzrt50p9jhgtpiohkDELETE_MEdsngiurhz958hchswinefihighr" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv", "videopremium.net" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/(embed\\-)?[a-z0-9]{12}", "r489e0zu0564hjzrt50p9jhgtpiohkDELETE_MEdsngiurhz958hchswinefihighr" }, flags = { 2, 0 })
 public class VideoPremiumNet extends PluginForHost {
 
     private String               passCode                     = null;
@@ -89,9 +89,8 @@ public class VideoPremiumNet extends PluginForHost {
     // captchatype: null
     // other: no redirects
 
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replaceAll("videopremium\\.(net|tv)/", "videopremium.me/"));
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     @Override

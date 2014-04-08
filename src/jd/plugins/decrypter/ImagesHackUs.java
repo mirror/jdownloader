@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -48,6 +49,9 @@ public class ImagesHackUs extends PluginForDecrypt {
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
+            logger.info("Link offline (server error): " + parameter);
+            return decryptedLinks;
+        } catch (final UnknownHostException e) {
             logger.info("Link offline (server error): " + parameter);
             return decryptedLinks;
         }

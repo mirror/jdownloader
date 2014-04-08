@@ -62,6 +62,7 @@ public class TuTv extends PluginForHost {
                 filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
             }
         }
+        if (filename == null) filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
         String vid = br.getRegex(">var codVideo=(\\d+);").getMatch(0);
         if (vid == null) vid = br.getRegex("\\&xtp=(\\d+)\"").getMatch(0);
         if (vid == null) vid = br.getRegex("votoPlus\\((\\d+)\\);\"").getMatch(0);

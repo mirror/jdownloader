@@ -26,6 +26,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -55,11 +56,13 @@ public class NetKupsCom extends PluginForHost {
     private final String  MAINPAGE = "http://netkups.com";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* Offline links should also have nice filenames */
+        link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL().replace("play=", "d="));
-        if (br.containsHTML(">File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found|>This file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<strong>File name:</strong>([^<>\"]*?)<br").getMatch(0);
         String filesize = br.getRegex("<strong>File size:</strong>([^<>\"]*?)<br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -69,7 +72,7 @@ public class NetKupsCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = null;
         // If its a streamlink we can try to download the stream and skip the

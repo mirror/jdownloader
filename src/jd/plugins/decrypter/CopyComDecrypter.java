@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copy.com" }, urls = { "https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+(/[^<>\"/]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copy.com" }, urls = { "https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+(/[^<>\"]+)?" }, flags = { 0 })
 public class CopyComDecrypter extends PluginForDecrypt {
 
     public CopyComDecrypter(PluginWrapper wrapper) {
@@ -56,12 +56,21 @@ public class CopyComDecrypter extends PluginForDecrypt {
         }
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
 
-        String linktext = br.getRegex("\"share\":null,\"children\":\\[(.*?)\\],\"children_count\":").getMatch(0);
+        String linktext = null;
+        final String additionalPath = new Regex(parameter, "copy\\.com(/s/.+)").getMatch(0);
+        if (parameter.matches("https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+/[^<>\"/]+/[^<>\"]+")) {
+            /* Subfolder */
+            linktext = br.getRegex("previous_parent = Browser\\.Models\\.Obj\\.findOrCreate\\((\\{\"id\":\"" + additionalPath + "\".*?\\})\\],\"children_count\":\\d+").getMatch(0);
+        } else {
+            /* Root */
+            linktext = br.getRegex("\"share\":null,\"children\":\\[(.*?)\\],\"children_count\":").getMatch(0);
+        }
         /* For single links */
-        if (linktext == null || linktext.equals("")) linktext = br.getRegex("var prefetchedObjects = (\\{\"id\":\"/s/[A-Za-z0-9]+\".*?\\})\\],\"stub\":false,\"children_count\":1").getMatch(0);
+        if (linktext == null || linktext.equals("")) linktext = br.getRegex("previous_parent = Browser\\.Models\\.Obj\\.findOrCreate\\((\\{\"id\":\"/s/.*?\\})\\],\"stub\":false,\"children_count\":1").getMatch(0);
         if (linktext == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            /* Probably offline - or plugin broken */
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         final String[] links = linktext.split("\\},\\{");
         if (links == null || links.length == 0) {
@@ -69,24 +78,33 @@ public class CopyComDecrypter extends PluginForDecrypt {
             return null;
         }
         for (final String singleinfo : links) {
-            final DownloadLink dl = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            final String filesize = getJson("size", singleinfo);
-            String filename = getJson("name", singleinfo);
-            String url = getJson("url", singleinfo);
-            if (filesize == null || filename == null || url == null) {
+            String name = getJson("name", singleinfo);
+            if (name == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            filename = Encoding.htmlDecode(filename.trim());
-            url = url.replace("\\", "");
-            dl.setDownloadSize(Long.parseLong(filesize));
-            dl.setFinalFileName(filename);
-            dl.setProperty("plain_name", filename);
-            dl.setProperty("plain_size", filesize);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("specified_link", url);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            name = Encoding.htmlDecode(name.trim());
+            if ("dir".equals(getJson("type", singleinfo))) {
+                final DownloadLink dl = createDownloadlink(parameter + "/" + name);
+                decryptedLinks.add(dl);
+            } else {
+                final DownloadLink dl = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                final String filesize = getJson("size", singleinfo);
+                String url = getJson("url", singleinfo);
+                if (filesize == null || url == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                url = url.replace("\\", "");
+                dl.setDownloadSize(Long.parseLong(filesize));
+                dl.setFinalFileName(name);
+                dl.setProperty("plain_name", name);
+                dl.setProperty("plain_size", filesize);
+                dl.setProperty("mainlink", parameter);
+                dl.setProperty("specified_link", url);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
         }
 
         return decryptedLinks;
