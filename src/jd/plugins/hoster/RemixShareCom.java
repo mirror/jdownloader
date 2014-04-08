@@ -52,7 +52,6 @@ public class RemixShareCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
         // clean links so prevent dupes and has less side effects with multihosters...
-        // website redirects to domain/#fuid
         final String fuid = getFileID(link);
         final String pnd = new Regex(link.getDownloadURL(), "https?://[\\w\\.]*?remixshare\\.com/").getMatch(-1);
         if (fuid == null || pnd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

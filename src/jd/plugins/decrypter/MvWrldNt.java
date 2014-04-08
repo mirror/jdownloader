@@ -34,13 +34,14 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili\\-warez\\.net/[^<>\"]+\\d+\\.html" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili\\-warez\\.net/[^<>\"]+\\d+\\.html" }, flags = { 0, 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String redirectLinks            = "http://(www\\.)?mov\\-world\\.net/[a-z]{2}-[a-zA-Z0-9]+/";
     private static final String UNSUPPORTEDLINKS         = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
     private static final String SPECIALUNSUPPORTEDLINKS  = "http://(www\\.)?chili\\-warez\\.net//[a-z0-9\\-_]+/[a-z0-9\\-_]+/seite\\-\\d+\\.html";
     private static final String SPECIALUNSUPPORTEDLINKS2 = "http://(www\\.)?xxx\\-4\\-free\\.net/stories/[a-z0-9\\-]+\\.html";
@@ -52,6 +53,14 @@ public class MvWrldNt extends PluginForDecrypt {
         final String parameter = param.toString();
         if (parameter.matches(UNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS2)) {
             logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
+        // redirect links
+        if (parameter.matches(redirectLinks)) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            String rd = br.getRedirectLocation();
+            if (rd != null) decryptedLinks.add(createDownloadlink(rd));
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
