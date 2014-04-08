@@ -1187,7 +1187,7 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             dl.startDownload();
-        } catch (IOException e) {
+        } catch (Exception e) {
 
             if (dl.getConnection().getResponseCode() == 406) {
 
