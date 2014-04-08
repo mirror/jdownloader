@@ -277,7 +277,17 @@ public class TbCmV2 extends PluginForDecrypt {
             HashMap<String, List<VariantInfo>> groupsExcluded = new HashMap<String, List<VariantInfo>>();
             HashMap<YoutubeVariantInterface, VariantInfo> allVariants = new HashMap<YoutubeVariantInterface, VariantInfo>();
             HashMap<String, VariantInfo> idMap = new HashMap<String, VariantInfo>();
-            Map<YoutubeITAG, YoutubeStreamData> vc = helper.loadVideo(vid);
+            Map<YoutubeITAG, YoutubeStreamData> vc = null;
+            try {
+                vc = helper.loadVideo(vid);
+            } catch (Exception e) {
+                final String emsg = e.getMessage().toString();
+                if (emsg != null && emsg.contains("Rental Video")) {
+                    vid.error = emsg;
+                } else {
+                    throw e;
+                }
+            }
             if (vc == null || StringUtils.isNotEmpty(vid.error)) {
                 getLogger().info("Error: " + vid.videoID + " (" + vid.title + "): " + vid.error);
                 // create a dumbie link so we know how many links are found and returned in tests!
