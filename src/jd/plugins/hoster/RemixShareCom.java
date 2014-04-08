@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "remixshare.com" }, urls = { "http://[\\w\\.]*?remixshare\\.com/(.*?\\?file=|download/)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "remixshare.com" }, urls = { "http://[\\w\\.]*?remixshare\\.com/(.*?\\?file=|download/|dl/)[a-z0-9]+" }, flags = { 0 })
 public class RemixShareCom extends PluginForHost {
 
     public static final String BLOCKED = "(class=\"blocked\"|>Von Deiner IP Adresse kamen zu viele Anfragen innerhalb kurzer Zeit\\.)";
@@ -47,6 +47,24 @@ public class RemixShareCom extends PluginForHost {
     public RemixShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(3000l);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) throws PluginException {
+        // clean links so prevent dupes and has less side effects with multihosters...
+        // website redirects to domain/#fuid
+        final String fuid = getFileID(link);
+        final String pnd = new Regex(link.getDownloadURL(), "https?://[\\w\\.]*?remixshare\\.com/").getMatch(-1);
+        if (fuid == null || pnd == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setUrlDownload(pnd + "download/" + fuid);
+        try {
+            link.setLinkID(fuid);
+        } catch (final Throwable e) {
+        }
+    }
+
+    private String getFileID(DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "(\\?file=|download/|dl/)([a-z0-9]+)").getMatch(1);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
