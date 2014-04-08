@@ -64,6 +64,7 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+
         setBrowserExclusive();
         boolean publicFile = true;
         String fileID = getPublicFileID(link);
@@ -75,10 +76,16 @@ public class MegaConz extends PluginForHost {
         }
         if (fileID == null || keyString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("APPID", "JDownloader");
-        if (publicFile) {
-            br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
-        } else {
-            br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
+        try {
+            if (publicFile) {
+                br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+            } else {
+                br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
+            }
+        } catch (IOException e) {
+            // java.io.IOException: 500 Server Too Busy
+            if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) { return AvailableStatus.UNCHECKABLE; }
+            throw e;
         }
         String fileSize = br.getRegex("\"s\"\\s*?:\\s*?(\\d+)").getMatch(0);
         if (fileSize == null) {
@@ -110,11 +117,15 @@ public class MegaConz extends PluginForHost {
         }
         link.setProperty("ALLOW_HASHCHECK", false);
         return AvailableStatus.TRUE;
+
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        AvailableStatus available = requestFileInformation(link);
+        if (AvailableStatus.FALSE == available) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (AvailableStatus.TRUE != available) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
+
         boolean publicFile = true;
         String fileID = getPublicFileID(link);
         String keyString = getPublicFileKey(link);
@@ -123,37 +134,43 @@ public class MegaConz extends PluginForHost {
             keyString = getNodeFileKey(link);
             publicFile = false;
         }
-        if (fileID == null || keyString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (publicFile) {
-            br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
-        } else {
-            br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
-        }
-        String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
-        if (downloadURL == null) {
-            String error = getError(br);
-            /*
-             * https://mega.co.nz/#doc
-             */
-            if ("-11".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
-            if ("-18".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (oldStyle()) {
-            /* old 09581 stable only */
-            dl = createHackedDownloadInterface(this, br, link, downloadURL);
-        } else {
-            /* mega does not like much connections! */
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
-        }
-        if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dl.startDownload()) {
-            if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
-                decrypt(link, keyString);
+        try {
+            if (fileID == null || keyString == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (publicFile) {
+                br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+            } else {
+                br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
             }
+            String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
+            if (downloadURL == null) {
+                String error = getError(br);
+                /*
+                 * https://mega.co.nz/#doc
+                 */
+                if ("-11".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
+                if ("-18".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (oldStyle()) {
+                /* old 09581 stable only */
+                dl = createHackedDownloadInterface(this, br, link, downloadURL);
+            } else {
+                /* mega does not like much connections! */
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
+            }
+            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dl.startDownload()) {
+                if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
+                    decrypt(link, keyString);
+                }
+            }
+        } catch (IOException e) {
+            if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
+            if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
+            throw e;
         }
     }
 
