@@ -51,6 +51,17 @@ public class OBoomCom extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        // clean links so prevent dupes and has less side effects with multihosters...
+        // website redirects to domain/#fuid
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com/(#(id=)?)?", "\\.com/#"));
+        try {
+            link.setLinkID(getFileID(link));
+        } catch (final Throwable e) {
+        }
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         Map<String, String> infos = loginAPI(account, true);
