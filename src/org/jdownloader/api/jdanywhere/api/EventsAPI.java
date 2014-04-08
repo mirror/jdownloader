@@ -26,7 +26,8 @@ public class EventsAPI implements IEventsApi {
 
     public boolean RegisterCaptchaPush(String host, String path, String query) {
 
-        return RegisterCaptchaPush_v2(query, host, path, query, false);
+        String deviceID = query.substring(query.indexOf("DeviceToken="), query.indexOf("&Badge=", query.indexOf("DeviceToken=")));
+        return RegisterCaptchaPush_v2(deviceID, host, path, query, false);
     }
 
     public boolean RegisterCaptchaPush_v2(String deviceID, String host, String path, String query, boolean withSound) {
