@@ -691,7 +691,11 @@ public class HugeFilesNet extends PluginForHost {
     }
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
+
         if (cbr.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        // 9th april 2014: Wrong IP
+        // No idea what's really wrong. the request answers with Wrong IP
+        if (cbr.containsHTML("Wrong IP")) throw new PluginException(LinkStatus.ERROR_RETRY);
         if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
 
