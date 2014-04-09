@@ -3,6 +3,7 @@ package org.jdownloader.statistics;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 
 import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.myjdownloader.client.json.AbstractJsonData;
 
 public class Candidate extends AbstractJsonData implements Storable {
@@ -72,16 +73,28 @@ public class Candidate extends AbstractJsonData implements Storable {
         switch (account.getType()) {
         case MULTI:
             // nopremium z.b. 4shared.com
-            if (account.getAccount().getBooleanProperty("free", false) || account.getAccount().getBooleanProperty("nopremium", false)) {
-                ret.type = ACCOUNT_MULTI_FREE;
+            if (account.getAccount().getBooleanProperty("nopremium", false)) {
+                // nopremium z.b. 4shared.com
+                ret.type = ACCOUNT_FREE;
+            } else if (account.getAccount().getBooleanProperty("free", false)) {
+                ret.type = ACCOUNT_FREE;
+            } else if (!StringUtils.equals("premium", account.getAccount().getStringProperty("session_type", null))) {
+                // session_type rapidgator
+                ret.type = ACCOUNT_FREE;
             } else {
-                ret.type = ACCOUNT_MULTI_PREMIUM;
+                ret.type = ACCOUNT_PREMIUM;
             }
             break;
 
         case ORIGINAL:
-            // nopremium z.b. 4shared.com
-            if (account.getAccount().getBooleanProperty("free", false) || account.getAccount().getBooleanProperty("nopremium", false)) {
+
+            if (account.getAccount().getBooleanProperty("nopremium", false)) {
+                // nopremium z.b. 4shared.com
+                ret.type = ACCOUNT_FREE;
+            } else if (account.getAccount().getBooleanProperty("free", false)) {
+                ret.type = ACCOUNT_FREE;
+            } else if (!StringUtils.equals("premium", account.getAccount().getStringProperty("session_type", null))) {
+                // session_type rapidgator
                 ret.type = ACCOUNT_FREE;
             } else {
                 ret.type = ACCOUNT_PREMIUM;
