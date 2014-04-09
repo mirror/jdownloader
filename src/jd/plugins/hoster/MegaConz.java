@@ -169,7 +169,7 @@ public class MegaConz extends PluginForHost {
             }
         } catch (IOException e) {
             if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
-            if (dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
+            if (dl != null && dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
             throw e;
         }
     }
