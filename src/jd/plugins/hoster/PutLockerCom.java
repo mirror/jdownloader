@@ -243,9 +243,16 @@ public class PutLockerCom extends PluginForHost {
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             passCode = handlePassword(downloadLink);
         }
+
         final Form freeform = br.getForm(1);
         if (freeform != null) br.submitForm(freeform);
 
+        if (br.containsHTML("prepare_continue_btn")) {
+            sleep(5000, downloadLink, "Prepare File...");
+            br.submitForm(freeform);
+
+        }
+        if (br.containsHTML("prepare_continue_btn")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         checkForErrors();
 
         final String dllink = getDllink(downloadLink);
