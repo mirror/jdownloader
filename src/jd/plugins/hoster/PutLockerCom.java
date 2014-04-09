@@ -243,7 +243,10 @@ public class PutLockerCom extends PluginForHost {
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             passCode = handlePassword(downloadLink);
         }
+        // HTTP/1.0 302 Moved
+        // Location: http://10.251.45.****:15871/cgi-bin/blockpage.cgi?ws-session=****
 
+        // unknown HTTP response
         final Form freeform = br.getForm(1);
         if (freeform != null) br.submitForm(freeform);
 
@@ -276,6 +279,23 @@ public class PutLockerCom extends PluginForHost {
             }
             logger.warning("firedrive.com: final link leads to html code...");
             br.followConnection();
+
+            if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 403) {
+                // HTTP/1.1 403 Forbidden
+                // Server: cloudflare-nginx
+                // Date: Sat, 05 Apr 2014 13:05:07 GMT
+                // Content-Type: text/html
+                // Transfer-Encoding: chunked
+                // Connection: close
+                // Access-Control-Allow-Methods: GET, POST, OPTIONS
+                // Access-Control-Allow-Headers:
+                // Origin,Referer,Accept-Encoding,Accept-Language,Accept,DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type
+                // Access-Control-Allow-Origin: *
+                // CF-RAY: *****-MIA
+                // Content-Encoding: gzip
+
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Error. Try again later", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         fixFilename(downloadLink);
