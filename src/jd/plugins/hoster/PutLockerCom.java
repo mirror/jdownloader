@@ -159,6 +159,7 @@ public class PutLockerCom extends PluginForHost {
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("No htmlCode read")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("This file might have been moved, replaced or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             link.getLinkStatus().setStatusText("This link is password protected");
@@ -216,8 +217,22 @@ public class PutLockerCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        AvailableStatus availableStatus = requestFileInformation(downloadLink);
+        if (availableStatus != null) {
+            switch (availableStatus) {
+            case FALSE:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case UNCHECKABLE:
+            case UNCHECKED:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+            case TRUE:
+                doFree(downloadLink);
+
+            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+        }
+
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
