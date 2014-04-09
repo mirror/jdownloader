@@ -472,6 +472,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                             }
                             if (!dl.gotBrowserUrl()) dl.setBrowserUrl(referer);
                             if (index2 < desc.length) dl.setComment(desc[index2]);
+                            if (index2 < fnames.length) dl.forceFileName(fnames[index2]);
                         }
                     });
                     link.setUnknownHandler(new UnknownCrawledLinkHandler() {
