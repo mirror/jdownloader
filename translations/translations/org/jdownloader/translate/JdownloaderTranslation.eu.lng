@@ -2,6 +2,7 @@ DuplicateAction_DuplicateAction_=Bikoiztutako araua
 ExportAction_ExportAction_tt=Gorde arauak fitxategi batean.\n- Backup\n- Besteekin partekatu
 ImportAction_tt=Inportatu arauak *.jdfilter (*.jdregexfilter) fitxategietatik
 LinkCollector_archiv=%s1
+LinkSource_CLIPBOARD=Arbela
 LinkSource_PASTE_LINKS_ACTION=Itsatsi estekak
 LinkgrabberFilterRule_duplicate=%s1 (kopia)
 MyJDownloaderController_onError_badlogins=Zure ' Nire JDownloader'  saioa ez da zuzena.\nMesedez egiaztatu erabiltzailea/posta edo pasahitza!
