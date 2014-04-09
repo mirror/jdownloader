@@ -64,42 +64,42 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
-
+    
     public static class StringContainer {
         public String string = null;
-
+        
         @Override
         public String toString() {
             return string;
         }
     }
-
+    
     private final String          UA                       = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36";
     private final String          FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private final String          PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
     public static StringContainer MAINPAGE                 = new StringContainer();
     public static final String    DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
-
+    
     private String                protocol                 = null;
-
+    
     public String                 DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private final Pattern         FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
     private final Pattern         FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
-
+    
     private static Object         PREMLOCK                 = new Object();
     private static Object         LOCK                     = new Object();
-
+    
     private static AtomicInteger  simultanpremium          = new AtomicInteger(1);
     private static AtomicBoolean  useAPI                   = new AtomicBoolean(true);
-
+    
     private final String          SSL_CONNECTION           = "SSL_CONNECTION";
-
+    
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
         this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
-
+    
     public void setMainpage() {
         if (MAINPAGE == null || MAINPAGE.string == null || userChangedSslSetting()) {
             try {
@@ -126,12 +126,12 @@ public class DepositFiles extends PluginForHost {
             }
         }
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return true;
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
@@ -144,14 +144,14 @@ public class DepositFiles extends PluginForHost {
         }
         return false;
     }
-
+    
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         setMainpage();
         final String newLink = link.getDownloadURL().replaceAll(DOMAINS + "(/.*?)?/files", MAINPAGE.string.replaceAll("https?://(www\\.)?", "") + "/de/files");
         link.setUrlDownload(fixLinkSSL(newLink));
     }
-
+    
     protected void showFreeDialog(final String domain) {
         if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
@@ -159,7 +159,7 @@ public class DepositFiles extends PluginForHost {
         }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-
+                
                 @Override
                 public void run() {
                     try {
@@ -189,7 +189,7 @@ public class DepositFiles extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-
+    
     private void checkShowFreeDialog() {
         SubConfiguration config = null;
         try {
@@ -216,7 +216,7 @@ public class DepositFiles extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         // correctlink fixes https|not https, and sets mainpage! no need to duplicate in other download areas!.
@@ -229,7 +229,7 @@ public class DepositFiles extends PluginForHost {
         // br.getHeaders().put("Referer", "http://www.google.de");
         br.setFollowRedirects(false);
         br.getPage(link);
-
+        
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML("<strong>Achtung! Sie haben ein Limit")) {
@@ -259,7 +259,7 @@ public class DepositFiles extends PluginForHost {
         downloadLink.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileSizeString)));
         return AvailableStatus.TRUE;
     }
-
+    
     public void checkErrors() throws NumberFormatException, PluginException {
         logger.info("Checking errors...");
         if (br.containsHTML("Zugang zur folgenden Datei ist begrenzt oder Datei wurde entfernt")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -272,14 +272,17 @@ public class DepositFiles extends PluginForHost {
         if (br.containsHTML("(Sie haben ein Limit fuer Downloaden ausgeschoepft|You used up your limit|Please try in|You have reached your download time limit)")) {
             String wait = br.getRegex("html_download_api-limit_interval\">(\\d+)</span>").getMatch(0);
             if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l); }
-            System.out.print(br.toString());
             wait = br.getRegex(">Try in (\\d+) minutes or use GOLD account").getMatch(0);
-            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 60 * 1000l); }
+            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(wait) + 1) * 60 * 1000l); }
+            wait = br.getRegex(">Try in (\\d+) seconds or use GOLD account").getMatch(0);
+            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l); }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         }
         if (br.containsHTML("(Anschlusslimit|Bitte versuchen Sie in)")) {
             String wait = br.getRegex("versuchen Sie in.*?(\\d+) minu").getMatch(0);
-            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 60 * 1000l); }
+            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(wait) + 1) * 60 * 1000l); }
+            wait = br.getRegex("versuchen Sie in.*?(\\d+) Seku").getMatch(0);
+            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 1000l); }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         }
         /* country slots full */
@@ -303,7 +306,7 @@ public class DepositFiles extends PluginForHost {
         }
         if (br.containsHTML("Entweder existiert diese Datei nicht oder sie wurde aufgrund von")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-
+    
     private String getDllink() throws Exception {
         String crap = br.getRegex("document\\.getElementById\\(\\'download_container\\'\\)\\.innerHTML = \\'(.*?\\';)").getMatch(0);
         if (crap == null && br.containsHTML("download_container")) {
@@ -330,24 +333,24 @@ public class DepositFiles extends PluginForHost {
         }
         return null;
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         synchronized (PREMLOCK) {
             return simultanpremium.get();
         }
     }
-
+    
     @Override
     public int getTimegapBetweenConnections() {
         return 800;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         logger.info("Free @ Guest :: Web download method in use");
@@ -355,7 +358,7 @@ public class DepositFiles extends PluginForHost {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
-
+    
     private void doFree(final DownloadLink downloadLink) throws Exception {
         checkShowFreeDialog();
         br.forceDebug(true);
@@ -495,13 +498,13 @@ public class DepositFiles extends PluginForHost {
         downloadLink.setProperty("finallink", finallink);
         dl.startDownload();
     }
-
+    
     private void setConstants() {
         // set session protocol based on user setting and jd version && java version
         protocol = fixLinkSSL("https://");
         if (isJava7nJDStable()) protocol = "http://";
     }
-
+    
     public boolean isFreeAccount(Account acc, boolean force) throws IOException {
         synchronized (LOCK) {
             Object free = acc.getBooleanProperty("free", false);
@@ -534,7 +537,7 @@ public class DepositFiles extends PluginForHost {
             return ret;
         }
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setBrowserExclusive();
@@ -554,7 +557,7 @@ public class DepositFiles extends PluginForHost {
             return ai;
         }
     }
-
+    
     private AccountInfo webFetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -602,7 +605,7 @@ public class DepositFiles extends PluginForHost {
         }
         return ai;
     }
-
+    
     @SuppressWarnings("unchecked")
     private void webLogin(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
@@ -651,7 +654,7 @@ public class DepositFiles extends PluginForHost {
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br2 = br.cloneBrowser();
                 br2.submitForm(login);
-
+                
                 if (br2.containsHTML("\"error\":\"CaptchaRequired\"") && cid == null) {
                     logger.warning("cid = null, captcha is required to login");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -682,7 +685,7 @@ public class DepositFiles extends PluginForHost {
                     logger.info("Depositfiles website login method == success!");
                 }
                 br.setFollowRedirects(false);
-
+                
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE.string);
@@ -701,7 +704,7 @@ public class DepositFiles extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants();
@@ -730,7 +733,7 @@ public class DepositFiles extends PluginForHost {
             webHandlePremium(downloadLink, account);
         }
     }
-
+    
     private void webHandlePremium(final DownloadLink downloadLink, Account account) throws Exception {
         webLogin(account, false);
         if (isFreeAccount(account, true)) {
@@ -789,15 +792,15 @@ public class DepositFiles extends PluginForHost {
             dl.startDownload();
         }
     }
-
+    
     private String newAppVersion = "2114";
-
+    
     private String apiKeyVal() {
         return "key" + (int) (Math.random() * 10000.0D) + "=val" + new Date().getTime();
     }
-
+    
     private final AtomicBoolean newVC = new AtomicBoolean(false);
-
+    
     @SuppressWarnings("unused")
     private boolean versionCheck() throws Exception {
         if (newVC.get()) {
@@ -813,28 +816,28 @@ public class DepositFiles extends PluginForHost {
                 return true;
         }
     }
-
+    
     private HashMap<String, Object> accountData = new HashMap<String, Object>();
-
+    
     private void saveAccountData(Account account) {
         if (!accountData.isEmpty())
             account.setProperty("accountData", accountData);
         else
             account.setProperty("accountData", Property.NULL);
     }
-
+    
     private void setConstants(Account account) {
         @SuppressWarnings("unchecked")
         HashMap<String, Object> tempHM = (HashMap<String, Object>) account.getProperty("accountData", null);
         if (tempHM != null) accountData = tempHM;
     }
-
+    
     private void getPage(String url) throws Exception {
         br = new Browser();
         apiPrepBr(br);
         br.getPage(fixLinkSSL(url));
     }
-
+    
     @SuppressWarnings("unchecked")
     private String getToken(Account account) throws Exception {
         String result = null;
@@ -856,7 +859,7 @@ public class DepositFiles extends PluginForHost {
         }
         return result.replace("%2F", "/");
     }
-
+    
     private Browser apiPrepBr(Browser ibr) {
         ibr.getHeaders().put("User-Agent", "Java/" + System.getProperty("java.version"));
         ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
@@ -867,7 +870,7 @@ public class DepositFiles extends PluginForHost {
         ibr.getHeaders().put("Pragma", null);
         return ibr;
     }
-
+    
     /**
      * new AccountInfo method for /api/
      * 
@@ -987,11 +990,11 @@ public class DepositFiles extends PluginForHost {
         // }
         return ai;
     }
-
+    
     // defaults do not change
     private boolean apiResumes = true;
     private int     apiChunks  = 0;
-
+    
     private void apiHandlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
         String pass = downloadLink.getStringProperty("pass", null);
@@ -1093,18 +1096,18 @@ public class DepositFiles extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     private String fuid(DownloadLink downloadLink) {
         String result = new Regex(downloadLink.getDownloadURL(), "files/([^/]+)").getMatch(0);
         return result;
     }
-
+    
     private String getJson(String object) {
         String result = br.getRegex("\"" + object + "\":\"([^\"]+)").getMatch(0);
         if (result == null) result = br.getRegex("\"" + object + "\":(\\d+)").getMatch(0);
         return result;
     }
-
+    
     private void mainpageCookies(Browser ibr) {
         String current_host = new Regex(ibr.getURL(), "(https?://[^/]+)").getMatch(0);
         /** Save cookies */
@@ -1113,7 +1116,7 @@ public class DepositFiles extends PluginForHost {
             br.setCookie(MAINPAGE.string, c.getKey(), c.getValue());
         }
     }
-
+    
     private String checkDirectLink(DownloadLink downloadLink) {
         String finallink = downloadLink.getStringProperty("finallink", null);
         if (finallink != null) {
@@ -1132,18 +1135,18 @@ public class DepositFiles extends PluginForHost {
         }
         return finallink;
     }
-
+    
     private boolean userChangedSslSetting() {
         if (MAINPAGE != null && MAINPAGE.string != null && (checkSsl() && MAINPAGE.string.startsWith("http://")) || (!checkSsl() && MAINPAGE.string.startsWith("https://")))
             return true;
         else
             return false;
     }
-
+    
     private boolean checkSsl() {
         return getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
     }
-
+    
     private String fixLinkSSL(String link) {
         if (checkSsl())
             link = link.replace("http://", "https://");
@@ -1151,20 +1154,20 @@ public class DepositFiles extends PluginForHost {
             link = link.replace("https://", "http://");
         return link;
     }
-
+    
     private boolean isJava7nJDStable() {
         if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
             return true;
         else
             return false;
     }
-
+    
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-
+    
     public static void showSSLWarning(final String domain) {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-
+                
                 @Override
                 public void run() {
                     try {
@@ -1213,31 +1216,31 @@ public class DepositFiles extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-
+    
     private void setConfigElements() {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.DepositFiles.com.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }
-
+    
     public void setLangtoGer() throws IOException {
         br.setCookie(MAINPAGE.string, "lang_current", "de");
     }
-
+    
     @Override
     public String getAGBLink() {
         setMainpage();
         return MAINPAGE.string + "/en/agreem.html";
     }
-
+    
 }
