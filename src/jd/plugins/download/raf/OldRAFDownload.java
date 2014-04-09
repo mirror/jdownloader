@@ -272,12 +272,20 @@ public class OldRAFDownload extends DownloadInterface {
         long part = fileSize / chunks;
         long dif;
         long last = -1;
+
         for (int i = 0; i < chunks; i++) {
             dif = chunksP[i] - i * part;
             if (dif < 0) return false;
             if (chunksP[i] <= last) return false;
+            if (chunksP[i] >= (i + 1) * part) {
+                logger.info("Correct Chunk " + i + " : " + chunksP[i] + " to " + (((i + 1) * part) - 1));
+                chunksP[i] = ((i + 1) * part) - 1;
+            }
+
             last = chunksP[i];
+
         }
+        downloadable.setChunksProgress(chunksP);
         if (chunks > 0) {
             if (chunks <= this.getChunkNum()) {
                 /* downloadchunks are less or equal to allowed chunks */
