@@ -268,6 +268,10 @@ public class OBoomCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("403,\"token.ip\"")) {
+                // ip changed
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -391,6 +395,10 @@ public class OBoomCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML("403,\"token.ip\"")) {
+                // ip changed
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
