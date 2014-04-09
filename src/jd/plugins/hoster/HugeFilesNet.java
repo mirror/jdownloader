@@ -420,6 +420,7 @@ public class HugeFilesNet extends PluginForHost {
                 if (!skipWaitTime) waitTime(timeBefore, downloadLink);
                 final String ctype = cbr.getRegex("name=\"ctype\" value=\"([^<>\"]*?)\">").getMatch(0);
                 if (ctype != null) dlForm.put("ctype", ctype);
+                dlForm.remove("method_premium");
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
@@ -1219,8 +1220,22 @@ public class HugeFilesNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, null);
+        AvailableStatus availableStatus = requestFileInformation(downloadLink);
+        if (availableStatus != null) {
+            switch (availableStatus) {
+            case FALSE:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case UNCHECKABLE:
+            case UNCHECKED:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+            case TRUE:
+                doFree(downloadLink, null);
+
+            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+        }
+
     }
 
     /**
@@ -1327,7 +1342,7 @@ public class HugeFilesNet extends PluginForHost {
             for (String value : capMap.values()) {
                 code.append(value);
             }
-            form.put("code", code.toString());
+            form.put("code", Encoding.urlEncode(code.toString()));
         } else if (cbr.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard Captcha\"");
             final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
@@ -1355,7 +1370,7 @@ public class HugeFilesNet extends PluginForHost {
                 logger.warning("Standard captcha captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            form.put("code", code);
+            form.put("code", Encoding.urlEncode(code.toString()));
         } else if (cbr.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
