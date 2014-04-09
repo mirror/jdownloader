@@ -425,6 +425,10 @@ public class OBoomCom extends PluginForHost {
             break;
         }
         if (br.containsHTML("incorrect-captcha-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("400\\,\"slot_error\"")) {
+            // country slot block. try again in 5 minutes
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later.", 5 * 60 * 1000l);
+        }
         String waitTime = br.getRegex("403,(\\d+)").getMatch(0);
         if (waitTime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l); }
         String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
