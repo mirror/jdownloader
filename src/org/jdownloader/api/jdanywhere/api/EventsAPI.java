@@ -93,7 +93,7 @@ public class EventsAPI implements IEventsApi {
                             CaptchaPushRegistration cpr = entry.getValue();
                             if (cpr != null) {
                                 String request = cpr.getUrl();
-                                ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
+                                // ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
                                 Long count = new Long(captchCount);
                                 request = request.replace("%7BCaptchaCount%7D", count.toString());
                                 getHTML(request);

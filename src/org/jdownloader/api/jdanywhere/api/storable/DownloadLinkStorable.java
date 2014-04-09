@@ -3,10 +3,13 @@ package org.jdownloader.api.jdanywhere.api.storable;
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.api.jdanywhere.JDAnywhereAPI;
 import org.jdownloader.api.jdanywhere.api.Helper;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadLinkStorable implements Storable {
+
+    private boolean _messageIsCountdown = false;
 
     public long getId() {
         if (link == null) return 0;
@@ -90,7 +93,13 @@ public class DownloadLinkStorable implements Storable {
         lsj.setFinished(FinalLinkState.CheckFinished(link.getFinalLinkState()));
         lsj.setInProgress(link.getDownloadLinkController() != null);
         lsj.setLinkID(link.getUniqueID().toString());
-        lsj.setStatusText(Helper.getMessage(link));
+
+        if (!JDAnywhereAPI.getInstance().events.CheckForProgressMsg(link)) {
+            lsj.setStatusText(Helper.getMessage(link));
+        } else {
+            lsj.setStatusText("Countdown running");
+            _messageIsCountdown = true;
+        }
         if (link.isEnabled())
             lsj.setStatus(1);
         else
@@ -101,4 +110,9 @@ public class DownloadLinkStorable implements Storable {
     public DownloadLinkStorable(DownloadLink link) {
         this.link = link;
     }
+
+    public boolean getMessageIsCountdown() {
+        return _messageIsCountdown;
+    }
+
 }

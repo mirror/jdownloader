@@ -119,6 +119,10 @@ public abstract class PluginProgress {
         eta = eTA;
     }
 
+    public long getStarted() {
+        return started;
+    }
+
     public void abort() {
     }
 

@@ -26,6 +26,7 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatusProperty;
+import jd.plugins.PluginProgress;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
@@ -44,6 +45,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
@@ -646,6 +648,8 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
         }
     }
 
+    public static final Object REQUESTOR = new Object();
+
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink dl, DownloadLinkProperty dlProperty) {
         if (dl != null) {
@@ -670,17 +674,20 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                 if (lastMessage == null) {
                     lastMessage = "";
                 }
-                String newMessage = Helper.getMessage(dl);
-                if (newMessage == null) {
-                    newMessage = "";
-                }
-                if (!lastMessage.equals(newMessage)) {
-                    linkStatusMessages.remove(dl.getUniqueID().getID());
-                    linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
-                    data.put("action", "MessageChanged");
-                    data.put("linkID", dl.getUniqueID().getID());
-                    data.put("NewValue", newMessage);
-                    publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_MESSAGE_AVAILABILITY" + dl.getUniqueID().getID());
+                if (!CheckForProgressMsg(dl)) {
+                    String newMessage = Helper.getMessage(dl);
+                    if (newMessage == null) {
+                        newMessage = "";
+                    }
+                    if (!lastMessage.equals(newMessage)) {
+                        linkStatusMessages.remove(dl.getUniqueID().getID());
+                        linkStatusMessages.put(dl.getUniqueID().getID(), newMessage);
+                        data.put("action", "MessageChanged");
+                        data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                        data.put("linkID", dl.getUniqueID().getID());
+                        data.put("NewValue", newMessage);
+                        publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_MESSAGE_AVAILABILITY" + dl.getUniqueID().getID());
+                    }
                 }
                 break;
             case ENABLED:
@@ -717,6 +724,23 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
                 break;
             }
         }
+    }
+
+    public boolean CheckForProgressMsg(DownloadLink dl) {
+        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+        PluginProgress prog = dl.getPluginProgress();
+        if (prog != null) {
+            if (prog.getID() == PluginTaskID.WAIT) {
+                linkStatusMessages.remove(dl.getUniqueID().getID());
+                data.put("action", "WaitMessage");
+                data.put("packageID", dl.getFilePackage().getUniqueID().toString());
+                data.put("linkID", dl.getUniqueID().getID());
+                data.put("NewValue", prog.getTotal() - (System.currentTimeMillis() - prog.getStarted()));
+                publishEvent(EVENTID.LINKSTATUSCHANGED, data, "DOWNLOADLINK_MESSAGE_AVAILABILITY" + dl.getUniqueID().getID());
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

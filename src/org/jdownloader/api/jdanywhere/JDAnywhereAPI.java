@@ -39,18 +39,18 @@ public class JDAnywhereAPI implements GenericConfigEventListener<Boolean> {
         logger = LogController.getInstance().getLogger(JDAnywhereAPI.class.getName());
     }
 
-    private CaptchaApi               cma;
-    private ContentApi               coma;
-    private DashboardApi             dba;
-    private DownloadLinkApi          dla;
-    private FilePackageApi           fpa;
-    private LinkCrawlerApi           lca;
+    private CaptchaApi              cma;
+    private ContentApi              coma;
+    private DashboardApi            dba;
+    private DownloadLinkApi         dla;
+    private FilePackageApi          fpa;
+    private LinkCrawlerApi          lca;
 
-    private EventsAPI                eva;
+    private EventsAPI               eva;
 
-    private JDAnywhereEventPublisher events;
-    private RemoteAPIController      controller;
-    private DownloadsAPIImpl         downloadsAPI;
+    public JDAnywhereEventPublisher events;
+    private RemoteAPIController     controller;
+    private DownloadsAPIImpl        downloadsAPI;
 
     protected void stop() {
         logger.info("Stop API");
