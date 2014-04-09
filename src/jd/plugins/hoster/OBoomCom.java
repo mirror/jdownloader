@@ -18,6 +18,7 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -36,20 +37,20 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?)?[A-Z0-9]{8}" }, flags = { 2 })
 public class OBoomCom extends PluginForHost {
-    
+
     private static Map<Account, Map<String, String>> ACCOUNTINFOS = new HashMap<Account, Map<String, String>>();
     private final String                             APPID        = "43340D9C23";
-    
+
     public OBoomCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("https://www.oboom.com");
     }
-    
+
     @Override
     public String getAGBLink() {
         return "https://www.oboom.com/#agb";
     }
-    
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // clean links so prevent dupes and has less side effects with multihosters...
@@ -60,7 +61,19 @@ public class OBoomCom extends PluginForHost {
         } catch (final Throwable e) {
         }
     }
-    
+
+    /**
+     * defines custom browser requirements.
+     * */
+    private Browser prepBrowser(final Browser prepBr) {
+        try {
+            /* not available in old stable */
+            prepBr.setAllowedResponseCodes(new int[] { 500 });
+        } catch (Throwable e) {
+        }
+        return prepBr;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -78,13 +91,14 @@ public class OBoomCom extends PluginForHost {
         ai.setStatus("Free Account");
         return ai;
     }
-    
+
     private Map<String, String> loginAPI(Account account, boolean forceLogin) throws Exception {
         synchronized (ACCOUNTINFOS) {
             boolean follow = br.isFollowingRedirects();
             try {
                 Map<String, String> infos = ACCOUNTINFOS.get(account);
                 if (infos == null || forceLogin) {
+                    prepBrowser(br);
                     br.setFollowRedirects(true);
                     if (account.getUser() == null || account.getUser().trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     if (account.getPass() == null || account.getPass().trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -120,17 +134,17 @@ public class OBoomCom extends PluginForHost {
             }
         }
     }
-    
+
     private String[] getKeys(String response) {
         return new Regex(response, "\"([a-zA-Z0-9]+)\":").getColumn(0);
     }
-    
+
     private String getValue(String response, String key) {
         String ret = new Regex(response, "\"" + key + "\":\\s*?\"(.*?)\"").getMatch(0);
         if (ret == null) ret = new Regex(response, "\"" + key + "\":\\s*?(\\d+)").getMatch(0);
         return ret;
     }
-    
+
     private static String PBKDF2Key(String password) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder(password);
         byte[] salt = sb.reverse().toString().getBytes("UTF-8");
@@ -139,7 +153,7 @@ public class OBoomCom extends PluginForHost {
         byte[] hash = skf.generateSecret(spec).getEncoded();
         return HexFormatter.byteArrayToHex(hash);
     }
-    
+
     private Map<String, String> getGuestSession(boolean forceNew, String forceNewIfSession, AtomicBoolean newSignal) throws Exception {
         synchronized (ACCOUNTINFOS) {
             boolean follow = br.isFollowingRedirects();
@@ -165,13 +179,14 @@ public class OBoomCom extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         return fetchFileInformation(parameter, null);
     }
-    
+
     protected AvailableStatus fetchFileInformation(DownloadLink link, String session) throws Exception {
+        prepBrowser(br);
         final String response;
         if (session != null) {
             response = br.getPage("https://api.oboom.com/1.0/info?token=" + session + "&items=" + getFileID(link));
@@ -193,7 +208,7 @@ public class OBoomCom extends PluginForHost {
         if (!"online".equals(state)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
-    
+
     public String unescape(String s) {
         if (s == null) return null;
         char ch;
@@ -206,52 +221,52 @@ public class OBoomCom extends PluginForHost {
             // prevents StringIndexOutOfBoundsException with ending char equals case trigger
             if (s.length() != i + 1) {
                 switch (ch) {
-                    case '%':
-                    case '\\':
-                        ch2 = ch;
-                        ch = s.charAt(++i);
-                        StringBuilder sb2 = null;
-                        switch (ch) {
-                            case 'u':
-                                /* unicode */
-                                sb2 = new StringBuilder();
-                                i++;
-                                ii = i + 4;
-                                for (; i < ii; i++) {
-                                    ch = s.charAt(i);
-                                    if (sb2.length() > 0 || ch != '0') {
-                                        sb2.append(ch);
-                                    }
-                                }
-                                i--;
-                                sb.append((char) Long.parseLong(sb2.toString(), 16));
-                                continue;
-                            case 'x':
-                                /* normal hex coding */
-                                sb2 = new StringBuilder();
-                                i++;
-                                ii = i + 2;
-                                for (; i < ii; i++) {
-                                    ch = s.charAt(i);
-                                    sb2.append(ch);
-                                }
-                                i--;
-                                sb.append((char) Long.parseLong(sb2.toString(), 16));
-                                continue;
-                            default:
-                                if (ch2 == '%') {
-                                    sb.append(ch2);
-                                }
-                                sb.append(ch);
-                                continue;
+                case '%':
+                case '\\':
+                    ch2 = ch;
+                    ch = s.charAt(++i);
+                    StringBuilder sb2 = null;
+                    switch (ch) {
+                    case 'u':
+                        /* unicode */
+                        sb2 = new StringBuilder();
+                        i++;
+                        ii = i + 4;
+                        for (; i < ii; i++) {
+                            ch = s.charAt(i);
+                            if (sb2.length() > 0 || ch != '0') {
+                                sb2.append(ch);
+                            }
                         }
+                        i--;
+                        sb.append((char) Long.parseLong(sb2.toString(), 16));
+                        continue;
+                    case 'x':
+                        /* normal hex coding */
+                        sb2 = new StringBuilder();
+                        i++;
+                        ii = i + 2;
+                        for (; i < ii; i++) {
+                            ch = s.charAt(i);
+                            sb2.append(ch);
+                        }
+                        i--;
+                        sb.append((char) Long.parseLong(sb2.toString(), 16));
+                        continue;
+                    default:
+                        if (ch2 == '%') {
+                            sb.append(ch2);
+                        }
+                        sb.append(ch);
+                        continue;
+                    }
                 }
             }
             sb.append(ch);
         }
         return sb.toString();
     }
-    
+
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         Map<String, String> usedInfos = null;
@@ -274,6 +289,13 @@ public class OBoomCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (dl.getConnection().getResponseCode() == 500) {
+                // HTTP/1.1 500 INTERNAL SERVER ERROR
+                // should be temp unavailable, but will revert to free download under Jiaz current handling. retry is also bad as it has 0
+                // wait
+                // time =[
+                throw new PluginException(LinkStatus.ERROR_RETRY, 120 * 1000);
+            }
             if (br.containsHTML("403,\"token.ip\"") && freshInfos == false) {
                 /* only retry on NON-fresh tokens */
                 synchronized (ACCOUNTINFOS) {
@@ -287,16 +309,16 @@ public class OBoomCom extends PluginForHost {
         }
         dl.startDownload();
     }
-    
+
     private String getFileID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "oboom\\.com/(#(id=)?)?([A-Z0-9]{8})").getMatch(2);
     }
-    
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         handleFree(link, null);
     }
-    
+
     private void checkShowFreeDialog() {
         SubConfiguration config = null;
         try {
@@ -323,7 +345,7 @@ public class OBoomCom extends PluginForHost {
             }
         }
     }
-    
+
     protected void showFreeDialog(final String domain) {
         if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
@@ -331,7 +353,7 @@ public class OBoomCom extends PluginForHost {
         }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-                
+
                 @Override
                 public void run() {
                     try {
@@ -361,13 +383,13 @@ public class OBoomCom extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-    
+
     @Override
     public boolean hasCaptcha(DownloadLink link, Account acc) {
         if (acc != null && acc.getMaxSimultanDownloads() == 0) return false;
         return true;
     }
-    
+
     public void handleFree(DownloadLink link, Account account) throws Exception {
         AtomicBoolean freshInfos = new AtomicBoolean(false);
         Map<String, String> usedInfos = null;
@@ -386,7 +408,11 @@ public class OBoomCom extends PluginForHost {
         fetchFileInformation(link, session);
         checkShowFreeDialog();
         if (session == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setAllowedResponseCodes(421, 509);
+        try {
+            br.setAllowedResponseCodes(421, 509);
+        } catch (Throwable e) {
+            // not in stable!
+        }
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         for (int i = 1; i <= 5; i++) {
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -414,6 +440,10 @@ public class OBoomCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (dl.getConnection().getResponseCode() == 500) {
+                // HTTP/1.1 500 INTERNAL SERVER ERROR
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
             if (br.containsHTML("403,\"token.ip\"") && freshInfos.get() == false) {
                 synchronized (ACCOUNTINFOS) {
                     if (ACCOUNTINFOS.get(account) == usedInfos) {
@@ -426,20 +456,20 @@ public class OBoomCom extends PluginForHost {
         }
         dl.startDownload();
     }
-    
+
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (account != null && account.getMaxSimultanDownloads() == 0) return true;
         if (downloadLink.getVerifiedFileSize() >= 0) return downloadLink.getVerifiedFileSize() < 1024 * 1024 * 1024l;
         return true;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
 }
