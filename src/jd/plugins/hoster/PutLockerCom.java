@@ -402,6 +402,7 @@ public class PutLockerCom extends PluginForHost {
     }
 
     protected void checkForErrors() throws PluginException {
+        if (br.containsHTML("This file is temporarily unavailable due to maintenance")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 5 * 60 * 1000l); }
         // Add firedrive errorhandling here
     }
 
