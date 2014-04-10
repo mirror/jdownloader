@@ -64,11 +64,13 @@ public class Tb7Pl extends PluginForHost {
 
         } catch (final Exception e) {
         }
-        validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do (.*?)<br>").getMatch(0);
-
-        validUntil = validUntil.replace(" | ", " ");
-        if (validUntil != null) expired = false;
-
+        if (br.containsHTML("Brak ważnego dostępu Premium")) {
+            expired = true;
+        } else {
+            validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do (.*?)<br>").getMatch(0);
+            validUntil = validUntil.replace(" | ", " ");
+            if (validUntil != null) expired = false;
+        }
         if (invalid) {
             if (invalid) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         }
