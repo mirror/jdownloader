@@ -403,7 +403,7 @@ public class HugeFilesNet extends PluginForHost {
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
                 // custom form inputs
-
+                dlForm.remove("method_premium");
                 final long timeBefore = System.currentTimeMillis();
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
