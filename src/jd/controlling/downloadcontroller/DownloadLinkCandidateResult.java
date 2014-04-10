@@ -119,7 +119,7 @@ public class DownloadLinkCandidateResult {
             try {
                 LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
                 if (logger == null) logger = LogController.getInstance().getLogger(DownloadLinkCandidateResult.class.getName());
-                logger.log(new Exception("CReated Plugin_defect linkresult"));
+                logger.log(new Exception("Created Plugin_defect linkresult"));
             } catch (Throwable e) {
                 e.printStackTrace();
             }

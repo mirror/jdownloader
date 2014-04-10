@@ -46,7 +46,7 @@ public class PluginException extends Exception {
             try {
                 LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
                 if (logger == null) logger = LogController.getInstance().getLogger(PluginException.class.getName());
-                logger.log(new Exception("CReated Plugin_defect linkStatus"));
+                logger.log(new Exception("Created Plugin_defect linkStatus"));
                 logger.info("Self: ");
                 logger.log(this);
             } catch (Throwable e) {
