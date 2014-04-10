@@ -1,13 +1,11 @@
 package org.jdownloader.api.jdanywhere.api;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import jd.http.Browser;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.api.jdanywhere.api.interfaces.IEventsApi;
@@ -16,20 +14,24 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public class EventsAPI implements IEventsApi {
-
+    
     public EventsAPI() {
-        if (captchaPushList == null) captchaPushList = new HashMap<String, CaptchaPushRegistration>();
     }
-
-    static JDAnywhereConfig                     cfg             = JsonConfig.create(JDAnywhereConfig.class);
-    static Map<String, CaptchaPushRegistration> captchaPushList = cfg.getList();
-
+    
+    private static final JDAnywhereConfig                     cfg             = JsonConfig.create(JDAnywhereConfig.class);
+    private static final Map<String, CaptchaPushRegistration> captchaPushList = getCaptchaPushList();
+    
+    private static Map<String, CaptchaPushRegistration> getCaptchaPushList() {
+        Map<String, CaptchaPushRegistration> captchaPushList = cfg.getList();
+        if (captchaPushList == null) captchaPushList = new HashMap<String, CaptchaPushRegistration>();
+        return captchaPushList;
+    }
+    
     public boolean RegisterCaptchaPush(String host, String path, String query) {
-
         String deviceID = query.substring(query.indexOf("DeviceToken="), query.indexOf("&Badge=", query.indexOf("DeviceToken=")));
         return RegisterCaptchaPush_v2(deviceID, host, path, query, false);
     }
-
+    
     public boolean RegisterCaptchaPush_v2(String deviceID, String host, String path, String query, boolean withSound) {
         URI uri = null;
         try {
@@ -37,6 +39,7 @@ public class EventsAPI implements IEventsApi {
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
+        if (uri == null) return false;
         String request = uri.toASCIIString();
         CaptchaPushRegistration cpr = new CaptchaPushRegistration();
         cpr.setUrl(request);
@@ -47,13 +50,13 @@ public class EventsAPI implements IEventsApi {
         }
         return true;
     }
-
+    
     public boolean IsRegistered(String deviceID) {
         synchronized (captchaPushList) {
             return captchaPushList.containsKey(deviceID);
         }
     }
-
+    
     public boolean IsSoundEnabled(String deviceID) {
         synchronized (captchaPushList) {
             if (captchaPushList.containsKey(deviceID)) {
@@ -66,17 +69,16 @@ public class EventsAPI implements IEventsApi {
                 return false;
         }
     }
-
+    
     public boolean UnRegisterCaptchaPush(String deviceID) {
         synchronized (captchaPushList) {
-            if (captchaPushList.containsKey(deviceID)) {
-                captchaPushList.remove(deviceID);
+            if (captchaPushList.remove(deviceID) != null) {
                 cfg.setList(captchaPushList);
             }
         }
         return true;
     }
-
+    
     public void sendNewCaptcha(final SolverJob<?> job) {
         new Thread() {
             public void run() {
@@ -94,39 +96,33 @@ public class EventsAPI implements IEventsApi {
                             if (cpr != null) {
                                 String request = cpr.getUrl();
                                 // ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
-                                Long count = new Long(captchCount);
-                                request = request.replace("%7BCaptchaCount%7D", count.toString());
+                                request = request.replace("%7BCaptchaCount%7D", Long.toString(captchCount));
                                 getHTML(request);
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
-
+                    
                 }
             }
         }.start();
     }
-
+    
     public String getHTML(String urlToRead) {
-        URL url;
-        HttpURLConnection conn;
-        BufferedReader rd;
-        String line;
-        String result = "";
+        Browser br = null;
         try {
-            url = new URL(urlToRead);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            while ((line = rd.readLine()) != null) {
-                result += line;
-            }
-            rd.close();
+            br = new Browser();
+            return br.getPage(urlToRead);
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (br != null) br.getHttpConnection().disconnect();
+            } catch (final Throwable ignore) {
+            }
         }
-        return result;
+        return null;
     }
-
+    
 }
