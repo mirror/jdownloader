@@ -149,9 +149,12 @@ public class UGoUploadNet extends PluginForHost {
                 }
             }
 
-            final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
+            final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
             final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaAction == null) {
+                logger.warning("captchaAction is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (rcID != null) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);

@@ -117,7 +117,9 @@ public class NovaUpMovcom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         final String addedlink = link.getDownloadURL();
         if (link.getDownloadURL().contains("video")) {
-            requestFileInformation(link);
+            /* Generate new link */
+            br.getPage(link.getDownloadURL());
+            getVideoLink();
             if (br.containsHTML("error_msg=The video is being transfered")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not downloadable at the moment, try again later...", 60 * 60 * 1000l);
             if (br.containsHTML("error_msg=invalid token")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'invalid token'", 30 * 60 * 1000l);
         } else {
@@ -136,6 +138,7 @@ public class NovaUpMovcom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

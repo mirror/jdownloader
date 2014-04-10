@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 public class EightTracksCom extends PluginForDecrypt {
 
     private static final String  MAINPAGE          = "http://8tracks.com/";
-    private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage|sets/new)";
+    private static final String  UNSUPPORTEDLINKS  = "http://(www\\.)?8tracks\\.com/((assets_js/|explore|auth|settings|mixes|developers|users)/.+|[\\w\\-]+/homepage|sets/new|collections/.+)";
     private static final String  TYPE_GENERAL      = "http://(www\\.)?8tracks\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+";
     private static final String  TYPE_SINGLE_TRACK = "http://(www\\.)?8tracks\\.com/tracks/\\d+";
     private static final String  TYPE_SHORT        = "http://(www\\.)?8trx\\.com/[A-Za-z0-9]+";

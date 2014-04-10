@@ -106,18 +106,24 @@ public class DropBoxCom extends PluginForDecrypt {
             final String[] entries = new Regex(listHTML, "(class=\"filename\\-col\"><a.*?</span></div>)").getColumn(0);
             if (entries != null && entries.length != 0) {
                 for (final String entry : entries) {
-                    final String size = new Regex(entry, "class=\"size\">([^<>\"]*?)</span>").getMatch(0);
                     final String link = new Regex(entry, "<a href=\"(https?://(www\\.)?dropbox\\.com/[^<>\"]*?)\"").getMatch(0);
-                    if (link == null || size == null) {
-                        continue;
+                    if (entry.contains("class=\"s_web_folder_")) {
+                        /* Folder */
+                        decryptedLinks.add(createDownloadlink(link));
+                    } else {
+                        /* File */
+                        final String size = new Regex(entry, "class=\"size\">([^<>\"]*?)</span>").getMatch(0);
+                        if (link == null || size == null) {
+                            continue;
+                        }
+                        final String filename = new Regex(link, "/([^<>\"/]*?)$").getMatch(0);
+                        final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
+                        if (filename != null) dl.setName(filename);
+                        dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
+                        dl.setProperty("decrypted", true);
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
                     }
-                    final String filename = new Regex(link, "/([^<>\"/]*?)$").getMatch(0);
-                    final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
-                    if (filename != null) dl.setName(filename);
-                    dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
-                    dl.setProperty("decrypted", true);
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
                 }
             }
         }

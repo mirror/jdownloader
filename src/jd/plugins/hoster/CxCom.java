@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -51,7 +52,11 @@ public class CxCom extends PluginForHost {
         FID = new Regex(link.getDownloadURL(), "cx\\.com/mycx/share/([A-Za-z0-9\\-_]+)/.{1}").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "*/*");
-        br.getPage("https://www.cx.com/0/files/list?path=" + FID + "%3A&sortby=modified&sortOrder=desc&offset=0&versionCount=true&showDirectoryInfo=true&_=" + System.currentTimeMillis());
+        try {
+            br.getPage("https://www.cx.com/0/files/list?path=" + FID + "%3A&sortby=modified&sortOrder=desc&offset=0&versionCount=true&showDirectoryInfo=true&_=" + System.currentTimeMillis());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if ("Group or Share not found".equals(getJson("message"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = getJson("name");
         final String filesize = getJson("size");

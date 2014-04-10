@@ -78,7 +78,7 @@ public class FlStbCm extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (br.containsHTML(">403 Forbidden<") || br.containsHTML("class=\"err404\"")) {
+        if (br.containsHTML(">403 Forbidden<") || br.containsHTML("class=\"err404\"") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
             offline.setAvailable(false);
             offline.setName(new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));

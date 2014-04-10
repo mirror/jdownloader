@@ -84,7 +84,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         main.setProperty("mainlink", parameter);
         main.setName(hashID);
 
-        if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)")) {
+        if (br.containsHTML("<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>|_file\\-blocked\"")) {
             main.setAvailable(false);
             main.setProperty("offline", true);
             decryptedLinks.add(main);

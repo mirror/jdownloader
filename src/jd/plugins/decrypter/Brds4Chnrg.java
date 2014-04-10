@@ -51,7 +51,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         } else {
             final String IMAGERDOMAINS = "(i\\.4cdn\\.org|images\\.4chan\\.org)";
             String[] images = br.getRegex("(?i)(https?://[\\w\\.]*?" + IMAGERDOMAINS + "/[0-9a-z]{1,3}/src/\\d+\\.(gif|jpg|png))").getColumn(0);
-            if (images == null || images.length == 0) images = br.getRegex("(?i)File: <a href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,3}/src/\\d+\\.(gif|jpg|png))\"").getColumn(0);
+            if (images == null || images.length == 0) images = br.getRegex("(?i)File: <a href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,3}/src/\\d+\\.(gif|jpg|png|webm))\"").getColumn(0);
 
             if (br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");

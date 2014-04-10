@@ -149,7 +149,7 @@ public class DebridItaliaCom extends PluginForHost {
                 logger.info("debriditalia.com: Unknown error - final downloadlink is missing");
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknownerror_dllink_missing", 0);
                 link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
+                if (timesFailed <= 20) {
                     timesFailed++;
                     link.setProperty("timesfaileddebriditalia_unknownerror_dllink_missing", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
