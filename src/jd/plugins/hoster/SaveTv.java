@@ -901,7 +901,7 @@ public class SaveTv extends PluginForHost {
                 formatter = new SimpleDateFormat(userDefinedDateFormat);
                 formattedDate = formatter.format(theDate);
             } catch (Exception e) {
-                // prevent user error killing plugin.
+                /* prevent user error killing plugin */
                 formattedDate = "";
             }
         }
@@ -935,10 +935,10 @@ public class SaveTv extends PluginForHost {
             } else {
                 formattedFilename = formattedFilename.replace("*produktionsland*", customStringForEmptyTags);
             }
-            // Insert actual filename at the end to prevent errors with tags
+            /* Insert actual filename at the end to prevent errors with tags */
             formattedFilename = formattedFilename.replace("*videotitel*", title);
         } else {
-            // For series
+            /* For series */
             formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_SERIES2, defaultCustomSeriesFilename);
             if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
             formattedFilename = formattedFilename.toLowerCase();
@@ -968,7 +968,7 @@ public class SaveTv extends PluginForHost {
             } else {
                 formattedFilename = formattedFilename.replace("*produktionsland*", customStringForEmptyTags);
             }
-            // Insert actual filename at the end to prevent errors with tags
+            /* Insert filename at the end to prevent errors with tags */
             formattedFilename = formattedFilename.replace("*serientitel*", seriestitle);
             formattedFilename = formattedFilename.replace("*episodenname*", episodename);
         }
@@ -1010,7 +1010,7 @@ public class SaveTv extends PluginForHost {
                 formatter = new SimpleDateFormat(userDefinedDateFormat);
                 formattedDate = formatter.format(theDate);
             } catch (Exception e) {
-                // prevent user error killing plugin.
+                /* prevent user error killing plugin */
                 formattedDate = "";
             }
         }
@@ -1031,7 +1031,7 @@ public class SaveTv extends PluginForHost {
                 final String seriestitle = downloadLink.getStringProperty("seriestitle", null);
                 final String episodename = downloadLink.getStringProperty("episodename", null);
                 final String episodenumber = getEpisodeNumber(downloadLink);
-                // For series
+                /* For series */
                 formattedFilename = seriestitle.replace(" ", "_") + "_";
                 formattedFilename += episodename.replace(" ", "_") + "_";
                 formattedFilename += "Folge" + episodenumber + "_" + formattedDate + "_";
