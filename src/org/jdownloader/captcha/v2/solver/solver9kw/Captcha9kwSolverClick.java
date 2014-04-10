@@ -103,6 +103,11 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         int priothing = config.getprio();
         int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000);
 
+        if (!config.getApiKey().matches("^[a-zA-Z0-9]+$")) {
+            jd.gui.UserIO.getInstance().requestMessageDialog("API Key is not correct!\nOnly a-z, A-Z and 0-9\n");
+            return;
+        }
+
         setdebug(solverJob, "Start Captcha to 9kw.eu. Timeout: " + JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " + captchaChallenge.getTypeID());
         if (config.getwhitelistcheck()) {
             if (config.getwhitelist() != null) {
@@ -178,6 +183,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             }
         }
 
+        setdebug(solverJob, "Upload Captcha to 9kw.eu. GetTypeID: " + captchaChallenge.getTypeID() + " - Plugin: " + captchaChallenge.getPlugin());
         solverJob.showBubble(this);
         try {
             click9kw_counter.incrementAndGet();
@@ -192,6 +198,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                     click9kw_counterSend.incrementAndGet();
                     break;
                 } else {
+                    setdebug(solverJob, "Upload Captcha(" + i + ") to 9kw.eu. GetTypeID: " + captchaChallenge.getTypeID() + " - Plugin: " + captchaChallenge.getPlugin());
                     Thread.sleep(3000);
 
                 }

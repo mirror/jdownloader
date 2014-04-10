@@ -297,23 +297,27 @@ public class NinekwService implements CESService {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        try {
-                            Browser br = new Browser();
-                            String accountcheck = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&okcheck=1&apikey=" + CFG_9KWCAPTCHA.API_KEY);
-                            String errorcheck = br.getRegex("^([0-9]+ .*)").getMatch(0);
-                            if (accountcheck.startsWith("OK-")) {
-                                jd.gui.UserIO.getInstance().requestMessageDialog("9kw message ", "Account OK\nCredits: " + accountcheck.substring("OK-".length()));
-                            } else if (errorcheck != null) {
-                                jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Account error\n" + accountcheck);
-                            } else if (CFG_9KWCAPTCHA.API_KEY != null) {
-                                jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "No api key.");
-                            } else if (accountcheck.length() > 5) {
-                                jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Unknown error or incorrect api key.");
-                            } else {
-                                jd.gui.UserIO.getInstance().requestMessageDialog("9kw error(1) ", "Unknown error.");
+                        if (!apiKey.getText().matches("^[a-zA-Z0-9]*$")) {
+                            jd.gui.UserIO.getInstance().requestMessageDialog("API Key is not correct!\nOnly a-z, A-Z and 0-9\n");
+                        } else {
+                            try {
+                                Browser br = new Browser();
+                                String accountcheck = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&okcheck=1&apikey=" + CFG_9KWCAPTCHA.API_KEY);
+                                String errorcheck = br.getRegex("^([0-9]+ .*)").getMatch(0);
+                                if (accountcheck.startsWith("OK-")) {
+                                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw message ", "Account OK\nCredits: " + accountcheck.substring("OK-".length()));
+                                } else if (errorcheck != null) {
+                                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Account error\n" + accountcheck);
+                                } else if (CFG_9KWCAPTCHA.API_KEY != null) {
+                                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "No api key.");
+                                } else if (accountcheck.length() > 5) {
+                                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Unknown error or incorrect api key.");
+                                } else {
+                                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error(1) ", "Unknown error.");
+                                }
+                            } catch (IOException e9kw) {
+                                jd.gui.UserIO.getInstance().requestMessageDialog("9kw error(2) ", "No connection, unknown error or incorrect api key.");
                             }
-                        } catch (IOException e9kw) {
-                            jd.gui.UserIO.getInstance().requestMessageDialog("9kw error(2) ", "No connection, unknown error or incorrect api key.");
                         }
                     }
                 });

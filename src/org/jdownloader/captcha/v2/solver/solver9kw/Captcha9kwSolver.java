@@ -166,6 +166,11 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         int priothing = config.getprio();
         int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000);
 
+        if (!config.getApiKey().matches("^[a-zA-Z0-9]+$")) {
+            jd.gui.UserIO.getInstance().requestMessageDialog("API Key is not correct!\nOnly a-z, A-Z and 0-9\n");
+            return;
+        }
+
         setdebug(job, "Start Captcha to 9kw.eu. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
         if (config.getwhitelistcheck()) {
             if (config.getwhitelist() != null) {
@@ -245,6 +250,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             }
         }
 
+        setdebug(job, "Upload Captcha to 9kw.eu. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
         try {
             counter.incrementAndGet();
             job.showBubble(this);
@@ -261,6 +267,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                     counterSend.incrementAndGet();
                     break;
                 } else {
+                    setdebug(job, "Upload Captcha(" + i + ") to 9kw.eu. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
                     Thread.sleep(3000);
 
                 }
@@ -472,17 +479,21 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             ret.setError("API Error!");
         }
 
-        credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
+        if (!config.getApiKey().matches("^[a-zA-Z0-9]+$")) {
+            ret.setError("API Key is not correct!");
+        } else {
+            credits = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&apikey=" + Encoding.urlEncode(config.getApiKey()));
 
-        try {
-            ret.setCreditBalance(Integer.parseInt(credits.trim()));
-            String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
-            String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
+            try {
+                ret.setCreditBalance(Integer.parseInt(credits.trim()));
+                String userhistory1 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
+                String userhistory2 = br.getPage(getAPIROOT() + "index.cgi?action=userhistory2&short=1&apikey=" + Encoding.urlEncode(config.getApiKey()));
 
-            ret.setAnswered9kw(Integer.parseInt(Regex.getLines(userhistory2)[0]));
-            ret.setSolved9kw(Integer.parseInt(Regex.getLines(userhistory1)[0]));
-        } catch (NumberFormatException e) {
-            ret.setError(credits);
+                ret.setAnswered9kw(Integer.parseInt(Regex.getLines(userhistory2)[0]));
+                ret.setSolved9kw(Integer.parseInt(Regex.getLines(userhistory1)[0]));
+            } catch (NumberFormatException e) {
+                ret.setError(credits);
+            }
         }
         return ret;
 
