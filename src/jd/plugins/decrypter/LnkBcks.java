@@ -52,7 +52,8 @@ public class LnkBcks extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent      = new AtomicReference<String>(null);
+    private final String                   surveyLink = "To access the content, you must complete a quick survey\\.";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -69,10 +70,19 @@ public class LnkBcks extends PluginForDecrypt {
 
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        sleep(5 * 1000l, param);
+        long firstGet = System.currentTimeMillis();
         String link = br.getRedirectLocation();
-        if ((link != null && link.contains("/notfound/")) || br.containsHTML("(>Link Not Found<|>The link may have been deleted by the owner)")) {
-            logger.info("Link offline: " + parameter);
+        if ((link != null && link.contains("/notfound/")) || br.containsHTML("(>Link Not Found<|>The link may have been deleted by the owner|" + surveyLink + ")")) {
+            DownloadLink dl = createDownloadlink("directhttp://" + parameter);
+            dl.setAvailable(false);
+            dl.setProperty("OFFLINE", true);
+            if (br.containsHTML(surveyLink)) {
+                dl.setName("JD NOTE - We don't support surveys");
+                logger.info("Survery Link!: " + parameter);
+            } else {
+                logger.info("Link offline: " + parameter);
+            }
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (inValidate(link)) {
@@ -127,15 +137,13 @@ public class LnkBcks extends PluginForDecrypt {
                 return null;
             }
             final long authKey = Long.parseLong(l1) + Long.parseLong(l2);
-
             Browser br2 = br.cloneBrowser();
             br2.getPage("/director/?t=" + token);
-            // not needed, sleep in beginning of plugin
+            final long timeLeft = 5033 - (System.currentTimeMillis() - firstGet);
+            if (timeLeft > 0) sleep(timeLeft, param);
             Browser br3 = br.cloneBrowser();
-
             br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey);
             link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);
-
         }
         if (inValidate(link)) {
             logger.warning("Decrypter broken for link: " + parameter);
