@@ -264,6 +264,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     }
 
                     if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
+                        logger.info("Parse response: \r\n" + br);
                         final String[] parseLines = splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
                         for (final String parseLine : parseLines) {
                             String varname = new Regex(parseLine, "(.*?):").getMatch(0);
