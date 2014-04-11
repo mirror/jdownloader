@@ -55,6 +55,7 @@ online=链接可用
 online_tt=链接可用
 packagename=包名
 password_required=需要密码！
+password_search=正在查找密码..
 plugins_optional_extraction_error_extrfailedcrc=提取失败 (未知文件中的 CRC)
 plugins_optional_extraction_filefilter=所有支持的格式
 plugins_optional_extraction_filenotfound=提取: 失败 (文件找不到)
