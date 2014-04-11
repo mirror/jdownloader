@@ -105,6 +105,8 @@ public class FilesMonsterCom extends PluginForHost {
             if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // Advertising link
             if (br.containsHTML(">the file can be accessed at the")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // link not possible due to ip ban http://svn.jdownloader.org/issues/27798
+            if (br.containsHTML(">You do not have permission to access the requested resource on this server.<|>Perhaps your IP address is blocked due to suspicious activity.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.getRedirectLocation() != null) {
                 // Link offline 2
                 if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
