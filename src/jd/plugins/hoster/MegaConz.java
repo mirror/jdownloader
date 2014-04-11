@@ -149,6 +149,9 @@ public class MegaConz extends PluginForHost {
                  */
                 if ("-11".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
                 if ("-18".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
+
+                checkServerBusy();
+
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (oldStyle()) {
@@ -168,10 +171,17 @@ public class MegaConz extends PluginForHost {
                 }
             }
         } catch (IOException e) {
-            if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
+            checkServerBusy();
             if (dl != null && dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
             throw e;
         }
+    }
+
+    /**
+     * @throws PluginException
+     */
+    public void checkServerBusy() throws PluginException {
+        if (br.getRequest() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection() != null && br.getRequest().getHttpConnection().getResponseCode() == 500) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l); }
     }
 
     private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
