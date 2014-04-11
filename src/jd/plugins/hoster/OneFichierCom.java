@@ -197,8 +197,21 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        AvailableStatus availableStatus = requestFileInformation(downloadLink);
+        if (availableStatus != null) {
+            switch (availableStatus) {
+            case FALSE:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case UNCHECKABLE:
+            case UNCHECKED:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+            case TRUE:
+                doFree(downloadLink);
+
+            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+        }
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
@@ -286,6 +299,14 @@ public class OneFichierCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+
+                // seems to be a temp. server error.
+                // <br/>Non TrouvÃ© (NOT FOUND)
+                // <br/>La ressource demandÃ©e n'a pu Ãªtre trouvÃ©e sur ce serveur.
+
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error. Try again later", 15 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) downloadLink.setProperty("pass", passCode);

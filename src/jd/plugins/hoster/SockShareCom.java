@@ -108,7 +108,19 @@ public class SockShareCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+        AvailableStatus availableStatus = requestFileInformation(downloadLink);
+        if (availableStatus != null) {
+            switch (availableStatus) {
+            case FALSE:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case UNCHECKABLE:
+            case UNCHECKED:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+
+            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+        }
         br.setFollowRedirects(false);
         if (br.containsHTML("(>You have exceeded the daily stream limit for your country|You can wait until tomorrow, or get a)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have exceeded the daily download limit for your country", 4 * 60 * 60 * 1000l);
         Form freeform = getFormByHTML("value=\"Continue as Free User\"");
