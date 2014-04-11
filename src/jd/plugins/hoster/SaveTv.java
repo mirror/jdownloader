@@ -1308,7 +1308,7 @@ public class SaveTv extends PluginForHost {
                         message += "- Laden des kompletten save.tv Archivs über wenige Klicks\r\n";
                         message += "-- > Oder wahlweise nur alle Links der letzten X Tage\r\n";
                         message += "- Benutzerdefinierte Dateinamen über ein Tag-System mit vielen Möglichkeiten\r\n";
-                        message += "- Alles unter beachtung der Schnittliste (falls gewähnt) und des Formats\r\n";
+                        message += "- Alles unter beachtung der Schnittlisten-Einstellungen und des Formats\r\n";
                         message += "- Und viele mehr...\r\n";
                         message += "\r\n";
                         message += "Diese einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
