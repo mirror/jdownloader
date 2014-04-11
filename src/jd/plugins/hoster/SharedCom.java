@@ -95,6 +95,7 @@ public class SharedCom extends PluginForHost {
                 downloadLink.setProperty(SharedCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 
