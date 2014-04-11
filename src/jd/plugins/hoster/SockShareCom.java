@@ -164,7 +164,7 @@ public class SockShareCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
-            if (dl.getConnection().getResponseCode() == 406) {
+            if (dl.getConnection().getResponseCode() == 416) {
 
                 downloadLink.reset();
                 throw new PluginException(LinkStatus.ERROR_RETRY);

@@ -159,6 +159,8 @@ public class Up4ShareVn extends PluginForHost {
                 downloadLink.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+
+            throw e;
         }
     }
 
@@ -200,6 +202,8 @@ public class Up4ShareVn extends PluginForHost {
                 link.setProperty(Up4ShareVn.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+
+            throw e;
         }
     }
 

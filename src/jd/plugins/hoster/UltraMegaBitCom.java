@@ -44,22 +44,22 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultramegabit.com" }, urls = { "https?://(www\\.)?ultramegabit\\.com/file/details/[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class UltraMegaBitCom extends PluginForHost {
-    
+
     public UltraMegaBitCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(MAINPAGE);
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://ultramegabit.com/terms";
     }
-    
+
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -78,19 +78,19 @@ public class UltraMegaBitCom extends PluginForHost {
             filesize = br.getRegex("id=\"download_button\" value=\"Free download \\(([^<>\"]*?)\\)\"").getMatch(0);
             if (filesize == null) filesize = br.getRegex("<h4>(<img[^>]+>)?(.*?) \\(([^\\)]+)\\)</h4>").getMatch(2);
         }
-        
+
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
-    
+
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (br.containsHTML(">Premium members only<|The owner of this file has decided to only allow premium members to download it")) {
             try {
@@ -148,10 +148,10 @@ public class UltraMegaBitCom extends PluginForHost {
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
-    
+
     private static final String MAINPAGE = "http://ultramegabit.com";
     private static Object       LOCK     = new Object();
-    
+
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -206,7 +206,7 @@ public class UltraMegaBitCom extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -224,7 +224,7 @@ public class UltraMegaBitCom extends PluginForHost {
         if (filesNum != null) ai.setFilesNum(Long.parseLong(filesNum));
         ai.setUnlimitedTraffic();
         br.getPage("/user/billing");
-        
+
         final boolean ispremium = (br.containsHTML("\"Premium Member\"") || br.containsHTML("premium subscription</h5>"));
         // some premiums have no expiration date, page shows only: Account status: Premium
         String expire = br.getRegex("<h5>Account expires at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
@@ -250,7 +250,7 @@ public class UltraMegaBitCom extends PluginForHost {
         ai.setStatus("Premium");
         return ai;
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -276,25 +276,25 @@ public class UltraMegaBitCom extends PluginForHost {
             dl.startDownload();
         }
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
     private long waitSum() {
         // time into the future
         String test = br.getRegex("ts = \\((\\d+)").getMatch(0);
@@ -307,7 +307,7 @@ public class UltraMegaBitCom extends PluginForHost {
         long result = wait1 - ct;
         return result;
     }
-    
+
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {

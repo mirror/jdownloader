@@ -289,6 +289,8 @@ public class UnrestrictLi extends PluginForHost {
                     link.setProperty(UnrestrictLi.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+
+                throw e;
             }
             return;
         } else {

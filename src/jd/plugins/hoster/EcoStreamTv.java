@@ -112,6 +112,8 @@ public class EcoStreamTv extends PluginForHost {
                 downloadLink.setProperty(EcoStreamTv.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+
+            throw e;
         }
     }
 

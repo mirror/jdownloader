@@ -88,7 +88,7 @@ public class GoogleBooks extends PluginForHost {
         String page = link.getStringProperty("page", null);
         if (page == null) page = new Regex(link.getDownloadURL(), "(&|\\?)pg=([A-Z]{2}\\d+)").getMatch(1);
 
-        if (br.getCookies(this.getHost()) == null) br.getPage(link.getDownloadURL());
+        if (br.getCookies(link.getDownloadURL()) == null) br.getPage(link.getDownloadURL());
 
         String dllink = bookList.get(buid + page);
         if (dllink == null) {
@@ -189,8 +189,14 @@ public class GoogleBooks extends PluginForHost {
     public String getImg(String buid, String page, DownloadLink link) throws Exception {
         String dl = null;
         String host = new Regex(link.getDownloadURL(), "(https?://[^/]+)").getMatch(0);
+        // http: //
+        // books.google.com/books?id=ODfjmOeNLMUC&printsec=frontcover&dq=reflection&hl=de&sa=X&ei=ndlHU8uMF4Xt4gS1joCYCg&redir_esc=y
+        br.clearCookies(host);
+        br.getPage(link.getDownloadURL());
+        // br.getHeaders().put("Referer", host + "/books?id=" + buid + "&printsec=frontcover&dq=reflection");
+        br.getHeaders().put("Referer", host + "/books?id=" + buid + "&printsec=frontcover&dq=reflection&hl=de&sa=X&ei=ndlHU8uMF4Xt4gS1joCYCg&redir_esc=y");
 
-        br.getHeaders().put("Referer", host + "/books?id=" + buid + "&printsec=frontcover&source=gbs_v2_summary_r&pg=pa1&redir_esc=y");
+        // br.getPage("http://books.google.de/books?id=ODfjmOeNLMUC&lpg=PP1&dq=reflection&hl=de&pg=PR9&jscmd=click3&vq=reflection&source=gbs_snippet&redir_esc=y");
         br.getPage(host + "/books?id=" + buid + "&lpg=PP1&pg=" + page + "&jscmd=click3");
 
         String[][] results = br.getRegex("\"pid\":\"(P[AP][0-9]+)\",\"src\":\"(http[^\"]+)").getMatches();

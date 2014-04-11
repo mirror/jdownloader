@@ -224,6 +224,8 @@ public class DebridItaliaCom extends PluginForHost {
                     link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+
+                throw e;
             }
         } finally {
             // remove download slot

@@ -37,23 +37,23 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class LinkSnappyCom extends PluginForHost {
-    
+
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    
+
     public LinkSnappyCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.linksnappy.com/members/index.php?act=register");
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://www.linksnappy.com/index.php?act=tos";
     }
-    
+
     private DownloadLink        currentLink = null;
     private Account             currentAcc  = null;
     private static final String NOCHUNKS    = "NOCHUNKS";
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
@@ -93,7 +93,7 @@ public class LinkSnappyCom extends PluginForHost {
             ac.setValidUntil(Long.parseLong(expire) * 1000);
             accountType = "Premium Account";
         }
-        
+
         /* now it's time to get all supported hosts */
         ArrayList<String> supportedHosts = new ArrayList<String>();
         getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=FILEHOSTS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
@@ -128,13 +128,13 @@ public class LinkSnappyCom extends PluginForHost {
         ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
-    
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         currentLink = link;
         currentAcc = account;
         br.setFollowRedirects(true);
-        
+
         for (int i = 1; i <= 10; i++) {
             getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
             if (br.containsHTML("\"error\":\"Invalid file URL format\\.\"")) {
@@ -159,10 +159,10 @@ public class LinkSnappyCom extends PluginForHost {
                 }
             }
             dllink = dllink.replace("\\", "");
-            
+
             int maxChunks = 0;
             if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
-            
+
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
             } catch (final SocketTimeoutException e) {
@@ -220,7 +220,7 @@ public class LinkSnappyCom extends PluginForHost {
             }
         }
     }
-    
+
     private String encode(String value) {
         value = value.replace("\"", "%22");
         value = value.replace(":", "%3A");
@@ -229,7 +229,7 @@ public class LinkSnappyCom extends PluginForHost {
         value = value.replace(",", "%2C");
         return value;
     }
-    
+
     private void getPageSecure(final String page) throws IOException, PluginException {
         boolean failed = true;
         for (int i = 1; i <= 10; i++) {
@@ -252,7 +252,7 @@ public class LinkSnappyCom extends PluginForHost {
         }
         if (failed) stupidServerError();
     }
-    
+
     private void postPageSecure(final String page, final String postData) throws IOException, PluginException {
         boolean failed = true;
         for (int i = 1; i <= 10; i++) {
@@ -275,7 +275,7 @@ public class LinkSnappyCom extends PluginForHost {
         }
         if (failed) stupidServerError();
     }
-    
+
     // Max 10 retries via link, 5 seconds waittime between = max 2 minutes trying -> Then deactivate host
     private void stupidServerError() throws PluginException {
         // it's only null on login
@@ -291,12 +291,12 @@ public class LinkSnappyCom extends PluginForHost {
             tempUnavailableHoster(currentAcc, currentLink, 60 * 60 * 1000l);
         }
     }
-    
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
-    
+
     @SuppressWarnings("unchecked")
     private boolean login(final Account account) throws Exception {
         /** Load cookies */
@@ -305,7 +305,7 @@ public class LinkSnappyCom extends PluginForHost {
         if (br.containsHTML("\"status\":\"ERROR\"")) return false;
         return true;
     }
-    
+
     /** Not needed anymore but is still working */
     // @SuppressWarnings("unchecked")
     // private void loginSite(final Account account, final boolean force) throws Exception {
@@ -342,12 +342,12 @@ public class LinkSnappyCom extends PluginForHost {
     // account.setProperty("cookies", cookies);
     // }
     // }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
-    
+
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
@@ -361,7 +361,7 @@ public class LinkSnappyCom extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-    
+
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         synchronized (hostUnavailableMap) {
@@ -378,13 +378,13 @@ public class LinkSnappyCom extends PluginForHost {
         }
         return true;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
 }

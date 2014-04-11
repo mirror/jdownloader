@@ -37,14 +37,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multishare.cz" }, urls = { "https?://[\\w\\.]*?multishare\\.cz/stahnout/[0-9]+/" }, flags = { 2 })
 public class MultiShareCz extends PluginForHost {
-    
+
     public MultiShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.multishare.cz/cenik/");
     }
-    
+
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -90,28 +90,28 @@ public class MultiShareCz extends PluginForHost {
         }
         return ai;
     }
-    
+
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
         if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
         return result;
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://www.multishare.cz/kontakt/";
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -136,7 +136,7 @@ public class MultiShareCz extends PluginForHost {
         }
         dl.startDownload();
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -163,11 +163,11 @@ public class MultiShareCz extends PluginForHost {
         }
         dl.startDownload();
     }
-    
+
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
     }
-    
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         this.setBrowserExclusive();
@@ -210,7 +210,7 @@ public class MultiShareCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
-    
+
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
@@ -225,7 +225,7 @@ public class MultiShareCz extends PluginForHost {
             }
         } else if (br.containsHTML("ERR: Invalid password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -242,7 +242,7 @@ public class MultiShareCz extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-    
+
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
@@ -256,7 +256,7 @@ public class MultiShareCz extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-    
+
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (account == null) {
@@ -277,13 +277,13 @@ public class MultiShareCz extends PluginForHost {
         }
         return true;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
 }
