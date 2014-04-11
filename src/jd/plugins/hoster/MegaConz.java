@@ -149,6 +149,7 @@ public class MegaConz extends PluginForHost {
                  */
                 if ("-11".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
                 if ("-18".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
+                if ("-3".equals(error)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
 
                 checkServerBusy();
 
