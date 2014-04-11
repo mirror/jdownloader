@@ -55,7 +55,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "secureupload.eu" }, urls = { "https?://(www\\.)?secureupload\\.eu/[a-z0-9]{12}" }, flags = { 2 })
 public class SecureUploadEu extends PluginForHost {
-
+    
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String         COOKIE_HOST                  = "http://secureupload.eu";
@@ -69,7 +69,7 @@ public class SecureUploadEu extends PluginForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static final String  NORESUME                     = "NORESUME";
-
+    
     // DEV NOTES
     /**
      * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
@@ -83,38 +83,38 @@ public class SecureUploadEu extends PluginForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other: no redirects, HEAVILY MODIFIED, DO NOT UPGRADE!!
-
+    
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
-
+    
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
-
+    
     public SecureUploadEu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return true;
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
     }
-
+    
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -158,7 +158,7 @@ public class SecureUploadEu extends PluginForHost {
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
     }
-
+    
     private String[] scanInfo(String[] fileInfo) {
         final Regex fInfo = new Regex(correctedBR, "<p class=\"font14\">Downloading \"([^<>\"]*?)\" \\(([^<>\"]*?)\\)</p>");
         // standard traits from base page
@@ -187,13 +187,13 @@ public class SecureUploadEu extends PluginForHost {
         }
         return fileInfo;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, false, 1, "freelink");
     }
-
+    
     public void doFree(final DownloadLink downloadLink, boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         // First, bring up saved final links
@@ -307,9 +307,9 @@ public class SecureUploadEu extends PluginForHost {
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-
+        
         if (downloadLink.getBooleanProperty(NORESUME, false)) resumable = false;
-
+        
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 416) {
@@ -341,21 +341,21 @@ public class SecureUploadEu extends PluginForHost {
             controlFree(-1);
         }
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
     }
-
+    
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -365,7 +365,7 @@ public class SecureUploadEu extends PluginForHost {
         maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
         logger.info("maxFree now = " + maxFree.get());
     }
-
+    
     /** Remove HTML code which could break the plugin */
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
@@ -386,7 +386,7 @@ public class SecureUploadEu extends PluginForHost {
             correctedBR = correctedBR.replace(fun, "");
         }
     }
-
+    
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
@@ -397,7 +397,7 @@ public class SecureUploadEu extends PluginForHost {
         }
         return dllink;
     }
-
+    
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -416,22 +416,22 @@ public class SecureUploadEu extends PluginForHost {
         }
         return dllink;
     }
-
+    
     private void getPage(final String page) throws Exception {
         br.getPage(page);
         correctBR();
     }
-
+    
     private void postPage(final String page, final String postdata) throws Exception {
         br.postPage(page, postdata);
         correctBR();
     }
-
+    
     private void sendForm(final Form form) throws Exception {
         br.submitForm(form);
         correctBR();
     }
-
+    
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
@@ -442,7 +442,7 @@ public class SecureUploadEu extends PluginForHost {
         logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
         if (wait > 0) sleep(wait * 1000l, downloadLink);
     }
-
+    
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
     // String value)
     /**
@@ -466,7 +466,7 @@ public class SecureUploadEu extends PluginForHost {
         }
         return null;
     }
-
+    
     private void fixFilename(final DownloadLink downloadLink) {
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
@@ -478,7 +478,7 @@ public class SecureUploadEu extends PluginForHost {
                 downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
         }
     }
-
+    
     private String handlePassword(String passCode, final Form pwform, final DownloadLink thelink) throws IOException, PluginException {
         passCode = thelink.getStringProperty("pass", null);
         if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
@@ -486,7 +486,7 @@ public class SecureUploadEu extends PluginForHost {
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return Encoding.urlEncode(passCode);
     }
-
+    
     public void checkErrors(final DownloadLink theLink, final boolean checkAll, final String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
@@ -555,7 +555,7 @@ public class SecureUploadEu extends PluginForHost {
         }
         if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
-
+    
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
@@ -563,10 +563,10 @@ public class SecureUploadEu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
-
+    
     private static AtomicInteger maxPrem = new AtomicInteger(1);
     private static final Object  LOCK    = new Object();
-
+    
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -617,7 +617,7 @@ public class SecureUploadEu extends PluginForHost {
         }
         return ai;
     }
-
+    
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -640,7 +640,14 @@ public class SecureUploadEu extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/login");
-                final Form loginform = br.getForm(0);
+                Form loginform = null;
+                Form[] forms = br.getForms();
+                for (Form form : forms) {
+                    if (form.hasInputFieldByName("login")) {
+                        loginform = form;
+                        break;
+                    }
+                }
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
@@ -667,7 +674,7 @@ public class SecureUploadEu extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String passCode = null;
@@ -712,21 +719,21 @@ public class SecureUploadEu extends PluginForHost {
             dl.startDownload();
         }
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
