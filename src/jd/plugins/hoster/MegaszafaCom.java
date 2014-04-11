@@ -90,7 +90,7 @@ public class MegaszafaCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Free (unregistered) downloads are not supported!");
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Free (unregistered) downloads are not supported!");
         // requestFileInformation(downloadLink);
         // doFree(downloadLink);
     }
