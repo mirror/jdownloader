@@ -62,7 +62,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         // Log in if possible to get 720p quality
         getUserLogin(false);
         br.getPage(PARAMETER);
-        if (br.containsHTML("Video not found<|class=\"play\\-error\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("Video not found<|class=\"play\\-error\"|class=\"error\\-sorry\"") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink dl = createDownloadlink("http://playviddecrypted.com/" + System.currentTimeMillis());
             dl.setFinalFileName(new Regex(PARAMETER, "\\?v=([A-Za-z0-9\\-]+)").getMatch(0));
             dl.setProperty("offline", true);

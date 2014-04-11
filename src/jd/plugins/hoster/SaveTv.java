@@ -635,7 +635,9 @@ public class SaveTv extends PluginForHost {
                 String expireDate = br.getRegex("<label>Laufzeit:</label></span> [0-9\\.]+ \\- (\\d{2}\\.\\d{2}\\.\\d{4})<br />").getMatch(0);
                 if (expireDate != null) {
                     expireDate = Encoding.htmlDecode(expireDate.trim());
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", Locale.GERMANY));
+                    /* Accounts expire after the last day */
+                    expireDate += " 23:59:59";
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy hh:mm:ss", Locale.GERMANY));
                     account.setProperty("acc_expire", expireDate);
                 }
                 final String package_name = br.getRegex("<label>Name:</label></span>([^<>\"]*?)<br").getMatch(0);

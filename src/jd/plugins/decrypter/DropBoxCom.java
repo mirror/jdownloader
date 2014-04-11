@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/(sh/.+|l/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/(sh/[A-Za-z0-9\\-_/]+|l/[A-Za-z0-9]+)" }, flags = { 0 })
 public class DropBoxCom extends PluginForDecrypt {
 
     private boolean pluginloaded;
@@ -116,9 +116,10 @@ public class DropBoxCom extends PluginForDecrypt {
                         if (link == null || size == null) {
                             continue;
                         }
-                        final String filename = new Regex(link, "/([^<>\"/]*?)$").getMatch(0);
+                        String filename = new Regex(link, "/([^<>\"/]*?)$").getMatch(0);
                         final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
-                        if (filename != null) dl.setName(filename);
+                        filename = Encoding.htmlDecode(filename).trim();
+                        dl.setName(filename);
                         dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
                         dl.setProperty("decrypted", true);
                         dl.setAvailable(true);

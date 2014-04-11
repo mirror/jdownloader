@@ -130,11 +130,11 @@ public class VideoPremiumNet extends PluginForHost {
         prepBrowser();
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         getPage(link.getDownloadURL());
-        br.getPage("http://" + CURRENT_DOMAIN + "/main?%2F" + fid);
-        br.getPage("http://" + CURRENT_DOMAIN + "/" + fid);
+        getPage("http://" + CURRENT_DOMAIN + "/main?%2F" + fid);
+        getPage("http://" + CURRENT_DOMAIN + "/" + fid);
         final String continuelink = br.getRegex(">window\\.location = \\'(http[^<>\"]*?)\\'").getMatch(0);
         if (continuelink != null) getPage(continuelink);
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File has been removed|>Page not found</h2>)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File has been removed|>Page not found<|>The requested file is not available<)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -232,6 +232,9 @@ public class VideoPremiumNet extends PluginForHost {
                 br.followConnection();
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (dl.getConnection().getLongContentLength() == 0) {
+                /* Streams cannot be 0b files */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - server sends empty file", 30 * 60 * 1000l);
             }
             downloadLink.setProperty(directlinkproperty, dllink);
             dl.startDownload();

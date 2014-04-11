@@ -98,9 +98,11 @@ public class GameFrontCom extends PluginForHost {
         String filesize = br.getRegex("\">File size:</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("File Size:<.*?<.*?>(.*?)<").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filesize = filesize.trim();
         downloadLink.setName(filename.trim());
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.") + "b"));
+        if (filesize != null) {
+            filesize = filesize.trim();
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.") + "b"));
+        }
         if (br.containsHTML("he file you are looking for seems to be unavailable at the")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unavailable at the moment", 60 * 60 * 1000l);
         return AvailableStatus.TRUE;
     }

@@ -99,7 +99,6 @@ public class VideoMsnCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SD, JDL.L("plugins.hoster.videomsncom.loadsd", "Load SD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.videomsncom.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH_FLV, JDL.L("plugins.hoster.videomsncom.loadhighflv", "Load high-flv Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-
     }
 
     @Override

@@ -79,6 +79,10 @@ public class KndGrlsCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptVideoLinks(Browser br) throws PluginException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        if (br.containsHTML("Video not found")) {
+            logger.info("Link offline: " + br.getURL());
+            return decryptedLinks;
+        }
         String link = br.getRegex("\\'flashvars\\',\\'\\&amp;file=(http://[^<>\"]*?)\\&amp;volume=\\d+\\'\\)").getMatch(0);
         if (link == null) link = br.getRegex("(\"|\\')(http://vids\\.kindgirls\\.com/[^<>\"]*?)(\"|\\')").getMatch(1);
         if (link == null || link.length() == 0) {

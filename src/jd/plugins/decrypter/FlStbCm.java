@@ -39,7 +39,7 @@ public class FlStbCm extends PluginForDecrypt {
         // TODO Auto-generated constructor stub
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.|beta\\.)?filestube\\.(com|to)/(source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html|affiliation\\.html|affiliation_clickrates\\.html|cookies_policy\\.html)";
+    private static final String INVALIDLINKS = "http://(www\\.|beta\\.)?filestube\\.(com|to)/(source\\.html|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html|submit\\.html|query\\.html|affiliation\\.html|affiliation_clickrates\\.html|cookies_policy\\.html)";
     private static final String NICE_HOST    = "filestube.to";
     private static final String VIDEOLINK    = "http://(www\\.)?video\\.filestube\\.com/(watch,[a-z0-9]+/.+\\.html|[a-z0-9]+)";
 
@@ -335,7 +335,7 @@ public class FlStbCm extends PluginForDecrypt {
                 }
             }
             final String pornLink = br.getRegex("class=\"gobut\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-            String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\" style=\".*?\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
+            String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\"(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
             // Find IDs for alternative links
             String[][] alternativeLinks = br.getRegex("alternate_files\\.push\\(\\{key: \\'([a-z0-9]+)\\',token: \\'([a-z0-9]+)\\'\\}\\)").getMatches();
             if (pagePiece == null && pornLink == null) {

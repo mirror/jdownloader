@@ -530,6 +530,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
+            /* Open regex is possible because in the unpacked JS there are usually only 1 links */
             finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(mp4|flv))(\"|\\')").getMatch(1);
         }
         return finallink;

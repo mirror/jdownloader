@@ -29,10 +29,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "top-protect.net" }, urls = { "http://(www\\.)?top\\-protect(ion)?\\.net/linkidwoc\\.php\\?linkid=[a-z]+" }, flags = { 0 })
-public class TopProtectNet extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protecteur.net" }, urls = { "http://(www\\.)?protecteur\\.net/check\\.[a-z]+\\.html" }, flags = { 0 })
+public class ProtecteurNet extends PluginForDecrypt {
 
-    public TopProtectNet(PluginWrapper wrapper) {
+    public ProtecteurNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -44,8 +44,8 @@ public class TopProtectNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        br.postPage("/linkid.php", "linkid=" + new Regex(parameter, "([a-z]+)$").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
-        final String fpName = br.getRegex("Titre:[\t\n\r ]+</td>[\t\n\r ]+<td style='border:1px'>([^<>\"/]+)</td>").getMatch(0);
+        br.postPage("/linkid.php", "linkid=" + new Regex(parameter, "([a-z]+)\\.html$").getMatch(0) + "&x=" + Integer.toString(new Random().nextInt(100)) + "&y=" + Integer.toString(new Random().nextInt(100)));
+        final String fpName = br.getRegex("Title:[\t\n\r ]+</td>[\t\n\r ]+<td style='border:1px'>([^<>\"/]+)</td>").getMatch(0);
         String[] links = br.getRegex("target=_blank>(https?://[^<>\"']+)").getColumn(0);
         if (links == null || links.length == 0) {
             if (br.containsHTML("href= target=_blank></a><br></br><a")) {
@@ -56,7 +56,7 @@ public class TopProtectNet extends PluginForDecrypt {
             return null;
         }
         for (String singleLink : links)
-            if (!new Regex(singleLink, "top-protect(ion)?\\.net/").matches()) decryptedLinks.add(createDownloadlink(singleLink));
+            if (!new Regex(singleLink, "protecteur\\.net/").matches()) decryptedLinks.add(createDownloadlink(singleLink));
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

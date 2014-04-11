@@ -47,6 +47,8 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String PHOTOLINK    = "http://(www\\.)?flickr\\.com/photos/.*?";
     private static final String SETLINK      = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
+    private static final String INVALIDLINKS = "http://(www\\.)?flickr\\.com/photos/(me|upload)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> addLinks = new ArrayList<String>();
@@ -60,6 +62,14 @@ public class FlickrCom extends PluginForDecrypt {
         if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/"));
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (parameter.matches(INVALIDLINKS)) {
+            final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            offline.setName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         br.getPage(parameter);
