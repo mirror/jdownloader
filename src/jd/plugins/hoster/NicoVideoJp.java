@@ -171,6 +171,7 @@ public class NicoVideoJp extends PluginForHost {
                 link.setProperty(NicoVideoJp.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

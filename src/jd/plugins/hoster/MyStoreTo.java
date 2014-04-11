@@ -96,6 +96,7 @@ public class MyStoreTo extends PluginForHost {
                 downloadLink.setProperty(MyStoreTo.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

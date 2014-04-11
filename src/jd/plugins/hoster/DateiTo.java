@@ -333,6 +333,7 @@ public class DateiTo extends PluginForHost {
                 downloadLink.setProperty(DateiTo.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

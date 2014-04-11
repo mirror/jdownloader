@@ -246,6 +246,7 @@ public class PlunderCom extends PluginForHost {
                 link.setProperty(PlunderCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

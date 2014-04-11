@@ -266,6 +266,7 @@ public class DownloadMe extends PluginForHost {
                 link.setProperty(DownloadMe.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

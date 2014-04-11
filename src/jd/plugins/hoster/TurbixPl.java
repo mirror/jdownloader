@@ -279,6 +279,7 @@ public class TurbixPl extends PluginForHost {
                 link.setProperty(TurbixPl.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

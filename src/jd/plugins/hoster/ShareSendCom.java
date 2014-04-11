@@ -103,6 +103,7 @@ public class ShareSendCom extends PluginForHost {
                 downloadLink.setProperty(ShareSendCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

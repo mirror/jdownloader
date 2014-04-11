@@ -108,6 +108,7 @@ public class SolidFilesCom extends PluginForHost {
                 downloadLink.setProperty(SolidFilesCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

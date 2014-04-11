@@ -123,6 +123,7 @@ public class YourLustCom extends PluginForHost {
                 downloadLink.setProperty(YourLustCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

@@ -123,6 +123,7 @@ public class AdriveCom extends PluginForHost {
                 downloadLink.setProperty(AdriveCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

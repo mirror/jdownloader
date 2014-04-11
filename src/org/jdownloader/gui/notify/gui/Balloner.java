@@ -201,7 +201,7 @@ public class Balloner implements ComponentListener {
         final GraphicsDevice[] screens = ge.getScreenDevices();
         if (getScreenID() != null) {
             for (final GraphicsDevice screen : screens) {
-                logger.info(getScreenID() + " - " + screen.getIDstring());
+
                 if (StringUtils.equalsIgnoreCase(getScreenID(), screen.getIDstring())) return screen;
 
             }

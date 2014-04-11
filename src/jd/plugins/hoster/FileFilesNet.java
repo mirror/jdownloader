@@ -280,6 +280,7 @@ public class FileFilesNet extends PluginForHost {
                 link.setProperty(FileFilesNet.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

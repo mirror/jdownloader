@@ -96,6 +96,7 @@ public class ZalivalkaRu extends PluginForHost {
                 downloadLink.setProperty(ZalivalkaRu.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

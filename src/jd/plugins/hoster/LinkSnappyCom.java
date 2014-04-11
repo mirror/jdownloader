@@ -218,6 +218,7 @@ public class LinkSnappyCom extends PluginForHost {
                 link.setProperty(LinkSnappyCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

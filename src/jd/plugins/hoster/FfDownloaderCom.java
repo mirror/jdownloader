@@ -149,6 +149,7 @@ public class FfDownloaderCom extends PluginForHost {
                 link.setProperty(FfDownloaderCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

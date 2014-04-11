@@ -330,6 +330,7 @@ public class EasyFilesPl extends PluginForHost {
                 link.setProperty(EasyFilesPl.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

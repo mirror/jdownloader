@@ -90,6 +90,7 @@ public class DivxHostingNet extends PluginForHost {
                 downloadLink.setProperty(DivxHostingNet.NORESUME, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

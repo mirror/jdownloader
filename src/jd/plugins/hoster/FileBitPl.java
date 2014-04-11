@@ -186,6 +186,7 @@ public class FileBitPl extends PluginForHost {
                 link.setProperty(FileBitPl.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

@@ -284,6 +284,7 @@ public class Rapids24Pl extends PluginForHost {
                 link.setProperty(Rapids24Pl.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

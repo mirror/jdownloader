@@ -131,6 +131,7 @@ public class ByteBxCom extends PluginForHost {
                 downloadLink.setProperty(ByteBxCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 
@@ -243,6 +244,7 @@ public class ByteBxCom extends PluginForHost {
                     link.setProperty(ByteBxCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+                throw e;
             }
         }
     }

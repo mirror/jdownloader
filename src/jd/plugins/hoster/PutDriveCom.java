@@ -295,6 +295,7 @@ public class PutDriveCom extends PluginForHost {
                 link.setProperty(PutDriveCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

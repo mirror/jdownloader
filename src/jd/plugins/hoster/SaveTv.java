@@ -573,6 +573,7 @@ public class SaveTv extends PluginForHost {
                 downloadLink.setProperty(SaveTv.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

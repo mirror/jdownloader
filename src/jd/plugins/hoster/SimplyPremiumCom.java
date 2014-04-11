@@ -164,6 +164,7 @@ public class SimplyPremiumCom extends PluginForHost {
                 link.setProperty(SimplyPremiumCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

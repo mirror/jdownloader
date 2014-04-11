@@ -120,6 +120,7 @@ public class OneThousandEbCom extends PluginForHost {
                 downloadLink.setProperty(OneThousandEbCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

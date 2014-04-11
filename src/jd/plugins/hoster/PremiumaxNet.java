@@ -220,6 +220,7 @@ public class PremiumaxNet extends PluginForHost {
                 link.setProperty(PremiumaxNet.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

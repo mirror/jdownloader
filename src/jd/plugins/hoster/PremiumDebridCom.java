@@ -302,6 +302,7 @@ public class PremiumDebridCom extends PluginForHost {
                 link.setProperty(PremiumDebridCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

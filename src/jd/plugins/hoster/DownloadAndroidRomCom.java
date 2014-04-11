@@ -102,6 +102,7 @@ public class DownloadAndroidRomCom extends PluginForHost {
                 downloadLink.setProperty(DownloadAndroidRomCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

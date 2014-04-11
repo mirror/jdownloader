@@ -115,6 +115,7 @@ public class GooIm extends PluginForHost {
                 downloadLink.setProperty(GooIm.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

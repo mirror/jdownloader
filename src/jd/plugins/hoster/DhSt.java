@@ -104,6 +104,7 @@ public class DhSt extends PluginForHost {
                 downloadLink.setProperty(DhSt.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

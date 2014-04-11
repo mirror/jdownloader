@@ -171,6 +171,7 @@ public class PanBaiduCom extends PluginForHost {
                 downloadLink.setProperty(PanBaiduCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

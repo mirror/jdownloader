@@ -262,6 +262,7 @@ public class ExtreamRapidCom extends PluginForHost {
                 link.setProperty(ExtreamRapidCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

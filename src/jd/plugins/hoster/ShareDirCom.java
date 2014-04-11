@@ -301,6 +301,7 @@ public class ShareDirCom extends PluginForHost {
                 link.setProperty(ShareDirCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 
