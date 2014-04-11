@@ -379,10 +379,22 @@ public class BitShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         prepBR();
         br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
+        // http://svn.jdownloader.org/issues/21377
+        final String ip = br.getRedirectLocation();
+        if (ip != null && ip.contains("http://192.168.")) {
+            // some local server fkup?
+            Thread.sleep(5000);
+            br = new Browser();
+            prepBR();
+            br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("http://192.168.")) return AvailableStatus.UNCHECKABLE;
+
+        }
+
         if (br.containsHTML("#offline#")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         if (br.containsHTML("No htmlCode read")) {
