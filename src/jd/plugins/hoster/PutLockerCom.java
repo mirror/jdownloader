@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -247,8 +248,10 @@ public class PutLockerCom extends PluginForHost {
         // Location: http://10.251.45.****:15871/cgi-bin/blockpage.cgi?ws-session=****
 
         // unknown HTTP response
+        logger.info(Arrays.toString(br.getForms()));
         final Form freeform = br.getForm(1);
-        if (freeform != null) br.submitForm(freeform);
+        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.submitForm(freeform);
 
         if (br.containsHTML("prepare_continue_btn")) {
             sleep(5000, downloadLink, "Prepare File...");
