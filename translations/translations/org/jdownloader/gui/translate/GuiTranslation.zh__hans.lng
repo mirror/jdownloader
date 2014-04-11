@@ -963,6 +963,7 @@ lit_progress=进度
 lit_proxy=代理
 lit_restart=重启
 lit_save=保存
+lit_save_to=保存到
 lit_status=状态
 lit_successfull=成功
 lit_unknown=未知
