@@ -171,7 +171,7 @@ public class FreeWayMe extends PluginForHost {
                                                       put("DETAILS_NOTIFICATIONS", "Benachrichtigungen:");
                                                       put("DETAILS_CATEGORY_HOSTS", "Unterstützte Hoster");
                                                       put("DETAILS_HOSTS_AMOUNT", "Anzahl: ");
-                                                      put("DETAILS_REVISION", "Plugin Version:");
+                                                      put("DETAILS_REVISION", "Plugin Revision:");
                                                       put("CLOSE", "Schließen");
                                                       put("ERROR_PREVENT_SPRIT_USAGE", "Spritverbrauch verhindert!");
                                                       put("FULLSPEED_TRAFFIC_NOTIFICATION_CAPTION", "Fullspeed-Limit");

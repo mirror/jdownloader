@@ -71,7 +71,7 @@ import org.jdownloader.DomainInfo;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?(save\\.tv|free\\.save\\.tv)/STV/M/obj/user/usShowVideoArchiveDetail\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
-    /** Static information */
+    /* Static information */
     private final String        INFOREGEX                                           = "<h3>([^<>\"]*?)</h2>[\t\n\r ]+<p>([^<>]*?)</p>([\t\n\r ]+<p>([^<>]*?)</p>)?";
     private final String        GENERAL_REGEX                                       = "Kategorie:</label>[\t\n\r ]+Info.*?";
     private final String        SERIESINFORMATION                                   = "[A-Za-z]+ [A-Za-z]+ (\\d{4} / \\d{4}|\\d{4})";
@@ -84,7 +84,7 @@ public class SaveTv extends PluginForHost {
     private static final int    MAX_RETRIES_LOGIN                                   = 10;
     private static final int    MAX_RETRIES_SAFE_REQUEST                            = 3;
 
-    /** Settings stuff */
+    /* Settings stuff */
     private static final String USEORIGINALFILENAME                                 = "USEORIGINALFILENAME";
     private static final String PREFERADSFREE                                       = "PREFERADSFREE";
     private static final String PREFERADSFREE_OVERRIDE                              = "PREFERADSFREE_OVERRIDE";
@@ -105,7 +105,7 @@ public class SaveTv extends PluginForHost {
     private static final String DISABLE_LINKCHECK                                   = "DISABLE_LINKCHECK";
     private static final String DELETE_TELECAST_ID_AFTER_DOWNLOAD                   = "DELETE_TELECAST_ID_AFTER_DOWNLOAD";
 
-    /** Custom filename settings stuff */
+    /* Custom filename settings stuff */
     private static final String CUSTOM_DATE                                         = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME2                                    = "CUSTOM_FILENAME2";
     private static final String CUSTOM_FILENAME_SERIES2                             = "CUSTOM_FILENAME_SERIES2";
@@ -114,11 +114,11 @@ public class SaveTv extends PluginForHost {
     private static final String FORCE_ORIGINALFILENAME_SERIES                       = "FORCE_ORIGINALFILENAME_SERIES";
     private static final String FORCE_ORIGINALFILENAME_MOVIES                       = "FORCE_ORIGINALFILENAME_MOVIES";
 
-    /** Variables */
+    /* Variables */
     private boolean             FORCE_ORIGINAL_FILENAME                             = false;
     private boolean             FORCE_LINKCHECK                                     = false;
     private boolean             ISADSFREEAVAILABLE                                  = false;
-    // If this != null, API is in use
+    /* If this != null, API is in use */
     private String              SESSIONID                                           = null;
     private static final String NORESUME                                            = "NORESUME";
     private static final String NOCHUNKS                                            = "NOCHUNKS";
@@ -129,6 +129,11 @@ public class SaveTv extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
         if (!isJDStable()) setConfigElements();
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
     }
 
     private boolean isJDStable() {
@@ -154,14 +159,13 @@ public class SaveTv extends PluginForHost {
      * TODO: Known Bugs in API mode: API cannot differ between H.264 Mobile and normal videos -> Cannot show any error in case user chose
      * H.264 but it's not available. --> NO FATAL bugs ---> Plugin will work fine with them!
      */
-    // TODO: Remove info-dialogs Feb, 2014 and add a single dialog which only shows up one time, first usage of the plugin
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         DLINK = link;
         br.setFollowRedirects(true);
-        // Show id in case it is offline or plugin is broken
+        /* Show telecast-ID in case it is offline or plugin is broken */
         if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(".mp4") || link.getName().contains("usShowVideoArchiveDetail.cfm"))) link.setName(getTelecastId(link) + ".mp4");
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
@@ -378,6 +382,7 @@ public class SaveTv extends PluginForHost {
         FORCE_ORIGINAL_FILENAME = (force_original_general || force_original_series || force_original_movies);
         if (FORCE_ORIGINAL_FILENAME) {
             final String originalfilename = getFakeOriginalFilename(link);
+            /* Reset from previous state so we can use the server filename as final filename */
             link.setFinalFileName(null);
             link.setName(originalfilename);
         } else {
@@ -385,11 +390,6 @@ public class SaveTv extends PluginForHost {
             link.setFinalFileName(formattedFilename);
         }
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
     }
 
     @SuppressWarnings("deprecation")
@@ -1099,17 +1099,17 @@ public class SaveTv extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Allgemeine Einstellungen:"));
-        final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, entfallen folgende Features:\r\n-Benutzerdefinierte Dateinamen\r\n-Archiv-Crawler\r\n-Nur Aufnahmen mit angewandter Schnittliste laden\r\n-Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\nAus technischen Gründen ist es (noch) nicht möglich, alle dann Inaktiven Einstellungen bei aktivierter API auszugrauen um dem Benutzer visuelles Feedback zu geben, sorry!")).setDefaultValue(false);
+        final ConfigEntry useMobileAPI = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, entfallen folgende Features:\r\n-Benutzerdefinierte Dateinamen\r\n-Archiv-Crawler\r\n-Nur Aufnahmen mit angewandter Schnittliste laden\r\n-Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\nAus technischen Gründen ist es (noch) nicht möglich, alle dann Inaktiven Einstellungen bei\r\naktivierter API auszugrauen um dem Benutzer visuelles Feedback zu geben, sorry!")).setDefaultValue(false);
         getConfig().addEntry(useMobileAPI);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren?\r\nVorteile:\r\n-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\nNachteile:\r\n-Im Linkgrabber werden zunächst nur die telecast-IDs als Dateinamen angezeigt\r\n-Korrekte Dateinamen werden erst beim Downloadstart angezeigt")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren?\r\nVorteile:\r\n-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\nNachteile:\r\n-Im Linkgrabber werden zunächst nur die telecast-IDs als Dateinamen angezeigt\r\n-Die endgültigen Dateinamen werden erst beim Downloadstart angezeigt")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Archiv-Crawler Einstellungen:"));
         final ConfigEntry grabArchives = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ACTIVATE, JDL.L("plugins.hoster.SaveTv.grabArchive", "Archiv-Crawler aktivieren?\r\nINFO: Fügt das komplette Archiv oder Teile davon beim Einfügen dieses Links ein:\r\n'http://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm'?\r\n")).setDefaultValue(false).setEnabledCondidtion(useMobileAPI, false);
         getConfig().addEntry(grabArchives);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SaveTv.CRAWLER_LASTDAYS_COUNT, JDL.L("plugins.hoster.SaveTv.grabArchive.LastDaysCount", "Nur Aufnahmen der letzten X Tage crawlen??\r\nAnzahl der Tage, die gecrawlt werden sollen [0 = komplettes Archiv = alle Tage]:"), 0, 32, 1).setDefaultValue(defaultCrawlLastdays).setEnabledCondidtion(useMobileAPI, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen schneller im Linkgrabber\r\nNachteil: Korrekte Dateinamen/Dateigröße werden erst beim Downloadstart angezeigt\r\n")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_ENABLE_FASTER, JDL.L("plugins.hoster.SaveTv.grabArchiveFaster", "Aktiviere schnellen Linkcheck für Archiv-Crawler?\r\nVorteil: Über den Archiv-Crawler hinzugefügte Links landen viel schneller im Linkgrabber\r\nNachteil: Es sind nicht alle Informationen (z.B. Produktionsjahr) verfügbar - erst beim Download oder späterem Linkcheck\r\n")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.CRAWLER_DISABLE_DIALOGS, JDL.L("plugins.hoster.SaveTv.crawlerDisableDialogs", "Info Dialoge des Archiv-Crawlers (nach dem Crawlen oder im Fehlerfall) deaktivieren?")).setDefaultValue(false).setEnabledCondidtion(grabArchives, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -1308,6 +1308,7 @@ public class SaveTv extends PluginForHost {
                         message += "- Laden des kompletten save.tv Archivs über wenige Klicks\r\n";
                         message += "-- > Oder wahlweise nur alle Links der letzten X Tage\r\n";
                         message += "- Benutzerdefinierte Dateinamen über ein Tag-System mit vielen Möglichkeiten\r\n";
+                        message += "- Alles unter beachtung der Schnittliste (falls gewähnt) und des Formats\r\n";
                         message += "- Und viele mehr...\r\n";
                         message += "\r\n";
                         message += "Diese einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
@@ -1406,7 +1407,7 @@ public class SaveTv extends PluginForHost {
             panelGenerator.addEntry("Account Typ:", accType);
             panelGenerator.addEntry("Paket:", acc_package);
             panelGenerator.addEntry("Laufzeit:", acc_runtime);
-            panelGenerator.addEntry("Ablaufdatum:", acc_expire);
+            panelGenerator.addEntry("Ablaufdatum:", acc_expire + " Uhr");
             panelGenerator.addEntry("Preis:", acc_price);
             panelGenerator.addEntry("Aufnahmekapazität:", acc_capacity);
             panelGenerator.addEntry("Sendungen im Archiv:", acc_count_archive_entries);
@@ -1417,7 +1418,7 @@ public class SaveTv extends PluginForHost {
             panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", "4");
             panelGenerator.addEntry("Abgebrochene Downloads fortsetzbar:", "Ja");
 
-            panelGenerator.addEntry("Plugin Version:", revision);
+            panelGenerator.addEntry("Plugin Revision:", revision);
 
             ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, "Schließen", "");
             try {
