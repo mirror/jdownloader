@@ -226,9 +226,9 @@ public class FileniumCom extends PluginForHost {
              * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
-            if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<"))
+            if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) {
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            else if (br.containsHTML(">TRAFICO CONSUMIDO PARA")) {
+            } else if (br.containsHTML(">TRAFICO CONSUMIDO PARA")) {
                 logger.info("Traffic for the current host is exhausted");
                 tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }

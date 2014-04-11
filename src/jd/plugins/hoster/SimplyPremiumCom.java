@@ -271,7 +271,12 @@ public class SimplyPremiumCom extends PluginForHost {
         String accdesc = null;
         if ("1".equals(acctype)) {
             ai.setUnlimitedTraffic();
-            final String expire = getXML("timeend");
+            String expire = getXML("timeend");
+            expire = expire.trim();
+            if (expire.equals("")) {
+                ai.setExpired(true);
+                return ai;
+            }
             final Long expirelng = Long.parseLong(expire);
             ai.setValidUntil(expirelng * 1000);
             accdesc = "Time account";
