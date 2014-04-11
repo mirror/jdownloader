@@ -159,7 +159,8 @@ public class PutLockerCom extends PluginForHost {
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("No htmlCode read")) return AvailableStatus.UNCHECKABLE;
+        // http://svn.jdownloader.org/issues/27819
+        if (br.containsHTML("No htmlCode read|This file is temporarily unavailable due to maintenance\\.")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("This file might have been moved, replaced or deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             link.getLinkStatus().setStatusText("This link is password protected");
