@@ -563,6 +563,10 @@ public class TurboBitNet extends PluginForHost {
         String dllink = null;
         final String[] mirrors = br.getRegex("(\\'|\")(http://([a-z0-9\\.]+)?turbobit\\.net//?download/redirect/.*?)(\\'|\")").getColumn(1);
         if (mirrors == null || mirrors.length == 0) {
+            if (br.containsHTML("You have reached the.*? limit of premium downloads")) {
+                logger.info("You have reached the.*? limit of premium downloads");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             if (br.containsHTML("'>Premium access is blocked<")) {
                 logger.info("No traffic available");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
