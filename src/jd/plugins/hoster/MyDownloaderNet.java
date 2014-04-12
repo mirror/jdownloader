@@ -271,6 +271,7 @@ public class MyDownloaderNet extends PluginForHost {
     }
 
     private void getPageSafe(final String url) throws IOException, PluginException {
+        boolean failed = true;
         for (int i = 1; i <= 3; i++) {
             br.getPage(url);
             if (br.containsHTML("<error>AUTH_ERROR</error>")) {
@@ -279,7 +280,12 @@ public class MyDownloaderNet extends PluginForHost {
                 getLoginToken(acc);
                 continue;
             }
+            failed = false;
             break;
+        }
+        if (failed) {
+            logger.info("Failed 3 times --> Temporarily disabling account");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
     }
 
