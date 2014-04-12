@@ -1,3 +1,19 @@
+//jDownloader - Downloadmanager
+//Copyright (C) 2014  JD-Team support@jdownloader.org
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.hoster;
 
 import java.io.IOException;
@@ -6,7 +22,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -35,21 +54,27 @@ import org.appwork.utils.formatter.HexFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "updown.bz" }, urls = { "https?://(?:www\\.)?updown\\.bz/[a-zA-Z0-9]+" }, flags = { 0 })
 public class UpDownBz extends PluginForHost {
 
-    /*
-     * hoster will be launched soon. https://updown.bz
-     */
+    private static final int    FORCE_LOGIN_INTERVAL_SEC = 20 * 60;
+    private static final Object LOGIN_LOCK               = new Object();
+    private static final String HTTP_PROTOCOL            = "https://";
+    private static final String API_HOST                 = "api.updown.bz";
+    private static final String WEB_HOST                 = "updown.bz";
 
-    private static final boolean FORCE_SSL = true; // ssl only
+    /*
+     * hoster will be launched soon (https://updown.bz).
+     * 
+     * If someone likes to review this code, please contact dev@updown.bz for an account or some links.
+     */
 
     public UpDownBz(PluginWrapper wrapper) throws IOException {
         super(wrapper);
         setConfigElements();
-        this.enablePremium(getHttpProtocol() + getWebHost() + "/premium");
+        this.enablePremium(HTTP_PROTOCOL + WEB_HOST + "/#!/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return getHttpProtocol() + getWebHost() + "/tos";
+        return HTTP_PROTOCOL + WEB_HOST + "/tos";
     }
 
     @Override
@@ -64,51 +89,48 @@ public class UpDownBz extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
-        String protocol = getHttpProtocol();
         String id = getFileId(link.getDownloadURL());
-        link.setUrlDownload(protocol + "updown.bz/" + id);
+        if (id != null && id.length() > 0) {
+            link.setUrlDownload(HTTP_PROTOCOL + "updown.bz/" + id);
+        } else {
+            link.setAvailable(false);
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        account.setProperty("sessionid", null);
-        account.setProperty("expires_at", null);
         ai.setStatus("Free");
+        ai.setExpired(true);
+        ai.setValidUntil(0);
         account.setValid(false);
 
         // login to service
-        HashMap<String, String> getsid_data = api_getsid(account.getUser(), account.getPass());
-        if (getsid_data == null) { return ai; }
+        String sessionid = login(account);
+        if (sessionid == null) { return ai; }
 
         // receive userdata
-        HashMap<String, Object> data = api_getdetails(getsid_data.get("sessionid"));
+        AccountData data = api_getdetails(account);
         if (data == null) { return ai; }
 
         // account is available and ok
         account.setValid(true);
 
-        // store login data globally
-        account.setProperty("sessionid", getsid_data.get("sessionid"));
-        account.setProperty("expires_at", getsid_data.get("expires_at"));
-
         // eval traffic data
-        if ((Long) data.get("traffic_max") == -1)
+        long traffic_max = data.getTrafficMax();
+        long traffic_used = data.getTrafficUsed();
+        if (traffic_max == -1)
             ai.setUnlimitedTraffic();
         else {
-            ai.setTrafficLeft((Long) data.get("traffic_max") - (Long) data.get("traffic_used"));
-            ai.setTrafficMax((Long) data.get("traffic_max"));
+            ai.setTrafficLeft(traffic_max - traffic_used);
+            ai.setTrafficMax(traffic_max);
         }
 
-        // set premium state data
-        Long premium_until = (Long) data.get("premium_until") * 1000L;
-        ai.setValidUntil(premium_until);
+        // set premium state
+        long premium_until = data.getPremiumUntil();
+        ai.setValidUntil(premium_until * 1000);
         ai.setStatus("Premium");
-        if (premium_until > System.currentTimeMillis()) {
-            ai.setExpired(false);
-        } else {
-            ai.setExpired(true);
-        }
+        ai.setExpired(premium_until > System.currentTimeMillis());
 
         return ai;
     }
@@ -119,38 +141,40 @@ public class UpDownBz extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
 
         // extract file ids to check
-        String[] ids = new String[urls.length];
-        int i = 0;
-        for (DownloadLink url : urls)
-            ids[i++] = getFileId(url.getDownloadURL());
+        List<String> ids = new ArrayList<>(urls.length);
+        List<DownloadLink> links = new ArrayList<>(urls.length);
+        for (DownloadLink url : urls) {
+            String id = getFileId(url.getDownloadURL());
+            if (id != null && id.length() > 0) {
+                ids.add(id);
+                links.add(url);
+            } else {
+                url.setAvailable(false);
+            }
+        }
 
         // check given ids
-        HashMap<String, HashMap<String, Object>> filedata = api_checklinks(ids);
+        Map<String, FileData> filedata = api_checkLinks(ids);
         if (filedata == null) return false;
 
         // update download links
         int j = 0;
-        Boolean check_result = true;
-        for (DownloadLink url : urls) {
-            String id = ids[j++];
-            if (filedata.containsKey(id)) {
-                Boolean online = (Boolean) filedata.get(id).get("online");
-                url.setAvailable(online);
-                url.setAvailableStatus(AvailableStatus.TRUE);
-                url.setFinalFileName((String) filedata.get(id).get("name"));
-                url.setDownloadSize((Long) filedata.get(id).get("size"));
-                url.setProperty("VERIFIEDFILESIZE", (Long) filedata.get(id).get("size"));
-                url.setMD5Hash((String) filedata.get(id).get("md5"));
-                url.setProperty("id", id);
-                url.setProperty("protected", (Boolean) filedata.get(id).get("protected"));
-                check_result &= online;
+        for (DownloadLink link : links) {
+            String id = ids.get(j++);
+            FileData data = filedata.get(id);
+            if (data != null) {
+                link.setAvailable(data.isOnline());
+                link.setFinalFileName(data.getName());
+                link.setDownloadSize(data.getSize());
+                link.setVerifiedFileSize(data.getSize());
+                link.setMD5Hash(data.getMd5());
+                link.setProperty("id", data.getId());
+                link.setProperty("protected", data.isProtected());
+                link.setProperty("filedata", data);
             } else {
-                url.setAvailable(false);
-                url.setAvailableStatus(AvailableStatus.FALSE);
+                link.setAvailable(false);
             }
-
         }
-
         return true;
     }
 
@@ -163,63 +187,58 @@ public class UpDownBz extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        // TODO share password support
-        // TODO reuse session data of fetched login data if any
-
         // set share password if file is protected
         String share_password = null;
-        boolean is_protected = downloadLink.getBooleanProperty("protected");
+        boolean is_protected = downloadLink.getBooleanProperty("protected", false);
         if (is_protected) {
             String dl_pass = downloadLink.getDownloadPassword();
-            if (dl_pass != null) {
-                if (dl_pass.length() > 0) {
-                    MessageDigest md = MessageDigest.getInstance("MD5");
-                    byte[] share_pass_bytes = md.digest((dl_pass).getBytes());
-                    share_password = HexFormatter.byteArrayToHex(share_pass_bytes);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "no download password set");
-                }
+            if (dl_pass != null && dl_pass.length() > 0) {
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                byte[] share_pass_bytes = md.digest((dl_pass).getBytes());
+                share_password = HexFormatter.byteArrayToHex(share_pass_bytes);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "no download password set");
             }
         }
 
-        // login for premium download
-        HashMap<String, String> getsid_data = api_getsid(account.getUser(), account.getPass());
-        if (getsid_data == null) throw new PluginException(LinkStatus.ERROR_RETRY, "login failed", 60 * 1000);
+        // login for premium download request
+        String sessionid = login(account);
+        if (sessionid == null) throw new PluginException(LinkStatus.ERROR_RETRY, "login failed", 60 * 1000);
 
         // request download
-        HashMap<String, String> prvdl_data = api_privatedownload(getsid_data.get("sessionid"));
+        PrivateDownloadData prvdl_data = api_privatedownload(account);
         if (prvdl_data == null) throw new PluginException(LinkStatus.ERROR_RETRY, "requesting download failed", 60 * 1000);
 
         // TODO: verify download file
 
         // is enough traffic available
-        if (downloadLink.getDownloadSize() > Long.parseLong(prvdl_data.get("traffic_left"))) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "traffic limit reached");
+        if (downloadLink.getDownloadSize() > prvdl_data.getTrafficLeft()) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, "traffic limit reached");
 
-        // construct the download url relating to the login data
-        String url = createStorageUrl(downloadLink, getsid_data.get("sessionid"), prvdl_data.get("host"), share_password);
+        // construct the download url
+        String url = createStorageUrl(downloadLink, sessionid, prvdl_data.getHost(), share_password);
 
-        // try to open download connection and check its response
+        // try to open a download connection and check first chunks response
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, (-1) * 2);
+        int code = dl.getConnection().getResponseCode();
+        {
+            // file is not available
+            if (code == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "requested file is not available");
 
-        // file is not available
-        if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "requested file is not available");
+            // you are not authorized
+            if (code == 401) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "invalid login data" + (is_protected ? " or wrong download password" : ""), 6 * 60 * 1000L);
 
-        // your are not authorized
-        if (dl.getConnection().getResponseCode() == 401) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
-        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "invalid login data" + (is_protected ?
-        // " or wrong link password" : ""), 6 * 60 * 1000L);
+            // wrong request format
+            if (code == 400) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request format"); }
 
-        // wrong request format
-        if (dl.getConnection().getResponseCode() == 400) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong requet format"); }
+            // wrong request method
+            if (code == 405) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request method"); }
 
-        // wrong request method
-        if (dl.getConnection().getResponseCode() == 405) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request method"); }
+            // no connections available
+            if (code == 421) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "connection limit reached", 1 * 60 * 1000L); }
 
-        // no connections available
-        if (dl.getConnection().getResponseCode() == 421) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "connection limit reached", 1 * 60 * 1000L); }
-
-        // is data to download available
-        if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no data to download found");
+            // is data to download available
+            if (dl.getConnection().getLongContentLength() != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no data to download found");
+        }
 
         // nothing wrong, thus start the download
         dl.startDownload();
@@ -240,10 +259,47 @@ public class UpDownBz extends PluginForHost {
         return;
     }
 
-    private HashMap<String, HashMap<String, Object>> api_checklinks(String[] ids) {
-        // output data. surrounding hashmap selects by id. inner map is the data
-        // per file. only found files will be available.
-        HashMap<String, HashMap<String, Object>> data = null;
+    private String login(Account account) {
+        return login(account, false);
+    }
+
+    private String login(Account account, boolean force) {
+        String sessionid = null;
+
+        // line up login calls from different threads
+        synchronized (LOGIN_LOCK) {
+
+            // execute login call if session is invalid, time is up or forced by caller
+            sessionid = account.getStringProperty("sessionid", null);
+            boolean time_to_login = System.currentTimeMillis() - account.getLongProperty("last_login_at", 0) > FORCE_LOGIN_INTERVAL_SEC * 1000;
+            if (force || sessionid == null || sessionid.length() <= 0 || time_to_login) {
+                sessionid = null;
+                account.setProperty("last_login_at", System.currentTimeMillis());
+                SessionData data = api_getsid(account);
+                if (data != null) {
+                    sessionid = data.getSessionId();
+                }
+            }
+
+            // finally check session id format
+            if (sessionid == null || sessionid.length() <= 0) {
+                sessionid = null;
+            }
+        }
+
+        return sessionid;
+    }
+
+    private Map<String, FileData> api_checkLinks(List<String> ids) {
+        if (ids == null) return null;
+        return api_checkLinks(ids.toArray(new String[ids.size()]));
+    }
+
+    private Map<String, FileData> api_checkLinks(String[] ids) {
+        if (ids == null) return null;
+
+        // output data. surrounding map selects by id. only found files will be available in the map.
+        Map<String, FileData> data = null;
 
         // create comma separated file ids
         StringBuilder sb = new StringBuilder();
@@ -257,20 +313,37 @@ public class UpDownBz extends PluginForHost {
         try {
             // do the actual api call
             br.setHeader("Content-Type", "application/json");
-            String response = br.postPageRaw(getHttpProtocol() + getApiHost(), query);
+            String response = br.postPageRaw(HTTP_PROTOCOL + API_HOST, query);
 
-            // try to parse json response
-            JSonFactory json_factory = new JSonFactory(response);
-            JSonObject json_response = (JSonObject) json_factory.parse();
-            Long code = (Long) (((JSonValue) json_response.get("c")).getValue());
-            if (code != null && code > 0) {
-                data = new HashMap<String, HashMap<String, Object>>();
-                if (json_response.containsKey("d")) {
-                    JSonArray json_data_array = (JSonArray) json_response.get("d");
-                    for (JSonNode json_data_tmp : json_data_array) {
-                        JSonObject json_data = (JSonObject) json_data_tmp;
+            // try to parse api response
+            JSonObject json_response = (JSonObject) new JSonFactory(response).parse();
+            ApiStatus status = ApiStatus.UNKNOWN;
+            try {
+                status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
+            } catch (NullPointerException | ClassCastException e) {
+                e.printStackTrace();
+            }
 
-                        // extract values
+            // do, whats to do
+            if (status.isSuccess()) {
+
+                // extract list of checked files
+                JSonArray json_array = null;
+                try {
+                    json_array = (JSonArray) json_response.get("d");
+                } catch (ClassCastException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (json_array == null) return null;
+                }
+
+                // extract values and add to output store for each file
+                data = new HashMap<String, FileData>();
+                for (JSonNode json_elem : json_array) {
+                    try {
+                        JSonObject json_data = (JSonObject) json_elem;
+                        if (json_data == null) continue;
+
                         String name = (String) ((JSonValue) json_data.get("name")).getValue();
                         String id = (String) ((JSonValue) json_data.get("id")).getValue();
                         Boolean online = (Boolean) ((JSonValue) json_data.get("online")).getValue();
@@ -278,16 +351,10 @@ public class UpDownBz extends PluginForHost {
                         Long size = (Long) ((JSonValue) json_data.get("size")).getValue();
                         String md5 = (String) ((JSonValue) json_data.get("md5")).getValue();
 
-                        // add data to output store entry
-                        HashMap<String, Object> fileinfo = new HashMap<String, Object>();
-                        fileinfo.put("online", online);
-                        fileinfo.put("name", name);
-                        fileinfo.put("size", size);
-                        fileinfo.put("md5", md5);
-                        fileinfo.put("protected", protect);
-
-                        // add values to output store
-                        data.put(id, fileinfo);
+                        data.put(id, new FileData(id, online, name, size, md5, protect));
+                    } catch (NullPointerException | ClassCastException e) {
+                        e.printStackTrace();
+                        continue;
                     }
                 }
             }
@@ -301,6 +368,7 @@ public class UpDownBz extends PluginForHost {
     }
 
     private String computePassword(final String username, final String password) {
+        if (username == null || password == null) { return null; }
         String result = null;
         try {
             MessageDigest digest = MessageDigest.getInstance("MD5");
@@ -333,9 +401,15 @@ public class UpDownBz extends PluginForHost {
         return result;
     }
 
-    private HashMap<String, String> api_privatedownload(String sessionid) {
+    private PrivateDownloadData api_privatedownload(Account account) {
+        if (account == null) return null;
+
         // output data. host, traffic_left
-        HashMap<String, String> data = null;
+        PrivateDownloadData data = null;
+
+        // client needs to be logged in
+        String sessionid = login(account);
+        if (sessionid == null) { return null; }
 
         // build json api query
         String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"prv\",\"a\":\"dl\",\"s\":\"" + sessionid + "\"}";
@@ -343,27 +417,36 @@ public class UpDownBz extends PluginForHost {
         try {
             // do the actual api call
             br.setHeader("Content-Type", "application/json");
-            String response = br.postPageRaw(getHttpProtocol() + getApiHost(), query);
+            String response = br.postPageRaw(HTTP_PROTOCOL + API_HOST, query);
 
-            // try to parse json response
-            JSonFactory json_factory = new JSonFactory(response);
-            JSonObject json_response = (JSonObject) json_factory.parse();
-            Long code = (Long) (((JSonValue) json_response.get("c")).getValue());
-            if (code != null && code > 0) {
-                data = new HashMap<String, String>();
-                if (json_response.containsKey("d")) {
+            // try to parse api response
+            JSonObject json_response = (JSonObject) new JSonFactory(response).parse();
+            ApiStatus status = ApiStatus.UNKNOWN;
+            try {
+                status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
+            } catch (NullPointerException | ClassCastException e) {
+                e.printStackTrace();
+            }
+
+            // do, whats to do
+            if (status.isSuccess()) {
+                try {
+                    // extract json data object
                     JSonObject json_data = (JSonObject) json_response.get("d");
+                    if (json_data == null) return null;
 
-                    // extract the actual data values
+                    // extract values and add to output store
                     String host = (String) ((JSonValue) json_data.get("h")).getValue();
                     Long traffic_left = (Long) ((JSonValue) json_data.get("l")).getValue();
 
-                    // add values to output store
-                    data.put("host", host);
-                    data.put("traffic_left", traffic_left.toString());
+                    data = new PrivateDownloadData(host, traffic_left);
+                } catch (NullPointerException | ClassCastException e) {
+                    e.printStackTrace();
+                    return null;
                 }
+            } else if (status.isAuthFailed()) {
+                account.setProperty("sessionid", "");
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ParserException e) {
@@ -373,53 +456,78 @@ public class UpDownBz extends PluginForHost {
         return data;
     }
 
-    private HashMap<String, String> api_getsid(String username, String password) {
+    private SessionData api_getsid(Account account) {
+        if (account == null) return null;
+
         // output data. sessionid, expires_at
-        HashMap<String, String> data = null;
+        SessionData data = null;
+        String sessionid = null;
+        Long expires_at = null;
 
         // compute password hash
-        String computed_password = computePassword(username, password);
+        String computed_password = computePassword(account.getUser(), account.getPass());
         if (computed_password == null) return null;
 
         // build json api query
-        String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"auth\",\"a\":\"getsid\",\"d\":{\"u\":\"" + username + "\",\"p\":\"" + computed_password + "\"}}";
+        String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"auth\",\"a\":\"getsid\",\"d\":{\"u\":\"" + account.getUser() + "\",\"p\":\"" + computed_password + "\"}}";
 
         try {
             // do the actual api call
             br.setHeader("Content-Type", "application/json");
-            String response = br.postPageRaw(getHttpProtocol() + getApiHost(), query);
+            String response = br.postPageRaw(HTTP_PROTOCOL + API_HOST, query);
 
-            // try to parse json response
-            JSonFactory json_factory = new JSonFactory(response);
-            JSonObject json_response = (JSonObject) json_factory.parse();
-            Long code = (Long) (((JSonValue) json_response.get("c")).getValue());
-            if (code != null && code > 0) {
-                data = new HashMap<String, String>();
-                if (json_response.containsKey("d")) {
-                    JSonObject json_data = (JSonObject) json_response.get("d");
-
-                    // extract the actual data values
-                    String sessionid = (String) ((JSonValue) json_data.get("s")).getValue();
-                    Long expires_at = (Long) ((JSonValue) json_data.get("e")).getValue();
-
-                    // add values to output
-                    data.put("sessionid", sessionid);
-                    data.put("expires_at", expires_at.toString());
-                }
+            // try to parse api response
+            JSonObject json_response = (JSonObject) new JSonFactory(response).parse();
+            ApiStatus status = ApiStatus.UNKNOWN;
+            try {
+                status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
+            } catch (NullPointerException | ClassCastException e) {
+                e.printStackTrace();
             }
 
+            // do, whats to do
+            if (status.isSuccess()) {
+                try {
+                    // extract json data object
+                    JSonObject json_data = (JSonObject) json_response.get("d");
+                    if (json_data == null) return null;
+
+                    // extract session values
+                    sessionid = (String) ((JSonValue) json_data.get("s")).getValue();
+                    expires_at = (Long) ((JSonValue) json_data.get("e")).getValue();
+                } catch (NullPointerException | ClassCastException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ParserException e) {
             e.printStackTrace();
+        } finally {
+            // create data container if valid session data
+            if (sessionid != null && sessionid.length() > 0 && expires_at != null) {
+                data = new SessionData(sessionid, expires_at);
+                account.setProperty("sessionid", sessionid);
+                account.setProperty("expires_at", expires_at);
+            } else {
+                account.setProperty("sessionid", "");
+                account.setProperty("expires_at", 0L);
+            }
         }
 
         return data;
     }
 
-    private HashMap<String, Object> api_getdetails(String sessionid) {
+    private AccountData api_getdetails(Account account) {
+        if (account == null) return null;
+
         // output data. premium_until, traffic_use, traffic_max
-        HashMap<String, Object> data = null;
+        AccountData data = null;
+
+        // client needs to be logged in
+        String sessionid = login(account);
+        if (sessionid == null) { return null; }
 
         // build json api query
         String query = "{\"i\":\"" + generateRandomId() + "\",\"m\":\"acc\",\"a\":\"info\",\"d\":{\"w\":\"jdl\"},\"s\":\"" + sessionid + "\"}";
@@ -427,29 +535,37 @@ public class UpDownBz extends PluginForHost {
         try {
             // do the actual api call
             br.setHeader("Content-Type", "application/json");
-            String response = br.postPageRaw(getHttpProtocol() + getApiHost(), query);
+            String response = br.postPageRaw(HTTP_PROTOCOL + API_HOST, query);
 
-            // try to parse json response
-            JSonFactory json_factory = new JSonFactory(response);
-            JSonObject json_response = (JSonObject) json_factory.parse();
-            Long code = (Long) (((JSonValue) json_response.get("c")).getValue());
-            if (code != null && code > 0) {
-                if (json_response.containsKey("d")) {
+            // try to parse api response
+            JSonObject json_response = (JSonObject) new JSonFactory(response).parse();
+            ApiStatus status = ApiStatus.UNKNOWN;
+            try {
+                status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
+            } catch (NullPointerException | ClassCastException e) {
+                e.printStackTrace();
+            }
+
+            // do, whats to do
+            if (status.isSuccess()) {
+                try {
+                    // extract json data object
                     JSonObject json_data = (JSonObject) json_response.get("d");
+                    if (json_data == null) return null;
 
-                    // extract the actual data values
+                    // extract account values
                     Long premium_until = (Long) ((JSonValue) json_data.get("premium_until")).getValue();
                     Long traffic_used = (Long) ((JSonValue) json_data.get("traffic_used")).getValue();
                     Long traffic_max = (Long) ((JSonValue) json_data.get("traffic_max")).getValue();
 
-                    // add values to output store
-                    data = new HashMap<String, Object>();
-                    data.put("premium_until", premium_until);
-                    data.put("traffic_used", traffic_used);
-                    data.put("traffic_max", traffic_max);
+                    data = new AccountData(traffic_max, traffic_used, premium_until);
+                } catch (NullPointerException | ClassCastException e) {
+                    e.printStackTrace();
+                    return null;
                 }
+            } else if (status.isAuthFailed()) {
+                account.setProperty("sessionid", "");
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ParserException e) {
@@ -460,8 +576,8 @@ public class UpDownBz extends PluginForHost {
     }
 
     private String createStorageUrl(DownloadLink dl_link, String sessionid, String host, String share_password) {
-        String url = getHttpProtocol() + host + "/d/?file=" + dl_link.getProperty("id") + "&sid=" + sessionid;
-        if (share_password != null && Boolean.TRUE.equals((Boolean) dl_link.getProperty("protected"))) url += "&pass=" + share_password;
+        String url = HTTP_PROTOCOL + (host != null ? host : "") + "/d/?file=" + dl_link.getStringProperty("id", "") + "&sid=" + (sessionid != null ? sessionid : "");
+        if (share_password != null && Boolean.TRUE.equals((Boolean) dl_link.getBooleanProperty("protected", false))) url += "&pass=" + share_password;
         return url;
     }
 
@@ -470,26 +586,162 @@ public class UpDownBz extends PluginForHost {
     }
 
     private String getFileId(String link) {
-        String id = new Regex(link, "https?://(?:.+\\.)?updown\\.bz/([a-zA-Z0-9]+)$").getMatch(0);
-        return id;
-    }
-
-    private String getHttpProtocol() {
-        if (FORCE_SSL)
-            return "https://";
-        else
-            return "http://";
-    }
-
-    private String getApiHost() {
-        return "api.updown.bz";
-    }
-
-    private String getWebHost() {
-        return "updown.bz";
+        return new Regex(link, "https?://(?:www\\.)?updown\\.bz/([a-zA-Z0-9]+)$").getMatch(0);
     }
 
     private void setConfigElements() {
         return;
+    }
+
+    private class AccountData {
+        private final long traffic_max;
+        private final long traffic_used;
+        private final long premium_until;
+
+        public AccountData(Long traffic_max, Long traffic_used, Long premium_until) {
+            this.traffic_max = traffic_max != null ? traffic_max : 0L;
+            this.traffic_used = traffic_used != null ? traffic_used : 0L;
+            this.premium_until = premium_until != null ? premium_until : 0L;
+        }
+
+        public long getPremiumUntil() {
+            return premium_until;
+        }
+
+        public long getTrafficMax() {
+            return traffic_max;
+        }
+
+        public long getTrafficUsed() {
+            return traffic_used;
+        }
+    }
+
+    private class PrivateDownloadData {
+        private final String host;
+        private final long   traffic_left;
+
+        public PrivateDownloadData(String host, Long traffic_left) {
+            this.host = host != null ? host : "";
+            this.traffic_left = traffic_left != null ? traffic_left : 0L;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public long getTrafficLeft() {
+            return traffic_left;
+        }
+    }
+
+    private class SessionData {
+        private final String sessionid;
+        private final long   expires_at;
+
+        public SessionData(String sessionid, Long expires_at) {
+            this.sessionid = sessionid != null ? sessionid : "";
+            this.expires_at = expires_at != null ? expires_at : 0L;
+        }
+
+        public String getSessionId() {
+            return sessionid;
+        }
+
+        public long getExpiresAt() {
+            return expires_at;
+        }
+
+    }
+
+    private class FileData {
+        private final String  id;
+        private final boolean online;
+        private final String  name;
+        private final long    size;
+        private final String  md5;
+        private final boolean protect;
+
+        public FileData(String id, Boolean online, String name, Long size, String md5, Boolean protect) {
+            this.id = id != null ? id : "";
+            this.online = Boolean.TRUE.equals(online);
+            this.name = name != null ? name : "";
+            this.size = size != null ? size : 0L;
+            this.md5 = md5 != null && md5.length() == 32 ? md5 : "";
+            this.protect = Boolean.TRUE.equals(protect);
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public boolean isOnline() {
+            return online;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public String getMd5() {
+            return md5;
+        }
+
+        public boolean isProtected() {
+            return protect;
+        }
+    }
+
+    private enum ApiStatus {
+        SUCCESS(1),
+        UNKNOWN(0),
+        ERROR(-1),
+        API_ERROR(-2),
+        MISSING_ARGUMENT(-3),
+        INVALID_ARGUMENT(-4),
+        MISSING_OR_INVALID_ARGUMENT(-5),
+        AUTH_FAILED(-6),
+        NO_PREMIUM(-7);
+
+        private final int code;
+
+        private ApiStatus(int code) {
+            this.code = code;
+        }
+
+        public static ApiStatus get(Long code) {
+            for (ApiStatus status : ApiStatus.values()) {
+                if (status.code == code) { return status; }
+            }
+            return ApiStatus.UNKNOWN;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public boolean isSuccess() {
+            return code >= ApiStatus.SUCCESS.code;
+        }
+
+        public boolean isError() {
+            return code <= ApiStatus.UNKNOWN.code;
+        }
+
+        public boolean isUnknown() {
+            return this == ApiStatus.UNKNOWN;
+        }
+
+        public boolean isAuthFailed() {
+            return this == ApiStatus.AUTH_FAILED;
+        }
+
+        public boolean isNoPremium() {
+            return this == ApiStatus.NO_PREMIUM;
+        }
     }
 }
