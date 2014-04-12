@@ -56,7 +56,7 @@ public class Mangafox extends PluginForDecrypt {
                 logger.warning("Invalid link: " + parameter);
                 return decryptedLinks;
             }
-            final String nextChapter = br.getRegex("<span>Next Chapter:</span> <a href=\"(http://mangafox\\.me/[^<>\"]*?)\">[^<>\"]*?</a></p>").getMatch(0);
+            final String nextChapter = null;// br.getRegex("<span>Next Chapter:</span> <a href=\"(http://mangafox\\.me/[^<>\"]*?)\">[^<>\"]*?</a></p>").getMatch(0);
             // We get the title
             String title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);
             if (title == null) {
@@ -78,7 +78,7 @@ public class Mangafox extends PluginForDecrypt {
             for (int i = 1; i <= numberOfPages; i++) {
                 br.getPage(url + "/" + i + ".html");
                 String pageNumber = String.format(format, i);
-                final String[][] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\"><img src=\"(http://.*?(.[a-z]+))\"").getMatches();
+                final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\"><img src=\"(http://.*?(\\.[a-z]+))\"").getRow(0);
                 if (unformattedSource == null || unformattedSource.length == 0) {
                     skippedPics++;
                     if (skippedPics > 5) {
@@ -87,8 +87,8 @@ public class Mangafox extends PluginForDecrypt {
                     }
                     continue;
                 }
-                String source = unformattedSource[0][0];
-                String extension = unformattedSource[0][1];
+                String source = unformattedSource[0];
+                String extension = unformattedSource[1];
                 final DownloadLink link = createDownloadlink("directhttp://" + source);
                 link.setFinalFileName(title + " – page " + pageNumber + extension);
                 fp.add(link);
