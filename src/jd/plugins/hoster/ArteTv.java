@@ -101,7 +101,11 @@ public class ArteTv extends PluginForHost {
 
     private void download(DownloadLink downloadLink) throws Exception {
         if (CLIPURL.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, CLIPURL);
+            try {
+                dl = new RTMPDownload(this, downloadLink, CLIPURL);
+            } catch (final NoClassDefFoundError e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+            }
             setupRTMPConnection(dl);
             if (!((RTMPDownload) dl).startDownload()) {
                 if (downloadLink.getBooleanProperty("STREAMURLISEXPIRED", false)) {

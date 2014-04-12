@@ -122,13 +122,15 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             if (ID != null && lang != null) {
                 String title = getTitle(br);
 
-                String tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + "_PLUS7-" + lang + "/ALL/ALL.json";
+                String tv_channel = br.getRegex("<li class=\"video\" data\\-vid=\"" + ID + "(_[A-Za-z0-9_\\-]+)\\-[A-Za-z]+\">").getMatch(0);
+                if (tv_channel == null) tv_channel = "_PLUS7";
+                String tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + tv_channel + "-" + lang + "/ALL/ALL.json";
                 String vsrRegex = "\"VSR\":\\{(.*?\\})\\}";
                 String strRegex = "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}";
                 String valRegex = "\"(.*?)\"\\s*:\\s*\"?(.*?)\"?,";
                 if (cfg.getBooleanProperty(HBBTV, false)) {
                     br.getHeaders().put("User-Agent", "HbbTV/1.1.1 (;;;;;) jd-arte.tv-plugin");
-                    tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/" + lang + "/" + ID + "_PLUS7-" + lang + "/HBBTV/ALL.json";
+                    tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/" + lang + "/" + ID + tv_channel + "-" + lang + "/HBBTV/ALL.json";
                     vsrRegex = "\"VSR\":\\[(.*?)\\]";
                     strRegex = "\\{(.*?\"VQU\":\"([^\"]+)\".*?)\\}";
                     valRegex = "\"([^\"]+)\":\"([^\"]+)\"";
