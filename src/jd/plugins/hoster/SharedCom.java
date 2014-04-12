@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -46,20 +47,29 @@ public class SharedCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private static final String NOCHUNKS     = "NOCHUNKS";
+
+    private static final String INVALIDLINKS = "https?://(www\\.)?shared\\.com/(login|plans)";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw e;
+        }
         if (br.containsHTML("id=\"page-not-found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("name: \"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Shared</title>").getMatch(0);
         String filesize = br.getRegex("class=\"attachment\\-size\">([^<>\"]*?)<").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        /* Filesize is not shown for video files */
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -73,8 +83,10 @@ public class SharedCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         try {
             if (!this.dl.startDownload()) {
