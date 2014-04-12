@@ -173,7 +173,8 @@ public class CosmoBoxOrg extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "File: <font style=\"color:darkred\">([^<>\"]*?)</font>").getMatch(0);
+
+            fileInfo[0] = new Regex(correctedBR, "Filename:</b></td><td nowrap>([^<]+)</td>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -190,8 +191,22 @@ public class CosmoBoxOrg extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+        AvailableStatus availableStatus = requestFileInformation(downloadLink);
+        if (availableStatus != null) {
+            switch (availableStatus) {
+            case FALSE:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case UNCHECKABLE:
+            case UNCHECKED:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+            case TRUE:
+                doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+
+            }
+        } else {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporarily not available", 15 * 60 * 1000l);
+        }
+
     }
 
     @SuppressWarnings("unused")
