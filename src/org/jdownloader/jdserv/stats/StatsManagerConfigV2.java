@@ -12,4 +12,10 @@ public interface StatsManagerConfigV2 extends ConfigInterface {
 
     void setEnabled(boolean b);
 
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    void setAlwaysAllowLogUploads(boolean dontShowAgainSelected);
+
+    boolean isAlwaysAllowLogUploads();
+
 }

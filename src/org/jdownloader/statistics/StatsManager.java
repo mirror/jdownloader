@@ -172,7 +172,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public void onDownloadWatchdogStateIsRunning() {
     }
 
-    private void createAndUploadLog(PostAction action) {
+    private void createAndUploadLog(PostAction action, boolean silent) {
 
         final File[] logs = Application.getResource("logs").listFiles();
 
@@ -233,7 +233,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             zip.delete();
                             if (zip.length() > 1024 * 1024 * 10) throw new Exception("Filesize: " + zip.length());
                             sendLogDetails(new LogDetails(id, action.getData()));
-                            UIOManager.I().showMessageDialog(_GUI._.StatsManager_createAndUploadLog_thanks_(action.getData()));
+                            if (!silent) {
+                                UIOManager.I().showMessageDialog(_GUI._.StatsManager_createAndUploadLog_thanks_(action.getData()));
+                            }
 
                         } catch (Exception e) {
                             logger.log(e);
@@ -269,6 +271,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             // HashResult hashResult = downloadController.getHashResult();
             // long startedAt = downloadController.getStartTimestamp();
             DownloadLink link = downloadController.getDownloadLink();
+
             DownloadLogEntry dl = new DownloadLogEntry();
             Throwable th = null;
             if (result.getResult() != null) {
@@ -676,34 +679,39 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                                     new Thread("Log Requestor") {
                                                                         @Override
                                                                         public void run() {
-                                                                            UploadSessionLogDialogInterface d = UIOManager.I().show(UploadSessionLogDialogInterface.class, new UploadSessionLogDialog(action.getData(), downloadLink));
-                                                                            if (d.getCloseReason() == CloseReason.OK) {
-                                                                                UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
+                                                                            if (config.isAlwaysAllowLogUploads()) {
+                                                                                createAndUploadLog(action, true);
+                                                                            } else {
+                                                                                UploadSessionLogDialogInterface d = UIOManager.I().show(UploadSessionLogDialogInterface.class, new UploadSessionLogDialog(action.getData(), downloadLink));
+                                                                                config.setAlwaysAllowLogUploads(d.isDontShowAgainSelected());
+                                                                                if (d.getCloseReason() == CloseReason.OK) {
+                                                                                    UIOManager.I().show(ProgressInterface.class, new ProgressDialog(new ProgressGetter() {
 
-                                                                                    @Override
-                                                                                    public void run() throws Exception {
-                                                                                        createAndUploadLog(action);
-                                                                                    }
+                                                                                        @Override
+                                                                                        public void run() throws Exception {
+                                                                                            createAndUploadLog(action, false);
+                                                                                        }
 
-                                                                                    @Override
-                                                                                    public String getString() {
-                                                                                        return null;
-                                                                                    }
+                                                                                        @Override
+                                                                                        public String getString() {
+                                                                                            return null;
+                                                                                        }
 
-                                                                                    @Override
-                                                                                    public int getProgress() {
-                                                                                        return -1;
-                                                                                    }
+                                                                                        @Override
+                                                                                        public int getProgress() {
+                                                                                            return -1;
+                                                                                        }
 
-                                                                                    @Override
-                                                                                    public String getLabelString() {
-                                                                                        return null;
-                                                                                    }
-                                                                                }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
-                                                                                    public java.awt.Dialog.ModalityType getModalityType() {
-                                                                                        return ModalityType.MODELESS;
-                                                                                    };
-                                                                                });
+                                                                                        @Override
+                                                                                        public String getLabelString() {
+                                                                                            return null;
+                                                                                        }
+                                                                                    }, 0, _GUI._.StatsManager_run_upload_error_title(), _GUI._.StatsManager_run_upload_error_message(), new AbstractIcon(IconKey.ICON_UPLOAD, 32)) {
+                                                                                        public java.awt.Dialog.ModalityType getModalityType() {
+                                                                                            return ModalityType.MODELESS;
+                                                                                        };
+                                                                                    });
+                                                                                }
                                                                             }
                                                                         }
                                                                     }.start();
@@ -723,7 +731,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                                                                     @Override
                                                                     public void run() throws Exception {
-                                                                        createAndUploadLog(action);
+                                                                        createAndUploadLog(action, false);
                                                                     }
 
                                                                     @Override
@@ -959,7 +967,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                                                     @Override
                                                     public void run() throws Exception {
-                                                        createAndUploadLog(action);
+                                                        createAndUploadLog(action, false);
                                                     }
 
                                                     @Override

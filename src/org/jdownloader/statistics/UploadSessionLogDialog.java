@@ -23,6 +23,7 @@ import org.appwork.uio.UIOManager;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -36,12 +37,25 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
     private DownloadLink downloadLink;
     private String       errorID;
     private int          desiredWidh = 0;
+    private String       dK;
 
     public UploadSessionLogDialog(String errorID, DownloadLink downloadLink) {
-        super(UIOManager.LOGIC_COUNTDOWN, _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_title2(), new AbstractIcon(IconKey.ICON_BOTTY_STOP, -1), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_yes(), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_no());
-        setTimeout(5 * 60 * 1000);
+        super(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_object_title2(), new AbstractIcon(IconKey.ICON_BOTTY_STOP, -1), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_yes(), _GUI._.UploadSessionLogDialog_UploadSessionLogDialog_no());
+        setTimeout(10 * 60 * 1000);
         this.downloadLink = downloadLink;
         this.errorID = errorID;
+        dK = "UploadSessionLogDialog+" + System.currentTimeMillis();
+
+    }
+
+    @Override
+    public String getDontShowAgainKey() {
+        return dK;
+    }
+
+    @Override
+    protected String getDontShowAgainLabelText() {
+        return _GUI._.UploadSessionLogDialog_getDontShowAgainLabelText_always();
     }
 
     @Override
@@ -51,7 +65,7 @@ public class UploadSessionLogDialog extends AbstractDialog<Object> implements Up
 
     @Override
     protected int getPreferredWidth() {
-        return Math.max(600, desiredWidh);
+        return Math.max(800, desiredWidh);
     }
 
     @Override

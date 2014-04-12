@@ -4527,4 +4527,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Thank you for reporting a problem.\r\nPlease continue to report problems whenever a download does not work as expected.\r\nYou will soon be able to see the report statistics on http://my.jdownloader.org.\r\n --- The more reports, the faster we can fix the Plugin. ---" })
     String VoteFinderWindow_runInEDT_thankyou_2();
 
+    @Default(lngs = { "en" }, values = { "Always allow Log Upload without asking." })
+    String UploadSessionLogDialog_getDontShowAgainLabelText_always();
+
 }
