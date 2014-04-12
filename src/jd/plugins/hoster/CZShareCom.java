@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,7 +39,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz", "czshare.com" }, urls = { "http://(www\\.)?sdilej\\.cz/\\d+/.{1}", "fhirtogjnrogjmrogowcertvntzjuilthbfrwefdDELETE_MErvrgjzjz7ef" }, flags = { 0, 2 })
 public class CZShareCom extends PluginForHost {
@@ -53,6 +51,22 @@ public class CZShareCom extends PluginForHost {
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://sdilej.cz/registrace");
+    }
+
+    public Boolean rewriteHost(DownloadLink link) {
+        if (link != null && "czshare.com".equals(link.getHost())) {
+            link.setHost("sdilej.cz");
+            return true;
+        }
+        return false;
+    }
+
+    public Boolean rewriteHost(Account acc) {
+        if (acc != null && "czshare.com".equals(acc.getHoster())) {
+            acc.setHoster("sdilej.cz");
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -83,12 +97,8 @@ public class CZShareCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        String trafficleft = br.getRegex("kredit: <strong>(.*?)</").getMatch(0);
-        // Regex probably broken
-        String expires = br.getRegex("Velikost kreditu.*?Platnost do</td>.*?<td>.*?<td>(.*?)</td>").getMatch(0);
-        if (expires != null && !"neomezená".equals(expires)) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy HH:mm", Locale.GERMANY));
-        } else if (expires == null) {
+        final String trafficleft = br.getRegex("kredit: <strong>(.*?)</").getMatch(0);
+        if (trafficleft == null) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -97,7 +107,7 @@ public class CZShareCom extends PluginForHost {
             }
 
         }
-        if (trafficleft != null) ai.setTrafficLeft(trafficleft.replace(",", "."));
+        ai.setTrafficLeft(trafficleft.replace(",", "."));
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
@@ -172,7 +182,7 @@ public class CZShareCom extends PluginForHost {
         String linkID = new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/").getMatch(0);
         if (linkID == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage("http://sdilej.cz/profi_down.php", "id=" + linkID + "&code=" + code);
-        String dllink = br.getRedirectLocation();
+        final String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -37,9 +37,15 @@ public class ImgBoxCom extends PluginForDecrypt {
     private static final String GALLERYLINK    = "http://(www\\.)?imgbox\\.com/g/[A-Za-z0-9]+";
     private static final String PICTUREOFFLINE = "The image in question does not exist|The image has been deleted due to a DMCA complaint";
 
+    private static final String INVALIDLINKS   = "http://(www\\.)?imgbox\\.com/(help|login|privacy|register|tos|images|dmca)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (br.containsHTML(">The page you were looking for")) {
             logger.info("Link offline: " + parameter);

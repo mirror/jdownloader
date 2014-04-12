@@ -42,7 +42,7 @@ public class VoaYeursCom extends PluginForDecrypt {
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Porno HD \\- VOAYEURS\\.COM</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         String externID = br.getRedirectLocation();
-        if (externID != null && externID.length() < 40) {
+        if (externID != null && externID.length() < 40 || br.containsHTML(">El video ha sido eliminado<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -335,6 +335,14 @@ public class VoaYeursCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+        }
+        /* Find random directlinks */
+        externID = br.getRegex("\"(https?://[^<>\"]*?\\.(mp4|flv))\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
+            dl.setFinalFileName(filename + externID.substring(externID.lastIndexOf(".")));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         if (externID == null) {
             logger.warning("Couldn't decrypt link: " + parameter);

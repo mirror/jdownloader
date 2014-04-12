@@ -73,7 +73,7 @@ public class DevArtCm extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.getPage(parameter);
         if (br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {

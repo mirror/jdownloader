@@ -68,7 +68,7 @@ public class PerseoIn extends PluginForDecrypt {
             fp.setName("perseo.in folder - " + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
             fp.addLinks(decryptedLinks);
         } else {
-            if (br.getURL().contains("/error.php?e=")) {
+            if (br.getURL().contains("/error.php?e=") || br.getHttpConnection().getResponseCode() == 404) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }

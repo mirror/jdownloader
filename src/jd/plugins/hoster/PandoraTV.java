@@ -127,6 +127,7 @@ public class PandoraTV extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setCustomCharset("UTF-8");
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("title\": \"(.*?)\",").getMatch(0);
         if (filename == null) {

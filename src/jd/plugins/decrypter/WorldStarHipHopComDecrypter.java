@@ -72,6 +72,11 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
             return decryptedLinks;
         }
+        externID = br.getRegex("url=(http%3A%2F%2Fapi\\.soundcloud\\.com%2Ftracks%2F[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+            return decryptedLinks;
+        }
         // Probably no external video, pass it over to the hoster plugin
         final DownloadLink dl = createDownloadlink(parameter.replace("worldstarhiphop.com/", "worldstarhiphopdecrypted.com/"));
         decryptedLinks.add(dl);

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -45,7 +46,13 @@ public class BigDownloaderCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final SocketTimeoutException e) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML("Ce fichier n'existe pas ou a été supprimé")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<b>Fichier : </b>([^<>\"]*?)<br />").getMatch(0);
         String filesize = br.getRegex("<b>Taille :</b>([^<>\"]*?)<br />").getMatch(0);

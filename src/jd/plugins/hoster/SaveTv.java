@@ -529,6 +529,9 @@ public class SaveTv extends PluginForHost {
                 logger.info(NICE_HOST + ": timesfailed_unknown_dlerror - disabling current host!");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unbekannter Server-Fehler - bitte dem JDownloader Support mit Log melden!", 60 * 60 * 1000l);
             }
+        } else if (dl.getConnection().getLongContentLength() <= 1048576) {
+            /* Avoid downloading trash data */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server-Fehler: Datei vom Server zu klein", 60 * 60 * 1000l);
         }
         if (FORCE_ORIGINAL_FILENAME) {
             downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));

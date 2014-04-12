@@ -30,12 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/(?!livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/)((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
 public class XXXBlg extends PluginForDecrypt {
 
     public XXXBlg(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String INVALIDLINKS = "http://(www\\.)?xxx\\-blog\\.to/(livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/|comments/|author/|page/|category/).*?";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -46,6 +48,10 @@ public class XXXBlg extends PluginForDecrypt {
         pwList.add("xxx-blog.org");
         pwList.add("xxx-blog.to");
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
+        if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("Fehler 404 \\- Seite nicht gefunden") || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {

@@ -72,7 +72,7 @@ public class NovaFileCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
-    // mods:
+    // mods: login, prepBr
     // non account: 1 * 1, no resume
     // free account: untested, set same as FREE
     // premium account: 1 * 10
@@ -117,6 +117,10 @@ public class NovaFileCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        try {
+            br.setAllowedResponseCodes(418);
+        } catch (final Throwable e) {
+        }
     }
 
     @Override
@@ -662,25 +666,26 @@ public class NovaFileCom extends PluginForHost {
                         return;
                     }
                 }
+                br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login");
-                Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.findID();
-                    rc.load();
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "novafile.com", "http://novafile.com", true);
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, dummyLink);
-                    String postData = "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&op=login&redirect=";
-                    final String rand = br.getRegex("name=\"rand\" value=\"([^<>\"]*?)\"").getMatch(0);
-                    if (rand != null) postData += "&rand=" + rand;
+                for (int i = 1; i <= 2; i++) {
+                    String postData = "op=login&redirect=&rand=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.findID();
+                        rc.load();
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "novafile.com", "http://novafile.com", true);
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String c = getCaptchaCode(cf, dummyLink);
+                        postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                        final String rand = br.getRegex("name=\"rand\" value=\"([^<>\"]*?)\"").getMatch(0);
+                        if (rand != null) postData += "&rand=" + rand;
+                    }
                     br.postPage(COOKIE_HOST + "/login", postData);
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) continue;
                 }
+                br.setFollowRedirects(false);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     final String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {

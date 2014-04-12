@@ -43,13 +43,18 @@ public class VidobuComDecrypter extends PluginForDecrypt {
             logger.info("Video only available for registered users: " + parameter);
             return decryptedLinks;
         }
-        String embedUrl = br.getRegex("\"(http://player\\.vimeo\\.com/video/\\d+)").getMatch(0);
-        if (embedUrl != null) {
-            DownloadLink dl = createDownloadlink(embedUrl);
+        String externID = br.getRegex("\"(http://player\\.vimeo\\.com/video/\\d+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
             dl.setProperty("Referer", parameter);
             decryptedLinks.add(dl);
         }
-        if (embedUrl == null) {
+        externID = br.getRegex("videolist: \"(http://[A-Za-z0-9\\-_]+\\.mynet\\.com/services/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+        }
+        if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

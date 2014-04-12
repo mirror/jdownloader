@@ -36,14 +36,15 @@ public class TextSnipCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        br.setFollowRedirects(false);
         /* Error handling */
         if ("http://textsnip.com/".equals(br.getRedirectLocation())) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("action=\"create\\.php\"")) {
+        if (br.containsHTML("action=\"create\\.php\"") || br.containsHTML(">Index of")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

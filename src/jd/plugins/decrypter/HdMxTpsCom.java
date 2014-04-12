@@ -71,7 +71,7 @@ public class HdMxTpsCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML(">404 Not Found<")) {
+        if (br.containsHTML(">404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -85,6 +85,10 @@ public class HdMxTpsCom extends PluginForDecrypt {
                 finallink = br.getRegex("<\\!--<a href=\"(http://.*?)\"").getMatch(0);
                 if (finallink == null) finallink = br.getRegex("\\d+\\&url=(http://.*?)\"").getMatch(0);
             }
+        }
+        if (finallink == null && br.containsHTML("download_counter\\.php\\?action=mixtape\\&id_mixtape=\\d+\\&url=\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
         if (finallink == null) {
             logger.warning("Failed to find the finallink(s) for link: " + parameter);

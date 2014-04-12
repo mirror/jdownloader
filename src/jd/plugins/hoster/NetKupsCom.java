@@ -62,7 +62,7 @@ public class NetKupsCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL().replace("play=", "d="));
-        if (br.containsHTML(">File not found|>This file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found|>This file has been deleted|>This file has been lost due to a system failure|>This file has been reported")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<strong>File name:</strong>([^<>\"]*?)<br").getMatch(0);
         String filesize = br.getRegex("<strong>File size:</strong>([^<>\"]*?)<br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

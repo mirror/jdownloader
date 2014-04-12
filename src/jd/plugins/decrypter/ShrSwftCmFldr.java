@@ -38,6 +38,10 @@ public class ShrSwftCmFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.contains("/img/")) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
         br.setCookie("http://shareswift.com", "lang", "english");
         br.getPage(parameter);
         if (br.containsHTML("You have to wait|Download File")) {
