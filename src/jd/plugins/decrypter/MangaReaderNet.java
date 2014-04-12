@@ -42,6 +42,8 @@ public class MangaReaderNet extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        // website issue not JD.
+        if (br.getRequest().getContentLength() == 0) return decryptedLinks;
         if (br.containsHTML("> is not published yet\\. Once <")) {
             logger.info("Non published release: " + parameter);
             return decryptedLinks;
