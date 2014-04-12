@@ -141,8 +141,8 @@ public class UpDownBz extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
 
         // extract file ids to check
-        List<String> ids = new ArrayList<>(urls.length);
-        List<DownloadLink> links = new ArrayList<>(urls.length);
+        List<String> ids = new ArrayList<String>(urls.length);
+        List<DownloadLink> links = new ArrayList<DownloadLink>(urls.length);
         for (DownloadLink url : urls) {
             String id = getFileId(url.getDownloadURL());
             if (id != null && id.length() > 0) {
@@ -320,7 +320,10 @@ public class UpDownBz extends PluginForHost {
             ApiStatus status = ApiStatus.UNKNOWN;
             try {
                 status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
-            } catch (NullPointerException | ClassCastException e) {
+
+            } catch (ClassCastException e) {
+                e.printStackTrace();
+            } catch (NullPointerException e) {
                 e.printStackTrace();
             }
 
@@ -352,7 +355,10 @@ public class UpDownBz extends PluginForHost {
                         String md5 = (String) ((JSonValue) json_data.get("md5")).getValue();
 
                         data.put(id, new FileData(id, online, name, size, md5, protect));
-                    } catch (NullPointerException | ClassCastException e) {
+                    } catch (NullPointerException e) {
+                        e.printStackTrace();
+                        continue;
+                    } catch (ClassCastException e) {
                         e.printStackTrace();
                         continue;
                     }
@@ -424,7 +430,9 @@ public class UpDownBz extends PluginForHost {
             ApiStatus status = ApiStatus.UNKNOWN;
             try {
                 status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
-            } catch (NullPointerException | ClassCastException e) {
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            } catch (ClassCastException e) {
                 e.printStackTrace();
             }
 
@@ -440,7 +448,10 @@ public class UpDownBz extends PluginForHost {
                     Long traffic_left = (Long) ((JSonValue) json_data.get("l")).getValue();
 
                     data = new PrivateDownloadData(host, traffic_left);
-                } catch (NullPointerException | ClassCastException e) {
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                    return null;
+                } catch (ClassCastException e) {
                     e.printStackTrace();
                     return null;
                 }
@@ -481,7 +492,10 @@ public class UpDownBz extends PluginForHost {
             ApiStatus status = ApiStatus.UNKNOWN;
             try {
                 status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
-            } catch (NullPointerException | ClassCastException e) {
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+
+            } catch (ClassCastException e) {
                 e.printStackTrace();
             }
 
@@ -495,7 +509,11 @@ public class UpDownBz extends PluginForHost {
                     // extract session values
                     sessionid = (String) ((JSonValue) json_data.get("s")).getValue();
                     expires_at = (Long) ((JSonValue) json_data.get("e")).getValue();
-                } catch (NullPointerException | ClassCastException e) {
+                } catch (NullPointerException e) {
+
+                    e.printStackTrace();
+                    return null;
+                } catch (ClassCastException e) {
                     e.printStackTrace();
                     return null;
                 }
@@ -542,7 +560,9 @@ public class UpDownBz extends PluginForHost {
             ApiStatus status = ApiStatus.UNKNOWN;
             try {
                 status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
-            } catch (NullPointerException | ClassCastException e) {
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            } catch (ClassCastException e) {
                 e.printStackTrace();
             }
 
@@ -559,7 +579,10 @@ public class UpDownBz extends PluginForHost {
                     Long traffic_max = (Long) ((JSonValue) json_data.get("traffic_max")).getValue();
 
                     data = new AccountData(traffic_max, traffic_used, premium_until);
-                } catch (NullPointerException | ClassCastException e) {
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                    return null;
+                } catch (ClassCastException e) {
                     e.printStackTrace();
                     return null;
                 }
