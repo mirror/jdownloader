@@ -25,6 +25,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -38,6 +39,86 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://dailymotiondecrypted\\.com/video/\\w+" }, flags = { 2 })
 public class DailyMotionCom extends PluginForHost {
+    private static String getQuality(final String quality, final String videosource) {
+        return new Regex(videosource, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
+    }
+
+    /* Sync the following functions in hoster- and decrypterplugin */
+    public static String getVideosource(final Browser br) {
+        String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
+        if (videosource == null) videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
+        if (videosource == null) videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
+        if (videosource != null) videosource = Encoding.htmlDecode(videosource).replace("\\", "");
+        return videosource;
+    }
+
+    public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
+        LinkedHashMap<String, String[]> QUALITIES = new LinkedHashMap<String, String[]>();
+        final String[][] qualities = { { "hd1080URL", "1" }, { "hd720URL", "2" }, { "hqURL", "3" }, { "sdURL", "4" }, { "ldURL", "5" }, { "video_url", "5" } };
+        for (final String quality[] : qualities) {
+            final String qualityName = quality[0];
+            final String qualityNumber = quality[1];
+            final String currentQualityUrl = getQuality(qualityName, videosource);
+            if (currentQualityUrl != null) {
+                final String[] dlinfo = new String[4];
+                dlinfo[0] = currentQualityUrl;
+                dlinfo[1] = null;
+                dlinfo[2] = qualityName;
+                dlinfo[3] = qualityNumber;
+                QUALITIES.put(qualityNumber, dlinfo);
+            }
+        }
+        // List empty or only 1 link found -> Check for (more) links
+        if (QUALITIES.isEmpty() || QUALITIES.size() == 1) {
+            final String manifestURL = new Regex(videosource, "\"autoURL\":\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (manifestURL != null) {
+                /** HDS */
+                final String[] dlinfo = new String[4];
+                dlinfo[0] = manifestURL;
+                dlinfo[1] = "hds";
+                dlinfo[2] = "autoURL";
+                dlinfo[3] = "7";
+                QUALITIES.put("7", dlinfo);
+            }
+
+            // Try to avoid HDS
+            br.getPage("http://www.dailymotion.com/embed/video/" + new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0));
+            videosource = br.getRegex("var info = \\{(.*?)\\},").getMatch(0);
+            if (videosource != null) {
+                videosource = Encoding.htmlDecode(videosource).replace("\\", "");
+                final String[][] embedQualities = { { "stream_h264_ld_url", "5" }, { "stream_h264_url", "4" }, { "stream_h264_hq_url", "3" }, { "stream_h264_hd_url", "2" }, { "stream_h264_hd1080_url", "1" } };
+                for (final String quality[] : embedQualities) {
+                    final String qualityName = quality[0];
+                    final String qualityNumber = quality[1];
+                    final String currentQualityUrl = getQuality(qualityName, videosource);
+                    if (currentQualityUrl != null) {
+                        final String[] dlinfo = new String[4];
+                        dlinfo[0] = currentQualityUrl;
+                        dlinfo[1] = null;
+                        dlinfo[2] = qualityName;
+                        dlinfo[3] = qualityNumber;
+                        QUALITIES.put(qualityNumber, dlinfo);
+                    }
+                }
+            }
+            // if (FOUNDQUALITIES.isEmpty()) {
+            // String[] values =
+            // br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
+            // if (values == null || values.length != 2) {
+            // /** RTMP */
+            // final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new
+            // Random(10000));
+            // dl.setProperty("isrtmp", true);
+            // dl.setProperty("mainlink", PARAMETER);
+            // dl.setFinalFileName(FILENAME + "_RTMP.mp4");
+            // fp.add(dl);
+            // decryptedLinks.add(dl);
+            // return decryptedLinks;
+            // }
+            // }
+        }
+        return QUALITIES;
+    }
 
     public String               dllink                 = null;
     private static final String MAINPAGE               = "http://www.dailymotion.com/";
@@ -129,9 +210,9 @@ public class DailyMotionCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage(dl.getStringProperty("mainlink", null));
             br.setFollowRedirects(false);
-            final String videosource = jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(this.br);
+            final String videosource = getVideosource(this.br);
             if (videosource == null) return null;
-            LinkedHashMap<String, String[]> foundqualities = jd.plugins.decrypter.DailyMotionComDecrypter.findVideoQualities(this.br, dl.getDownloadURL(), videosource);
+            LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this.br, dl.getDownloadURL(), videosource);
             final String qualityvalue = dl.getStringProperty("qualityvalue", null);
             final String directlinkinfo[] = foundqualities.get(qualityvalue);
             dllink = Encoding.htmlDecode(directlinkinfo[0]);
