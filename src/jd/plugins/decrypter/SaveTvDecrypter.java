@@ -61,8 +61,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private final String           CRAWLER_DISABLE_DIALOGS           = "CRAWLER_DISABLE_DIALOGS";
     private final String           CRAWLER_LASTDAYS_COUNT            = "CRAWLER_LASTDAYS_COUNT";
 
-    private static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE = 12.605;
-    private static final double    QUALITY_H264_MOBILE_MB_PER_MINUTE = 4.64;
+    private static final double    QUALITY_H264_NORMAL_MB_PER_MINUTE = jd.plugins.hoster.SaveTv.QUALITY_H264_NORMAL_MB_PER_MINUTE;
+    private static final double    QUALITY_H264_MOBILE_MB_PER_MINUTE = jd.plugins.hoster.SaveTv.QUALITY_H264_MOBILE_MB_PER_MINUTE;
 
     private final SubConfiguration cfg                               = SubConfiguration.getConfig("save.tv");
     private final boolean          FAST_LINKCHECK                    = cfg.getBooleanProperty(CRAWLER_ENABLE_FASTER, false);
@@ -303,6 +303,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final Regex dateRegex = new Regex(id_info, "(\\d{2}\\.\\d{2}\\.\\d{2}) \\| (\\d{2}:\\d{2})[\t\n\r ]+\\((\\d+)min\\)");
         final String date = dateRegex.getMatch(0);
         final String time = dateRegex.getMatch(1);
+        final String tv_station = new Regex(id_info, "global/TVLogoDE/[A-Za-z0-9\\-_]+\\.gif\" width=\"\\d+\" height=\"\\d+\" alt=\"([^<>\"]*?)\"").getMatch(0);
         final int duration_minutes = Integer.parseInt(dateRegex.getMatch(2));
         double filesize;
         /* User doesn't prefer the mobile version */
@@ -339,13 +340,13 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 dl.setProperty("category", 2);
                 dl.setProperty("seriestitle", name);
                 dl.setProperty("episodename", sur_name);
-
             } else {
                 /* For all others */
                 dl.setProperty("category", 1);
             }
 
             // Add remaining information
+            dl.setProperty("plain_tv_station", Encoding.htmlDecode(tv_station).trim());
             dl.setProperty("plainfilename", name);
             dl.setProperty("type", ".mp4");
             dl.setProperty("originaldate", datemilliseconds);
