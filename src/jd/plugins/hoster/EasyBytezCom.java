@@ -592,7 +592,9 @@ public class EasyBytezCom extends PluginForHost {
             }
         }
         // monitor this
-        if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {
+
+        // 12th april 2014: <font style="color:#d33;">You have reached the download-limit: 1024 Mb for last 1 days</font>
+        if (cbr.containsHTML("You have reached the download(-| )limit[^<]+for last[^<]+")) {
             /*
              * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
              * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
