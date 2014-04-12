@@ -249,9 +249,9 @@ public class PutLockerCom extends PluginForHost {
 
         // unknown HTTP response
 
+        /* Not always needed */
         final Form freeform = br.getFormbyKey("confirm");
-        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.submitForm(freeform);
+        if (freeform != null) br.submitForm(freeform);
 
         if (br.containsHTML("prepare_continue_btn")) {
             sleep(5000, downloadLink, "Prepare File...");
