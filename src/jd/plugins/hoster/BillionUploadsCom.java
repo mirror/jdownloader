@@ -606,6 +606,11 @@ public class BillionUploadsCom extends PluginForHost {
                 logger.warning("Expired download session, lets retry!");
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            if (cbr.containsHTML("buzy.init")) {
+                logger.warning("Server Busy");
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server busy. Try again later.", 5 * 60 * 1000l);
+
+            }
             if (cbr.containsHTML("Wrong captcha")) {
                 logger.warning("Wrong Captcha response!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
