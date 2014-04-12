@@ -946,6 +946,7 @@ UploadSessionLogDialog_UploadSessionLogDialog_object_more=(daha fazla...)
 UploadSessionLogDialog_UploadSessionLogDialog_object_msg2=Dosya indirilirken bilinmeyen bir hata meydana geldi. Bu sorunu çözmek için nedenle ilgili daha fazla ayrıntıya ihtiyacımız var. JDownloader hata ile ilgili tüm gereken bilgileri otomatik olarak toplayabilir. Bu bilgileri bir an önce bize göndererek lütfen bu sorunu düzeltmemize yardım edin.
 UploadSessionLogDialog_UploadSessionLogDialog_object_title2=Yardımınıza ihtiyacımız var!
 UploadSessionLogDialog_UploadSessionLogDialog_yes=Yardım etmek istiyorum! Devam et.
+UploadSessionLogDialog_getDontShowAgainLabelText_always=Sormadan Günlük Göndermeye her zaman izin ver.
 UploadSessionLogDialog_layoutDialogContent_errorid=Hata Kodu
 UrlColumn_UrlColumn_open_tt_=URL'yi tarayıcıda görüntülemek için buraya tıklayın
 VariantColumn_VariantColumn_name_=Değişim
