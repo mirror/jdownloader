@@ -139,9 +139,11 @@ public class Tube8Com extends PluginForHost {
     }
 
     private String standardAndMobile(DownloadLink downloadLink) throws Exception {
+        final String hash = br.getRegex("videoHash[\t\n\r ]+=[\t\n\r ]\"([a-z0-9]+)\"").getMatch(0);
+        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage("http://www.tube8.com/ajax/getVideoDownloadURL.php?_=" + System.currentTimeMillis() + "&hash=" + br.getRegex("var hash = \"([a-z0-9]+)\"").getMatch(0) + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0));
+        br2.getPage("http://www.tube8.com/ajax/getVideoDownloadURL.php?hash=" + hash + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0) + "&download_cdn=true&_=" + System.currentTimeMillis());
         String ret = br2.getRegex("^(.*?)$").getMatch(0);
         return ret != null ? ret.replace("\\", "") : "";
     }
