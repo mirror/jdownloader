@@ -46,17 +46,17 @@ public class MyDownloaderNet extends PluginForHost {
         this.enablePremium("http://mydownloader.net/buy_credits.php");
     }
 
+    private String  token = null;
+    private Account acc   = null;
+
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
 
-        String page = null;
-        String token = null;
-
         try {
-            // login
+            /* login */
             token = getLoginToken(account);
         } catch (final Exception e) {
             account.setValid(false);
@@ -64,18 +64,18 @@ public class MyDownloaderNet extends PluginForHost {
             ac.setStatus("\r\nCan't get login token. Wrong password?");
             return ac;
         }
-        // get account info:
+        /* get account info */
         try {
-            page = br.getPage("http://api.mydownloader.net/api.php?task=user_info&auth=" + token);
+            br.getPage("http://api.mydownloader.net/api.php?task=user_info&auth=" + token);
         } catch (Exception e) {
             account.setValid(false);
             ac.setProperty("multiHostSupport", Property.NULL);
             ac.setStatus("Mydownloader.net server error.");
             return ac;
         }
-        long traffic = (long) (Float.parseFloat(getXMLTag(page, "remaining_limit_mb").getMatch(0)) + 0.5f);
+        long traffic = (long) (Float.parseFloat(getXMLTag(br.toString(), "remaining_limit_mb").getMatch(0)) + 0.5f);
         ac.setTrafficLeft(traffic * 1024 * 1024l);
-        String expire = getXMLTag(page, "experation_date").getMatch(0);
+        String expire = getXMLTag(br.toString(), "experation_date").getMatch(0);
         if (!expire.equals("lifetime")) {
             if (expire.equalsIgnoreCase("trial")) {
                 ac.setStatus("Trial");
@@ -95,8 +95,8 @@ public class MyDownloaderNet extends PluginForHost {
             }
         }
         // get supported hoster
-        page = br.getPage("http://api.mydownloader.net/api.php?task=supported_list&auth=" + token);
-        String[] hosters = getXMLTag(page, "values").getColumn(0);
+        br.getPage("http://api.mydownloader.net/api.php?task=supported_list&auth=" + token);
+        String[] hosters = getXMLTag(br.toString(), "values").getColumn(0);
         if (hosters == null) {
             account.setValid(false);
             ac.setProperty("multiHostSupport", Property.NULL);
@@ -122,16 +122,17 @@ public class MyDownloaderNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private void showMessage(DownloadLink link, String message) {
+    private void showMessage(final DownloadLink link, final String message) {
         link.getLinkStatus().setStatusText(message);
     }
 
-    /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    /* no override to keep plugin compatible to old stable */
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        this.acc = acc;
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         showMessage(link, "Phase 1/4: Login");
@@ -158,12 +159,12 @@ public class MyDownloaderNet extends PluginForHost {
         String url = Encoding.urlEncode(link.getDownloadURL());
 
         showMessage(link, "Phase 2/4: Add Link");
-        String page = br.getPage("http://api.mydownloader.net/api.php?task=add_url&auth=" + auth + "&url=" + url);
-        if (getXMLTag(page, "url_error").getMatch(0) != null && !getXMLTag(page, "url_error").getMatch(0).isEmpty()) {
+        getPageSafe("http://api.mydownloader.net/api.php?task=add_url&auth=" + auth + "&url=" + url);
+        if (getXMLTag(br.toString(), "url_error").getMatch(0) != null && !getXMLTag(br.toString(), "url_error").getMatch(0).isEmpty()) {
             // file already added
             // tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
-        } else if (!getXMLTag(page, "fid").getMatch(0).isEmpty()) {
-            url = getXMLTag(page, "fid").getMatch(0).trim(); // we can use fileid instead url if given
+        } else if (!getXMLTag(br.toString(), "fid").getMatch(0).isEmpty()) {
+            url = getXMLTag(br.toString(), "fid").getMatch(0).trim(); // we can use fileid instead url if given
         }
         sleep(2 * 1000l, link);
 
@@ -172,8 +173,8 @@ public class MyDownloaderNet extends PluginForHost {
         String status = "";
         // wait until mydownloader has loaded file on their server
         while (genlink.isEmpty() && (maxCount > 0)) {
-            page = br.getPage("http://api.mydownloader.net/api.php?task=file_info&auth=" + auth + "&file=" + url);
-            status = getXMLTag(page, "status").getMatch(0);
+            br.getPage("http://api.mydownloader.net/api.php?task=file_info&auth=" + auth + "&file=" + url);
+            status = getXMLTag(br.toString(), "status").getMatch(0);
             if (status.equalsIgnoreCase("new")) {
                 // File was just added to our system
                 // or
@@ -192,7 +193,7 @@ public class MyDownloaderNet extends PluginForHost {
             } else if (status.equalsIgnoreCase("download_ok") || status.equalsIgnoreCase("ok")) {
                 // File is uploading to our servers and you can start downloading to your computer.
                 // or: File is fully uploaded to our servers
-                genlink = getXMLTag(page, "download_link").getMatch(0).trim();
+                genlink = getXMLTag(br.toString(), "download_link").getMatch(0).trim();
                 if (genlink.isEmpty()) {
                     if (link.getLinkStatus().getRetryCount() >= 3) {
                         try {
@@ -246,7 +247,7 @@ public class MyDownloaderNet extends PluginForHost {
                 String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
             } else if (status.equalsIgnoreCase("efo")) {
-                showMessage(link, "Error: " + getXMLTag(page, "error").getMatch(0));
+                showMessage(link, "Error: " + getXMLTag(br.toString(), "error").getMatch(0));
                 tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
             }
             maxCount--;
@@ -267,6 +268,19 @@ public class MyDownloaderNet extends PluginForHost {
         }
         showMessage(link, "Phase 4/4: Begin download");
         dl.startDownload();
+    }
+
+    private void getPageSafe(final String url) throws IOException, PluginException {
+        for (int i = 1; i <= 3; i++) {
+            br.getPage(url);
+            if (br.containsHTML("<error>AUTH_ERROR</error>")) {
+                logger.info("Auth error: " + i + " of 3: Failed to get url: " + url);
+                logger.info("--> Trying to get a new token");
+                getLoginToken(acc);
+                continue;
+            }
+            break;
+        }
     }
 
     @Override
@@ -313,11 +327,15 @@ public class MyDownloaderNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    private String getLoginToken(Account ac) throws IOException {
+    private String getLoginToken(final Account ac) throws IOException, PluginException {
         String user = Encoding.urlEncode(ac.getUser());
         String pw = Encoding.urlEncode(ac.getPass());
         String token = "";
         String page = br.getPage("http://api.mydownloader.net/api.php?task=auth&login=" + user + "&password=" + pw);
+        if (br.containsHTML("too? many logins")) {
+            logger.info("Server says 'too many logins' --> Temporarily disabling account");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         token = getXMLTag(page, "auth").getMatch(0);
         if (token.length() == 0) {
             String errormsg = getXMLTag(page, "error").getMatch(0);

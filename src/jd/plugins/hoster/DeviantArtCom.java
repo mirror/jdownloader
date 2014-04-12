@@ -257,6 +257,7 @@ public class DeviantArtCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
             handleServerErrors();
             br.followConnection();
+            if (br.containsHTML("><title>Redirection</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: unknown redirect", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
