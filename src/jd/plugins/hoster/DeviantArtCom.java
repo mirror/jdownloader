@@ -277,11 +277,13 @@ public class DeviantArtCom extends PluginForHost {
             if (dllink == null) {
                 if (br.containsHTML(">Mature Content</span>")) {
                     /* Prefer HQ */
-                    dllink = br.getRegex("class=\"dev\\-content\\-normal\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    dllink = getHQpic();
                     if (dllink == null) dllink = br.getRegex("data\\-gmiclass=\"ResViewSizer_img\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) dllink = br.getRegex("<img collect_rid=\"\\d+:\\d+\" src=\"(https?://[^\"]+)").getMatch(0);
                 } else {
-                    dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
+                    /* Prefer HQ */
+                    dllink = getHQpic();
+                    if (dllink == null) dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
                     if (dllink == null) dllink = br.getRegex("<div class=\"dev\\-view\\-deviation\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http[^<>\"]*?)\"").getMatch(0);
                 }
             }
@@ -291,6 +293,10 @@ public class DeviantArtCom extends PluginForHost {
             DLLINK = dllink;
         }
         return DLLINK;
+    }
+
+    private String getHQpic() {
+        return br.getRegex("class=\"dev\\-content\\-normal\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
     }
 
     @Override
