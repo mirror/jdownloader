@@ -946,6 +946,7 @@ UploadSessionLogDialog_UploadSessionLogDialog_object_more=(tovább...)
 UploadSessionLogDialog_UploadSessionLogDialog_object_msg2=Egy ismeretlen probléma adódott a egy fájl letöltésekor. A probléma megoldásához szükség van az ok további részleteinek ismeretére. A JDownloader képes összegyűjteni az összes szükséges információt a hibáról automatikusan. Kérjük,azzal segítsen nekünk hogy, a problémát trtalmazó információt a lehető leghamarabb elküldi részünkre.
 UploadSessionLogDialog_UploadSessionLogDialog_object_title2=Szükségünk van a segítségére!
 UploadSessionLogDialog_UploadSessionLogDialog_yes=Szeretném, hogy segítsen! Folytatás.
+UploadSessionLogDialog_getDontShowAgainLabelText_always=Kérdezés nélkül, mindig engedélyezze a Log fájl feltöltését
 UploadSessionLogDialog_layoutDialogContent_errorid=Hibakód
 UrlColumn_UrlColumn_open_tt_=Kattintson ide az URL böngészőben történő megnyitásához
 VariantColumn_VariantColumn_name_=Változat
