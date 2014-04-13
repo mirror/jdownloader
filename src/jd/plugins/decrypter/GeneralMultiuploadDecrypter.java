@@ -106,7 +106,12 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             getPage(br, status);
         } else if (parameter.contains("go4up.com/")) {
             getPage(br, parameter);
-            if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
+            if (br.containsHTML(">File not Found<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
+            br.getPage("http://go4up.com/download/gethosts/" + new Regex(parameter, "(\\w{1,15})/?$").getMatch(0));
         } else if (parameter.matches("(?i).+(up4vn\\.com|multiupfile\\.com)/.+")) {
             // use standard page, status.php doesn't exist
             getPage(br, parameter);
@@ -124,8 +129,11 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         if (redirectLinks == null || redirectLinks.length == 0) {
             // So far only tested for maxmirror.com, happens when all links have
             // the status "Unavailable"
-            if (br.containsHTML("<td><img src=/images/Upload.gif")) {
+            if (br.containsHTML("<td><img src=/images/Upload\\.gif")) {
                 logger.info("All links are unavailable: " + parameter);
+                return decryptedLinks;
+            } else if (host.contains("1filesharing.com") && br.containsHTML("/images/removed\\.gif")) {
+                logger.info("All links are unavailable (abused): " + parameter);
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
@@ -171,7 +179,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);
         } else if (parameter.contains("go4up.com/")) {
             dllink = brc.getRedirectLocation();
-            if (dllink == null) dllink = brc.getRegex("window\\.location = \"(http[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = brc.getRegex("window\\.location = (\"|\\')(http[^<>\"]*?)(\"|\\')").getMatch(1);
         } else if (parameter.contains("maxmirror.com/")) {
             dllink = brc.getRegex("\"(http[^<>\"]*?)\"><img border=\"0\" src=\"http://(www\\.)?maxmirror\\.com/").getMatch(0);
         } else if (parameter.matches(".+(qooy\\.com|multfile\\.com)/.+")) {

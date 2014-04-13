@@ -281,7 +281,7 @@ public class SimplyPremiumCom extends PluginForHost {
             ai.setValidUntil(expirelng * 1000);
             accdesc = "Time account";
         } else {
-            ai.setTrafficLeft(getXML("maxtraffic"));
+            ai.setTrafficLeft(getXML("remain_traffic"));
             accdesc = "Volume account";
         }
 
