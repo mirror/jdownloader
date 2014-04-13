@@ -78,16 +78,16 @@ public class IGetFileCom extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://sumofile.me";
+    private final String               COOKIE_HOST                  = "http://www.sumofile.me";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(sumofile\\.me)";
+    private final String               DOMAINS                      = "(sumofile\\.me|igetfile\\.com)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi|dl)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
-    private final boolean              useAltLinkCheck              = true;
+    private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
@@ -97,6 +97,13 @@ public class IGetFileCom extends PluginForHost {
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
 
+    // non account && free account (you would hope..)
+    private final String               an                           = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users)";
+    // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
+    private final String               fa                           = "(Upgrade your account to download (bigger|larger) files)";
+    // these errors imply (Premium Required) from the outset.
+    private final String               pr                           = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<)";
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
@@ -105,13 +112,14 @@ public class IGetFileCom extends PluginForHost {
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
-    // other: no redirects, when dl reached they do not show filename..
-    // mods: scanInfo, dllinkRegex, disabled doFree
+    // other: no redirects
+    // mods: scanInfo, dllinkRegex
+    // notes: chunks over 1 throw 404 instead of standard nginx 503
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 0;
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -123,7 +131,7 @@ public class IGetFileCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0;
+            chunks = 1;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
@@ -219,8 +227,12 @@ public class IGetFileCom extends PluginForHost {
         }
 
         getPage(downloadLink.getDownloadURL());
+        if (cbr.containsHTML(an + "|" + pr)) {
+            // link requires either an account to linkcheck successfully. website strips filenames within title/meta.
+            linkCheckRequiresLogin = true;
+        }
 
-        if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
+        if (br.getURL().matches(".+(\\?|&)op=login(.*)?") || linkCheckRequiresLogin) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             Account account = null;
             if (accounts != null && accounts.size() != 0) {
@@ -233,11 +245,19 @@ public class IGetFileCom extends PluginForHost {
                     }
                 }
             }
-            if (account != null) {
+            if ((!linkCheckRequiresLogin && account != null) || (linkCheckRequiresLogin && account != null && !account.getBooleanProperty("free", false))) {
                 login(account, false);
                 getPage(downloadLink.getDownloadURL());
             } else {
+                // best case we get filesize with this.. when no premium account present and or enabled
                 altAvailStat(downloadLink, fileInfo);
+                // set meta/title as not final filename
+                fileInfo[0] = cbr.getRegex("<Title>Download (.*?)</Title>").getMatch(0);
+                if (!inValidate(fileInfo[0])) {
+                    // lets set the file extension properly.
+                    String[] fileExt = new Regex(fileInfo[0], "(.*?)\\s*([^\\s*]+)$").getRow(0);
+                    fileInfo[0] = fileExt[0] + "." + fileExt[1];
+                }
             }
         }
 
@@ -354,7 +374,7 @@ public class IGetFileCom extends PluginForHost {
         } else {
             logger.info("Guest @ " + acctype + " -> Free Download");
         }
-        if (true) {
+        if (false) {
             // prevent wasteful captchas
             String msg = "Disabled, hoster doesn't send data on finallink request. If you can download in browser please report this to JDownloader Development Team. http://board.jdownloader.org/";
             logger.warning(msg);
@@ -564,7 +584,7 @@ public class IGetFileCom extends PluginForHost {
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]*>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        if (inValidate(ttt)) ttt = cbr.getRegex("[^>]*>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
             final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
@@ -650,12 +670,7 @@ public class IGetFileCom extends PluginForHost {
         if (cbr.containsHTML("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (cbr.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for account based restrictions */
-        // non account && free account (you would hope..)
-        final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users)";
-        // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
-        final String fa = "(Upgrade your account to download (bigger|larger) files)";
-        // these errors imply (Premium Required) from the outset.
-        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<)";
+
         // let the fun begin!
         if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
             String msg = null;
@@ -979,6 +994,7 @@ public class IGetFileCom extends PluginForHost {
 
     private boolean                                           resumes                = false;
     private boolean                                           skipWaitTime           = false;
+    private boolean                                           linkCheckRequiresLogin = false;
 
     private final String                                      language               = System.getProperty("user.language");
     private final String                                      preferHTTPS            = "preferHTTPS";
