@@ -56,7 +56,8 @@ public class FaceBookComVideos extends PluginForHost {
     private static Object       LOCK                       = new Object();
     public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
     private boolean             pluginloaded               = false;
-    private static final String PHOTOLINK                  = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    private static final String TYPE_PHOTO                 = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
+    private static final String TYPE_VIDEO                 = "http://facebook\\.com/video/video\\.php\\?v=\\d+";
 
     private String              DLLINK                     = null;
     private static final String FASTLINKCHECK_PICTURES     = "FASTLINKCHECK_PICTURES";
@@ -88,8 +89,8 @@ public class FaceBookComVideos extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
-        final boolean noAccountNeeded = link.getBooleanProperty("nologin", false);
-        if (!noAccountNeeded) {
+        final boolean accountNeeded = accountNeeded(link);
+        if (accountNeeded) {
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null || !aa.isValid()) {
                 link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
@@ -102,14 +103,20 @@ public class FaceBookComVideos extends PluginForHost {
         String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
         if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
         if (br.containsHTML("<h2 class=\"accessible_elem\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);
+        String filename;
+        if (accountNeeded) {
+            filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);
+            }
+        } else {
+            filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
+
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = Encoding.htmlDecode(filename.trim());
 
-        if (link.getDownloadURL().matches(PHOTOLINK)) {
+        if (link.getDownloadURL().matches(TYPE_PHOTO)) {
             // Try if a downloadlink is available
             DLLINK = br.getRegex("class=\"fbPhotosPhotoActionsItem\" href=\"(https?://[^<>\"]*?\\?dl=1)\"").getMatch(0);
             // Try to find original quality link
@@ -210,17 +217,21 @@ public class FaceBookComVideos extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            if (downloadLink.getBooleanProperty("nologin", false)) {
-                handleVideo(downloadLink);
-            } else {
+            if (accountNeeded(downloadLink)) {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
                     if (e instanceof PluginException) throw (PluginException) e;
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+            } else {
+                handleVideo(downloadLink);
             }
         }
+    }
+
+    private boolean accountNeeded(final DownloadLink dl) {
+        return (!dl.getBooleanProperty("nologin", false) && !dl.getDownloadURL().matches(TYPE_VIDEO));
     }
 
     private String getHigh() {

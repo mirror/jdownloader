@@ -227,7 +227,7 @@ public class SaveTv extends PluginForHost {
             if (site_title == null) site_title = br.getRegex("id=\"telecast-detail\">.*?<h3>(.*?)</h2>").getMatch(0);
             filesize = br.getRegex(">Download</a>[ \t\n\r]+\\(ca\\.[ ]+([0-9\\.]+ [A-Za-z]{1,5})\\)[ \t\n\r]+</p>").getMatch(0);
             if (preferMobileVids) filesize = br.getRegex("title=\"H\\.264 Mobile\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive\\-detail\\-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
-            if (site_title == null) {
+            if (site_title == null || filesize == null) {
                 logger.warning("Save.tv: Availablecheck failed!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -316,26 +316,33 @@ public class SaveTv extends PluginForHost {
                 }
             } else if (br.containsHTML("src=\"/STV/IMG/global/TVCategorie/kat1\\.jpg\"") || br.containsHTML("<label>Kategorie:</label>[\t\n\r ]+Film") || br.containsHTML(GENERAL_REGEX)) {
                 /* For movies */
-                final Regex movieInfo = br.getRegex(INFOREGEX);
-                String moviesdata = movieInfo.getMatch(1);
-                if (moviesdata != null) {
-                    moviesdata = moviesdata.trim();
-                    final String[] dataArray = moviesdata.split(" ");
-                    if (dataArray != null) {
-                        genre = dataArray[0];
-                        /* Maybe the media was produced over multiple years */
-                        produceyear = new Regex(moviesdata, "(\\d{4} / \\d{4})").getMatch(0);
-                        if (produceyear == null) produceyear = new Regex(moviesdata, "(\\d{4})").getMatch(0);
-                        if (produceyear != null) {
-                            producecountry = new Regex(moviesdata, genre + "(.+)" + produceyear).getMatch(0);
-                        } else {
-                            producecountry = new Regex(moviesdata, genre + "(.+)").getMatch(0);
-                        }
-                        /* A little errorhandling but this should never happen */
-                        if (producecountry != null) producecountry = Encoding.htmlDecode(producecountry).trim();
-                        if (producecountry != null && producecountry.equals("")) producecountry = null;
+                try {
+                    final Regex movieInfo = br.getRegex(INFOREGEX);
+                    String moviesdata = movieInfo.getMatch(1);
+                    if (moviesdata != null) {
+                        moviesdata = moviesdata.trim();
+                        final String[] dataArray = moviesdata.split(" ");
+                        if (dataArray != null) {
+                            genre = dataArray[0];
+                            /* Maybe the media was produced over multiple years */
+                            produceyear = new Regex(moviesdata, "(\\d{4} / \\d{4})").getMatch(0);
+                            if (produceyear == null) produceyear = new Regex(moviesdata, "(\\d{4})").getMatch(0);
+                            if (produceyear != null) {
+                                producecountry = new Regex(moviesdata, genre + "(.+)" + produceyear).getMatch(0);
+                            } else {
+                                producecountry = new Regex(moviesdata, genre + "(.+)").getMatch(0);
+                            }
+                            /* A little errorhandling but this should never happen */
+                            if (producecountry != null) producecountry = Encoding.htmlDecode(producecountry).trim();
+                            if (producecountry != null && producecountry.equals("")) producecountry = null;
 
+                        }
                     }
+                } catch (final Throwable e) {
+                    logger.warning("produceyear/producecountry handling failed!");
+                    produceyear = "PLUGIN_ERROR";
+                    producecountry = "PLUGIN_ERROR";
+                    site_title += "PLUGIN_ERROR";
                 }
                 link.setProperty("category", 1);
             } else {
