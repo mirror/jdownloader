@@ -139,9 +139,9 @@ public class DlPrtcCom extends PluginForDecrypt {
                         br = obr.cloneBrowser();
                     }
                     br.cloneBrowser().getPage("/pub_footer.html");
-                    String formName = "securek";
+                    String formName = "secure";
                     importantForm.put(formName, code);
-                    importantForm.put("secure", "");
+                    // importantForm.put("secure", "");
                     importantForm.put("submitform", "");
                 }
                 importantForm.put("i", ""/* Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())) */);
