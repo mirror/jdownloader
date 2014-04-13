@@ -165,6 +165,10 @@ public class Keep2ShareCc extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<title>Keep2Share\\.cc \\- Error</title>")) {
+            link.getLinkStatus().setStatusText("Cannot check status - unknown error state");
+            return AvailableStatus.UNCHECKABLE;
+        }
         String filename = null, filesize = null;
         // This might not be needed anymore but keeping it doesn't hurt either
         if (br.containsHTML(DOWNLOADPOSSIBLE)) {
@@ -202,6 +206,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         checkShowFreeDialog();
+        handleGeneralErrors();
         br.setFollowRedirects(false);
         if (br.containsHTML("File size to large\\!<") || br.containsHTML("Only <b>Premium</b> access<br>") || br.containsHTML("only for premium members")) {
             try {
@@ -269,7 +274,10 @@ public class Keep2ShareCc extends PluginForHost {
             br.followConnection();
             logger.info(br.toString());
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                handleGeneralServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = dllink.replace("\\", "");
             // Try again...
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -408,7 +416,7 @@ public class Keep2ShareCc extends PluginForHost {
         AtomicBoolean validateCookie = new AtomicBoolean(true);
         try {
             login(account, true, validateCookie);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
@@ -476,6 +484,7 @@ public class Keep2ShareCc extends PluginForHost {
         } else {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
+            handleGeneralErrors();
             // Set cookies for other domain if it is changed via redirect
             String currentDomain = MAINPAGE.replace("http://", "");
             String newDomain = null;
@@ -516,10 +525,22 @@ public class Keep2ShareCc extends PluginForHost {
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
+                handleGeneralServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
         }
+    }
+
+    private void handleGeneralErrors() throws PluginException {
+        if (br.containsHTML("<title>Keep2Share\\.cc \\- Error</title>")) {
+            if (br.containsHTML("<li>Sorry, our store is not available, please try later")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Store is temporarily unavailable'", 5 * 60 * 1000l); }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+        }
+    }
+
+    private void handleGeneralServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 404 || br.containsHTML(">Not Found<")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l); }
     }
 
     private String getDllinkPremium() {
