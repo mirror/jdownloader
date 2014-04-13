@@ -820,6 +820,7 @@ public class SaveTv extends PluginForHost {
             br.getPage(url);
             if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
                 logger.info("Refreshing cookies to continue downloading " + i + " of " + MAX_RETRIES_SAFE_REQUEST);
+                br.clearCookies(COOKIE_HOST);
                 loginSafe(br, acc, true);
                 continue;
             }
