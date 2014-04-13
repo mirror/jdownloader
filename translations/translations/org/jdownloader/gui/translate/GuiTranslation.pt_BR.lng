@@ -946,6 +946,7 @@ UploadSessionLogDialog_UploadSessionLogDialog_object_more=(mais...)
 UploadSessionLogDialog_UploadSessionLogDialog_object_msg2=Ocorreu um erro desconhecido durante o download do arquivo. Para resolver este problema, precisamos de mais detalhes sobre o motivo. O JDownloader pode coletar todas as informações necessárias sobre o bug automaticamente. Por favor, ajude-nos a corrigir o problema o quanto antes possível, enviando estas informações.
 UploadSessionLogDialog_UploadSessionLogDialog_object_title2=Precisamos de sua ajuda!
 UploadSessionLogDialog_UploadSessionLogDialog_yes=Eu quero ajudar! Continuar.
+UploadSessionLogDialog_getDontShowAgainLabelText_always=Sempre permitir envio do log sem perguntar
 UploadSessionLogDialog_layoutDialogContent_errorid=Código do erro
 UrlColumn_UrlColumn_open_tt_=Clique para abrir Url no navegador
 VariantColumn_VariantColumn_name_=Variante
