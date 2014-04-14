@@ -39,6 +39,7 @@ public class BrowserAdapter {
             dl.setChunkNum(chunksCount < 0 ? Math.min(chunksCount * -1, JsonConfig.create(GeneralSettings.class).getMaxChunksPerFile()) : chunksCount);
         }
         dl.setResume(resumeEnabled);
+
         return dl;
     }
 
@@ -51,9 +52,11 @@ public class BrowserAdapter {
     }
 
     public static DownloadInterface openDownload(Browser br, Downloadable downloadable, Request request, boolean resume, int chunks) throws Exception {
+
         String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadable, request, resume, chunks);
         downloadable.setDownloadInterface(dl);
+
         try {
             dl.connect(br);
         } catch (PluginException handle) {

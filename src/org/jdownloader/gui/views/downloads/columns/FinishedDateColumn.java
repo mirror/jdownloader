@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.JPopupMenu;
@@ -8,7 +10,9 @@ import javax.swing.SwingConstants;
 import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.swing.exttable.columns.ExtDateColumn;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
 
@@ -57,6 +61,14 @@ public class FinishedDateColumn extends ExtDateColumn<AbstractNode> {
     @Override
     public boolean isEnabled(AbstractNode obj) {
         return obj.isEnabled();
+    }
+
+    protected String getDateFormatString() {
+        String custom = CFG_GUI.CFG.getDateTimeFormatDownloadListFinishedDateColumn();
+        if (StringUtils.isNotEmpty(custom)) { return custom; }
+        DateFormat sd = SimpleDateFormat.getDateTimeInstance();
+        if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
+        return _GUI._.added_date_column_dateformat();
     }
 
     @Override

@@ -52,6 +52,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import sun.swing.SwingUtilities2;
 
@@ -484,8 +485,9 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             protected String getDateFormatString() {
-
-                DateFormat sd = SimpleDateFormat.getDateInstance(SimpleDateFormat.SHORT);
+                String custom = CFG_GUI.CFG.getDateTimeFormatAccountManagerExpireDateColumn();
+                if (StringUtils.isNotEmpty(custom)) { return custom; }
+                DateFormat sd = SimpleDateFormat.getDateTimeInstance();
                 if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
                 return _GUI._.PremiumAccountTableModel_getDateFormatString_();
 

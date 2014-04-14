@@ -272,7 +272,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             if (varname != null && pattern != null) {
                                 varname = varname.trim();
                                 pattern = pattern.trim();
-                                String found = new Regex(br.getRequest(), pattern).getMatch(0);
+                                String found =new Regex(br.getRequest(),pattern).getMatch(0);
                                 if (found != null) {
                                     found = found.trim();
                                     logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);

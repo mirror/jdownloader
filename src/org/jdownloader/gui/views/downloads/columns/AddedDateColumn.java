@@ -12,7 +12,9 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtDateColumn;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
 
@@ -63,6 +65,8 @@ public class AddedDateColumn extends ExtDateColumn<AbstractNode> {
     }
 
     protected String getDateFormatString() {
+        String custom = CFG_GUI.CFG.getDateTimeFormatDownloadListAddedDateColumn();
+        if (StringUtils.isNotEmpty(custom)) { return custom; }
         DateFormat sd = SimpleDateFormat.getDateTimeInstance();
         if (sd instanceof SimpleDateFormat) { return ((SimpleDateFormat) sd).toPattern(); }
         return _GUI._.added_date_column_dateformat();
