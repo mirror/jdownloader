@@ -946,6 +946,7 @@ UploadSessionLogDialog_UploadSessionLogDialog_object_more=(dettagli...)
 UploadSessionLogDialog_UploadSessionLogDialog_object_msg2=Un problema sconosciuto si è verificato scaricando un file. Per risolvere questo problema abbiamo bisogno di conoscere più dettagli riguardo la causa che lo ha scatenato. JDownloader è in grado di raccogliere informazioni sui bug automaticamente. Ti chiediamo di aiutarci a risolvere questi problemi il prima possibile inoltrandoci queste informazioni.
 UploadSessionLogDialog_UploadSessionLogDialog_object_title2=Abbiamo bisogno del tuo aiuto!
 UploadSessionLogDialog_UploadSessionLogDialog_yes=Voglio aiutare! Continua
+UploadSessionLogDialog_getDontShowAgainLabelText_always=Consenti il caricamento automatico dei log
 UploadSessionLogDialog_layoutDialogContent_errorid=Codice errore
 UrlColumn_UrlColumn_open_tt_=Fai clic per aprire l'URL nel browser
 VariantColumn_VariantColumn_name_=Variante
