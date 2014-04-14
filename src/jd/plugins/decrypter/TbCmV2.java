@@ -281,7 +281,12 @@ public class TbCmV2 extends PluginForDecrypt {
             try {
                 vc = helper.loadVideo(vid);
             } catch (Exception e) {
-                final String emsg = e.getMessage().toString();
+                String emsg = null;
+                try {
+                    emsg = e.getMessage().toString();
+                } catch (NullPointerException npe) {
+                    // e.message can be null...
+                }
                 if (emsg != null && emsg.contains("Rental Video")) {
                     vid.error = emsg;
                 } else {
