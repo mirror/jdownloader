@@ -207,7 +207,8 @@ public class SaveTv extends PluginForHost {
             if (SESSIONID == null) login(this.br, aa, true);
             String preferMobileVideosString = "5";
             if (preferMobileVids) preferMobileVideosString = "4";
-            doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideosString + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">false</adFreeSpecified>");
+            doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideosString + "</recordingFormatId><adFree i:type=\"d:boolean\">1</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
+            // doSoapRequest("http://tempuri.org/IUser/IsLoggedIn", "<sessionId>" + SESSIONID + "</sessionId>");
             String apifilename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
             filesize = br.getRegex("<a:SizeMB>(\\d+)</a:SizeMB>").getMatch(0);
             if (apifilename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -216,7 +217,7 @@ public class SaveTv extends PluginForHost {
             if (filenameReplace != null) site_title = apifilename.replace(filenameReplace, "");
 
             date = fName.getMatch(1);
-            // Test code to correct the date here - not possible (yet) because AM/PM is not given: http://pastebin.com/SZJFYn1W
+            /* Test code to correct the date here - not possible (yet) because AM/PM time-state is not given: http://pastebin.com/SZJFYn1W */
             link.setProperty("apiplainfilename", apifilename);
             filesize += " KB";
         } else {
@@ -459,6 +460,8 @@ public class SaveTv extends PluginForHost {
             checkFeatureDialogCrawler();
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
+        final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
+        final boolean preferMobileVids = cfg.getBooleanProperty(PREFERH264MOBILE);
         FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
         login(this.br, account, false);
@@ -468,7 +471,13 @@ public class SaveTv extends PluginForHost {
             if (SESSIONID == null) login(this.br, account, true);
             // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
             // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
-            doSoapRequest("http://tempuri.org/IVideoArchive/GetAdFreeState", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
+            // try {
+            // doSoapRequest("http://tempuri.org/IDownload/GetSimultaneousDownloadConnectionCount", "<sessionId>" + SESSIONID +
+            // "</sessionId>");
+            // } catch (final BrowserException e) {
+            // logger.warning("FAILED!");
+            // }
+            doSoapRequest("http://tempuri.org/IVideoArchive/GetAdFreeState", "<sessionId>" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(downloadLink) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified>");
             if (br.containsHTML("<a:IsAdFreeAvailable>false</a:IsAdFreeAvailable>")) {
                 downloadLink.getLinkStatus().setStatusText(ADSFREEANOTVAILABLE);
                 ISADSFREEAVAILABLE = false;
@@ -495,7 +504,7 @@ public class SaveTv extends PluginForHost {
          * User wants ads-free but it's not available -> Wait 12 hours, status can still change but probably won't -> If defined by user,
          * force version with ads after a user defined amount of retries
          */
-        if (this.getPluginConfig().getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
+        if (preferAdsFree && this.getPluginConfig().getBooleanProperty(DOWNLOADONLYADSFREE, false) && !this.ISADSFREEAVAILABLE) {
             final boolean preferadsfreeOverride = cfg.getBooleanProperty(PREFERADSFREE_OVERRIDE, false);
             final long maxRetries = getLongProperty(cfg, PREFERADSFREE_OVERRIDE_MAXRETRIES, defaultIgnoreOnlyAdsFreeAfterRetries_maxRetries);
             long currentTryCount = getLongProperty(downloadLink, "curren_no_ads_free_available_retries", 0);
@@ -511,8 +520,6 @@ public class SaveTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, NOCUTAVAILABLETEXT, userDefinedWaitHours * 60 * 60 * 1000l);
             }
         }
-        final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
-        final boolean preferMobileVids = cfg.getBooleanProperty(PREFERH264MOBILE);
         String downloadWithoutAds = "false";
         if (preferAdsFree) downloadWithoutAds = "true";
         String preferMobileVideos = null;
@@ -540,7 +547,7 @@ public class SaveTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink + " starting download...");
-        int maxChunks = -4;
+        int maxChunks = -2;
         boolean resume = true;
         if (downloadLink.getBooleanProperty(NORESUME, false)) resume = false;
         if (downloadLink.getBooleanProperty(SaveTv.NOCHUNKS, false) || resume == false) {
@@ -712,7 +719,7 @@ public class SaveTv extends PluginForHost {
             // Only generate new sessionID if we have none or it's older than 6 hours
             if (SESSIONID == null || (System.currentTimeMillis() - lastUse) > 360000) {
                 prepBrowser_api(br);
-                doSoapRequest("http://tempuri.org/ISession/CreateSession", "<apiKey i:type=\"d:string\">" + Encoding.Base64Decode(APIKEY) + "</apiKey>");
+                doSoapRequest("http://tempuri.org/ISession/CreateSession", "<apiKey>" + Encoding.Base64Decode(APIKEY) + "</apiKey>");
                 SESSIONID = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
                 if (SESSIONID == null) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -724,7 +731,7 @@ public class SaveTv extends PluginForHost {
                 account.setProperty("lastuse", System.currentTimeMillis());
                 account.setProperty("sessionid", SESSIONID);
             }
-            doSoapRequest("http://tempuri.org/IUser/Login", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><username i:type=\"d:string\">" + account.getUser() + "</username><password i:type=\"d:string\">" + account.getPass() + "</password>");
+            doSoapRequest("http://tempuri.org/IUser/Login", "<sessionId>" + SESSIONID + "</sessionId><username>" + account.getUser() + "</username><password>" + account.getPass() + "</password>");
             if (!br.containsHTML("<a:HasPremiumStatus>true</a:HasPremiumStatus>")) {
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -823,6 +830,9 @@ public class SaveTv extends PluginForHost {
                 br.clearCookies(COOKIE_HOST);
                 loginSafe(br, acc, true);
                 continue;
+            }
+            if (i > 1) {
+                logger.info("Successfully refreshed cookies to access url: " + url);
             }
             break;
         }

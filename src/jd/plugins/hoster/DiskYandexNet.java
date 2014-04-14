@@ -122,7 +122,9 @@ public class DiskYandexNet extends PluginForHost {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("https://disk.yandex.com/handlers.jsx", "_ckey=" + ckey + "&_name=getLinkFileDownload&hash=" + Encoding.urlEncode(hash));
-        if (br.containsHTML("\"title\":\"invalid ckey\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        if (br.containsHTML("\"title\":\"invalid ckey\"")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        } else if (br.containsHTML("\"code\":88")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 88 'Decryption error'", 5 * 60 * 1000l); }
         String dllink = parse("url", this.br);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.startsWith("//")) dllink = "http:" + dllink;
