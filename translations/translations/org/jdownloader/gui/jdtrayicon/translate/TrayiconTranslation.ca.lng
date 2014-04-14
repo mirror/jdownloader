@@ -18,6 +18,7 @@ plugins_optional_JDLightTray_minimizetotray=Acció en clicar 'Minimitza <_>'
 plugins_optional_JDLightTray_passwordRequired=Requereix contrasenya per obrir des de l'àrea de notificacions
 plugins_optional_JDLightTray_singleClick=Alterna l'estat de la finestra amb un únic clic
 plugins_optional_JDLightTray_startMinimized=Inicia minimitzat
+plugins_optional_JDLightTray_tooltip=Mostra l'indicador de funció
 plugins_optional_trayIcon_dl_running=En curs:
 plugins_optional_trayIcon_dl_total=Total:
 plugins_optional_trayIcon_downloads=Descàrregues:
