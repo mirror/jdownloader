@@ -101,7 +101,6 @@ public class UpDownBz extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         ai.setStatus("Free");
-        ai.setExpired(true);
         ai.setValidUntil(0);
         account.setValid(false);
 
@@ -127,10 +126,8 @@ public class UpDownBz extends PluginForHost {
         }
 
         // set premium state
-        long premium_until = data.getPremiumUntil();
-        ai.setValidUntil(premium_until * 1000);
+        ai.setValidUntil(data.getPremiumUntil() * 1000);
         ai.setStatus("Premium");
-        ai.setExpired(premium_until > System.currentTimeMillis());
 
         return ai;
     }
