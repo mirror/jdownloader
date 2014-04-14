@@ -52,7 +52,7 @@ public class ImgBoxCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches(GALLERYLINK)) {
-            if (br.containsHTML("The specified gallery could not be found")) {
+            if (br.containsHTML("The specified gallery could not be found") || br.containsHTML("0 images</h1>")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -108,7 +108,7 @@ public class ImgBoxCom extends PluginForDecrypt {
     }
 
     private DownloadLink decryptSingle() {
-        final String finallink = br.getRegex("\"(http://[a-z0-9\\-]+\\.imgbox\\.com/[^<>\"]*?\\?st[^<>\"]*?)\"").getMatch(0);
+        final String finallink = br.getRegex("\"(http://(i|[a-z0-9\\-]+)\\.imgbox\\.com/[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) { return null; }
         return createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
     }

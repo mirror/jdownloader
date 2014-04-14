@@ -172,13 +172,9 @@ public class ChoMikujPl extends PluginForHost {
                 br.setFollowRedirects(false);
                 requestVerificationToken = br.getRegex("<div id=\"content\">[\t\n\r ]+<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
             }
+            if (requestVerificationToken == null) requestVerificationToken = theLink.getStringProperty("__RequestVerificationToken_Lw__", null);
             if (requestVerificationToken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final String requestverifytoken2 = theLink.getStringProperty("__RequestVerificationToken_Lw__", null);
-            if (requestverifytoken2 != null) {
-                br.setCookie("http://chomikuj.pl/", "__RequestVerificationToken_Lw__", requestverifytoken2);
-            } else {
-                logger.info("Failed to set __RequestVerificationToken_Lw__ cookie inside getDllink");
-            }
+            br.setCookie("http://chomikuj.pl/", "__RequestVerificationToken_Lw__", requestVerificationToken);
 
             final String chomikID = theLink.getStringProperty("chomikID");
 

@@ -121,7 +121,9 @@ public class MgfpCm extends PluginForDecrypt {
                 }
                 for (final String elements[] : info) {
                     final String orderID = df.format(counter);
-                    final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + elements[0]);
+                    final String fid = elements[0];
+                    final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + fid);
+                    link.setBrowserUrl("http://www.imagefap.com/photo/" + fid + "/");
                     link.setProperty("orderid", orderID);
                     link.setProperty("galleryname", galleryName);
                     link.setProperty("authorsname", authorsName);

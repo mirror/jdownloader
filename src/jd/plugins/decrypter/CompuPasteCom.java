@@ -64,8 +64,8 @@ public class CompuPasteCom extends PluginForDecrypt {
         }
         final String[] links = br.getRegex("target=\"_blank\" href=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.info("Link offline (no links found): " + parameter);
+            return decryptedLinks;
         }
         for (final String singleLink : links)
             if (!singleLink.contains("compupaste.com/")) decryptedLinks.add(createDownloadlink(singleLink));

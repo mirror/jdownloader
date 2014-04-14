@@ -120,6 +120,8 @@ public class Rdrctr extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 if (br.containsHTML(">404 Page Not Found|bannedsextapes\\.com/|\"error\":\"Please enter a valid URL") || br.getRequest().getHttpConnection().getResponseCode() == 404) offline = true;
+            } else if (parameter.contains("tiny.cc/") && br.containsHTML("Sorry, we weren't able to locate that URL")) {
+                offline = true;
             }
             if (offline) {
                 logger.info("Link offline or invalid: " + parameter);

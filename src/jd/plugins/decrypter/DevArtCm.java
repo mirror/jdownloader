@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+|\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?)?|[A-Za-z0-9\\-]+/collections/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/((gallery|favourites)/\\d+(\\?offset=\\d+)?|(gallery|favourites)/(\\?offset=\\d+|\\?catpath(=.+)?)?|[A-Za-z0-9\\-]+/collections/\\d+)" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
 
     /**
@@ -63,7 +63,8 @@ public class DevArtCm extends PluginForDecrypt {
 
     private static final String FASTLINKCHECK_2  = "FASTLINKCHECK_2";
     private static final String TYPE_COLLECTIONS = "https?://[\\w\\.\\-]*?deviantart\\.com/[A-Za-z0-9\\-]+/collections/\\d+";
-    private static final String TYPE_CATPATH     = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
+    private static final String TYPE_CATPATH_ALL = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
+    private static final String TYPE_CATPATH_1   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
     private static final String TYPE_CATPATH_2   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]+(\\&offset=\\d+)?";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -102,12 +103,15 @@ public class DevArtCm extends PluginForDecrypt {
             String pagetype = "";
             if (parameter.matches(TYPE_CATPATH_2)) {
                 pagetype = new Regex(parameter, "deviantart\\.com/gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
-            } else if (parameter.contains("/favourites/"))
+            } else if (parameter.matches(TYPE_CATPATH_ALL)) {
+                pagetype = "catpath";
+            } else if (parameter.contains("/favourites/")) {
                 pagetype = "Favourites";
-            else if (parameter.contains("/gallery/"))
+            } else if (parameter.contains("/gallery/")) {
                 pagetype = "Gallery";
-            else
+            } else {
                 pagetype = "Unknown";
+            }
             // find and set pagename
             String pagename = br.getRegex("class=\"folder\\-title\">([^<>\"]*?)</span>").getMatch(0);
             if (pagename != null) pagename = Encoding.htmlDecode(pagename.trim());
@@ -127,7 +131,7 @@ public class DevArtCm extends PluginForDecrypt {
                 final int offsetLink = Integer.parseInt(new Regex(parameter, "(\\d+)$").getMatch(0));
                 currentOffset = offsetLink;
                 maxOffset = offsetLink;
-            } else if (!parameter.matches(TYPE_CATPATH)) {
+            } else if (!parameter.matches(TYPE_CATPATH_1)) {
                 final String[] offsets = br.getRegex("data\\-offset=\"(\\d+)\" name=\"gmi\\-GPageButton\"").getColumn(0);
                 if (offsets != null && offsets.length != 0) {
                     for (final String offset : offsets) {
@@ -152,7 +156,7 @@ public class DevArtCm extends PluginForDecrypt {
                     // Not available in old 0.9.581 Stable
                 }
                 logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
-                if (parameter.matches(TYPE_CATPATH) && !parameter.contains("offset=")) {
+                if (parameter.matches(TYPE_CATPATH_1) && !parameter.contains("offset=")) {
                     if (counter > 1) br.getPage(parameter + "&offset=" + currentOffset);
                     // catpath links have an unknown end-offset
                     final String nextOffset = br.getRegex("\\?catpath=[A-Za-z0-9%]+\\&amp;offset=(\\d+)\"><span>Next</span></a>").getMatch(0);

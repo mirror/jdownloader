@@ -39,7 +39,7 @@ public class CopyComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = Encoding.htmlDecode(param.toString());
         final DownloadLink offline = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         offline.setAvailable(false);
         offline.setProperty("offline", true);
@@ -64,6 +64,14 @@ public class CopyComDecrypter extends PluginForDecrypt {
         } else {
             /* Root */
             linktext = br.getRegex("\"share\":null,\"children\":\\[(.*?)\\],\"children_count\":").getMatch(0);
+            if (linktext == null) {
+                /* Invalid subfolder that leads to the root --> re-add root */
+                if (br.containsHTML("\"children\":\\[\\]\\},")) {
+                    final String public_root = "https://www.copy.com/s/" + new Regex(parameter, "/s/([A-Za-z0-9]+)").getMatch(0) + "/Public";
+                    decryptedLinks.add(createDownloadlink(public_root));
+                    return decryptedLinks;
+                }
+            }
         }
         /* For single links */
         if (linktext == null || linktext.equals("")) linktext = br.getRegex("previous_parent = Browser\\.Models\\.Obj\\.findOrCreate\\((\\{\"id\":\"/s/.*?\\})\\],\"stub\":false,\"children_count\":1").getMatch(0);

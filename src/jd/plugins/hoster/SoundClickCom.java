@@ -46,12 +46,14 @@ public class SoundClickCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        /* Offline links should also have nice filenames */
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".mp3");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("&content=music")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String songName = br.getRegex("<div style=\"float:left; width:500px; padding:5px 0px 10px 20px;\">([^<>\"]*?)</div>").getMatch(0);
-        final String artist = br.getRegex("<title>SoundClick artist: ([^<>\"]*?)\\- page with MP3 music downloads</title>").getMatch(0);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("&content=music")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String songName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
+        final String artist = br.getRegex("<a href=\"/bands/default\\.cfm\\?bandID=\\d+\">([^<>\"]*?)</a>").getMatch(0);
         if (songName == null || artist == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.soundclick.com/util/passkey.cfm?flash=true");
         final String controlID = br.getRegex("<controlID>([^<>\"]*?)</controlID>").getMatch(0);
@@ -62,7 +64,7 @@ public class SoundClickCom extends PluginForHost {
         DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp3";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(songName.trim()) + ext);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(songName.trim()).replace(".mp3", "") + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

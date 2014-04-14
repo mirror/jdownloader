@@ -94,7 +94,7 @@ public class UGoUploadNet extends PluginForHost {
             link.getLinkStatus().setStatusText(DLSLIMITUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (br.getURL().contains("ugoupload.net/index.html") || br.containsHTML("<title>Index of")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("ugoupload.net/index.html") || br.containsHTML("<title>Index of") || br.containsHTML(">File has been removed due to inactivity")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String[][] fileInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>[\r\n\t ]+(.+)\\(([\\d\\.]+ (KB|MB|GB))\\)<br/>").getMatches();
         if (fileInfo == null || fileInfo.length == 0) {
             fileInfo = br.getRegex("(.*?) \\(([\\d\\.]+ (KB|MB|GB))\\)").getMatches();

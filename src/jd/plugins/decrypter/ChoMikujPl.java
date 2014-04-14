@@ -172,6 +172,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
             dloffline.setAvailable(false);
             dloffline.setProperty("offline", true);
+            dloffline.setName(new Regex(parameter, "chomikuj\\.pl/(.+)").getMatch(0));
             decryptedLinks.add(dloffline);
             return decryptedLinks;
         }
@@ -227,6 +228,12 @@ public class ChoMikujPl extends PluginForDecrypt {
         final String cantDecrypt = getError();
         if (cantDecrypt != null) {
             logger.info(String.format(cantDecrypt, parameter));
+            // Offline
+            final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+            dloffline.setAvailable(false);
+            dloffline.setProperty("offline", true);
+            dloffline.setName(cantDecrypt + "_" + new Regex(parameter, "chomikuj\\.pl/(.+)").getMatch(0));
+            decryptedLinks.add(dloffline);
             return decryptedLinks;
         }
 
@@ -316,6 +323,10 @@ public class ChoMikujPl extends PluginForDecrypt {
             error = "Can't decrypt link, the account of the owner is banned: %s";
         } else if (br.containsHTML("Chomik o takiej nazwie nie istnieje<|Nie znaleziono - błąd 404")) {
             error = "This link is offline (received error 404): %s";
+        } else if (br.containsHTML("Chomik Jareczczek zablokowany")) {
+            error = "Link blocked";
+        } else if (br.containsHTML("<title>Przyjazny dysk internetowy \\- Chomikuj\\.pl</title>")) {
+            error = "Link leads to mainpage";
         }
         return error;
     }

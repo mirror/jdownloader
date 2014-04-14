@@ -51,7 +51,7 @@ public class FapduCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         // Invalid link
-        if (br.containsHTML("The page you were looking for isn|>Page Not Found")) {
+        if (br.containsHTML("The page you were looking for isn|>Page Not Found") || !br.containsHTML("id=\"sharing\"")) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }

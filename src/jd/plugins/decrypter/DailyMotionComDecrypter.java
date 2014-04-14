@@ -96,7 +96,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        /** Login if account available */
+        /* Login if account available */
         final PluginForHost dailymotionHosterplugin = JDUtilities.getPluginForHost("dailymotion.com");
         Account aa = AccountController.getInstance().getValidAccount(dailymotionHosterplugin);
         if (aa != null) {
@@ -107,7 +107,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 logger.info("Account seems to be invalid -> Continuing without account!");
             }
         }
-        /** Login end... */
+        /* Login end... */
 
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.setCookie("http://www.dailymotion.com", "ff", "off");
@@ -229,10 +229,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private void decryptPlaylist() throws IOException {
         logger.info("Decrypting playlist: " + PARAMETER);
         final Regex info = br.getRegex("class=\"name\">([^<>\"]*?)</a> \\| (\\d+(,\\d+)?) Videos?");
-        final String username = info.getMatch(0);
+        String username = info.getMatch(0);
+        if (username == null) username = br.getRegex("<meta name=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
         String fpName = br.getRegex("<div id=\"playlist_name\">([^<>\"]*?)</div>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<div class=\"page\\-title mrg\\-btm\\-sm\">([^<>\"]*?)</div>").getMatch(0);
         fpName = Encoding.htmlDecode(fpName.trim());
-        final String videosNum = info.getMatch(1);
+        String videosNum = info.getMatch(1);
+        if (videosNum == null) videosNum = br.getRegex("(\\d+(,\\d+)?) Videos? \\|[\t\n\r ]+<span>").getMatch(0);
         if (videosNum == null || fpName == null) {
             logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
             decryptedLinks = null;

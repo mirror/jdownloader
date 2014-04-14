@@ -44,6 +44,7 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
         if (uid == null) uid = new Regex(parameter, "(video/|file=)(.*?)$").getMatch(1);
         if (uid == null) {
             br.getPage(parameter);
+
             if (br.containsHTML("Vídeo no existe posiblemente")) {
                 final DownloadLink offline = createDownloadlink("http://moevideosdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 offline.setName(new Regex(parameter, "moevideos\\.net/(.+)").getMatch(0));
@@ -67,6 +68,16 @@ public class MoeVideosNetDecrypter extends PluginForDecrypt {
             // sleep(wait * 1001l, downloadLink);
 
             br.submitForm(iAmHuman);
+
+            if (br.containsHTML("Vídeo no existe posiblemente")) {
+                final DownloadLink offline = createDownloadlink("http://moevideosdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                offline.setName(new Regex(parameter, "moevideos\\.net/(.+)").getMatch(0));
+                offline.setProperty("offline", true);
+                offline.setAvailable(false);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+
             uid = br.getRegex("file=([0-9a-f\\.]+)(\\&|\"|\\')").getMatch(0);
             if (uid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
