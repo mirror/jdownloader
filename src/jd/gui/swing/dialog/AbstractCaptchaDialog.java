@@ -569,7 +569,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         switch (type) {
         case HOSTER:
             if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;
-            return ((PluginForHost) plugin).getDownloadLink().getName();
+            return ((PluginForHost) plugin).getDownloadLink().getView().getDisplayName();
         }
         return null;
     }

@@ -1,20 +1,14 @@
 package org.jdownloader.gui.views.downloads.properties;
 
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.List;
 
-import javax.swing.Action;
-import javax.swing.ActionMap;
 import javax.swing.Icon;
-import javax.swing.InputMap;
 import javax.swing.JPopupMenu;
-import javax.swing.KeyStroke;
-import javax.swing.text.DefaultEditorKit.CopyAction;
-import javax.swing.text.TextAction;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLinkProperty;
@@ -64,25 +58,25 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
                 // delayedSave();
             }
 
-            protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
-                InputMap map = getInputMap(condition);
-                ActionMap am = getActionMap();
-
-                if (map != null && am != null && isEnabled()) {
-                    Object binding = map.get(ks);
-                    Action action = (binding == null) ? null : am.get(binding);
-
-                    if (action != null) {
-
-                        if (action instanceof CopyAction) { return super.processKeyBinding(ks, e, condition, pressed); }
-                        if ("select-all".equals(binding)) return super.processKeyBinding(ks, e, condition, pressed);
-                        if (action instanceof TextAction) { return false; }
-
-                    }
-
-                }
-                return super.processKeyBinding(ks, e, condition, pressed);
-            }
+            // protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
+            // InputMap map = getInputMap(condition);
+            // ActionMap am = getActionMap();
+            //
+            // if (map != null && am != null && isEnabled()) {
+            // Object binding = map.get(ks);
+            // Action action = (binding == null) ? null : am.get(binding);
+            //
+            // if (action != null) {
+            //
+            // if (action instanceof CopyAction) { return super.processKeyBinding(ks, e, condition, pressed); }
+            // if ("select-all".equals(binding)) return super.processKeyBinding(ks, e, condition, pressed);
+            // if (action instanceof TextAction) { return false; }
+            //
+            // }
+            //
+            // }
+            // return super.processKeyBinding(ks, e, condition, pressed);
+            // }
         };
     }
 
@@ -166,7 +160,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected String loadFilename() {
-        return currentLink.getName();
+        return currentLink.getView().getDisplayName();
     }
 
     @Override
@@ -287,7 +281,8 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected void saveFilename(String text) {
-        currentLink.setName(filename.getText());
+        DownloadWatchDog.getInstance().renameLink(currentLink, filename.getText());
+
     }
 
     @Override

@@ -22,8 +22,8 @@ public interface DownloadLinkView {
 
     /**
      * 
-     * @return this method returns the known filesize or -1. The value is not verified. That means it is probably correct, but it may vary for a few bytes or
-     *         kilobytes.
+     * @return this method returns the known filesize or -1. The value is not verified. That means it is probably correct, but it may vary
+     *         for a few bytes or kilobytes.
      * @see #getBytesTotalEstimated()
      * @see #getBytesTotalVerified()
      */
@@ -37,5 +37,7 @@ public interface DownloadLinkView {
     long getBytesTotalVerified();
 
     long getDownloadTime();
+
+    String getDisplayName();
 
 }

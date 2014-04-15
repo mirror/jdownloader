@@ -24,6 +24,7 @@ public class PartInfo {
         if (node != null) {
             try {
                 String name = node.getName();
+                if (node instanceof DownloadLink) name = ((DownloadLink) node).getView().getDisplayName();
                 String partID = new Regex(name, "\\.r(\\d+)$").getMatch(0);
                 if (partID == null) partID = new Regex(name, "\\.pa?r?t?\\.?(\\d+).*?\\.rar$").getMatch(0);
                 if (partID != null) {

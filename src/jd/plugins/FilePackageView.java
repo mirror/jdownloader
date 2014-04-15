@@ -468,19 +468,19 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
             tmp.newEnabledCount++;
         }
-        Long downloadSize = tmp.downloadSizes.get(link.getName());
+        Long downloadSize = tmp.downloadSizes.get(link.getView().getDisplayName());
 
         if (downloadSize == null) {
-            tmp.downloadSizes.put(link.getName(), link.getView().getBytesTotalEstimated());
-            tmp.downloadDone.put(link.getName(), link.getView().getBytesLoaded());
+            tmp.downloadSizes.put(link.getView().getDisplayName(), link.getView().getBytesTotalEstimated());
+            tmp.downloadDone.put(link.getView().getDisplayName(), link.getView().getBytesLoaded());
         } else {
-            if (!tmp.eta.contains(link.getName())) {
+            if (!tmp.eta.contains(link.getView().getDisplayName())) {
                 if (link.isEnabled()) {
-                    tmp.downloadSizes.put(link.getName(), link.getView().getBytesTotalEstimated());
-                    tmp.downloadDone.put(link.getName(), link.getView().getBytesLoaded());
+                    tmp.downloadSizes.put(link.getView().getDisplayName(), link.getView().getBytesTotalEstimated());
+                    tmp.downloadDone.put(link.getView().getDisplayName(), link.getView().getBytesLoaded());
                 } else if (downloadSize < link.getView().getBytesTotalEstimated()) {
-                    tmp.downloadSizes.put(link.getName(), link.getView().getBytesTotalEstimated());
-                    tmp.downloadDone.put(link.getName(), link.getView().getBytesLoaded());
+                    tmp.downloadSizes.put(link.getView().getDisplayName(), link.getView().getBytesTotalEstimated());
+                    tmp.downloadDone.put(link.getView().getDisplayName(), link.getView().getBytesLoaded());
                 }
             }
         }
@@ -489,10 +489,10 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         if (link.isEnabled() && link.getFinalLinkState() == null) {
             /* link must be enabled and not finished state */
             boolean linkRunning = link.getDownloadLinkController() != null;
-            if (linkRunning || tmp.eta.contains(link.getName()) == false) {
+            if (linkRunning || tmp.eta.contains(link.getView().getDisplayName()) == false) {
                 if (linkRunning) {
                     tmp.fpRunning = true;
-                    tmp.eta.add(link.getName());
+                    tmp.eta.add(link.getView().getDisplayName());
                 }
 
                 if (link.getView().getBytesTotal() >= 0) {

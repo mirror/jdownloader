@@ -8,7 +8,7 @@ public class DownloadLinkInfoStorable implements Storable {
 
     public String getName() {
         if (link == null) return null;
-        return link.getName();
+        return link.getView().getDisplayName();
     }
 
     public String getComment() {

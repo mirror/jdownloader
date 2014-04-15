@@ -1029,7 +1029,7 @@ public class D extends PluginsC {
                     // url.appendChild(content.createTextNode(JDUtilities.
                     // Base64Encode(tmpLinks.get(x).getDownloadURL())));
 
-                    filename.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getName())));
+                    filename.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getView().getDisplayName())));
 
                     size.appendChild(content.createTextNode(Encoding.Base64Encode(tmpLinks.get(x).getView().getBytesTotalEstimated() + "")));
 

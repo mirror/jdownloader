@@ -112,10 +112,10 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
             boolean isDirect = "DirectHTTP".equalsIgnoreCase(dl.getHost()) || "http links".equalsIgnoreCase(dl.getHost());
             if (streamingWithoutAccount || AccountController.getInstance().hasAccounts(dl.getHost()) || isDirect) {
                 String url = dl.getDownloadURL();
-                String name = dl.getName();
+                String name = dl.getView().getDisplayName();
                 if ("rar".equals(Files.getExtension(name))) {
                     DownloadLinkArchiveFactory lfa = new DownloadLinkArchiveFactory(dl);
-                    status = T._.open_rar(dl.getName());
+                    status = T._.open_rar(dl.getView().getDisplayName());
                     if (extractor.isLinkSupported(lfa)) {
                         String archiveID = extractor.createArchiveID(lfa);
                         if (archives.contains(archiveID)) continue;
@@ -125,7 +125,7 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
 
                     }
                 } else {
-                    status = T._.prepare(dl.getName());
+                    status = T._.prepare(dl.getView().getDisplayName());
                     HashSet<ExtensionHandler> handlers = HANDLER.get(Files.getExtension(name));
                     if (handlers == null) {
                         LOGGER.warning("No Handler for " + name);

@@ -23,7 +23,7 @@ public class DownloadLinkStorable implements Storable {
 
     public String getName() {
         if (link == null) return null;
-        return link.getName();
+        return link.getView().getDisplayName();
     }
 
     public org.jdownloader.myjdownloader.client.json.JsonMap getInfoMap() {

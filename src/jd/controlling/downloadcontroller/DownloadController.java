@@ -617,11 +617,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     localLink = it.next();
                     if (cleanupStartup) {
                         if (FinalLinkState.CheckFinished(localLink.getFinalLinkState())) {
-                            logger.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
+                            logger.info("Remove " + localLink.getView().getDisplayName() + " because Finished and CleanupOnStartup!");
                             removeList.add(localLink);
                             continue;
                         } else if (cleanupFileExists && FinalLinkState.FAILED_EXISTS.equals(localLink.getFinalLinkState())) {
-                            logger.info("Remove " + localLink.getName() + " because FileExists and CleanupOnStartup!");
+                            logger.info("Remove " + localLink.getView().getDisplayName() + " because FileExists and CleanupOnStartup!");
                             removeList.add(localLink);
                             continue;
                         }

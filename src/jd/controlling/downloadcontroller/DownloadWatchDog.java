@@ -816,13 +816,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private boolean isMirrorCandidate(DownloadLink linkCandidate, String cachedLinkCandidateName, DownloadLink mirrorCandidate) {
-        if (cachedLinkCandidateName == null) cachedLinkCandidateName = linkCandidate.getName();
+        if (cachedLinkCandidateName == null) cachedLinkCandidateName = linkCandidate.getView().getDisplayName();
         Boolean sameSizeResult = null;
         final boolean sameName;
         if (CrossSystem.isWindows() || config.isForceMirrorDetectionCaseInsensitive()) {
-            sameName = cachedLinkCandidateName.equalsIgnoreCase(mirrorCandidate.getName());
+            sameName = cachedLinkCandidateName.equalsIgnoreCase(mirrorCandidate.getView().getDisplayName());
         } else {
-            sameName = cachedLinkCandidateName.equals(mirrorCandidate.getName());
+            sameName = cachedLinkCandidateName.equals(mirrorCandidate.getView().getDisplayName());
         }
         switch (config.getMirrorDetectionDecision()) {
         case AUTO:
@@ -878,7 +878,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private List<DownloadLink> findDownloadLinkMirrors(final DownloadLink link) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = link.getFilePackage();
-        final String name = link.getName();
+        final String name = link.getView().getDisplayName();
         fp.getModifyLock().runReadLock(new Runnable() {
 
             @Override
@@ -1145,7 +1145,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (candidate.isForced()) return ret;
         DownloadLink link = candidate.getLink();
         FilePackage filePackage = link.getFilePackage();
-        String name = link.getName();
+        String name = link.getView().getDisplayName();
         ArrayList<DownloadLink> removeList = new ArrayList<DownloadLink>();
         for (DownloadLink next : getSession().getActivationRequests()) {
             if (next == link) continue;
@@ -1887,6 +1887,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 logger.log(e);
                             }
                         }
+                        String cFinal = link.getCustomFinalName();
+                        if (StringUtils.isNotEmpty(cFinal)) {
+                            try {
+                                candidate.getCachedAccount().getPlugin().rename(link, cFinal);
+                            } catch (Throwable e) {
+                                logger.log(e);
+                                link.forceFileName(cFinal);
+                            }
+                        }
                         HashSet<DownloadLink> finalLinkStateLinks = finalizeConditionalSkipReasons(currentSession);
                         /* after each download, the order/position of next downloadCandidate could have changed */
                         currentSession.refreshCandidates();
@@ -1986,7 +1995,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             @Override
                             protected Void run() throws RuntimeException {
                                 for (DownloadLink cleanupLink : cleanupLinks) {
-                                    String name = cleanupLink.getName();
+                                    String name = cleanupLink.getView().getDisplayName();
                                     logger.info("Remove Link " + name + " because " + cleanupLink.getFinalLinkState() + " and CleanupImmediately!");
                                     java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
                                     remove.add(cleanupLink);
@@ -3361,6 +3370,37 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg) {
+    }
+
+    public void renameLink(final DownloadLink downloadLink, final String value) {
+        enqueueJob(new DownloadWatchDogJob() {
+            @Override
+            public void execute(DownloadSession currentSession) {
+
+                if (isAttached(downloadLink)) {
+                    downloadLink.setCustomFinalName(value);
+                } else {
+                    downloadLink.getDefaultPlugin().rename(downloadLink, value);
+
+                }
+
+            }
+
+            @Override
+            public void interrupt() {
+            }
+        });
+
+    }
+
+    /**
+     * not synchronized. only use from within DownloadWatchDogJobs
+     * 
+     * @param downloadLink
+     * @return
+     */
+    protected boolean isAttached(DownloadLink downloadLink) {
+        return getSession().getControllers().contains(downloadLink.getDownloadLinkController());
     }
 
 }

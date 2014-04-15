@@ -522,7 +522,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 if (v == null) { throw new BadParameterException("Unknown variantID"); }
 
                 // create new downloadlink
-                final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+                final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
                 dllink.setProperties(link.getDownloadLink().getProperties());
 
                 // create crawledlink

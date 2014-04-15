@@ -52,7 +52,7 @@ public class DownloadPropertiesHeader extends AbstractPanelHeader implements Lin
                 } else if (objectbyRow instanceof DownloadLink) {
                     DownloadLink link = (DownloadLink) objectbyRow;
                     setIcon(link.getIcon());
-                    str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getName()));
+                    str = (_GUI._.LinkgrabberPropertiesHeader_update_link(link.getView().getDisplayName()));
                 }
                 setText(str);
 

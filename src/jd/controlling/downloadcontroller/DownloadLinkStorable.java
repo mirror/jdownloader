@@ -52,11 +52,12 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public String getName() {
-        return link.getName();
+        return link.getView().getDisplayName();
     }
 
     public void setName(String name) {
-        this.link.setName(name);
+        DownloadWatchDog.getInstance().renameLink(link, name);
+
     }
 
     public Map<String, Object> getProperties() {

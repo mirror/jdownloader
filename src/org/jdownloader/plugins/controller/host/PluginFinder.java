@@ -90,7 +90,7 @@ public class PluginFinder {
                 }
                 rewriteLinkCache.put(originalHost, pluginForHost);
                 if (pluginForHost != null) {
-                    logger.info("Plugin " + pluginForHost.getHost() + " now handles " + link.getName());
+                    logger.info("Plugin " + pluginForHost.getHost() + " now handles " + link.getView().getDisplayName());
                     link.setDefaultPlugin(pluginForHost);
                     return pluginForHost;
                 }
@@ -98,7 +98,7 @@ public class PluginFinder {
             if (pluginForHost != null) {
                 try {
                     if (pluginForHost.rewriteHost(link)) {
-                        logger.info("Plugin " + pluginForHost.getHost() + " now handles " + link.getName());
+                        logger.info("Plugin " + pluginForHost.getHost() + " now handles " + link.getView().getDisplayName());
                         link.setDefaultPlugin(pluginForHost);
                         return pluginForHost;
                     }
@@ -117,7 +117,7 @@ public class PluginFinder {
             logger.log(e);
         }
         if (pluginForHost != null) {
-            logger.severe("Use fallBackPlugin for: " + link.getHost() + "|" + link.getName());
+            logger.severe("Use fallBackPlugin for: " + link.getHost() + "|" + link.getView().getDisplayName());
             pluginCache.put(link.getHost(), pluginForHost);
             if (pluginForHost != null) {
                 /* plugin found, let's put it into cache */
@@ -125,7 +125,7 @@ public class PluginFinder {
                 return pluginForHost;
             }
         }
-        logger.severe("Could not find plugin: " + link.getHost() + " for " + link.getName());
+        logger.severe("Could not find plugin: " + link.getHost() + " for " + link.getView().getDisplayName());
         return null;
     }
 

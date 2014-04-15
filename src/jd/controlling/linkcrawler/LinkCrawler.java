@@ -703,7 +703,7 @@ public class LinkCrawler {
                         DownloadLink dl = possibleCryptedLink.getDownloadLink();
                         final CrawledLink modifiedPossibleCryptedLink;
                         if (dl != null) {
-                            modifiedPossibleCryptedLink = new CrawledLink(new DownloadLink(dl.getDefaultPlugin(), dl.getName(), dl.getHost(), url, dl.isEnabled()));
+                            modifiedPossibleCryptedLink = new CrawledLink(new DownloadLink(dl.getDefaultPlugin(), dl.getView().getDisplayName(), dl.getHost(), url, dl.isEnabled()));
                             /* forward downloadLink infos from source to dest */
                             java.util.List<DownloadLink> dlLinks = new ArrayList<DownloadLink>();
                             dlLinks.add(modifiedPossibleCryptedLink.getDownloadLink());
@@ -1064,7 +1064,7 @@ public class LinkCrawler {
             List<String> srcPWs = source.getSourcePluginPasswordList();
             if (srcPWs != null && srcPWs.size() > 0) dl.setSourcePluginPasswordList(new ArrayList<String>(srcPWs));
             dl.setComment(source.getComment());
-            dl.setName(source.getName());
+            dl.setName(source.getView().getDisplayName());
             dl.forceFileName(source.getForcedFileName());
             dl.setFinalFileName(source.getFinalFileName());
             if (source.gotBrowserUrl()) dl.setBrowserUrl(source.getBrowserUrl());

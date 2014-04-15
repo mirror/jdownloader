@@ -173,7 +173,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         }
         queueItem.queueLinks.add(downloadLink);
         linkStatus = new LinkStatus(downloadLink);
-        setName("Download: " + downloadLink.getName() + "_" + downloadLink.getHost());
+        setName("Download: " + downloadLink.getView().getDisplayName() + "_" + downloadLink.getHost());
 
     }
 
@@ -236,7 +236,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
             };
             abortThread.setDaemon(true);
-            abortThread.setName("Abort: " + downloadLink.getName() + "_" + downloadLink.getUniqueID());
+            abortThread.setName("Abort: " + downloadLink.getView().getDisplayName() + "_" + downloadLink.getUniqueID());
             abortThread.start();
         }
     }

@@ -1888,7 +1888,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     public CrawledLink addAdditional(final CrawledLink link, final LinkVariant o) {
 
-        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
+        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
         dllink.setProperties(link.getDownloadLink().getProperties());
         final CrawledLink cl = new CrawledLink(dllink);
 

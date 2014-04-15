@@ -12,7 +12,7 @@ public class DownloadLinkAPIStorableV2 extends DownloadLinkStorable implements S
     }
 
     public DownloadLinkAPIStorableV2(DownloadLink link) {
-        setName(link.getName());
+        setName(link.getView().getDisplayName());
         setUuid(link.getUniqueID().getID());
     }
 

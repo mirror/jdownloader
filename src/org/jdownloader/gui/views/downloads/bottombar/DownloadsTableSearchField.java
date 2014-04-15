@@ -99,7 +99,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 @Override
                 public boolean isFiltered(DownloadLink v) {
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(v.getName()).find()) return false;
+                        if (filterPattern.matcher(v.getView().getDisplayName()).find()) return false;
                     }
                     return true;
                 }

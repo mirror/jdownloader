@@ -148,7 +148,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_COMMENT, nulltoString(link.getComment()));
             line = line.replace(PATTERN_FILESIZE, nulltoString(link.getView().getBytesTotalEstimated()));
             line = line.replace(PATTERN_MD5, nulltoString(link.getMD5Hash()));
-            line = line.replace(PATTERN_NAME, nulltoString(link.getName()));
+            line = line.replace(PATTERN_NAME, nulltoString(link.getView().getDisplayName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getSha1Hash()));
             line = line.replace(PATTERN_URL, nulltoString(link.getBrowserUrl()));
 
@@ -160,7 +160,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
             line = line.replace(PATTERN_FILESIZE, nulltoString(link.getSize()));
             line = line.replace(PATTERN_MD5, nulltoString(link.getDownloadLink().getMD5Hash()));
-            line = line.replace(PATTERN_NAME, nulltoString(link.getName()));
+            line = line.replace(PATTERN_NAME, nulltoString(link.getDownloadLink().getView().getDisplayName()));
             line = line.replace(PATTERN_SHA256, nulltoString(link.getDownloadLink().getSha1Hash()));
             line = line.replace(PATTERN_URL, nulltoString(link.getDownloadLink().getBrowserUrl()));
 

@@ -461,7 +461,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             DownloadLink downloadLink = (DownloadLink) obj;
             String packagename = downloadLink.getParentNode().getName();
             content.add(SwingUtils.toBold(new JLabel(_GUI._.lit_filename())), "sizegroup left,alignx left");
-            content.add(leftLabel(downloadLink.getName()));
+            content.add(leftLabel(downloadLink.getView().getDisplayName()));
             content.add(SwingUtils.toBold(new JLabel(_GUI._.IfFileExistsDialog_layoutDialogContent_package())), "sizegroup left,alignx left");
             content.add(leftLabel(packagename));
             content.add(SwingUtils.toBold(new JLabel(_GUI._.lit_hoster())), "sizegroup left,alignx left");
