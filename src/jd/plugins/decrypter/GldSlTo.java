@@ -26,6 +26,7 @@ import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -62,6 +63,7 @@ public class GldSlTo extends PluginForDecrypt {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final int maxc = decryptIDs.length;
         int counter = 1;
+        boolean captchafailed = false;
         for (final String decryptID : decryptIDs) {
             try {
                 if (this.isAbort()) {
@@ -72,7 +74,6 @@ public class GldSlTo extends PluginForDecrypt {
                 // Not available in old 0.9.581 Stable
             }
             br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
-            boolean captchafailed = false;
             if (br.containsHTML("Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet")) {
                 for (int i = 1; i <= 3; i++) {
                     try {
@@ -135,6 +136,8 @@ public class GldSlTo extends PluginForDecrypt {
             }
             counter++;
         }
+        /* Only 1 link + wrong captcha --> */
+        if (decryptedLinks.size() == 0 && captchafailed) throw new DecrypterException(DecrypterException.CAPTCHA);
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

@@ -131,7 +131,10 @@ public class SaveTv extends PluginForHost {
     private static final int    MAX_RETRIES_LOGIN                                   = 10;
     private static final int    MAX_RETRIES_SAFE_REQUEST                            = 3;
 
-    private static final String DL_IMPOSSIBLE                                       = ">Diese Sendung kann leider nicht heruntergeladen werden, da die Aufnahme fehlerhaft ist";
+    /* Other API/site errorhandling constants */
+    private static final String SITE_DL_IMPOSSIBLE                                  = ">Diese Sendung kann leider nicht heruntergeladen werden, da die Aufnahme fehlerhaft ist";
+    private static final String API_DL_IMPOSSIBLE                                   = ">1418</ErrorCodeID>";
+    private static final String DL_IMPOSSIBLE_USER_TEXT                             = JDL.L("plugins.hoster.SaveTv.dlImpossible", "Aufnahme fehlerhaft - Download momentan nicht möglich");
 
     @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
@@ -205,12 +208,16 @@ public class SaveTv extends PluginForHost {
         String genre = null;
         String producecountry = null;
         String produceyear = null;
-        if (SESSIONID != null || is_API_enabled()) {
+        if (SESSIONID != null && is_API_enabled()) {
             if (SESSIONID == null) login(this.br, aa, true);
             String preferMobileVideosString = "5";
             if (preferMobileVids) preferMobileVideosString = "4";
             doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(link) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideosString + "</recordingFormatId><adFree i:type=\"d:boolean\">1</adFree><adFreeSpecified i:type=\"d:boolean\">true</adFreeSpecified>");
-            // doSoapRequest("http://tempuri.org/IUser/IsLoggedIn", "<sessionId>" + SESSIONID + "</sessionId>");
+            /* filesize = 0, filename = null - but we know, it is online */
+            if (br.containsHTML(API_DL_IMPOSSIBLE)) {
+                link.getLinkStatus().setStatusText(DL_IMPOSSIBLE_USER_TEXT);
+                return AvailableStatus.TRUE;
+            }
             String apifilename = br.getRegex("<a:Filename>([^<>\"]*?)</a").getMatch(0);
             filesize = br.getRegex("<a:SizeMB>(\\d+)</a:SizeMB>").getMatch(0);
             if (apifilename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -230,10 +237,9 @@ public class SaveTv extends PluginForHost {
             if (site_title == null) site_title = br.getRegex("id=\"telecast-detail\">.*?<h3>(.*?)</h2>").getMatch(0);
             filesize = br.getRegex(">Download</a>[ \t\n\r]+\\(ca\\.[ ]+([0-9\\.]+ [A-Za-z]{1,5})\\)[ \t\n\r]+</p>").getMatch(0);
             if (preferMobileVids) filesize = br.getRegex("title=\"H\\.264 Mobile\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive\\-detail\\-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
-            if (site_title == null || filesize == null) {
+            if (site_title == null || filesize == null && !br.containsHTML(SITE_DL_IMPOSSIBLE)) {
                 logger.warning("Save.tv: Availablecheck failed!");
-                if (br.containsHTML(DL_IMPOSSIBLE)) logger.warning("Fail reason: DL_IMPOSSIBLE!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                return AvailableStatus.UNCHECKABLE;
             }
             site_title = correctSiteTitle(site_title);
 
@@ -363,26 +369,32 @@ public class SaveTv extends PluginForHost {
         link.setAvailable(true);
 
         /* Filesize stuff */
-        filesize = filesize.replace(".", "");
-        final long page_size = SizeFormatter.getSize(filesize.replace(".", ""));
-        final long run_time_max_difference = getLongProperty(this.getPluginConfig(), FAILED_ADSFREE_DIFFERENCE_MINUTES, 0);
-        if (run_time_max_difference > 0) {
-            final long page_size_mb = SizeFormatter.getSize(filesize.replace(".", "")) / 1024 / 1024;
-            final long run_time_page = Long.parseLong(br.getRegex("<b>Aufnahmezeitraum:</b>[\t\n\r ]+\\d{2}:\\d{2} \\-[\t\n\r ]+\\d{2}:\\d{2} \\((\\d+) Min\\.\\)").getMatch(0));
-            double run_time_calculated;
-            if (preferMobileVids) {
-                run_time_calculated = page_size_mb / QUALITY_H264_MOBILE_MB_PER_MINUTE;
-            } else {
-                run_time_calculated = page_size_mb / QUALITY_H264_NORMAL_MB_PER_MINUTE;
+        /* Download impossible --> No filesize given --> Calculate it */
+        final String site_run_time = get_run_time(this.br);
+        if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
+            link.setDownloadSize(calculateFilesize(site_run_time, preferMobileVids));
+        } else {
+            filesize = filesize.replace(".", "");
+            final long page_size = SizeFormatter.getSize(filesize.replace(".", ""));
+            final long run_time_max_difference = getLongProperty(this.getPluginConfig(), FAILED_ADSFREE_DIFFERENCE_MINUTES, 0);
+            if (run_time_max_difference > 0) {
+                final long page_size_mb = SizeFormatter.getSize(filesize.replace(".", "")) / 1024 / 1024;
+                final long run_time_page = Long.parseLong(site_run_time);
+                double run_time_calculated;
+                if (preferMobileVids) {
+                    run_time_calculated = page_size_mb / QUALITY_H264_MOBILE_MB_PER_MINUTE;
+                } else {
+                    run_time_calculated = page_size_mb / QUALITY_H264_NORMAL_MB_PER_MINUTE;
+                }
+                long run_time_difference = run_time_page - (long) run_time_calculated;
+                if (run_time_difference < 0) run_time_difference = run_time_difference * (-1);
+                if (run_time_difference > run_time_max_difference) {
+                    logger.info("Seems like the ads-free (Schnittliste) failed - marking filename if possible.");
+                    link.setProperty("is_adsfree_failed", true);
+                }
             }
-            long run_time_difference = run_time_page - (long) run_time_calculated;
-            if (run_time_difference < 0) run_time_difference = run_time_difference * (-1);
-            if (run_time_difference > run_time_max_difference) {
-                logger.info("Seems like the ads-free (Schnittliste) failed - marking filename if possible.");
-                link.setProperty("is_adsfree_failed", true);
-            }
+            link.setDownloadSize(page_size);
         }
-        link.setDownloadSize(page_size);
 
         /* Set properties which are needed for filenames */
         /* Add series information */
@@ -467,11 +479,10 @@ public class SaveTv extends PluginForHost {
         final boolean preferMobileVids = cfg.getBooleanProperty(PREFERH264MOBILE);
         FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
-        login(this.br, account, false);
 
         /* Check if ads-free version is available */
-        if (SESSIONID != null || is_API_enabled()) {
-            if (SESSIONID == null) login(this.br, account, true);
+        if (SESSIONID != null && is_API_enabled()) {
+            if (br.containsHTML(API_DL_IMPOSSIBLE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DL_IMPOSSIBLE_USER_TEXT, 30 * 60 * 1000l); }
             // doSoapRequest("http://tempuri.org/ITelecast/GetTelecastDetail",
             // "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><GetTelecastDetail xmlns=\"http://tempuri.org/\"><sessionId>6f33f94f-13bb-4271-ab48-3339d2430d75</sessionId><telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"/><detailLevel>1</detailLevel></GetTelecastDetail></s:Body></s:Envelope>");
             // try {
@@ -489,6 +500,7 @@ public class SaveTv extends PluginForHost {
                 ISADSFREEAVAILABLE = true;
             }
         } else {
+            if (br.containsHTML(SITE_DL_IMPOSSIBLE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DL_IMPOSSIBLE_USER_TEXT, 30 * 60 * 1000l); }
             final DecimalFormat df = new DecimalFormat("0000");
             postPageSafe(this.br, "https://www.save.tv/STV/M/obj/cRecordOrder/croGetAdFreeAvailable.cfm?null.GetAdFreeAvailable", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetAdFreeAvailable&c0-id=" + df.format(new Random().nextInt(1000)) + "_" + System.currentTimeMillis() + "&c0-param0=number:" + getTelecastId(downloadLink) + "&xml=true&extend=function (object) {for (property in object) {this[property] = object[property];}return this;}&");
             if (this.br.containsHTML("= \\'3\\';")) {
@@ -882,6 +894,12 @@ public class SaveTv extends PluginForHost {
             calculated_filesize = QUALITY_H264_NORMAL_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
         }
         return (long) calculated_filesize;
+    }
+
+    private String get_run_time(final Browser br) {
+        String run_time_site = br.getRegex("<b>Aufnahmezeitraum:</b>[\t\n\r ]+\\d{2}:\\d{2} \\-[\t\n\r ]+\\d{2}:\\d{2} \\((\\d+) Min\\.\\)").getMatch(0);
+        if (run_time_site == null) run_time_site = "0";
+        return run_time_site;
     }
 
     /**

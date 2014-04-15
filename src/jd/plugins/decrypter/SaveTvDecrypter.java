@@ -304,7 +304,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String date = dateRegex.getMatch(0);
         final String time = dateRegex.getMatch(1);
         final String tv_station = new Regex(id_info, "global/TVLogoDE/[A-Za-z0-9\\-_]+\\.gif\" width=\"\\d+\" height=\"\\d+\" alt=\"([^<>\"]*?)\"").getMatch(0);
-        final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(dateRegex.getMatch(2), mobilePreferred());
+        String site_run_time = dateRegex.getMatch(2);
+        if (site_run_time == null) site_run_time = "0";
+        final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(site_run_time, mobilePreferred());
         final Regex nameRegex = new Regex(id_info, "class=\"normal\">([^<>\"]*?)</a>([^<>\"]*?)</td>");
         String name = nameRegex.getMatch(0);
         if (name == null) name = new Regex(id_info, "class=\"child\">([^<>\"]*?)</a>").getMatch(0);
