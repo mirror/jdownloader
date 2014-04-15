@@ -87,9 +87,12 @@ public class VDiskCn extends PluginForDecrypt {
                 return null;
             }
             DownloadLink link;
+            String filename;
             for (String singleLink[] : links) {
                 link = createDownloadlink("http://vdisk.cn" + singleLink[0]);
-                link.setName(singleLink[1]);
+                /* [NEW] --> Remove that from filenames */
+                filename = singleLink[1].replace("<font color=\"#FF0000\">[新]</font>", "");
+                link.setName(filename);
                 link.setDownloadSize(SizeFormatter.getSize(singleLink[2].trim()));
                 link.setAvailable(true);
                 try {

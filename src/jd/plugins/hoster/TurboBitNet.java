@@ -33,6 +33,7 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -63,12 +64,15 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.)?(maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|sharezoid\\.com|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz\\-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
-    private static StringContainer UA            = new StringContainer(RandomUserAgent.generate());
-    private static final String    RECAPTCHATEXT = "api\\.recaptcha\\.net";
-    private static final String    CAPTCHAREGEX  = "\"(http://turbobit\\.net/captcha/.*?)\"";
-    private static final String    MAINPAGE      = "http://turbobit.net";
-    private static Object          LOCK          = new Object();
-    private static final String    BLOCKED       = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
+    private static StringContainer UA                = new StringContainer(RandomUserAgent.generate());
+    private static final String    RECAPTCHATEXT     = "api\\.recaptcha\\.net";
+    private static final String    CAPTCHAREGEX      = "\"(http://turbobit\\.net/captcha/.*?)\"";
+    private static final String    MAINPAGE          = "http://turbobit.net";
+    private static Object          LOCK              = new Object();
+    private static final String    BLOCKED           = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
+
+    private static final String    NICE_HOST         = "turbobit.net";
+    private static final String    NICE_HOSTproperty = "turbobitnet";
 
     public static class StringContainer {
         public String string = null;
@@ -580,7 +584,19 @@ public class TurboBitNet extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info(NICE_HOST + ": unknown_dl_error_premium");
+            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "unknown_dl_error_premium", 0);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty(NICE_HOSTproperty + "unknown_dl_error_premium", timesFailed);
+                logger.info(NICE_HOST + ": unknown_dl_error_premium -> Retrying");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "unknown_dl_error_premium");
+            } else {
+                link.setProperty(NICE_HOSTproperty + "unknown_dl_error_premium", Property.NULL);
+                logger.info(NICE_HOST + ": unknown_dl_error_premium - Plugin might be broken!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         br.setFollowRedirects(false);
         boolean isdllable = false;
@@ -631,8 +647,7 @@ public class TurboBitNet extends PluginForHost {
             }
             br.followConnection();
             logger.warning("dllink doesn't seem to be a file...");
-            if (br.containsHTML("<h1>404 Not Found</h1>")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
-            if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
+            handleGeneralServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -690,12 +705,18 @@ public class TurboBitNet extends PluginForHost {
             br.followConnection();
             logger.warning("dllink doesn't seem to be a file...");
             if (br.containsHTML("Our service is currently unavailable in your country\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country."); }
-            if (br.containsHTML("<h1>404 Not Found</h1>")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
-            if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
+            handleGeneralServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         handleServerErrors();
         dl.startDownload();
+    }
+
+    private void handleGeneralServerErrors() throws PluginException {
+        if (br.containsHTML("<h1>404 Not Found</h1>") || br.getHttpConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l); }
+        if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Try again later'", 20 * 60 * 1000l); }
+        /* Either user waited too long for the captcha or maybe slow servers */
+        if (br.containsHTML(">Ссылка просрочена\\. Пожалуйста получите")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 5 * 60 * 1000l); }
     }
 
     private void handleServerErrors() throws PluginException {

@@ -32,7 +32,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thefilebay.com" }, urls = { "http://(www\\.)?thefilebay\\.com/(?!faq|register|login|terms|report_file)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thefilebay.com" }, urls = { "https?://(www\\.)?thefilebay\\.com/(?!faq|register|login|terms|report_file)[a-z0-9]+" }, flags = { 0 })
 public class TheFileBayCom extends PluginForHost {
 
     public TheFileBayCom(PluginWrapper wrapper) {
@@ -62,11 +62,13 @@ public class TheFileBayCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace(this.getHost() + "decrypted", this.getHost()));
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -79,9 +81,8 @@ public class TheFileBayCom extends PluginForHost {
             link.getLinkStatus().setStatusText(SERVERERRORUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        final Regex fInfo = br.getRegex("<th class=\"descr\"([^<>]*?)?>[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<br/>");
-        final String filename = fInfo.getMatch(1);
-        final String filesize = fInfo.getMatch(2);
+        final String filename = br.getRegex("<strong>File Name:</strong>([^<>\"]*?)<br/>").getMatch(0);
+        final String filesize = br.getRegex("<strong>File Size:</strong>([^<>\"]*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
@@ -92,12 +93,17 @@ public class TheFileBayCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         boolean captcha = false;
         requestFileInformation(downloadLink);
-        if (br.getURL().contains(SIMULTANDLSLIMIT)) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
-        } else if (br.getURL().contains(SERVERERROR)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l); }
-        final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-        if (waittime != null) sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", RESUME, MAXCHUNKS);
+        String waittime = br.getRegex("var seconds = (\\d+);").getMatch(0);
+        String dllink = br.getRegex("class=\\'DownloadButton\\'><a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) {
+            if (br.getURL().contains(SIMULTANDLSLIMIT)) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, SIMULTANDLSLIMITUSERTEXT, 1 * 60 * 1000l);
+            } else if (br.getURL().contains(SERVERERROR)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l); }
+            waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+            dllink = downloadLink.getDownloadURL() + "?d=1";
+        }
+        if (waittime != null) sleep(Integer.parseInt(waittime) * 1001l + 2000, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.getURL().contains(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
