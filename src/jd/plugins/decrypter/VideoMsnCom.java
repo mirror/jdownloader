@@ -54,6 +54,8 @@ public class VideoMsnCom extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink("decrypted://video.msn.com/" + System.currentTimeMillis() + new Random().nextInt(1000000));
             dl.setName(new Regex(parameter, "msn\\.com/watch/video/([a-z0-9\\-_]+)/").getMatch(0));
             dl.setAvailable(false);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         br.getPage(parameter);
         final SubConfiguration cfg = SubConfiguration.getConfig("video.msn.com");

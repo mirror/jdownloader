@@ -304,18 +304,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String date = dateRegex.getMatch(0);
         final String time = dateRegex.getMatch(1);
         final String tv_station = new Regex(id_info, "global/TVLogoDE/[A-Za-z0-9\\-_]+\\.gif\" width=\"\\d+\" height=\"\\d+\" alt=\"([^<>\"]*?)\"").getMatch(0);
-        final int duration_minutes = Integer.parseInt(dateRegex.getMatch(2));
-        double filesize;
-        /* User doesn't prefer the mobile version */
-        if (!mobilePreferred()) {
-            filesize = QUALITY_H264_NORMAL_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
-            /* User prefers mobile version & it's available */
-        } else if (mobilePreferred() && id_info.contains("class=\"rec4\"")) {
-            filesize = QUALITY_H264_MOBILE_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
-        } else {
-            /* User prefers mobile version but it's not available -> Don't set filesize */
-            filesize = 0;
-        }
+        final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(dateRegex.getMatch(2), mobilePreferred());
         final Regex nameRegex = new Regex(id_info, "class=\"normal\">([^<>\"]*?)</a>([^<>\"]*?)</td>");
         String name = nameRegex.getMatch(0);
         if (name == null) name = new Regex(id_info, "class=\"child\">([^<>\"]*?)</a>").getMatch(0);
@@ -330,7 +319,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(telecast_url);
             /* Nothing to hide - Always show original links in JD */
             dl.setBrowserUrl(telecast_url);
-            dl.setDownloadSize((long) filesize);
+            dl.setDownloadSize(calculated_filesize);
             if (FAST_LINKCHECK) dl.setAvailable(true);
 
             if (sur_name != null && !sur_name.equals("")) {

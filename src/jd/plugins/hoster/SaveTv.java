@@ -131,6 +131,8 @@ public class SaveTv extends PluginForHost {
     private static final int    MAX_RETRIES_LOGIN                                   = 10;
     private static final int    MAX_RETRIES_SAFE_REQUEST                            = 3;
 
+    private static final String DL_IMPOSSIBLE                                       = ">Diese Sendung kann leider nicht heruntergeladen werden, da die Aufnahme fehlerhaft ist";
+
     @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -230,6 +232,7 @@ public class SaveTv extends PluginForHost {
             if (preferMobileVids) filesize = br.getRegex("title=\"H\\.264 Mobile\"( )?/>[\t\n\r ]+</a>[\t\n\r ]+<p>[\t\n\r ]+<a class=\"archive\\-detail\\-link\" href=\"javascript:STV\\.Archive\\.Download\\.openWindow\\(\\d+, \\d+, \\d+, \\d+\\);\">Download</a>[\t\n\r ]+\\(ca\\.[ ]+(.*?)\\)").getMatch(1);
             if (site_title == null || filesize == null) {
                 logger.warning("Save.tv: Availablecheck failed!");
+                if (br.containsHTML(DL_IMPOSSIBLE)) logger.warning("Fail reason: DL_IMPOSSIBLE!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             site_title = correctSiteTitle(site_title);
@@ -624,30 +627,6 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    /**
-     * @param dl
-     *            DownloadLink
-     * @param preferMobileVideos
-     *            : Mobile Videos bevurzugen oder nicht
-     * @param downloadWithoutAds
-     *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
-     */
-    private void postDownloadPage(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
-        br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + getTelecastId(dl) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
-    }
-
-    /**
-     * @param dl
-     *            DownloadLink
-     * @param preferMobileVideos
-     *            : Mobile Videos bevurzugen oder nicht
-     * @param downloadWithoutAds
-     *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
-     */
-    private void postDownloadPageAPI(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
-        doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds + "</adFreeSpecified>");
-    }
-
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -855,6 +834,30 @@ public class SaveTv extends PluginForHost {
         }
     }
 
+    /**
+     * @param dl
+     *            DownloadLink
+     * @param preferMobileVideos
+     *            : Mobile Videos bevurzugen oder nicht
+     * @param downloadWithoutAds
+     *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
+     */
+    private void postDownloadPage(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
+        br.postPage("https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?null.GetDownloadUrl", "ajax=true&clientAuthenticationKey=&callCount=1&c0-scriptName=null&c0-methodName=GetDownloadUrl&c0-id=&c0-param0=number:" + getTelecastId(dl) + "&" + preferMobileVideos + "&c0-param2=boolean:" + downloadWithoutAds + "&xml=true&");
+    }
+
+    /**
+     * @param dl
+     *            DownloadLink
+     * @param preferMobileVideos
+     *            : Mobile Videos bevurzugen oder nicht
+     * @param downloadWithoutAds
+     *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
+     */
+    private void postDownloadPageAPI(final DownloadLink dl, final String preferMobileVideos, final String downloadWithoutAds) throws IOException {
+        doSoapRequest("http://tempuri.org/IDownload/GetStreamingUrl", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId><telecastId i:type=\"d:int\">" + getTelecastId(dl) + "</telecastId><telecastIdSpecified i:type=\"d:boolean\">true</telecastIdSpecified><recordingFormatId i:type=\"d:int\">" + preferMobileVideos + "</recordingFormatId><recordingFormatIdSpecified i:type=\"d:boolean\">true</recordingFormatIdSpecified><adFree i:type=\"d:boolean\">false</adFree><adFreeSpecified i:type=\"d:boolean\">" + downloadWithoutAds + "</adFreeSpecified>");
+    }
+
     private void prepBrowser_web(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
@@ -866,6 +869,19 @@ public class SaveTv extends PluginForHost {
         br.setConnectTimeout(3 * 60 * 1000);
         br.getHeaders().put("User-Agent", "kSOAP/2.0");
         br.getHeaders().put("Content-Type", "text/xml");
+    }
+
+    public static long calculateFilesize(final String minutes, final boolean mobilePreferred) {
+        double calculated_filesize;
+        final long duration_minutes = Long.parseLong(minutes);
+        if (mobilePreferred) {
+            /* User prefers the mobile version */
+            calculated_filesize = QUALITY_H264_MOBILE_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
+        } else {
+            /* User does not prefer mobile version */
+            calculated_filesize = QUALITY_H264_NORMAL_MB_PER_MINUTE * duration_minutes * 1024 * 1024;
+        }
+        return (long) calculated_filesize;
     }
 
     /**
