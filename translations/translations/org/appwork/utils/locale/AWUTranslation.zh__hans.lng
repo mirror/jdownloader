@@ -115,5 +115,6 @@ proxy_none=直接
 proxy_socks4=%s1:%s2 (Socks4 代理)
 proxy_socks5=%s1:%s2 (Socks5 代理)
 proxydialog_title=没有连接到互联网
+tableheader_tooltip_locked=%s1 (大小锁定)
 tableheader_tooltip_normal=%s1
 unLockColumnWidthAction2=列宽度已锁

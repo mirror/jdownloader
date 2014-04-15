@@ -1,4 +1,5 @@
 IfFileExistsDialog_layoutDialogContent_archive=压缩文档:
+IfFileExistsDialog_layoutDialogContent_newName=新名称:
 ValidateArchiveAction_ValidateArchiveAction=确认 %s1
 ValidateArchiveAction_ValidateArchiveAction_multi=确认压缩文档
 ValidateArchiveAction_ValidateArchiveAction_object_=确认多个压缩文档
