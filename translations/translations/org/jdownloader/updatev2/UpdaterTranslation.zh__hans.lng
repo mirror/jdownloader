@@ -38,3 +38,4 @@ update_dialog_later=稍后询问
 update_dialog_news_button=打开更改日志
 update_dialog_title_updates_available=更新可用
 update_dialog_yes=是(推荐)
+update_in_next_session=取消，直到重启之前都不再提示
