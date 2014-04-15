@@ -90,7 +90,13 @@ public class GldSlTo extends PluginForDecrypt {
                     }
                     final File file = this.getLocalCaptchaFile();
                     br.cloneBrowser().getDownload(file, "http://goldesel.to/" + capLink);
-                    final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Goldesel.to\r\nDecrypting: " + fpName + "\r\nClick-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID, "Klicke in den gestrichelten Kreis!");
+                    String click_on;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        click_on = "Klicke in den gestrichelten Kreis!";
+                    } else {
+                        click_on = "Click in the dashed circle!";
+                    }
+                    final Point p = UserIO.getInstance().requestClickPositionDialog(file, "Goldesel.to\r\nDecrypting: " + fpName + "\r\nClick-Captcha | Mirror " + counter + " / " + maxc + " : " + decryptID, click_on);
                     if (p == null) {
                         logger.info("p = null --> Decrypt process or captchas aborted by user");
                         return decryptedLinks;

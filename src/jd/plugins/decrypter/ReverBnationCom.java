@@ -71,6 +71,10 @@ public class ReverBnationCom extends PluginForDecrypt {
             final String fileID = new Regex(parameter, "(\\d+)$").getMatch(0);
             if (parameter.matches("http://(www\\.)?reverbnation\\.com/open_graph/song/\\d+")) parameter = parameter.replace("open_graph/song/", "play_now/song_");
             br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String artistID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
             if (artistID == null) {
                 artistID = br.getRegex("\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);

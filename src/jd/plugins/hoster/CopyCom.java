@@ -95,6 +95,7 @@ public class CopyCom extends PluginForHost {
                 downloadLink.setProperty(CopyCom.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
+            throw e;
         }
     }
 

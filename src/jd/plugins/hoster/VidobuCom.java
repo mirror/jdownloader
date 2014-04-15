@@ -70,10 +70,11 @@ public class VidobuCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("http://www\\.vidobu\\.com/uyari_ip\\.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("http://www\\.vidobu\\.com/uyari_ip\\.php") || br.getHttpConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String nextUrl = br.getRegex("<iframe src=\"(http://[^<>]+)\"").getMatch(0);
         clipData = br.getPage(Encoding.htmlDecode(nextUrl));
         String title = br.getRegex("<title>(.*?)</title>").getMatch(0);

@@ -115,7 +115,7 @@ public class HugeFilesNet extends PluginForHost {
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
             // prem account
-            chunks = 0;
+            chunks = -2;
             resumes = true;
             acctype = "Premium Account";
             directlinkproperty = "premlink";
@@ -786,7 +786,8 @@ public class HugeFilesNet extends PluginForHost {
             } else {
                 expire = expireD;
             }
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 4);
+            account.setMaxSimultanDownloads(4);
             ai.setValidUntil(expire);
             ai.setStatus("Premium User");
         }

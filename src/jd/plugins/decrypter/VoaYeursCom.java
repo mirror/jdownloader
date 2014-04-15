@@ -193,6 +193,11 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.madthumbs.com/" + Encoding.htmlDecode(externID)));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(http://(www\\.)?embed\\.porntube\\.com/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // For all following ids, a filename is needed
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);

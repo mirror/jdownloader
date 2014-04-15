@@ -1486,7 +1486,7 @@ public class SaveTv extends PluginForHost {
 
             panelGenerator.addCategory("Download");
             panelGenerator.addEntry("Max. Anzahl gleichzeitiger Downloads:", "20");
-            panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", "4");
+            panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", "2");
             panelGenerator.addEntry("Abgebrochene Downloads fortsetzbar:", "Ja");
 
             panelGenerator.addEntry("Plugin Revision:", revision);

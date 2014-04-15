@@ -81,11 +81,16 @@ public class ChoMikujPl extends PluginForDecrypt {
         String linkending = null;
         if (parameter.contains(",")) linkending = parameter.substring(parameter.lastIndexOf(","));
         if (linkending == null) linkending = parameter.substring(parameter.lastIndexOf("/") + 1);
-        /** Correct added link */
+        /* Correct added link */
         parameter = parameter.replace("www.", "");
         br.setFollowRedirects(false);
+        try {
+            br.setLoadLimit(4194304);
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 */
+        }
 
-        // checking if the single link is folder with EXTENSTION in the name
+        /* checking if the single link is folder with EXTENSTION in the name */
         boolean folderCheck = false;
         /** Handle single links */
 
@@ -456,19 +461,25 @@ public class ChoMikujPl extends PluginForDecrypt {
                     final String filesize = new Regex(entry, "<li><span>(\\d+(,\\d+)? [A-Za-z]{1,5})</span>").getMatch(0);
                     final Regex finfo = new Regex(entry, "<span class=\"bold\">(.*?)</span>(\\.[^<>\"/]*?)</a>");
                     String filename = finfo.getMatch(0);
+                    /* This is usually only for filenames without ext */
+                    if (filename == null) filename = new Regex(entry, "data\\-title=\"([^<>\"]*?)\"").getMatch(0);
                     final String fid = new Regex(entry, "rel=\"(\\d+)\"").getMatch(0);
                     String ext = finfo.getMatch(1);
-                    if (filename == null || ext == null || filesize == null || fid == null) {
+                    if (filename == null || filesize == null || fid == null) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
-                    filename = Encoding.htmlDecode(filename.trim());
+                    filename = correctFilename(Encoding.htmlDecode(filename).trim());
                     filename = filename.replace("<span class=\"e\"> </span>", "");
-                    ext = Encoding.htmlDecode(ext.trim());
+                    if (ext != null) {
+                        ext = Encoding.htmlDecode(ext.trim());
+                        filename += ext;
+                    }
 
                     dl.setProperty("fileid", fid);
                     dl.setProperty("__RequestVerificationToken_Lw__", br.getCookie(parameter, "__RequestVerificationToken_Lw__"));
-                    dl.setName(correctFilename(Encoding.htmlDecode(filename)) + ext);
+                    dl.setProperty("plain_filename", filename);
+                    dl.setName(filename);
 
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);

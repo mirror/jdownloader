@@ -42,6 +42,9 @@ public class VidobuComDecrypter extends PluginForDecrypt {
         if (br.containsHTML("<a href=\"https?://(www\\.)?vidobu\\.com/satinal\\.php\"><img src=\"https?://(www\\.)?vidobu.com/images/uyari_ekran\\.png\"")) {
             logger.info("Video only available for registered users: " + parameter);
             return decryptedLinks;
+        } else if (br.containsHTML("class=\"lock icon\"")) {
+            logger.info("Video is private: " + parameter);
+            return decryptedLinks;
         }
         String externID = br.getRegex("\"(http://player\\.vimeo\\.com/video/\\d+)").getMatch(0);
         if (externID != null) {

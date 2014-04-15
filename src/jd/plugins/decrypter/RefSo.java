@@ -35,12 +35,14 @@ public class RefSo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Wrong<|Url not Found<") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">Wrong<|Url not Found<") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String link = br.getRegex("class=\"img_btn hide fleft\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        String link = br.getRegex("class=\"img_btn hide fleft\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (link == null && !br.getURL().contains("ref.so/")) link = br.getURL();
         if (link == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
