@@ -27,6 +27,8 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -147,11 +149,11 @@ public class MixtureCloudCom extends PluginForHost {
         String dllink = br.getRegex("style=\"padding\\-left:30px\"></div>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.mixturecloud\\.com/down\\.php\\?d=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /** Waittime can be skipped */
-        int wait = 52;
-        final String waittime = br.getRegex("var time=(\\d+)").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
+        // /** Waittime can be skipped */
+        // int wait = 52;
+        // final String waittime = br.getRegex("var time=(\\d+)").getMatch(0);
+        // if (waittime != null) wait = Integer.parseInt(waittime);
+        // sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -160,7 +162,7 @@ public class MixtureCloudCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://mixture-cloud.com";
+    private static final String MAINPAGE = "http://mixturecloud.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -184,26 +186,56 @@ public class MixtureCloudCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
-                br.getPage("https://www.mixture-cloud.com/");
-                final String secCode = br.getRegex("type=\"hidden\" name=\"securecode\" value=\"([^<>\"]{8})\"").getMatch(0);
-                if (secCode == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                String postData = "login=1&back=&securecode=" + Encoding.urlEncode(secCode) + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
-                // Check if we have to enter a login captcha
-                final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                if (rcID != null) {
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setId(rcID);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "mixturecloud.com", "http://mixture-cloud.com", true);
-                    final String c = getCaptchaCode(cf, dummyLink);
-                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                loop: for (int i = 0; i < 3; i++) {
+                    // 3 captcha tries
+
+                    br.clearCookies("https://www.mixturecloud.com/");
+                    br.setFollowRedirects(true);
+                    br.getPage("https://www.mixturecloud.com/");
+
+                    Form login = br.getForm(1);
+                    login.getInputField("email").setValue(Encoding.urlEncode(account.getUser()));
+                    login.getInputField("password").setValue(Encoding.urlEncode(account.getPass()));
+
+                    final String secCode = br.getRegex("type=\"hidden\" name=\"securecode\" value=\"([^<>\"]{8})\"").getMatch(0);
+                    if (secCode == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    String postData = "login=1&back=&securecode=" + Encoding.urlEncode(secCode) + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                    // Check if we have to enter a login captcha
+                    final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+                    if (rcID != null) {
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setId(rcID);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "mixturecloud.com", "http://mixture-cloud.com", true);
+                        final String c = getCaptchaCode(cf, dummyLink);
+                        postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                        login.addInputField(new InputField("recaptcha_challenge_field", Encoding.urlEncode(rc.getChallenge())));
+                        login.addInputField(new InputField("recaptcha_response_field", Encoding.urlEncode(c)));
+                    }
+                    // br.postPage("http://www.mixturecloud.com/login", postData);
+                    br.setFollowRedirects(false);
+                    br.submitForm(login);
+                    br.setFollowRedirects(true);
+                    for (String s : br.getRequest().getResponseHeaders().get("Set-Cookie")) {
+                        if (s.startsWith("mx_e=") && s.contains("Incorrect+words")) {
+                            // captcha wrong
+                            continue loop;
+                        }
+                    }
+
+                    break;
                 }
-                br.postPage("http://www.mixture-cloud.com/login", postData);
                 final String mx_m = br.getCookie(MAINPAGE, "mx_m");
-                if (br.getCookie(MAINPAGE, "mx") == null && (mx_m == null || !mx_m.contains("connected"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                boolean success = false;
+                for (String s : br.getRequest().getResponseHeaders().get("Set-Cookie")) {
+                    if (s.startsWith("mx_m=") && s.contains("connected")) {
+                        success = true;
+                        break;
+                    }
+                }
+                if (!success) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
 
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -245,7 +277,8 @@ public class MixtureCloudCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://www.mixture-cloud.com/account");
+        br.setFollowRedirects(true);
+        br.getPage("http://www.mixturecloud.com/account");
         ai.setUnlimitedTraffic();
         account.setValid(true);
         if (br.containsHTML("<\\!\\-\\- PREMIUM \\-\\->")) {
