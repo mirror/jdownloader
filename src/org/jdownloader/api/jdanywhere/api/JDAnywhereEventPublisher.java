@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.AccountPropertyChangedEvent;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
@@ -49,13 +53,14 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
-public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener, ChallengeResponseListener {
+public class JDAnywhereEventPublisher implements EventPublisher, AccountControllerListener, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener, ChallengeResponseListener {
 
     private CopyOnWriteArraySet<EventsSender> eventSenders       = new CopyOnWriteArraySet<EventsSender>();
     private EventsAPI                         eventsApi          = new EventsAPI();
     HashMap<Long, String>                     linkStatusMessages = new HashMap<Long, String>();
 
     private enum EVENTID {
+        ACCOUNTCHANGED,
         SETTINGSCHANGED,
         LINKCHANGED,
         LINKSTATUSCHANGED,
@@ -79,7 +84,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     @Override
     public String[] getPublisherEventIDs() {
-        return new String[] { EVENTID.CRAWLEDLINKENABLEDCHANGED.name(), EVENTID.LINKENABLEDCHANGED.name(), EVENTID.SETTINGSCHANGED.name(), EVENTID.LINKCHANGED.name(), EVENTID.LINKSTATUSCHANGED.name(), EVENTID.FILEPACKAGESTATUSCHANGED.name(), EVENTID.PACKAGEFINISHED.name(), EVENTID.DOWNLOADLINKADDED.name(), EVENTID.DOWNLOADLINKREMOVED.name(), EVENTID.DOWNLOADPACKAGEADDED.name(), EVENTID.DOWNLOADPACKAGEREMOVED.name(), EVENTID.CAPTCHA.name(), EVENTID.RUNNINGSTATE.name(), EVENTID.LINKCOLLECTORLINKADDED.name(), EVENTID.LINKCOLLECTORLINKREMOVED.name(), EVENTID.LINKCOLLECTORPACKAGEADDED.name(), EVENTID.LINKCOLLECTORPACKAGEREMOVED.name(), EVENTID.CRAWLEDLINKSTATUSCHANGED.name(), EVENTID.CRAWLEDPACKAGESTATUSCHANGED.name() };
+        return new String[] { EVENTID.ACCOUNTCHANGED.name(), EVENTID.CRAWLEDLINKENABLEDCHANGED.name(), EVENTID.LINKENABLEDCHANGED.name(), EVENTID.SETTINGSCHANGED.name(), EVENTID.LINKCHANGED.name(), EVENTID.LINKSTATUSCHANGED.name(), EVENTID.FILEPACKAGESTATUSCHANGED.name(), EVENTID.PACKAGEFINISHED.name(), EVENTID.DOWNLOADLINKADDED.name(), EVENTID.DOWNLOADLINKREMOVED.name(), EVENTID.DOWNLOADPACKAGEADDED.name(), EVENTID.DOWNLOADPACKAGEREMOVED.name(), EVENTID.CAPTCHA.name(), EVENTID.RUNNINGSTATE.name(), EVENTID.LINKCOLLECTORLINKADDED.name(), EVENTID.LINKCOLLECTORLINKREMOVED.name(), EVENTID.LINKCOLLECTORPACKAGEADDED.name(), EVENTID.LINKCOLLECTORPACKAGEREMOVED.name(), EVENTID.CRAWLEDLINKSTATUSCHANGED.name(), EVENTID.CRAWLEDPACKAGESTATUSCHANGED.name() };
     }
 
     @Override
@@ -520,6 +525,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
             LinkCollector.getInstance().getEventsender().addListener(this, true);
             DownloadWatchDog.getInstance().getStateMachine().addListener(this);
             DownloadWatchDog.getInstance().getEventSender().addListener(this);
+            AccountController.getInstance().getBroadcaster().addListener(this);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(downloadSpeedLimitEventListener, false);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(downloadSpeedLimitEnabledEventListener, false);
             CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getEventSender().addListener(maxSimultaneDownloadsEventListenr, false);
@@ -540,6 +546,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
             LinkCollector.getInstance().getEventsender().removeListener(this);
             DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
             DownloadWatchDog.getInstance().getEventSender().removeListener(this);
+            AccountController.getInstance().getBroadcaster().removeListener(this);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().removeListener(downloadSpeedLimitEventListener);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().removeListener(downloadSpeedLimitEnabledEventListener);
             CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getEventSender().removeListener(maxSimultaneDownloadsEventListenr);
@@ -781,6 +788,37 @@ public class JDAnywhereEventPublisher implements EventPublisher, DownloadWatchdo
 
     @Override
     public void onDownloadWatchDogPropertyChange(DownloadWatchDogProperty propertyChange) {
+    }
+
+    @Override
+    public void onAccountControllerEvent(AccountControllerEvent event) {
+        if (event.getAccount() != null) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("ID", event.getAccount().getId().toString());
+            data.put("event", event.getType());
+            switch (event.getType()) {
+            case ACCOUNT_CHECKED:
+                // data.put("NewValue", event.getAccount().getId().toString());
+                break;
+            case ACCOUNT_PROPERTY_UPDATE:
+                data.put("Property", ((AccountPropertyChangedEvent) event).getProperty().getProperty().toString());
+                if (((AccountPropertyChangedEvent) event).getProperty().getValue() != null)
+                    data.put("NewValue", ((AccountPropertyChangedEvent) event).getProperty().getValue().toString());
+                else
+                    data.put("NewValue", "");
+                break;
+            case ADDED:
+                // data.put("NewValue", event.getAccount().getId().toString());
+                break;
+            case REMOVED:
+                // data.put("NewValue", event.getAccount().getId().toString());
+                break;
+            default:
+                break;
+
+            }
+            publishEvent(EVENTID.ACCOUNTCHANGED, data, "ACCOUNT_" + event.getAccount().getId().toString());
+        }
     }
 
 }

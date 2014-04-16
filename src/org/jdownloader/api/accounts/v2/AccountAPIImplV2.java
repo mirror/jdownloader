@@ -160,6 +160,14 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
         setEnabledState(false, linkIds);
     }
 
+    @Override
+    public void refreshAccounts(long[] ids) {
+        java.util.List<Account> accs = getAccountbyIDs(ids);
+        for (Account acc : accs) {
+            AccountController.getInstance().updateAccountInfo(acc, false);
+        }
+    }
+
     public void setEnabledState(boolean enabled, long[] ids) {
         java.util.List<Account> accs = getAccountbyIDs(ids);
         for (Account acc : accs) {
