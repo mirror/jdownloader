@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabyteupload.com" }, urls = { "http://(www\\.)?gigabyteupload\\.com/download\\-[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigabyteupload.com" }, urls = { "http://(www\\.)?gigabyteupload\\.com/(download\\-|download\\.html\\?video=)[a-z0-9]{32}" }, flags = { 0 })
 public class GigabyteUploadCom extends PluginForHost {
 
     public GigabyteUploadCom(PluginWrapper wrapper) {
@@ -37,6 +38,10 @@ public class GigabyteUploadCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.gigabyteupload.com/tos";
+    }
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://www.gigabyteupload.com/download-" + new Regex(link.getDownloadURL(), "([a-z0-9]{32})$").getMatch(0));
     }
 
     @Override

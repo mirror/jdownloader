@@ -366,7 +366,7 @@ public class SimplyPremiumCom extends PluginForHost {
         if (br.containsHTML("<error>not_valid_ip</error>")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid / Ungültig", PluginException.VALUE_ID_PREMIUM_DISABLE);
 
         }
-        APIKEY = br.getCookie("http://simply-premium.com/", "apikey");
+        APIKEY = br.getRegex("<apikey>([A-Za-z0-9]+)</apikey>").getMatch(0);
         if (APIKEY == null || br.containsHTML("<error>not_valid</error>")) {
             if ("de".equalsIgnoreCase(lang)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);

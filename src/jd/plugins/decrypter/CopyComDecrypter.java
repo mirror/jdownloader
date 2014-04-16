@@ -21,6 +21,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -57,7 +58,12 @@ public class CopyComDecrypter extends PluginForDecrypt {
             br.getHeaders().put("X-Client-Version", "1.0.00");
             br.getHeaders().put("X-Client-Type", "API");
             br.getHeaders().put("X-Api-Version", "1.0");
-            br.getPage("https://apiweb.copy.com/rest/meta" + additionalPath + "?offset=0&limit=2000&order=asc");
+            try {
+                br.getPage("https://apiweb.copy.com/rest/meta" + additionalPath + "?offset=0&limit=2000&order=asc");
+            } catch (final BrowserException e) {
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
             linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"").getMatch(0);
             /* Check if we have a single file */
             if (linktext == null && br.containsHTML("\"children_count\":0")) linktext = br.toString();
