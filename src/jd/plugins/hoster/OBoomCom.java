@@ -454,8 +454,9 @@ public class OBoomCom extends PluginForHost {
         }
         String waitTime = br.getRegex("403,(\\-?\\d+)").getMatch(0);
         if (waitTime != null && Integer.parseInt(waitTime) < 0) {
-
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later.", 1 * 60 * 1000l); }
+            // there is already a download running.
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+        }
         if (waitTime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l); }
         String urlInfos[] = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
         if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
