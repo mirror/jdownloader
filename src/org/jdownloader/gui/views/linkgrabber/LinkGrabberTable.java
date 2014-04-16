@@ -58,6 +58,7 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeperatorData;
 import org.jdownloader.controlling.contextmenu.gui.ExtPopupMenu;
 import org.jdownloader.controlling.contextmenu.gui.MenuBuilder;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -163,11 +164,11 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
                         if (LinkGrabberTable.this.isRowSelected(row)) {
                             // clicked on a selected row. let's confirm them all
 
-                            ConfirmLinksContextAction.confirmSelection(getSelectionInfo(true, true), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false, null, false);
+                            ConfirmLinksContextAction.confirmSelection(getSelectionInfo(true, true), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false, null, BooleanStatus.FALSE);
                         } else {
                             // clicked on a not-selected row. only add the context item
 
-                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, false), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false, null, false);
+                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, false), org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue(), false, false, null, BooleanStatus.FALSE);
 
                         }
 

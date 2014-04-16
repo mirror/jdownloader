@@ -24,6 +24,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcollector.autostart.AutoStartManager;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
@@ -245,9 +246,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     private DelayedRunnable                              asyncCacheCleanup;
 
     private boolean                                      restoreButtonEnabled = false;
+    private AutoStartManager                             autoStartManager;
 
     private LinkCollector() {
         autoRenameCache = new HashMap<Object, Object>();
+        autoStartManager = new AutoStartManager();
         ShutdownController.getInstance().addShutdownVetoListener(this);
 
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
@@ -363,6 +366,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
 
         });
+    }
+
+    public AutoStartManager getAutoStartManager() {
+        return autoStartManager;
     }
 
     public LinkCollectorEventSender getEventsender() {
@@ -686,6 +693,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         LinkCollector.this.moveOrAddAt(pkg, add, -1);
                     }
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.ADDED_LINK, link, QueuePriority.NORM));
+                    autoStartManager.onLinkAdded(link);
                     return null;
                 } catch (Throwable e) {
                     dupeCheckMap.remove(link.getLinkID());

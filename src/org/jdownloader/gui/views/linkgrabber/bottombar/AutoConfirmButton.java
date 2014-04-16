@@ -5,44 +5,30 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 import javax.swing.Icon;
 import javax.swing.Timer;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 
-import jd.controlling.TaskQueue;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerEvent;
 import jd.controlling.linkchecker.LinkCheckerListener;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorCrawler;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcollector.autostart.AutoStartManagerListener;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerEvent;
 import jd.controlling.linkcrawler.LinkCrawlerListener;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
-import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.event.predefined.changeevent.ChangeEvent;
 import org.appwork.utils.event.predefined.changeevent.ChangeListener;
-import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
-import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.AutoStartOptions;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 
-public class AutoConfirmButton extends ExtButton implements ChangeListener, TableModelListener {
+public class AutoConfirmButton extends ExtButton implements ChangeListener, AutoStartManagerListener {
     /**
      * 
      */
@@ -51,12 +37,10 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
     protected static final int     SIZE             = 22;
 
     private IconedProcessIndicator progress         = null;
-    private DelayedRunnable        delayer;
+
     private Timer                  timer;
     private long                   startTime;
     private boolean                active           = false;
-
-    private int                    waittime;
 
     public void setVisible(boolean aFlag) {
         super.setVisible(aFlag);
@@ -64,8 +48,9 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
 
     public AutoConfirmButton() {
         super();
+
         setVisible(false);
-        waittime = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.CFG.getAutoConfirmDelay();
+
         progress = new IconedProcessIndicator(NewTheme.I().getIcon("paralell", 18)) {
             /**
              * 
@@ -97,7 +82,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
 
         };
         progress.getEventSender().addListener(this);
-        progress.setMaximum(waittime);
+
         setIcon(new Icon() {
 
             public void paintIcon(Component c, Graphics g, int x, int y) {
@@ -122,11 +107,9 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
         timer = new Timer(100, new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if ((System.currentTimeMillis() - startTime) < 1000) {
-                    progress.setValue((int) waittime);
-                } else {
-                    progress.setValue((int) (waittime - (System.currentTimeMillis() - startTime)));
-                }
+                progress.setMaximum(LinkCollector.getInstance().getAutoStartManager().getMaximum());
+                progress.setValue(LinkCollector.getInstance().getAutoStartManager().getValue());
+
             }
         });
         timer.setRepeats(true);
@@ -135,8 +118,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
 
             public void actionPerformed(ActionEvent e) {
                 setTooltipsEnabled(false);
-                delayer.stop();
-                timer.stop();
+                LinkCollector.getInstance().getAutoStartManager().interrupt();
                 setVisible(false);
             }
         });
@@ -168,67 +150,30 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                 }
             }
         });
-        delayer = new DelayedRunnable(waittime, -1) {
 
-            @Override
-            public String getID() {
-                return "AutoConfirmButton";
-            }
-
-            @Override
-            public void delayedrun() {
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-                        timer.stop();
-                        setVisible(false);
-                        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-                            @Override
-                            protected Void run() throws RuntimeException {
-                                java.util.List<AbstractNode> list = new ArrayList<AbstractNode>();
-                                boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
-                                boolean autoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
-                                for (CrawledLink l : LinkGrabberTableModel.getInstance().getAllChildrenNodes()) {
-                                    if (l.getLinkState() == AvailableLinkState.OFFLINE) continue;
-                                    if (l.isAutoConfirmEnabled() || autoConfirm) {
-                                        list.add(l);
-                                        if (l.isAutoStartEnabled()) autoStart = true;
-                                    }
-                                }
-                                ConfirmLinksContextAction ca = new ConfirmLinksContextAction(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false));
-                                ca.setAutoStart(autoStart ? AutoStartOptions.ENABLED : AutoStartOptions.DISABLED);
-                                ca.actionPerformed(null);
-                                return null;
-                            }
-                        });
-                    }
-                };
-            }
-        };
     }
 
     public void onChangeEvent(ChangeEvent event) {
         repaint();
     }
 
-    public void tableChanged(TableModelEvent e) {
-        boolean hasAutoConfirms = LinkGrabberTableModel.getInstance().isAutoConfirm();
-        this.setVisible(hasAutoConfirms);
-        if (hasAutoConfirms) {
-            delayer.resetAndStart();
-            startTime = System.currentTimeMillis();
-            if (!timer.isRunning()) {
-                timer.start();
-                setTooltipsEnabled(true);
-            }
-        } else {
-            setTooltipsEnabled(false);
-            delayer.stop();
-            timer.stop();
-        }
-
-    }
+    // public void tableChanged(TableModelEvent e) {
+    // boolean hasAutoConfirms = LinkGrabberTableModel.getInstance().isAutoConfirm();
+    // this.setVisible(hasAutoConfirms);
+    // if (hasAutoConfirms) {
+    // delayer.resetAndStart();
+    // startTime = System.currentTimeMillis();
+    // if (!timer.isRunning()) {
+    // timer.start();
+    // setTooltipsEnabled(true);
+    // }
+    // } else {
+    // setTooltipsEnabled(false);
+    // delayer.stop();
+    // timer.stop();
+    // }
+    //
+    // }
 
     private void update() {
         final boolean enabled = !LinkChecker.isChecking() && !LinkCrawler.isCrawling();
@@ -237,12 +182,49 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
             if (enabled == active) return;
             if (enabled) {
                 this.active = true;
-                LinkGrabberTableModel.getInstance().addTableModelListener(this);
+                LinkCollector.getInstance().getAutoStartManager().getEventSender().addListener(this, true);
+                // LinkGrabberTableModel.getInstance().addTableModelListener(this);
             } else {
                 active = false;
-                LinkGrabberTableModel.getInstance().removeTableModelListener(this);
+                // LinkGrabberTableModel.getInstance().removeTableModelListener(this);
+                LinkCollector.getInstance().getAutoStartManager().getEventSender().removeListener(this);
             }
         }
+    }
+
+    @Override
+    public void onAutoStartManagerDone() {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                timer.stop();
+                setVisible(false);
+            }
+        };
+
+    }
+
+    @Override
+    public void onAutoStartManagerReset() {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (!timer.isRunning()) {
+                    timer.start();
+                }
+                setVisible(true);
+            }
+        };
+
+    }
+
+    @Override
+    public void onAutoStartManagerRunning() {
+
     }
 
 }

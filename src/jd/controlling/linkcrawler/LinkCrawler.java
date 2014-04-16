@@ -964,6 +964,7 @@ public class LinkCrawler {
     private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest, final CrawledLinkModifier linkModifier, final String sourceURLs[]) {
         if (source == null || dest == null) return;
         dest.setSourceLink(source);
+        dest.setOrigin(source.getOrigin());
         dest.setSourceUrls(sourceURLs);
         dest.setMatchingFilter(source.getMatchingFilter());
         dest.setSourceJob(source.getSourceJob());

@@ -22,6 +22,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
@@ -70,7 +71,7 @@ public class StartDownloadsAction extends AbstractToolBarAction implements Downl
                 protected Void run() throws RuntimeException {
                     switch (CFG_GUI.CFG.getStartButtonActionInLinkgrabberContext()) {
                     case ADD_ALL_LINKS_AND_START_DOWNLOADS:
-                        ConfirmLinksContextAction.confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), true, false, true, null, false);
+                        ConfirmLinksContextAction.confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), true, false, true, null, BooleanStatus.FALSE);
 
                         break;
                     case START_DOWNLOADS_ONLY:

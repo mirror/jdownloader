@@ -57,13 +57,14 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
 
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {
         PackageControllerTableModelData<CrawledPackage, CrawledLink> ret = (PackageControllerTableModelData<CrawledPackage, CrawledLink>) super.sort(data, column);
-
+        System.out.println("AutoConfirm=false");
         boolean autoConfirm = ret.size() > 0 && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue();
         if (!autoConfirm) {
             for (CrawledLink l : ret.getAllChildrenNodes()) {
                 if (l.getLinkState() != AvailableLinkState.OFFLINE) {
                     if (l.isAutoConfirmEnabled()) {
                         autoConfirm = true;
+                        System.out.println("AutoConfirm=true");
                         break;
                     }
                 }
@@ -71,6 +72,7 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
         }
         // if (autoConfirm) {
         this.autoConfirm = autoConfirm;
+
         // }
         return ret;
 

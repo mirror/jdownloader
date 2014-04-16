@@ -191,4 +191,10 @@ public interface LinkgrabberSettings extends ConfigInterface {
     boolean isAddLinksDialogOverwritesPackagizerRulesEnabled();
 
     void setAddLinksDialogOverwritesPackagizerRulesEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isAutoStartConfirmSidebarFilterEnabled();
+
+    void setAutoStartConfirmSidebarFilterEnabled(boolean b);
 }

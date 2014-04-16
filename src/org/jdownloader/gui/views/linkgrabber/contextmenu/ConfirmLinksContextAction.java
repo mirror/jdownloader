@@ -34,6 +34,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction
 import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
@@ -115,7 +116,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
      */
     private static final long  serialVersionUID = -3937346180905569896L;
 
-    public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final boolean forcedStart) {
+    public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final BooleanStatus forcedStart) {
         Thread thread = new Thread() {
 
             public void run() {
@@ -219,7 +220,16 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 for (CrawledLink cl : selection.getChildren()) {
                     if (toDelete.contains(cl)) continue;
                     if (toKeepInLinkgrabber.contains(cl)) continue;
-                    cl.setForcedAutoStartEnabled(forcedStart);
+                    if (forcedStart != null) {
+                        switch (forcedStart) {
+                        case FALSE:
+                            cl.setForcedAutoStartEnabled(false);
+                            break;
+                        case TRUE:
+                            cl.setForcedAutoStartEnabled(true);
+                            break;
+                        }
+                    }
                     cl.setAutoStartEnabled(autoStart);
                     if (newPriority != null) {
                         cl.setPriority(newPriority);
@@ -292,10 +302,10 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         if (!isEnabled()) return;
         if (isSelectionOnly()) {
 
-            confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads());
+            confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
 
         } else {
-            confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads());
+            confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
         }
     }
 
