@@ -946,6 +946,7 @@ UploadSessionLogDialog_UploadSessionLogDialog_object_more=(více...)
 UploadSessionLogDialog_UploadSessionLogDialog_object_msg2=Během stahování souboru došlo k neznámému problému. Potřebujeme více podrobností o důvodu, abychom vyřešili tento problém. JDownloader je schopný automaticky sbírat požadované informace o chybě.  Pomozte nám opravit tento problém co nejdříve je možné odesláním těchto informací.
 UploadSessionLogDialog_UploadSessionLogDialog_object_title2=Potřebujeme vaši pomoc!
 UploadSessionLogDialog_UploadSessionLogDialog_yes=Chci pomoct! Pokračovat.
+UploadSessionLogDialog_getDontShowAgainLabelText_always=Vždy povolit nahrání protokolu bez dotázání.
 UploadSessionLogDialog_layoutDialogContent_errorid=Chybový kód
 UrlColumn_UrlColumn_open_tt_=Klikněte pro otevření URL v prohlížeči
 VariantColumn_VariantColumn_name_=Proměnná
