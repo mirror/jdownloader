@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -60,19 +61,23 @@ public class PornCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
-        if (br.containsHTML(">Sorry, this video is only available to members")) {
+        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
+        final Browser brc = br.cloneBrowser();
+        /* This way we can access links which are usually only accessible for registered users */
+        brc.getPage("http://www.porn.com/videos/embed/" + fid + ".html");
+        DLLINK = brc.getRegex("\"Med\"(,file)?:\"(http:.*?)\"").getMatch(1);
+        if (DLLINK == null) {
+            DLLINK = brc.getRegex("\"Low\"(,file)?:\"(http:.*?)\"").getMatch(1);
+            if (DLLINK == null) {
+                DLLINK = brc.getRegex("\"trailer\"(file)?:\"(http:.*?)\"").getMatch(1);
+            }
+        }
+        if (DLLINK == null && br.containsHTML(">Sorry, this video is only available to members")) {
             downloadLink.setName(filename + ".mp4");
             downloadLink.getLinkStatus().setStatusText("Only available for registered users");
             return AvailableStatus.TRUE;
         }
-        DLLINK = br.getRegex("\"Med\"(,file)?:\"(http:.*?)\"").getMatch(1);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"Low\"(,file)?:\"(http:.*?)\"").getMatch(1);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\"trailer\"(file)?:\"(http:.*?)\"").getMatch(1);
-            }
-        }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = ".mp4";
@@ -99,7 +104,7 @@ public class PornCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">Sorry, this video is only available to members")) {
+        if (DLLINK == null && br.containsHTML(">Sorry, this video is only available to members")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {

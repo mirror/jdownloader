@@ -62,7 +62,7 @@ public class EyesFileCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://eyesfile.com" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("http://eyesfile.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
 
     }
 

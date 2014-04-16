@@ -56,7 +56,7 @@ public class Share4WebCom extends PluginForHost {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
         }
-        final Regex fileInfo = br.getRegex("id=\"fileName\" style=\"[^<>\"]*?\">([^<>\"]*?)</span><span style=\"[^<>\"]*?\">\\(([^<>\"]*?)\\)</span>");
+        final Regex fileInfo = br.getRegex("<small>Download file:</small><br/>([^<>\"]*?)<small>\\(([^<>\"]*?)\\)</small>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

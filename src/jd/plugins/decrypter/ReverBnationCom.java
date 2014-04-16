@@ -100,7 +100,7 @@ public class ReverBnationCom extends PluginForDecrypt {
             if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|open_graph/song/\\d+)") || parameter.matches(PLAYLISTLINK)) {
                 br.getPage(parameter);
                 fpName = getFpname();
-                allInfo = br.getRegex("data\\-url=\"/artist/artist_song/(\\d+)\\?song_id=(\\d+)\">[\t\n\r ]+<a href=\"#\" class=\" standard_play_button song\\-action play\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
+                allInfo = br.getRegex("data\\-url=\"/artist/artist_song/(\\d+)\\?song_id=(\\d+)\">.*?<a href=\"#\" class=\"[^<>\"/]+\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
             } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/artist/downloads/\\d+")) {
                 br.getPage(parameter);
                 fpName = getFpname();
