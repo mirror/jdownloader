@@ -109,6 +109,7 @@ public class GldSlTo extends PluginForDecrypt {
                         String waittime = br.getRegex("<strong>(\\d+) Sekunden</strong> warten\\.").getMatch(0);
                         if (waittime != null) wait = Integer.parseInt(waittime);
                         this.sleep(wait * 1001, param);
+                        br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
                         continue;
                     }
                     if (br.containsHTML("Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet")) {

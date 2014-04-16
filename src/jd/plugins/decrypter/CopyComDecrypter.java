@@ -58,7 +58,9 @@ public class CopyComDecrypter extends PluginForDecrypt {
             br.getHeaders().put("X-Client-Type", "API");
             br.getHeaders().put("X-Api-Version", "1.0");
             br.getPage("https://apiweb.copy.com/rest/meta" + additionalPath + "?offset=0&limit=2000&order=asc");
-            linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"children_count\":\\d+").getMatch(0);
+            linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"").getMatch(0);
+            /* Check if we have a single file */
+            if (linktext == null && br.containsHTML("\"children_count\":0")) linktext = br.toString();
         } else {
             /* Old code, avoid using it! */
             br.getPage(parameter);

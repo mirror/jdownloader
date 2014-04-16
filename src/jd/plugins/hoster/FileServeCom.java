@@ -107,6 +107,10 @@ public class FileServeCom extends PluginForHost {
                 }
                 sb.append("&submit=Submit+Query");
                 this.br.postPage("http://app.fileserve.com/api/linkchecker/", sb.toString());
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    logger.warning("Fileserve availablecheck is out of order - under maintenance!");
+                    return false;
+                }
                 for (final DownloadLink dl : links) {
                     final String fileid = getID(dl);
                     if (fileid == null) {
