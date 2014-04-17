@@ -318,7 +318,7 @@ public class LinkSnappyCom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 503) {
             try {
                 dl.getConnection().disconnect();
-            } catch (Throwable e) {
+            } catch (final Throwable e) {
             }
             logger.info("Attempt failed: Got 503 error for link: " + dllink);
             return false;
@@ -455,7 +455,11 @@ public class LinkSnappyCom extends PluginForHost {
             }
             br.setFollowRedirects(true);
             postPageSecure("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null || !br.containsHTML("<strong>Expire Date:</strong> <span class=\"gold\">Lifetime</span>")) return false;
+            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null) return false;
+            /* Valid account --> Check if the account type is supported */
+            br.getPage("http://linksnappy.com/members/index.php?act=index");
+            /* Unsupported account type? */
+            if (!br.containsHTML("<strong>Expire Date:</strong> <span class=\"gold\">Lifetime</span>")) return false;
 
             /** Save cookies */
             final HashMap<String, String> cookies = new HashMap<String, String>();

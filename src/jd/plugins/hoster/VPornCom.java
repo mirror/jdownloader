@@ -52,6 +52,8 @@ public class VPornCom extends PluginForHost {
 
     private static final String INVALIDLINKS = "http://(www\\.)?vporn\\.com/(user|favorite|submitted|thumb)/.+";
 
+    private static final String NOCHUNKS     = "NOCHUNKS";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -94,12 +96,41 @@ public class VPornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+
+        int maxChunks = 0;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dl.getConnection().getResponseCode() == 416) {
+            logger.info("Resume failed --> Retrying from zero");
+            downloadLink.setChunksProgress(null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        try {
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(VPornCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(VPornCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            // New V2 errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(VPornCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(VPornCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
+        }
     }
 
     @Override
