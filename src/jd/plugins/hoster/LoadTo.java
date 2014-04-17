@@ -120,8 +120,9 @@ public class LoadTo extends PluginForHost {
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, "", true, 1);
         }
-        URLConnectionAdapter con = dl.getConnection();
+        final URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 416) {
+            logger.info("Resume failed --> Retrying from zero");
             downloadLink.setChunksProgress(null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }

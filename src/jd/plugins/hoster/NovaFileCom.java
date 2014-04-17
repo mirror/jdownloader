@@ -58,7 +58,7 @@ public class NovaFileCom extends PluginForHost {
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String  COOKIE_HOST                  = "http://novafile.com";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode|No htmlCode read";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -130,7 +130,7 @@ public class NovaFileCom extends PluginForHost {
         prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (correctedBR.contains(MAINTENANCE)) {
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
@@ -337,6 +337,11 @@ public class NovaFileCom extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dllink = Encoding.urlEncode_light(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        if (dl.getConnection().getResponseCode() == 416) {
+            logger.info("Resume failed --> Retrying from zero");
+            downloadLink.setChunksProgress(null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -508,7 +513,7 @@ public class NovaFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
@@ -752,6 +757,11 @@ public class NovaFileCom extends PluginForHost {
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dllink = Encoding.urlEncode_light(dllink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            if (dl.getConnection().getResponseCode() == 416) {
+                logger.info("Resume failed --> Retrying from zero");
+                link.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();

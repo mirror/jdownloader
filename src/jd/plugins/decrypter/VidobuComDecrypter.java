@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -38,12 +39,25 @@ public class VidobuComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+
+        final DownloadLink offline = createDownloadlink("http://vidobu.com/videoPlayer.php?videoID=" + System.currentTimeMillis());
+        offline.setFinalFileName(new Regex(parameter, "vidobu\\.com/videolar/(.+)").getMatch(0));
+        offline.setAvailable(false);
+        offline.setProperty("offline", true);
+
         if (br.containsHTML("<a href=\"https?://(www\\.)?vidobu\\.com/satinal\\.php\"><img src=\"https?://(www\\.)?vidobu.com/images/uyari_ekran\\.png\"")) {
             logger.info("Video only available for registered users: " + parameter);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (br.containsHTML("class=\"lock icon\"")) {
             logger.info("Video is private: " + parameter);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Video is offline: " + parameter);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String externID = br.getRegex("\"(http://player\\.vimeo\\.com/video/\\d+)").getMatch(0);

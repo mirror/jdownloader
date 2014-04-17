@@ -292,7 +292,13 @@ public class VKontakteRuHoster extends PluginForHost {
             if (br.containsHTML("This document is available only to its owner\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This document is available only to its owner"); }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        final URLConnectionAdapter con = dl.getConnection();
+        if (con.getResponseCode() == 416) {
+            logger.info("Resume failed --> Retrying from zero");
+            downloadLink.setChunksProgress(null);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        if (con.getContentType().contains("html")) {
             logger.info("vk.com: Plugin broken after download-try");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
