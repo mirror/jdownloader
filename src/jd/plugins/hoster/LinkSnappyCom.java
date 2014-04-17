@@ -141,12 +141,7 @@ public class LinkSnappyCom extends PluginForHost {
         /* now it's time to get all supported hosts */
         getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=FILEHOSTS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
         if (br.containsHTML("\"error\":\"Account has exceeded")) {
-            logger.info("Daily limit reached");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTageslimit erreicht!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDaily limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
+            dailyLimitReached();
         }
         final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}\\}").getMatch(0);
         hosts = hostText.split("\\},");
@@ -155,6 +150,16 @@ public class LinkSnappyCom extends PluginForHost {
             if (host != null) supportedHosts.add(host);
         }
         return ac;
+    }
+
+    private void dailyLimitReached() throws PluginException {
+        final String lang = System.getProperty("user.language");
+        logger.info("Daily limit reached");
+        if ("de".equalsIgnoreCase(lang)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTageslimit erreicht!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDaily limit reached!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
     }
 
     private AccountInfo site_fetchAccountInfo(final Account account) throws Exception {
@@ -234,8 +239,10 @@ public class LinkSnappyCom extends PluginForHost {
             }
         }
 
-        if (dl.getConnection().getResponseCode() == 503) stupidServerError();
-        if (dl.getConnection().getContentType().contains("html")) {
+        final URLConnectionAdapter con = dl.getConnection();
+        if (con.getResponseCode() == 503) stupidServerError();
+        if (con.getResponseCode() == 999) dailyLimitReached();
+        if (con.getContentType().contains("html")) {
             br.followConnection();
             logger.info("linksnappy.com: Unknown download error");
             int timesFailed = link.getIntegerProperty("timesfailedlinksnappycom_unknowndlerror", 0);
@@ -322,6 +329,98 @@ public class LinkSnappyCom extends PluginForHost {
             }
             logger.info("Attempt failed: Got 503 error for link: " + dllink);
             return false;
+        }
+        return true;
+    }
+
+    private boolean api_login(final Account account) throws Exception {
+        /** Load cookies */
+        br.setCookiesExclusive(true);
+        getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
+        if (br.containsHTML("\"status\":\"ERROR\"")) return false;
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean site_login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            /** Load cookies */
+            br.setCookiesExclusive(true);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(COOKIE_HOST, key, value);
+                    }
+                    return true;
+                }
+            }
+            br.setFollowRedirects(true);
+            postPageSecure("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
+            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null) return false;
+            /* Valid account --> Check if the account type is supported */
+            br.getPage("http://linksnappy.com/members/index.php?act=index");
+            if (br.containsHTML("<strong>Account Type:</strong>[\t\n\r ]+Free")) return false;
+            /* Unsupported account type? */
+            if (!br.containsHTML("<strong>Expire Date:</strong> <span class=\"gold\">Lifetime</span>")) {
+                final String lang = System.getProperty("user.language");
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+
+            /** Save cookies */
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(COOKIE_HOST);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+            return true;
+        }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        return AvailableStatus.UNCHECKABLE;
+    }
+
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
+        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, Long>();
+                hostUnavailableMap.put(account, unavailableMap);
+            }
+            /* wait to retry this host */
+            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+        }
+        throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    return false;
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(downloadLink.getHost());
+                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                }
+            }
         }
         return true;
     }
@@ -424,90 +523,6 @@ public class LinkSnappyCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-    }
-
-    private boolean api_login(final Account account) throws Exception {
-        /** Load cookies */
-        br.setCookiesExclusive(true);
-        getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
-        if (br.containsHTML("\"status\":\"ERROR\"")) return false;
-        return true;
-    }
-
-    @SuppressWarnings("unchecked")
-    private boolean site_login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            /** Load cookies */
-            br.setCookiesExclusive(true);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        this.br.setCookie(COOKIE_HOST, key, value);
-                    }
-                    return true;
-                }
-            }
-            br.setFollowRedirects(true);
-            postPageSecure("http://www.linksnappy.com/members/index.php?act=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
-            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null) return false;
-            /* Valid account --> Check if the account type is supported */
-            br.getPage("http://linksnappy.com/members/index.php?act=index");
-            /* Unsupported account type? */
-            if (!br.containsHTML("<strong>Expire Date:</strong> <span class=\"gold\">Lifetime</span>")) return false;
-
-            /** Save cookies */
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(COOKIE_HOST);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
-            return true;
-        }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        return AvailableStatus.UNCHECKABLE;
-    }
-
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
-            }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
-        }
-        throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
-                }
-            }
-        }
-        return true;
     }
 
     private final boolean default_api = true;
