@@ -1,6 +1,7 @@
 action_tooltip=Permettre l'arrêt du système une fois que les téléchargements sont finis
 addons_jdshutdown_statusmessage_disabled=Le Système ne sera pas arrêté par JDownloader
 addons_jdshutdown_statusmessage_enabled=JDownloader arrêtera le Système après les téléchargements complétés
+config_active_by_default=Laisser l'arret automatique actif
 config_toolbarbutton=Bouton de la barre d'outils visible
 gui_config_jdshutdown_close=Fermer JD
 gui_config_jdshutdown_forceshutdown=Forcer la mise hors tension (pas pour tous les OS)
