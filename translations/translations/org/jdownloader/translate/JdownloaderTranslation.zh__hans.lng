@@ -25,6 +25,7 @@ LinkCollector_addCrawledLink_variouspackage=各种文件
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=链接收集器仍在处理中!
 LinkCollector_onShutdownRequest_msg=您是否想停止链接收集器?
+LinkFilterSettings_DefaultFilterList_directhttp=直接 HTTP
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=离线文件
 LinkSource_ADD_CONTAINER_ACTION=添加容器动作
 LinkSource_ADD_LINKS_DIALOG=添加链接动作
