@@ -538,7 +538,13 @@ public class FourSharedCom extends PluginForHost {
             prepBrowser(br);
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("The file link that you requested is not valid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("The file link that you requested is not valid|This file is no longer available because of a claim")) {
+                /* Find out of this is always there for offline links */
+                if (br.containsHTML("class=\"warn\"")) {
+                    logger.info("WARN class-element exists.");
+                }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String filename = null, size = null;
             // need password?
             if (br.containsHTML(PASSWORDTEXT)) {
