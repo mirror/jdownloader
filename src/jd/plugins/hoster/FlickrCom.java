@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,16 +53,19 @@ public class FlickrCom extends PluginForHost {
         return "http://flickr.com";
     }
 
-    private static Object       LOCK     = new Object();
-    private static final String MAINPAGE = "http://flickr.com";
+    private static Object       LOCK      = new Object();
+    private static final String MAINPAGE  = "http://flickr.com";
+    private static final String intl      = "us";
+    private static final String lang_post = "en-US";
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("flickrdecrypted.com/", "flickr.com/"));
+        link.setUrlDownload("https://www.flickr.com/" + new Regex(link.getDownloadURL(), "\\.com/(.+)").getMatch(0));
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        correctDownloadLink(downloadLink);
         br.clearCookies(MAINPAGE);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
@@ -100,7 +104,7 @@ public class FlickrCom extends PluginForHost {
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
             DLLINK = getFinalLink(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-            if (DLLINK == null) DLLINK = br.getRegex("\"(http://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\"(https?://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             if (ext == null || ext.length() > 5) ext = ".jpg";
@@ -159,7 +163,7 @@ public class FlickrCom extends PluginForHost {
             login(account, false, br);
         } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setStatus("Registered (free) User");
         ai.setUnlimitedTraffic();
@@ -189,7 +193,7 @@ public class FlickrCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
-                br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
+                prepBr(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -201,28 +205,49 @@ public class FlickrCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
-                        br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
                         final Browser brc = br.cloneBrowser();
-                        brc.getPage("http://www.flickr.com/");
-                        if (brc.containsHTML("data\\-track=\"Account\\-flickrmail\\-menu\"")) return;
+                        if (isValid(brc)) return;
+                        /* Clear existing cookies - get ready to do a full login */
+                        br.clearCookies(MAINPAGE);
                     }
                 }
                 final String lang = System.getProperty("user.language");
                 br.setFollowRedirects(true);
-                br.getPage("http://www.flickr.com/signin/");
-                final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-                final String challenge = br.getRegex("type=\"hidden\" name=\"\\.challenge\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-                final String done = br.getRegex("type=\"hidden\" name=\"\\.done\" value=\"([^<>\"\\']+)\"").getMatch(0);
-                final String pd = br.getRegex("type=\"hidden\" name=\"\\.pd\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
-                if (u == null || challenge == null || done == null || pd == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage("https://www.flickr.com/signin/");
+                for (int i = 1; i <= 5; i++) {
+                    final String u = br.getRegex("type=\"hidden\" name=\"\\.u\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+                    final String challenge = br.getRegex("type=\"hidden\" name=\"\\.challenge\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+                    final String done = br.getRegex("type=\"hidden\" name=\"\\.done\" value=\"([^<>\"\\']+)\"").getMatch(0);
+                    final String pd = br.getRegex("type=\"hidden\" name=\"\\.pd\" value=\"([^<>\"\\'/]+)\"").getMatch(0);
+                    String action = br.getRegex("<form method=\"post\" action=\"(https?://login\\.yahoo.com/config/[^<>\"]*?)\"").getMatch(0);
+                    if (u == null || challenge == null || done == null || pd == null || action == null) {
+                        if ("de".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
+                    // action = "https://login.yahoo.com/config/login";
+
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+                    final String post_data_basic = ".tries=1&.src=flickrsignin&.md5=&.hash=&.js=&.last=&promo=&.intl=" + intl + "&.lang=" + lang_post + "&.bypass=&.partner=&.u=" + u + "&.v=0&.challenge=" + challenge + "&.yplus=&.emailCode=&pkg=&stepid=&.ev=&hasMsgr=0&.chkP=Y&.done=" + Encoding.urlEncode(done) + "&.pd=" + Encoding.urlEncode(pd) + "&.ws=1&.cp=0&nr=0&pad=6&aad=6&login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&.persistent=y&.save=&passwd_raw=";
+                    String post_data = post_data_basic;
+                    /* Captcha for/before login */
+                    if (action.contains("login_verify2")) {
+                        post_data += getLoginCaptchaData(account);
+                    }
+                    br.postPage(action, post_data);
+                    /* Account is valid but captcha input is needed to verify that */
+                    if (br.containsHTML("\"code\":\"1213\"")) {
+                        post_data += getLoginCaptchaData(account);
+                        br.postPage(action, post_data);
+                        break;
+                    }
+                    if (br.containsHTML("<legend>Login Form</legend>")) continue;
+                    break;
                 }
-                br.postPage("https://login.yahoo.com/config/login", ".tries=1&.src=flickrsignin&.md5=&.hash=&.js=&.last=&promo=&.intl=us&.lang=en-US&.bypass=&.partner=&.u=" + u + "&.v=0&.challenge=" + Encoding.urlEncode(challenge) + "&.yplus=&.emailCode=&pkg=&stepid=&.ev=&hasMsgr=0&.chkP=Y&.done=" + Encoding.urlEncode(done) + "&.pd=" + Encoding.urlEncode(pd) + "&.ws=1&.cp=0&pad=15&aad=15&popup=1&login=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&.persistent=y&.save=&passwd_raw=");
-                if (br.containsHTML("\"status\" : \"error\"")) {
+                if (br.containsHTML("\"status\"([\t\n\r]+)?:([\t\n\r]+)?\"error\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -240,7 +265,7 @@ public class FlickrCom extends PluginForHost {
                 br.getPage(stepForward);
                 stepForward = br.getRegex("Please <a href=\"(http://(www\\.)?flickr\\.com/[^<>\"]+)\"").getMatch(0);
                 if (stepForward != null) br.getPage(stepForward);
-                if (!br.containsHTML("class=\"disk left\"")) {
+                if (!isValid(this.br)) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -262,6 +287,47 @@ public class FlickrCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    public static void prepBr(final Browser br) {
+        br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept-Charset", null);
+    }
+
+    private boolean isValid(final Browser br) throws IOException {
+        br.getPage("https://www.flickr.com/");
+        if (!br.containsHTML("class=\"disk left\"")) return false;
+        return true;
+    }
+
+    private String getLoginCaptchaData(final Account acc) throws PluginException, IOException {
+        String post_data = "";
+        br.getPage("https://login.yahoo.com/captcha/CaptchaWSProxyService.php?action=createlazy&initial_view=&.intl=" + intl + "&.lang=" + lang_post + "&login=" + Encoding.urlEncode(acc.getUser()) + "&rnd=" + System.currentTimeMillis());
+        final String captchaLink = br.getRegex("Enter the characters displayed\\&quot; src=\\&quot;(https?://[A-Za-z0-9\\-_\\.]+yahoo\\.com:\\d+/img/[^<>\"]*?)\\&quot;").getMatch(0);
+        if (captchaLink == null) {
+            final String lang = System.getProperty("user.language");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        final DownloadLink dummyLink = new DownloadLink(this, "Account", "flickr.com", "http://flickr.com", true);
+        final String c = getCaptchaCode(captchaLink, dummyLink);
+        final String valuesText = br.getRegex("\\&lt;div id=\\&quot;captchaV5ControlElements\\&quot;\\&gt;(.*?)\\&lt;audio id=\\&quot;captchaV5Audio\\&quot;").getMatch(0);
+        if (valuesText != null) {
+            final String[][] data = new Regex(valuesText, "type=\\&quot;hidden\\&quot; name=\\&quot;([^<>\"]*?)\\&quot; id=\\&quot;([^<>\"]*?)\\&quot; value=\\&quot;([^<>\"]*?)\\&quot;").getMatches();
+            for (final String[] single_data : data) {
+                final String name = single_data[0];
+                final String value = single_data[2];
+                post_data += "&" + name + "=" + value;
+            }
+        }
+        post_data += "&captchaView=visual&captchaAnswer=" + Encoding.urlEncode(c) + "&.saveC=&.persistent=y";
+        return post_data;
     }
 
     private String createGuid() {
@@ -297,9 +363,10 @@ public class FlickrCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("class=\"photo\\-title\">(.*?)</h1").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\| Flickr \\- (F|Ph)otosharing\\!</title>").getMatch(0);
+                filename = br.getRegex("<title>(.*?) \\| Flickr \\- Photo Sharing\\!</title>").getMatch(0);
             }
         }
+        if (filename == null) filename = br.getRegex("<meta name=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         return filename;
     }
 

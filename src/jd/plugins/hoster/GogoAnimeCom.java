@@ -59,7 +59,8 @@ public class GogoAnimeCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        dllink = br.getRegex("url\":\"(http[^\"]+(gogoanime\\.com|[\\d\\.]+)/dl/[^\"]+)").getMatch(0);
+        if (br.containsHTML("\"url\":\"http:///dl/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = br.getRegex("url\":\"(http[^\"]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
@@ -69,7 +70,7 @@ public class GogoAnimeCom extends PluginForHost {
         try {
             con = br2.openGetConnection(dllink);
             // only way to check for made up links... or offline is here
-            if (con.getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 404 || con.getContentType().equals("application/x-shockwave-flash")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setFinalFileName(getFileNameFromHeader(con));
                 downloadLink.setDownloadSize(con.getLongContentLength());

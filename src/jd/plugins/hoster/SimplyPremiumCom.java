@@ -362,10 +362,7 @@ public class SimplyPremiumCom extends PluginForHost {
                 }
             }
         }
-        /* TODO: Add correct handling for this case */
-        if (br.containsHTML("<error>not_valid_ip</error>")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid / Ungültig", PluginException.VALUE_ID_PREMIUM_DISABLE);
-
-        }
+        if (br.containsHTML("<error>not_valid_ip</error>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid IP / Ungültige IP", PluginException.VALUE_ID_PREMIUM_DISABLE);
         APIKEY = br.getRegex("<apikey>([A-Za-z0-9]+)</apikey>").getMatch(0);
         if (APIKEY == null || br.containsHTML("<error>not_valid</error>")) {
             if ("de".equalsIgnoreCase(lang)) {

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -42,6 +43,7 @@ public class IFilezComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("i-filez", "depfile");
+        final String folder_id = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         // Set English language
         br.setCookie(this.getHost(), "sdlanguageid", "2");
         br.setFollowRedirects(true);
@@ -51,10 +53,10 @@ public class IFilezComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         handleErrors();
-        String[] links = br.getRegex("(https?://(www\\.)?depfile\\.com/downloads/i/\\d+/f/[^\"' ><]+|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32})").getColumn(0);
+        final String[] links = br.getRegex("(https?://depfile\\.com/[A-Za-z0-9]+|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32})").getColumn(0);
         if (links != null && links.length != 0) {
             for (String dl : links)
-                decryptedLinks.add(createDownloadlink(dl.replace("depfile.com/", DEPFILEDECRYPTED)));
+                if (!dl.contains(folder_id)) decryptedLinks.add(createDownloadlink(dl.replace("depfile.com/", DEPFILEDECRYPTED)));
         } else {
             if (br.containsHTML(">Description of the downloaded folder")) {
                 logger.warning("Decrypter broken for link: " + parameter);

@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/(photos/([^<>\"/]+/(\\d+|favorites)|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)|groups/[^<>\"/]+/(?!members)[^<>\"/]+(/[^<>\"/]+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(www\\.)?flickr\\.com/(photos/([^<>\"/]+/(\\d+|favorites)|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)|groups/[^<>\"/]+/(?!members)[^<>\"/]+(/[^<>\"/]+)?)" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -56,7 +56,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
-        String parameter = param.toString();
+        String parameter = param.toString().replace("http://", "https://");
         int lastPage = 1;
         // Check if link is for hosterplugin
         if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
@@ -81,7 +81,7 @@ public class FlickrCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        /** Login is not always needed but we force it to get all pictures */
+        /* Login is not always needed but we force it to get all pictures */
         if (!getUserLogin()) {
             logger.info("Login failed or no accounts active/existing -> Continuing without account");
         }
@@ -163,9 +163,11 @@ public class FlickrCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String aLink : addLinks) {
+        for (final String aLink : addLinks) {
             final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink);
             dl.setAvailable(true);
+            /* No need to hide decrypted single links */
+            dl.setBrowserUrl("http://www.flickr.com" + aLink);
             decryptedLinks.add(dl);
         }
         if (fpName != null) {

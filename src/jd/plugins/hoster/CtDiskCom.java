@@ -66,7 +66,7 @@ public class CtDiskCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
@@ -183,7 +183,7 @@ public class CtDiskCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, false);
@@ -219,7 +219,7 @@ public class CtDiskCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, false, 1);
     }
@@ -255,7 +255,7 @@ public class CtDiskCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(true);

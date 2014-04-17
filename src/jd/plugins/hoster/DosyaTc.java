@@ -51,9 +51,9 @@ public class DosyaTc extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         // For JD2
-        if (br.containsHTML(">Dosya bulunamadı")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Dosya bulunamadı|>Dosya bulunamadi")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // For the Stable
-        if (br.containsHTML("r>Dosya bulunamadý")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("r>Dosya bulunamadý|>Dosya bulunamadi")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getURL().endsWith("dosya.tc")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<td><b>Dosya Adı(/File Name)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
         final String filesize = br.getRegex("<td><b>Dosya Boyutu(/File Size)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);

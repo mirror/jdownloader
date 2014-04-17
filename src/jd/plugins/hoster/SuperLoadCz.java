@@ -201,6 +201,7 @@ public class SuperLoadCz extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
         prepBrowser();
+        br.setFollowRedirects(true);
         final String pass = downloadLink.getStringProperty("pass", null);
         TOKEN = account.getStringProperty("token", null);
         if (TOKEN == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
