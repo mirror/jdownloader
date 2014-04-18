@@ -88,11 +88,7 @@ public class CtDiskCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean premium, final int maxchunks) throws Exception, PluginException {
-        String uid = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
-        if (uid == null) {
-            logger.warning("Could not find file UID");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
             dllink = findDllink();
@@ -100,14 +96,23 @@ public class CtDiskCom extends PluginForHost {
         }
         if (dllink == null) {
             final Form free = br.getFormbyProperty("name", "user_form");
-            String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2(_login)?\\.php\\?fid=" + uid + "&rand=)").getMatch(0);
+            String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2(_login)?\\.php\\?fid=" + fid + "&rand=)").getMatch(0);
             if (free == null || captcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String hash_key = br.getRegex("\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
-            if (hash_key == null) {
+            if (hash_key == null && free.hasInputFieldByName("hash_info")) {
                 String tmp = free.getInputFieldByName("hash_info").getValue();
                 if (tmp != null) {
                     tmp = Encoding.htmlDecode(tmp);
                     hash_key = Encoding.Base64Decode(tmp);
+                }
+            }
+            if (hash_key == null) {
+                try {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage("http://www.400gb.com/getdownloadkey.php?id=" + fid);
+                    final String b64 = Encoding.Base64Decode(brc.getRegex("eval\\(\\$\\.base64\\.decode\\(\"(.*?)\"\\)\\);").getMatch(0));
+                    hash_key = new Regex(b64, "\\$\\(\"#hash_key\"\\)\\.val\\(\"([^<>\"]*?)\"\\)").getMatch(0);
+                } catch (final Throwable e) {
                 }
             }
             if (hash_key != null) free.put("hash_key", hash_key);
