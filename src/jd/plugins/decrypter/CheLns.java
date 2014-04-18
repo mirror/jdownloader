@@ -41,6 +41,7 @@ public class CheLns extends PluginForDecrypt {
     }
 
     // All similar: IleProtectCom, ExtremeProtectCom, TopProtectNet
+    /* DecrypterScript_linkid=_linkcheck.php */
     private final String RECAPTCHATEXT  = "api\\.recaptcha\\.net";
     private final String RECAPTCHATEXT2 = "google\\.com/recaptcha/api/challenge";
 

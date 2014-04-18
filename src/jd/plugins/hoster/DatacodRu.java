@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -65,7 +66,11 @@ public class DatacodRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; chrome://global/locale/intl.properties; rv:1.8.1.12) Gecko/2008102920  Firefox/3.0.0 YB/4.2.0");
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final UnknownHostException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML("<title>404</title>") || br.containsHTML("Файл не найден") || br.containsHTML("Закончился срок хранения файла\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("Доступ на сервер разрешён только для пользователей Авангарда")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
         String name = br.getRegex(Pattern.compile("файл: <b title=\"(.*?)\">")).getMatch(0);

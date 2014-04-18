@@ -97,6 +97,7 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("dl\\.pornhost\\.com%2F0%2F\\d+%2F(\\d+)%2F").getMatch(0);
+        if (externID == null) externID = br.getRegex("pornhost\\.com/embed/(\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://pornhost.com/" + externID));
             return decryptedLinks;

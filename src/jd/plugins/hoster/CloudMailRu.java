@@ -150,6 +150,7 @@ public class CloudMailRu extends PluginForHost {
                 br.postPage("https://cloud.mail.ru/api/v1/zip", "name=%D0%9D%D0%BE%D0%B2%D0%B0%D1%8F+%D0%BF%D0%B0%D0%BF%D0%BA%D0%B0&ids=%5B%22" + request_id + "%22%5D&storage=public&cp866=false&api=1&htmlencoded=false&build=" + BUILD);
                 dllink = getJson("body", br.toString());
             } else {
+                logger.warning("Failed");
                 /* FAIL case */
                 // dllink = checkDirectLink(dl, "plain_directlink");
             }

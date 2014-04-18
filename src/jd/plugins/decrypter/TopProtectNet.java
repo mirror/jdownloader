@@ -37,6 +37,7 @@ public class TopProtectNet extends PluginForDecrypt {
     }
 
     // All similar: IleProtectCom, ExtremeProtectCom, TopProtectNet, ProtecteurNet
+    /* DecrypterScript_linkid=_linkcheck.php */
     // top-protect and top-protection uids are not transferable. Keep script independent from domain.
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

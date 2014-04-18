@@ -37,6 +37,7 @@ public class ProtectUrlNet extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* DecrypterScript_linkid=_linkcheck.php */
     private static final String PASSWRONG = "window\\.location = \"linkcheck\\.php\\?linkid=[a-z0-9]+\\&message=wrong\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

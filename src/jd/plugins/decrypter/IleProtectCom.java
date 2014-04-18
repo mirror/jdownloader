@@ -41,6 +41,7 @@ public class IleProtectCom extends PluginForDecrypt {
     }
 
     // All similar: IleProtectCom, ExtremeProtectCom, TopProtectNet
+    /* DecrypterScript_linkid=_linkcheck.php */
     private static final String RECAPTCHATEXT  = "api\\.recaptcha\\.net";
     private static final String RECAPTCHATEXT2 = "google\\.com/recaptcha/api/challenge";
 
