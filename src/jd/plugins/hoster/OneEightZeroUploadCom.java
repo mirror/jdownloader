@@ -465,6 +465,11 @@ public class OneEightZeroUploadCom extends PluginForHost {
             }
         }
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 416) {
+                logger.info("Resume impossible, disabling it for the next try");
+                downloadLink.setChunksProgress(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
@@ -918,6 +923,11 @@ public class OneEightZeroUploadCom extends PluginForHost {
                 }
             }
             if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 416) {
+                    logger.info("Resume impossible, disabling it for the next try");
+                    downloadLink.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
                 if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
                     controlSimHost(account);
                     controlHost(account, downloadLink, false);
