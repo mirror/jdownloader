@@ -247,6 +247,7 @@ public class SimplyPremiumCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
+        br.setFollowRedirects(true);
         getapikey(account);
         br.getPage("http://simply-premium.com/api/user.php?apikey=" + APIKEY);
         account.setValid(true);
@@ -362,7 +363,17 @@ public class SimplyPremiumCom extends PluginForHost {
                 }
             }
         }
-        if (br.containsHTML("<error>not_valid_ip</error>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid IP / Ungültige IP", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("<error>not_valid_ip</error>")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid IP / Ungültige IP", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (br.containsHTML("<error>no_traffic</error>")) {
+            logger.info("Account has no traffic");
+            if ("de".equalsIgnoreCase(lang)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Kein Traffic", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+
+        }
         APIKEY = br.getRegex("<apikey>([A-Za-z0-9]+)</apikey>").getMatch(0);
         if (APIKEY == null || br.containsHTML("<error>not_valid</error>")) {
             if ("de".equalsIgnoreCase(lang)) {
