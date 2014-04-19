@@ -58,6 +58,14 @@ public class DebridLinkFr extends PluginForHost {
         return "http://debrid-link.fr/?page=mention";
     }
 
+    private Browser prepBrowser(Browser prepBr) {
+        // define custom browser headers and language settings.
+        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setCustomCharset("UTF-8");
+        return prepBr;
+    }
+
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
         return maxPrem.get();
@@ -70,26 +78,29 @@ public class DebridLinkFr extends PluginForHost {
         if (!isAccPresent(account)) login(account);
 
         // account stats
-        getPage(account, null, "infoMember", null);
+        getPage(account, null, "infoMember", true, null);
         final String accountType = getJson("accountType");
         final String premiumLeft = getJson("premiumLeft");
         if ("0".equals(accountType)) {
             // free account
             ac.setStatus("Free Account");
             ac.setValidUntil(-1);
+            account.setProperty("free", true);
         } else if ("1".equals(accountType)) {
             // premium account
-            if (premiumLeft != null) ac.setValidUntil(System.currentTimeMillis() + (Long.parseLong(premiumLeft) * 1000));
             ac.setStatus("Premium Account");
+            if (premiumLeft != null) ac.setValidUntil(System.currentTimeMillis() + (Long.parseLong(premiumLeft) * 1000));
+            account.setProperty("free", false);
         } else if ("2".equals(accountType)) {
             // life account
             ac.setStatus("Life Account");
             ac.setValidUntil(-1);
+            account.setProperty("free", false);
         }
         // end of account stats
 
         // multihoster array
-        getPage(account, null, "statusDownloader", null);
+        getPage(account, null, "statusDownloader", true, null);
         String[] status = br.getRegex("\\{\"status\":[\\d\\-]+.*?\\]\\}").getColumn(-1);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String stat : status) {
@@ -110,31 +121,42 @@ public class DebridLinkFr extends PluginForHost {
     }
 
     private void login(final Account account) throws Exception {
-        br.getPage(apiHost + "?r=getToken&publickey=" + publicApiKey);
+        getPage(account, null, "getToken", false, "publickey=" + publicApiKey);
         updateSession(account);
         if (true) {
-            Browser br2 = br.cloneBrowser();
-            br2.setCustomCharset("UTF-8");
-            br2.setFollowRedirects(true);
-            br2.getPage(getJson("validTokenUrl"));
-            // validate token externally.. this is good idea in principle but in practice not so, as it will drive users/customers NUTTS!
-            // Your better off doing 2 factor to email, as it can't be bypassed like this!
-            Form vT = br2.getForm(0);
-            if (vT == null) {
-                dump(account);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            vT.put("sessidTime", "24");
-            vT.put("user", Encoding.urlEncode(account.getUser()));
-            vT.put("password", Encoding.urlEncode(account.getPass()));
-            vT.put("authorizedToken", "1");
-            br2.submitForm(vT);
-            if (br2.containsHTML("La session à bien été activé. Vous pouvez utiliser l'application Jdownloader")) {
-                logger.info("success!!");
-            } else {
-                logger.warning("problemo!");
-                dump(account);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            try {
+                Browser br2 = new Browser();
+                prepBrowser(br2);
+                br2.setFollowRedirects(true);
+                final String validateToken = getJson("validTokenUrl");
+                if (validateToken == null) {
+                    logger.warning("problemo!");
+                    dump(account);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br2.getPage(validateToken);
+                // validate token externally.. this is good idea in principle but in practice not so, as it will drive users/customers
+                // NUTTS!
+                // Your better off doing 2 factor to email, as it can't be bypassed like this!
+                Form vT = br2.getForm(0);
+                if (vT == null) {
+                    dump(account);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                vT.put("sessidTime", "24");
+                vT.put("user", Encoding.urlEncode(account.getUser()));
+                vT.put("password", Encoding.urlEncode(account.getPass()));
+                vT.put("authorizedToken", "1");
+                br2.submitForm(vT);
+                if (br2.containsHTML("La session à bien été activé. Vous pouvez utiliser l'application Jdownloader")) {
+                    logger.info("success!!");
+                } else {
+                    logger.warning("problemo!");
+                    dump(account);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } catch (Exception e) {
+                throw e;
             }
         }
     }
@@ -168,9 +190,26 @@ public class DebridLinkFr extends PluginForHost {
         }
     }
 
-    private synchronized void getPage(final Account account, final DownloadLink downloadLink, final String r, final String other) throws Exception {
-        if (account != null) {
-            br.getPage(apiHost + "?r=" + r + "&token=" + getValue(account, "token") + "&sign=" + getSign(account, r) + (other != null ? (!other.startsWith("&") ? "&" : "") + other : ""));
+    /**
+     * getPage sends get request with a new browser instance with each request! <br/>
+     * error handling after page is returned.
+     * 
+     * @param account
+     * @param downloadLink
+     * @param r
+     *            :: r value
+     * @param sign
+     *            :: required ? true|false
+     * @param other
+     *            :: additional http request arguments
+     * @throws Exception
+     * 
+     */
+    private synchronized void getPage(final Account account, final DownloadLink downloadLink, final String r, final boolean sign, final String other) throws Exception {
+        br = new Browser();
+        prepBrowser(br);
+        if (account != null && r != null) {
+            br.getPage(apiHost + "?r=" + r + (sign ? "&token=" + getValue(account, "token") + "&sign=" + getSign(account, r) : "") + (other != null ? (!other.startsWith("&") ? "&" : "") + other : ""));
             if (errChk()) {
                 errHandling(account, downloadLink);
             }
@@ -250,7 +289,7 @@ public class DebridLinkFr extends PluginForHost {
             return false;
     }
 
-    private String getSign(final Account account, final String r) throws PluginException {
+    private String getSign(final Account account, final String r) throws Exception {
         if (r == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         final String to = getValue(account, "timeOffset");
@@ -273,8 +312,22 @@ public class DebridLinkFr extends PluginForHost {
         }
     }
 
-    private String getValue(final Account account, final String key) {
+    private String getValue(final Account account, final String key) throws Exception {
         synchronized (accountInfo) {
+            // simulate dump
+            // accountInfo.remove(account);
+            // relogin required due to possible dump.
+            for (int i = 0; i != 2; i++) {
+                if (!isAccPresent(account)) {
+                    login(account);
+                    if (isAccPresent(account)) break;
+                    if (!isAccPresent(account) && i + 1 == 2)
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    else
+                        continue;
+                } else
+                    break;
+            }
             Map<String, String> accInfo = accountInfo.get(account);
             String value = accInfo.get(key);
             return value;
@@ -309,11 +362,10 @@ public class DebridLinkFr extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
         showMessage(downloadLink, "Phase 1/2: Generating link");
-        getPage(account, downloadLink, "addLink", "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+        getPage(account, downloadLink, "addLink", true, "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
 
         int chunks = 0;
         boolean resumes = true;
-        ;
 
         final String chunk = getJson("chunk");
         final String resume = getJson("resume");
