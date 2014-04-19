@@ -1363,7 +1363,7 @@ public class MuchShareNet extends PluginForHost {
                 chid = sm.getChallenge(code);
             }
             form.put("adcopy_challenge", chid);
-            form.put("adcopy_response", code);
+            form.put("adcopy_response", Encoding.urlEncode(code));
             skipWaitTime = waitTimeSkipableSolveMedia;
         } else if (form.containsHTML("id=\"capcode\" name= \"capcode\"")) {
             logger.info("Detected captcha method \"Key Captcha\"");
