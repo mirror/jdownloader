@@ -41,25 +41,25 @@ import org.appwork.utils.formatter.SizeFormatter;
 /*Same script for AbelhasPt, LolaBitsEs*/
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://(www\\.)?lolabits\\.es/[^<>\"/]+/[^<>\"/]+/[^<>\"/]+" }, flags = { 2 })
 public class LolaBitsEs extends PluginForHost {
-    
+
     public LolaBitsEs(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://lolabits.es/action/Registration/Create");
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://lolabits.es/TerminosCondiciones.aspx";
     }
-    
+
     private static boolean pluginloaded = false;
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getDownloadURL().contains("lolabits.es/action/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://lolabits.es/cherokin/Prova") || br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null && br.getRedirectLocation().endsWith("/cherokin/Prova")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("Descargar: <b>([^<>\"]*?)</b>").getMatch(0);
         final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -67,7 +67,7 @@ public class LolaBitsEs extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -91,10 +91,10 @@ public class LolaBitsEs extends PluginForHost {
         fixFilename(downloadLink);
         dl.startDownload();
     }
-    
+
     private static final String MAINPAGE = "http://lolabits.es";
     private static Object       LOCK     = new Object();
-    
+
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -142,7 +142,7 @@ public class LolaBitsEs extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -157,7 +157,7 @@ public class LolaBitsEs extends PluginForHost {
         ai.setStatus("Registered (free) user");
         return ai;
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -172,14 +172,14 @@ public class LolaBitsEs extends PluginForHost {
         String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = unescape(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
-    
+
     private static synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
@@ -189,7 +189,7 @@ public class LolaBitsEs extends PluginForHost {
         }
         return jd.plugins.hoster.Youtube.unescape(s);
     }
-    
+
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -218,7 +218,7 @@ public class LolaBitsEs extends PluginForHost {
             FFN = orgNameExt;
         downloadLink.setFinalFileName(FFN);
     }
-    
+
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      * 
@@ -233,23 +233,23 @@ public class LolaBitsEs extends PluginForHost {
         else
             return false;
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
 }
