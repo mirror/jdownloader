@@ -70,7 +70,7 @@ public class EcoStreamTv extends PluginForHost {
         String postpage = null;
         try {
             final Browser tmpbr = br.cloneBrowser();
-            tmpbr.getPage("http://www.ecostream.tv/js/app.js");
+            tmpbr.getPage("/js/ecos.js");
             final String post_urls[] = tmpbr.getRegex("\\$\\.post\\(\\'(/[^<>\"]*?)\\'").getColumn(0);
             if (post_urls != null && post_urls.length > 0) postpage = post_urls[post_urls.length - 2];
         } catch (final Throwable e) {
