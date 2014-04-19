@@ -197,6 +197,7 @@ public class SaveTv extends PluginForHost {
         login(this.br, aa, false);
 
         final boolean preferMobileVids = getPluginConfig().getBooleanProperty(PREFERH264MOBILE);
+        final String string_for_empty_tags = this.getPluginConfig().getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
         String site_title = null;
         String filesize = null;
         long datemilliseconds = 0;
@@ -281,12 +282,12 @@ public class SaveTv extends PluginForHost {
                 } else {
                     seriestitle = site_title;
                 }
-                if (episodename == null) episodename = this.getPluginConfig().getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
+                if (episodename == null) episodename = string_for_empty_tags;
                 episodename = correctData(episodename);
                 if (episodename.matches(SERIESINFORMATION)) {
-                    episodename = "-";
+                    episodename = string_for_empty_tags;
                 } else if (episodename.contains("Für diese Sendung stehen leider keine weiteren Informationen zur Verfügung")) {
-                    episodename = "-";
+                    episodename = string_for_empty_tags;
                 }
                 String seriesdata = seriesInfo.getMatch(3);
                 if (seriesdata == null) seriesdata = seriesInfo.getMatch(2);
@@ -409,17 +410,14 @@ public class SaveTv extends PluginForHost {
         /* Add series information */
         if (episodenumber != null) link.setProperty("episodenumber", Integer.parseInt(episodenumber));
         link.setProperty("seriestitle", seriestitle);
-        if (episodename != null) {
-            episodename = correctData(episodename);
-            link.setProperty("episodename", episodename);
-        }
+        link.setProperty("episodename", episodename);
 
         /* Add movie information */
         if (produceyear != null) {
             produceyear = produceyear.replace("/", "-");
             link.setProperty("produceyear", produceyear);
         }
-        if (genre == null) genre = "-";
+        if (genre == null) genre = string_for_empty_tags;
         link.setProperty("genre", correctData(genre));
         link.setProperty("producecountry", producecountry);
         link.setProperty("plain_site_category", category);
@@ -958,12 +956,12 @@ public class SaveTv extends PluginForHost {
         return false;
     }
 
-    private String correctData(final String input) {
+    public static String correctData(final String input) {
         String output = Encoding.htmlDecode(input);
         output = output.replace("_", " ");
         output = output.trim();
         output = output.replaceAll("(\r|\n)", "");
-        output = output.replace("/", getPluginConfig().getStringProperty(CUSTOM_FILENAME_SEPERATION_MARK, defaultCustomSeperationMark));
+        output = output.replace("/", SubConfiguration.getConfig("save.tv").getStringProperty(CUSTOM_FILENAME_SEPERATION_MARK, defaultCustomSeperationMark));
 
         /* Correct spaces */
         final String[] unneededSpaces = new Regex(output, ".*?([ ]{2,}).*?").getColumn(0);
@@ -1134,7 +1132,7 @@ public class SaveTv extends PluginForHost {
     private static String getEpisodeNumber(final DownloadLink dl) {
         final long episodenumber = getLongProperty(dl, "episodenumber", 0l);
         if (episodenumber == 0) {
-            return "-";
+            return SubConfiguration.getConfig("save.tv").getStringProperty(CUSTOM_FILENAME_EMPTY_TAG_STRING, defaultCustomStringForEmptyTags);
         } else {
             return Long.toString(episodenumber);
         }

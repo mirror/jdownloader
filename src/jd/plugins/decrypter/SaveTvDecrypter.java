@@ -297,22 +297,26 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return br.getRegex("(<tr name=\"archive\\-list\\-row\\-\\d+\".*?</tr>)").getColumn(0);
     }
 
-    private void addID(final String id_info) throws ParseException {
+    private void addID(final String id_info) throws ParseException, DecrypterException {
         final String telecast_id = new Regex(id_info, "name=\"lTelecastID\" value=\"(\\d+)\"").getMatch(0);
         final String telecast_url = "https://www.save.tv/STV/M/obj/user/usShowVideoArchiveDetail.cfm?TelecastID=" + telecast_id;
         final Regex dateRegex = new Regex(id_info, "(\\d{2}\\.\\d{2}\\.\\d{2}) \\| (\\d{2}:\\d{2})[\t\n\r ]+\\((\\d+)min\\)");
         final String date = dateRegex.getMatch(0);
         final String time = dateRegex.getMatch(1);
-        final String tv_station = new Regex(id_info, "global/TVLogoDE/[A-Za-z0-9\\-_]+\\.gif\" width=\"\\d+\" height=\"\\d+\" alt=\"([^<>\"]*?)\"").getMatch(0);
+        String tv_station = new Regex(id_info, "global/TVLogoDE/[A-Za-z0-9\\-_]+\\.gif\" width=\"\\d+\" height=\"\\d+\" alt=\"([^<>\"]*?)\"").getMatch(0);
         String site_run_time = dateRegex.getMatch(2);
         if (site_run_time == null) site_run_time = "0";
         final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(site_run_time, mobilePreferred());
         final Regex nameRegex = new Regex(id_info, "class=\"normal\">([^<>\"]*?)</a>([^<>\"]*?)</td>");
         String name = nameRegex.getMatch(0);
         if (name == null) name = new Regex(id_info, "class=\"child\">([^<>\"]*?)</a>").getMatch(0);
-        name = Encoding.htmlDecode(name);
+        if (name == null || tv_station == null) throw new DecrypterException("Decrypt failed");
         String sur_name = nameRegex.getMatch(1);
-        if (sur_name != null) sur_name = Encoding.htmlDecode(sur_name).trim();
+        if (sur_name != null) {
+            sur_name = correctData(sur_name);
+        }
+        name = correctData(name);
+        tv_station = correctData(tv_station);
 
         final long datemilliseconds = TimeFormatter.getMilliSeconds(date + ":" + time, "dd.MM.yy:HH:mm", Locale.GERMAN);
         final long current_tdifference = System.currentTimeMillis() - datemilliseconds;
@@ -337,12 +341,12 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
 
             // Add remaining information
-            dl.setProperty("plain_tv_station", Encoding.htmlDecode(tv_station).trim());
+            dl.setProperty("plain_tv_station", tv_station);
             dl.setProperty("plainfilename", name);
             dl.setProperty("type", ".mp4");
             dl.setProperty("originaldate", datemilliseconds);
             final String formatted_filename = jd.plugins.hoster.SaveTv.getFormattedFilename(dl);
-            dl.setFinalFileName(formatted_filename);
+            dl.setName(formatted_filename);
 
             try {
                 distribute(dl);
@@ -351,6 +355,10 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
             decryptedLinks.add(dl);
         }
+    }
+
+    private String correctData(final String input) {
+        return jd.plugins.hoster.SaveTv.correctData(input);
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {
