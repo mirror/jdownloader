@@ -164,7 +164,8 @@ public class DirectHTTP extends PluginForHost {
              * Randomise user-agent to prevent tracking by google, each time we load(). Without this they could make the captchas images
              * harder read, the more a user requests captcha'. Also algos could track captcha requests based on user-agent globally, which
              * means JD default user-agent been very old (firefox 3.x) negatively biased to JD clients! Tracking takes place on based on IP
-             * address, User-Agent, and APIKey of request (site of APIKey), and combinations of those.
+             * address, User-Agent, and APIKey of request (site of APIKey), cookies session submitted, and combinations of those.
+             * Effectively this can all be done with a new browser, with regex tasks from source browser (ids|keys|submitting forms).
              */
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -176,6 +177,8 @@ public class DirectHTTP extends PluginForHost {
             } catch (final Throwable e) {
                 /* 09581 will break here */
             }
+            // doesn't need cookies either!
+            rcBr.clearCookies(this.rcBr.getHost());
             // end of privacy protection
 
             /* follow redirect needed as google redirects to another domain */

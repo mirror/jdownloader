@@ -45,6 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -78,7 +79,7 @@ public class UpToBoxCom extends PluginForHost {
     // free account: 2 * 1
     // premium account: 20 * 3 = max 60 connections
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: solvemedia
     // other: no redirects
 
     @Override
@@ -98,7 +99,7 @@ public class UpToBoxCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
+        return false;
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
@@ -267,6 +268,21 @@ public class UpToBoxCom extends PluginForHost {
                     dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                    logger.info("Detected captcha method \"solvemedia\" for this host");
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                    File cf = null;
+                    try {
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    } catch (final Exception e) {
+                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        throw e;
+                    }
+                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String chid = sm.getChallenge(code);
+                    dlForm.put("adcopy_challenge", chid);
+                    dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);

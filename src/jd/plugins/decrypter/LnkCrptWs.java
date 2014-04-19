@@ -456,6 +456,28 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private void load() throws Exception {
             smBr = br.cloneBrowser();
+            // solvemedia works off API key, and javascript. The imported browser session isn't actually needed.
+            /*
+             * Randomise user-agent to prevent tracking by solvemedia, each time we load(). Without this they could make the captchas images
+             * harder read, the more a user requests captcha'. Also algos could track captcha requests based on user-agent globally, which
+             * means JD default user-agent been very old (firefox 3.x) negatively biased to JD clients! Tracking takes place on based on IP
+             * address, User-Agent, and APIKey of request (site of APIKey), cookies session submitted, and combinations of those.
+             * Effectively this can all be done with a new browser, with regex tasks from source browser (ids|keys|submitting forms).
+             */
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            smBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+
+            // this prevents solvemedia group from seeing referrer
+            try {
+                smBr.setCurrentURL(null);
+            } catch (final Throwable e) {
+                /* 09581 will break here */
+            }
+            // doesn't need cookies either!
+            smBr.clearCookies(smBr.getHost());
+            // end of privacy protection
+
             if (this.challenge == null) getChallengeKey();
             setServer();
             setPath();
