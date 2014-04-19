@@ -33,3 +33,4 @@ popup_reconnect=Ponovo se konektuj Sada
 popup_reconnecttoggle=Omogućeno je Auto-konektovanje
 popup_update=Provjeri Nadgradnje
 popup_update_install=Instaliraj posljednju nadgradnju
+popup_update_install_tt=Postoje nadgradnje spremne za instalaciju. Kliknite da ih instalirate sada!

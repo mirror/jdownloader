@@ -50,6 +50,7 @@ extractprogress_label=Ekstraktovano %s1: %s2 dokumenata
 failed=Nije uspjelo ekstraktovanje: %s1
 failed_no_details=Ekstraktovanje nije uspjelo
 file_exists=Dokument postoji
+file_exists_message=Nastao je problem pri ekstraktovanju arhive. Dokument koji se ekstraktuje već postoji na disku. Molimo izaberite šta želite uraditi_
 file_exists_not=Dokument ne postoji
 filename=Ime dokumenta
 files2=Dokument(i)
