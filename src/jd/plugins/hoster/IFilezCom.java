@@ -84,7 +84,7 @@ public class IFilezCom extends PluginForHost {
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-z0-9]{32})</td>").getMatch(0);
+        String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-f0-9]{32})</td>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
         if (br.containsHTML(ONLY4PREMIUM)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
         return AvailableStatus.TRUE;

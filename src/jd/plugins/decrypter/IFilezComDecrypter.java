@@ -57,13 +57,12 @@ public class IFilezComDecrypter extends PluginForDecrypt {
         if (links != null && links.length != 0) {
             for (String dl : links)
                 if (!dl.contains(folder_id)) decryptedLinks.add(createDownloadlink(dl.replace("depfile.com/", DEPFILEDECRYPTED)));
-        } else {
-            if (br.containsHTML(">Description of the downloaded folder")) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(parameter.replace("depfile.com/", DEPFILEDECRYPTED)));
+        } else if (br.containsHTML(">Description of the downloaded folder")) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
+        // single dl...
+        if (decryptedLinks.isEmpty()) decryptedLinks.add(createDownloadlink(parameter.replace("depfile.com/", DEPFILEDECRYPTED)));
         return decryptedLinks;
     }
 
