@@ -211,7 +211,6 @@ public class Freaksharenet extends PluginForHost {
                 captchaFailed = false;
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resume, maxchunks);
             }
-            if (captchaFailed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) continue;
@@ -223,12 +222,6 @@ public class Freaksharenet extends PluginForHost {
         if (captchaFailed) {
             handleOtherErrors(downloadLink);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        if (!dl.getConnection().isContentDisposition()) {
-            logger.info("The finallink is no file, trying to handle errors...");
-            br.followConnection();
-            handleOtherErrors(downloadLink);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
