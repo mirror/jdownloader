@@ -55,7 +55,8 @@ public class DosyaTc extends PluginForHost {
         // For the Stable
         if (br.containsHTML("r>Dosya bulunamadý|>Dosya bulunamadi")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getURL().endsWith("dosya.tc")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<td><b>Dosya Adı(/File Name)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
+        String filename = br.getRegex("<td><b>Dosya Adı(/File Name)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
+        if (filename == null) filename = br.getRegex("<b>Dosya Adi/File Name</b></td> <td><b>([^<>\"]*?)</b></td>").getMatch(0);
         final String filesize = br.getRegex("<td><b>Dosya Boyutu(/File Size)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename);

@@ -56,7 +56,7 @@ public class IFilezComDecrypter extends PluginForDecrypt {
         final String[] links = br.getRegex("(https?://depfile\\.com/[A-Za-z0-9]+|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32})").getColumn(0);
         if (links != null && links.length != 0) {
             for (String dl : links)
-                if (!dl.contains(folder_id)) decryptedLinks.add(createDownloadlink(dl.replace("depfile.com/", DEPFILEDECRYPTED)));
+                if (!dl.contains(folder_id) && !dl.equals("http://depfile.com/downloads")) decryptedLinks.add(createDownloadlink(dl.replace("depfile.com/", DEPFILEDECRYPTED)));
         } else if (br.containsHTML(">Description of the downloaded folder")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -29,7 +30,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -90,7 +90,10 @@ public class Freaksharenet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        // br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         /*
          * set english language in phpsession
          */
@@ -140,6 +143,8 @@ public class Freaksharenet extends PluginForHost {
             }
         }
         if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        form.remove(null);
+
         String ttt = null;
         if (ajax != null) {
             final Browser br2 = br.cloneBrowser();
@@ -154,30 +159,37 @@ public class Freaksharenet extends PluginForHost {
             tt = Integer.parseInt(ttt);
         }
         if ((tt > 600 && !waitReconnecttime) || tt > 1800) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        sleep((tt + 15) * 1001l, downloadLink);
+        sleep((tt + new Random().nextInt(10)) * 1001l, downloadLink);
         br.submitForm(form);
-        handleFreeErrors();
-        Form[] forms = br.getForms();
-        form = null;
-        if (forms == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        for (Form a : forms) {
-            if (a.getAction() != null) {
-                if (a.getAction().contains("shop")) continue;
-                if (a.getAction().contains("payment.html")) continue;
+
+        boolean captchaFailed = false;
+        for (int i = 1; i <= 5; i++) {
+            handleFreeErrors();
+            Form[] forms = br.getForms();
+            form = null;
+            if (forms == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            for (Form a : forms) {
+                if (a.getAction() != null) {
+                    if (a.getAction().contains("shop")) continue;
+                    if (a.getAction().contains("payment.html")) continue;
+                }
+                form = a;
+                break;
             }
-            form = a;
-            break;
-        }
-        if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-            for (int i = 0; i <= 5; i++) {
+            if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                captchaFailed = true;
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.parse();
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
-                rc.setCode(c);
+                form.put("recaptcha_challenge_field", rc.getChallenge());
+                form.put("recaptcha_response_field", c);
+                form.remove("submit");
+                form.remove(null);
+                br.submitForm(form);
                 if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maximum concurrent download sessions reached.", 30 * 60 * 1000l); }
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) {
                     try {
@@ -191,41 +203,26 @@ public class Freaksharenet extends PluginForHost {
                     } catch (final Throwable e) {
                     }
                 }
+                final String finallink = br.getRedirectLocation();
+                if (finallink == null) continue;
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, resume, maxchunks);
                 break;
+            } else {
+                captchaFailed = false;
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resume, maxchunks);
             }
-            if (br.getRedirectLocation() == null) {
-                handleOtherErrors(downloadLink);
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (captchaFailed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (!dl.getConnection().isContentDisposition()) {
+                br.followConnection();
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) continue;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), resume, maxchunks);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, resume, maxchunks);
+            captchaFailed = false;
+            break;
         }
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            /* try again captcha */
-            br.setFollowRedirects(false);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") && form != null) {
-                for (int i = 0; i <= 5; i++) {
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.parse();
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, downloadLink);
-                    rc.setCode(c);
-                    if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Maximum concurrent download sessions reached.", 30 * 60 * 1000l); }
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) {
-                        continue;
-                    }
-                    break;
-                }
-                if (br.getRedirectLocation() == null) {
-                    handleOtherErrors(downloadLink);
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), resume, maxchunks);
-            }
+        if (captchaFailed) {
+            handleOtherErrors(downloadLink);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (!dl.getConnection().isContentDisposition()) {
             logger.info("The finallink is no file, trying to handle errors...");

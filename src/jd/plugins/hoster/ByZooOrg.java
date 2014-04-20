@@ -59,7 +59,8 @@ public class ByZooOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        dllink = br.getRegex("url: '(http[^']+byzoo\\.org%2[^']+)").getMatch(0);
+        dllink = br.getRegex("url: \\'(http[^\\']+byzoo\\.org%2[^\\']+)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("url: \\'(http://[^<>\"\\']*?)\\',[\t\r\n ]+autoPlay: false").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();

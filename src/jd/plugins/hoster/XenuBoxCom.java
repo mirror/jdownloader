@@ -57,7 +57,7 @@ public class XenuBoxCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "https://xenubox.com";
+    private final String         COOKIE_HOST                  = "http://xenubox.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -85,7 +85,7 @@ public class XenuBoxCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
     @Override
@@ -125,7 +125,7 @@ public class XenuBoxCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        // Fix old links, https needed
+        // Fix old links
         correctDownloadLink(link);
         br.setFollowRedirects(false);
         prepBrowser();
@@ -613,13 +613,14 @@ public class XenuBoxCom extends PluginForHost {
                         return;
                     }
                 }
-                br.postPage("https://xenubox.com/", "op=login&redirect=https%3A%2F%2Fxenubox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("http://xenubox.com/?op=login");
+                br.postPage("http://xenubox.com/", "op=login&redirect=http%3A%2F%2Fxenubox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (new Regex(correctedBR, ">Apply Premium Key:<").matches()) {
-                    account.setProperty("nopremium", true);
-                } else {
                     account.setProperty("nopremium", false);
+                } else {
+                    account.setProperty("nopremium", true);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();

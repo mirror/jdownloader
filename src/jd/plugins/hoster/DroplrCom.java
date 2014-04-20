@@ -45,12 +45,15 @@ public class DroplrCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("d.pr/", "droplr.com/"));
     }
 
+    private static final String INVALIDLINKS = "https?://droplr\\.com/join/d/.+";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The password you entered for the drop was incorrect")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">The password you entered for the drop was incorrect") || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("data\\-filename=\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

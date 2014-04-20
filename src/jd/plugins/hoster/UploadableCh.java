@@ -66,6 +66,7 @@ public class UploadableCh extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not available<|>This file is no longer available.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("id=\"file_name\" title=\"([^<>\"]*?)\"").getMatch(0);
@@ -90,9 +91,11 @@ public class UploadableCh extends PluginForHost {
         br.setFollowRedirects(false);
         String dllink = checkDirectLink(downloadLink, "uploadabledirectlink");
         if (dllink == null) {
+            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             final String postLink = br.getURL();
             br.getHeaders().put("Accept", "application/json, text/javascript, */*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.cloneBrowser().getPage("http://www.uploadable.ch/now.php");
             br.postPage(postLink, "downloadLink=wait");
             int wait = 90;
             final String waittime = br.getRegex("\"waitTime\":(\\d+)").getMatch(0);
@@ -107,7 +110,7 @@ public class UploadableCh extends PluginForHost {
             for (int i = 1; i <= 5; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
-                br.postPage("http://www.uploadable.ch/checkReCaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_shortencode_field=" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+                br.postPage("http://www.uploadable.ch/checkReCaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_shortencode_field=" + fid);
                 if (br.containsHTML("\"success\":0")) {
                     rc.reload();
                     continue;
@@ -115,9 +118,14 @@ public class UploadableCh extends PluginForHost {
                 break;
             }
             if (br.containsHTML("\"success\":0")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            br.postPage(postLink, "downloadLink=show");
+
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            br.getHeaders().put("Referer", postLink);
+            br.postPage("http://www.uploadable.ch/file/" + fid, "downloadLink=show");
             if (br.containsHTML("fail")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            br.postPage(postLink, "download=normal");
+            br.postPage("http://www.uploadable.ch/file/" + fid, "download=normal");
             dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

@@ -155,8 +155,14 @@ public class BitShareCom extends PluginForHost {
         if (br.containsHTML("Only Premium members can access this file\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitsharecom.premiumonly", "Only downloadable for premium users!"));
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
-        br.cloneBrowser().getPage("http://bitshare.com/getads.html");
-        String fileID = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
+        try {
+            br.cloneBrowser().getPage("http://bitshare.com/getads.html");
+            br.cloneBrowser().getPage("http://bitshare.com/getads.html");
+        } catch (final Throwable e) {
+            logger.info("Adv-Speed-gain failed!");
+        }
+        final String fileID = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
+        final String ajax_url = JSONHOST + fileID + "/request.html";
         if (br.containsHTML("You reached your hourly traffic limit")) {
             String wait = br.getRegex("id=\"blocktimecounter\">(\\d+) Seconds</span>").getMatch(0);
             if (wait != null) {
@@ -179,7 +185,7 @@ public class BitShareCom extends PluginForHost {
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         br2.getHeaders().put("Accept", "text/html, */*");
-        br2.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
+        br2.postPage(ajax_url, "request=generateID&ajaxid=" + tempID);
         br.cloneBrowser().getPage("http://bitshare.com/getiframepopup_download.html?anticache=" + System.currentTimeMillis());
         String regexedWait = null;
         regexedWait = br2.getRegex("\\w+:(\\d+):").getMatch(0);
@@ -204,7 +210,7 @@ public class BitShareCom extends PluginForHost {
                 id = id.trim();
                 Form reCaptchaForm = new Form();
                 reCaptchaForm.setMethod(Form.MethodType.POST);
-                reCaptchaForm.setAction(JSONHOST + fileID + "/request.html");
+                reCaptchaForm.setAction(ajax_url);
                 reCaptchaForm.put("request", "validateCaptcha");
                 reCaptchaForm.put("ajaxid", tempID);
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -214,9 +220,7 @@ public class BitShareCom extends PluginForHost {
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
-                rc.getForm().put("recaptcha_response_field", c);
-                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
-                br2.submitForm(rc.getForm());
+                br2.postPage(ajax_url, "request=validateCaptcha&ajaxid=" + tempID + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 if (br2.containsHTML("ERROR:incorrect\\-captcha")) {
                     try {
                         invalidateLastChallengeResponse();

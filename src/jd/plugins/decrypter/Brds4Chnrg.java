@@ -36,6 +36,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* TODO: Maybe implement API: https://github.com/4chan/4chan-API */
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -48,10 +49,11 @@ public class Brds4Chnrg extends PluginForDecrypt {
             for (String thread : threads) {
                 decryptedLinks.add(createDownloadlink(parameter + "res/" + thread));
             }
-        } else {
+        }
+        if (decryptedLinks.size() == 0) {
             final String IMAGERDOMAINS = "(i\\.4cdn\\.org|images\\.4chan\\.org)";
             String[] images = br.getRegex("(?i)(https?://[\\w\\.]*?" + IMAGERDOMAINS + "/[0-9a-z]{1,3}/src/\\d+\\.(gif|jpg|png))").getColumn(0);
-            if (images == null || images.length == 0) images = br.getRegex("(?i)File: <a href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,3}/src/\\d+\\.(gif|jpg|png|webm))\"").getColumn(0);
+            if (images == null || images.length == 0) images = br.getRegex("(?i)File: <a href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,3}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(0);
 
             if (br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");

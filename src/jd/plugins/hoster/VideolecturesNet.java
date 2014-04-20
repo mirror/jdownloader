@@ -45,6 +45,8 @@ public class VideolecturesNet extends PluginForHost {
         return -1;
     }
 
+    private static final String INVALIDLINKS = "http://blog\\.videolectures\\.net/.+";
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -74,6 +76,7 @@ public class VideolecturesNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;

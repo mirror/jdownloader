@@ -49,6 +49,7 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static final String INVALIDLINKS = "http://(www\\.)?flickr\\.com/photos/(me|upload)";
 
+    /* TODO: Maybe implement API: https://api.flickr.com/services/rest?photo_id=&extras=can_ ... */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> addLinks = new ArrayList<String>();
@@ -90,90 +91,96 @@ public class FlickrCom extends PluginForDecrypt {
             logger.info("Link offline (empty): " + parameter);
             return decryptedLinks;
         }
+        /* Check if we have a single link */
+        if (br.containsHTML("var photo = \\{")) {
+            final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com/" + new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
+            decryptedLinks.add(dl);
+        } else {
 
-        // Some stuff which is different from link to link
-        String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
-        int maxEntriesPerPage = 72;
-        String fpName = br.getRegex("<title>Flickr: ([^<>\"]*)</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"]*)\"").getMatch(0);
-        if (parameter.matches(SETLINK)) {
-            picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
-            if (picCount == null) picCount = br.getRegex("<div class=\"vsNumbers\">[\t\n\r ]+(\\d+) photos").getMatch(0);
-            if (picCount == null) picCount = br.getRegex("<h1>(\\d+)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
-            fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\- a set on Flickr</title>").getMatch(0);
-        } else if (parameter.matches(PHOTOLINK)) {
-            maxEntriesPerPage = 100;
-        } else if (parameter.matches(FAVORITELINK)) {
-            fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
-        } else if (parameter.matches(GROUPSLINK)) {
-            if (picCount == null) picCount = br.getRegex("<h1>(\\d+(,\\d+)?)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
-        }
-        if (picCount == null) {
-            logger.warning("Couldn't find total number of pictures, aborting...");
-            return null;
-        }
+            // Some stuff which is different from link to link
+            String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
+            int maxEntriesPerPage = 72;
+            String fpName = br.getRegex("<title>Flickr: ([^<>\"]*)</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"]*)\"").getMatch(0);
+            if (parameter.matches(SETLINK)) {
+                picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
+                if (picCount == null) picCount = br.getRegex("<div class=\"vsNumbers\">[\t\n\r ]+(\\d+) photos").getMatch(0);
+                if (picCount == null) picCount = br.getRegex("<h1>(\\d+)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
+                fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+                if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\- a set on Flickr</title>").getMatch(0);
+            } else if (parameter.matches(PHOTOLINK)) {
+                maxEntriesPerPage = 100;
+            } else if (parameter.matches(FAVORITELINK)) {
+                fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
+            } else if (parameter.matches(GROUPSLINK)) {
+                if (picCount == null) picCount = br.getRegex("<h1>(\\d+(,\\d+)?)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
+            }
+            if (picCount == null) {
+                logger.warning("Couldn't find total number of pictures, aborting...");
+                return null;
+            }
 
-        final int totalEntries = Integer.parseInt(picCount.replace(",", ""));
+            final int totalEntries = Integer.parseInt(picCount.replace(",", ""));
 
-        /**
-         * Handling for albums/sets: Only decrypt all pages if user did NOT add a direct page link
-         * */
-        int lastPageCalculated = 0;
-        if (!parameter.contains("/page")) {
-            logger.info("Decrypting all available pages.");
-            // Removed old way of finding page number on the 27.07.12
-            // Add 2 extra pages because usually the decrypter should already
-            // stop before
-            lastPageCalculated = (int) StrictMath.ceil(totalEntries / maxEntriesPerPage);
-            lastPage = lastPageCalculated + 2;
-            logger.info("Found " + lastPageCalculated + " pages using the calculation method.");
-        }
+            /**
+             * Handling for albums/sets: Only decrypt all pages if user did NOT add a direct page link
+             * */
+            int lastPageCalculated = 0;
+            if (!parameter.contains("/page")) {
+                logger.info("Decrypting all available pages.");
+                // Removed old way of finding page number on the 27.07.12
+                // Add 2 extra pages because usually the decrypter should already
+                // stop before
+                lastPageCalculated = (int) StrictMath.ceil(totalEntries / maxEntriesPerPage);
+                lastPage = lastPageCalculated + 2;
+                logger.info("Found " + lastPageCalculated + " pages using the calculation method.");
+            }
 
-        String getPage = parameter + "/page%s";
-        if (parameter.matches(GROUPSLINK)) {
-            // Try other way of loading more pictures for groups links
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            getPage = parameter + "/page%s/?fragment=1";
-        }
-        for (int i = 1; i <= lastPage; i++) {
-            int addedLinksCounter = 0;
-            if (i != 1) br.getPage(String.format(getPage, i));
-            final String[] regexes = { "data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)" };
-            for (String regex : regexes) {
-                String[] links = br.getRegex(regex).getColumn(0);
-                if (links != null && links.length != 0) {
-                    for (String singleLink : links) {
-                        // Regex catches links twice, correct that here
-                        if (!addLinks.contains(singleLink)) {
-                            addLinks.add(singleLink);
-                            addedLinksCounter++;
+            String getPage = parameter + "/page%s";
+            if (parameter.matches(GROUPSLINK)) {
+                // Try other way of loading more pictures for groups links
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                getPage = parameter + "/page%s/?fragment=1";
+            }
+            for (int i = 1; i <= lastPage; i++) {
+                int addedLinksCounter = 0;
+                if (i != 1) br.getPage(String.format(getPage, i));
+                final String[] regexes = { "data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)" };
+                for (String regex : regexes) {
+                    String[] links = br.getRegex(regex).getColumn(0);
+                    if (links != null && links.length != 0) {
+                        for (String singleLink : links) {
+                            // Regex catches links twice, correct that here
+                            if (!addLinks.contains(singleLink)) {
+                                addLinks.add(singleLink);
+                                addedLinksCounter++;
+                            }
                         }
                     }
                 }
+                logger.info("Found " + addedLinksCounter + " links on page " + i + " of approximately " + lastPage + " pages.");
+                logger.info("Found already " + addLinks.size() + " of " + totalEntries + " entries, so we still have to decrypt " + (totalEntries - addLinks.size()) + " entries!");
+                if (addedLinksCounter == 0 || addLinks.size() == totalEntries) {
+                    logger.info("Stopping at page " + i + " because it seems like we got everything decrypted.");
+                    break;
+                }
             }
-            logger.info("Found " + addedLinksCounter + " links on page " + i + " of approximately " + lastPage + " pages.");
-            logger.info("Found already " + addLinks.size() + " of " + totalEntries + " entries, so we still have to decrypt " + (totalEntries - addLinks.size()) + " entries!");
-            if (addedLinksCounter == 0 || addLinks.size() == totalEntries) {
-                logger.info("Stopping at page " + i + " because it seems like we got everything decrypted.");
-                break;
+            if (addLinks == null || addLinks.size() == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-        }
-        if (addLinks == null || addLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String aLink : addLinks) {
-            final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink);
-            dl.setAvailable(true);
-            /* No need to hide decrypted single links */
-            dl.setBrowserUrl("http://www.flickr.com" + aLink);
-            decryptedLinks.add(dl);
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            for (final String aLink : addLinks) {
+                final DownloadLink dl = createDownloadlink("http://www.flickrdecrypted.com" + aLink);
+                dl.setAvailable(true);
+                /* No need to hide decrypted single links */
+                dl.setBrowserUrl("http://www.flickr.com" + aLink);
+                decryptedLinks.add(dl);
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }

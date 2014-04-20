@@ -65,6 +65,10 @@ public class UltraMegaBitCom extends PluginForHost {
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
+        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Charset", null);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("ultramegabit.com/folder/add/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">File not found<|>File restricted<|>File not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -93,6 +97,7 @@ public class UltraMegaBitCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        final long timeBefore = System.currentTimeMillis();
         if (br.containsHTML(">Premium members only<|The owner of this file has decided to only allow premium members to download it")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -108,6 +113,23 @@ public class UltraMegaBitCom extends PluginForHost {
         for (final Form form : br.getForms())
             if (form.containsHTML("ultramegabit\\.com/file/download")) dlform = form;
         if (rcid == null || dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        final String encode = dlform.getInputField("encode").getValue();
+        final String csrf_token = dlform.getInputField("csrf_token").getValue();
+        br.setCookie(MAINPAGE, "csrf_cookie", csrf_token);
+        try {
+            br.cloneBrowser().getPage("https://ultramegabit.com/css/bootstrap.css");
+            br.cloneBrowser().getPage("https://ultramegabit.com/css/umb.css");
+            br.cloneBrowser().getPage("https://ultramegabit.com/js/jquery.1.10.2.min.js");
+            br.cloneBrowser().getPage("https://ultramegabit.com/js/jquery.validate.js");
+            br.cloneBrowser().getPage("https://ultramegabit.com/js/jquery.countdown.js");
+            br.cloneBrowser().getPage("https://ultramegabit.com/js/jquery.cookie.js");
+            br.cloneBrowser().getPage("https://ultramegabit.com/js/bootstrap.js");
+            br.cloneBrowser().getPage("https://ultramegabit.com/js/bootstrapx-clickover.js");
+            br.cloneBrowser().getPage("https://ultramegabit.com/js/umb.js?version=ff068643b8538703b1d7bff9f60237c6");
+        } catch (final Throwable e) {
+        }
+
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcid);
@@ -117,8 +139,12 @@ public class UltraMegaBitCom extends PluginForHost {
         dlform.put("recaptcha_response_field", c);
         dlform.put("recaptcha_challenge_field", rc.getChallenge());
         dlform.remove(null);
+        waitTime(timeBefore, downloadLink);
+        // br.postPage("https://ultramegabit.com/file/download", "csrf_token=" + csrf_token + "&recaptcha_challenge_field=" +
+        // rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&encode=" + encode);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");
             br.followConnection();
             if (br.containsHTML("<b>Fatal error</b>:")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
             if (br.containsHTML("<div id=\"file_delay_carousel\"")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
@@ -148,6 +174,22 @@ public class UltraMegaBitCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
+    }
+
+    private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        /** Ticket Time */
+        final String ttt = "30";
+        if (ttt != null) {
+            int wait = Integer.parseInt(ttt);
+            wait -= passedTime;
+            logger.info("[Seconds] Waittime on the page: " + ttt);
+            logger.info("[Seconds] Passed time: " + passedTime);
+            logger.info("[Seconds] Total time to wait: " + wait);
+            if (wait > 0) {
+                sleep(wait * 1000l, downloadLink);
+            }
+        }
     }
 
     private static final String MAINPAGE = "http://ultramegabit.com";

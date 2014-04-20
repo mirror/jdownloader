@@ -61,16 +61,13 @@ public class PornCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = Encoding.htmlDecode(filename.trim());
-        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
-        final Browser brc = br.cloneBrowser();
-        /* This way we can access links which are usually only accessible for registered users */
-        brc.getPage("http://www.porn.com/videos/embed/" + fid + ".html");
-        DLLINK = brc.getRegex("\"Med\"(,file)?:\"(http:.*?)\"").getMatch(1);
+        get_dllink(this.br);
         if (DLLINK == null) {
-            DLLINK = brc.getRegex("\"Low\"(,file)?:\"(http:.*?)\"").getMatch(1);
-            if (DLLINK == null) {
-                DLLINK = brc.getRegex("\"trailer\"(file)?:\"(http:.*?)\"").getMatch(1);
-            }
+            final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
+            final Browser brc = br.cloneBrowser();
+            /* This way we can access links which are usually only accessible for registered users */
+            brc.getPage("http://www.porn.com/videos/embed/" + fid + ".html");
+            get_dllink(brc);
         }
         if (DLLINK == null && br.containsHTML(">Sorry, this video is only available to members")) {
             downloadLink.setName(filename + ".mp4");
@@ -97,6 +94,16 @@ public class PornCom extends PluginForHost {
             try {
                 con.disconnect();
             } catch (Throwable e) {
+            }
+        }
+    }
+
+    private void get_dllink(final Browser brc) {
+        DLLINK = brc.getRegex("\"Med\"(,file)?:\"(http:.*?)\"").getMatch(1);
+        if (DLLINK == null) {
+            DLLINK = brc.getRegex("\"Low\"(,file)?:\"(http:.*?)\"").getMatch(1);
+            if (DLLINK == null) {
+                DLLINK = brc.getRegex("\"trailer\"(file)?:\"(http:.*?)\"").getMatch(1);
             }
         }
     }

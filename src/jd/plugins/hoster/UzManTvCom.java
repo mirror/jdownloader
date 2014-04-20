@@ -38,7 +38,7 @@ public class UzManTvCom extends PluginForHost {
     private String              DLLINK       = null;
 
     private static final String DLLINKPART   = "?source=site";
-    private static final String INVALIDLINKS = "http://(www\\.)?uzmantv\\.com/(kategoriler|kullanimkosullari|favoriler|facebookSubLogin|yardim|konular|konu|uzmanlar|iphone|iletisim|uyeliksozlesmesi|images|etiketler|etiket|sitemapsv2)";
+    private static final String INVALIDLINKS = "http://(www\\.)?uzmantv\\.com/(kategoriler|kullanimkosullari|favoriler|facebookSubLogin|yardim|konular|konu|uzman|uzmanlar|iphone|iletisim|uyeliksozlesmesi|images|etiketler|etiket|sitemapsv2|programlar)";
 
     public UzManTvCom(PluginWrapper wrapper) {
         super(wrapper);
