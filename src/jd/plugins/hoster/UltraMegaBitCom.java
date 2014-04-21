@@ -270,8 +270,8 @@ public class UltraMegaBitCom extends PluginForHost {
 
         final boolean ispremium = (br.containsHTML("\"Premium Member\"") || br.containsHTML("premium subscription</h5>"));
         // some premiums have no expiration date, page shows only: Account status: Premium
-        String expire = br.getRegex("<h5>Account expires at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
-        if (expire == null) expire = br.getRegex("<h5>Next rebill at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
+        String expire = br.getRegex("<h5>Next rebill at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
+        if (expire == null) expire = br.getRegex("<h5>Account expires at (\\d+:\\d+(am|pm) \\d+/\\d+/\\d+)</h5>").getMatch(0);
         if (expire == null && !ispremium) {
             // "Member"
             account.setProperty("free", true);
