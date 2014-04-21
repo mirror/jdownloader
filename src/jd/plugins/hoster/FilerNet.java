@@ -25,9 +25,11 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -46,6 +48,9 @@ public class FilerNet extends PluginForHost {
 
     private static Object       LOCK                            = new Object();
     private int                 STATUSCODE                      = 0;
+    private String              fuid                            = null;
+    private String              recapID                         = null;
+    private String              dllink                          = null;
     private static final int    APIDISABLED                     = 400;
     private static final String APIDISABLEDTEXT                 = "API is disabled, please wait or use filer.net from your browser";
     private static final int    DOWNLOADTEMPORARILYDISABLED     = 500;
@@ -158,7 +163,9 @@ public class FilerNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser();
-        callAPI("http://api.filer.net/api/status/" + getFID(link) + ".json");
+        fuid = getFID(link);
+        if (fuid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        callAPI("http://api.filer.net/api/status/" + fuid + ".json");
         if (STATUSCODE == APIDISABLED) {
             link.getLinkStatus().setStatusText(APIDISABLEDTEXT);
             return AvailableStatus.UNCHECKABLE;
@@ -182,13 +189,16 @@ public class FilerNet extends PluginForHost {
         requestFileInformation(downloadLink);
         handleDownloadErrors();
         checkShowFreeDialog();
-        callAPI("http://filer.net/get/" + getFID(downloadLink) + ".json");
+        callAPI("http://filer.net/get/" + fuid + ".json");
 
         if (STATUSCODE == 501) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
         } else if (STATUSCODE == 502) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 5 * 60 * 1000l); }
 
-        int wait = Integer.parseInt(getJson("wait", br.toString()));
+        final String token = getJson("token", br.toString());
+        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // 203 503 wait
+        int wait = getWait();
         if (STATUSCODE == 203) {
             sleep(wait * 1001l, downloadLink);
         } else if (STATUSCODE == 503) {
@@ -196,7 +206,7 @@ public class FilerNet extends PluginForHost {
             if (wait < 61) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads...", wait * 1001l);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         }
-        callAPI("http://filer.net/get/" + getFID(downloadLink) + ".json" + "?token=" + getJson("token", br.toString()));
+        callAPI("http://filer.net/get/" + fuid + ".json?token=" + token);
         String dllink = null;
         if (STATUSCODE == 202) {
             int maxCaptchaTries = 5;
@@ -204,12 +214,14 @@ public class FilerNet extends PluginForHost {
             while (tries < maxCaptchaTries) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId(getJson("recaptcha_challange", br.toString()));
+                if (recapID == null) recapID = getJson("recaptcha_challange", br.toString());
+                if (recapID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                rc.setId(recapID);
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
                 tries++;
-                br.postPage("http://filer.net/get/" + getFID(downloadLink) + ".json", "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)§").getMatch(0));
+                br.postPage("http://filer.net/get/" + fuid + ".json", "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&hash=" + fuid);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     updateStatuscode();
@@ -250,6 +262,42 @@ public class FilerNet extends PluginForHost {
                 }
             }
         }
+    }
+
+    private int getWait() {
+        final String tiaw = getJson("wait", br.toString());
+        if (tiaw != null)
+            return Integer.parseInt(tiaw);
+        else
+            return 15;
+    }
+
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    /**
+     * Returns the first form that has a 'key' that equals 'value'.
+     * 
+     * @param key
+     *            name
+     * @param value
+     *            expected value
+     * @param ibr
+     *            import browser
+     * */
+    private Form getFormByInput(final Browser ibr, final String key, final String value) {
+        Form[] workaround = ibr.getForms();
+        if (workaround != null) {
+            for (Form f : workaround) {
+                if (f.containsHTML(key + "=(\"|')" + value + "\\1")) return f;
+            }
+        }
+        return null;
+    }
+
+    private Browser prepBrowser(final Browser prepBr) {
+        prepBr.setFollowRedirects(false);
+        prepBr.getHeaders().put("Accept-Charset", null);
+        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11");
+        return prepBr;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -305,7 +353,7 @@ public class FilerNet extends PluginForHost {
         requestFileInformation(downloadLink);
         handleDownloadErrors();
         br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-        callAPI("http://filer.net/api/dl/" + getFID(downloadLink) + ".json");
+        callAPI("http://filer.net/api/dl/" + fuid + ".json");
         if (STATUSCODE == 504) {
             logger.info("No traffic available!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);

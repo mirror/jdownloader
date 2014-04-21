@@ -56,7 +56,7 @@ public class DirectHTTP extends PluginForHost {
 
     public static class Recaptcha {
 
-        private static final int MAX_TRIES = 5;
+        private static final int MAX_TRIES    = 5;
         private final Browser    br;
         private String           challenge;
         private String           server;
@@ -64,7 +64,8 @@ public class DirectHTTP extends PluginForHost {
         private String           id;
         private Browser          rcBr;
         private Form             form;
-        private int              tries     = 0;
+        private int              tries        = 0;
+        private boolean          clearReferer = true;
 
         public Recaptcha(final Browser br) {
             this.br = br;
@@ -173,12 +174,11 @@ public class DirectHTTP extends PluginForHost {
 
             // this prevents google/recaptcha group from seeing referrer
             try {
-                this.rcBr.setCurrentURL(null);
+                if (clearReferer) this.rcBr.setCurrentURL(null);
             } catch (final Throwable e) {
                 /* 09581 will break here */
             }
-            // doesn't need cookies either!
-            rcBr.clearCookies(this.rcBr.getHost());
+
             // end of privacy protection
 
             /* follow redirect needed as google redirects to another domain */
@@ -275,6 +275,10 @@ public class DirectHTTP extends PluginForHost {
 
         public void setChallenge(final String challenge) {
             this.challenge = challenge;
+        }
+
+        public void setClearReferer(final boolean clearReferer) {
+            this.clearReferer = clearReferer;
         }
 
         public Browser setCode(final String code) throws Exception {

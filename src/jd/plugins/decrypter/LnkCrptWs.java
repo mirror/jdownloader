@@ -430,6 +430,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         private Form               verify;
         private boolean            secure                  = false;
         private boolean            noscript                = true;
+        private boolean            clearReferer            = true;
         public Browser             smBr;
 
         public SolveMedia(final Browser br) {
@@ -470,12 +471,10 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             // this prevents solvemedia group from seeing referrer
             try {
-                smBr.setCurrentURL(null);
+                if (clearReferer) smBr.setCurrentURL(null);
             } catch (final Throwable e) {
                 /* 09581 will break here */
             }
-            // doesn't need cookies either!
-            smBr.clearCookies(smBr.getHost());
             // end of privacy protection
 
             if (this.challenge == null) getChallengeKey();
@@ -582,6 +581,10 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         public String getCaptchaUrl() {
             return captchaAddress;
+        }
+
+        public void setClearReferer(final boolean clearReferer) {
+            this.clearReferer = clearReferer;
         }
 
     }

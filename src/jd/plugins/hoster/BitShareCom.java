@@ -146,6 +146,8 @@ public class BitShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br = new Browser();
+        prepBR();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         doFree(downloadLink);
@@ -156,8 +158,9 @@ public class BitShareCom extends PluginForHost {
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         try {
-            br.cloneBrowser().getPage("http://bitshare.com/getads.html");
-            br.cloneBrowser().getPage("http://bitshare.com/getads.html");
+            Browser ads = br.cloneBrowser();
+            prepBrowser(ads);
+            ads.getPage("http://bitshare.com/getads.html");
         } catch (final Throwable e) {
             logger.info("Adv-Speed-gain failed!");
         }
@@ -181,23 +184,18 @@ public class BitShareCom extends PluginForHost {
         /** Try to find stream links */
         String dllink = br.getRegex("scaling: \\'fit\\',[\t\n\r ]+url: \\'(http://[^<>\"\\']+)\\'").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\\'(http://s\\d+\\.bitshare\\.com/stream/[^<>\"\\']+)\\'").getMatch(0);
-        final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        br2.getHeaders().put("Accept", "text/html, */*");
+        final Browser ajax = br.cloneBrowser();
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        ajax.getHeaders().put("Accept", "text/html, */*");
+        // clonebr required otherwise browser referrer will be wrong down the page.
+        Browser br2 = ajax.cloneBrowser();
+        prepBrowser(br2);
         br2.postPage(ajax_url, "request=generateID&ajaxid=" + tempID);
-        br.cloneBrowser().getPage("http://bitshare.com/getiframepopup_download.html?anticache=" + System.currentTimeMillis());
-        String regexedWait = null;
-        regexedWait = br2.getRegex("\\w+:(\\d+):").getMatch(0);
-        int wait = 45;
-        if (regexedWait != null) {
-            wait = Integer.parseInt(regexedWait);
-            logger.info("Waittime Regex Worked!, regexed waittime = " + wait);
-        } else {
-            logger.warning("Waittime Regex Failed!, failsafe waittime = " + wait);
-        }
-        wait += 3;
-        sleep(wait * 1001l, downloadLink);
+        Browser getframe = br.cloneBrowser();
+        prepBrowser(getframe);
+        getframe.getPage("http://bitshare.com/getiframepopup_download.html?anticache=" + System.currentTimeMillis());
+        long startOfWait = System.currentTimeMillis();
         String id = br.getRegex("http://api\\.recaptcha\\.net/challenge\\?k=(.*?)\"").getMatch(0);
         if (id != null) {
             Boolean failed = true;
@@ -220,19 +218,25 @@ public class BitShareCom extends PluginForHost {
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
-                br2.postPage(ajax_url, "request=validateCaptcha&ajaxid=" + tempID + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                if (br2.containsHTML("ERROR:incorrect\\-captcha")) {
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                rc.getForm().put("recaptcha_response_field", c);
+                rc.getForm().put("recaptcha_challenge_field", rc.getChallenge());
+                br2 = ajax.cloneBrowser();
+                prepBrowser(br2);
+                String regexedWait = null;
+                regexedWait = br2.getRegex("\\w+:(\\d+):").getMatch(0);
+                int wait = 45;
+                if (regexedWait != null) {
+                    wait = Integer.parseInt(regexedWait);
+                    logger.info("Waittime Regex Worked!, regexed waittime = " + wait);
+                } else {
+                    logger.warning("Waittime Regex Failed!, failsafe waittime = " + wait);
+                }
+                wait += 5;
+                sleep((wait * 1001) - (System.currentTimeMillis() - startOfWait), downloadLink);
+                br2.submitForm(rc.getForm());
+                if (br2.containsHTML("ERROR:incorrect-captcha")) {
                     br.getPage(downloadLink.getDownloadURL());
                     continue;
-                } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                 }
                 failed = false;
                 break;
@@ -241,7 +245,8 @@ public class BitShareCom extends PluginForHost {
         }
         /** For files */
         if (dllink == null) {
-            br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
+            br2 = ajax.cloneBrowser();
+            br2.postPage(ajax_url, "request=getDownloadURL&ajaxid=" + tempID);
             if (br2.containsHTML("Your Traffic is used up for today"))
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             else if (br2.containsHTML("Sorry, you cant download more then|You are not able to start a new download right now"))
@@ -384,6 +389,7 @@ public class BitShareCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         prepBR();
         br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -437,6 +443,14 @@ public class BitShareCom extends PluginForHost {
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", agent);
+        prepBrowser(br);
+
+    }
+
+    private Browser prepBrowser(Browser prepBr) {
+        prepBr.getHeaders().put("Accept-Language", "en,en-AU;q=0.8");
+        prepBr.getHeaders().put("Accept-Charset", null);
+        return prepBr;
     }
 
     @Override

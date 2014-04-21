@@ -424,7 +424,9 @@ public class AkaFileCom extends PluginForHost {
                 checkErrors(downloadLink, account, true);
                 getDllink();
                 if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
-                    if (i == repeat)
+                    if (cbr.containsHTML("href=\"http://www\\.downloadthesefiles\\.com/Download/"))
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    else if (i == repeat)
                         logger.warning("Exausted repeat count, after 'dllink == null'");
                     else
                         logger.warning("Couldn't find 'download2' and 'dllink == null'");

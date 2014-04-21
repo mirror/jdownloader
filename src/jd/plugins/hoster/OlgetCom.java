@@ -184,7 +184,7 @@ public class OlgetCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
             String retryMsg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + retryMsg, 20 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs " + retryMsg, 20 * 1000l);
         }
         String genlink = rootNode.get("link").getTextValue().trim();
         if (!(genlink.startsWith("http://") || genlink.startsWith("https://"))) {
@@ -200,7 +200,7 @@ public class OlgetCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             }
             String retryMsg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + retryMsg, 20 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs " + retryMsg, 20 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
         if (dl.getConnection().getResponseCode() == 404) {

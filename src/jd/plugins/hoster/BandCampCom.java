@@ -53,11 +53,16 @@ public class BandCampCom extends PluginForHost {
         this.setConfigElements();
     }
 
-    private static final String FASTLINKCHECK      = "FASTLINKCHECK";
-    private static final String CUSTOM_DATE        = "CUSTOM_DATE";
-    private static final String CUSTOM_FILENAME    = "CUSTOM_FILENAME";
-    private static final String GRABTHUMB          = "GRABTHUMB";
-    private static final String CUSTOM_PACKAGENAME = "CUSTOM_PACKAGENAME";
+    public static final String FASTLINKCHECK        = "FASTLINKCHECK";
+    public static final String CUSTOM_DATE          = "CUSTOM_DATE";
+    public static final String CUSTOM_FILENAME      = "CUSTOM_FILENAME";
+    public static final String GRABTHUMB            = "GRABTHUMB";
+    public static final String CUSTOM_PACKAGENAME   = "CUSTOM_PACKAGENAME";
+    public static final String FILENAMELOWERCASE    = "FILENAMELOWERCASE";
+    public static final String PACKAGENAMELOWERCASE = "PACKAGENAMELOWERCASE";
+    public static final String FILENAMESPACE        = "FILENAMESPACE";
+    public static final String PACKAGENAMESPACE     = "PACKAGENAMESPACE";
+    public static final String CLEANPACKAGENAME     = "CLEANPACKAGENAME";
 
     @Override
     public String getAGBLink() {
@@ -109,7 +114,6 @@ public class BandCampCom extends PluginForHost {
             con.disconnect();
         } catch (Throwable e) {
         }
-        br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Sorry, that something isn\\'t here|>start at the beginning</a> and you\\'ll certainly find what)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = br.getRegex("\"file\":.*?\"(http:.*?)\"").getMatch(0);
         logger.info("DLLINK = " + DLLINK);
@@ -119,12 +123,10 @@ public class BandCampCom extends PluginForHost {
             String tracknumber = br.getRegex("\"track_number\":(\\d+)").getMatch(0);
             if (tracknumber == null) tracknumber = "1";
             final int trackNum = Integer.parseInt(tracknumber);
-            DecimalFormat df = new DecimalFormat("0");
+            DecimalFormat df = new DecimalFormat("00");
             if (trackNum > 999)
                 df = new DecimalFormat("0000");
-            else if (trackNum > 99)
-                df = new DecimalFormat("000");
-            else if (trackNum > 9) df = new DecimalFormat("00");
+            else if (trackNum > 99) df = new DecimalFormat("000");
             final String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
             String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
             if (date == null) {
@@ -143,7 +145,6 @@ public class BandCampCom extends PluginForHost {
             downloadLink.setProperty("directtracknumber", df.format(trackNum));
         }
         final String filename = getFormattedFilename(downloadLink);
-        downloadLink.setFinalFileName(filename);
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         try {
@@ -219,6 +220,9 @@ public class BandCampCom extends PluginForHost {
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
 
+        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMELOWERCASE, false)) formattedFilename = formattedFilename.toLowerCase();
+        if (cfg.getBooleanProperty(jd.plugins.hoster.BandCampCom.FILENAMESPACE, false)) formattedFilename = formattedFilename.replace(" ", "_");
+
         return formattedFilename;
     }
 
@@ -260,6 +264,11 @@ public class BandCampCom extends PluginForHost {
         sbpack.append("*album* = artist of the album\r\n");
         sbpack.append("*date* = date when the album was released - appears in the user-defined format above");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbpack.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FILENAMELOWERCASE, JDL.L("plugins.hoster.bandcamp.filenamelowercase", "filename to lower case")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMELOWERCASE, JDL.L("plugins.hoster.bandcamp.packagenamelowercase", "packagename to lower case")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FILENAMESPACE, JDL.L("plugins.hoster.bandcamp.filenamespace", "filename space striper")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMESPACE, JDL.L("plugins.hoster.bandcamp.packagenamespace", "packagename space striper")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEANPACKAGENAME, JDL.L("plugins.hoster.bandcamp.cleanpackagename", "when unchecked JD Core packagename cleanup routine is disabled!")).setDefaultValue(true));
     }
 
     @Override

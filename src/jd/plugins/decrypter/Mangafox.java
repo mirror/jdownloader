@@ -46,66 +46,55 @@ public class Mangafox extends PluginForDecrypt {
         url = url.replaceAll("(c00\\d+)$", "c001");
         br.getPage(url + "/1.html");
 
-        boolean nextChapterAvailable = true;
-        while (nextChapterAvailable) {
-            if (br.containsHTML("cannot be found|not available yet")) {
-                logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
-                return decryptedLinks;
-            }
-            if (!br.containsHTML("onclick=\"return enlarge\\(\\)\"")) {
-                logger.warning("Invalid link: " + parameter);
-                return decryptedLinks;
-            }
-            final String nextChapter = null;// br.getRegex("<span>Next Chapter:</span> <a href=\"(http://mangafox\\.me/[^<>\"]*?)\">[^<>\"]*?</a></p>").getMatch(0);
-            // We get the title
-            String title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);
-            if (title == null) {
-                logger.warning("Decrypter broken for: " + parameter);
-                return null;
-            }
-            title = Encoding.htmlDecode(title.trim());
+        if (br.containsHTML("cannot be found|not available yet")) {
+            logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);
+            return decryptedLinks;
+        }
+        if (!br.containsHTML("onclick=\"return enlarge\\(\\)\"")) {
+            logger.warning("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
+        // We get the title
+        String title = br.getRegex("<title>(.*?) \\- Read (.*?) Online \\- Page 1</title>").getMatch(0);
+        if (title == null) {
+            logger.warning("Decrypter broken for: " + parameter);
+            return null;
+        }
+        title = Encoding.htmlDecode(title.trim());
 
-            // We get the number of pages in the chapter
-            String format = "%02d";
-            int numberOfPages = Integer.parseInt(br.getRegex("of (\\d+)").getMatch(0));
-            if (numberOfPages > 0) {
-                format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
-            }
-            // We load each page and retrieve the URL of the picture
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
-            int skippedPics = 0;
-            for (int i = 1; i <= numberOfPages; i++) {
-                if (i != 1) br.getPage(url + "/" + i + ".html");
-                String pageNumber = String.format(format, i);
-                final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\"><img src=\"(http://[^\"]+(\\.[a-z]+))\"").getRow(0);
-                if (unformattedSource == null || unformattedSource.length == 0) {
-                    skippedPics++;
-                    if (skippedPics > 5) {
-                        logger.info("Too many links were skipped, stopping...");
-                        break;
-                    }
-                    continue;
+        // We get the number of pages in the chapter
+        String format = "%02d";
+        int numberOfPages = Integer.parseInt(br.getRegex("of (\\d+)").getMatch(0));
+        if (numberOfPages > 0) {
+            format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
+        }
+        // We load each page and retrieve the URL of the picture
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        int skippedPics = 0;
+        for (int i = 1; i <= numberOfPages; i++) {
+            if (i != 1) br.getPage(url + "/" + i + ".html");
+            String pageNumber = String.format(format, i);
+            final String[] unformattedSource = br.getRegex("onclick=\"return enlarge\\(\\);?\"><img src=\"(http://[^\"]+(\\.[a-z]+))\"").getRow(0);
+            if (unformattedSource == null || unformattedSource.length == 0) {
+                skippedPics++;
+                if (skippedPics > 5) {
+                    logger.info("Too many links were skipped, stopping...");
+                    break;
                 }
-                String source = unformattedSource[0];
-                String extension = unformattedSource[1];
-                final DownloadLink link = createDownloadlink("directhttp://" + source);
-                link.setFinalFileName(title + " – page " + pageNumber + extension);
-                fp.add(link);
-                try {
-                    distribute(link);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                }
-                decryptedLinks.add(link);
+                continue;
             }
-            if (nextChapter != null) {
-                br.getPage(nextChapter);
-                nextChapterAvailable = true;
-                logger.info("Decrypting chapter: " + nextChapter);
-            } else {
-                nextChapterAvailable = false;
+            String source = unformattedSource[0];
+            String extension = unformattedSource[1];
+            final DownloadLink link = createDownloadlink("directhttp://" + source);
+            link.setFinalFileName(title + " – page " + pageNumber + extension);
+            fp.add(link);
+            try {
+                distribute(link);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
             }
+            decryptedLinks.add(link);
         }
 
         return decryptedLinks;
