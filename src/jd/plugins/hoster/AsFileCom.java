@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -63,8 +64,10 @@ public class AsFileCom extends PluginForHost {
         return "http://asfile.com/en/page/offer";
     }
 
-    private static Object       LOCK     = new Object();
-    private static final String MAINPAGE = "http://asfile.com";
+    private static Object                  LOCK     = new Object();
+    private static final String            MAINPAGE = "http://asfile.com";
+
+    private static AtomicReference<String> agent    = new AtomicReference<String>(null);
 
     private Browser prepBrowser(final Browser prepBr) {
         // required for native cloudflare support, without the need to repeat requests.
@@ -85,6 +88,13 @@ public class AsFileCom extends PluginForHost {
                 }
             }
         }
+        if (agent.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
+        prepBr.getHeaders().put("User-Agent", agent.get());
+        prepBr.setRequestIntervalLimit(this.getHost(), 1500);
         return prepBr;
     }
 
@@ -224,6 +234,7 @@ public class AsFileCom extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         prepBrowser(br);
+        final boolean follows_redirect = br.isFollowingRedirects();
         br.setReadTimeout(3 * 60 * 1000);
         synchronized (LOCK) {
             // Load cookies
@@ -250,9 +261,8 @@ public class AsFileCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
-                postPage(MAINPAGE + "/en/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 getPage(MAINPAGE + "/en/");
+                postPage(MAINPAGE + "/en/login", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=on&referer=%2Fen%2F");
                 final String lang = System.getProperty("user.language");
                 if (br.containsHTML(">Fail login<") || !br.containsHTML("logout\">Logout ")) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -291,6 +301,8 @@ public class AsFileCom extends PluginForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", null);
                 throw e;
+            } finally {
+                br.setFollowRedirects(follows_redirect);
             }
         }
     }
@@ -451,6 +463,8 @@ public class AsFileCom extends PluginForHost {
      */
     private void getPage(final String page) throws Exception {
         if (page == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final boolean follows_redirects = br.isFollowingRedirects();
+        br.setFollowRedirects(true);
         try {
             br.getPage(page);
         } catch (Exception e) {
@@ -463,44 +477,48 @@ public class AsFileCom extends PluginForHost {
                 throw e;
         }
         // prevention is better than cure
-        if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
-            String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-            Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
-            if (cloudflare != null) {
-                String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                if (math == null) {
-                    String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) variableName = variableName.trim();
-                    math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                }
-                if (math == null) {
-                    logger.warning("Couldn't find 'math'");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                // author.
-                ScriptEngineManager mgr = new ScriptEngineManager();
-                ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                cloudflare.put("jschl_answer", String.valueOf(((Object) engine.eval("(" + math + ") + " + host.length()))));
-                Thread.sleep(5500);
-                br.submitForm(cloudflare);
-                if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                    logger.warning("Possible plugin error within cloudflare handling");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // lets save cloudflare cookie to reduce the need repeat cloudFlare()
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) cookies.put(c.getKey(), c.getValue());
-                }
-                synchronized (cloudflareCookies) {
-                    cloudflareCookies.clear();
-                    cloudflareCookies.putAll(cookies);
+        try {
+            if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
+                String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
+                Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
+                if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
+                if (cloudflare != null) {
+                    String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
+                    if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                    if (math == null) {
+                        String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
+                        if (variableName != null) variableName = variableName.trim();
+                        math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
+                    }
+                    if (math == null) {
+                        logger.warning("Couldn't find 'math'");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
+                    // author.
+                    ScriptEngineManager mgr = new ScriptEngineManager();
+                    ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                    cloudflare.put("jschl_answer", String.valueOf(((Object) engine.eval("(" + math + ") + " + host.length()))));
+                    Thread.sleep(5500);
+                    br.submitForm(cloudflare);
+                    if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
+                        logger.warning("Possible plugin error within cloudflare handling");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    // lets save cloudflare cookie to reduce the need repeat cloudFlare()
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    final Cookies add = br.getCookies(this.getHost());
+                    for (final Cookie c : add.getCookies()) {
+                        if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) cookies.put(c.getKey(), c.getValue());
+                    }
+                    synchronized (cloudflareCookies) {
+                        cloudflareCookies.clear();
+                        cloudflareCookies.putAll(cookies);
+                    }
                 }
             }
+        } finally {
+            br.setFollowRedirects(follows_redirects);
         }
     }
 
