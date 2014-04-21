@@ -146,3 +146,4 @@ system_download_doCRC2_success=CRC-Provjera Uredu (%s1)
 system_download_errors_couldnotdelete=Nije bilo moguće izbrisati postojeći part dokument
 system_download_errors_couldnotrename=Nije bilo moguće preimenovati Dio (Part) dokumenta
 system_download_errors_linkisBlocked=Mirror %s1 se učitava
+video_description=Video dokumenti: mp4, avi, mov,...
