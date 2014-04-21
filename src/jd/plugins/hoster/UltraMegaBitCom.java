@@ -114,22 +114,9 @@ public class UltraMegaBitCom extends PluginForHost {
             if (form.containsHTML("ultramegabit\\.com/file/download")) dlform = form;
         if (rcid == null || dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        final String encode = dlform.getInputField("encode").getValue();
+        // final String encode = dlform.getInputField("encode").getValue();
         final String csrf_token = dlform.getInputField("csrf_token").getValue();
         br.setCookie(MAINPAGE, "csrf_cookie", csrf_token);
-        try {
-            br.cloneBrowser().getPage("https://ultramegabit.com/css/bootstrap.css");
-            br.cloneBrowser().getPage("https://ultramegabit.com/css/umb.css");
-            br.cloneBrowser().getPage("https://ultramegabit.com/js/jquery.1.10.2.min.js");
-            br.cloneBrowser().getPage("https://ultramegabit.com/js/jquery.validate.js");
-            br.cloneBrowser().getPage("https://ultramegabit.com/js/jquery.countdown.js");
-            br.cloneBrowser().getPage("https://ultramegabit.com/js/jquery.cookie.js");
-            br.cloneBrowser().getPage("https://ultramegabit.com/js/bootstrap.js");
-            br.cloneBrowser().getPage("https://ultramegabit.com/js/bootstrapx-clickover.js");
-            br.cloneBrowser().getPage("https://ultramegabit.com/js/umb.js?version=ff068643b8538703b1d7bff9f60237c6");
-        } catch (final Throwable e) {
-        }
-
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcid);
@@ -140,8 +127,6 @@ public class UltraMegaBitCom extends PluginForHost {
         dlform.put("recaptcha_challenge_field", rc.getChallenge());
         dlform.remove(null);
         waitTime(timeBefore, downloadLink);
-        // br.postPage("https://ultramegabit.com/file/download", "csrf_token=" + csrf_token + "&recaptcha_challenge_field=" +
-        // rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&encode=" + encode);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500");

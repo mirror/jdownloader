@@ -243,7 +243,7 @@ public class BitShareCom extends PluginForHost {
             }
             if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        /** For files */
+        /* For files */
         if (dllink == null) {
             br2 = ajax.cloneBrowser();
             br2.postPage(ajax_url, "request=getDownloadURL&ajaxid=" + tempID);

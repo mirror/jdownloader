@@ -206,6 +206,7 @@ public class Freaksharenet extends PluginForHost {
                 final String finallink = br.getRedirectLocation();
                 if (finallink == null) continue;
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, resume, maxchunks);
+                captchaFailed = false;
                 break;
             } else {
                 captchaFailed = false;

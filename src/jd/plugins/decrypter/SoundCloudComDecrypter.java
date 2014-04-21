@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z09]+)|api\\.soundcloud\\.com/tracks/\\d+|api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+|api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public SoundCloudComDecrypter(PluginWrapper wrapper) {
@@ -48,6 +48,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private static final String INVALIDLINKS       = "https?://(www\\.)?soundcloud\\.com/(you/|tour|signup|logout|login|premium|messages|settings|imprint|community\\-guidelines|videos|terms\\-of\\-use|sounds|jobs|press|mobile|#?search|upload|people|dashboard|#/).*?";
     private static final String PLAYLISTAPILINK    = "https?://(www\\.|m\\.)?api\\.soundcloud\\.com/playlists/\\d+\\?secret_token=[A-Za-z0-9\\-_]+";
+
+    private static final String TYPE_SHORT         = "https?://snd\\.sc/[A-Za-z0-9]+";
 
     private static final String GRAB500THUMB       = "GRAB500THUMB";
     private static final String GRABORIGINALTHUMB  = "GRABORIGINALTHUMB";
@@ -65,6 +67,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         // Sometimes slow servers
         br.setConnectTimeout(3 * 60 * 1000);
         br.setReadTimeout(3 * 60 * 1000);
+        br.setFollowRedirects(false);
         try {
             // They can have huge pages, allow eight times the normal load limit
             br.setLoadLimit(8388608);
@@ -88,7 +91,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
 
         // Correct links
-        if (parameter.matches("http://(www\\.)?snd\\.sc/[A-Za-z09]+")) {
+        if (parameter.matches(TYPE_SHORT)) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             final String newparameter = br.getRedirectLocation();
