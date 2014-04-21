@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/((media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+|media/set/\\?set=vb\\.\\d+|[a-z0-9\\.]+/photos(_(of|all|albums|stream))?))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/((media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)a\\.\\d+\\.\\d+\\.\\d+|media/set/\\?set=vb\\.\\d+|[a-z0-9\\.]+/photos(_(of|all|albums|stream))?|profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+))" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -60,6 +60,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   TYPE_PHOTOS_ALL_LINK           = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all";
     private static final String   TYPE_PHOTOS_STREAM_LINK        = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream";
     private static final String   TYPE_PHOTOS_LINK               = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos";
+    private static final String   TYPE_PROFILE_PHOTOS            = "https?://(www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+";
 
     private static final int      MAX_LOOPS_GENERAL              = 150;
 
@@ -374,6 +375,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     fp.setName(Encoding.htmlDecode(fpName.trim()));
                     fp.addLinks(decryptedLinks);
                 }
+            } else if (parameter.matches(TYPE_PROFILE_PHOTOS)) {
+                // Old handling removed 05.12.13 in rev 23262
+                decryptPicsGeneral(null);
             } else {
                 // Should never happen
                 logger.warning("Unsupported linktype: " + parameter);
