@@ -946,6 +946,7 @@ UploadSessionLogDialog_UploadSessionLogDialog_object_more=(više...)
 UploadSessionLogDialog_UploadSessionLogDialog_object_msg2=Tijekom preuzimanja datoteke nastao je problem. Kako bi se taj problem riješio, trebamo više detalja o razlogu. JDownloader je u mogućnosti automatski prikupiti sve potrebne informacije o grešci. Molimo da nam pomognete riješiti problem što je prije moguće slanjem ovih informacija.
 UploadSessionLogDialog_UploadSessionLogDialog_object_title2=Trebamo Vašu pomoć!
 UploadSessionLogDialog_UploadSessionLogDialog_yes=Želim pomoći! Nastavak.
+UploadSessionLogDialog_getDontShowAgainLabelText_always=Uvijek dozvoli slanje zapisa bez pitanja.
 UploadSessionLogDialog_layoutDialogContent_errorid=Kôd greške
 UrlColumn_UrlColumn_open_tt_=Kliknite za otvaranje adrese u pregledniku
 VariantColumn_VariantColumn_name_=Varijanta
