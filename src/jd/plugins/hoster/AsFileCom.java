@@ -74,6 +74,17 @@ public class AsFileCom extends PluginForHost {
         } catch (Throwable e) {
         }
         prepBr.getHeaders().put("Accept-Language", "en-EN");
+        HashMap<String, String> map = null;
+        synchronized (cloudflareCookies) {
+            map = new HashMap<String, String>(cloudflareCookies);
+            if (!map.isEmpty()) {
+                for (final Map.Entry<String, String> cookieEntry : map.entrySet()) {
+                    final String key = cookieEntry.getKey();
+                    final String value = cookieEntry.getValue();
+                    prepBr.setCookie(this.getHost(), key, value);
+                }
+            }
+        }
         return prepBr;
     }
 
