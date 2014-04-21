@@ -64,7 +64,7 @@ public class PornOxoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Video was not found<|<title> at PornoXO</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Video was not found<|<title> at PornoXO</title>|>This video has been deleted|<title>PornoXO \\- Page Not Found</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?)\\- PornoXO\\.com</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<div id=\"maincolumn2\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
         DLLINK = br.getRegex("\\'file\\': \"(http://.*?)\"").getMatch(0);

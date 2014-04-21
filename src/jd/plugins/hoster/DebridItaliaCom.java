@@ -55,11 +55,13 @@ public class DebridItaliaCom extends PluginForHost {
         return maxPrem.get();
     }
 
-    private static final String  NOCHUNKS                     = "NOCHUNKS";
+    private static final String  NOCHUNKS                                          = "NOCHUNKS";
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload                      = new AtomicInteger(20);
     // don't touch the following!
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                                           = new AtomicInteger(1);
+
+    private static final int     MAXRETRIES_timesfaileddebriditalia_unknowndlerror = 50;
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -173,7 +175,7 @@ public class DebridItaliaCom extends PluginForHost {
                 logger.info("debriditalia.com: Unknown download error");
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknowndlerror", 1);
                 link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 10) {
+                if (timesFailed <= MAXRETRIES_timesfaileddebriditalia_unknowndlerror) {
                     timesFailed++;
                     link.setProperty("timesfaileddebriditalia_unknowndlerror", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");

@@ -73,7 +73,7 @@ public class FileMazeWs extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
-    // mods:
+    // mods: other login page
     // non account: 1 (no resume) * 1 (untested as I couldn't dl -raz)
     // free account: same as above (login works, dl untested as I couldn't dl -raz)
     // premium account: 20 * 20 (untested, previous plugin settings)
@@ -649,7 +649,7 @@ public class FileMazeWs extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/");
-                getPage(COOKIE_HOST + "/login.html");
+                getPage(COOKIE_HOST + "/signin.html");
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));

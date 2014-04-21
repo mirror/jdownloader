@@ -47,7 +47,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imagefolks.com", "imgrill.com", "pixup.us", "imgcandy.net", "imagecorn.com", "imgnext.com", "imgsavvy.com" };
+        return new String[] { "imagefolks.com", "imgrill.com", "pixup.us", "imgcandy.net", "imagecorn.com", "imgnext.com", "hosturimage.com" };
     }
 
     /**
@@ -67,9 +67,9 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // ImgScriptDecrypt Version: 1.0
-    // Example url: http://imagehost.com/img-bldegrthz467uj.html
-    /** All of the above domains use the same script. Last checked version: 1.2 */
+    // ImgScriptDecrypt_imgContinue Version: 1.0
+    // Example url: http://imagehost.com/img-az09.html
+    /* All of the above domains use the same script. Last checked version: 1.2 */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

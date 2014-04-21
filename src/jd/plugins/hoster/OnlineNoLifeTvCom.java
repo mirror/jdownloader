@@ -107,7 +107,14 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (notDownloadable) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT); }
+        if (notDownloadable) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -173,7 +180,10 @@ public class OnlineNoLifeTvCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        /* Offline files should also get nice names */
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-_]+)$").getMatch(0));
         br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0");
         /* Richtige Dateigröße bezogen auf den Accounttyp erhalten */
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -201,8 +211,14 @@ public class OnlineNoLifeTvCom extends PluginForHost {
 
             long ts = System.currentTimeMillis();
             br.postPage("/_nlfplayer/api/api_player.php", "a=UEM%7CSEM%7CMEM%7CCH%7CSWQ&id%5Fnlshow=" + getId(dllink) + "&timestamp=" + ts + "&skey=" + getSKey(ts) + "&quality=0");
-            DLLINK = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
             if (br.containsHTML("message=Je ne trouve pas cette émission")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Pour voir l'émission complète, abonnez\\-vous")) {
+                notDownloadable = true;
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onlinenolifetvcom.only4premium", ONLYPREMIUMUSERTEXT));
+                downloadLink.setName(filename + ".mp4");
+                return AvailableStatus.TRUE;
+            }
+            DLLINK = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             filename = filename.trim();
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));

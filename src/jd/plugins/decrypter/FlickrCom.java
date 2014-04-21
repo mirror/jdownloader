@@ -41,13 +41,13 @@ public class FlickrCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String MAINPAGE     = "http://flickr.com/";
-    private static final String FAVORITELINK = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
-    private static final String GROUPSLINK   = "http://(www\\.)?flickr\\.com/groups/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?";
-    private static final String PHOTOLINK    = "http://(www\\.)?flickr\\.com/photos/.*?";
-    private static final String SETLINK      = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
+    private static final String MAINPAGE     = "https?://flickr.com/";
+    private static final String FAVORITELINK = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
+    private static final String GROUPSLINK   = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?";
+    private static final String PHOTOLINK    = "https?://(www\\.)?flickr\\.com/photos/.*?";
+    private static final String SETLINK      = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
-    private static final String INVALIDLINKS = "http://(www\\.)?flickr\\.com/photos/(me|upload)";
+    private static final String INVALIDLINKS = "https?://(www\\.)?flickr\\.com/photos/(me|upload|tags)";
 
     /* TODO: Maybe implement API: https://api.flickr.com/services/rest?photo_id=&extras=can_ ... */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

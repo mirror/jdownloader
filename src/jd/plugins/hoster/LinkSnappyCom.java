@@ -62,7 +62,7 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private static Object       LOCK                  = new Object();
-    private static final String USE_API               = "USE_API";
+    private static final String USE_API               = "USE_API_2";
 
     private static final String COOKIE_HOST           = "http://linksnappy.com";
     private static final int    MAX_DOWNLOAD_ATTEMPTS = 10;

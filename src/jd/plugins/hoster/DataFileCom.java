@@ -166,18 +166,26 @@ public class DataFileCom extends PluginForHost {
             dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String finalname = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+            String finalFixedName = new Regex(finalname, "([^<>\"]*?)\"; creation\\-date=").getMatch(0);
+            if (finalFixedName != null) finalname = finalFixedName;
+            downloadLink.setFinalFileName(finalFixedName);
+            downloadLink.setProperty("directlink", dllink);
+            dl.startDownload();
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                logger.info("Retry on ERROR_DOWNLOAD_INCOMPLETE");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
         }
-        String finalname = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        String finalFixedName = new Regex(finalname, "([^<>\"]*?)\"; creation\\-date=").getMatch(0);
-        if (finalFixedName != null) finalname = finalFixedName;
-        downloadLink.setFinalFileName(finalFixedName);
-        downloadLink.setProperty("directlink", dllink);
-        dl.startDownload();
     }
 
     private void waitTime(long timeBefore, final DownloadLink downloadLink, long wait) throws PluginException {
