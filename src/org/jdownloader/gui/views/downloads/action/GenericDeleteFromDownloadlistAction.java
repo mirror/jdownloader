@@ -184,11 +184,53 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     @Override
     public void actionPerformed(final ActionEvent e) {
         final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
-        for (final DownloadLink dl : selection.getChildren()) {
-            if (checkLink(dl)) {
-                nodesToDelete.add(dl);
+
+        switch (includedSelection.getSelectionType()) {
+
+        case UNSELECTED:
+
+            final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getEnabledTableFilters();
+            boolean read = DownloadController.getInstance().readLock();
+            try {
+                for (FilePackage pkg : DownloadController.getInstance().getPackages()) {
+                    if (selection.isFullPackageSelection(pkg)) {
+                        continue;
+                    }
+                    boolean readL2 = pkg.getModifyLock().readLock();
+                    try {
+                        childs: for (DownloadLink child : pkg.getChildren()) {
+                            if (selection.contains(child)) {
+                                continue;
+                            }
+                            if (isIgnoreFiltered()) {
+                                for (PackageControllerTableModelFilter<FilePackage, DownloadLink> filter : filters) {
+                                    if (filter.isFiltered((DownloadLink) child)) {
+                                        continue childs;
+                                    }
+                                }
+                            }
+                            if (checkLink(child)) {
+                                nodesToDelete.add(child);
+                            }
+                        }
+                    } finally {
+                        pkg.getModifyLock().readUnlock(readL2);
+                    }
+                }
+            } finally {
+                DownloadController.getInstance().readUnlock(read);
+            }
+
+            break;
+
+        default:
+            for (final DownloadLink dl : selection.getChildren()) {
+                if (checkLink(dl)) {
+                    nodesToDelete.add(dl);
+                }
             }
         }
+
         if (nodesToDelete.size() > 0) {
             final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, false);
             if (si.getChildren().size() > 0) {
