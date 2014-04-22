@@ -498,7 +498,8 @@ public class AsFileCom extends PluginForHost {
                     // author.
                     ScriptEngineManager mgr = new ScriptEngineManager();
                     ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                    cloudflare.put("jschl_answer", String.valueOf(((Object) engine.eval("(" + math + ") + " + host.length()))));
+                    long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
+                    cloudflare.put("jschl_answer", value + "");
                     Thread.sleep(5500);
                     br.submitForm(cloudflare);
                     if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
