@@ -1638,7 +1638,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 switch (deleteTo) {
                 case NULL:
                     if (deleteFile.delete() == false) {
-                        logger.info("Could not delete file: " + deleteFile + " for " + link);
+                        logger.info("Could not delete file: " + deleteFile + " for " + link + " exists: " + deleteFile.exists());
                     } else {
                         logger.info("Deleted file: " + deleteFile + " for " + link);
                     }
@@ -1648,7 +1648,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         JDFileUtils.moveToTrash(deleteFile);
                         logger.info("Recycled file: " + deleteFile + " for " + link);
                     } catch (IOException e) {
-                        logger.info("Could not recycle file: " + deleteFile + " for " + link);
+                        logger.log(e);
+                        logger.info("Could not recycle file: " + deleteFile + " for " + link + " exists: " + deleteFile.exists());
                     }
                     break;
                 }
