@@ -158,10 +158,15 @@ public class BitShareCom extends PluginForHost {
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         try {
-            Browser ads = br.cloneBrowser();
+            Browser ads = new Browser();
             prepBrowser(ads);
+            try {
+                ads.setAllowedResponseCodes(404);
+            } catch (Throwable z) {
+            }
             ads.getPage("http://bitshare.com/getads.html");
-        } catch (final Throwable e) {
+            // this injects a cookie in jd and not browser... clone browser shares cookies with parent.. so be aware..
+        } catch (final Exception e) {
             logger.info("Adv-Speed-gain failed!");
         }
         final String fileID = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
@@ -433,21 +438,22 @@ public class BitShareCom extends PluginForHost {
     }
 
     private void prepBR() {
-        br.setReadTimeout(3 * 60 * 1000);
-        br.setConnectTimeout(3 * 60 * 1000);
         br.setCookie(MAINPAGE, "language_selection", "EN");
-        br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
+        prepBrowser(br);
+        // do not merge prepBr and prepBrowser. some functions do not need lang cookie..
+
+    }
+
+    private Browser prepBrowser(Browser prepBr) {
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
-        br.getHeaders().put("User-Agent", agent);
-        prepBrowser(br);
-
-    }
-
-    private Browser prepBrowser(Browser prepBr) {
+        prepBr.setReadTimeout(3 * 60 * 1000);
+        prepBr.setConnectTimeout(3 * 60 * 1000);
+        prepBr.getHeaders().put("User-Agent", agent);
+        prepBr.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
         prepBr.getHeaders().put("Accept-Language", "en,en-AU;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
         return prepBr;
