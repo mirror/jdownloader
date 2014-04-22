@@ -109,6 +109,7 @@ public class Srnnks extends PluginForDecrypt {
     private static AtomicInteger    RUNNING                = new AtomicInteger(0);
     // Always use real-expire-seconds minus 2
     private int                     CAPTCHA_EXPIRE_SECONDS = 58;
+    private int                     CAPTCHA_MAXRETRIES     = 5;
 
     private synchronized static boolean limitsReached(final Browser br) throws IOException {
         int ret = -100;
@@ -226,7 +227,7 @@ public class Srnnks extends PluginForDecrypt {
                     Form[] forms;
                     // progress.setStatusText("Lade Downloadseite");
 
-                    for (int i = 0; i < 5; i++) {
+                    for (int i = 0; i < CAPTCHA_MAXRETRIES; i++) {
                         progress.setRange(100);
                         try {
                             if (isAbort()) return new ArrayList<DownloadLink>(ret);

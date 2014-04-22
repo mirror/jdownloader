@@ -139,6 +139,8 @@ public class LinkSnappyCom extends PluginForHost {
             accountType = "Premium Account";
         }
         ac.setStatus(accountType + " valid");
+        final String trafficLeft = br.getRegex("\"trafficleft\":([0-9\\.]+)").getMatch(0);
+        ac.setTrafficLeft((long) Double.parseDouble(trafficLeft) * 1024 * 1024);
 
         /* now it's time to get all supported hosts */
         getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=FILEHOSTS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
@@ -206,9 +208,8 @@ public class LinkSnappyCom extends PluginForHost {
         String accountType = "Lifetime Premium Account";
         ac.setStatus(accountType + " valid");
 
-        // traffic left
-        final String traffic = br.getRegex("<strong>Traffic left:</strong> (\\d+(\\.\\d+)? [A-Z]{2})").getMatch(0);
-        if (traffic != null) ac.setTrafficLeft(SizeFormatter.getSize(traffic));
+        final String trafficleft = br.getRegex("<strong>Daily traffic left:</strong> (\\d+(\\.\\d+)? [A-Z]{2})").getMatch(0);
+        if (trafficleft != null) ac.setTrafficLeft(SizeFormatter.getSize(trafficleft));
 
         /* now it's time to get all supported hosts */
         // present on most pages
