@@ -1640,6 +1640,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     if (deleteFile.delete() == false) {
                         logger.info("Could not delete file: " + deleteFile + " for " + link + " exists: " + deleteFile.exists());
                     } else {
+
                         logger.info("Deleted file: " + deleteFile + " for " + link);
                     }
                     break;
