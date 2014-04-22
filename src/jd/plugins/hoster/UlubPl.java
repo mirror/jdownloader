@@ -51,7 +51,7 @@ public class UlubPl extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://ulub.pl/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://ulub.pl/") || !br.containsHTML("class=\"pobierz\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1 class=\"h1_pad\">Pobierz MP3 \"([^<>\"]*?)\"</h1>").getMatch(0);
         final String filesize = br.getRegex("kHz (\\d+\\.\\d+ (Kb|Mb))</span>").getMatch(0);

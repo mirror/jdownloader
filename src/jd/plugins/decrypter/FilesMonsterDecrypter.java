@@ -93,7 +93,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         // Advertising link
-        if (br.containsHTML("the file can be accessed at the")) {
+        if (br.containsHTML("the file can be accessed at the|>can be accessed at the")) {
             final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             finalOne.setAvailable(false);
             finalOne.setProperty("offline", true);

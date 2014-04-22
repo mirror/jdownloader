@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,7 +47,23 @@ public class UltraShareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("This file doesn\\'t exist or has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("Download</span>(.*?)\\(<i").getMatch(0);
+        if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        final String filesize = br.getRegex("\\(<i>(.*?)</i>\\)").getMatch(0);
+        if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         // Page only needs to be refreshed to get the dllink but maybe they
         // change the number of refreshs till you get the link so i made a
@@ -58,22 +76,8 @@ public class UltraShareNet extends PluginForHost {
         String dllink = br.getRegex("\"(http://ultrashare\\.net/hosting/sf/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).trim());
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This file doesn't exist or has been removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("Download</span>(.*?)\\(<i").getMatch(0);
-        String filesize = br.getRegex("\\(<i>(.*?)</i>\\)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-
-        return AvailableStatus.TRUE;
     }
 
     @Override

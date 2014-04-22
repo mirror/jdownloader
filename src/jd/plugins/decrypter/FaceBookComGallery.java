@@ -376,7 +376,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     fp.addLinks(decryptedLinks);
                 }
             } else if (parameter.matches(TYPE_PROFILE_PHOTOS)) {
-                // Old handling removed 05.12.13 in rev 23262
                 decryptPicsGeneral(null);
             } else {
                 // Should never happen

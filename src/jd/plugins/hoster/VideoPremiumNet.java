@@ -216,6 +216,13 @@ public class VideoPremiumNet extends PluginForHost {
                 br2.setFollowRedirects(false);
                 br2.getPage("http://" + CURRENT_DOMAIN + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
                 dllink = br2.getRedirectLocation();
+                if (dllink != null) {
+                    // /* thx to raztoki, correct invalid vidembed directlinks */
+                    // final String h = new Regex(dllink, "h=([a-z0-9]{50,70})").getMatch(0);
+                    // if (h != null) {
+                    // dllink = "http://93.115.86.10:182/" + h + "/video.mp4";
+                    // }
+                }
             } catch (final Throwable e) {
             }
         }

@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,7 +43,7 @@ public class FileImCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://www.fileim.com/", "SiteLang", "en-us");
@@ -52,7 +51,7 @@ public class FileImCom extends PluginForHost {
         if (br.getURL().contains("fileim.com/notfound.html") || br.containsHTML("(Sorry, the file or folder does not exist|>Not Found<|FileIM \\- Not Found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<label id=\"FileName\" title=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>[\t\n\r ]+FileIM Download File: ([^<>\"]*?)</title>").getMatch(0);
-        String filesize = br.getRegex("<label id=\"FileSize\">([^<>\"]*?)</label>").getMatch(0);
+        String filesize = br.getRegex("id=\"FileSize\">([^<>\"]*?)<").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll("(\\(|\\))", "")));
@@ -60,13 +59,15 @@ public class FileImCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String fid = br.getRegex("download\\.fid=\"(\\d+)\"").getMatch(0);
-        if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("\">Another Download Is Progressing")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+        final String av = br.getRegex("name=\"av\" id=\"av\" value=\"([^<>\"]*?)\"").getMatch(0);
+        final String fid = br.getRegex("download\\.fid=(\\d+);").getMatch(0);
+        if (fid == null || av == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage("/ajax/download/getTimer.ashx");
+        br2.getPage("http://www.fileim.com/ajax/download/gettimer.ashx");
         String waittime = br2.getRegex("(\\d+)_\\d+").getMatch(0);
         if (waittime == null) waittime = br2.getRegex("(\\d+)").getMatch(0);
         int wait = 150;
@@ -75,12 +76,21 @@ public class FileImCom extends PluginForHost {
         if (wait >= 600) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.getPage("/ajax/getKey.ashx");
         sleep(wait * 1001l, downloadLink);
-        br.getPage("http://www.fileim.com/libs/downloader.aspx?a=0%2C" + new Regex(downloadLink.getDownloadURL(), "/file/([a-z0-9]{16})").getMatch(0) + "%2C0");
-        String dllink = br.getRegex("class=\"downarea\">([\r\n\t ]+)?<a href=\"(https?://[^\"]+)").getMatch(1);
-        if (dllink == null) dllink = br.getRegex("\"(https?://([a-z0-9]+\\.fileim\\.com|([1-2]?[0-9]{1,2}\\.){3}[1-2]?[0-9]{1,2})/download\\.ashx\\?a=[^\"]+)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        br2.getPage("http://www.fileim.com/ajax/download/getcdowninfo.ashx?a=" + av);
+        final String ix = br2.getRegex("ix:\\'([0-9\\.]+)\\'").getMatch(0);
+        if (ix == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        br2.getPage("http://www.fileim.com/ajax/download/getdownservers.ashx?type=0");
+        String domain = br2.getRegex("%2Cdomain%3A\\'([0-9\\.]+%3A\\d+)\\'").getMatch(0);
+        if (domain == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        domain = Encoding.htmlDecode(domain);
+
+        br2.getPage("http://www.fileim.com/ajax/download/setperdown.ashx?ix=" + ix + "&tag=" + av);
+        if (br2.toString().length() >= 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        final String dllink = "http://" + domain + "/download.ashx?a=" + br2.toString();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -100,7 +110,7 @@ public class FileImCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

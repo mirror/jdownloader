@@ -55,7 +55,7 @@ public class FlickrCom extends PluginForDecrypt {
         ArrayList<String> addLinks = new ArrayList<String>();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
-        br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
+        br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
         String parameter = param.toString().replace("http://", "https://");
         int lastPage = 1;
@@ -103,9 +103,11 @@ public class FlickrCom extends PluginForDecrypt {
             String fpName = br.getRegex("<title>Flickr: ([^<>\"]*)</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"]*)\"").getMatch(0);
             if (parameter.matches(SETLINK)) {
+
                 picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
                 if (picCount == null) picCount = br.getRegex("<div class=\"vsNumbers\">[\t\n\r ]+(\\d+) photos").getMatch(0);
-                if (picCount == null) picCount = br.getRegex("<h1>(\\d+)</h1>[\t\n\r ]+<h2>Photos</h2>").getMatch(0);
+                if (picCount == null) picCount = br.getRegex("<div class=\"stats\">.*?<h1>(\\d+)</h1>[\t\n\r ]+<h2>").getMatch(0);
+
                 fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                 if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\- a set on Flickr</title>").getMatch(0);
             } else if (parameter.matches(PHOTOLINK)) {
