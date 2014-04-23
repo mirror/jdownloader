@@ -78,7 +78,7 @@ public class Candidate extends AbstractJsonData implements Storable {
                 ret.type = ACCOUNT_FREE;
             } else if (account.getAccount().getBooleanProperty("free", false)) {
                 ret.type = ACCOUNT_FREE;
-            } else if (!StringUtils.equals("premium", account.getAccount().getStringProperty("session_type", null))) {
+            } else if (account.getAccount().getStringProperty("session_type", null) != null && !StringUtils.equals("premium", account.getAccount().getStringProperty("session_type", null))) {
                 // session_type rapidgator
                 ret.type = ACCOUNT_FREE;
             } else {
@@ -93,7 +93,7 @@ public class Candidate extends AbstractJsonData implements Storable {
                 ret.type = ACCOUNT_FREE;
             } else if (account.getAccount().getBooleanProperty("free", false)) {
                 ret.type = ACCOUNT_FREE;
-            } else if (!StringUtils.equals("premium", account.getAccount().getStringProperty("session_type", null))) {
+            } else if (account.getAccount().getStringProperty("session_type", null) != null && !StringUtils.equals("premium", account.getAccount().getStringProperty("session_type", null))) {
                 // session_type rapidgator
                 ret.type = ACCOUNT_FREE;
             } else {
