@@ -37,7 +37,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
 
     private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?(hulkshare\\.com|hu\\/lk)/([a-z0-9]{12})";
     private static final String TYPE_SECONDSINGLELINK = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]+/[^<>\"/]+";
-    private static final String TYPE_PLAYLIST         = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/playlist/\\d+";
+    private static final String TYPE_PLAYLIST         = "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/playlist/\\d+(.+)?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -56,7 +56,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             // Not available in old 0.9.581 Stable
         }
         br.getPage(parameter);
-        if (br.getRequest().getHttpConnection().getContentType().equals("text/javascript") || br.getRequest().getHttpConnection().getContentType().equals("text/css")) {
+        if (br.getHttpConnection().getContentType().equals("text/javascript") || br.getHttpConnection().getContentType().equals("text/css")) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
         }

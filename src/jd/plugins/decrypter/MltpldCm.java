@@ -58,7 +58,8 @@ public class MltpldCm extends PluginForDecrypt {
                 br.getPage(redirect);
             }
         }
-        if (!parameter.contains("_")) {
+        /* Decrypt all if single link fails */
+        if (!br.getURL().contains("_")) {
             final String[] redirectLinks = br.getRegex(Pattern.compile("id=\"url_\\d+\"><a href=\"(http://(www\\.)?multiupload\\.nl.*?)\"")).getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
                 logger.warning("redirectLinks list is null, only returning direct link...");

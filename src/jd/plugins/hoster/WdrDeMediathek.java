@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://(www\\.)?wdr\\.de/(mediathek/html/regional/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-_]+\\.xml|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/(mediathek/html/regional/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-_]+\\.xml|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 0 })
 public class WdrDeMediathek extends PluginForHost {
 
     public WdrDeMediathek(PluginWrapper wrapper) {

@@ -46,7 +46,7 @@ public class UpfCoIl extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("file-not-exits.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("file-not-exits.html") || br.containsHTML("<b>שגיאה:</b> קובץ הורדה לא נמצא\\.<br />")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<title>([^<>\"]*?) להורדה \\- UpF\\.co\\.il</title>").getMatch(0);
         final String ext = br.getRegex("title=\\'הורד קובץ זה רק אם אתה בטוח שאינו מזיק\\'>([^<>\"]*?)</span>").getMatch(0);
         final String filesize = br.getRegex("<b>גודל הורדה</b><br />([^<>\"]*?)<br /><br").getMatch(0);

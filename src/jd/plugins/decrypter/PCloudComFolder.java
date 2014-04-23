@@ -51,7 +51,7 @@ public class PCloudComFolder extends PluginForDecrypt {
         br.getPage("http://api.pcloud.com/showpublink?code=" + getFID(parameter));
         /* 7002 = deleted by the owner */
         if (br.containsHTML("\"error\": \"Invalid link") || br.containsHTML("\"result\": 7002")) {
-            main.setFinalFileName(new Regex(parameter, "copy\\.com/(.+)").getMatch(0));
+            main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
             main.setAvailable(false);
             main.setProperty("offline", true);
             decryptedLinks.add(main);

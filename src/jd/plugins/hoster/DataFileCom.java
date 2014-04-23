@@ -123,6 +123,11 @@ public class DataFileCom extends PluginForHost {
         if (br.containsHTML("ErrorCode 7: Download file count limit")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l);
         if (br.containsHTML(PREMIUMONLY)) {
             // not possible to download under handleFree!
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         String dllink = checkDirectLink(downloadLink, "directlink");
@@ -308,18 +313,7 @@ public class DataFileCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
-            String redirect = br.getRedirectLocation();
-            if (redirect != null && redirect.contains("error.html?code=")) {
-                String errorCode = new Regex(redirect, "error\\.html\\?code=(\\d+)").getMatch(0);
-                if ("7".endsWith(errorCode)) {
-                    // reached daily download quota
-                    logger.info("You've reached daily download quota for " + account.getUser() + " account");
-                    AccountInfo ac = new AccountInfo();
-                    ac.setTrafficLeft(0);
-                    account.setAccountInfo(ac);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
+            handleGeneralErrors(account);
             doFree(downloadLink);
         }
         br.setFollowRedirects(true);
@@ -328,9 +322,34 @@ public class DataFileCom extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            handleGeneralErrors(account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleGeneralErrors(final Account account) throws PluginException {
+        final String redirect = br.getRedirectLocation();
+        String errorCode = br.getRegex("ErrorCode (\\d+):").getMatch(0);
+        if ((redirect != null && redirect.contains("error.html?code=")) || errorCode != null) {
+            if (errorCode == null) errorCode = new Regex(redirect, "error\\.html\\?code=(\\d+)").getMatch(0);
+            if ("6".endsWith(errorCode)) {
+                logger.info("Trafficlimit reached");
+                final AccountInfo ac = new AccountInfo();
+                ac.setTrafficLeft(0);
+                account.setAccountInfo(ac);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if ("7".endsWith(errorCode)) {
+                // reached daily download quota
+                logger.info("You've reached daily download quota for " + account.getUser() + " account");
+                final AccountInfo ac = new AccountInfo();
+                ac.setTrafficLeft(0);
+                account.setAccountInfo(ac);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Trafficlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            logger.warning("Unknown error");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Unknown error", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
     }
 
     private void postPage(String url, final String postData) throws IOException {

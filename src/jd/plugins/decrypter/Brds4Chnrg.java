@@ -44,6 +44,10 @@ public class Brds4Chnrg extends PluginForDecrypt {
         String parameter = param.toString();
         String prot = new Regex(parameter, "(https?)://").getMatch(0);
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Link offline (404): " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.matches("https?://[\\w\\.]*?boards\\.4chan\\.org/[0-9a-z]{1,4}/[0-9]*")) {
             String[] threads = br.getRegex("\\[<a href=\"thread/(\\d+)").getColumn(0);
             for (String thread : threads) {
@@ -53,7 +57,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         if (decryptedLinks.size() == 0) {
             final String IMAGERDOMAINS = "(i\\.4cdn\\.org|images\\.4chan\\.org)";
             String[] images = br.getRegex("(?i)(https?://[\\w\\.]*?" + IMAGERDOMAINS + "/[0-9a-z]{1,4}/(src/)?\\d+\\.(gif|jpg|png|webm))").getColumn(0);
-            if (images == null || images.length == 0) images = br.getRegex("(?i)File: <a href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,4}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(0);
+            if (images == null || images.length == 0) images = br.getRegex("(?i)File: <a (title=\"[^<>\"/]+\" )?href=\"(//" + IMAGERDOMAINS + "/[0-9a-z]{1,4}/(src/)?\\d+\\.(gif|jpg|png|webm))\"").getColumn(1);
 
             if (br.containsHTML("404 - Not Found")) {
                 fp.setName("4chan - 404 - Not Found");
@@ -64,6 +68,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
                 fp.add(dl);
                 decryptedLinks.add(dl);
             } else if (images.length == 0) {
+                logger.info("Empty 4chan link: " + parameter);
                 return decryptedLinks;
             } else {
                 String domain = "4chan.org";

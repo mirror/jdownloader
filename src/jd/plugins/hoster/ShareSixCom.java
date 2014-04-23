@@ -89,6 +89,7 @@ public class ShareSixCom extends PluginForHost {
     private final boolean              useAltLinkCheck              = false;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
+    private final boolean              useSpecialWay                = true;
     private final boolean              useAltExpire                 = true;
     private final long                 useLoginIndividual           = 6 * 3480000;
     private final boolean              waitTimeSkipableReCaptcha    = true;
@@ -105,7 +106,7 @@ public class ShareSixCom extends PluginForHost {
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: null
     // other: no redirects
-    // mods:
+    // mods: useSpecialWay, and filename/size regexes
 
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
@@ -279,6 +280,7 @@ public class ShareSixCom extends PluginForHost {
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
+        final Regex special = cbr.getRegex("<p class=\"f_l_name\">Download File ([^<>\"]*?) \\(([^<>\"/\\(\\)]*?)\\)</p>");
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
             if (inValidate(fileInfo[0])) {
@@ -303,6 +305,7 @@ public class ShareSixCom extends PluginForHost {
                 }
             }
         }
+        if (inValidate(fileInfo[0])) fileInfo[0] = special.getMatch(0);
         if (inValidate(fileInfo[1])) {
             fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
             if (inValidate(fileInfo[1])) {
@@ -319,6 +322,7 @@ public class ShareSixCom extends PluginForHost {
                 }
             }
         }
+        if (inValidate(fileInfo[1])) fileInfo[1] = special.getMatch(1);
         if (inValidate(fileInfo[2])) fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
     }
@@ -381,6 +385,10 @@ public class ShareSixCom extends PluginForHost {
                 br = obr;
                 cbr = obrc;
             }
+        }
+        if (inValidate(dllink) && useSpecialWay) {
+            postPage(br.getURL(), "method_free=Free");
+            dllink = cbr.getRegex("file[\t\n\r ]+:[\t\n\r ]+\"(http://[^<>\"]*?)\"").getMatch(0);
         }
         // Fourth, continue like normal.
         if (inValidate(dllink)) {

@@ -97,6 +97,14 @@ public class FileBoomMe extends PluginForHost {
             if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(br.getURL(), "slow_id=" + id);
+            if (br.containsHTML("Free user can\\'t download large files")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            }
             if (br.containsHTML(">Downloading is not possible<")) {
                 final Regex waittime = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this");
                 String tmphrs = waittime.getMatch(0);

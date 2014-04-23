@@ -286,6 +286,7 @@ public class BitShareCom extends PluginForHost {
         if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>|bad try)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         if (br.containsHTML("No input file specified|Connection to main server failed")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         if (br.containsHTML("You don\\'t have necessary rights to start this download or your session has timed out")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+        if (br.containsHTML("<title id=\"title_d_page\">Blocked</title>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Blocked'", 30 * 60 * 1000l);
     }
 
     @Override

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://(www\\.)?plunder\\.com/.+/(?!support|browse|privacy|tos|dmca).+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://(www\\.)?plunder\\.com/[^<>\"/]+/[^<>\"/]+/" }, flags = { 0 })
 public class PlunderComFolder extends PluginForDecrypt {
 
     public PlunderComFolder(PluginWrapper wrapper) {
@@ -39,8 +39,12 @@ public class PlunderComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("(>Server Error<|>403 \\- Forbidden: Access is denied)") || br.getURL().contains("/search/?f=")) {
+        if (br.containsHTML("(>Server Error<|>403 \\- Forbidden: Access is denied|>The file your are requesting is no longer available)") || br.getURL().contains("/search/?f=")) {
             logger.info("Link offline or server error: " + parameter);
+            return decryptedLinks;
+        }
+        if (!br.containsHTML("class=\\'shorturl\\'>")) {
+            logger.info("Link offline (no downloadlink): " + parameter);
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>.*?\\-(.*?)\\- Plunder").getMatch(0);

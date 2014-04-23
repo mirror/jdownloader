@@ -28,7 +28,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://[\\w\\.]*?(yapapka|rusfolder|ifolder)\\.(net|ru|com)/f\\d+" }, flags = { 0 })
 public class IFolderFolder extends PluginForDecrypt {
@@ -41,12 +40,18 @@ public class IFolderFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("Запрашиваемая вами папка не существует или у вас нет прав для просмотра данной папки")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Запрашиваемая вами папка не существует или у вас нет прав для просмотра данной папки")) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         String fpName = br.getRegex("Название: <b>(.*?)</b>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<h1>Просмотр папки(.*?)</h").getMatch(0);
         // Get the links of the first page
         String collectedlinks1[] = getLinks();
-        if (collectedlinks1 == null || collectedlinks1.length == 0) return null;
+        if (collectedlinks1 == null || collectedlinks1.length == 0) {
+            logger.info("Link probably offline: " + parameter);
+            return decryptedLinks;
+        }
         for (String dl : collectedlinks1) {
             decryptedLinks.add(createDownloadlink("http://rusfolder.ru/" + dl));
         }

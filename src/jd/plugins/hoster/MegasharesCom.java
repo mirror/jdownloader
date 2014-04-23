@@ -58,7 +58,9 @@ public class MegasharesCom extends PluginForHost {
         enablePremium("http://www.megashares.com/lc_order.php?tid=sasky");
     }
 
-    private AvailableStatus requestFileInformationInternal(DownloadLink downloadLink) throws IOException, PluginException {
+    private AvailableStatus requestFileInformationInternal(final DownloadLink downloadLink) throws IOException, PluginException {
+        /* Offline links should also get nice filenames */
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
         br.getHeaders().put("User-Agent", UserAgent);
         synchronized (LOCK) {
             restoreCookies(br, premCookies);

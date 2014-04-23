@@ -74,7 +74,7 @@ public class FlickrCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (br.containsHTML("Page Not Found<|>This member is no longer active")) {
+        if (br.containsHTML("Page Not Found<|>This member is no longer active") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
             offline.setName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
             offline.setAvailable(false);

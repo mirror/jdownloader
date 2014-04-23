@@ -42,10 +42,14 @@ public class HitFileNetFolder extends PluginForDecrypt {
         br.getHeaders().put("Referer", parameter);
         br.getPage("http://hitfile.net/lang/en");
         if (!br.getURL().equals(parameter)) br.getPage(parameter);
-        if (br.containsHTML(">There are no any files in this folder<")) return decryptedLinks;
+        if (br.containsHTML(">There are no any files in this folder<|>Searching file\\.\\.\\.Please wait|>Please wait, searching file")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("class=\\'folder\\-big\\'><img src=\\'/js/lib/grid/icon/folder\\.png\\'>([^<>\"\\']+)</div>").getMatch(0);
+        final String fid = new Regex(parameter, "/folder/(\\d+)").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://hitfile.net/downloadfolder/gridFile?id_folder=" + new Regex(parameter, "/folder/(\\d+)").getMatch(0) + "&_search=false&nd=" + Math.random() + "&rows=2000&page=1&sidx=name&sord=asc");
+        br.getPage("http://hitfile.net/downloadfolder/gridFile?rootId=" + fid + "&currentId=" + fid + "&_search=false&nd=" + Math.random() + "&rows=2000&page=1&sidx=name&sord=asc");
         String[] ids = br.getRegex("\"id\":\"([A-Za-z0-9]+)\"").getColumn(0);
         if (ids == null || ids.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

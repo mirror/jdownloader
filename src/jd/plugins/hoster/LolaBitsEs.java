@@ -71,18 +71,28 @@ public class LolaBitsEs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        /* Free users can only download low quality streams */
-        String dllink = br.getRegex("\"(http://(www\\.)?lolabits\\.es/Video\\.ashx\\?e=[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+        String dllink = null;
+        int maxChunks = 0;
+        try {
+            dllink = get_dllink();
+        } catch (final Throwable e) {
+            logger.info("Failed to get downloadlink without account");
         }
-        dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dllink == null) {
+            /* Free users can only download low quality streams */
+            dllink = br.getRegex("\"(http://(www\\.)?lolabits\\.es/Video\\.ashx\\?e=[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+            }
+            dllink = Encoding.htmlDecode(dllink);
+            maxChunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             /* Whatever happens here, always show server error... */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
@@ -164,6 +174,16 @@ public class LolaBitsEs extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+        final String dllink = get_dllink();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private String get_dllink() throws IOException, PluginException {
         final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
         final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (fileid == null || requestvtoken == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -172,12 +192,7 @@ public class LolaBitsEs extends PluginForHost {
         String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = unescape(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        return dllink;
     }
 
     private static synchronized String unescape(final String s) {
