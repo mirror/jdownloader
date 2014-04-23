@@ -881,9 +881,20 @@ public class FileOmCom extends PluginForHost {
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, account, false);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
-                    if (dlform == null)
+                    if (dlform == null) {
+                        Form freeDL = cbr.getFormbyProperty("op", "download1");
+                        if (freeDL != null) {
+                            synchronized (ACCLOCK) {
+                                account.setProperty("cookies", Property.NULL);
+                                account.setProperty("lastlogin", Property.NULL);
+                                /* will also recheck free property */
+                                fetchAccountInfo(account);
+                                // if you retry, it can use another account...
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            }
+                        }
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
+                    } else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
                     sendForm(dlform);
                     checkErrors(downloadLink, account, true);
                     getDllink();
