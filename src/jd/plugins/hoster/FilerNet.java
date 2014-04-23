@@ -47,7 +47,7 @@ import org.appwork.utils.os.CrossSystem;
 public class FilerNet extends PluginForHost {
 
     private static Object       LOCK                            = new Object();
-    private int                 STATUSCODE                      = 0;
+    private int                 statusCode                      = 0;
     private String              fuid                            = null;
     private String              recapID                         = null;
     private String              dllink                          = null;
@@ -166,14 +166,14 @@ public class FilerNet extends PluginForHost {
         fuid = getFID(link);
         if (fuid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         callAPI("http://api.filer.net/api/status/" + fuid + ".json");
-        if (STATUSCODE == APIDISABLED) {
+        if (statusCode == APIDISABLED) {
             link.getLinkStatus().setStatusText(APIDISABLEDTEXT);
             return AvailableStatus.UNCHECKABLE;
-        } else if (STATUSCODE == 505) {
+        } else if (statusCode == 505) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (STATUSCODE == DOWNLOADTEMPORARILYDISABLED) {
+        } else if (statusCode == DOWNLOADTEMPORARILYDISABLED) {
             link.getLinkStatus().setStatusText(DOWNLOADTEMPORARILYDISABLEDTEXT);
-        } else if (STATUSCODE == UNKNOWNERROR) {
+        } else if (statusCode == UNKNOWNERROR) {
             link.getLinkStatus().setStatusText(UNKNOWNERRORTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
@@ -191,24 +191,25 @@ public class FilerNet extends PluginForHost {
         checkShowFreeDialog();
         callAPI("http://filer.net/get/" + fuid + ".json");
 
-        if (STATUSCODE == 501) {
+        if (statusCode == 501) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
-        } else if (STATUSCODE == 502) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 5 * 60 * 1000l); }
-
-        final String token = getJson("token", br.toString());
-        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (statusCode == 502) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 5 * 60 * 1000l); }
         // 203 503 wait
         int wait = getWait();
-        if (STATUSCODE == 203) {
-            sleep(wait * 1001l, downloadLink);
-        } else if (STATUSCODE == 503) {
+        if (statusCode == 503) {
             // Waittime too small->Don't reconnect
             if (wait < 61) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads...", wait * 1001l);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         }
+        final String token = getJson("token", br.toString());
+        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        if (statusCode == 203) {
+            sleep(wait * 1001l, downloadLink);
+        }
         callAPI("http://filer.net/get/" + fuid + ".json?token=" + token);
         String dllink = null;
-        if (STATUSCODE == 202) {
+        if (statusCode == 202) {
             int maxCaptchaTries = 5;
             int tries = 0;
             while (tries < maxCaptchaTries) {
@@ -225,9 +226,9 @@ public class FilerNet extends PluginForHost {
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
                     updateStatuscode();
-                    if (STATUSCODE == 501) {
+                    if (statusCode == 501) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
-                    } else if (STATUSCODE == 502) {
+                    } else if (statusCode == 502) {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 5 * 60 * 1000l);
                     } else {
                         continue;
@@ -354,10 +355,10 @@ public class FilerNet extends PluginForHost {
         handleDownloadErrors();
         br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
         callAPI("http://filer.net/api/dl/" + fuid + ".json");
-        if (STATUSCODE == 504) {
+        if (statusCode == 504) {
             logger.info("No traffic available!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-        } else if (STATUSCODE == UNKNOWNERROR) { throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT); }
+        } else if (statusCode == UNKNOWNERROR) { throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT); }
         final String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Important!!
@@ -389,11 +390,11 @@ public class FilerNet extends PluginForHost {
     }
 
     private void handleDownloadErrors() throws PluginException {
-        if (STATUSCODE == APIDISABLED) {
+        if (statusCode == APIDISABLED) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, APIDISABLEDTEXT, 2 * 60 * 60 * 1000l);
-        } else if (STATUSCODE == DOWNLOADTEMPORARILYDISABLED) {
+        } else if (statusCode == DOWNLOADTEMPORARILYDISABLED) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DOWNLOADTEMPORARILYDISABLEDTEXT, 2 * 60 * 60 * 1000l);
-        } else if (STATUSCODE == UNKNOWNERROR) { throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT); }
+        } else if (statusCode == UNKNOWNERROR) { throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT); }
     }
 
     private String getFID(final DownloadLink link) {
@@ -407,7 +408,7 @@ public class FilerNet extends PluginForHost {
 
     private void updateStatuscode() {
         final String code = getJson("code", br.toString());
-        if (code != null) STATUSCODE = Integer.parseInt(code);
+        if (code != null) statusCode = Integer.parseInt(code);
     }
 
     private String getJson(final String parameter, final String source) {
