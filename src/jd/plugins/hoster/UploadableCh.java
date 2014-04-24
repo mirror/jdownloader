@@ -46,21 +46,21 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadable.ch" }, urls = { "http://(www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
-
+    
     public UploadableCh(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.uploadable.ch/extend.php");
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.uploadable.ch/terms.php";
     }
-
+    
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
-
+    
     private static final long    FREE_SIZELIMIT = 1073741824;
-
+    
     // TODO: Maybe implement mass linkchecker: http://www.uploadable.ch/check.php
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -74,19 +74,16 @@ public class UploadableCh extends PluginForHost {
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         final long fsize = SizeFormatter.getSize(filesize);
-        if (fsize > 0) {
-            link.setProperty("VERIFIEDFILESIZE", fsize);
-        }
         link.setDownloadSize(fsize);
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
-
+    
     private void doFree(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(false);
         String dllink = checkDirectLink(downloadLink, "uploadabledirectlink");
@@ -118,7 +115,7 @@ public class UploadableCh extends PluginForHost {
                 break;
             }
             if (br.containsHTML("\"success\":0")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
+            
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -137,7 +134,7 @@ public class UploadableCh extends PluginForHost {
         downloadLink.setProperty("uploadabledirectlink", dllink);
         dl.startDownload();
     }
-
+    
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -156,10 +153,10 @@ public class UploadableCh extends PluginForHost {
         }
         return dllink;
     }
-
+    
     private static final String MAINPAGE = "http://uploadable.ch";
     private static Object       LOCK     = new Object();
-
+    
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -204,7 +201,7 @@ public class UploadableCh extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -245,7 +242,7 @@ public class UploadableCh extends PluginForHost {
         account.setValid(true);
         return ai;
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -269,30 +266,30 @@ public class UploadableCh extends PluginForHost {
             dl.startDownload();
         }
     }
-
+    
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getVerifiedFileSize() > FREE_SIZELIMIT)
             return false;
         else
             return true;
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
+    
 }
