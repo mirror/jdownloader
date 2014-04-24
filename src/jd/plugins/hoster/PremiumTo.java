@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -216,7 +217,9 @@ public class PremiumTo extends PluginForHost {
                 url = url.replaceFirst("filefactory.com/", "ff.com/");
             }
             /* end code from premium.to support */
-
+            if (url.startsWith("oboom.com/")) {
+                url = url.replaceFirst("oboom.com/#", "oboom.com/");
+            }
             url = Encoding.urlEncode(url);
             showMessage(link, "Phase 1/3: Login...");
             login(br, acc);
@@ -248,7 +251,12 @@ public class PremiumTo extends PluginForHost {
                     }
                 }
                 br.followConnection();
+
                 logger.severe("PremiumTo(Error): " + br.toString());
+                if (br.containsHTML("File not found")) {
+                    // probably a plugin error - we need to add a url fix (see above)
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Support defect: " + new URL(link.getDownloadURL()).getHost());
+                }
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
