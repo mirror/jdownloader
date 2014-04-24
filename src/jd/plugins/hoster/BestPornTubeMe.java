@@ -54,14 +54,26 @@ public class BestPornTubeMe extends PluginForHost {
         br.getHeaders().put("Accept-Charset", null);
 
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.openGetConnection(downloadLink.getDownloadURL());
+        try {
+            if (!"text/html".equals(br.getRequest().getResponseHeader("Content-Type"))) {
+                // workaround to support old links. changed this on 24th april 2014. can be removed in june
+                dlUrl = downloadLink.getDownloadURL();
+                return AvailableStatus.TRUE;
+
+            }
+            br.followConnection();
+        } finally {
+            br.disconnect();
+        }
+
         if (br.getURL().contains("videos/?m=e")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String file_name = br.getRegex("<title>([^<>]*?)- Free Porn Videos and Sex Movies at bestporntube\\.me Kinky Porn Tube</title>").getMatch(0);
         dlUrl = br.getRegex("'file': '(.*?)',").getMatch(0); // get_file/1/00094dfde0d2e240adaf674be13efbd8/0/59/59.flv/";
 
         if (file_name == null || dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(file_name.replace("\"", "'") + ".flv");
-        downloadLink.setUrlDownload(dlUrl);
+
         return AvailableStatus.TRUE;
     }
 
