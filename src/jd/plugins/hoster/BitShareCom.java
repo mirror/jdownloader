@@ -229,12 +229,17 @@ public class BitShareCom extends PluginForHost {
                 prepBrowser(br2);
                 String regexedWait = null;
                 regexedWait = br2.getRegex("\\w+:(\\d+):").getMatch(0);
-                int wait = 45;
+                if (regexedWait == null) {
+                    // 24th april 2014
+                    regexedWait = br2.getRegex("time = (\\d+)").getMatch(0);
+                }
+                int wait = -1;
                 if (regexedWait != null) {
                     wait = Integer.parseInt(regexedWait);
                     logger.info("Waittime Regex Worked!, regexed waittime = " + wait);
                 } else {
                     logger.warning("Waittime Regex Failed!, failsafe waittime = " + wait);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Waittime Regex Failed!");
                 }
                 wait += 5;
                 sleep((wait * 1001) - (System.currentTimeMillis() - startOfWait), downloadLink);
