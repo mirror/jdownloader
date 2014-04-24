@@ -27,8 +27,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision: 25040 $", interfaceVersion = 2, names = { "batoto.net" }, urls = { "http://[\\w\\.]*?batoto\\.net/read/_/\\d+/[\\w\\-_\\.]+" }, flags = { 0 })
@@ -64,7 +62,7 @@ public class BtoNt extends PluginForDecrypt {
         String reg = "<title>(.*?) - (vol ([\\d\\.]+) )?(ch ([\\d\\.]+) )(Page [\\d\\.]+ )?\\|[^<]+</title";
         t = br.getRegex(reg).getRow(0);
         if (t == null) {
-            logger.warning("Decrypter broken for: " + parameter);
+            logger.warning("Decrypter broken for: " + parameter + " @ t");
             return null;
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -75,15 +73,17 @@ public class BtoNt extends PluginForDecrypt {
             String[] s = new Regex(t[2], "(\\d+)(\\.\\d+)").getRow(0);
             fp.setProperty("CLEANUP_NAME", false);
             t[2] = df_title.format(Integer.parseInt(s[0])) + s[1];
-        } else {
+        } else if (t[2] != null) {
             t[2] = df_title.format(Integer.parseInt(t[2]));
-        }
-        if (t[4] != null && t[4].contains(".")) {
+        } else if (t[4] != null && t[4].contains(".")) {
             String[] s = new Regex(t[4], "(\\d+)(\\.\\d+)").getRow(0);
             fp.setProperty("CLEANUP_NAME", false);
             t[4] = df_title.format(Integer.parseInt(s[0])) + s[1];
-        } else {
+        } else if (t[4] != null) {
             t[4] = df_title.format(Integer.parseInt(t[4]));
+        } else {
+            logger.warning("Decrypter broken for: " + parameter + " @ df_title");
+            return null;
         }
         final String title = Encoding.htmlDecode(t[0].trim() + " -" + (t[2] != null ? " Volume " + t[2] : "") + " Chapter " + t[4]);
 
@@ -123,7 +123,8 @@ public class BtoNt extends PluginForDecrypt {
                 decryptedLinks.add(link);
             }
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("Decrypter broken for: " + parameter + " @ pages");
+            return null;
         }
 
         return decryptedLinks;
