@@ -61,19 +61,20 @@ public class LinkSnappyCom extends PluginForHost {
         return "http://www.linksnappy.com/index.php?act=tos";
     }
 
-    private static Object       LOCK                  = new Object();
-    private static final String USE_API               = "USE_API_2";
+    private static Object       LOCK                   = new Object();
+    private static final String USE_API                = "USE_API_3";
+    private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
 
-    private static final String COOKIE_HOST           = "http://linksnappy.com";
-    private static final int    MAX_DOWNLOAD_ATTEMPTS = 10;
-    private static final int    MAX_CHUNKS            = 0;
+    private static final String COOKIE_HOST            = "http://linksnappy.com";
+    private static final int    MAX_DOWNLOAD_ATTEMPTS  = 10;
+    private static final int    MAX_CHUNKS             = 0;
 
-    private DownloadLink        currentLink           = null;
-    private Account             currentAcc            = null;
-    private static final String NOCHUNKS              = "NOCHUNKS";
+    private DownloadLink        currentLink            = null;
+    private Account             currentAcc             = null;
+    private static final String NOCHUNKS               = "NOCHUNKS";
 
-    private ArrayList<String>   supportedHosts        = null;
-    private String              dllink                = null;
+    private ArrayList<String>   supportedHosts         = null;
+    private String              dllink                 = null;
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -228,13 +229,14 @@ public class LinkSnappyCom extends PluginForHost {
         currentAcc = account;
         br.setFollowRedirects(true);
         dllink = checkDirectLink(link, "linksnappycomdirectlink");
+        final boolean use_api = this.getPluginConfig().getBooleanProperty(USE_API, default_api);
         if (dllink != null) {
             /* Same as done in the other handling but without further errorhandling - we checked the direct link and it should work! */
             int maxChunks = MAX_CHUNKS;
             if (currentLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
             dl = jd.plugins.BrowserAdapter.openDownload(br, currentLink, dllink, true, maxChunks);
         } else {
-            if (this.getPluginConfig().getBooleanProperty(USE_API, default_api)) {
+            if (use_api) {
                 for (int i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                     getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
                     if (!attemptDownload()) continue;
@@ -282,6 +284,29 @@ public class LinkSnappyCom extends PluginForHost {
                 if (link.getBooleanProperty(LinkSnappyCom.NOCHUNKS, false) == false) {
                     link.setProperty(LinkSnappyCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+                /*
+                 * Check if user wants JD to clear serverside download history in linksnappy account after each download - only possible via
+                 * account - also make sure we get no exception as our download was successful NOTE: Even failed downloads will appear in
+                 * the download history - but they will also be cleared once you have one successful download.
+                 */
+                if (!use_api && this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history)) {
+                    boolean history_deleted = false;
+                    try {
+                        br.getPage("http://linksnappy.com/includes/deletelinks.php?id=all");
+                        if (br.toString().trim().equals("OK")) history_deleted = true;
+                    } catch (final Throwable e) {
+                        history_deleted = false;
+                    }
+                    try {
+                        if (history_deleted) {
+                            logger.warning("Delete history succeeded!");
+                        } else {
+                            logger.warning("Delete history failed");
+                        }
+                    } catch (final Throwable e2) {
+                    }
                 }
             }
         } catch (final PluginException e) {
@@ -546,10 +571,13 @@ public class LinkSnappyCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private final boolean default_api = true;
+    private final boolean default_api                    = true;
+    private final boolean default_clear_download_history = false;
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_API, JDL.L("plugins.hoster.linksnappycom.useAPI", "Use API (recommended) ?")).setDefaultValue(default_api));
+        final ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_API, JDL.L("plugins.hoster.linksnappycom.useAPI", "Use API (recommended)?")).setDefaultValue(default_api);
+        getConfig().addEntry(ce);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEAR_DOWNLOAD_HISTORY, JDL.L("plugins.hoster.linksnappycom.clear_serverside_download_history", "Clear download history in linksnappy account after each download?")).setDefaultValue(default_clear_download_history).setEnabledCondidtion(ce, false));
     }
 
     private String getJson(final String source, final String key) {
