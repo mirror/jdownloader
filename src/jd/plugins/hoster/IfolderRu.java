@@ -19,8 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -36,11 +38,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
 public class IfolderRu extends PluginForHost {
 
-    private String              ua      = RandomUserAgent.generate();
+    private String       ua          = RandomUserAgent.generate();
 
-    private static final String PWTEXT  = "Введите пароль:<br";
+    private final String passWarning = ">Владелец файла установил пароль для скачивания\\.<";
+    private final String PWTEXT      = "Введите пароль:<br";
 
-    private static final String CAPTEXT = "/random/images/";
+    private final String CAPTEXT     = "/random/images/";
 
     public IfolderRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,6 +74,15 @@ public class IfolderRu extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         String passCode = null;
+        // prevents captcha if user doesn't set dl password here....
+        if (br.containsHTML(passWarning)) {
+            passCode = downloadLink.getStringProperty("pass", null);
+            if ("".equals(passCode) || passCode == null) {
+                passCode = getUserInput(null, downloadLink);
+            }
+            // can not have a blank password, no point doing captcha when password isn't possible.
+            if ("".equals(passCode) || passCode == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Password required to download this file"); }
+        }
         String domain = br.getRegex("(https?://ints\\..*?\\.[a-z]{2,3})/ints/").getMatch(0);
         String watchAd = br.getRegex("http://ints\\..*?\\.[a-z]{2,3}/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {
@@ -157,29 +169,33 @@ public class IfolderRu extends PluginForHost {
         if (br.containsHTML(CAPTEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         /* Is the file password protected ? */
         if (br.containsHTML(PWTEXT)) {
-            for (int passwordRetry = 1; passwordRetry <= 3; passwordRetry++) {
+            final int repeat = 3;
+            for (int passwordRetry = 0; passwordRetry <= repeat; passwordRetry++) {
                 logger.info("This file is password protected");
                 final String session = br.getRegex("name=\"session\" value=\"(.*?)\"").getMatch(0);
-                final String fileID = new Regex(downloadLink.getDownloadURL(), "rusfolder\\.ru/(\\d+)").getMatch(0);
+                final String fileID = getFUID(downloadLink);
                 if (session == null || fileID == null) {
                     logger.warning("The string 'session' or 'fileID' equals null, throwing exception...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = getUserInput(null, downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
-                String postData = "session=" + session + "&file_id=" + fileID + "&action=1&pswd=" + passCode;
+                String postData = "session=" + session + "&file_id=" + fileID + "&action=1&pswd=" + Encoding.urlEncode(passCode);
                 br.postPage(br.getURL(), postData);
-                if (!br.containsHTML(PWTEXT)) break;
+                if (!br.containsHTML(PWTEXT)) {
+                    break;
+                } else if (passwordRetry + 1 != repeat) {
+                    logger.info("DownloadPW wrong!");
+                    passCode = getUserInput("Wrong Password, Please enter in another!", downloadLink);
+                    // can not have a blank password, no point doing captcha when password isn't possible.
+                    if ("".equals(passCode) || passCode == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Password required to download this file"); }
+                    continue;
+                } else {
+                    downloadLink.setProperty("pass", Property.NULL);
+                    logger.warning("DownloadPW wrong!");
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
-            if (br.containsHTML(PWTEXT)) {
-                downloadLink.setProperty("pass", null);
-                logger.info("DownloadPW wrong!");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
+            // set working password
+            downloadLink.setProperty("pass", passCode);
         }
         String directLink = br.getRegex("id=\"download_file_href\".*?href=\"(.*?)\"").getMatch(0);
         if (directLink == null) {
@@ -193,6 +209,11 @@ public class IfolderRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getFUID(DownloadLink downloadLink) {
+        final String fuid = new Regex(downloadLink.getDownloadURL(), "/(\\d+)$").getMatch(0);
+        return fuid;
     }
 
     // do not add @Override here to keep 0.* compatibility
