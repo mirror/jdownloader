@@ -273,7 +273,7 @@ public class CatShareNet extends PluginForHost {
                 // for the last day of the premium period
                 if (br.containsHTML("Konto premium ważne do : <strong>-</strong></span>")) {
                     // 0 days left
-                    expire = br.getRegex("<a href=\"/premium\">Konto:[ \t\n\r]+ Premium \\(<b>(\\d) dni</b>\\)+[ \t\n\r]+</a>").getMatch(0);
+                    expire = br.getRegex("<a href=\"/premium\">(Konto:[\t\n\r ]+)*Premium \\(<b>(\\d) dni</b>\\)+[ \t\n\r]+</a>").getMatch(1);
                 }
                 if (expire == null) {
                     ai.setExpired(true);
@@ -330,7 +330,7 @@ public class CatShareNet extends PluginForHost {
                 login.put("user_password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
                 br.getPage("/");
-                if (!br.containsHTML("Konto:[\r\t\n ]+Premium \\(<b>\\d+ dni</b>\\)")) {
+                if (!br.containsHTML("(Konto:[\r\t\n ]+)*Premium \\(<b>\\d+ dni</b>\\)")) {
                     logger.warning("Couldn't determine premium status or account is Free not Premium!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium Account is invalid: it's free or not recognized!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -351,7 +351,7 @@ public class CatShareNet extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         String passCode = null;
         requestFileInformation(downloadLink);
         login(account, false);
@@ -369,7 +369,13 @@ public class CatShareNet extends PluginForHost {
         }
 
         logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, getMaxChunksPremiumDownload());
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, getMaxChunksPremiumDownload());
+        } catch (Exception e) {
+            logger.info("Downloading of: " + dllink + " throws exception: " + e.getMessage());
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, e.getMessage());
+        }
+
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
