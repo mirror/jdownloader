@@ -220,7 +220,7 @@ public class OneFichierCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         /* Maybe direct link */
         final String redirect = br.getRedirectLocation();
-        if (redirect != null && redirect.length() > 35) dllink = redirect;
+        if (redirect != null) dllink = redirect;
         if (dllink != null) {
             /* try to resume existing file */
             br.setFollowRedirects(true);
@@ -244,7 +244,12 @@ public class OneFichierCom extends PluginForHost {
         boolean retried = false;
         String passCode = null;
         while (true) {
+
+            br.setFollowRedirects(true);
+            // redirect log 2414663166931
             br.getPage(downloadLink.getDownloadURL() + "/en/index.html");
+            br.setFollowRedirects(false);
+
             errorHandling(downloadLink, br);
             if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
                 if (downloadLink.getStringProperty("pass", null) == null) {
