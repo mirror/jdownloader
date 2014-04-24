@@ -45,6 +45,7 @@ file_exists_not=文件存在不
 filename=文件名
 files2=文件
 files_and_folders=文件或目录
+final_delete=最终删除文件
 folders=目录
 hoster=托管主机
 local=文件状态
