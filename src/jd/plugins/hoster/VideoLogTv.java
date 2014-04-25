@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -46,10 +47,16 @@ public class VideoLogTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://videolog.tv/index.php") || br.containsHTML("<title>Videolog \\| A maior comunidade de produtores de vídeo do Brasil</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw e;
+        }
+        if (br.getURL().equals("http://videolog.tv/index.php") || br.containsHTML("<title>Videolog \\| A maior comunidade de produtores de vídeo do Brasil</title>|>Esse vídeo que você procurou não foi encontrado|>Vídeo não encontrado<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Removed because of copyright stuff
         if (br.containsHTML(">Este v\\&iacute;deo foi bloqueado por desrespeitar o acordo de utiliza\\&ccedil;\\&atilde;o,")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<input type=\\'hidden\\' id=\"prop3\" value=\"(.*?)\"").getMatch(0);
@@ -69,7 +76,12 @@ public class VideoLogTv extends PluginForHost {
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        br.getPage("http://embed-video.videolog.tv/api/player/video.php?format=xml&id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        try {
+            br.getPage("http://embed-video.videolog.tv/api/player/video.php?format=xml&id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw e;
+        }
         /** Prefer HD quality */
         DLLINK = br.getRegex("<hd_720><\\!\\[CDATA\\[(http://.*?)\\]\\]></hd_720>").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("<standard><\\!\\[CDATA\\[(http://.*?)\\]\\]></standard>").getMatch(0);

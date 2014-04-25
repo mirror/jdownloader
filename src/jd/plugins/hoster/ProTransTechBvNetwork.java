@@ -260,7 +260,7 @@ public class ProTransTechBvNetwork extends PluginForHost {
         prepBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         // 404 on desktop page
-        if (br.containsHTML("was not found on this server, please try a")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("was not found on this server, please try a") || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // 404 on mobile page
         if (br.containsHTML("<a href=\"#sorting\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) \\- ([^<>\"]*?)</title>").getMatch(0);

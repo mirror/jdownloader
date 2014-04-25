@@ -87,7 +87,10 @@ public class MegasharesCom extends PluginForHost {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.megasharescom.errors.passwordprotected", "Password protected download"));
                 return AvailableStatus.UNCHECKABLE;
             }
-            if (br.containsHTML("This link is currently offline")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link is currently offline for scheduled maintenance, please try again later", 60 * 60 * 1000l);
+            if (br.containsHTML("This link is currently offline")) {
+                downloadLink.getLinkStatus().setStatusText("This link is currently offline for scheduled maintenance, please try again later");
+                return AvailableStatus.TRUE;
+            }
             /* fallback regex */
             if (dsize == null) dsize = br.getRegex("Filesize:</span></strong>(.*?)<br />").getMatch(0);
             if (fln == null) fln = br.getRegex("download page link title.*?<h1 class=.*?>(.*?)<").getMatch(0);
@@ -209,6 +212,7 @@ public class MegasharesCom extends PluginForHost {
     }
 
     private void handleErrors(DownloadLink link) throws PluginException {
+        if (br.containsHTML("This link is currently offline")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link is currently offline for scheduled maintenance, please try again later", 60 * 60 * 1000l); }
         // Sie laden gerade eine datei herunter
         if (br.containsHTML("You already have the maximum")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l); }
         String[] dat = br.getRegex("Your download passport will renew.*?in.*?(\\d+).*?:.*?(\\d+).*?:.*?(\\d+)</strong>").getRow(0);

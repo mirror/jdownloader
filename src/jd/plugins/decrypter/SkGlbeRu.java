@@ -80,6 +80,10 @@ public class SkGlbeRu extends PluginForDecrypt {
             String finallink = br.getRegex("<META http\\-equiv=\"refresh\" content=\"\\d+; url=((http|ftp)[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("If downloading not start after \\d+ seconds, press </FONT><A href=\"((http|ftp)[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
+                if (br.containsHTML(">If downloading not start after")) {
+                    logger.info("Link offline (server error): " + parameter);
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }

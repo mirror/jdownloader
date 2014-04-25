@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
@@ -82,8 +83,12 @@ public class Speedy_ShareCom extends PluginForHost {
     }
 
     // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.getPage(downloadLink.getDownloadURL());
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final UnknownHostException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!br.containsHTML("File Not Found")) {
             downloadLink.setName(Encoding.htmlDecode(br.getRegex("File Name:</span>(.*?)</span>").getMatch(0)));
             downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("File Size:</span>(.*?)</span>").getMatch(0)));

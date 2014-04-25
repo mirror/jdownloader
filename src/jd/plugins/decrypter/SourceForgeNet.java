@@ -47,6 +47,11 @@ public class SourceForgeNet extends PluginForDecrypt {
         URLConnectionAdapter con = br.openGetConnection(parameter);
         if (con.getContentType().contains("html")) {
             br.followConnection();
+            /* Maybe redirect to external mirror */
+            if (!br.getURL().contains("sourceforge.net/")) {
+                decryptedLinks.add(createDownloadlink(br.getURL()));
+                return decryptedLinks;
+            }
             if (br.containsHTML("(Error 404|The page you were looking for cannot be found|could not be found or is not available)")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -68,6 +73,11 @@ public class SourceForgeNet extends PluginForDecrypt {
                         return decryptedLinks;
                     }
                     br.getPage(continuelink);
+                    /* Maybe redirect to external mirror */
+                    if (!br.getURL().contains("sourceforge.net/")) {
+                        decryptedLinks.add(createDownloadlink(br.getURL()));
+                        return decryptedLinks;
+                    }
                     if (br.containsHTML("(<h1>Error encountered</h1>|>We apologize\\. It appears an error has occurred\\.)")) {
                         logger.info("Servererror for link: " + parameter);
                         throw new DecrypterException(JDL.L("plugins.decrypt.sourceforgenet.errormsg.servererror", "A server error happened, please try again or check in browser!"));

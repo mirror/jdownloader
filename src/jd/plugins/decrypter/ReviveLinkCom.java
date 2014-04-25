@@ -35,10 +35,16 @@ public class ReviveLinkCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?revivelink.com/\\?(contact|register|forgot|login)";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // Logger logDebug = JDLogger.getLogger();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String strParameter = param.toString();
+        if (strParameter.matches(INVALIDLINKS)) {
+            logger.info("Link offline: " + strParameter);
+            return decryptedLinks;
+        }
 
         // Get the package name
         String strName = "";
@@ -46,7 +52,7 @@ public class ReviveLinkCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(strParameter);
 
-        if (br.containsHTML("(An error has occurred|The article cannot be found)")) {
+        if (br.containsHTML("(An error has occurred|The article cannot be found)") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + strParameter);
             return decryptedLinks;
         }

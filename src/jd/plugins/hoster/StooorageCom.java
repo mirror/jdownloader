@@ -53,7 +53,7 @@ public class StooorageCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Picture doesn\\'t exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Picture doesn\\'t exist|Bild existiert nicht<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = new Regex(parameter.getDownloadURL(), "/show/\\d+/(.+)").getMatch(0);
         if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setName(name);

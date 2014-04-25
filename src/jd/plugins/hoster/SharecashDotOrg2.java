@@ -55,30 +55,30 @@ public class SharecashDotOrg2 extends PluginForHost {
         try {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
-            if (downloadLink.getDownloadURL().contains("sharecash.org/")) {
+            String filename = null, filesize = null, md5 = null;
+            if (br.getURL().contains("sharecash.org/")) {
                 final String linkID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
                 downloadLink.setName(linkID);
                 if (br.containsHTML("(>File Does Not Exist|<title>ShareCash\\.Org - Make Money Uploading Files\\! - </title>)") || br.getURL().contains("/doesnt_exist.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                String filename = br.getRegex("<td width=\"120\"><strong>(.*?)</strong></td>").getMatch(0);
+                filename = br.getRegex("<td width=\"120\"><strong>(.*?)</strong></td>").getMatch(0);
                 if (filename == null) filename = linkID;
-                final String filesize = br.getRegex("<strong>File Size:</strong>([^<>\"]*?)<br />").getMatch(0);
+                filesize = br.getRegex("<strong>File Size:</strong>([^<>\"]*?)<br />").getMatch(0);
                 if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String md5hash = br.getRegex("<strong>MD5:</strong>([^<>\"]*?)<br />").getMatch(0);
-                if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
-                downloadLink.setFinalFileName(filename.trim());
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                md5 = br.getRegex("<strong>MD5:</strong>([^<>\"]*?)<br />").getMatch(0);
             } else {
-                if (br.containsHTML("<title>Download \\.</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                if (br.getURL().equals("http://jafiles.net/doesnt_exist.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                String filename = br.getRegex("<strong>Name:</strong> (.*?)<br").getMatch(0);
-                if (filename == null) filename = br.getRegex("<title>Download (.*?)\\.</title>").getMatch(0);
-                String filesize = br.getRegex("<strong>Size:</strong>(.*?)</p>").getMatch(0);
-                if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                String md5hash = br.getRegex("<strong>MD5:</strong>(.*?)</p>").getMatch(0);
-                if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
-                downloadLink.setFinalFileName(filename.trim());
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                final String linkID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+                downloadLink.setName(linkID);
+
+                if (br.containsHTML("(>File Does Not Exist|<title>ShareCash\\.Org - Make Money Uploading Files\\! - </title>)") || br.getURL().contains("/doesnt_exist.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                filename = br.getRegex("<td width=\"120\"><strong>(.*?)</strong></td>").getMatch(0);
+                if (filename == null) filename = linkID;
+                filesize = br.getRegex("class=\"file\\-link\\-size\">File size: ([^<>\"]*?)</span>").getMatch(0);
+                if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                md5 = br.getRegex("class=\"file\\-link\\-md5\">MD5 Value: ([a-f0-9]+)</span>").getMatch(0);
             }
+            downloadLink.setFinalFileName(filename.trim());
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (md5 != null) downloadLink.setMD5Hash(md5.trim());
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SharecashDotNet.only4premium", ONLY4PREMIUMUSERTEXT));
             return AvailableStatus.TRUE;
         } catch (NullPointerException e) {

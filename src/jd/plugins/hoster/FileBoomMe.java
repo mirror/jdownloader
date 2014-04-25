@@ -52,23 +52,23 @@ import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileboom.me" }, urls = { "http://(www\\.)?(fboom|fileboom)\\.me/file/[a-z0-9]{13,}" }, flags = { 2 })
 public class FileBoomMe extends PluginForHost {
-    
+
     public FileBoomMe(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://fboom.me/premium.html");
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://fboom.me/page/terms.html";
     }
-    
+
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("fileboom.me/", "fboom.me/"));
     }
-    
+
     private static AtomicInteger maxPrem = new AtomicInteger(1);
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -81,13 +81,13 @@ public class FileBoomMe extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink);
     }
-    
+
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         checkShowFreeDialog();
         String dllink = checkDirectLink(downloadLink, "directlink");
@@ -155,7 +155,7 @@ public class FileBoomMe extends PluginForHost {
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
     }
-    
+
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
@@ -174,10 +174,10 @@ public class FileBoomMe extends PluginForHost {
         }
         return dllink;
     }
-    
+
     private static final String MAINPAGE = "http://fboom.me";
     private static Object       LOCK     = new Object();
-    
+
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -232,7 +232,7 @@ public class FileBoomMe extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -275,7 +275,7 @@ public class FileBoomMe extends PluginForHost {
         account.setValid(true);
         return ai;
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -285,11 +285,9 @@ public class FileBoomMe extends PluginForHost {
         if (account.getBooleanProperty("nopremium", false)) {
             doFree(link);
         } else {
-            final String dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            String dllink = br.getRedirectLocation();
+            /* Maybe user has direct downloads disabled */
+            if (dllink == null) dllink = getDllink();
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
@@ -299,11 +297,11 @@ public class FileBoomMe extends PluginForHost {
             dl.startDownload();
         }
     }
-    
+
     // private String getFID(final DownloadLink dl) {
     // return new Regex(dl.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     // }
-    
+
     private void checkShowFreeDialog() {
         SubConfiguration config = null;
         try {
@@ -330,7 +328,7 @@ public class FileBoomMe extends PluginForHost {
             }
         }
     }
-    
+
     protected void showFreeDialog(final String domain) {
         if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
@@ -338,7 +336,7 @@ public class FileBoomMe extends PluginForHost {
         }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-                
+
                 @Override
                 public void run() {
                     try {
@@ -368,7 +366,7 @@ public class FileBoomMe extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-    
+
     private String getDllink() throws IOException, PluginException {
         String dllink = br.getRegex("(\"|\\')(/file/url\\.html\\?file=[a-z0-9]+)(\"|\\')").getMatch(1);
         if (dllink != null) {
@@ -381,23 +379,23 @@ public class FileBoomMe extends PluginForHost {
         }
         return dllink;
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return maxPrem.get();
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
 }
