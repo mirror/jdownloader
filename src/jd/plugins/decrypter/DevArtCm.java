@@ -65,7 +65,7 @@ public class DevArtCm extends PluginForDecrypt {
     private static final String TYPE_COLLECTIONS = "https?://[\\w\\.\\-]*?deviantart\\.com/[A-Za-z0-9\\-]+/collections/\\d+";
     private static final String TYPE_CATPATH_ALL = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
     private static final String TYPE_CATPATH_1   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
-    private static final String TYPE_CATPATH_2   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]+(\\&offset=\\d+)?";
+    private static final String TYPE_CATPATH_2   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -103,8 +103,8 @@ public class DevArtCm extends PluginForDecrypt {
             String pagetype = "";
             if (parameter.matches(TYPE_CATPATH_2)) {
                 pagetype = new Regex(parameter, "deviantart\\.com/gallery/\\?catpath=([a-z0-9]+)").getMatch(0);
-            } else if (parameter.matches(TYPE_CATPATH_ALL)) {
-                pagetype = "catpath";
+                /* First letter = capital letter */
+                pagetype = pagetype.substring(0, 1).toUpperCase() + pagetype.substring(1, pagetype.length());
             } else if (parameter.contains("/favourites/")) {
                 pagetype = "Favourites";
             } else if (parameter.contains("/gallery/")) {

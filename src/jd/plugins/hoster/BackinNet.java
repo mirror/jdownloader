@@ -82,7 +82,7 @@ public class BackinNet extends PluginForHost {
     private final String               DOMAINS                      = "(backin\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = true;
@@ -104,7 +104,7 @@ public class BackinNet extends PluginForHost {
     // XfileShare Version 3.0.8.4
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: recaptcha
-    // mods: server errorhandling, another correctBR regex
+    // mods: many, do NOT upgrade!
     // other: no redirects
 
     private void setConstants(final Account account) {
@@ -358,7 +358,10 @@ public class BackinNet extends PluginForHost {
         // First, bring up saved final links
         dllink = checkDirectLink(downloadLink);
         // Second, check for streaming links on the first page
-        if (inValidate(dllink)) getDllink();
+        if (inValidate(dllink)) {
+            checkErrors(downloadLink, account, false);
+            getDllink();
+        }
         // Third, do they provide video hosting?
         if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
