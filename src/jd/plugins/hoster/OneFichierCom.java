@@ -328,7 +328,8 @@ public class OneFichierCom extends PluginForHost {
 
             String waittime = ibr.getRegex("you can download only one file at a time and you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
 
-            String sincelastDownloadTime = ibr.getRegex("you must wait between each downloads<br/>Your last download finished (\\d+) minutes ago").getMatch(1);
+            // String sincelastDownloadTime =
+            // ibr.getRegex("you must wait between each downloads<br/>Your last download finished (\\d+) minutes ago").getMatch(1);
 
             if (waittime != null && preferReconnect) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
