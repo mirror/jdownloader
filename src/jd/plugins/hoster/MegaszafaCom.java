@@ -75,7 +75,7 @@ public class MegaszafaCom extends PluginForHost {
 
         br.postPage(MAINPAGE + "plikInformacje.html", "id=" + fileId);
         String fileStatus = getJson("status", br);
-        if (!fileStatus.equals("1")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "File Status is <> 1!"); }
+        if (!fileStatus.equals("1")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File is unavailable!"); }
         String fileErros = getJson("errors", br);
         String fileDetails = getJson("extra", br);
         String fileName = new Regex(fileDetails, "<div class=(.*?)name(.*?)>(.*?)<(.*?)div>").getMatch(2);
@@ -193,7 +193,13 @@ public class MegaszafaCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        ai.setUnlimitedTraffic();
+        String dailyLimitLeft = br.getRegex("<div class=\"profileTransfer\">[\t\n\r ]+Transfer:[\t ]+([ 0-9\\.A-Za-z]+)[\t\n\r ]+</div>").getMatch(0);
+        if (dailyLimitLeft != null) {
+            ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
+            ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft));
+        } else
+            ai.setUnlimitedTraffic();
+
         account.setValid(true);
         ai.setStatus("Registered user");
         return ai;
