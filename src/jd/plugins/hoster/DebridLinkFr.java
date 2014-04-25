@@ -148,7 +148,7 @@ public class DebridLinkFr extends PluginForHost {
                 vT.put("password", Encoding.urlEncode(account.getPass()));
                 vT.put("authorizedToken", "1");
                 br2.submitForm(vT);
-                if (br2.containsHTML("La session à bien été activé. Vous pouvez utiliser l'application Jdownloader")) {
+                if (br2.containsHTML("La session à bien été activé. Vous pouvez utiliser l'application Jdownloader|The session has been activated\\. You can use the application Jdownloader")) {
                     logger.info("success!!");
                 } else {
                     logger.warning("problemo!");
