@@ -33,6 +33,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
     }
 
     public AutoStartManager() {
+
         eventSender = new AutoStartManagerEventSender();
         globalAutoStart = CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled();
         globalAutoConfirm = CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.isEnabled();
@@ -68,9 +69,9 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                                 if (l.isAutoStartEnabled()) autoStart = true;
                             }
                         }
-
-                        ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false), autoStart, false, false, null, BooleanStatus.UNSET);
-
+                        if (list.size() > 0) {
+                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false), autoStart, false, false, null, BooleanStatus.UNSET);
+                        }
                         // lastReset = -1;
 
                         eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
@@ -83,7 +84,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
 
     public void onLinkAdded(CrawledLink link) {
 
-        if (!globalAutoStart && !globalAutoConfirm && !link.isAutoConfirmEnabled() && !link.isAutoStartEnabled()) return;
+        if (!globalAutoConfirm && !link.isAutoConfirmEnabled()) return;
 
         if (!delayer.isDelayerActive()) {
             lastStarted = System.currentTimeMillis();
