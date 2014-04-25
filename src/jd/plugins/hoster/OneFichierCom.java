@@ -54,7 +54,7 @@ public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
     private final String         PASSWORDTEXT     = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
-    private final String         IPBLOCKEDTEXTS   = "(/>Téléchargements en cours|En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you (can download only one file at a time|must wait up to \\d+ minutes between each downloads)|you must wait between each downloads)";
+
     private final String         FREELINK         = "freeLink";
     private final String         PREMLINK         = "premLink";
     private final String         SSL_CONNECTION   = "SSL_CONNECTION";
@@ -321,15 +321,28 @@ public class OneFichierCom extends PluginForHost {
 
     private void errorHandling(final DownloadLink downloadLink, final Browser ibr) throws Exception {
         if (ibr.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (ibr.containsHTML(IPBLOCKEDTEXTS)) {
+        errorIpBlockedHandling(ibr);
+    }
+
+    private void errorIpBlockedHandling(Browser br) throws PluginException {
+
+        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait up to 15 minutes between
+        // each downloads<br/>Your last download finished 00 minutes ago</div>
+
+        String waittime = br.getRegex("you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
+        boolean isBlocked = waittime != null;
+        isBlocked |= br.containsHTML("/>Téléchargements en cours");
+        isBlocked |= br.containsHTML("En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier");
+        isBlocked |= br.containsHTML(">veuillez patienter avant de télécharger un autre fichier");
+        isBlocked |= br.containsHTML(">You already downloading (some|a) file");
+        isBlocked |= br.containsHTML(">You can download only one file at a time");
+        isBlocked |= br.containsHTML(">Please wait a few seconds before downloading new ones");
+        isBlocked |= br.containsHTML(">You must wait for another download");
+        isBlocked |= br.containsHTML("Without premium status, you can download only one file at a time");
+        isBlocked |= br.containsHTML("you must wait between each downloads");
+
+        if (isBlocked) {
             final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
-            // Warning ! Without premium status, you can download only one file at a time and you must wait up to 5 minutes between each
-            // downloads.
-
-            String waittime = ibr.getRegex("you can download only one file at a time and you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
-
-            // String sincelastDownloadTime =
-            // ibr.getRegex("you must wait between each downloads<br/>Your last download finished (\\d+) minutes ago").getMatch(1);
 
             if (waittime != null && preferReconnect) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
@@ -556,7 +569,14 @@ public class OneFichierCom extends PluginForHost {
             br.followConnection();
             if (pwProtected || br.containsHTML("password")) passCode = handlePassword(link, passCode);
             dllink = br.getRedirectLocation();
-            if (dllink != null && br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+            if (dllink != null) {
+
+                try {
+                    errorIpBlockedHandling(br);
+                } catch (PluginException e) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+                }
+            }
             if (dllink == null && br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
                 logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
