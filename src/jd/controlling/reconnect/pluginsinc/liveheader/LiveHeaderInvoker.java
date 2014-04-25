@@ -272,15 +272,27 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             if (varname != null && pattern != null) {
                                 varname = varname.trim();
                                 pattern = pattern.trim();
-                                String found =new Regex(br.getRequest(),pattern).getMatch(0);
+
+                                String found = br.getRegex(pattern).getMatch(0);
                                 if (found != null) {
                                     found = found.trim();
                                     logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);
                                     this.variables.put(varname, found);
                                     if (feedback != null) feedback.onVariablesUpdated(variables);
                                 } else {
-                                    logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->NOT FOUND!");
-                                    if (feedback != null) feedback.onVariableParserFailed(pattern, br.getRequest());
+
+                                    found = new Regex(br.getRequest().getHttpConnection() + "", pattern).getMatch(0);
+                                    if (found != null) {
+                                        found = found.trim();
+                                        logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);
+                                        this.variables.put(varname, found);
+                                        if (feedback != null) feedback.onVariablesUpdated(variables);
+                                    } else {
+
+                                        logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->NOT FOUND!");
+                                        if (feedback != null) feedback.onVariableParserFailed(pattern, br.getRequest());
+                                    }
+
                                 }
                             }
                         }
