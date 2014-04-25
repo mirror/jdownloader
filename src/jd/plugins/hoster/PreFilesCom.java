@@ -161,7 +161,7 @@ public class PreFilesCom extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"filename_bar\"><i></i><h3>([^<>\"]*?)<small>").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "class=\"filename_bar\"><i></i><h\\d+>([^<>\"]*?)<small>").getMatch(0);
             if (fileInfo[0] == null) {
                 fileInfo[0] = new Regex(correctedBR, "<title>Download ([^<>\"]*?) from PreFiles\\.com</title>").getMatch(0);
             }
@@ -289,16 +289,8 @@ public class PreFilesCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                     continue;
                 } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                     break;
                 }
             }
@@ -375,7 +367,7 @@ public class PreFilesCom extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "\"(http://srv\\d+\\.prefiles\\.com(:\\d+)?/files/\\d+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "\"(http://[0-9\\.]+/cgi\\-bin/dl\\.cgi/[^<>\"]*?)\"").getMatch(0);
+                dllink = new Regex(correctedBR, "\"(http://[0-9\\.]+/(cgi\\-bin/dl\\.cgi/|files/\\d+/[a-z0-9]+/)[^<>\"]*?)\"").getMatch(0);
             }
         }
         return dllink;
