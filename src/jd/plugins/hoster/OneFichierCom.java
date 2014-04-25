@@ -54,7 +54,7 @@ public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
     private final String         PASSWORDTEXT     = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
-    private final String         IPBLOCKEDTEXTS   = "(/>Téléchargements en cours|En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you (can download only one file at a time|must wait up to \\d+ minutes between each downloads))";
+    private final String         IPBLOCKEDTEXTS   = "(/>Téléchargements en cours|En téléchargement standard, vous ne pouvez télécharger qu\\'un seul fichier|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you (can download only one file at a time|must wait up to \\d+ minutes between each downloads)|you must wait between each downloads)";
     private final String         FREELINK         = "freeLink";
     private final String         PREMLINK         = "premLink";
     private final String         SSL_CONNECTION   = "SSL_CONNECTION";
@@ -325,15 +325,19 @@ public class OneFichierCom extends PluginForHost {
             final boolean preferReconnect = this.getPluginConfig().getBooleanProperty("PREFER_RECONNECT", false);
             // Warning ! Without premium status, you can download only one file at a time and you must wait up to 5 minutes between each
             // downloads.
-            final String waittime = ibr.getRegex("you can download only one file at a time and you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
+
+            String waittime = ibr.getRegex("you can download only one file at a time and you must wait (at least|up to) (\\d+) minutes between each downloads").getMatch(1);
+
+            String sincelastDownloadTime = ibr.getRegex("you must wait between each downloads<br/>Your last download finished (\\d+) minutes ago").getMatch(1);
+
             if (waittime != null && preferReconnect) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 60 * 1001l);
             } else if (preferReconnect) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
             } else if (waittime != null) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is not chosen", Integer.parseInt(waittime) * 60 * 1001l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", Integer.parseInt(waittime) * 60 * 1001l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is not chosen", 5 * 60 * 1001);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between download, Reconnect is disabled in plugin settings", 5 * 60 * 1001);
             }
         }
     }
