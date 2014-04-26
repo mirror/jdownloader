@@ -111,7 +111,7 @@ public class VidToMe extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
@@ -123,7 +123,7 @@ public class VidToMe extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
+            chunks = 1;
             resumes = true;
             acctype = "Non Account";
             directlinkproperty = "freelink";
