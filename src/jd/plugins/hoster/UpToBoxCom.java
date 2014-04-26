@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -713,6 +714,11 @@ public class UpToBoxCom extends PluginForHost {
         final String ttt = new Regex(correctedBR, "<span id=\"[a-z0-9]+\">(\\d+)</span>\\s*seconds").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
+            /* Do not use fake waittime */
+            if (tt > 180 || tt < 60) tt = 100;
+            /* Add some random seconds */
+            tt += new Random().nextInt(10);
+            /* Remove time, user needed to enter the captcha */
             tt -= passedTime;
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
             if (tt > 0) sleep(tt * 1000l, downloadLink);

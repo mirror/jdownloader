@@ -127,6 +127,8 @@ public class FuxCom extends PluginForHost {
                 if (finallink != null && checkDirectLink(finallink) != null) break;
             }
         }
+        /* Hm probably this is only needed if only one quality exists */
+        if (finallink == null) finallink = br.getRegex("\"token\":\"(http://[^<>\"]*?)\"").getMatch(0);
         return finallink;
     }
 

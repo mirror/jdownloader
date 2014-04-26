@@ -35,7 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?(youdownload\\.eu|binarybooty\\.com|mashupscene\\.com|plunder\\.com|files\\.youdownload\\.com)/((-download-[a-z0-9]+|.+\\-download\\-.+)\\.htm|(?!/)[0-9a-z]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://plunderdecrypted\\.com/\\d+" }, flags = { 2 })
 public class PlunderCom extends PluginForHost {
 
     /**
@@ -46,7 +46,8 @@ public class PlunderCom extends PluginForHost {
         this.enablePremium("http://www.plunder.com/Register/");
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private static final String NOCHUNKS          = "NOCHUNKS";
+    private static final String unsupported_links = "http://[\\w\\.]*?(youdownload\\.eu|binarybooty\\.com|mashupscene\\.com|plunder\\.com|files\\.youdownload\\.com)/((-download-[a-z0-9]+|.+\\-download\\-.+)\\.htm|(?!/)[0-9a-z]+)";
 
     @Override
     public String getAGBLink() {
@@ -77,9 +78,11 @@ public class PlunderCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        /* Links which were added before major decrypter- and host plugin change */
+        if (downloadLink.getDownloadURL().matches(unsupported_links)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(getOriginalLink(downloadLink));
         // Sometimes the links are outdated but they show the new links, the
         // problem is they they new and newer links could also be moved so this
         // is why we need the following part!
@@ -101,17 +104,16 @@ public class PlunderCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (br.getURL().contains("/search/?f=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>([^<>\"]*?) Download</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) download[\t\n\r ]+</title>").getMatch(0);
+        final String filename = br.getRegex(">Download Now</a><BR>([^<>\"]*?)<BR>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
+        downloadLink.setName(Encoding.htmlDecode(filename).trim());
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL() + "?showlink=1");
+        br.getPage(getOriginalLink(downloadLink) + "?showlink=1");
         String dllink = br.getRegex("/h2><a href=(\"|')?(http://[^<>\"']+)").getMatch(1);
         if (dllink == null) dllink = br.getRegex("(\"|')?(http://[a-z0-9]+\\.plunder\\.com/x/[^<>\"']+)").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -125,6 +127,10 @@ public class PlunderCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getOriginalLink(final DownloadLink dl) {
+        return dl.getStringProperty("mainlink", null);
     }
 
     private static final String MAINPAGE = "http://plunder.com";

@@ -38,25 +38,28 @@ public class LiensProtectCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().contains("/error.php")) {
+        if (br.getURL().contains("/error.php") || br.containsHTML("<title>Index of")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        boolean failed = true;
-        for (int i = 1; i <= 3; i++) {
-            String captchaLink = br.getRegex("\"\\.(/securimage_show[^<>\"]*?)\"").getMatch(0);
-            if (captchaLink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+        String captchaLink = br.getRegex("\"\\.(/securimage_show[^<>\"]*?)\"").getMatch(0);
+        if (captchaLink != null) {
+            boolean failed = true;
+            for (int i = 1; i <= 3; i++) {
+                captchaLink = br.getRegex("\"\\.(/securimage_show[^<>\"]*?)\"").getMatch(0);
+                if (captchaLink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                captchaLink = "http://www.liens-protect.com" + captchaLink;
+                final String c = getCaptchaCode(captchaLink, param);
+                br.postPage(br.getURL(), "do=contact&ct_captcha=" + c);
+                if (br.containsHTML("/securimage_show")) continue;
+                failed = false;
+                break;
             }
-            captchaLink = "http://www.liens-protect.com" + captchaLink;
-            final String c = getCaptchaCode(captchaLink, param);
-            br.postPage(br.getURL(), "do=contact&ct_captcha=" + c);
-            if (br.containsHTML("/securimage_show")) continue;
-            failed = false;
-            break;
+            if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         final String[] links = br.getRegex("target=_blank>(http[^<>\"]*?)</a>").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

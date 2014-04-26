@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -47,20 +48,32 @@ public class PlunderComFolder extends PluginForDecrypt {
             logger.info("Link offline (no downloadlink): " + parameter);
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>.*?\\-(.*?)\\- Plunder").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<h1>.*?files \\-(.*?)</h1>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        String[] links = br.getRegex("\\'(http://(www\\.)?plunder\\.com/[a-z0-9\\-]+\\-download\\-[A-Z0-9]+\\.htm)\\'").getColumn(0);
-        if (links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        /* Differ between single links and folders */
+        if (parameter.contains("download-")) {
+            final DownloadLink singlelink = createDownloadlink("http://plunderdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            singlelink.setProperty("mainlink", parameter);
+            final String filename = br.getRegex(">Download Now</a><BR>([^<>\"]*?)<BR>").getMatch(0);
+            if (filename != null) {
+                singlelink.setName(Encoding.htmlDecode(filename).trim());
+                singlelink.setAvailable(true);
+            }
+            decryptedLinks.add(singlelink);
+        } else {
+            String fpName = br.getRegex("<title>.*?\\-(.*?)\\- Plunder").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<h1>.*?files \\-(.*?)</h1>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            String[] links = br.getRegex("\\'(http://(www\\.)?plunder\\.com/[a-z0-9\\-]+\\-download\\-[A-Z0-9]+\\.htm)\\'").getColumn(0);
+            if (links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String dl : links)
+                decryptedLinks.add(createDownloadlink(dl));
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }

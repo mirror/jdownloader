@@ -52,7 +52,7 @@ public class ReviveLinkCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(strParameter);
 
-        if (br.containsHTML("(An error has occurred|The article cannot be found)") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("(An error has occurred|The article cannot be found|404 Not Found)") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + strParameter);
             return decryptedLinks;
         }

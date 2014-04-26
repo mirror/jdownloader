@@ -48,13 +48,15 @@ public class VidGrabNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">PAGE NOT FOUND\\!<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">PAGE NOT FOUND\\!<") || br.getURL().contains("/?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) \\- VIDGRAB</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<div class=\"singlepost\">[^<>\"]+<h2>([^<>\"]*?)</h2>").getMatch(0);
         DLLINK = br.getRegex("config=([^<>\"\\']*?)(\"|\\')").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://vidgrab.net/95000.php?id=" + Encoding.htmlDecode(DLLINK));
         DLLINK = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+        /* Video does not load --> Probably down */
+        if (DLLINK == null && br.containsHTML("<file>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
