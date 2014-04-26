@@ -710,7 +710,7 @@ public class UpToBoxCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "Wait.*?<strong><span id=\"[a-z0-9]+\">(\\d+)</span> seconds</strong").getMatch(0);
+        final String ttt = new Regex(correctedBR, "<span id=\"[a-z0-9]+\">(\\d+)</span>\\s*seconds").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
