@@ -235,7 +235,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         if (fpName == null) fpName = br.getRegex("<div class=\"page\\-title mrg\\-btm\\-sm\">([^<>\"]*?)</div>").getMatch(0);
         fpName = Encoding.htmlDecode(fpName.trim());
         String videosNum = info.getMatch(1);
-        if (videosNum == null) videosNum = br.getRegex("(\\d+(,\\d+)?) Videos? \\|[\t\n\r ]+<span>").getMatch(0);
+        final String videosnum_text = br.getRegex("class=\"link\\-on\\-hvr\"(.*?)<span>").getMatch(0);
+        if (videosNum == null && videosnum_text != null) videosNum = new Regex(videosnum_text, "(\\d+(,\\d+)?) Videos?").getMatch(0);
         if (videosNum == null || fpName == null) {
             logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
             decryptedLinks = null;

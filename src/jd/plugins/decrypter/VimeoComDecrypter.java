@@ -145,14 +145,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(link);
                 return decryptedLinks;
             }
-            if (br.containsHTML("This is a private video")) {
-                if (!br.containsHTML("If so please provide the correct password")) {
-                    final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
-                    link.setAvailable(false);
-                    link.setProperty("offline", true);
-                    decryptedLinks.add(link);
-                    return decryptedLinks;
-                }
+            if (br.containsHTML("<title>Private Video on Vimeo</title>") && !br.containsHTML("If so please provide the correct password")) {
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                decryptedLinks.add(link);
+                return decryptedLinks;
             }
             if (br.containsHTML(">There was a problem loading this video")) {
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin1" + "://"));

@@ -37,7 +37,7 @@ public class XXXBlg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?xxx\\-blog\\.to/(livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/|comments/|author/|page/|category/|tag/|blog/).*?";
+    private static final String INVALIDLINKS = "http://(www\\.)?xxx\\-blog\\.to/(livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/|comments/|author/|page/|category/|tag/|blog/|search/).*?";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -80,6 +80,7 @@ public class XXXBlg extends PluginForDecrypt {
             String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
             if (pagepiece == null) pagepiece = br.getRegex("<div class=\"entry\">(.+)\\s+</div>\\s+<br />").getMatch(0);
             if (pagepiece == null) pagepiece = br.getRegex("<table class=\"dltable\"(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
+            if (pagepiece == null) pagepiece = br.getRegex("class=\\'easySpoilerTitleA\\'(.*?)class=\\'easySpoilerConclude\\'").getMatch(0);
             if (pagepiece == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
