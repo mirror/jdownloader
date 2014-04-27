@@ -40,6 +40,7 @@ public class PotlockerRe extends PluginForDecrypt {
             logger.info("Link invalid (unsupported): " + parameter);
             return decryptedLinks;
         }
+        br.getPage(parameter);
         final String potlockerdirect = br.getRegex("file: \\'(http://potlocker\\.re/videos\\.php\\?vid=[a-z0-9]+)\\'").getMatch(0);
         if (potlockerdirect != null) {
             br.getPage(potlockerdirect);
