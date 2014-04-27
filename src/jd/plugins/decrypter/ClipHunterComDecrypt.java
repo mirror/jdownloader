@@ -139,7 +139,7 @@ public class ClipHunterComDecrypt extends PluginForDecrypt {
      */
     private LinkedHashMap<String, String> findAvailableVideoQualities() throws IOException {
         // parse decryptalgo
-        final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player\\.js)\"").getMatch(0);
+        final String jsUrl = br.getRegex("<script.*src=\"(http://s\\.gexo.*?player[_a-z]+\\.js)\"").getMatch(0);
         final String[] encryptedUrls = br.getRegex("var pl_fiji(_p|_i)? = \\'(.*?)\\'").getColumn(1);
         if (jsUrl == null || encryptedUrls == null || encryptedUrls.length == 0) return null;
         final Browser br2 = br.cloneBrowser();
