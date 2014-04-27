@@ -25,7 +25,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
@@ -73,17 +72,9 @@ public class MegaConz extends PluginForDecrypt {
             String nodeAttr = getField("a", node);
             String nodeID = getField("h", node);
             String nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
-            try {
-                nodeAttr = decrypt(nodeAttr, nodeKey);
-            } catch (PluginException e) {
-                try {
-                    // not found
-                    if (e.getLinkStatus() == 32) continue;
-                } catch (Throwable t) {
-                }
-                e.printStackTrace();
+            nodeAttr = decrypt(nodeAttr, nodeKey);
+            if (nodeAttr == null) {
                 continue;
-
             }
             String nodeName = new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
             String nodeType = getField("t", node);
@@ -182,7 +173,7 @@ public class MegaConz extends PluginForDecrypt {
         String ret = new String(payLoadBytes, "UTF-8");
         if (ret != null && !ret.startsWith("MEGA{")) {
             /* verify if the keyString is correct */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return null;
         }
         return ret;
     }
