@@ -55,6 +55,23 @@ public class UploadHeroCom extends PluginForHost {
         this.enablePremium(MAINPAGE + "/premium");
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
+
+    public boolean hasAutoCaptcha() {
+        return false;
+    }
+
     @Override
     public boolean isPremiumEnabled() {
         return "uploadhero.co".equals(getHost());
@@ -104,9 +121,9 @@ public class UploadHeroCom extends PluginForHost {
         String filename = br.getRegex("<div class=\"nom_de_fichier\">([^<>\"/]+)</div>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- UploadHero</title>").getMatch(0);
         String filesize = br.getRegex("<span class=\"noir\">Filesize: </span><strong>([^<>\"\\'/]+)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -128,7 +145,9 @@ public class UploadHeroCom extends PluginForHost {
             String code = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
             br.getPage(downloadLink.getDownloadURL() + "?code=" + code);
         }
+        String wait = br.getRegex("\\$\\(this\\)\\.oneTime\\((\\d+),").getMatch(0);
         String dllink = getDllink();
+        if (dllink != null && wait != null) sleep((Integer.parseInt(wait) * 100) + 3333, downloadLink);
         if (dllink == null) {
             if (!br.containsHTML("\"dddl\"") || br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0) != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             generalErrorhandling();
@@ -197,7 +216,6 @@ public class UploadHeroCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        maxPrem.set(1);
         final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -222,8 +240,8 @@ public class UploadHeroCom extends PluginForHost {
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
-            account.setProperty("nopremium", true);
-            ai.setStatus("Registered (free) user");
+            account.setProperty("free", true);
+            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(System.currentTimeMillis() + (Integer.parseInt(expire) + 1) * 24 * 60 * 60 * 1000l);
             try {
@@ -233,8 +251,8 @@ public class UploadHeroCom extends PluginForHost {
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }
-            account.setProperty("nopremium", false);
-            ai.setStatus("Premium User");
+            account.setProperty("free", false);
+            ai.setStatus("Premium Account");
         }
         account.setValid(true);
         return ai;
@@ -246,7 +264,7 @@ public class UploadHeroCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (account.getBooleanProperty("nopremium", false)) {
+        if (account.getBooleanProperty("free", false)) {
             doFree(link);
         } else {
             String dllink = br.getRedirectLocation();
@@ -256,6 +274,8 @@ public class UploadHeroCom extends PluginForHost {
                 generalErrorhandling();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            // small wait to maybe help with file not found .. maybe caused by backend not in sync with db server?
+            sleep(1250, link);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
@@ -288,7 +308,7 @@ public class UploadHeroCom extends PluginForHost {
     }
 
     private void generalErrorhandling() throws PluginException {
-        if (br.getURL().contains("/optmizing") || br.containsHTML(">UploadHero is on maintenance") || br.containsHTML("Maintenance en cours")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 30 * 60 * 1000l);
+        if (br.getURL().contains("/optmizing") || br.containsHTML(">UploadHero is on maintenance|Maintenance en cours")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 30 * 60 * 1000l);
     }
 
     @Override
@@ -309,16 +329,4 @@ public class UploadHeroCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }
