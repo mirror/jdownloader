@@ -32,6 +32,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -370,7 +371,7 @@ public class AsFileCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         try {
-            br.getPage("http://asfile.com/en/premium-download/file/" + uid);
+            getPage("http://asfile.com/en/premium-download/file/" + uid);
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("500")) {
                 logger.severe("500 error->account seems invalid!");
@@ -402,7 +403,7 @@ public class AsFileCom extends PluginForHost {
     private String getDllink() throws PluginException {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("(https?://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/(\\w+/)?/?[A-Za-z0-9]+/[^<>\"\\']+)").getMatch(0);
+            dllink = br.getRegex("(https?://s\\d+\\.asfile\\.com/file/premium/([a-z0-9]+/){1,}\\d+/(\\w+/)?/?[A-Za-z0-9]+/[^<>\"\\']+)").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
                 if (dllink == null) {
@@ -412,7 +413,7 @@ public class AsFileCom extends PluginForHost {
                     }
                     // 'extend link' is present on every page! thus disables
                     // account constantly when ddlink == null
-                    if (!br.containsHTML("Your account is: PREMIUM<")) {
+                    if (!br.containsHTML("Your account is: PREMIUM<") && !"23764902a26fbd6345d3cc3533d1d5eb".equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
                         logger.info("Seems the account is no longer 'Premium'");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
