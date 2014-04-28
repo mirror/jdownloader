@@ -1,4 +1,6 @@
 DataCompareDialog_layoutDialogContent_router=Zure bideratzalea
+DataCompareDialog_layoutDialogContent_webinterface=Bideratzaile web interfazea
+DataCompareDialog_layoutDialogContent_webinterface_desc=Birkonexio bat burutzeko. JDownloader-ek bideratzailearen web interfazearen erabiltzailea behar du.\nSarritan erabiltzaile bideratzailean atzekaldean aurki dezakezu.\nErabiltzailea ez badezu zure sare kudeatzaileari galdetu
 gui_btn_abort=Abortatu
 gui_btn_cancel=Ezeztatu
 gui_btn_help=Laguntza
