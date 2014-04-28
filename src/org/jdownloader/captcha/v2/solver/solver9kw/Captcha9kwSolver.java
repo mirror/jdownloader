@@ -465,7 +465,7 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         ret.setUnused(counterUnused.get() + org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick.getInstance().click9kw_counterUnused.get());
 
         try {
-            String servercheck = br.getPage(getAPIROOT() + "index.cgi?action=userservercheck");
+            String servercheck = br.getPage(getAPIROOT() + "grafik/servercheck.txt");
             ret.setWorker(Integer.parseInt(new Regex(servercheck, "worker=(\\d+)").getMatch(0)));
             ret.setAvgSolvtime(Integer.parseInt(new Regex(servercheck, "avg1h=(\\d+)").getMatch(0)));
             ret.setQueue(Integer.parseInt(new Regex(servercheck, "queue=(\\d+)").getMatch(0)));
