@@ -82,8 +82,12 @@ public class EcoStreamTv extends PluginForHost {
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+
+        this.sleep(2 * 1000l, downloadLink);
+
         br.postPage(postpage, "id=" + getfid(downloadLink) + "&tpm=" + tmp + noSenseForThat);
         String finallink = br.getRegex("\"url\":\"(/[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null && br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 15 * 60 * 1000l);
         if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         finallink = "http://www.ecostream.tv" + finallink;
         int maxChunks = 0;

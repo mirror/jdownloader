@@ -153,6 +153,7 @@ public class RDMdthk extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> getDownloadLinks(SubConfiguration cfg, String... s) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
 
         try {
             String title = s[2];
@@ -162,7 +163,8 @@ public class RDMdthk extends PluginForDecrypt {
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.getPage(s[0]);
-                if (br.containsHTML("(<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>|Die angeforderte Datei existiert leider nicht)")) return ret;
+                if (br.containsHTML("(<h1>Leider konnte die gew\\&uuml;nschte Seite<br />nicht gefunden werden\\.</h1>|Die angeforderte Datei existiert leider nicht)")) return ret;
+                final String subtitleLink = br.getRegex("mediaCollection\\.setSubtitleUrl\\(\"(/static/avportal/untertitel_mediathek/\\d+\\.xml)\"").getMatch(0);
                 String url = null, fmt = null;
                 int t = 0;
 
@@ -230,15 +232,36 @@ public class RDMdthk extends PluginForDecrypt {
                     }
 
                     lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
-                    final String name = title + "@" + fmt.toUpperCase(Locale.ENGLISH) + "-" + quality[4] + extension;
-                    final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt + "&network=" + quality[4]);
+                    final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + quality[4];
+                    final String plain_name = title + "@" + quality_part;
+                    final String full_name = plain_name + extension;
+                    final String network = quality[4];
+
+                    final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt + "&network=" + network);
                     if (t == 1 ? false : true) link.setAvailable(true);
-                    link.setFinalFileName(name);
+                    link.setFinalFileName(full_name);
                     link.setBrowserUrl(s[0]);
                     link.setProperty("directURL", url);
-                    link.setProperty("directName", name);
+                    link.setProperty("directName", full_name);
+                    link.setProperty("plain_name", plain_name);
+                    link.setProperty("plain_quality_part", quality_part);
+                    link.setProperty("plain_name", plain_name);
+                    link.setProperty("plain_network", network);
                     link.setProperty("directQuality", quality[1]);
                     link.setProperty("streamingType", t);
+
+                    /* Add subtitle link for every quality so players will automatically find it */
+                    if (grab_subtitle && subtitleLink != null) {
+                        final String subtitle_filename = plain_name + ".xml";
+                        final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@" + quality_part;
+                        final DownloadLink dl_subtitle = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=subtitles" + fmt + "&network=" + network);
+                        dl_subtitle.setAvailable(true);
+                        dl_subtitle.setFinalFileName(subtitle_filename);
+                        dl_subtitle.setProperty("directURL", finallink);
+                        dl_subtitle.setProperty("directName", subtitle_filename);
+                        dl_subtitle.setProperty("streamingType", "subtitle");
+                        newRet.add(dl_subtitle);
+                    }
 
                     DownloadLink best = bestMap.get(fmt);
                     if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
@@ -265,20 +288,23 @@ public class RDMdthk extends PluginForDecrypt {
                         if (keep != null) {
                             newRet.clear();
                             newRet.add(keep);
-                        }
-                    }
-                    if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
-                        final String filename = title + "@subtitle.xml";
-                        String subtitleLink = br.getRegex("mediaCollection\\.setSubtitleUrl\\(\"(/static/avportal/untertitel_mediathek/\\d+\\.xml)\"").getMatch(0);
-                        if (subtitleLink != null) {
-                            final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@";
-                            final DownloadLink dl = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=subtitle&network=default");
-                            dl.setAvailable(true);
-                            dl.setFinalFileName(filename);
-                            dl.setProperty("directURL", finallink);
-                            dl.setProperty("directName", filename);
-                            dl.setProperty("streamingType", "subtitle");
-                            newRet.add(dl);
+
+                            /* We have to re-add the subtitle for the best quality if wished by the user */
+                            if (grab_subtitle && subtitleLink != null) {
+                                final String plain_name = keep.getStringProperty("plain_name", null);
+                                final String plain_quality_part = keep.getStringProperty("plain_quality_part", null);
+                                final String plain_network = keep.getStringProperty("plain_network", null);
+                                final String subtitle_filename = plain_name + ".xml";
+                                final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@" + plain_quality_part;
+                                final DownloadLink dl_subtitle = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=subtitles" + lastQualityFMT + "&network=" + plain_network);
+                                dl_subtitle.setAvailable(true);
+                                dl_subtitle.setFinalFileName(subtitle_filename);
+                                dl_subtitle.setProperty("directURL", finallink);
+                                dl_subtitle.setProperty("directName", subtitle_filename);
+                                dl_subtitle.setProperty("streamingType", "subtitle");
+                                newRet.add(dl_subtitle);
+                            }
+
                         }
                     }
                     if (newRet.size() > 1) {
@@ -296,7 +322,7 @@ public class RDMdthk extends PluginForDecrypt {
         } catch (final Throwable e) {
             logger.severe(e.getMessage());
         }
-        for (DownloadLink dl : ret) {
+        for (final DownloadLink dl : ret) {
             try {
                 distribute(dl);
             } catch (final Throwable e) {

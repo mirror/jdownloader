@@ -287,7 +287,7 @@ public class UpToBoxCom extends PluginForHost {
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-                if (!skipWaittime) waitTime(timeBefore, downloadLink);
+                if (!skipWaittime) waitTime(timeBefore, downloadLink, true);
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
@@ -708,21 +708,22 @@ public class UpToBoxCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
+    private void waitTime(long timeBefore, DownloadLink downloadLink, final boolean forceWait) throws PluginException {
+        int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "<span id=\"[a-z0-9]+\">(\\d+)</span>\\s*seconds").getMatch(0);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            /* Do not use fake waittime */
-            if (tt > 180 || tt < 60) tt = 100;
-            /* Add some random seconds */
-            tt += new Random().nextInt(10);
-            /* Remove time, user needed to enter the captcha */
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
-        }
+        /* Ticket Time */
+        String regexed_wait = new Regex(correctedBR, "<span id=\"[a-z0-9]+\">(\\d+)</span>\\s*seconds").getMatch(0);
+        if (regexed_wait == null && forceWait)
+            wait = 50;
+        else if (regexed_wait != null) wait = Integer.parseInt(regexed_wait);
+        /* Do not use fake waittime */
+        if (wait > 210 || wait < 3) wait = 60;
+        /* Add some random seconds */
+        wait += new Random().nextInt(10);
+        /* Remove time, user needed to enter the captcha */
+        wait -= passedTime;
+        logger.info("Waittime detected, waiting " + regexed_wait + " - " + passedTime + " seconds from now on...");
+        if (wait > 0) sleep(wait * 1000l, downloadLink);
     }
 
 }
