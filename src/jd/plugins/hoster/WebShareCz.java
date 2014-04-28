@@ -56,7 +56,7 @@ public class WebShareCz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -89,7 +89,7 @@ public class WebShareCz extends PluginForHost {
         br.getHeaders().put("X-Requested-With", null);
         final String dllink = getXMLtagValue("link");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(>Požadovaný soubor nebyl nalezen|>Requested file not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
