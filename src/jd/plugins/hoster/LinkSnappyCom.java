@@ -76,6 +76,10 @@ public class LinkSnappyCom extends PluginForHost {
     private ArrayList<String>   supportedHosts         = null;
     private String              dllink                 = null;
 
+    /*
+     * TODO: Implement correct connection limits - admin said, max 36 connectins per file, waiting for more input and/or even api
+     * implementation
+     */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         supportedHosts = new ArrayList<String>();

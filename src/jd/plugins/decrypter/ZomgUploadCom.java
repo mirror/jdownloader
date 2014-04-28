@@ -43,10 +43,11 @@ public class ZomgUploadCom extends PluginForDecrypt {
         if (br.containsHTML(">This folder is empty<")) {
             logger.info("Link offline (folder empty): " + parameter);
             return decryptedLinks;
-        }
-
-        if (br.containsHTML(">File Not Found<")) {
+        } else if (br.containsHTML(">File Not Found<")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        } else if (br.containsHTML("type=\"password\" name=\"password\" class=\"myForm\"")) {
+            logger.info("Link offline (password protected links are not yet supported): " + parameter);
             return decryptedLinks;
         }
 

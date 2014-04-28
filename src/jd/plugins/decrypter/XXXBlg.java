@@ -37,7 +37,8 @@ public class XXXBlg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?xxx\\-blog\\.to/(livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/|comments/|author/|page/|category/|tag/|blog/|search/).*?";
+    private static final String INVALIDLINKS   = "http://(www\\.)?xxx\\-blog\\.to/(livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/|comments/|author/|page/|category/|tag/|blog/|search/).*?";
+    private static final String INVALIDLINKS_2 = "http://(www\\.)?xxx\\-blog\\.to/typ/$";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -48,13 +49,13 @@ public class XXXBlg extends PluginForDecrypt {
         pwList.add("xxx-blog.org");
         pwList.add("xxx-blog.to");
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
-        if (parameter.matches(INVALIDLINKS)) {
+        if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS_2)) {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("Fehler 404 \\- Seite nicht gefunden") || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
+        if (br.containsHTML("Fehler 404 \\- Seite nicht gefunden|<h1>404 Error: Page Not Found</h1>") || br.containsHTML(">403 Forbidden<") || br.containsHTML("No htmlCode read") || br.getURL().equals("http://xxx-blog.to/")) {
             logger.warning("Link offline or invalid: " + parameter);
             return decryptedLinks;
         }

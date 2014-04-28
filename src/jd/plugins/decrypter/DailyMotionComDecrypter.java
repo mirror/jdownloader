@@ -233,11 +233,21 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         if (username == null) username = br.getRegex("<meta name=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
         String fpName = br.getRegex("<div id=\"playlist_name\">([^<>\"]*?)</div>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<div class=\"page\\-title mrg\\-btm\\-sm\">([^<>\"]*?)</div>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("\"playlist_title\":\"([^<>\"]*?)\"").getMatch(0);
+        if (fpName == null) fpName = new Regex(PARAMETER, "dailymotion.com/playlist/([A-Za-z0-9]+_[A-Za-z0-9\\-_]+)").getMatch(0);
         fpName = Encoding.htmlDecode(fpName.trim());
         String videosNum = info.getMatch(1);
         final String videosnum_text = br.getRegex("class=\"link\\-on\\-hvr\"(.*?)<span>").getMatch(0);
         if (videosNum == null && videosnum_text != null) videosNum = new Regex(videosnum_text, "(\\d+(,\\d+)?) Videos?").getMatch(0);
-        if (videosNum == null || fpName == null) {
+        if (videosNum == null) {
+            /* Empty playlist site */
+            if (!br.containsHTML("\"watchlaterAdd\"")) {
+                final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/playlistoffline_" + System.currentTimeMillis() + Encoding.urlEncode(fpName));
+                dl.setFinalFileName(fpName);
+                dl.setProperty("offline", true);
+                decryptedLinks.add(dl);
+                return;
+            }
             logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
             decryptedLinks = null;
             return;
@@ -368,6 +378,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return;
+        } else if (new Regex(VIDEOSOURCE, "\"title\":\"Channel offline\\.\"").matches()) {
+            final DownloadLink dl = createDownloadlink(PARAMETER.replace("dailymotion.com/", "dailymotiondecrypted.com/"));
+            dl.setFinalFileName(FILENAME + ".mp4");
+            dl.setProperty("offline", true);
+            dl.setAvailable(false);
+            decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(FILENAME);
