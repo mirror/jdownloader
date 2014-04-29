@@ -212,6 +212,7 @@ public class TestClient {
         register(new VerifyDirectConnection());
         register(new DirectConnectionCall());
         register(new StorageRemoveKeyTest());
+        register(new SolveCaptchaTest());
         JacksonMapper jm;
         JSonStorage.setMapper(jm = new JacksonMapper());
         
