@@ -46,19 +46,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.downloadcore.v15.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
-
+    
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2 (but disabled with interfaceVersion 3)
-
+    
     private final String                                   mName                 = "real-debrid.com";
     private final String                                   mProt                 = "https://";
     private int                                            maxChunks             = 0;
@@ -71,17 +71,17 @@ public class RealDebridCom extends PluginForHost {
     private static final long                              UNKNOWN_ERROR_RETRY_2 = 50;
     private static final long                              UNKNOWN_ERROR_RETRY_3 = 20;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap    = new HashMap<Account, HashMap<String, Long>>();
-
+    
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
     }
-
+    
     @Override
     public String getAGBLink() {
         return mProt + mName + "/terms";
     }
-
+    
     private Browser prepBrowser(Browser prepBr) {
         // define custom browser headers and language settings.
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -94,7 +94,7 @@ public class RealDebridCom extends PluginForHost {
         prepBr.setAllowedResponseCodes(new int[] { 504 });
         return prepBr;
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
         URLConnectionAdapter con = null;
@@ -119,7 +119,7 @@ public class RealDebridCom extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getDownloadURL().matches(this.getLazyP().getPatternSource())) {
@@ -144,23 +144,23 @@ public class RealDebridCom extends PluginForHost {
             return true;
         }
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         handleDL(null, downloadLink, downloadLink.getDownloadURL());
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return MAX_DOWNLOADS.get();
     }
-
+    
     @Override
     public int getMaxSimultanDownload(DownloadLink link, final Account account) {
         return MAX_DOWNLOADS.get();
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
@@ -169,20 +169,18 @@ public class RealDebridCom extends PluginForHost {
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, link.getDownloadURL());
     }
-
+    
     private void handleDL(final Account acc, final DownloadLink link, final String dllink) throws Exception {
         // real debrid connections are flakey at times! Do this instead of repeating download steps.
         int repeat = 3;
         for (int i = 0; i <= repeat; i++) {
-            DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link);
-            if (swapped) {
-                downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
-                    @Override
-                    public HashInfo getHashInfo() {
-                        return null;
-                    }
-                };
-            }
+            DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
+                @Override
+                public HashInfo getHashInfo() {
+                    if (swapped) return null;
+                    return super.getHashInfo();
+                }
+            };
             final Browser br2 = br.cloneBrowser();
             try {
                 dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLinkDownloadable, br2.createGetRequest(dllink), resumes, maxChunks);
@@ -197,7 +195,7 @@ public class RealDebridCom extends PluginForHost {
                     if (link.getLinkStatus().getErrorMessage().contains("Unexpected rangeheader format:")) {
                         logger.warning("Bad Range Header! Resuming isn't possible without resetting");
                         throw new PluginException(LinkStatus.ERROR_FATAL);
-
+                        
                         // logger.warning("BAD HEADER RANGES!, auto resetting");
                         // link.reset();
                     }
@@ -210,61 +208,69 @@ public class RealDebridCom extends PluginForHost {
                         logger.info(msg);
                         if (msg.contains("You can not download this file because you already have download(s) currently downloading and this hoster is limited")) {
                             // You can not download this file because you already have download(s) currently downloading and this hoster is limited.
-                        	tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
+                            tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         } else if (msg.contains("You can not download this file because you have too many download(s) currently downloading")) {
-                            // You can not download this file because you have too many download(s) currently downloading                            
+                            // You can not download this file because you have too many download(s) currently downloading
                             // set upper max sim dl ?
                             /* You have too many simultaneous downloads */
                             errTooManySimCon(acc, link);
                         } else if (msg.contains("You can not download this file because you have exceeded your traffic on this hoster")) {
-                        	errNoHosterTrafficLeft(acc, link);
+                            errNoHosterTrafficLeft(acc, link);
                         } else if (msg.contains("A Premium account for the hoster is missing or inactive")) {
                             // short retry?
                             tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         } else if (msg.contains("The traffic of the Premium account for the hoster is exceeded")) {
-                        	tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                            tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
-                        }  else if (msg.contains("An error occured while generating a premium link")) {
-                        	// An error occured while generating a premium link, please contact an Administrator with these following informations :<br/><br/>Link: http://rapidgator.net/file/e1e8957be6a02dbfbe28b4b8f8ec465e<br/>Server: 31<br/>Code: 64i4u284w2v293333033", {type: "error"});
-                        	// An error occured while generating a premium link, please contact an Administrator with these following informations :<br/><br/>Link: http://rapidgator.net/file/170bb859202bf1f5927f6b5a22f8a6ac<br/>Server: 31<br/>Code: 64i4u284w23383634237", {type: "error"});
+                        } else if (msg.contains("An error occured while generating a premium link")) {
+                            // An error occured while generating a premium link, please contact an Administrator with these following informations
+                            // :<br/><br/>Link: h<br/>Server: 31<br/>Code:
+                            // 64i4u284w2v293333033", {type: "error"});
+                            // An error occured while generating a premium link, please contact an Administrator with these following informations
+                            // :<br/><br/>Link:<br/>Server: 31<br/>Code:
+                            // 64i4u284w23383634237", {type: "error"});
                             tempUnavailableHoster(acc, link, 15 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         } else if (msg.contains("An error occured while attempting to download the file")) {
-                            // An error occured while attempting to download the file. Too many attempts, please contact an Administrator with these following informations :
-                            // An error occured while attempting to download the file. Multiple "Location:" headers, please contact an Administrator with these following informations :
+                            // An error occured while attempting to download the file. Too many attempts, please contact an Administrator with these following
+                            // informations :
+                            // An error occured while attempting to download the file. Multiple "Location:" headers, please contact an Administrator with these
+                            // following informations :
                             // issue with THIS downloadlink, throw instantly to next download routine. ** Using Jiaz new handling..
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         } else if (msg.contains("An error occured while read your file on the remote host")) {
-                            // An error occured while read your file on the remote host ! Timeout of 90s exceeded !<br/>The download server is down or ban from our server, please contact an Administrator with these following informations :<br/><br/>Link:*****)
+                            // An error occured while read your file on the remote host ! Timeout of 90s exceeded !<br/>The download server is down or ban from
+                            // our server, please contact an Administrator with these following informations :<br/><br/>Link:*****)
                             // An error occured while read your file on the remote host ! Timeout of 15s exceeded (Passive FTP Mode) !
                             // An error occured while read your file on the remote host ! Timeout of 15s exceeded (FTP Mode) !
                             tempUnavailableHoster(acc, link, 15 * 60 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         } else if (msg.contains("You are not allowed to download this file !<br/>Your current IP adress is")) {
                             // You are not allowed to download this file !<br/>Your current IP adress is:
-                			String l = "Dedicated server detected!";
-                			if (acc != null) { 
-                			    l += " Account Disabled!";
-                			    logger.info(l);
-                			    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                			} else { 
-                				// free dl, without an account (generated by the user)
-                				throw new PluginException(LinkStatus.ERROR_FATAL, l);
-                			}
-                		} else if (msg.contains("You are not allowed to download this file !<br/>Your account is not Premium or your account is suspended.")) {
+                            String l = "Dedicated server detected!";
+                            if (acc != null) {
+                                l += " Account Disabled!";
+                                logger.info(l);
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            } else {
+                                // free dl, without an account (generated by the user)
+                                throw new PluginException(LinkStatus.ERROR_FATAL, l);
+                            }
+                        } else if (msg.contains("You are not allowed to download this file !<br/>Your account is not Premium or your account is suspended.")) {
                             // You are not allowed to download this file !<br/>Your account is not Premium or your account is suspended.
-                		    // so free account or suspended account... 
-                		    if (acc != null) {
+                            // so free account or suspended account...
+                            if (acc != null) {
                                 logger.info("Suspended Account!");
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                		    } else {
-                		        // handleFree :: no account in jd account manager.. could be copy paste someone else' generated link, or manually import links, without an account
+                            } else {
+                                // handleFree :: no account in jd account manager.. could be copy paste someone else' generated link, or manually import links,
+                                // without an account
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium required, or Account has been disabled");
-                		    }
-                		} else if (msg.contains("You can not change your server manually on this hoster")) {
-                		    // as title says user changed the premium link server... would only happen if a user manually imports final links!
+                            }
+                        } else if (msg.contains("You can not change your server manually on this hoster")) {
+                            // as title says user changed the premium link server... would only happen if a user manually imports final links!
                             if (new Regex(link.getDownloadURL(), this.getLazyP().getPattern()).matches()) {
                                 // manually imported
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium required, or Account has been disabled");
@@ -272,11 +278,11 @@ public class RealDebridCom extends PluginForHost {
                                 // should never happen!
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
-                		} else { 
-                		    // unhandled error msg type!
-                		    logger.warning("Please report this issue to JDownloader Development Team!");
+                        } else {
+                            // unhandled error msg type!
+                            logger.warning("Please report this issue to JDownloader Development Team!");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                		}
+                        }
                     } else {
                         // unhandled error!
                         logger.warning("Please report this issue to JDownloader Development Team!");
@@ -316,7 +322,7 @@ public class RealDebridCom extends PluginForHost {
             }
         }
     }
-
+    
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
@@ -330,7 +336,7 @@ public class RealDebridCom extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-
+    
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         // work around
@@ -341,7 +347,7 @@ public class RealDebridCom extends PluginForHost {
             link.setProperty("hasFailedWait", Property.NULL);
             sleep(hasFailedInt * 1001, link);
         }
-
+        
         prepBrowser(br);
         login(acc, false);
         showMessage(link, "Task 1: Generating Link");
@@ -451,7 +457,7 @@ public class RealDebridCom extends PluginForHost {
                     err = "Host is currently not possible because no server is available!";
                     num = "9";
                 }
-
+                
                 /*
                  * after x retries we disable this host and retry with normal plugin
                  */
@@ -505,11 +511,11 @@ public class RealDebridCom extends PluginForHost {
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
             if (br.containsHTML("An error occured while attempting to download the file.")) { throw new PluginException(LinkStatus.ERROR_RETRY); }
-
+            
             throw e1;
         }
     }
-
+    
     private void errNoHosterTrafficLeft(Account acc, DownloadLink link) throws Exception {
         logger.info("You have run out of download quota for this hoster");
         tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
@@ -520,7 +526,7 @@ public class RealDebridCom extends PluginForHost {
         MAX_DOWNLOADS.set(RUNNING_DOWNLOADS.get());
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -622,7 +628,7 @@ public class RealDebridCom extends PluginForHost {
         }
         return ai;
     }
-
+    
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -662,7 +668,7 @@ public class RealDebridCom extends PluginForHost {
                         if (br.containsHTML("\"message\":\"PIN Code required\"")) {
                             try {
                                 SwingUtilities.invokeAndWait(new Runnable() {
-
+                                    
                                     @Override
                                     public void run() {
                                         try {
@@ -703,7 +709,7 @@ public class RealDebridCom extends PluginForHost {
                                 });
                             } catch (Throwable e) {
                             }
-
+                            
                         }
                         break;
                     } catch (SocketException e) {
@@ -711,7 +717,7 @@ public class RealDebridCom extends PluginForHost {
                         Thread.sleep(1000);
                     }
                 }
-
+                
                 if (br.getCookie(mProt + mName, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -728,22 +734,22 @@ public class RealDebridCom extends PluginForHost {
             }
         }
     }
-
+    
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("retry_913", Property.NULL);
         link.setProperty("hasFailed", Property.NULL);
         link.setProperty("hasFailedWait", Property.NULL);
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
@@ -756,7 +762,7 @@ public class RealDebridCom extends PluginForHost {
         }
         return false;
     }
-
+    
     /**
      * Tries to return value of key from JSon response, from String source.
      * 
@@ -768,7 +774,7 @@ public class RealDebridCom extends PluginForHost {
         if (result != null) result = result.replaceAll("\\\\/", "/");
         return result;
     }
-
+    
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
      * 
@@ -777,7 +783,7 @@ public class RealDebridCom extends PluginForHost {
     private String getJson(final String key) {
         return getJson(br.toString(), key);
     }
-
+    
     /**
      * Tries to return value of key from JSon response, from provided Browser.
      * 
@@ -786,5 +792,5 @@ public class RealDebridCom extends PluginForHost {
     private String getJson(final Browser ibr, final String key) {
         return getJson(ibr.toString(), key);
     }
-
+    
 }
