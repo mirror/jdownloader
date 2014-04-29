@@ -334,17 +334,32 @@ public class DebridLinkFr extends PluginForHost {
         }
     }
 
+    /**
+     * Tries to return value of key from JSon response, from String source.
+     * 
+     * @author raztoki
+     * */
     private String getJson(final String source, final String key) {
         String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + key + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
         if (result != null) result = result.replaceAll("\\\\/", "/");
         return result;
     }
 
+    /**
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     * 
+     * @author raztoki
+     * */
     private String getJson(final String key) {
         return getJson(br.toString(), key);
     }
 
+    /**
+     * Tries to return value of key from JSon response, from provided Browser.
+     * 
+     * @author raztoki
+     * */
     private String getJson(final Browser ibr, final String key) {
         return getJson(ibr.toString(), key);
     }
