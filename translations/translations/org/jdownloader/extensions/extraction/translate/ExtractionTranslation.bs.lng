@@ -32,6 +32,7 @@ contextmenu_extract_show_result=Prikaži log Ekstrakcije
 contextmenu_extract_to=Postavi Putanju Za Ekstrakciju
 contextmenu_main=Arhiva(e)
 contextmenu_password=Postavi Šifru Arhive
+crash_message=Izgleda da se desio 'pad' tokom ekstrakcije arhive. Pogledajte detalje ispod. Želite li poslati izvještaj o greški?
 crash_title=JDownloader je 'pao'!
 date=Datum
 delete_to_trash=Premakni u Smeće
