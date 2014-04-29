@@ -25,6 +25,7 @@ errordialog_cannot_write2=Nedostaju prava pisanja da bi bila instalirana nadgrad
 errordialog_frametitle=Nastala je Greška
 errordialog_noconnection=JDownloader se nije mogao povezati sa Serverom za nadgradnje. Molimo provjerite da li ste konektovani na internet.
 errordialog_not_enough_space=Na vašem disku C: nema dovoljno slobodnog mjesta. Obezbijedite barem %s1 slobodnog prostora (potrebno je još %s2) i restartujte nadgradnju.
+errordialog_selfupdate_failed=Nije uspjela instalacija nadgradnje. Molimo pokušajte ponovo kasnije. Ako se problem ne riješi 'sam od sebe' nakon nekoliko sati, kontaktirajte našu podršku ili ponovo instalirajte JDownloader.
 errordialog_server_error=Seerver za nadgradnju momentalno nije dostupan. Molimo pokušajte ponovo kasnije ili kontaktirajte podršku
 errordialog_server_locked2=Upravo pripremamo novi paket za Nadgradnju. Molimo pokušajte ponovo za nekoliko minuta
 errordialog_server_offline=Seerver za nadgradnju momentalno nije dostupan. Molimo pokušajte ponovo kasnije!
