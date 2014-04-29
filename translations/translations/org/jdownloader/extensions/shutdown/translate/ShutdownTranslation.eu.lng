@@ -13,7 +13,9 @@ install_force=Instalatu behartutako itzaltzea
 install_msg=Nahi duzu zure sistema behartutako itzaltzearen ezaugarrirako prestatzea?
 install_title=Instalatu behartutako itzaltzea
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red"> JDownloade itxi egingo da!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistema egonean utzi!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><fon color="red"> Sistema itzaliko da!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><font color="red">Sistema egonean utzi!</font></h2>
 interaction_shutdown_dialog_title_closejd=JDownloader itxi
 interaction_shutdown_dialog_title_hibernate=Hibernatu?
 interaction_shutdown_dialog_title_shutdown=Itzali?
