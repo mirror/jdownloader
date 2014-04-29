@@ -8,6 +8,7 @@ import jd.controlling.captcha.SkipException;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.api.myjdownloader.MyJDownloaderSettings;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
@@ -20,6 +21,7 @@ import org.jdownloader.captcha.v2.solver.captcharesolutor.CaptchaResolutorCaptch
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSettings;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
@@ -32,6 +34,7 @@ import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
     private CaptchaSettings                       config;
     private Captcha9kwSettings                    config9kw;
+    private MyJDownloaderSettings                 configMyJD;
     private CaptchaBrotherHoodSettings            configcbh;
     private CaptchaResolutorCaptchaSettings       configresolutor;
     private BasicCaptchaDialogHandler             handler;
@@ -77,6 +80,7 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
         configDBC = JsonConfig.create(DeathByCaptchaSettings.class);
         configcbh = JsonConfig.create(CaptchaBrotherHoodSettings.class);
         configresolutor = JsonConfig.create(CaptchaResolutorCaptchaSettings.class);
+        configMyJD = JsonConfig.create(MyJDownloaderSettings.class);
     }
 
     /**
@@ -87,6 +91,7 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
     public boolean hasToWaitForInvisibleSolvers() {
         if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) return true;
         if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) return true;
+        if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESTimeout() > 0) return true;
         if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) return true;
         if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) return true;
         return false;
@@ -103,8 +108,8 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
                     waitingThread = Thread.currentThread();
                     job.waitFor(config.getCaptchaDialogJAntiCaptchaTimeout(), JACSolver.getInstance());
                     if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) job.waitFor(config.getCaptchaDialogDBCTimeout(), DeathByCaptchaSolver.getInstance());
-
                     if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) job.waitFor(config.getCaptchaDialog9kwTimeout(), Captcha9kwSolver.getInstance());
+                    if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESTimeout() > 0) job.waitFor(config.getCaptchaDialogMyJDCESTimeout(), CaptchaMyJDSolver.getInstance());
                     if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) job.waitFor(config.getCaptchaDialogCaptchaBrotherhoodTimeout(), CBSolver.getInstance());
                     if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) job.waitFor(config.getCaptchaDialogResolutorCaptchaTimeout(), CaptchaResolutorCaptchaSolver.getInstance());
 

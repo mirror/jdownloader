@@ -103,6 +103,7 @@ import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
+import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.controlling.FileCreationManager;
@@ -710,6 +711,7 @@ public class SecondLevelLaunch {
                             ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(DialogClickCaptchaSolver.getInstance());
+                            ChallengeResponseController.getInstance().addSolver(CaptchaMyJDSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(CBSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(DeathByCaptchaSolver.getInstance());
                             ChallengeResponseController.getInstance().addSolver(Captcha9kwSolver.getInstance());
