@@ -1228,6 +1228,7 @@ settings_linkgrabber_filter_columns_name=Nom de la règle
 settings_linkgrabber_filter_others=Autres
 skip_file=Ignorer le fichier
 special_deal_oboom=Compte pro OBOOM.com gratuit
+specialdeals_oboom_dialog_conditions=A propos
 specialdeals_oboom_dialog_email=Entrez votre adresse mail
 specialdeals_oboom_dialog_email_help=Votre adresse mail ...
 specialdeals_oboom_dialog_msg=Nous distribuons des comptes OBOOM.com gratuitement (stocks limités). Tous les comptes sont valides pour 2 jours. <br> Vous recevrez vos identifiants après avoir entré votre adresse mail.
