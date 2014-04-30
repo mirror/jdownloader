@@ -46,6 +46,7 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.oboom.OboomDialog;
 import jd.gui.swing.jdgui.views.ClosableView;
+import jd.http.Browser;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -67,7 +68,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
-    public static final boolean   SPECIAL_DEALS_ENABLED = true;
+    public static boolean         SPECIAL_DEALS_ENABLED = false;
 
     private AbstractIcon          specialDealIcon;
 
@@ -174,6 +175,44 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             }
 
         });
+
+        new Thread("Ask StatServ") {
+            public void run() {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Browser br = new Browser();
+                try {
+                    br.getPage("http://stats.appwork.org/data/db/getDealStatus");
+
+                    if (br.containsHTML("true")) {
+                        SPECIAL_DEALS_ENABLED = true;
+                        new EDTRunner() {
+
+                            @Override
+                            protected void runInEDT() {
+                                repaint();
+                            }
+                        };
+                        if (CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup()) {
+                            Thread.sleep(10000);
+
+                            OboomDialog d = new OboomDialog();
+
+                            UIOManager.I().show(null, d);
+                            CFG_GUI.CFG.setSpecialDealOboomDialogVisibleOnStartup(false);
+
+                        }
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            };
+        }.start();
     }
 
     public void notifyCurrentTab() {
@@ -192,7 +231,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         super.paint(g);
         if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(false);
 
-        if (CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED) {
+        if (CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED && OboomDialog.isOfferActive()) {
             int height = 22;
             specialDealIcon = new AbstractIcon("logo_oboom", 65);
             Graphics2D g2 = (Graphics2D) g;
@@ -329,7 +368,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     @Override
     public void mouseMoved(MouseEvent e) {
 
-        if (specialDealBounds != null && specialDealBounds.contains(e.getPoint()) && !specialDealMouseOver && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED) {
+        if (specialDealBounds != null && specialDealBounds.contains(e.getPoint()) && !specialDealMouseOver && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED && OboomDialog.isOfferActive()) {
             specialDealMouseOver = true;
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
@@ -345,7 +384,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        if (specialDealMouseOver && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED) {
+        if (specialDealMouseOver && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED && OboomDialog.isOfferActive()) {
             new Thread("OSR") {
                 public void run() {
 

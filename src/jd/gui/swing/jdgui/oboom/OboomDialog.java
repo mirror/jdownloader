@@ -19,6 +19,7 @@ import javax.swing.JPanel;
 
 import jd.controlling.AccountController;
 import jd.gui.swing.dialog.AddAccountDialog;
+import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -29,6 +30,8 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -48,8 +51,9 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class OboomDialog extends AbstractDialog<Integer> {
 
-    private ExtTextField input;
-    private LogSource    logger;
+    private static boolean OFFER_IS_ACTIVE = !Application.getTempResource("oboom1").exists();
+    private ExtTextField   input;
+    private LogSource      logger;
 
     public OboomDialog() {
         super(0, _GUI._.specialdeals_oboom_dialog_title(), new AbstractIcon("logo_oboom_small", 64), _GUI._.lit_continue(), _GUI._.lit_close());
@@ -138,6 +142,7 @@ public class OboomDialog extends AbstractDialog<Integer> {
                 retry();
                 return;
             } else if (br.containsHTML("200,\"EXISTING\"")) {
+                setOfferActive();
                 OboomDialog.track("OK_EXISTING");
                 ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts("oboom.com");
                 if (accounts != null) {
@@ -170,6 +175,7 @@ public class OboomDialog extends AbstractDialog<Integer> {
                     }
                 }
             } else {
+                setOfferActive();
                 OboomDialog.track("OK_NEW");
                 Object[] data = JSonStorage.restoreFromString(br.toString(), Object[].class);
 
@@ -196,6 +202,18 @@ public class OboomDialog extends AbstractDialog<Integer> {
         } catch (DialogCanceledException e) {
             logger.log(e);
         }
+    }
+
+    private void setOfferActive() {
+        OFFER_IS_ACTIVE = false;
+        if (!Application.getTempResource("oboom1").exists()) {
+            try {
+                IO.writeStringToFile(Application.getTempResource("oboom1"), System.currentTimeMillis() + "");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        MainTabbedPane.getInstance().repaint();
     }
 
     private void retry() {
@@ -294,5 +312,9 @@ public class OboomDialog extends AbstractDialog<Integer> {
                 }
             }
         }.start();
+    }
+
+    public static boolean isOfferActive() {
+        return OFFER_IS_ACTIVE;
     }
 }
