@@ -163,13 +163,13 @@ public class RemoteAPIController {
             }
             
             @Override
-            protected RemoteAPIRequest createRemoteAPIRequestObject(HttpRequest request, String[] intf, InterfaceHandler<?> interfaceHandler, List<String> parameters, String jqueryCallback) throws IOException {
+            protected RemoteAPIRequest createRemoteAPIRequestObject(HttpRequest request, final String methodName, InterfaceHandler<?> interfaceHandler, List<String> parameters, String jqueryCallback) throws IOException {
                 if (request instanceof DeprecatedAPIRequestInterface) {
                 
-                return new DeprecatedRemoteAPIRequest(interfaceHandler, intf[2], parameters.toArray(new String[] {}), (DeprecatedAPIRequestInterface) request, jqueryCallback);
+                return new DeprecatedRemoteAPIRequest(interfaceHandler, methodName, parameters.toArray(new String[] {}), (DeprecatedAPIRequestInterface) request, jqueryCallback);
                 //
                 }
-                return new MyJDRemoteAPIRequest(interfaceHandler, intf[2], parameters.toArray(new String[] {}), (MyJDownloaderRequestInterface) request);
+                return new MyJDRemoteAPIRequest(interfaceHandler, methodName, parameters.toArray(new String[] {}), (MyJDownloaderRequestInterface) request);
             }
             
             @Override
