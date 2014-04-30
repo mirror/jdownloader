@@ -41,6 +41,8 @@ public class TimSahCom extends PluginForHost {
         super(wrapper);
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?timsah\\.com/(kategori|uye|videolar|bizeulasin)/.+";
+
     private String execJS(final String fun) throws Exception {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
@@ -77,12 +79,13 @@ public class TimSahCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(\">URLde verilen video ID hatalı|<title>Yeni gelen videolar \\- Timsah\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!br.containsHTML("id=\"playerDiv\"") || br.containsHTML("(\">URLde verilen video ID hatalı|<title>Yeni gelen videolar \\- Timsah\\.com</title>)") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("</td><td class=\"mid\"><h1>(.*?)</h1></td>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("property=\"og:site_name\" name=\"og:site_name\" /><meta content=\"(.*?)\"").getMatch(0);

@@ -614,7 +614,10 @@ public class XenuBoxCom extends PluginForHost {
                     }
                 }
                 br.getPage("http://xenubox.com/?op=login");
-                br.postPage("https://xenubox.com/", "op=login&redirect=http%3A%2F%2Fxenubox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                /* They switch betweenv https and http */
+                String action = br.getRegex("action=\"(https?://xenubox\\.com/[^<>\"/]*?)\" name=\"FL\"").getMatch(0);
+                if (action == null) action = "http://xenubox.com/";
+                br.postPage(action, "op=login&redirect=http%3A%2F%2Fxenubox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (new Regex(correctedBR, ">Apply Premium Key:<").matches()) {

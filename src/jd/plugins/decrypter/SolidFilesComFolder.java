@@ -49,9 +49,9 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)\\- Solidfiles</title>").getMatch(0);
         if (fpName == null) fpName = new Regex(parameter, "([a-z0-9]+)/$").getMatch(0);
-        final PluginForHost chomikujpl = JDUtilities.getPluginForHost("solidfiles.com");
-        final boolean decryptFolders = chomikujpl.getPluginConfig().getBooleanProperty(jd.plugins.hoster.SolidFilesCom.DECRYPTFOLDERS, false);
-        final String[][] fileStuff = br.getRegex("<a href=\"(/d/[a-z0-9]+/?)\">([^<>\"]*?)</a>[\t\n\r ]+</h1>[\t\n\r ]+<p class=\"stats\">[^<>\"/,]+,([^<>\"]*?),[\t\n\r ]+\\d+ downloads?").getMatches();
+        final PluginForHost solidfiles_host = JDUtilities.getPluginForHost("solidfiles.com");
+        final boolean decryptFolders = solidfiles_host.getPluginConfig().getBooleanProperty(jd.plugins.hoster.SolidFilesCom.DECRYPTFOLDERS, false);
+        final String[][] fileStuff = br.getRegex("<a href=\"(/d/[a-z0-9]+(/[^<>\"/]*?)?)\">([^<>\"]*?)</a>[\t\n\r ]+</h1>[\t\n\r ]+<p class=\"stats\">[^<>\"/,]+,([^<>\"]*?),[\t\n\r ]+\\d+ downloads?").getMatches();
         final String[] folders = br.getRegex("<a href=\"(/folder/[a-z0-9]+/?)\"").getColumn(0);
         if ((folders == null || folders.length == 0) && (fileStuff == null || fileStuff.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);

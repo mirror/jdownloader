@@ -649,7 +649,9 @@ public class FileMazeWs extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/");
-                getPage(COOKIE_HOST + "/signin.html");
+                String login_page = br.getRegex("href=\"(https?://(www\\.)?filemaze\\.ws/[^<>\"]*?)\"><b>Login</b>").getMatch(0);
+                if (login_page == null) login_page = COOKIE_HOST + "/signin.html";
+                getPage(login_page);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));

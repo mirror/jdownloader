@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apunkabollywood.net" }, urls = { "http://(www\\.)?apunkabollywood\\.net/browser/category/view/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apunkabollywood.net" }, urls = { "http://(www\\.)?apunkabollywood\\.(net|us)/browser/category/view/\\d+" }, flags = { 0 })
 public class ApunkaBollyWoodNet extends PluginForDecrypt {
 
     public ApunkaBollyWoodNet(PluginWrapper wrapper) {
@@ -39,14 +39,16 @@ public class ApunkaBollyWoodNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("apunkabollywood.net/", "apunkabollywood.us/");
         br.getPage(parameter);
         if (br.containsHTML(">500 \\- Server Error<") || br.getRedirectLocation() != null) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("<li><a href=\"(http://(www\\.)?apunkabollywood\\.net/browser/category/view/\\d+)").getColumn(0);
-        final String[][] downloadLinks = br.getRegex("\"(http://(www\\.)?apunkabollywood\\.net/browser/download/get/\\d+/[^<>\"/]*?\\.html)\">([^<>\"]*?)</a><small>\\((\\d+(\\.\\d+)? MB)\\)</small>").getMatches();
+        final String[] links = br.getRegex("<li><a href=\"(http://(www\\.)?apunkabollywood\\.us/browser/category/view/\\d+)").getColumn(0);
+        // ><a href="http://www.apunkabollywood.us/browser/download/get/65152/Track 06 (ApunKaBollywood.com).html"> Track 06 </a><small>(9.5
+        // MB)</small>
+        final String[][] downloadLinks = br.getRegex("\"(http://(www\\.)?apunkabollywood\\.us/browser/download/get/\\d+/[^<>\"/]*?\\.html)\">([^<>\"]*?)</a><small>\\((\\d+(\\.\\d+)? MB)\\)</small>").getMatches();
         if ((links == null || links.length == 0) && (downloadLinks == null || downloadLinks.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

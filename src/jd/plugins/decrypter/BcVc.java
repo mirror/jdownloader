@@ -44,7 +44,17 @@ public class BcVc extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
+
+        /* Check for direct redirect */
+        String redirect = br.getRedirectLocation();
+        if (redirect == null) redirect = br.getRegex("top\\.location\\.href = \"(http[^<>\"]*?)\"").getMatch(0);
+        if (redirect != null && !redirect.contains("bc.vc/")) {
+            decryptedLinks.add(createDownloadlink(redirect));
+            return decryptedLinks;
+        }
+
         if (br.getURL().equals("http://bc.vc/") || br.containsHTML("top\\.location\\.href = \"http://bc\\.vc/\"") || br.containsHTML(">404 Not Found<") || br.containsHTML(">Sorry the page you are looking for does not exist")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

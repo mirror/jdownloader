@@ -41,7 +41,11 @@ public class BergFilesCom extends PluginForDecrypt {
         final Browser ajaxBR = br.cloneBrowser();
         ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(parameter);
-        if (parameter.matches("http://(www\\.)?bergfiles\\.com/i/[a-z0-9]+")) {
+        if (parameter.matches("http://(www\\.)?bergfiles\\.com/i/[A-Za-z0-9]+")) {
+            if (br.containsHTML("<title>File \\. Only direct download")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
             for (int i = 0; i <= 3; i++) {
                 String code = getCaptchaCode("http://www.bergfiles.com/captcha/" + fid, param);
