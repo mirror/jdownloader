@@ -133,6 +133,7 @@ CaptchaDialogsToogleAction_getNameWhenDisabled_=Omogući Captcha dijaloge
 CaptchaDialogsToogleAction_getNameWhenEnabled_=Onemogući Captcha Dijaloge
 CaptchaExchangeToogleAction_getNameWhenDisabled_=Servisi za Razmjenu captcha
 CaptchaExchangeToogleAction_getNameWhenEnabled_=Servisi za Razmjenu captcha
+ChallengeDialogHandler_viaGUI_skipped_help_msg=Čestitka! Pronašli ste opciju 'Preskoči Captcha Download-e'!\r\nJedan ili više Download linkova je preskočen da bi se izbjegli budući Captcha Dijalozi.\r\nAko ipak želite da Download-ujete ove linkove, imate tri mogućnosti:\r\n\r\n  1. Restartujte Downloade\r\n  2. Desni klik -> Ostalo ->Resetuj Download link\r\n  3. Desni klik -> Vrati Preskočeni Download
 ChallengeDialogHandler_viaGUI_skipped_help_title=Preskočeni linkovi
 CheckForUpdatesAction_CheckForUpdatesAction=Pronađi Nadgradnje
 ChunksEditor_ChunksEditor_=Max. Komada po Download-u
