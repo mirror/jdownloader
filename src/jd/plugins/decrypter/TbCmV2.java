@@ -668,6 +668,30 @@ public class TbCmV2 extends PluginForDecrypt {
 
     private DownloadLink createLink(VariantInfo variantInfo, List<VariantInfo> alternatives) {
         try {
+
+            // if (!getCachedHelper().getConfig().isFastLinkCheckEnabled()) {
+            // // sometimes streams are not available due to whatever. (for example internal server errors)
+            // // let's just try the next alternative in this case
+            // HashSet<VariantInfo> dupe = new HashSet<VariantInfo>();
+            // int i = 0;
+            // VariantInfo originalVariant = variantInfo;
+            // while (!validate(variantInfo)) {
+            // dupe.add(variantInfo);
+            // variantInfo = null;
+            // for (; i < alternatives.size(); i++) {
+            // VariantInfo nextVariant = alternatives.get(i);
+            // if (!dupe.contains(nextVariant)) {
+            // variantInfo = nextVariant;
+            // break;
+            // }
+            //
+            // }
+            // if (variantInfo == null) {
+            // variantInfo = originalVariant;
+            // break;
+            // }
+            // }
+            // }
             YoutubeClipData clip = null;
             if (clip == null && variantInfo.videoStream != null) {
                 clip = variantInfo.videoStream.getClip();

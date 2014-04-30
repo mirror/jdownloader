@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +35,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -505,47 +507,73 @@ public class YoutubeDashV2 extends PluginForHost {
             break;
 
         default:
+            br.setFollowRedirects(true);
 
-            for (int i = 0; i < 2; i++) {
-                totalSize = 0;
-                UrlCollection urls = getUrlPair(downloadLink);
+            HashSet<LinkVariant> checkedAlternatives = new HashSet<LinkVariant>();
+            YoutubeVariantInterface orgVariant = getVariant(downloadLink);
+            test: while (true) {
 
-                if (StringUtils.isNotEmpty(urls.video)) {
-                    con = br.openGetConnection(urls.video);
-                    con.disconnect();
-                    if (con.getResponseCode() == 200) {
-                        totalSize += con.getLongContentLength();
-                        data.setDashVideoSize(con.getLongContentLength());
+                checkedAlternatives.add(getVariant(downloadLink));
+                try {
 
-                    } else {
-                        if (i == 0) {
-                            resetStreamUrls(downloadLink);
-                            continue;
+                    for (int i = 0; i < 2; i++) {
+                        totalSize = 0;
+                        UrlCollection urls = getUrlPair(downloadLink);
+
+                        if (StringUtils.isNotEmpty(urls.video)) {
+                            br.openRequestConnection(new HeadRequest(urls.video)).disconnect();
+                            con = br.getHttpConnection();
+                            if (con.getResponseCode() == 200) {
+                                totalSize += con.getLongContentLength();
+                                data.setDashVideoSize(con.getLongContentLength());
+                                break test;
+                            } else {
+                                if (i == 0) {
+                                    resetStreamUrls(downloadLink);
+                                    continue;
+                                }
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+                            }
                         }
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
+                        if (StringUtils.isNotEmpty(urls.audio)) {
+                            br.openRequestConnection(new HeadRequest(urls.audio)).disconnect();
+                            con = br.getHttpConnection();
+                            if (con.getResponseCode() == 200) {
+                                totalSize += con.getLongContentLength();
+                                data.setDashAudioSize(con.getLongContentLength());
+
+                                break test;
+                            } else {
+
+                                if (i == 0) {
+                                    resetStreamUrls(downloadLink);
+                                    continue;
+                                }
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                        } else {
+                            break;
+                        }
                     }
+
+                } catch (PluginException e) {
+
+                    List<LinkVariant> alternatives = getVariantsByLink(downloadLink);
+                    if (alternatives != null) {
+                        for (LinkVariant v : alternatives) {
+
+                            if (!checkedAlternatives.contains(v)) {
+                                setActiveVariantByLink(downloadLink, v);
+                                continue test;
+                            }
+                        }
+                    }
+                    setActiveVariantByLink(downloadLink, orgVariant);
+                    throw e;
                 }
 
-                if (StringUtils.isNotEmpty(urls.audio)) {
-                    con = br.openGetConnection(urls.audio);
-                    con.disconnect();
-                    if (con.getResponseCode() == 200) {
-                        totalSize += con.getLongContentLength();
-                        data.setDashAudioSize(con.getLongContentLength());
-
-                        break;
-                    } else {
-
-                        if (i == 0) {
-                            resetStreamUrls(downloadLink);
-                            continue;
-                        }
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                } else {
-                    break;
-                }
             }
 
         }
