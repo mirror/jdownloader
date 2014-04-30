@@ -861,6 +861,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     //
     // void setOSRSurveyEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isSpecialDealsEnabled();
+
+    void setSpecialDealsEnabled(boolean b);
+
     //
     @AboutConfig
     @DefaultBooleanValue(true)

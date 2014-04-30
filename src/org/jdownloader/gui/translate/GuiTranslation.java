@@ -4530,4 +4530,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Always allow Log Upload without asking." })
     String UploadSessionLogDialog_getDontShowAgainLabelText_always();
 
+    @Default(lngs = { "en" }, values = { "Free Oboom.com Premium" })
+    String special_deal_oboom();
+
 }

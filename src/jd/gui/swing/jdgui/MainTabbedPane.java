@@ -16,12 +16,26 @@
 
 package jd.gui.swing.jdgui;
 
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.font.TextAttribute;
+import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
@@ -32,18 +46,34 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
 import jd.gui.swing.jdgui.views.ClosableView;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEvent;
 import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class MainTabbedPane extends JTabbedPane {
+public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
 
-    private static final long     serialVersionUID = -1531827591735215594L;
+    private static final long     serialVersionUID      = -1531827591735215594L;
 
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
+    private static final boolean  SPECIAL_DEALS_ENABLED = !Application.isJared(null);
+
+    private AbstractIcon          specialDealIcon;
+
+    private Font                  specialDealFont;
+    private Color                 specialDealColor;
+    private Rectangle             specialDealBounds;
+    private boolean               specialDealMouseOver  = false;
 
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) INSTANCE = new MainTabbedPane();
@@ -100,6 +130,28 @@ public class MainTabbedPane extends JTabbedPane {
         this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         this.setOpaque(false);
 
+        specialDealIcon = new AbstractIcon("osrlogo", 18);
+
+        JLabel dummyLbl = new JLabel();
+        specialDealFont = dummyLbl.getFont();
+        CFG_GUI.SPECIAL_DEALS_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                repaint();
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
+        Map<TextAttribute, Integer> fontAttributes = new HashMap<TextAttribute, Integer>();
+        // fontAttributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+        specialDealFont = (specialDealFont.deriveFont(specialDealFont.getStyle() ^ Font.BOLD).deriveFont(fontAttributes)).deriveFont(16f);
+        addMouseMotionListener(this);
+        addMouseListener(this);
+        specialDealColor = dummyLbl.getForeground();
+
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
@@ -138,6 +190,54 @@ public class MainTabbedPane extends JTabbedPane {
     public void paint(Graphics g) {
         super.paint(g);
         if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(false);
+
+        if (CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED) {
+            int height = 22;
+            specialDealIcon = new AbstractIcon("logo_oboom", 65);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setFont(specialDealFont);
+            g2.setColor(Color.GRAY);
+            //
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            String[] parts = _GUI._.special_deal_oboom().split("(?i)oboom(\\.com)?");
+
+            int totalWidth = 0;
+            for (int i = 0; i < parts.length; i++) {
+                if (StringUtils.isEmpty(parts[i])) parts[i] = "";
+                String s = parts[i];
+                Rectangle2D bounds = g2.getFontMetrics().getStringBounds(s, g2);
+                totalWidth += bounds.getWidth();
+                if (i < parts.length - 1) {
+                    // totalWidth += 5;
+                    totalWidth += specialDealIcon.getIconWidth();
+                }
+            }
+
+            int x = getWidth() - totalWidth - 2;
+            for (int i = 0; i < parts.length; i++) {
+                String s = parts[i];
+                Rectangle2D bounds = g2.getFontMetrics().getStringBounds(s, g2);
+                g2.drawString(s, x, (int) ((height - bounds.getHeight()) / 2) + (int) bounds.getHeight());
+                x += bounds.getWidth();
+                // x += 5;
+                // g2.setColor(Color.RED);
+                // g2.drawRect(getWidth() - width, 2, width, height);
+
+                if (i < parts.length - 1) {
+                    specialDealIcon.paintIcon(this, g2, x, 4 + (height - specialDealIcon.getIconHeight()) / 2);
+                    x += specialDealIcon.getIconWidth();
+                }
+            }
+            specialDealBounds = new Rectangle(getWidth() - totalWidth, 2, totalWidth, height);
+
+            if (specialDealMouseOver) {
+
+                g2.drawLine(getWidth() - totalWidth - 4, height, getWidth() - 2, height);
+            } else {
+                // g2.drawLine(getWidth() - totalWidth - 3, height - 2, getWidth() - 2, height - 2);
+            }
+
+        }
 
     }
 
@@ -220,5 +320,55 @@ public class MainTabbedPane extends JTabbedPane {
     //
     // public void mouseReleased(MouseEvent e) {
     // }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+
+        if (specialDealBounds != null && specialDealBounds.contains(e.getPoint()) && !specialDealMouseOver && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED) {
+            specialDealMouseOver = true;
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
+
+        } else if (specialDealMouseOver && (specialDealBounds == null || !specialDealBounds.contains(e.getPoint()))) {
+            specialDealMouseOver = false;
+            setCursor(null);
+            repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
+
+        }
+
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (specialDealMouseOver && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED) {
+            new Thread("OSR") {
+                public void run() {
+                    // OSRSurvey.getInstance().start();
+
+                }
+            }.start();
+
+        }
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
 
 }
