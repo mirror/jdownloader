@@ -332,7 +332,7 @@ public class Freaksharenet extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Sorry, you cant download more then 50 files at time.")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
+        if (br.containsHTML("Sorry, you cant download more then 50 files at time\\.")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001); }
         if (account.getBooleanProperty("freeacc", false)) {
             doFree(downloadLink);
         } else {
