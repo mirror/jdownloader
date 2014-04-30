@@ -526,7 +526,7 @@ public class YoutubeDashV2 extends PluginForHost {
                             if (con.getResponseCode() == 200) {
                                 totalSize += con.getLongContentLength();
                                 data.setDashVideoSize(con.getLongContentLength());
-                                break test;
+
                             } else {
                                 if (i == 0) {
                                     resetStreamUrls(downloadLink);
@@ -544,7 +544,6 @@ public class YoutubeDashV2 extends PluginForHost {
                                 totalSize += con.getLongContentLength();
                                 data.setDashAudioSize(con.getLongContentLength());
 
-                                break test;
                             } else {
 
                                 if (i == 0) {
@@ -553,9 +552,8 @@ public class YoutubeDashV2 extends PluginForHost {
                                 }
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
-                        } else {
-                            break;
                         }
+                        break test;
                     }
 
                 } catch (PluginException e) {
