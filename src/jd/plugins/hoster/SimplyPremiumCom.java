@@ -327,8 +327,10 @@ public class SimplyPremiumCom extends PluginForHost {
 
     private void getapikey(final Account acc) throws IOException, PluginException {
         synchronized (LOCK) {
+            boolean acmatch = Encoding.urlEncode(acc.getUser()).equals(acc.getStringProperty("name", Encoding.urlEncode(acc.getUser())));
+            if (acmatch) acmatch = Encoding.urlEncode(acc.getPass()).equals(acc.getStringProperty("pass", Encoding.urlEncode(acc.getPass())));
             APIKEY = acc.getStringProperty(NICE_HOSTproperty + "apikey", null);
-            if (APIKEY != null) {
+            if (APIKEY != null && acmatch) {
                 br.setCookie("http://simply-premium.com/", "apikey", APIKEY);
             } else {
                 login(acc);
@@ -391,6 +393,8 @@ public class SimplyPremiumCom extends PluginForHost {
             }
         }
         account.setProperty(NICE_HOSTproperty + "apikey", APIKEY);
+        account.setProperty("name", Encoding.urlEncode(account.getUser()));
+        account.setProperty("pass", Encoding.urlEncode(account.getPass()));
     }
 
     private void showMessage(DownloadLink link, String message) {
