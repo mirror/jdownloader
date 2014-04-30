@@ -57,7 +57,12 @@ public class CESSolverJob<T> {
     }
 
     public CESBubble showBubble(CESChallengeSolver<T> cbSolver) throws InterruptedException {
-        bubble = CESBubbleSupport.getInstance().show(cbSolver, this, CFG_CAPTCHA.CFG.getCaptchaExchangeChanceToSkipBubbleTimeout());
+
+        return showBubble(cbSolver, CFG_CAPTCHA.CFG.getCaptchaExchangeChanceToSkipBubbleTimeout());
+    }
+
+    public CESBubble showBubble(CESChallengeSolver<T> cbSolver, int timeout) throws InterruptedException {
+        bubble = CESBubbleSupport.getInstance().show(cbSolver, this, timeout);
         return bubble;
     }
 

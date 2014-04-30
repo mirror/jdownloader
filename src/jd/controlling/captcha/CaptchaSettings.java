@@ -90,12 +90,20 @@ public interface CaptchaSettings extends ConfigInterface {
     void setCaptchaDialog9kwTimeout(int ms);
 
     @AboutConfig
-    @DefaultIntValue(0)
+    @DefaultIntValue(30 * 1000)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Milliseconds after which a Captcha Dialog will appear even if Auto MyJDownloader Service is still running")
-    int getCaptchaDialogMyJDCESTimeout();
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Crawler Challenges: Milliseconds after which a Captcha Dialog will appear even if Auto MyJDownloader Service is still running")
+    int getCaptchaDialogMyJDCESForCrawlerPluginsTimeout();
 
-    void setCaptchaDialogMyJDCESTimeout(int ms);
+    void setCaptchaDialogMyJDCESForCrawlerPluginsTimeout(int ms);
+
+    @AboutConfig
+    @DefaultIntValue(3 * 60 * 1000)
+    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Download Challenges: Milliseconds after which a Captcha Dialog will appear even if Auto MyJDownloader Service is still running")
+    int getCaptchaDialogMyJDCESForHostPluginsTimeout();
+
+    void setCaptchaDialogMyJDCESForHostPluginsTimeout(int ms);
 
     @AboutConfig
     @DefaultIntValue(300000)

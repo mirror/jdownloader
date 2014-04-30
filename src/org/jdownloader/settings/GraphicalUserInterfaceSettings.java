@@ -1046,4 +1046,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setDateTimeFormatDownloadListFinishedDateColumn(String df);
 
+    @AboutConfig
+    @RequiresRestart("Restart is Required")
+    @DefaultBooleanValue(true)
+    boolean isSpecialDealOboomDialogVisibleOnStartup();
+
+    void setSpecialDealOboomDialogVisibleOnStartup(boolean b);
 }

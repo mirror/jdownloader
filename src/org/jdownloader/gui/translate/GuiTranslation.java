@@ -4530,7 +4530,49 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Always allow Log Upload without asking." })
     String UploadSessionLogDialog_getDontShowAgainLabelText_always();
 
-    @Default(lngs = { "en" }, values = { "Free Oboom.com Premium" })
+    @Default(lngs = { "en" }, values = { "Free OBOOM.com Pro Account" })
     String special_deal_oboom();
+
+    @Default(lngs = { "en" }, values = { "Get a free OBOOM.com Pro Account" })
+    String specialdeals_oboom_dialog_title();
+
+    @Default(lngs = { "en" }, values = { "About that Deal!" })
+    String specialdeals_oboom_dialog_conditions();
+
+    @Default(lngs = { "en" }, values = { "We give away absolutly free OBOOM.com Pro Accounts (while supplies last). All accounts are valid for 2 days, so you can download with full premium conditions for 2 days. <br>You receive your access data after entering your eMail-address." })
+    String specialdeals_oboom_dialog_msg();
+
+    @Default(lngs = { "en" }, values = { "Enter your eMail-address" })
+    String specialdeals_oboom_dialog_email();
+
+    @Default(lngs = { "en" }, values = { "your eMail-address ..." })
+    String specialdeals_oboom_dialog_email_help();
+
+    @Default(lngs = { "en" }, values = { "OBOOM.com Terms of Service" })
+    String specialdeals_oboom_tocs();
+
+    @Default(lngs = { "en" }, values = { "Requesting your account..." })
+    String specialdeals_oboom_dialog_request_title();
+
+    @Default(lngs = { "en" }, values = { "Please wait..." })
+    String specialdeals_oboom_dialog_request_msg();
+
+    @Default(lngs = { "en" }, values = { "This eMail-address is already used for a valid Pro Account." })
+    String specialdeals_oboom_dialog_request_error_e_premium();
+
+    @Default(lngs = { "en" }, values = { "An unknown Error occured. Please try again later or with a different eMail-address." })
+    String specialdeals_oboom_dialog_request_error_forbidden();
+
+    @Default(lngs = { "en" }, values = { "This eMail-address has been rejected." })
+    String specialdeals_oboom_dialog_request_error_email_forbidden();
+
+    @Default(lngs = { "en" }, values = { "This eMail-address has already been used to get a free Account." })
+    String specialdeals_oboom_dialog_request_error_used();
+
+    @Default(lngs = { "en" }, values = { "Congratulations!" })
+    String specialdeals_oboom_dialog_request_success_title();
+
+    @Default(lngs = { "en" }, values = { "Your new OBOOM.com Pro Account is ready to use. \r\nJust start downloading now!" })
+    String specialdeals_oboom_dialog_request_success_msg();
 
 }

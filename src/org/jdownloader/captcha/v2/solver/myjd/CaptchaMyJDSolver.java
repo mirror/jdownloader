@@ -7,7 +7,6 @@ import java.util.LinkedList;
 import javax.swing.Icon;
 
 import jd.SecondLevelLaunch;
-import jd.controlling.captcha.CaptchaSettings;
 import jd.gui.swing.jdgui.components.premiumbar.ServiceCollection;
 import jd.gui.swing.jdgui.components.premiumbar.ServicePanel;
 
@@ -93,7 +92,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
         job.getLogger().info(this.getName() + ": Start. GetTypeID: " + challenge.getTypeID() + " - Plugin: " + challenge.getPlugin());
 
-        int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialogMyJDCESTimeout() / 1000);
+        // int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialogMyJDCESTimeout() / 1000);
 
         BlackOrWhitelist type = config.getCESBlackOrWhitelistType();
         if (type != null) {
@@ -140,6 +139,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
             byte[] data = IO.readFile(challenge.getImageFile());
             // Browser br = new Browser();
             // br.setAllowedResponseCodes(new int[] { 500 });
+            job.showBubble(this, 0);
             String ret = "";
             job.setStatus(SolverStatus.UPLOADING);
             MyCaptchaChallenge ch = new MyCaptchaChallenge();

@@ -66,6 +66,7 @@ import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.oboom.OboomDialog;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.Screen;
@@ -506,6 +507,33 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         this.downloadView = new DownloadsView();
         this.linkgrabberView = new LinkGrabberView();
         this.mainTabbedPane.addTab(downloadView);
+        this.mainTabbedPane.addTab(this.linkgrabberView);
+        if (MainTabbedPane.SPECIAL_DEALS_ENABLED && CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup()) {
+
+            SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
+                @Override
+                public void run() {
+                    new Thread() {
+                        @Override
+                        public void run() {
+
+                            try {
+                                Thread.sleep(20000);
+
+                                OboomDialog d = new OboomDialog();
+
+                                UIOManager.I().show(null, d);
+                                CFG_GUI.CFG.setSpecialDealOboomDialogVisibleOnStartup(false);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    }.start();
+
+                }
+            });
+        }
         this.mainTabbedPane.addTab(this.linkgrabberView);
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
             @Override

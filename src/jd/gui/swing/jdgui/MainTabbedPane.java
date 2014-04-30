@@ -44,11 +44,13 @@ import javax.swing.event.ChangeListener;
 import jd.gui.swing.jdgui.interfaces.SwitchPanelEvent;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.maintab.ClosableTabHeader;
+import jd.gui.swing.jdgui.oboom.OboomDialog;
 import jd.gui.swing.jdgui.views.ClosableView;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
@@ -66,7 +68,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
-    private static final boolean  SPECIAL_DEALS_ENABLED = !Application.isJared(null);
+    public static final boolean   SPECIAL_DEALS_ENABLED = !Application.isJared(null);
 
     private AbstractIcon          specialDealIcon;
 
@@ -347,8 +349,10 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         if (specialDealMouseOver && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED) {
             new Thread("OSR") {
                 public void run() {
-                    // OSRSurvey.getInstance().start();
 
+                    OboomDialog d = new OboomDialog();
+
+                    UIOManager.I().show(null, d);
                 }
             }.start();
 
