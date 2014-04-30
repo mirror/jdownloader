@@ -4539,7 +4539,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "About that Deal!" })
     String specialdeals_oboom_dialog_conditions();
 
-    @Default(lngs = { "en" }, values = { "We give away absolutly free OBOOM.com Pro Accounts (while supplies last). All accounts are valid for 2 days, so you can download with full premium conditions for 2 days. <br>You receive your access data after entering your eMail-address." })
+    @Default(lngs = { "en" }, values = { "We give away absolutely free OBOOM.com Pro Accounts (while supplies last). All accounts are valid for 2 days, so you can download with full premium conditions for 2 days. <br>You receive your access data after entering your eMail-address." })
     String specialdeals_oboom_dialog_msg();
 
     @Default(lngs = { "en" }, values = { "Enter your eMail-address" })
@@ -4560,13 +4560,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This eMail-address is already used for a valid Pro Account." })
     String specialdeals_oboom_dialog_request_error_e_premium();
 
-    @Default(lngs = { "en" }, values = { "An unknown Error occured. Please try again later or with a different eMail-address." })
+    @Default(lngs = { "en" }, values = { "An unknown error occured. Please try again later or with a different eMail-address." })
     String specialdeals_oboom_dialog_request_error_forbidden();
 
     @Default(lngs = { "en" }, values = { "This eMail-address has been rejected." })
     String specialdeals_oboom_dialog_request_error_email_forbidden();
 
-    @Default(lngs = { "en" }, values = { "This eMail-address has already been used to get a free Account." })
+    @Default(lngs = { "en" }, values = { "This eMail-address has already been used to get a free Pro Account." })
     String specialdeals_oboom_dialog_request_error_used();
 
     @Default(lngs = { "en" }, values = { "Congratulations!" })
@@ -4575,4 +4575,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Your new OBOOM.com Pro Account is ready to use. \r\nJust start downloading now!" })
     String specialdeals_oboom_dialog_request_success_msg();
 
+    @Default(lngs = { "en" }, values = { "We upgraded your existing OBOOM.com Account.\r\nJust start downloading now!" })
+    String specialdeals_oboom_dialog_request_successupdate_msg();
+
+    @Default(lngs = { "en" }, values = { "We upgraded your existing OBOOM.com Account.\r\nPlease click continue to enter your password." })
+    String specialdeals_oboom_dialog_request_successupdate_input_msg();
 }

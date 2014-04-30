@@ -51,7 +51,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEvent;
@@ -68,7 +67,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
-    public static final boolean   SPECIAL_DEALS_ENABLED = !Application.isJared(null);
+    public static final boolean   SPECIAL_DEALS_ENABLED = true;
 
     private AbstractIcon          specialDealIcon;
 
@@ -353,6 +352,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     OboomDialog d = new OboomDialog();
 
                     UIOManager.I().show(null, d);
+                    OboomDialog.track("TabbedClick");
                 }
             }.start();
 
