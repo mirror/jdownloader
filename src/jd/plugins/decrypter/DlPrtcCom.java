@@ -21,7 +21,9 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
@@ -57,8 +59,11 @@ public class DlPrtcCom extends PluginForDecrypt {
     private static AtomicReference<String> agent          = new AtomicReference<String>(null);
     private static AtomicReference<Object> cookieMonster  = new AtomicReference<Object>();
     private static AtomicInteger           maxConProIns   = new AtomicInteger(1);
+    private static AtomicLong              lastUsed       = new AtomicLong(0);
     private boolean                        coLoaded       = false;
     private Browser                        cbr            = new Browser();
+    private static Object                  ctrlLock       = new Object();
+    private boolean                        test           = false;
 
     @SuppressWarnings("unchecked")
     private Browser prepBrowser(final Browser prepBr) {
@@ -74,6 +79,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                 final HashMap<String, String> cookies = (HashMap<String, String>) cookieMonster.get();
                 for (Map.Entry<String, String> entry : cookies.entrySet()) {
                     prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
+
                 }
                 coLoaded = true;
             }
@@ -91,125 +97,138 @@ public class DlPrtcCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/");
-        prepBrowser(br);
         if (parameter.endsWith("dl-protect.com/en")) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
         }
-        getPage(parameter);
-        if (cbr.containsHTML(">Unfortunately, the link you are looking for is not found")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(CAPTCHATEXT)) {
-            int repeat = 2;
-            for (int i = 0; i != repeat; i++) {
-                Form importantForm = getForm();
-                if (importantForm == null) {
-                    logger.warning("Decrypter broken 1 for link: " + parameter);
-                    return null;
-                }
-                if (cbr.containsHTML(PASSWORDTEXT)) {
-                    final String pwd = getUserInput(null, param);
-                    importantForm.put("pwd", pwd);
-                }
-                if (cbr.containsHTML(CAPTCHATEXT)) {
-                    String[] test = cbr.getRegex("<img[^>]+src=\"(/template/images/[^\"]+)").getColumn(0);
-                    if (test != null) {
-                        for (final String t : test) {
-                            final Browser brAds = br.cloneBrowser();
-                            try {
-                                brAds.openGetConnection(t);
-                            } catch (final Exception e) {
-                            }
-                        }
-                    }
-
-                    String captchaLink = getCaptchaLink(importantForm.getHtmlCode());
-                    if (captchaLink == null) {
-                        logger.warning("Decrypter broken 2 for link: " + parameter);
-                        return null;
-                    }
-                    captchaLink = "http://www.dl-protect.com" + captchaLink;
-                    String code = null;
-                    if (true) {
-                        Browser obr = br.cloneBrowser();
-                        br.getHeaders().put("Accept", "text/html, application/xml;q=0.9, application/xhtml+xml, image/png, image/webp, image/jpeg, image/gif, image/x-xbitmap, */*;q=0.1");
-                        code = getCaptchaCode(captchaLink, param);
-                        br = obr.cloneBrowser();
-                    }
-                    br.cloneBrowser().getPage("/pub_footer.html");
-                    String formName = "secure";
-                    importantForm.put(formName, code);
-                    // importantForm.put("secure", "");
-                    importantForm.put("submitform", "");
-                }
-                importantForm.put("i", ""/* Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())) */);
-                sendForm(importantForm);
-                if ((getCaptchaLink(cbr.toString()) != null && cbr.containsHTML(CAPTCHAFAILED)) || (cbr.containsHTML(PASSWORDFAILED) || cbr.containsHTML(PASSWORDTEXT))) {
-                    if (i + 1 == repeat) {
-                        // dump session
-                        nullSession(parameter);
-                        throw new DecrypterException("Excausted Retry!");
-                    } else {
-                        continue;
-                    }
-                } else {
-                    break;
-                }
+        // prevent more than one thread starting across the different versions of JD
+        synchronized (ctrlLock) {
+            // has to be this side of lock otherwise loading of cookies before lock will always be blank or wrong.
+            prepBrowser(br);
+            // little wait between ties?
+            if (lastUsed.get() == 0) {
+                // magic
+            } else if ((System.currentTimeMillis() - lastUsed.get()) <= 5000) {
+                // hoodo
+                Thread.sleep(3731 + new Random().nextInt(3000));
             }
-        }
-        // if (cbr.containsHTML("No htmlCode read")) {
-        // getPage(parameter);
-        // }
-
-        if (cbr.containsHTML(">Please click on continue to see")) {
-            Form continueForm = getContinueForm();
-            if (continueForm == null) {
-                logger.warning("Decrypter broken 3 for link: " + parameter);
-                return null;
-            }
-            if (coLoaded) {
-                continueForm.remove("submitform");
-                // continueForm.put("submitform", "");
-            }
-            sendForm(continueForm);
-        }
-        if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
-            nullSession(parameter);
-            throw new DecrypterException("D-TECTED!");
-        }
-        String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)</table>").getMatch(0);
-        if (linktext == null) {
-            if (br.containsHTML(">Your link :</div>")) {
+            getPage(parameter);
+            if (cbr.containsHTML(">Unfortunately, the link you are looking for is not found")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            logger.warning("Decrypter broken 4 for link: " + parameter);
-            return null;
-        }
-        final String[] links = new Regex(linktext, "href=\"([^\"\\']+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken 5 for link: " + parameter);
-            return null;
-        }
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+            if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(CAPTCHATEXT)) {
+                int repeat = 2;
+                for (int i = 0; i != repeat; i++) {
+                    Form importantForm = getForm();
+                    if (importantForm == null) {
+                        logger.warning("Decrypter broken 1 for link: " + parameter);
+                        return null;
+                    }
+                    if (cbr.containsHTML(PASSWORDTEXT)) {
+                        final String pwd = getUserInput(null, param);
+                        importantForm.put("pwd", pwd);
+                    }
+                    if (cbr.containsHTML(CAPTCHATEXT)) {
+                        String[] test = cbr.getRegex("<img[^>]+src=\"(/template/images/[^\"]+)").getColumn(0);
+                        if (test != null) {
+                            for (final String t : test) {
+                                final Browser brAds = br.cloneBrowser();
+                                try {
+                                    brAds.openGetConnection(t);
+                                } catch (final Exception e) {
+                                }
+                            }
+                        }
 
-        // saving session info can result in you not having to enter a captcha for each new link viewed!
-        final HashMap<String, String> cookies = new HashMap<String, String>();
-        final Cookies add = br.getCookies(this.getHost());
-        for (final Cookie c : add.getCookies()) {
-            cookies.put(c.getKey(), c.getValue());
-        }
-        synchronized (cookieMonster) {
-            cookieMonster.set((Object) cookies);
-        }
+                        String captchaLink = getCaptchaLink(importantForm.getHtmlCode());
+                        if (captchaLink == null) {
+                            logger.warning("Decrypter broken 2 for link: " + parameter);
+                            return null;
+                        }
+                        captchaLink = "http://www.dl-protect.com" + captchaLink;
+                        String code = null;
+                        if (true) {
+                            Browser obr = br.cloneBrowser();
+                            br.getHeaders().put("Accept", "text/html, application/xml;q=0.9, application/xhtml+xml, image/png, image/webp, image/jpeg, image/gif, image/x-xbitmap, */*;q=0.1");
+                            code = getCaptchaCode(captchaLink, param);
+                            br = obr.cloneBrowser();
+                        }
+                        br.cloneBrowser().getPage("/pub_footer.html");
+                        String formName = "secure";
+                        importantForm.put(formName, code);
+                        // importantForm.put("secure", "");
+                        importantForm.put("submitform", "");
+                    }
+                    importantForm.put("i", ""/* Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())) */);
+                    sendForm(importantForm);
+                    if ((getCaptchaLink(cbr.toString()) != null && cbr.containsHTML(CAPTCHAFAILED)) || (cbr.containsHTML(PASSWORDFAILED) || cbr.containsHTML(PASSWORDTEXT))) {
+                        if (i + 1 == repeat) {
+                            // dump session
+                            nullSession(parameter);
+                            throw new DecrypterException("Excausted Retry!");
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+            // if (cbr.containsHTML("No htmlCode read")) {
+            // getPage(parameter);
+            // }
 
-        // once the first session is saved, lets ramp things up!
-        // if (maxConProIns.equals(1)) maxConProIns.set(4);
-        // rmCookie(parameter);
-        return decryptedLinks;
+            if (cbr.containsHTML(">Please click on continue to see")) {
+                br.cloneBrowser().getPage("/pub_footer.html");
+                Form continueForm = getContinueForm();
+                if (continueForm == null) {
+                    logger.warning("Decrypter broken 3 for link: " + parameter);
+                    return null;
+                }
+                if (coLoaded) {
+                    // continueForm.remove("submitform");
+                    continueForm.put("submitform", "");
+                }
+                sendForm(continueForm);
+            }
+            if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
+                nullSession(parameter);
+                throw new DecrypterException("D-TECTED!");
+            }
+            br.cloneBrowser().getPage("/pub_footer.html");
+            String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)</table>").getMatch(0);
+            if (linktext == null) {
+                if (br.containsHTML(">Your link :</div>")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
+                logger.warning("Decrypter broken 4 for link: " + parameter);
+                return null;
+            }
+            final String[] links = new Regex(linktext, "href=\"([^\"\\']+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken 5 for link: " + parameter);
+                return null;
+            }
+            for (String dl : links)
+                decryptedLinks.add(createDownloadlink(dl));
+
+            // saving session info can result in you not having to enter a captcha for each new link viewed!
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = br.getCookies(this.getHost());
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            synchronized (cookieMonster) {
+                cookieMonster.set((Object) cookies);
+            }
+
+            // rmCookie(parameter);
+            lastUsed.set(System.currentTimeMillis());
+
+            return decryptedLinks;
+        }
 
     }
 
@@ -362,11 +381,6 @@ public class DlPrtcCom extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
-    }
-
-    public int getMaxConcurrentProcessingInstances() {
-        // works best with the cache session, otherwise first import results in many captchas!
-        return maxConProIns.get();
     }
 
 }
