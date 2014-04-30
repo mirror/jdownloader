@@ -47,8 +47,8 @@ public class GoEarCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("404 \\- Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String title = br.getRegex("<title>([^<<\"]*?) \\- goear\\.com</title>").getMatch(0);
+        if (br.containsHTML("404 - Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String title = br.getRegex("<title>([^<]+)( - goear\\.com)?</title>").getMatch(0);
         if (title == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(Encoding.htmlDecode(title.trim()) + ".mp3");
         return AvailableStatus.TRUE;
@@ -59,7 +59,7 @@ public class GoEarCom extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         final String finallink = "http://www.goear.com/action/sound/get/" + new Regex(link.getDownloadURL(), "([0-9a-f]+)/$").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
