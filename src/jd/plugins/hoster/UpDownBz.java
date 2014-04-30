@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -234,7 +236,24 @@ public class UpDownBz extends PluginForHost {
             if (code == 421) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "connection limit reached", 1 * 60 * 1000L); }
 
             // is data to download available
-            if (dl.getConnection().getLongContentLength() != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no data to download found");
+            if (code == 200) {
+                long downloadsize = dl.getConnection().getLongContentLength();
+                if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+            } else if (code == 206) {
+                long downloadsize = -1;
+
+                String content_range = dl.getConnection().getHeaderField("Content-Range");
+                if (content_range != null) {
+                    Matcher m = Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+)").matcher(content_range);
+                    if (m.find()) {
+                        downloadsize = Long.parseLong(m.group(3));
+                    }
+                }
+
+                if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+            }
         }
 
         // nothing wrong, thus start the download
