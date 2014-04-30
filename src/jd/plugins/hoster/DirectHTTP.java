@@ -53,9 +53,9 @@ import jd.utils.locale.JDL;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\w\\.:\\-@]*/.*\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cbz|ccf|chm|cr2|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|ppsx|ppsx|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|swc|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+(?=\\?|$|\"|\r|\n))" }, flags = { 2, 0 })
 public class DirectHTTP extends PluginForHost {
-
+    
     public static class Recaptcha {
-
+        
         private static final int MAX_TRIES    = 5;
         private final Browser    br;
         private String           challenge;
@@ -66,11 +66,11 @@ public class DirectHTTP extends PluginForHost {
         private Form             form;
         private int              tries        = 0;
         private boolean          clearReferer = true;
-
+        
         public Recaptcha(final Browser br) {
             this.br = br;
         }
-
+        
         public File downloadCaptcha(final File captchaFile) throws IOException, PluginException {
             /* follow redirect needed as google redirects to another domain */
             if (this.getTries() > 0) {
@@ -85,48 +85,48 @@ public class DirectHTTP extends PluginForHost {
             }
             return captchaFile;
         }
-
+        
         public void findID() throws PluginException {
             this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
             if (this.id == null) this.id = this.br.getRegex("Recaptcha\\.create\\((\"|\\')([A-Za-z0-9%_\\+\\- ]+)(\"|\\')").getMatch(1);
             if (this.id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
+        
         public String getCaptchaAddress() {
             return this.captchaAddress;
         }
-
+        
         public String getChallenge() {
             return this.challenge;
         }
-
+        
         public Form getForm() {
             return this.form;
         }
-
+        
         public String getId() {
             return this.id;
         }
-
+        
         public String getServer() {
             return this.server;
         }
-
+        
         public int getTries() {
             return this.tries;
         }
-
+        
         public synchronized void handleAuto(final Plugin plg, final DownloadLink downloadLink) throws Exception {
-
+            
             if (this.form == null || this.id == null) {
                 this.parse();
             }
-
+            
             this.load();
             while (!this.isSolved()) {
-
+                
                 int count = 1;
-
+                
                 File dest = null;
                 while (dest == null || dest.exists()) {
                     dest = JDUtilities.getResourceFile("captchas/recaptcha_" + plg.getHost() + "_" + count + ".jpg", true);
@@ -134,17 +134,17 @@ public class DirectHTTP extends PluginForHost {
                     count++;
                 }
                 dest.deleteOnExit();
-
+                
                 this.downloadCaptcha(dest);
                 // workaround
                 final String code = new DirectHTTP(PluginWrapper.getWrapper(plg.getClass().getName())).getCaptchaCode(plg.getHost(), dest, 0, downloadLink, "", "Please enter both words");
-
+                
                 if (code == null || code.length() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Recaptcha failed", 10 * 1000l); }
                 this.setCode(code);
-
+                
             }
         }
-
+        
         public boolean isSolved() throws PluginException {
             if (this.tries > Recaptcha.MAX_TRIES) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             try {
@@ -157,30 +157,30 @@ public class DirectHTTP extends PluginForHost {
                 return true;
             }
         }
-
+        
         public void load() throws IOException, PluginException {
             this.rcBr = this.br.cloneBrowser();
             // recaptcha works off API key, and javascript. The imported browser session isn't actually needed.
             /*
-             * Randomise user-agent to prevent tracking by google, each time we load(). Without this they could make the captchas images
-             * harder read, the more a user requests captcha'. Also algos could track captcha requests based on user-agent globally, which
-             * means JD default user-agent been very old (firefox 3.x) negatively biased to JD clients! Tracking takes place on based on IP
-             * address, User-Agent, and APIKey of request (site of APIKey), cookies session submitted, and combinations of those.
-             * Effectively this can all be done with a new browser, with regex tasks from source browser (ids|keys|submitting forms).
+             * Randomise user-agent to prevent tracking by google, each time we load(). Without this they could make the captchas images harder read, the more a
+             * user requests captcha'. Also algos could track captcha requests based on user-agent globally, which means JD default user-agent been very old
+             * (firefox 3.x) negatively biased to JD clients! Tracking takes place on based on IP address, User-Agent, and APIKey of request (site of APIKey),
+             * cookies session submitted, and combinations of those. Effectively this can all be done with a new browser, with regex tasks from source browser
+             * (ids|keys|submitting forms).
              */
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
             this.rcBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
-
+            
             // this prevents google/recaptcha group from seeing referrer
             try {
                 if (clearReferer) this.rcBr.setCurrentURL(null);
             } catch (final Throwable e) {
                 /* 09581 will break here */
             }
-
+            
             // end of privacy protection
-
+            
             /* follow redirect needed as google redirects to another domain */
             this.rcBr.setFollowRedirects(true);
             this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
@@ -192,18 +192,18 @@ public class DirectHTTP extends PluginForHost {
             }
             this.captchaAddress = this.server + "image?c=" + this.challenge;
         }
-
+        
         public void parse() throws IOException, PluginException {
             this.form = null;
             this.id = null;
             if (this.br.containsHTML("Recaptcha\\.create\\(\".*?\"\\,\\s*\".*?\"\\,.*?\\)")) {
                 this.id = this.br.getRegex("Recaptcha\\.create\\(\"(.*?)\"").getMatch(0);
                 final String div = this.br.getRegex("Recaptcha\\.create\\(\"(.*?)\"\\,\\s*\"(.*?)\"").getMatch(1);
-
+                
                 // find form that contains the found div id
                 if (div == null || this.id == null) {
                     System.out.println("reCaptcha ID or div couldn't be found...");
-
+                    
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 for (final Form f : this.br.getForms()) {
@@ -212,7 +212,7 @@ public class DirectHTTP extends PluginForHost {
                         break;
                     }
                 }
-
+                
             } else {
                 final Form[] forms = this.br.getForms();
                 this.form = null;
@@ -241,12 +241,12 @@ public class DirectHTTP extends PluginForHost {
             }
             if (this.form == null) {
                 System.out.println("reCaptcha form couldn't be found...");
-
+                
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
+            
         }
-
+        
         /* do not use for plugins at the moment */
         private void prepareForm(final String code) throws PluginException {
             if (this.challenge == null || code == null) {
@@ -256,31 +256,31 @@ public class DirectHTTP extends PluginForHost {
             this.form.put("recaptcha_challenge_field", this.challenge);
             this.form.put("recaptcha_response_field", Encoding.urlEncode(code));
         }
-
+        
         public void reload() throws IOException, PluginException {
-
+            
             this.rcBr.getPage("http://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
             this.challenge = this.rcBr.getRegex("Recaptcha\\.finish\\_reload\\(\\'(.*?)\\'\\, \\'image\\'").getMatch(0);
-
+            
             if (this.challenge == null) {
                 System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.captchaAddress = this.server + "image?c=" + this.challenge;
         }
-
+        
         public void setCaptchaAddress(final String captchaAddress) {
             this.captchaAddress = captchaAddress;
         }
-
+        
         public void setChallenge(final String challenge) {
             this.challenge = challenge;
         }
-
+        
         public void setClearReferer(final boolean clearReferer) {
             this.clearReferer = clearReferer;
         }
-
+        
         public Browser setCode(final String code) throws Exception {
             // <textarea name="recaptcha_challenge_field" rows="3"
             // cols="40"></textarea>\n <input type="hidden"
@@ -290,22 +290,22 @@ public class DirectHTTP extends PluginForHost {
             this.tries++;
             return this.br;
         }
-
+        
         public void setForm(final Form form) {
             this.form = form;
         }
-
+        
         public void setId(final String id) {
             this.id = id;
         }
-
+        
         public void setServer(final String server) {
             this.server = server;
         }
     }
-
+    
     private static final String JDL_PREFIX        = "jd.plugins.hoster.DirectHTTP.";
-
+    
     public static final String  ENDINGS           = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cbz|ccf|chm|cr2|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|ppsx|ppsx|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|swc|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+)";
     public static final String  NORESUME          = "nochunkload";
     public static final String  NOCHUNKS          = "nochunk";
@@ -313,7 +313,7 @@ public class DirectHTTP extends PluginForHost {
     public static final String  FORCE_NOCHUNKS    = "forcenochunk";
     public static final String  TRY_ALL           = "tryall";
     public static final String  POSSIBLE_URLPARAM = "POSSIBLE_GETPARAM";
-
+    
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
         ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
@@ -343,7 +343,7 @@ public class DirectHTTP extends PluginForHost {
         }
         return ret;
     }
-
+    
     public boolean isValidURL(String URL) {
         URL = URL.toLowerCase(Locale.ENGLISH);
         if (URL.contains("facebook.com/l.php")) return false;
@@ -351,7 +351,7 @@ public class DirectHTTP extends PluginForHost {
         if (URL.contains("youtube.com/videoplayback") && URL.startsWith("http")) return false;
         return true;
     }
-
+    
     /**
      * TODO: Remove with next major-update!
      */
@@ -360,7 +360,7 @@ public class DirectHTTP extends PluginForHost {
         /* remove tags!! */
         final ArrayList<String> ret = new ArrayList<String>();
         try {
-
+            
             for (final String link : new Regex(source, "((https?|ftp):((//)|(\\\\\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)(\n|\r|$|<|\")").getColumn(0)) {
                 try {
                     new URL(link);
@@ -368,7 +368,7 @@ public class DirectHTTP extends PluginForHost {
                         ret.add(link);
                     }
                 } catch (final MalformedURLException e) {
-
+                    
                 }
             }
         } catch (final Exception e) {
@@ -376,7 +376,7 @@ public class DirectHTTP extends PluginForHost {
         }
         return DirectHTTP.removeDuplicates(ret);
     }
-
+    
     /**
      * TODO: Remove with next major-update!
      */
@@ -402,13 +402,13 @@ public class DirectHTTP extends PluginForHost {
         }
         return tmplinks;
     }
-
+    
     private String               contentType       = "";
-
+    
     private String               customFavIconHost = null;
-
+    
     private static AtomicBoolean hotFixSynthethica = new AtomicBoolean(true);
-
+    
     public DirectHTTP(final PluginWrapper wrapper) {
         super(wrapper);
         if (hotFixSynthethica.get()) {
@@ -417,8 +417,8 @@ public class DirectHTTP extends PluginForHost {
                  * hotfix for synthetica license issues, as some java versions have broken aes support
                  */
                 /*
-                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this
-                 * sourcecode, you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
+                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode, you have to
+                 * remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
                  */
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
                 javax.swing.UIManager.put("Synthetica.license.info", li);
@@ -428,7 +428,7 @@ public class DirectHTTP extends PluginForHost {
             hotFixSynthethica.set(false);
         }
     }
-
+    
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         if (link.getDownloadURL().startsWith("directhttp")) {
@@ -439,12 +439,12 @@ public class DirectHTTP extends PluginForHost {
             link.setUrlDownload(link.getDownloadURL().replaceAll("\\.jdeatme$", ""));
         }
     }
-
+    
     @Override
     public String getAGBLink() {
         return "";
     }
-
+    
     private String[] getBasicAuth(final DownloadLink link) {
         String url;
         if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
@@ -462,7 +462,7 @@ public class DirectHTTP extends PluginForHost {
         }
         return new String[] { ("Basic " + Encoding.Base64Encode(username + ":" + password)), username, password };
     }
-
+    
     public String getCustomFavIconURL(DownloadLink link) {
         if (link != null) {
             String domain = Browser.getHost(link.getDownloadURL(), true);
@@ -471,23 +471,23 @@ public class DirectHTTP extends PluginForHost {
         if (this.customFavIconHost != null) { return this.customFavIconHost; }
         return null;
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     /**
      * TODO: can be removed with next major update cause of recaptcha change
      */
     public Recaptcha getReCaptcha(final Browser br) {
         return new Recaptcha(br);
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         if (this.requestFileInformation(downloadLink) == AvailableStatus.UNCHECKABLE) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
-
+        
         final String auth = this.br.getHeaders().get("Authorization");
         /*
          * replace with br.setCurrentURL(null); in future (after 0.9)
@@ -501,7 +501,7 @@ public class DirectHTTP extends PluginForHost {
         this.br.setDebug(true);
         boolean resume = true;
         int chunks = 0;
-
+        
         if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) || downloadLink.getBooleanProperty(DirectHTTP.FORCE_NORESUME, false)) {
             resume = false;
         }
@@ -537,7 +537,7 @@ public class DirectHTTP extends PluginForHost {
             }
         }
     }
-
+    
     private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
         URLConnectionAdapter urlConnection = null;
         this.setCustomHeaders(br, downloadLink);
@@ -548,12 +548,12 @@ public class DirectHTTP extends PluginForHost {
         }
         return urlConnection;
     }
-
+    
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         handleFree(link);
     }
-
+    
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
@@ -564,7 +564,7 @@ public class DirectHTTP extends PluginForHost {
         // if (true) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
         this.setBrowserExclusive();
         /* disable gzip, because current downloadsystem cannot handle it correct */
-        this.br.getHeaders().put("Accept-Encoding", "");
+        this.br.getHeaders().put("Accept-Encoding", "identity");
         String authinURL = new Regex(downloadLink.getDownloadURL(), "https?://(.+)@.*?($|/)").getMatch(0);
         String authSaved = null;
         String authProperty = null;
@@ -616,7 +616,7 @@ public class DirectHTTP extends PluginForHost {
                     break;
                 }
             }
-
+            
             if (urlConnection.getResponseCode() == 401) {
                 String[] basicauthInfo = this.getBasicAuth(downloadLink);
                 if (basicauthInfo == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed")); }
@@ -628,7 +628,7 @@ public class DirectHTTP extends PluginForHost {
             }
             if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             downloadLink.setProperty("auth", basicauth);
-
+            
             if (urlConnection.getResponseCode() == 503) { return AvailableStatus.UNCHECKABLE; }
             this.contentType = urlConnection.getContentType();
             if (contentType != null && contentType.startsWith("application/pls") && downloadLink.getName().endsWith("mp3")) {
@@ -713,7 +713,7 @@ public class DirectHTTP extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-
+    
     /**
      * update this map to your needs
      * 
@@ -731,11 +731,11 @@ public class DirectHTTP extends PluginForHost {
         map.put("application/pdf", "pdf");
         return map.get(mimeType.toLowerCase(Locale.ENGLISH));
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         link.setProperty(DirectHTTP.NORESUME, Property.NULL);
@@ -744,11 +744,11 @@ public class DirectHTTP extends PluginForHost {
             link.setFinalFileName(link.getStringProperty("fixName", null));
         }
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }
-
+    
     private void setCustomHeaders(final Browser br, final DownloadLink downloadLink) throws IOException {
         /* allow customized headers, eg useragent */
         final Object customRet = downloadLink.getProperty("customHeader");
@@ -760,8 +760,7 @@ public class DirectHTTP extends PluginForHost {
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
-                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[]
-                 * and ArrayList<String>
+                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[] and ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
                     br.getHeaders().put((String) ((ArrayList<?>) header).get(0), (String) ((ArrayList<?>) header).get(1));
@@ -789,7 +788,7 @@ public class DirectHTTP extends PluginForHost {
         }
         downloadWorkaround(br, downloadLink);
     }
-
+    
     private void downloadWorkaround(final Browser br, final DownloadLink downloadLink) throws IOException {
         // we shouldn't potentially over right setCustomHeaders..
         if (br.getHeaders().get("Referer") == null) {
@@ -821,7 +820,7 @@ public class DirectHTTP extends PluginForHost {
             }
         }
     }
-
+    
     public void setDownloadLink(final DownloadLink link) {
         try {
             super.setDownloadLink(link);
@@ -829,7 +828,7 @@ public class DirectHTTP extends PluginForHost {
         } catch (final Throwable e) {
         }
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
