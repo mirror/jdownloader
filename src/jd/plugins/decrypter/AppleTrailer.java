@@ -167,7 +167,7 @@ public class AppleTrailer extends PluginForDecrypt {
                 if (selectedMirrorsIndices == null) {
                     // respect cancel!
                     return new ArrayList<DownloadLink>();
-                } else {
+                } else if (selectedMirrorsIndices.length == 0) {
                     // select all when they select none!
                     selectedMirrorsIndices = new int[] { 0, 1 };
                 }
@@ -287,7 +287,7 @@ public class AppleTrailer extends PluginForDecrypt {
                         if (dupe.add(url) == false) continue;
                         String extension = url.substring(url.lastIndexOf("."));
                         url = url.replace("apple.com/", "appledecrypted.com/");
-                        String pSize = new Regex(url, "(\\d+)p?\\.mov").getMatch(0);
+                        String pSize = new Regex(url, "(\\d+)p?\\.(mov|m4v)").getMatch(0);
                         DownloadLink dlLink = createDownloadlink(url);
                         dlLink.setFinalFileName(filename + " (" + p_q(pSize) + ")" + extension);
                         dlLink.setAvailable(true);
@@ -378,11 +378,11 @@ public class AppleTrailer extends PluginForDecrypt {
 
             if (sdFilter != null && sdFilter.length != 0) {
                 for (String sd : sdFilter) {
-                    String url = new Regex(sd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.mov)").getMatch(0);
-                    if (dupe.add(url) == false) continue;
-                    String pSize = new Regex(url, "(\\d+)\\.mov").getMatch(0);
-                    String name = title + " - " + names[h] + " (" + p_q(pSize) + ").mov";
-                    DownloadLink dlLink = createDownloadlink(url.replace(".apple.com", ".appledecrypted.com"));
+                    String[] url = new Regex(sd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.(mov|m4v))").getRow(0);
+                    if (dupe.add(url[0]) == false) continue;
+                    String pSize = new Regex(url[0], "(\\d+)\\." + url[1]).getMatch(0);
+                    String name = title + " - " + names[h] + " (" + p_q(pSize) + ")." + url[1];
+                    DownloadLink dlLink = createDownloadlink(url[0].replace(".apple.com", ".appledecrypted.com"));
                     dlLink.setFinalFileName(name);
                     dlLink.setProperty("Referer", br1.getURL());
                     dlLink.setAvailable(true);
@@ -393,12 +393,12 @@ public class AppleTrailer extends PluginForDecrypt {
                 int z = -1;
                 for (String hd : hdFilter) {
                     z++;
-                    String url = new Regex(hd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.mov)").getMatch(0);
-                    if (dupe.add(url) == false) continue;
-                    String pSize = new Regex(url, "(\\d+)p\\.mov").getMatch(0);
-                    String name = title + " - " + names[h] + " (" + p_q(pSize) + ").mov";
+                    String[] url = new Regex(hd, "(https?://[^/]+apple\\.com/[^\\?'\"]+\\.(mov|m4v))").getRow(0);
+                    if (dupe.add(url[0]) == false) continue;
+                    String pSize = new Regex(url[0], "(\\d+)p\\." + url[1]).getMatch(0);
+                    String name = title + " - " + names[h] + " (" + p_q(pSize) + ")." + url[1];
                     String size = hdSizes[z];
-                    DownloadLink dlLink = createDownloadlink(url.replace(".apple.com", ".appledecrypted.com"));
+                    DownloadLink dlLink = createDownloadlink(url[0].replace(".apple.com", ".appledecrypted.com"));
                     if (size != null) dlLink.setDownloadSize(SizeFormatter.getSize(size));
                     dlLink.setFinalFileName(name);
                     dlLink.setProperty("Referer", br1.getURL());
