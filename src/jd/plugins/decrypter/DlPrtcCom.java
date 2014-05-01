@@ -63,7 +63,6 @@ public class DlPrtcCom extends PluginForDecrypt {
     private boolean                        coLoaded       = false;
     private Browser                        cbr            = new Browser();
     private static Object                  ctrlLock       = new Object();
-    private boolean                        test           = false;
 
     @SuppressWarnings("unchecked")
     private Browser prepBrowser(final Browser prepBr) {
@@ -113,6 +112,14 @@ public class DlPrtcCom extends PluginForDecrypt {
                 Thread.sleep(3731 + new Random().nextInt(3000));
             }
             getPage(parameter);
+
+            String rdl = br.getRedirectLocation();
+            if (rdl != null && !rdl.contains(this.getHost()) && rdl.matches("(?i-)(https?|ftp)://.+")) {
+                decryptedLinks.add(createDownloadlink(rdl));
+                return decryptedLinks;
+            } else if (rdl != null) {
+                br.getPage(rdl);
+            }
             if (cbr.containsHTML(">Unfortunately, the link you are looking for is not found")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -127,6 +134,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                     }
                     if (cbr.containsHTML(PASSWORDTEXT)) {
                         final String pwd = getUserInput(null, param);
+                        // TODO: reask password vs going onto captcha, when null.. after second failure abort plugin...
                         importantForm.put("pwd", pwd);
                     }
                     if (cbr.containsHTML(CAPTCHATEXT)) {
