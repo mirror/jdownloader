@@ -74,6 +74,7 @@ basics_no=Ne
 basics_yes=Da
 configheader_enabled=Omogućeno
 controller_packages_defaultname=Razne
+convert_CLR_Reconnect_to_jdownloader=Konvertuj Cryptload *.clr Skriptu za Ponovno konektovanje u JDownloader LiveHeader
 decrypter_invalidaccount=Nije pronađen validan nalog
 decrypter_unknownerror=Nepoznata greška
 decrypter_wrongcaptcha=Pogrešan Captcha
