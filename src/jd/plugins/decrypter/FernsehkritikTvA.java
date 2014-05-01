@@ -100,7 +100,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                     posteckedl.setProperty("directdate", DATE);
                     posteckedl.setProperty("directepisodenumber", EPISODENUMBER);
                     posteckedl.setProperty("directtype", ".flv");
-                    final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVPostFormattedFilename(posteckedl);
+                    final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVPost_FormattedFilename(posteckedl);
                     posteckedl.setFinalFileName(formattedFilename);
                     if (FASTCHECKENABLED) posteckedl.setAvailable(true);
                     decryptedLinks.add(posteckedl);

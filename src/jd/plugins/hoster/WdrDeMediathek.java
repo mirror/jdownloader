@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/(mediathek/html/regional/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-_]+\\.xml|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([a-z0-9\\-_/]+/sendungen/[a-z0-9\\-_/]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 0 })
 public class WdrDeMediathek extends PluginForHost {
 
     public WdrDeMediathek(PluginWrapper wrapper) {
@@ -44,6 +45,13 @@ public class WdrDeMediathek extends PluginForHost {
         return "http://www1.wdr.de/themen/global/impressum/impressum116.html";
     }
 
+    private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
+
+    public void correctDownloadLink(final DownloadLink link) {
+        final String player_part = new Regex(link.getDownloadURL(), "(\\-videoplayer(_size\\-[A-Z])?\\.html)").getMatch(0);
+        if (player_part != null) link.setUrlDownload(link.getDownloadURL().replace(player_part, ".html"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -51,31 +59,40 @@ public class WdrDeMediathek extends PluginForHost {
         final String startLink = downloadLink.getDownloadURL();
         br.getPage(startLink);
 
-        if (startLink.matches("http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp")) return requestRockpalastFileInformation(downloadLink);
+        if (startLink.matches(TYPE_ROCKPALAST)) return requestRockpalastFileInformation(downloadLink);
 
         if (br.getURL().contains("/fehler.xml")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String sendung = br.getRegex("class=\"moSubText\">([^<>\"]*?)<br").getMatch(0);
-        String filename = br.getRegex("<title>([^<>\"]*?)\\-  WDR MEDIATHEK \\- WDR\\.de</title>").getMatch(0);
+        String sendung = br.getRegex("<strong>([^<>\"]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
+        if (sendung == null) sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>\"]*?)<span class=\"hover\">").getMatch(0);
+        String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>\"]*?)<span class=\"hover\"").getMatch(0);
+        if (episode_name == null) episode_name = br.getRegex("class=\"hover\">:([^<>\"]*?)</span>").getMatch(0);
+        if (sendung == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String preferedExt = ".mp4";
         if (br.containsHTML("<div class=\"audioContainer\">")) {
             DLLINK = br.getRegex("dslSrc: \\'dslSrc=(http://[^<>\"]*?)\\&amp;mediaDuration=\\d+\\'").getMatch(0);
             preferedExt = ".mp3";
         } else {
-            final String mid = br.getRegex("mid: \\'(\\d+)\\'").getMatch(0);
-            if (mid == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage("http://www.wdr.de/mediathek/codebase/intern/player.jsp?mid=" + mid + "&size=big");
-            DLLINK = br.getRegex("type=\"video/quicktime\"[\t\n\r ]+data=\"(http://[^<>\"]*?)\"").getMatch(0);
+            String player_link = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
+            if (player_link == null) player_link = br.getRegex("\"(/[^<>\"]*?)\" rel=\"nofollow\" class=\"videoButton play\"").getMatch(0);
+            if (player_link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("http://www1.wdr.de" + player_link);
+            /* Avoid HDS */
+            final String[] qualities = br.getRegex("(CMS2010/mdb/ondemand/weltweit/fsk\\d+/[^<>\"]*?)\"").getColumn(0);
+            if (qualities == null || qualities.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = "http://http-ras.wdr.de/" + qualities[0];
         }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         DLLINK = Encoding.htmlDecode(DLLINK.trim());
-        filename = filename.trim().replace(":", " - ").replace("?", "");
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         if (ext == null || ext.length() > 5) ext = preferedExt;
-        filename = Encoding.htmlDecode(filename);
-        if (sendung != null) {
-            downloadLink.setFinalFileName(Encoding.htmlDecode(sendung) + " - " + filename + ext);
+        sendung = encodeUnicode(Encoding.htmlDecode(sendung).trim());
+        if (episode_name != null) {
+            episode_name = Encoding.htmlDecode(episode_name).trim();
+            episode_name = encodeUnicode(episode_name);
+            downloadLink.setFinalFileName(sendung + " - " + episode_name + ext);
         } else {
-            downloadLink.setFinalFileName(filename + ext);
+            downloadLink.setFinalFileName(sendung + ext);
         }
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -100,8 +117,23 @@ public class WdrDeMediathek extends PluginForHost {
         String fileName = br.getRegex("<h1 class=\"wsSingleH1\">([^<]+)</h1>[\r\n]+<h2>([^<]+)<").getMatch(0);
         DLLINK = br.getRegex("dslSrc=(.*?)\\&amp").getMatch(0);
         if (fileName == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadlink.setFinalFileName(fileName + ".mp4");
+        downloadlink.setFinalFileName(encodeUnicode(Encoding.htmlDecode(fileName).trim()) + ".mp4");
         return AvailableStatus.TRUE;
+    }
+
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

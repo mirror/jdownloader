@@ -692,10 +692,14 @@ public class SaveTv extends PluginForHost {
                 final String price = br.getRegex("<label>Preis:</label></span>([^<>\"]*?)<br").getMatch(0);
                 final String capacity = br.getRegex("<label>Kapazität Videoarchiv:</label></span>([^<>\"]*?)<br").getMatch(0);
                 final String runtime = br.getRegex("<label>Laufzeit:</label></span>([^<>\"]*?)<br").getMatch(0);
-                if (package_name != null) account.setProperty("acc_package", this.correctData(package_name));
-                if (price != null) account.setProperty("acc_price", this.correctData(price));
-                if (capacity != null) account.setProperty("acc_capacity", this.correctData(capacity));
-                if (runtime != null) account.setProperty("acc_runtime", this.correctData(runtime));
+                if (package_name != null) account.setProperty("acc_package", correctData(package_name));
+                if (price != null) account.setProperty("acc_price", correctData(price));
+                if (capacity != null) account.setProperty("acc_capacity", correctData(capacity));
+                if (runtime != null) account.setProperty("acc_runtime", correctData(runtime));
+
+                br.getPage("https://www.save.tv/STV/M/obj/user/usShowVideoArchive.cfm?");
+                final String totalLinks = br.getRegex(">Gefundene Sendungen: (\\d+)").getMatch(0);
+                if (totalLinks != null) account.setProperty("acc_count_telecast_ids", totalLinks);
             }
         } catch (final Throwable e) {
             logger.info("Extended account check failed");

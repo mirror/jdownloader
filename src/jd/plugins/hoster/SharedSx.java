@@ -51,10 +51,11 @@ public class SharedSx extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (!br.containsHTML("data\\-type=\"video\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("data\\-name=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("addthis:title=\"Watch (\\&#34;)?([^<>\"]*?)(\\&#34;)? on shared\\.sx\"").getMatch(1);
+        if (filename == null) filename = br.getRegex("data\\-type=\"video\">Watch ([^<>\"]*?)(\\&nbsp;)?<strong>").getMatch(0);
         final String filesize = br.getRegex("<strong>\\(([^<>\"]*?)\\)</strong></h1>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename).trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -64,6 +65,11 @@ public class SharedSx extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
+            final String hash = br.getRegex("type=\"hidden\" name=\"hash\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String expires = br.getRegex("type=\"hidden\" name=\"expires\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String timestamp = br.getRegex("type=\"hidden\" name=\"timestamp\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (hash == null || expires == null || timestamp == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage(br.getURL(), "hash=" + hash + "&expires=" + expires + "&timestamp=" + timestamp);
             dllink = br.getRegex("class=\"stream\\-content\" data\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -77,6 +83,8 @@ public class SharedSx extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
