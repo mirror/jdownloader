@@ -64,6 +64,7 @@ public class WdrDeMediathek extends PluginForHost {
         if (br.getURL().contains("/fehler.xml")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String sendung = br.getRegex("<strong>([^<>\"]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
         if (sendung == null) sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>\"]*?)<span class=\"hover\">").getMatch(0);
+        if (sendung == null) sendung = br.getRegex("<li class=\"active\" >[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatch(0);
         String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>\"]*?)<span class=\"hover\"").getMatch(0);
         if (episode_name == null) episode_name = br.getRegex("class=\"hover\">:([^<>\"]*?)</span>").getMatch(0);
         if (sendung == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
