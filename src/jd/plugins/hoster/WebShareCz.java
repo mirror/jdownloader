@@ -189,17 +189,15 @@ public class WebShareCz extends PluginForHost {
         br.postPage("http://webshare.cz/api/user_data/", "wst=" + getToken(account));
         final String space = getXMLtagValue("private_space");
         final String filesnum = getXMLtagValue("files");
-        // TODO: Wait for admin changes for more precise values
         final String credits = getXMLtagValue("credits");
-        ai.setTrafficLeft(SizeFormatter.getSize((Long.parseLong(credits) * 10) + "MB"));
         ai.setFilesNum(Long.parseLong(filesnum));
         ai.setUsedSpace(space.trim());
         final String days = getXMLtagValue("vip_days");
         if (days == null) {
-            account.setValid(false);
-            return ai;
+            ai.setTrafficLeft(SizeFormatter.getSize((Long.parseLong(credits) * 10) + "MB"));
         } else {
             ai.setValidUntil(System.currentTimeMillis() + Integer.parseInt(days) * 24 * 60 * 60 * 1000l);
+            ai.setUnlimitedTraffic();
         }
         account.setValid(true);
         ai.setStatus("Premium User");

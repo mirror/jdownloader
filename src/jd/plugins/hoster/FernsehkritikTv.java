@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv" }, urls = { "http://(couch\\.)?fernsehkritik\\.tv/(jdownloaderfolge(neu|alt)?\\d+|inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+|dl/fernsehkritik\\d+\\.[a-z0-9]{1,4}|folge-\\d+.*|userbereich/archive#stream:\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fernsehkritik.tv", "massengeschmack.tv" }, urls = { "http://(couch\\.)?fernsehkritik\\.tv/(jdownloaderfolge(neu|alt)?\\d+|inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+|dl/fernsehkritik\\d+\\.[a-z0-9]{1,4}|folge-\\d+.*|userbereich/archive#stream:\\d+)", "https?://massengeschmack\\.tv/play/\\d+/[a-z0-9\\-]+" }, flags = { 2, 2 })
 public class FernsehkritikTv extends PluginForHost {
 
     // Refactored on the 02.07.2011, Rev. 14521,
@@ -66,24 +66,33 @@ public class FernsehkritikTv extends PluginForHost {
         return -1;
     }
 
-    private static final String POSTECKE                 = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+";
-    private static final String FOLGE_NEW                = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
-    private static final String FOLGE_OLD                = "http://fernsehkritik\\.tv/jdownloaderfolgealt\\d+";
-    private static final String COUCH                    = "http://couch\\.fernsehkritik\\.tv.*";
-    private static final String COUCHSTREAM              = "http://couch\\.fernsehkritik\\.tv/userbereich/archive#stream:.*";
-    private static final String COUCHHOST                = "http://couch.fernsehkritik.tv";
-    private static Object       LOCK                     = new Object();
-    private static final String LOGIN_ERROR              = "Login fehlerhaft";
-    private String              DLLINK                   = null;
-    private static final String DL_AS_MOV                = "DL_AS_MOV";
-    private static final String DL_AS_MP4                = "DL_AS_MP4";
-    private static final String DL_AS_FLV                = "DL_AS_FLV";
-    private static final String GRAB_POSTECKE            = "GRAB_POSTECKE";
-    private static final String CUSTOM_DATE              = "CUSTOM_DATE";
-    private static final String CUSTOM_FILENAME_FKTV     = "CUSTOM_FILENAME_FKTV";
-    private static final String CUSTOM_FILENAME_FKTVPOST = "CUSTOM_FILENAME_FKTVPOST";
-    private static final String CUSTOM_PACKAGENAME       = "CUSTOM_PACKAGENAME";
-    private static final String FASTLINKCHECK            = "FASTLINKCHECK";
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
+
+    private static final String TYPE_POSTECKE_GENERAL        = "http://(fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)|massengeschmack\\.tv/play/\\d+/postecke)\\d+";
+    private static final String TYPE_POSTECKE_OLD            = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+";
+    private static final String TYPE_POSTECKE_NEW            = "http://massengeschmack\\.tv/play/\\d+/postecke\\d+";
+    private static final String TYPE_FOLGE_NEW               = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
+    private static final String TYPE_FOLGE_OLD               = "http://fernsehkritik\\.tv/jdownloaderfolgealt\\d+";
+    private static final String TYPE_COUCH                   = "http://couch\\.fernsehkritik\\.tv.*";
+    private static final String TYPE_COUCHSTREAM             = "http://couch\\.fernsehkritik\\.tv/userbereich/archive#stream:.*";
+    private static final String TYPE_MASSENGESCHMACK_GENERAL = "http://massengeschmack\\.tv/play/\\d+/[a-z0-9\\-]+";
+
+    private static final String HOST_COUCH                   = "http://couch.fernsehkritik.tv";
+    private static final String HOST_MASSENGESCHMACK         = "http://couch.fernsehkritik.tv";
+    private static Object       LOCK                         = new Object();
+    private static final String LOGIN_ERROR                  = "Login fehlerhaft";
+    private String              DLLINK                       = null;
+    private static final String DL_AS_MOV                    = "DL_AS_MOV";
+    private static final String DL_AS_MP4                    = "DL_AS_MP4";
+    private static final String DL_AS_FLV                    = "DL_AS_FLV";
+    private static final String GRAB_POSTECKE                = "GRAB_POSTECKE";
+    private static final String CUSTOM_DATE                  = "CUSTOM_DATE";
+    private static final String CUSTOM_FILENAME_FKTV         = "CUSTOM_FILENAME_FKTV";
+    private static final String CUSTOM_FILENAME_FKTVPOST     = "CUSTOM_FILENAME_FKTVPOST";
+    private static final String CUSTOM_PACKAGENAME           = "CUSTOM_PACKAGENAME";
+    private static final String FASTLINKCHECK                = "FASTLINKCHECK";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -92,40 +101,33 @@ public class FernsehkritikTv extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink, Account account) throws Exception {
         DLLINK = null;
-        if (downloadLink.getDownloadURL().matches(POSTECKE)) {
+        String final_filename = null;
+        if (downloadLink.getDownloadURL().matches(TYPE_POSTECKE_GENERAL)) {
             final String episodenumber = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-            br.getPage("http://fernsehkritik.tv/folge-" + episodenumber + "/Start/");
-            String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
-            if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            date = Encoding.htmlDecode(date.trim());
-            String posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
-            // Only use episode number of fktv episode if postecke episodenumber is not available
-            if (posteckeepisode == null) posteckeepisode = episodenumber;
-            downloadLink.setProperty("directposteckeepisode", posteckeepisode);
-            downloadLink.setProperty("directdate", date);
-            downloadLink.setProperty("directepisodenumber", episodenumber);
-            downloadLink.setProperty("directtype", ".flv");
+            if (downloadLink.getDownloadURL().matches(TYPE_POSTECKE_OLD)) {
+                br.getPage("http://fernsehkritik.tv/folge-" + episodenumber + "/Start/");
+                String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
+                if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                date = Encoding.htmlDecode(date.trim());
+                String posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
+                // Only use episode number of fktv episode if postecke episodenumber is not available
+                if (posteckeepisode == null) posteckeepisode = episodenumber;
+                downloadLink.setProperty("directposteckeepisode", posteckeepisode);
+                downloadLink.setProperty("directdate", date);
+                downloadLink.setProperty("directepisodenumber", episodenumber);
+                downloadLink.setProperty("directtype", ".flv");
 
-            br.getPage(downloadLink.getDownloadURL());
-            DLLINK = br.getRegex("playlist = \\[ \\{ url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("\\'(http://dl\\d+\\.fernsehkritik\\.tv/postecke/postecke\\d+\\.flv)\\'").getMatch(0);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    downloadLink.setFinalFileName(getFKTVPostFormattedFilename(downloadLink));
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
+                br.getPage(downloadLink.getDownloadURL());
+                DLLINK = br.getRegex("playlist = \\[ \\{ url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+                if (DLLINK == null) DLLINK = br.getRegex("\\'(http://dl\\d+\\.fernsehkritik\\.tv/postecke/postecke\\d+\\.flv)\\'").getMatch(0);
+                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                br.getPage(downloadLink.getDownloadURL());
+                if (br.containsHTML(">Clip nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                getMassengeschmackDLLINK();
             }
-        } else if (downloadLink.getDownloadURL().matches(COUCHSTREAM)) {
+            final_filename = getFKTVPostFormattedFilename(downloadLink);
+        } else if (downloadLink.getDownloadURL().matches(TYPE_COUCHSTREAM)) {
             final String episodenumber = new Regex(downloadLink.getDownloadURL(), "archive#stream:(.*?)$").getMatch(0);
             br.getPage("http://fernsehkritik.tv/folge-" + episodenumber + "/Start/");
             final String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
@@ -147,102 +149,77 @@ public class FernsehkritikTv extends PluginForHost {
             DLLINK = "http://couch.fernsehkritik.tv" + br.getRegex("\'file\': \"(/dl/\\d+-[a-z0-9]+-[a-z0-9]+-\\d+\\.flv)\"").getMatch(0);
 
             if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            URLConnectionAdapter con = null;
-            try {
-                downloadLink.setFinalFileName("Fernsehkritik-TV Folge " + episodenumber + " vom " + date + ".flv");
-                br.setFollowRedirects(true);
-                con = br.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    br.setFollowRedirects(false);
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-        } else if (downloadLink.getDownloadURL().matches(COUCH)) {
+            final_filename = "Fernsehkritik-TV Folge " + episodenumber + " vom " + date + ".flv";
+        } else if (downloadLink.getDownloadURL().matches(TYPE_COUCH)) {
             final String episodenumber = new Regex(downloadLink.getDownloadURL(), "fernsehkritik(\\d+)\\..*?$").getMatch(0);
             br.getPage("http://fernsehkritik.tv/folge-" + episodenumber + "/Start/");
             final String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
             if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            URLConnectionAdapter con = null;
-            try {
-                String extension = new Regex(downloadLink.getDownloadURL(), "fernsehkritik(\\d+)\\.(.*?)$").getMatch(1);
-                if (extension == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                downloadLink.setFinalFileName("Fernsehkritik-TV Folge " + episodenumber + " vom " + date + "." + extension);
-                if (account != null) {
-                    try {
-                        login(account, false);
-                    } catch (final PluginException e) {
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                } else {
+            if (account != null) {
+                try {
+                    login(account, false);
+                } catch (final PluginException e) {
                     return AvailableStatus.UNCHECKABLE;
                 }
-                br.setFollowRedirects(true);
-                con = br.openGetConnection(downloadLink.getDownloadURL());
-                if (!con.getContentType().contains("html")) {
-                    DLLINK = downloadLink.getDownloadURL();
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    br.setFollowRedirects(false);
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
+            } else {
+                return AvailableStatus.UNCHECKABLE;
             }
-        } else if (downloadLink.getDownloadURL().matches(FOLGE_NEW)) {
+
+            br.setFollowRedirects(true);
+            String extension = new Regex(downloadLink.getDownloadURL(), "fernsehkritik(\\d+)\\.(.*?)$").getMatch(1);
+            if (extension == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final_filename = "Fernsehkritik-TV Folge " + episodenumber + " vom " + date + "." + extension;
+        } else if (downloadLink.getDownloadURL().matches(TYPE_FOLGE_NEW)) {
             br.getPage(downloadLink.getStringProperty("originallink", null));
             DLLINK = br.getRedirectLocation();
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    downloadLink.setFinalFileName(getFKTVFormattedFilename(downloadLink));
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-        } else if (downloadLink.getDownloadURL().matches(FOLGE_OLD)) {
+            final_filename = getFKTVFormattedFilename(downloadLink);
+        } else if (downloadLink.getDownloadURL().matches(TYPE_FOLGE_OLD)) {
             br.getPage(downloadLink.getStringProperty("originallink", null));
             DLLINK = br.getRedirectLocation();
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    downloadLink.setFinalFileName(getFKTVFormattedFilename(downloadLink));
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+            final_filename = getFKTVFormattedFilename(downloadLink);
+        } else if (downloadLink.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL)) {
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML(">Clip nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* Sometimes different qualities are available - prefer webm */
+            DLLINK = br.getRegex("type=\"video/webm\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK == null) getMassengeschmackDLLINK();
+            final String title = br.getRegex("<li><a href=\"/u/\\d+\">([^<>\"]*?)</a> <span class=\"divider\"").getMatch(0);
+            final String episode = br.getRegex("<li class=\"active\">([^<>\"]*?)</li>").getMatch(0);
+            if (title == null || episode == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final_filename = Encoding.htmlDecode(title).trim() + " - " + Encoding.htmlDecode(episode).trim() + DLLINK.substring(DLLINK.lastIndexOf("."));
         } else {
             downloadLink.getLinkStatus().setStatusText("Unknown linkformat");
             return AvailableStatus.UNCHECKABLE;
         }
+
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setFinalFileName(final_filename);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+
         return AvailableStatus.TRUE;
+    }
+
+    private void getMassengeschmackDLLINK() throws PluginException {
+        final String base = br.getRegex("var base = \\'(http://[^<>\"]*?)\\';").getMatch(0);
+        final String link = br.getRegex("playlist = \\[\\{url: base \\+ \\'([^<>\"]*?)\\'").getMatch(0);
+        if (base == null || link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = base + link;
     }
 
     @Override
@@ -330,19 +307,19 @@ public class FernsehkritikTv extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(COUCHHOST, key, value);
+                            br.setCookie(HOST_COUCH, key, value);
                         }
                         return;
                     }
                 }
                 br.getHeaders().put("Accept-Encoding", "gzip");
                 br.setFollowRedirects(true);
-                br.getPage(COUCHHOST);
-                br.postPage(COUCHHOST + "/login.php", "location=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&setCookie=set");
+                br.getPage(HOST_COUCH);
+                br.postPage(HOST_COUCH + "/login.php", "location=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&setCookie=set");
                 if (br.containsHTML(LOGIN_ERROR)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-                if (br.getCookie(COUCHHOST, "couchlogin") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (br.getCookie(HOST_COUCH, "couchlogin") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(COUCHHOST);
+                final Cookies add = br.getCookies(HOST_COUCH);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

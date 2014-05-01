@@ -84,20 +84,27 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         DATE = Encoding.htmlDecode(DATE.trim());
 
         if (CFG.getBooleanProperty(GRAB_POSTECKE, false)) {
-            String posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
-            // Only use episode number of fktv episode if postecke episodenumber is not available
-            if (posteckeepisode == null) posteckeepisode = EPISODENUMBER;
-            final String posteckelink = br.getRegex("\"(http://(www\\.)?fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?[^<>\"]*?)\"").getMatch(0);
-            if (posteckelink != null) {
-                final DownloadLink posteckedl = createDownloadlink(posteckelink);
-                posteckedl.setProperty("directposteckeepisode", posteckeepisode);
-                posteckedl.setProperty("directdate", DATE);
-                posteckedl.setProperty("directepisodenumber", EPISODENUMBER);
-                posteckedl.setProperty("directtype", ".flv");
-                final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVPostFormattedFilename(posteckedl);
-                posteckedl.setFinalFileName(formattedFilename);
-                if (FASTCHECKENABLED) posteckedl.setAvailable(true);
-                decryptedLinks.add(posteckedl);
+            /* Check for external links */
+            final String external_link = br.getRegex("rel=\"postecke\" href=\"(http://(www\\.)?youtube\\.com/watch\\?v=[A-Za-z0-9\\-_]+)\"").getMatch(0);
+            if (external_link != null) {
+                decryptedLinks.add(createDownloadlink(external_link));
+            } else {
+                String posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
+                // Only use episode number of fktv episode if postecke episodenumber is not available
+                if (posteckeepisode == null) posteckeepisode = EPISODENUMBER;
+                String posteckelink = br.getRegex("\"(http://(www\\.)?fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?[^<>\"]*?)\"").getMatch(0);
+                if (posteckelink == null) posteckelink = br.getRegex("\"(http://massengeschmack\\.tv/play/\\d+/postecke\\d+)\"").getMatch(0);
+                if (posteckelink != null) {
+                    final DownloadLink posteckedl = createDownloadlink(posteckelink);
+                    posteckedl.setProperty("directposteckeepisode", posteckeepisode);
+                    posteckedl.setProperty("directdate", DATE);
+                    posteckedl.setProperty("directepisodenumber", EPISODENUMBER);
+                    posteckedl.setProperty("directtype", ".flv");
+                    final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVPostFormattedFilename(posteckedl);
+                    posteckedl.setFinalFileName(formattedFilename);
+                    if (FASTCHECKENABLED) posteckedl.setAvailable(true);
+                    decryptedLinks.add(posteckedl);
+                }
             }
         }
 

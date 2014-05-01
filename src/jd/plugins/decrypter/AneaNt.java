@@ -71,8 +71,11 @@ public class AneaNt extends PluginForDecrypt {
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", agent);
+
         br.getPage(parameter);
-        if (br.containsHTML("> 404 Not Found") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("manga.animea.net/browse.html"))) {
+
+        final String redirect = br.getRedirectLocation();
+        if (br.containsHTML("> 404 Not Found") || (redirect != null && (redirect.contains("manga.animea.net/browse.html") || !redirect.contains("animea.net/")))) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -80,6 +83,7 @@ public class AneaNt extends PluginForDecrypt {
             logger.info("Not downloadable: " + parameter);
             return decryptedLinks;
         }
+
         // manga reader
         if (parameter.contains("manga.animea.net/")) {
             // We get the title

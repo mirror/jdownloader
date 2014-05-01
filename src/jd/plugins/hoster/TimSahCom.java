@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.net.UnknownHostException;
 import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
@@ -93,13 +94,17 @@ public class TimSahCom extends PluginForHost {
                 filename = br.getRegex("<title>Video: (.*?) \\- Timsah\\.com</title>").getMatch(0);
             }
         }
-        String killJS2 = br.getRegex("var tok = (.*?);").getMatch(0);
-        String killJS = br.getRegex("src=\"/v2/js/video\\.comments\\.js\\?v=\\d+\" type=\"text/javascript\"></script><script type=\"text/javascript\">(.*?)</script>").getMatch(0);
-        DLLINK = br.getRegex("file:\\'(http.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null || killJS == null || killJS2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String killedJS = execJS(killJS + killJS2);
-        if (killedJS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK) + killedJS + ".flv";
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = br.getRegex("file:\\'(http://[^<>\"\\']*?)\\',type:\\'flv\\'").getMatch(0);
+        if (DLLINK == null) {
+            String killJS2 = br.getRegex("var tok = (.*?);").getMatch(0);
+            String killJS = br.getRegex("src=\"/v2/js/video\\.comments\\.js\\?v=\\d+\" type=\"text/javascript\"></script><script type=\"text/javascript\">(.*?)</script>").getMatch(0);
+            DLLINK = br.getRegex("file:\\'(http.*?)\"").getMatch(0);
+            String killedJS = execJS(killJS + killJS2);
+            if (killedJS == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = Encoding.htmlDecode(DLLINK) + killedJS + ".flv";
+            if (DLLINK == null || killJS == null || killJS2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();
@@ -107,7 +112,11 @@ public class TimSahCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final UnknownHostException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html"))
                 downloadLink.setDownloadSize(con.getLongContentLength());
             else

@@ -33,20 +33,26 @@ public class CntrstrkD extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         // Get fileid
-        String fileid = new Regex(param.toString(), "http://[\\w\\.]*?4players\\.de/\\S*/download/([0-9]+)/([01]/)?index\\.html?").getMatch(0);
+        final String fileid = new Regex(param.toString(), "http://[\\w\\.]*?4players\\.de/\\S*/download/([0-9]+)/([01]/)?index\\.html?").getMatch(0);
 
         // Open URL which redirects immediately to the file
         br.setFollowRedirects(false);
+        br.getPage("http://www.4players.de/cs.php/download_start/-/download/" + fileid + "/0/index.html");
         br.getPage("http://www.4players.de/cs.php/download_start/-/download/" + fileid + "/1/index.html");
+
+        final String finallink = br.getRedirectLocation();
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + param.toString());
+            return null;
+        }
 
         // Add to decrypted links - we use http://ftp.freenet instead of
         // ftp://freenet which works
-        decryptedLinks.add(createDownloadlink(br.getRedirectLocation().replaceFirst("ftp", "httpviajd")));
+        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
 
         return decryptedLinks;
     }

@@ -56,7 +56,7 @@ public class BreakCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.break.com/embed/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
-        if (br.getURL().contains("break.com/content/missing/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("break.com/content/missing/") || br.containsHTML("\"videoUri\": \"\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("\"contentName\": \"([^<>\"]*?)\"").getMatch(0);
 
         String token = br.getRegex("\"AuthToken\": \"([^<>\"]*?)\"").getMatch(0);

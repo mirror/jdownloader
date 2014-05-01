@@ -42,6 +42,10 @@ public class CnnT extends PluginForDecrypt {
         boolean valid = false;
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML(">Versuche es in wenigen Minuten nochmals")) {
+            logger.info("Site overloaded at the moment: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("Es existiert kein Eintrag zu dieser ID")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

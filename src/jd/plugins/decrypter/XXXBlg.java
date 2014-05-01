@@ -38,7 +38,7 @@ public class XXXBlg extends PluginForDecrypt {
     }
 
     private static final String INVALIDLINKS   = "http://(www\\.)?xxx\\-blog\\.to/(livecams|download|feed|trade|contact|faq|webmasters|a\\-z\\-index|link\\-us|\\d{4}/|comments/|author/|page/|category/|tag/|blog/|search/).*?";
-    private static final String INVALIDLINKS_2 = "http://(www\\.)?xxx\\-blog\\.to/typ/$";
+    private static final String INVALIDLINKS_2 = "http://(www\\.)?xxx\\-blog\\.to/(typ|dmca)/$";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
