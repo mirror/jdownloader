@@ -72,7 +72,7 @@ public class FernsehkritikTv extends PluginForHost {
 
     private static final String TYPE_POSTECKE_GENERAL                 = "http://(fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)|massengeschmack\\.tv/play/\\d+/postecke)\\d+";
     private static final String TYPE_POSTECKE_OLD                     = "http://fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?(iframe=true\\&width=\\d+\\&height=\\d+\\&ep=|ep=)\\d+";
-    private static final String TYPE_POSTECKE_NEW                     = "http://massengeschmack\\.tv/play/\\d+/postecke\\d+";
+    private static final String TYPE_POSTECKE_NEW                     = "http://massengeschmack\\.tv/play/1/postecke\\d+";
     private static final String TYPE_FOLGE_NEW                        = "http://fernsehkritik\\.tv/jdownloaderfolgeneu\\d+";
     private static final String TYPE_FOLGE_OLD                        = "http://fernsehkritik\\.tv/jdownloaderfolgealt\\d+";
     private static final String TYPE_COUCH                            = "http://couch\\.fernsehkritik\\.tv.*";
@@ -125,7 +125,15 @@ public class FernsehkritikTv extends PluginForHost {
             } else {
                 br.getPage(downloadLink.getDownloadURL());
                 if (br.containsHTML(">Clip nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /* Get date without time */
+                final String date = br.getRegex("<p class=\"muted\">([^<>\"]*?) / \\d{2}:\\d{2}:\\d{2}</p>").getMatch(0);
+                if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 getMassengeschmackDLLINK();
+                /* Massengeschmack postecke episodes have no own episodenumber */
+                downloadLink.setProperty("directposteckeepisode", default_empty_tag_separation_mark);
+                downloadLink.setProperty("directdate", date);
+                downloadLink.setProperty("directepisodenumber", episodenumber);
+                downloadLink.setProperty("directtype", ".flv");
             }
             final_filename = getFKTVPost_FormattedFilename(downloadLink);
         } else if (downloadLink.getDownloadURL().matches(TYPE_COUCHSTREAM)) {
@@ -508,7 +516,7 @@ public class FernsehkritikTv extends PluginForHost {
     }
 
     private final static String defaultCustomFilename                       = "Fernsehkritik-TV Folge *episodenumber* vom *date*_Teil*partnumber**ext*";
-    private final static String defaultCustomFilename_fktvpost              = "Fernsehkritik-TV Postecke *posteckeepisodenumber* zur Episode *episodenumber* vom *date**ext*";
+    private final static String defaultCustomFilename_fktvpost              = "Fernsehkritik-TV Postecke zur Episode *episodenumber* vom *date**ext*";
     private final static String defaultCustomFilename_massengeschmack_other = "*seriesname* Episode *episodenumber* vom *date**ext*";
     private final static String defaultCustomPackagename                    = "Fernsehkritik.tv Folge *episodenumber* vom *date*";
     private final static String defaultCustomDate                           = "dd MMMMM yyyy";
