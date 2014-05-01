@@ -51,6 +51,9 @@ public class ImgChiliCom extends PluginForDecrypt {
             if (br.containsHTML("The album does not exist")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
+            } else if (br.containsHTML("This album is empty\\. <br/>")) {
+                logger.info("Link offline (empty album): " + parameter);
+                return decryptedLinks;
             }
 
             final String fpName = br.getRegex("<title>imgChili \\&raquo; ([^<>\"]*?)</title>").getMatch(0);

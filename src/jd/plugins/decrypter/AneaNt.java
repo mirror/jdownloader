@@ -149,6 +149,10 @@ public class AneaNt extends PluginForDecrypt {
         }
         // /download/
         else {
+            if (!br.containsHTML("class=\"mirrors\"")) {
+                logger.info("Link offline (no downloadlinks available): " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             String grabFrame = br.getRegex("Download links</h2>(.+)<script type=").getMatch(0);
             if (grabFrame == null) {
@@ -156,7 +160,10 @@ public class AneaNt extends PluginForDecrypt {
                 return null;
             }
             String[] links = new Regex(grabFrame, "<td><a href=\"(https?://[^\"]+)").getColumn(0);
-            if (links == null || links.length == 0) return null;
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             if (links != null && links.length != 0) {
                 for (String dl : links)
                     decryptedLinks.add(createDownloadlink(dl));
