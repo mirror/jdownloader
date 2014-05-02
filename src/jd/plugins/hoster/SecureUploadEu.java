@@ -621,6 +621,8 @@ public class SecureUploadEu extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean frd = br.isFollowingRedirects();
+            br.setFollowRedirects(true);
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
@@ -671,6 +673,8 @@ public class SecureUploadEu extends PluginForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(frd);
             }
         }
     }
