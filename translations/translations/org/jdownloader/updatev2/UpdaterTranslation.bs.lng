@@ -62,4 +62,5 @@ update_dialog_news_button=Otvori log Izmjena
 update_dialog_news_button_url=http//www.jdownloader.org/changelog
 update_dialog_title_updates_available=Nadgradnje su dostupne
 update_dialog_yes=Da(preporučeno)
+update_in_next_session=Otkaži i ne pitaj do sljedećeg restarta
 updatedplugins=Dodaci su bilio nadgrađeni. Sada imate najnoviju verziju JDownloader-a.
