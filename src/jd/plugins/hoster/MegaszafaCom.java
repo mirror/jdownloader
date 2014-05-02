@@ -193,12 +193,14 @@ public class MegaszafaCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String dailyLimitLeft = br.getRegex("<div class=\"profileTransfer\">[\t\n\r ]+Transfer:[\t ]+([ 0-9\\.A-Za-z]+)[\t\n\r ]+</div>").getMatch(0);
-        if (dailyLimitLeft != null) {
-            ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
-            ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft));
-        } else
-            ai.setUnlimitedTraffic();
+        // update 02.05.2014 - no limit for users... again
+        /*
+         * String dailyLimitLeft =
+         * br.getRegex("<div class=\"profileTransfer\">[\t\n\r ]+Transfer:[\t ]+([ 0-9\\.A-Za-z]+)[\t\n\r ]+</div>").getMatch(0); if
+         * (dailyLimitLeft != null) { ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
+         * ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft)); } else
+         */
+        ai.setUnlimitedTraffic();
 
         account.setValid(true);
         ai.setStatus("Registered user");
