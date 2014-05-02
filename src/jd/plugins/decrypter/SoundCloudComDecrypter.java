@@ -105,6 +105,15 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             parameter = newparameter;
         } else if (parameter.matches("https?://api\\.soundcloud\\.com/tracks/\\d+")) {
             br.getPage(parameter + "?format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("Link offline (offline track link): " + parameter);
+                final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                dl.setAvailable(false);
+                dl.setProperty("offline", true);
+                dl.setFinalFileName(new Regex(parameter, "(\\d+)$").getMatch(0));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             String newparameter = br.getRegex("\"permalink_url\":\"(http://soundcloud\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[a-z0-9\\-_]+)?)\"").getMatch(0);
             if (newparameter == null) {
                 logger.warning("Decrypter failed on redirect link: " + parameter);
@@ -138,7 +147,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 dl.setAvailable(false);
                 dl.setProperty("offline", true);
-                dl.setName(parameter);
+                dl.setFinalFileName(parameter);
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
@@ -157,7 +166,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
                         dl.setAvailable(false);
                         dl.setProperty("offline", true);
-                        dl.setName(parameter);
+                        dl.setFinalFileName(parameter);
                         decryptedLinks.add(dl);
                         return decryptedLinks;
                     }

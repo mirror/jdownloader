@@ -45,7 +45,7 @@ public class U115ComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String PASSCODETEXT = ">文件发布者设置了访问权限，您需要输入访问密码才可进入下载页";
+    private static final String PASSCODETEXT = "class=\"file\\-box pickcode file\\-lock\"";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -54,7 +54,7 @@ public class U115ComFolder extends PluginForDecrypt {
         br.setReadTimeout(2 * 60 * 1000);
         br.setCookie("http://115.com/", "lang", "en");
         br.setCustomCharset("utf-8");
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.getPage(parameter);
         if (br.containsHTML("(>文件夹提取码不存在<|>文件拥有者未分享该文件夹。<)")) {

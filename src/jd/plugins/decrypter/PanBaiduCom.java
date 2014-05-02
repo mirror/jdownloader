@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(pan|yun)\\.baidu\\.com/(share/(link|init)(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(#dir/path=%2F.+)?)|s/\\w+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(pan|yun)\\.baidu\\.com/((share|wap)/(link|init)(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(#dir/path=%2F.+)?)|s/\\w+)" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -54,7 +54,7 @@ public class PanBaiduCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String uk = null, shareid = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/");
+        String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().contains("pan.baidu.com/share/error?") || br.containsHTML("啊哦，你来晚了，分享的文件已经被删除了，下次要早点哟|啊哦，你来晚了，分享的文件已经被取消了，下次要早点哟。")) {

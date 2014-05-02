@@ -101,6 +101,15 @@ public class PanBaiduCom extends PluginForHost {
                 br.setCookie("http://pan.baidu.com/", "BDCLND", link_password_cookie);
             }
             br.getPage(original_url);
+
+            final String i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
+            if (i_frame != null) {
+                logger.info("Found i_frame - accessing it!");
+                br.getPage(i_frame);
+            } else {
+                logger.info("Found no i_frame");
+            }
+
             // Fallback handling if the password cookie didn't work
             if (link_password != null && br.getURL().matches(TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED)) {
                 br.postPage("http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));

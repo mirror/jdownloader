@@ -54,7 +54,7 @@ public class ZippyTuneCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("errorid=notfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("errorid=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) Listen \\& Download \\- ZippyTune</title>").getMatch(0);
         DLLINK = "https://www.zippytune.com/audiostream/" + getFid(downloadLink) + ".mp3";
