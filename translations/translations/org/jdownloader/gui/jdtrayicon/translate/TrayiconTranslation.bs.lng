@@ -12,6 +12,7 @@ OnMinimizeAction_totray=Zatvori u Tray
 TrayMenuManager_getName=Upravitelj Tray Ikonica
 getName=Tray ikonica
 jd_plugins_optional_jdtrayicon_jdlighttray=Lagani Tray
+jd_plugins_optional_jdtrayicon_jdlighttray_description=Dozvoli minimiziranje ili zatvaranje JDownloader-a u notifikacijsku zonu i druge povezane stvari kao zaštita šifrom i više.
 plugins_optional_JDLightTray_closetotray2=Kliknite na 'Zatvori <X>' Akciju
 plugins_optional_JDLightTray_hideifframevisible=Sakrij Tray ako je Prozor vidljiv
 plugins_optional_JDLightTray_minimizetotray=Kliknite na  'Minimiziraj <_>' Akciju
