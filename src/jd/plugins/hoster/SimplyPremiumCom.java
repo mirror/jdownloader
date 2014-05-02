@@ -16,11 +16,19 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -36,6 +44,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.dialog.ContainerDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.DomainInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simply-premium.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class SimplyPremiumCom extends PluginForHost {
@@ -121,8 +135,7 @@ public class SimplyPremiumCom extends PluginForHost {
 
         final boolean resume_allowed = account.getBooleanProperty("resume_allowed", false);
 
-        int maxChunks = 1;
-        maxChunks = (int) account.getLongProperty("maxconnections", 1);
+        int maxChunks = (int) account.getLongProperty("maxconnections", 1);
         if (maxChunks > 20) maxChunks = 0;
         if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
         if (!resume_allowed) maxChunks = 1;
@@ -280,10 +293,10 @@ public class SimplyPremiumCom extends PluginForHost {
             }
             final Long expirelng = Long.parseLong(expire);
             ai.setValidUntil(expirelng * 1000);
-            accdesc = "Time account";
+            accdesc = getPhrase("ACCOUNT_TYPE_TIME");
         } else {
             ai.setTrafficLeft(getXML("remain_traffic"));
-            accdesc = "Volume account";
+            accdesc = getPhrase("ACCOUNT_TYPE_VOLUME");
         }
 
         int maxSimultanDls = Integer.parseInt(getXML("max_downloads"));
@@ -297,9 +310,10 @@ public class SimplyPremiumCom extends PluginForHost {
 
         long maxChunks = Integer.parseInt(getXML("chunks"));
         if (maxChunks > 1) maxChunks = -maxChunks;
-        account.setProperty("maxconnections", maxChunks);
-
         final boolean resumeAllowed = "1".equals(getXML("resume"));
+        account.setProperty("maxconnections", maxChunks);
+        account.setProperty("max_downloads", maxSimultanDls);
+        account.setProperty("acc_type", accdesc);
         account.setProperty("resume_allowed", resumeAllowed);
 
         /* online=1 == show only working hosts */
@@ -422,6 +436,166 @@ public class SimplyPremiumCom extends PluginForHost {
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return maxPrem.get();
+    }
+
+    public void showAccountDetailsDialog(final Account account) {
+        final AccountInfo ai = account.getAccountInfo();
+        if (ai != null) {
+            final String windowTitleLangText = "Account Zusatzinformationen";
+            int maxChunks = (int) account.getLongProperty("maxconnections", 1);
+            if (maxChunks < 0) maxChunks = maxChunks * -1;
+            int max_dls = (int) account.getLongProperty("max_downloads", 1);
+            final String accType = account.getStringProperty("acc_type", "?");
+            final boolean resume_allowed = account.getBooleanProperty("resume_allowed", false);
+            String resume_string;
+            if (resume_allowed) {
+                resume_string = getPhrase("DOWNLOAD_RESUMABLE_TRUE");
+            } else {
+                resume_string = getPhrase("DOWNLOAD_RESUMABLE_FALSE");
+            }
+
+            /* it manages new panel */
+            final PanelGenerator panelGenerator = new PanelGenerator();
+
+            JLabel hostLabel = new JLabel("<html><b>" + account.getHoster() + "</b></html>");
+            hostLabel.setIcon(DomainInfo.getInstance(account.getHoster()).getFavIcon());
+            panelGenerator.addLabel(hostLabel);
+
+            String revision = "$Revision$";
+            try {
+                String[] revisions = revision.split(":");
+                revision = revisions[1].replace('$', ' ').trim();
+            } catch (final Exception e) {
+                logger.info("save.tv revision number error: " + e);
+            }
+
+            panelGenerator.addCategory("Account");
+            panelGenerator.addEntry("Name:", account.getUser());
+            panelGenerator.addEntry("Account Typ:", accType);
+
+            panelGenerator.addCategory("Download");
+            panelGenerator.addEntry("Max. Anzahl gleichzeitiger Downloads:", Integer.toString(max_dls));
+            panelGenerator.addEntry("Max. Anzahl Verbindungen pro Datei (Chunks):", Integer.toString(maxChunks));
+            panelGenerator.addEntry("Abgebrochene Downloads fortsetzbar:", resume_string);
+
+            panelGenerator.addEntry("Plugin Revision:", revision);
+
+            ContainerDialog dialog = new ContainerDialog(UIOManager.BUTTONS_HIDE_CANCEL + UIOManager.LOGIC_COUNTDOWN, windowTitleLangText, panelGenerator.getPanel(), null, "Schließen", "");
+            try {
+                Dialog.getInstance().showDialog(dialog);
+            } catch (DialogNoAnswerException e) {
+            }
+        }
+
+    }
+
+    public class PanelGenerator {
+        private JPanel panel = new JPanel();
+        private int    y     = 0;
+
+        public PanelGenerator() {
+            panel.setLayout(new GridBagLayout());
+            panel.setMinimumSize(new Dimension(270, 200));
+        }
+
+        public void addLabel(JLabel label) {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(label, c);
+            y++;
+        }
+
+        public void addCategory(String categoryName) {
+            JLabel category = new JLabel("<html><u><b>" + categoryName + "</b></u></html>");
+
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(10, 5, 0, 5);
+            panel.add(category, c);
+            y++;
+        }
+
+        public void addEntry(String key, String value) {
+            GridBagConstraints c = new GridBagConstraints();
+            JLabel keyLabel = new JLabel(key);
+            // keyLabel.setFont(keyLabel.getFont().deriveFont(Font.BOLD));
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.weightx = 0.9;
+            c.gridx = 0;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(keyLabel, c);
+
+            JLabel valueLabel = new JLabel(value);
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 1;
+            panel.add(valueLabel, c);
+
+            y++;
+        }
+
+        public void addTextField(JTextArea textfield) {
+            GridBagConstraints c = new GridBagConstraints();
+            c.fill = GridBagConstraints.HORIZONTAL;
+            c.gridx = 0;
+            c.gridwidth = 2;
+            c.gridy = y;
+            c.insets = new Insets(0, 5, 0, 5);
+            panel.add(textfield, c);
+            y++;
+        }
+
+        public JPanel getPanel() {
+            return panel;
+        }
+
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("ACCOUNT_TYPE", "Account type:");
+                                                      put("ACCOUNT_TYPE_TIME", "Time account");
+                                                      put("ACCOUNT_TYPE_VOLUME", "Volume account");
+                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. number of simultan downloads:");
+                                                      put("DOWNLOAD_MAXCHUNKS", "Max. chunks (connections per file):");
+                                                      put("DOWNLOAD_RESUMABLE", "Resuming of stopped downloads possible:");
+                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Yes");
+                                                      put("DOWNLOAD_RESUMABLE_FALSE", "No");
+                                                  }
+                                              };
+
+    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+                                                  {
+                                                      put("ACCOUNT_TYPE", "Account Typ:");
+                                                      put("ACCOUNT_TYPE_TIME", "Zeitaccount");
+                                                      put("ACCOUNT_TYPE_VOLUME", "Volumenaccount");
+                                                      put("DOWNLOAD_MAXSIMULTAN", "Max. Anzahl gleichzeitiger Downloads:");
+                                                      put("DOWNLOAD_MAXCHUNKS", "Max. Anzahl Verbindungen pro Datei (Chunks):");
+                                                      put("DOWNLOAD_RESUMABLE", "Abgebrochene Downloads fortsetzbar:");
+                                                      put("DOWNLOAD_RESUMABLE_TRUE", "Ja");
+                                                      put("DOWNLOAD_RESUMABLE_FALSE", "Nein");
+                                                  }
+                                              };
+
+    /**
+     * Returns a germen/english translation of a phrase - we don't use the JDownloader translation framework since we need only germen and
+     * english (provider is german)
+     * 
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
+            return phrasesDE.get(key);
+        } else if (phrasesEN.containsKey(key)) { return phrasesEN.get(key); }
+        return "Translation not found!";
     }
 
     @Override
