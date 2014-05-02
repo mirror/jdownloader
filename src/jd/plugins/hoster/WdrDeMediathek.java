@@ -46,6 +46,7 @@ public class WdrDeMediathek extends PluginForHost {
     }
 
     private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
+    private static final String TYPE_INVALID    = "http://([a-z0-9]+\\.)?wdr\\.de/[a-z0-9\\-_/]+/sendungen/filterseite[a-z0-9\\-_/]+\\.html";
 
     public void correctDownloadLink(final DownloadLink link) {
         final String player_part = new Regex(link.getDownloadURL(), "(\\-videoplayer(_size\\-[A-Z])?\\.html)").getMatch(0);
@@ -54,10 +55,13 @@ public class WdrDeMediathek extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        if (downloadLink.getDownloadURL().contains("filterseite-")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String startLink = downloadLink.getDownloadURL();
         br.getPage(startLink);
+
+        if (br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         if (startLink.matches(TYPE_ROCKPALAST)) return requestRockpalastFileInformation(downloadLink);
 

@@ -48,11 +48,17 @@ public class ImgChiliCom extends PluginForDecrypt {
             br.getPage(parameter);
             br.setFollowRedirects(false);
 
+            final DownloadLink offline = createDownloadlink("directhttp://http://imgchili.net/" + System.currentTimeMillis() + "/" + System.currentTimeMillis() + ".png");
+            offline.setFinalFileName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+            offline.setAvailable(false);
+
             if (br.containsHTML("The album does not exist")) {
                 logger.info("Link offline: " + parameter);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             } else if (br.containsHTML("This album is empty\\. <br/>")) {
                 logger.info("Link offline (empty album): " + parameter);
+                decryptedLinks.add(offline);
                 return decryptedLinks;
             }
 

@@ -62,9 +62,9 @@ public class Kiwi6Com extends PluginForHost {
         if (filesize == null) filesize = br.getRegex(">Download File</a></h1>([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (artist != null) {
-            link.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
+            link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3"));
         } else {
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+            link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim()) + ".mp3"));
         }
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -73,10 +73,12 @@ public class Kiwi6Com extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("\"(http://[a-z0-9]+\\.kiwi6\\.com/download/[a-z0-9]+)\"").getMatch(0);
-        // Download disabled? Download stream!
-        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.kiwi6\\.com/hotlink/[a-z0-9]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* Slow server */
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        final String host = br.getRegex("data\\-host=\"([^<>\"]*?)\"").getMatch(0);
+        final String dllink = "http://" + host + "/download/" + fid;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -84,6 +86,21 @@ public class Kiwi6Com extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

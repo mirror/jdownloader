@@ -77,8 +77,8 @@ public class LinkSnappyCom extends PluginForHost {
     private String              dllink                 = null;
 
     /*
-     * TODO: Implement correct connection limits - admin said, max 36 connectins per file, waiting for more input and/or even api
-     * implementation
+     * TODO: Implement correct connection limits - admin said, max 36 connectins per file (no total limit), waiting for more input and/or
+     * even api implementation
      */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {

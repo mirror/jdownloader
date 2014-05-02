@@ -46,6 +46,7 @@ public class IvPasteCom extends PluginForDecrypt {
         br.getPage(parameter);
         String ID = new Regex(parameter, "ivpaste\\.com/(v/|view\\.php\\?id=)([A-Za-z0-9]+)").getMatch(1);
         if (ID == null) return null;
+        br.getPage("http://ivpaste.com/v/" + ID);
         br.getPage("http://ivpaste.com/p/" + ID);
         if (br.containsHTML("<b>Acceda desde: <a")) {
             logger.info("Link offline: " + parameter);

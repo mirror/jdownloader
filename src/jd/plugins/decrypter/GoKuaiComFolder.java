@@ -54,6 +54,11 @@ public class GoKuaiComFolder extends PluginForDecrypt {
         if (parameter.matches("https?://(www\\.)?gokuai\\.com/a/[a-zA-Z0-9]{16}")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);
+
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                logger.warning("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             br.setFollowRedirects(false);
 
             // return error message for invalid url

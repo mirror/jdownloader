@@ -58,6 +58,8 @@ public class MegaszafaCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
 
+        if (br.getURL().contains("Error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         String browserUrl = link.getBrowserUrl();
         String fileId = "";
         if (browserUrl.contains("plik,"))
