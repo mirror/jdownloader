@@ -322,20 +322,20 @@ public class FourSharedCom extends PluginForHost {
     }
 
     private void handleFreeErrors(DownloadLink downloadLink) throws PluginException {
-        String cau2 = new Regex(br.getRequest().getUrl(), "cau2=([^&]+)").getMatch(0);
-        logger.info("CAU2: " + cau2);
+        // cau2=0759nousr&ua=LINUX&sop=true', title:"<div>You should log in to download this file.
+        // String cau2 = new Regex(br.getRequest().getUrl(), "cau2=([^&]+)").getMatch(0);
+        // logger.info("CAU2: " + cau2);
+        // if ("dow-lim".equals(cau2)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,
+        // "The download limit has been reached by you", 60 * 60 * 1000l); }
+
+        // Download limit might be there but dormant.
+        // if (br.containsHTML("<div class=\"limitErrorMsg\">")) {
+        //
         // <div class="limitErrorMsg">
         // <span>The download limit has been reached by you. Get your Premium account now to instantly download more</span>
         // </div>
-        if ("dow-lim".equals(cau2)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached by you", 60 * 60 * 1000l); }
-
-        if (br.containsHTML("<div class=\"limitErrorMsg\">")) {
-            //
-            // <div class="limitErrorMsg">
-            // <span>The download limit has been reached by you. Get your Premium account now to instantly download more</span>
-            // </div>
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached by you", 60 * 60 * 1000l);
-        }
+        // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached by you", 60 * 60 * 1000l);
+        // }
 
         if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short\\-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
         String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
