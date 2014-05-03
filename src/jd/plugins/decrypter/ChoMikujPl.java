@@ -125,8 +125,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                             dloffline.setProperty("offline", true);
                             decryptedLinks.add(dloffline);
                             return decryptedLinks;
-                        } else
+                        } else {
                             folderCheck = true;
+                        }
 
                     }
                 }
@@ -144,6 +145,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     String ext = null;
                     if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
                     if (fileid == null) {
+                        /* No ID --> We can't download anything --> Must be offline */
                         dl.setProperty("offline", true);
                         dl.setAvailable(false);
                     } else {

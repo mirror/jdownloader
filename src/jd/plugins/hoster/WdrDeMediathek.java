@@ -46,6 +46,7 @@ public class WdrDeMediathek extends PluginForHost {
     }
 
     private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
+    private static final String TYPE_INVALID    = "http://(www\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
 
     public void correctDownloadLink(final DownloadLink link) {
         final String player_part = new Regex(link.getDownloadURL(), "(\\-videoplayer(_size\\-[A-Z])?\\.html)").getMatch(0);
@@ -54,7 +55,7 @@ public class WdrDeMediathek extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getDownloadURL().contains("filterseite-")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().matches(TYPE_INVALID) || downloadLink.getDownloadURL().contains("filterseite-") || downloadLink.getDownloadURL().contains("uebersicht")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String startLink = downloadLink.getDownloadURL();
@@ -68,6 +69,7 @@ public class WdrDeMediathek extends PluginForHost {
         String sendung = br.getRegex("<strong>([^<>\"]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
         if (sendung == null) sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>\"]*?)<span class=\"hover\">").getMatch(0);
         if (sendung == null) sendung = br.getRegex("<li class=\"active\" >[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatch(0);
+        if (sendung == null) sendung = br.getRegex("<div id=\"initialPagePart\">[\t\n\r ]+<h1>[\t\n\r ]+<span>([^<>\"]*?)<span class=\"hidden\">:</span>").getMatch(0);
         String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>\"]*?)<span class=\"hover\"").getMatch(0);
         if (episode_name == null) episode_name = br.getRegex("class=\"hover\">:([^<>\"]*?)</span>").getMatch(0);
         if (sendung == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

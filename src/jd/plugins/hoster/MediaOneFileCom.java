@@ -110,8 +110,8 @@ public class MediaOneFileCom extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = 0;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
@@ -122,8 +122,8 @@ public class MediaOneFileCom extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = 0;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
