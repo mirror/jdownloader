@@ -328,14 +328,13 @@ public class FourSharedCom extends PluginForHost {
         // if ("dow-lim".equals(cau2)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,
         // "The download limit has been reached by you", 60 * 60 * 1000l); }
 
-        // Download limit might be there but dormant.
-        // if (br.containsHTML("<div class=\"limitErrorMsg\">")) {
-        //
-        // <div class="limitErrorMsg">
-        // <span>The download limit has been reached by you. Get your Premium account now to instantly download more</span>
-        // </div>
-        // throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached by you", 60 * 60 * 1000l);
-        // }
+        if (br.containsHTML(">The download limit has been reached")) {
+            //
+            // <div class="limitErrorMsg"> // "limitErrorMsg" can contain another message!
+            // <span>The download limit has been reached by you. Get your Premium account now to instantly download more</span>
+            // </div>
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached", 60 * 60 * 1000l);
+        }
 
         if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short\\-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
         String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
