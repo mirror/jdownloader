@@ -74,7 +74,7 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileom.com" }, urls = { "https?://(www\\.)?fileom\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
 public class FileOmCom extends PluginForHost {
-    
+
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://fileom.com";
@@ -95,18 +95,18 @@ public class FileOmCom extends PluginForHost {
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
     private final boolean              captchaSkipableSolveMedia    = false;
-    
+
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-    
+
     // DEV NOTES
-    // XfileShare Version 3.0.8.4
+    // XfileShare Version 3.0.8.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: solvemedia
     // other: no redirects, uses cloudflare, maybe sister site billionupload.com?
     // mods:
-    
+
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
@@ -128,7 +128,7 @@ public class FileOmCom extends PluginForHost {
             directlinkproperty = "freelink";
         }
     }
-    
+
     private boolean allowsConcurrent(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
@@ -141,11 +141,11 @@ public class FileOmCom extends PluginForHost {
             return false;
         }
     }
-    
+
     public boolean hasAutoCaptcha() {
         return false;
     }
-    
+
     public boolean hasCaptcha(final DownloadLink downloadLink, final jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */
@@ -157,7 +157,7 @@ public class FileOmCom extends PluginForHost {
         }
         return false;
     }
-    
+
     /**
      * @author raztoki
      * 
@@ -168,7 +168,7 @@ public class FileOmCom extends PluginForHost {
         setConfigElements();
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
-    
+
     /**
      * defines custom browser requirements.
      * */
@@ -202,7 +202,7 @@ public class FileOmCom extends PluginForHost {
         }
         return prepBr;
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // make sure the downloadURL protocol is of site ability and user preference
@@ -210,15 +210,15 @@ public class FileOmCom extends PluginForHost {
         fuid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         br.setFollowRedirects(true);
         prepBrowser(br);
-        
+
         String[] fileInfo = new String[3];
-        
+
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
         }
-        
+
         getPage(downloadLink.getDownloadURL());
-        
+
         if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
             Account account = null;
@@ -233,13 +233,13 @@ public class FileOmCom extends PluginForHost {
                 }
             }
             if (account != null) {
-                login(account, false);
+                login(account, null, false, false);
                 getPage(downloadLink.getDownloadURL());
             } else {
                 altAvailStat(downloadLink, fileInfo);
             }
         }
-        
+
         if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
@@ -276,7 +276,7 @@ public class FileOmCom extends PluginForHost {
         if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
         return getAvailableStatus(downloadLink);
     }
-    
+
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
@@ -322,10 +322,10 @@ public class FileOmCom extends PluginForHost {
         if (inValidate(fileInfo[2])) fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
     }
-    
+
     /**
-     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this method doesn't give
-     * filename...
+     * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
+     * method doesn't give filename...
      * 
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
@@ -345,7 +345,7 @@ public class FileOmCom extends PluginForHost {
         if (!inValidate(fuid) && inValidate(fileInfo[0])) fileInfo[0] = fuid;
         return fileInfo;
     }
-    
+
     @SuppressWarnings("unused")
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         if (account != null) {
@@ -404,7 +404,7 @@ public class FileOmCom extends PluginForHost {
             for (int i = 0; i <= repeat; i++) {
                 dlForm = cleanForm(dlForm);
                 // custom form inputs
-                
+
                 final long timeBefore = System.currentTimeMillis();
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
@@ -445,7 +445,7 @@ public class FileOmCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         } catch (UnknownHostException e) {
             // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-            
+
             // dump the saved host from directlinkproperty
             downloadLink.setProperty(directlinkproperty, Property.NULL);
             // remove usedHost slot from hostMap
@@ -468,7 +468,7 @@ public class FileOmCom extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
-                
+
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
             } else {
                 logger.warning("The final dllink seems not to be a file!");
@@ -495,7 +495,7 @@ public class FileOmCom extends PluginForHost {
             }
         }
     }
-    
+
     /**
      * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
      * 
@@ -504,11 +504,11 @@ public class FileOmCom extends PluginForHost {
      */
     public void correctBR() throws Exception {
         String toClean = br.toString();
-        
+
         ArrayList<String> regexStuff = new ArrayList<String>();
-        
+
         // remove custom rules first!!! As html can change because of generic cleanup rules.
-        
+
         // generic cleanup
         // this checks for fake or empty forms from original source and corrects
         for (final Form f : br.getForms()) {
@@ -519,7 +519,7 @@ public class FileOmCom extends PluginForHost {
         regexStuff.add("<!(--.*?--)>");
         regexStuff.add("(<div[^>]+display: ?none;[^>]+>.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
-        
+
         for (String aRegex : regexStuff) {
             String results[] = new Regex(toClean, aRegex).getColumn(0);
             if (results != null) {
@@ -531,7 +531,7 @@ public class FileOmCom extends PluginForHost {
         cbr = br.cloneBrowser();
         cleanupBrowser(cbr, toClean);
     }
-    
+
     private void getDllink() {
         dllink = br.getRedirectLocation();
         if (inValidate(dllink) || (!inValidate(dllink) && !dllink.matches(dllinkRegex))) {
@@ -547,7 +547,7 @@ public class FileOmCom extends PluginForHost {
             }
         }
     }
-    
+
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
@@ -560,7 +560,7 @@ public class FileOmCom extends PluginForHost {
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
     }
-    
+
     private void checkErrors(final DownloadLink theLink, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (cbr.containsHTML(">Expired download session<")) {
@@ -588,9 +588,9 @@ public class FileOmCom extends PluginForHost {
         // monitor this
         if (cbr.containsHTML("(class=\"err\">(<center>)?You have reached the download(\\-| )limit[^<]+for last[^<]+)")) {
             /*
-             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was recorded from x time
-             * (hours|days) which can trigger false positive below wait handling. As its only indication of what's previous happened, as in past tense and not a
-             * wait time going forward... unknown wait time!
+             * Indication of when you've reached the max download limit for that given session! Usually shows how long the session was
+             * recorded from x time (hours|days) which can trigger false positive below wait handling. As its only indication of what's
+             * previous happened, as in past tense and not a wait time going forward... unknown wait time!
              */
             if (account != null) {
                 logger.warning("Your account ( " + account.getUser() + " @ " + acctype + " ) has been temporarily disabled for going over the download session limit. JDownloader parses HTML for error messages, if you believe this is not a valid response please confirm issue within your browser. If you can download within your browser please contact JDownloader Development Team, if you can not download in your browser please take the issue up with " + this.getHost());
@@ -679,177 +679,189 @@ public class FileOmCom extends PluginForHost {
         }
         if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
-    
+
     private void checkServerErrors() throws NumberFormatException, PluginException {
         if (cbr.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
         if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
+        AccountInfo ai = new AccountInfo();
         try {
             // logic to manipulate full login.
             if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
-                login(account, false);
+                login(account, ai, false, true);
             } else {
-                login(account, true);
+                login(account, ai, true, true);
             }
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        // required for when we don't login fully.
-        final String myAccount = "/?op=my_account";
-        if (br.getURL() == null) {
-            br.setFollowRedirects(true);
-            getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + myAccount);
-        } else if (!br.getURL().contains(myAccount)) {
-            getPage(myAccount);
-        }
-        // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
-            account.setProperty("free", true);
-        } else {
-            account.setProperty("free", false);
-        }
-        String space[] = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if (space == null || space.length == 0) space = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
-            // free users it's provided by default
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && !inValidate(space[0])) {
-            // premium users the Mb value isn't provided for some reason...
-            ai.setUsedSpace(space[0] + "Mb");
-        }
-        account.setValid(true);
-        String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
-        if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic = availabletraffic.trim();
-            // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-            } else {
-                ai.setTrafficLeft(0);
-            }
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        if (account.getBooleanProperty("free")) {
-            ai.setStatus("Registered (free) User");
-            account.setProperty("totalMaxSim", 20);
-        } else {
-            long expire = 0, expireD = 0, expireS = 0;
-            final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-            if (!inValidate(expireDay)) {
-                expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
-            }
-            if (inValidate(expireDay) || useAltExpire) {
-                // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
-                getPage("/?op=payments");
-                String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
-                if (!inValidate(expireSecond)) {
-                    String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
-                    String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
-                    String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
-                    String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
-                    String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
-                    long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                    if (!inValidate(tmpYears)) years = Integer.parseInt(tmpYears);
-                    if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
-                    if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
-                    if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
-                    if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
-                    expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-                }
-                if (expireD == 0 && expireS == 0) {
-                    ai.setExpired(true);
-                    account.setValid(false);
-                    return ai;
-                }
-            }
-            if (expireS != 0) {
-                expire = expireS;
-            } else {
-                expire = expireD;
-            }
-            account.setProperty("totalMaxSim", 10);
-            account.setMaxSimultanDownloads(10);
-            ai.setValidUntil(expire);
-            ai.setStatus("Premium User");
-        }
         return ai;
     }
-    
+
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account, AccountInfo importedAI, final boolean loginFull, final boolean loginInfo) throws Exception {
         synchronized (ACCLOCK) {
+            // we need accountInfo reference for below!
+            AccountInfo ai = importedAI;
+            if (ai == null) ai = new AccountInfo();
+            // used in finally to restore browser redirect status, before possible login changes.
+            final boolean frd = br.isFollowingRedirects();
             try {
                 /** Load cookies */
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final boolean acmatch = (Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser()))) && Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass()))) && ret != null && ret instanceof HashMap<?, ?> && account.isValid() && !loginFull ? true : false);
+                if (acmatch) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        br.setCookie(COOKIE_HOST, key, value);
+                    }
+                }
+                if (!acmatch || loginFull) {
+                    br.setFollowRedirects(true);
+                    getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
+                    Form loginform = br.getFormbyProperty("name", "FL");
+                    if (loginform == null) {
+                        if ("de".equalsIgnoreCase(language)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
-                        return;
                     }
+                    loginform = cleanForm(loginform);
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
+                    // check form for login captcha crap.
+                    DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
+                    loginform = captchaForm(dummyLink, loginform);
+                    // end of check form for login captcha crap.
+                    sendForm(loginform);
+                    if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                        if ("de".equalsIgnoreCase(language)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    /** Save cookies */
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    final Cookies add = br.getCookies(COOKIE_HOST);
+                    for (final Cookie c : add.getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                    account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                    account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                    account.setProperty("cookies", cookies);
+                    account.setProperty("lastlogin", System.currentTimeMillis());
                 }
-                br.setFollowRedirects(true);
-                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
-                Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(language)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // fetch account info, we need it here, so that we can always determine free|premium status.
+                if (!acmatch || loginInfo) {
+                    // required for when we don't login fully.
+                    final String myAccount = "/?op=my_account";
+                    if (br.getURL() == null) {
+                        br.setFollowRedirects(true);
+                        getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + myAccount);
+                    } else if (!br.getURL().contains(myAccount)) {
+                        getPage(myAccount);
+                    }
+                    // what type of account?
+                    if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
+                        account.setProperty("free", true);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        account.setProperty("free", false);
                     }
-                }
-                loginform = cleanForm(loginform);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("redirect", Encoding.urlEncode("/?op=my_account"));
-                // check form for login captcha crap.
-                DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), COOKIE_HOST, true);
-                loginform = captchaForm(dummyLink, loginform);
-                // end of check form for login captcha crap.
-                sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    if ("de".equalsIgnoreCase(language)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    String space[] = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+                    if (space == null || space.length == 0) space = cbr.getRegex(">Used space.*?<b>([0-9\\.]+) of [0-9\\.]+ ?(KB|MB|GB|TB)?</b>").getRow(0);
+                    if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
+                        // free users it's provided by default
+                        ai.setUsedSpace(space[0] + " " + space[1]);
+                    } else if ((space != null && space.length != 0) && !inValidate(space[0])) {
+                        // premium users the Mb value isn't provided for some reason...
+                        ai.setUsedSpace(space[0] + "Mb");
+                    }
+                    account.setValid(true);
+                    String availabletraffic = cbr.getRegex("Traffic available.*?:</TD><TD><b>([^<>\"']+)</b>").getMatch(0);
+                    if (!inValidate(availabletraffic) && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+                        availabletraffic = availabletraffic.trim();
+                        // need to set 0 traffic left, as getSize returns positive result, even when negative value supplied.
+                        if (!availabletraffic.startsWith("-")) {
+                            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+                        } else {
+                            ai.setTrafficLeft(0);
+                        }
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        ai.setUnlimitedTraffic();
+                    }
+                    if (account.getBooleanProperty("free")) {
+                        ai.setStatus("Registered (free) User");
+                        account.setProperty("totalMaxSim", 20);
+                    } else {
+                        long expire = 0, expireD = 0, expireS = 0;
+                        final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+                        if (!inValidate(expireDay)) {
+                            expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
+                        }
+                        if (inValidate(expireDay) || useAltExpire) {
+                            // A more accurate expire time, down to the second. Usually shown on 'extend premium account' page.
+                            getPage("/?op=payments");
+                            String expireSecond = cbr.getRegex("Premium(-| )Account expires?:([^\n\r]+)").getMatch(1);
+                            if (!inValidate(expireSecond)) {
+                                String tmpYears = new Regex(expireSecond, "(\\d+)\\s+years?").getMatch(0);
+                                String tmpdays = new Regex(expireSecond, "(\\d+)\\s+days?").getMatch(0);
+                                String tmphrs = new Regex(expireSecond, "(\\d+)\\s+hours?").getMatch(0);
+                                String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
+                                String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
+                                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+                                if (!inValidate(tmpYears)) years = Integer.parseInt(tmpYears);
+                                if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
+                                if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
+                                if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
+                                if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
+                                expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
+                            }
+                            if (expireD == 0 && expireS == 0) {
+                                ai.setExpired(true);
+                                account.setValid(false);
+                            }
+                        }
+                        if (expireS != 0) {
+                            expire = expireS;
+                        } else {
+                            expire = expireD;
+                        }
+                        account.setProperty("totalMaxSim", 10);
+                        ai.setValidUntil(expire);
+                        ai.setStatus("Premium User");
+                    }
+                    // this basically updates account info before returning (when no throw exception have happened).
+                    if (importedAI == null) {
+                        account.setAccountInfo(ai);
+                    } else {
+                        importedAI = ai;
                     }
                 }
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-                account.setProperty("lastlogin", System.currentTimeMillis());
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 account.setProperty("lastlogin", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(frd);
             }
         }
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
         requestFileInformation(downloadLink);
-        login(account, false);
+        login(account, null, false, false);
         if (account.getBooleanProperty("free")) {
             getPage(downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
@@ -934,7 +946,7 @@ public class FileOmCom extends PluginForHost {
                 if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
                     controlSimHost(account);
                     controlHost(account, downloadLink, false);
-                    
+
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
                 } else {
                     logger.warning("The final dllink seems not to be a file!");
@@ -962,48 +974,48 @@ public class FileOmCom extends PluginForHost {
             }
         }
     }
-    
+
     // ***************************************************************************************************** //
     // The components below doesn't require coder interaction, or configuration !
-    
+
     private Browser                                           cbr                    = new Browser();
-    
+
     private String                                            acctype                = null;
     private String                                            directlinkproperty     = null;
     private String                                            dllink                 = null;
     private String                                            fuid                   = null;
     private String                                            passCode               = null;
     private String                                            usedHost               = null;
-    
+
     private int                                               chunks                 = 1;
-    
+
     private boolean                                           resumes                = false;
     private boolean                                           skipWaitTime           = false;
-    
+
     private final String                                      language               = System.getProperty("user.language");
     private final String                                      preferHTTPS            = "preferHTTPS";
     private final String                                      ALLWAIT_SHORT          = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private final String                                      MAINTENANCEUSERTEXT    = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    
+
     private static AtomicInteger                              maxFree                = new AtomicInteger(1);
     private static AtomicInteger                              maxPrem                = new AtomicInteger(1);
     // connections you can make to a given 'host' file server, this assumes each file server is setup identically.
     private static AtomicInteger                              maxNonAccSimDlPerHost  = new AtomicInteger(20);
     private static AtomicInteger                              maxFreeAccSimDlPerHost = new AtomicInteger(20);
     private static AtomicInteger                              maxPremAccSimDlPerHost = new AtomicInteger(20);
-    
+
     private static HashMap<String, String>                    cloudflareCookies      = new HashMap<String, String>();
     private static HashMap<Account, HashMap<String, Integer>> hostMap                = new HashMap<Account, HashMap<String, Integer>>();
-    
+
     private static Object                                     ACCLOCK                = new Object();
     private static Object                                     CTRLLOCK               = new Object();
-    
+
     private static StringContainer                            agent                  = new StringContainer();
-    
+
     public static class StringContainer {
         public String string = null;
     }
-    
+
     /**
      * Rules to prevent new downloads from commencing
      * 
@@ -1019,7 +1031,7 @@ public class FileOmCom extends PluginForHost {
         else
             return true;
     }
-    
+
     @SuppressWarnings("unused")
     public void setConfigElements() {
         if (supportsHTTPS && enforcesHTTPS) {
@@ -1033,7 +1045,7 @@ public class FileOmCom extends PluginForHost {
             getPluginConfig().setProperty(preferHTTPS, Property.NULL);
         }
     }
-    
+
     /**
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
@@ -1058,7 +1070,7 @@ public class FileOmCom extends PluginForHost {
         String importedHost = new Regex(downloadLink.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
-    
+
     @SuppressWarnings("unused")
     private String getProtocol() {
         if ((supportsHTTPS && enforcesHTTPS) || (supportsHTTPS && getPluginConfig().getBooleanProperty(preferHTTPS, false))) {
@@ -1067,7 +1079,7 @@ public class FileOmCom extends PluginForHost {
             return "http://";
         }
     }
-    
+
     public void showAccountDetailsDialog(final Account account) {
         setConstants(account);
         AccountInfo ai = account.getAccountInfo();
@@ -1075,30 +1087,30 @@ public class FileOmCom extends PluginForHost {
         message += "Account type: " + acctype + "\r\n";
         if (ai.getUsedSpace() != -1) message += "  Used Space: " + Formatter.formatReadable(ai.getUsedSpace()) + "\r\n";
         if (ai.getPremiumPoints() != -1) message += "Premium Points: " + ai.getPremiumPoints() + "\r\n";
-        
+
         jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " Account", message);
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
     }
-    
+
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(final DownloadLink downloadLink) {
         downloadLink.setProperty("retry", Property.NULL);
@@ -1106,7 +1118,7 @@ public class FileOmCom extends PluginForHost {
         downloadLink.setProperty("requiresAnyAccount", Property.NULL);
         downloadLink.setProperty("requiresPremiumAccount", Property.NULL);
     }
-    
+
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
@@ -1168,7 +1180,7 @@ public class FileOmCom extends PluginForHost {
         }
         correctBR();
     }
-    
+
     @SuppressWarnings("unused")
     private void postPage(String page, final String postData) throws Exception {
         if (page == null || postData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1182,7 +1194,7 @@ public class FileOmCom extends PluginForHost {
         }
         correctBR();
     }
-    
+
     private void sendForm(final Form form) throws Exception {
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
@@ -1219,17 +1231,17 @@ public class FileOmCom extends PluginForHost {
         }
         correctBR();
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
         requestFileInformation(downloadLink);
         doFree(downloadLink, null);
     }
-    
+
     /**
-     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking which is based on
-     * fuid.
+     * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
+     * which is based on fuid.
      * 
      * @version 0.2
      * @author raztoki
@@ -1265,7 +1277,7 @@ public class FileOmCom extends PluginForHost {
             FFN = orgNameExt;
         downloadLink.setFinalFileName(FFN);
     }
-    
+
     private String checkDirectLink(final DownloadLink downloadLink) {
         dllink = downloadLink.getStringProperty(directlinkproperty);
         if (dllink != null) {
@@ -1285,7 +1297,7 @@ public class FileOmCom extends PluginForHost {
         }
         return dllink;
     }
-    
+
     private Form handlePassword(final Form pwform, final DownloadLink downloadLink) throws PluginException {
         if (pwform == null) {
             // so we know handlePassword triggered without any form
@@ -1304,7 +1316,7 @@ public class FileOmCom extends PluginForHost {
         pwform.put("password", Encoding.urlEncode(passCode));
         return pwform;
     }
-    
+
     /**
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
      * 
@@ -1406,7 +1418,7 @@ public class FileOmCom extends PluginForHost {
         downloadLink.setProperty("captchaTries", (captchaTries + 1));
         return form;
     }
-    
+
     /**
      * @param source
      *            for the Regular Expression match against
@@ -1432,7 +1444,7 @@ public class FileOmCom extends PluginForHost {
         if (inValidate(result)) result = new Regex(source, "'(" + dllinkRegex + ")'").getMatch(0);
         return result;
     }
-    
+
     /**
      * @param source
      *            String for decoder to process
@@ -1440,38 +1452,38 @@ public class FileOmCom extends PluginForHost {
      * */
     private void decodeDownloadLink(final String s) {
         String decoded = null;
-        
+
         try {
             Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-            
+
             String p = params.getMatch(0).replaceAll("\\\\", "");
             int a = Integer.parseInt(params.getMatch(1));
             int c = Integer.parseInt(params.getMatch(2));
             String[] k = params.getMatch(3).split("\\|");
-            
+
             while (c != 0) {
                 c--;
                 if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
             }
-            
+
             decoded = p;
         } catch (Exception e) {
         }
-        
+
         if (!inValidate(decoded)) {
             dllink = regexDllink(decoded);
         }
     }
-    
+
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlSlot
      *            (+1|-1)
@@ -1489,10 +1501,10 @@ public class FileOmCom extends PluginForHost {
             }
         }
     }
-    
+
     /**
-     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going forward. Thus prevents
-     * new downloads starting when not possible and is self aware and requires no coder interaction.
+     * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
+     * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
      * 
      * @param account
      * 
@@ -1525,11 +1537,11 @@ public class FileOmCom extends PluginForHost {
             }
         }
     }
-    
+
     /**
-     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x connections to ip/host
-     * server. Currently JD allows a global connection controller and doesn't allow for handling of different hosts/IP setup. This will help with those
-     * situations by allowing more connection when possible.
+     * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
+     * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
+     * hosts/IP setup. This will help with those situations by allowing more connection when possible.
      * 
      * @param Account
      *            Account that's been used, can be null
@@ -1549,13 +1561,13 @@ public class FileOmCom extends PluginForHost {
                     logger.warning("Regex on usedHost failed, Please report this to JDownloader Development Team");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            
+
             // save finallink and use it for later, this script can determine if it's usable at a later stage. (more for dev purposes)
             downloadLink.setProperty(directlinkproperty, dllink);
-            
+
             // place account into a place holder, for later references;
             Account accHolder = account;
-            
+
             // allows concurrent logic
             boolean thisAccount = allowsConcurrent(account);
             boolean continu = true;
@@ -1570,9 +1582,9 @@ public class FileOmCom extends PluginForHost {
                     // current account allows concurrent
                     // hostmap entries c
                 }
-                
+
             }
-            
+
             String user = null;
             Integer simHost;
             if (accHolder != null) {
@@ -1589,7 +1601,7 @@ public class FileOmCom extends PluginForHost {
                 simHost = maxNonAccSimDlPerHost.get();
             }
             user = user + " @ " + acctype;
-            
+
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
                 Integer usedSlots = getHashedHashedValue(account);
@@ -1602,11 +1614,11 @@ public class FileOmCom extends PluginForHost {
                 }
             } else {
                 // New download started, check finallink host against hostMap values && max(Free|Prem)SimDlHost!
-                
+
                 /*
-                 * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous downloads finishes. This is
-                 * best practice otherwise you have to use some crude system of waits, but you have no control over to reset the count. Highly dependent on how
-                 * fast or slow the users connections is.
+                 * max(Free|Prem)SimDlHost prevents more downloads from starting on a given host! At least until one of the previous
+                 * downloads finishes. This is best practice otherwise you have to use some crude system of waits, but you have no control
+                 * over to reset the count. Highly dependent on how fast or slow the users connections is.
                  */
                 if (isHashedHashedKey(account, usedHost)) {
                     Integer usedSlots = getHashedHashedValue(account);
@@ -1627,7 +1639,7 @@ public class FileOmCom extends PluginForHost {
             }
         }
     }
-    
+
     /**
      * Sets Key and Values to respective Account stored within hostMap
      * 
@@ -1668,7 +1680,7 @@ public class FileOmCom extends PluginForHost {
             hostMap.put(account, holder);
         }
     }
-    
+
     /**
      * Returns String key from Account@usedHost from hostMap
      * 
@@ -1688,7 +1700,7 @@ public class FileOmCom extends PluginForHost {
         }
         return null;
     }
-    
+
     /**
      * Returns integer value from Account@usedHost from hostMap
      * 
@@ -1708,7 +1720,7 @@ public class FileOmCom extends PluginForHost {
         }
         return null;
     }
-    
+
     /**
      * Returns true if hostMap contains 'key'
      * 
@@ -1729,7 +1741,7 @@ public class FileOmCom extends PluginForHost {
         }
         return false;
     }
-    
+
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      * 
@@ -1744,7 +1756,7 @@ public class FileOmCom extends PluginForHost {
         else
             return false;
     }
-    
+
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
@@ -1770,10 +1782,10 @@ public class FileOmCom extends PluginForHost {
         }
         return null;
     }
-    
+
     /**
-     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re: InputField
-     * parse(final String data). Affects revision 19688 and earlier!
+     * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
+     * InputField parse(final String data). Affects revision 19688 and earlier!
      * 
      * TODO: remove after JD2 goes stable!
      * 
@@ -1800,10 +1812,10 @@ public class FileOmCom extends PluginForHost {
         ret.setMethod(form.getMethod());
         return ret;
     }
-    
+
     /**
-     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same request id. This is
-     * needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
+     * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
+     * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
      * 
      * @param ibr
      *            Import Browser
@@ -1816,7 +1828,7 @@ public class FileOmCom extends PluginForHost {
         // preserve valuable original request components.
         final String oURL = ibr.getURL();
         final URLConnectionAdapter con = ibr.getRequest().getHttpConnection();
-        
+
         Request req = new Request(oURL) {
             {
                 boolean okay = false;
@@ -1835,26 +1847,26 @@ public class FileOmCom extends PluginForHost {
                         e.printStackTrace();
                     }
                 }
-                
+
                 httpConnection = con;
                 setHtmlCode(t);
             }
-            
+
             public long postRequest() throws IOException {
                 return 0;
             }
-            
+
             public void preRequest() throws IOException {
             }
         };
-        
+
         ibr.setRequest(req);
         if (ibr.isDebug()) {
             logger.info("\r\ndirtyMD5sum = " + dMD5 + "\r\ncleanMD5sum = " + JDHash.getMD5(ibr.toString()) + "\r\n");
             System.out.println(ibr.toString());
         }
     }
-    
+
     private AvailableStatus getAvailableStatus(DownloadLink link) {
         try {
             final Field field = link.getClass().getDeclaredField("availableStatus");
@@ -1865,20 +1877,20 @@ public class FileOmCom extends PluginForHost {
         }
         return AvailableStatus.UNCHECKED;
     }
-    
+
     private boolean isJava7nJDStable() {
         if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
             return true;
         else
             return false;
     }
-    
+
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-    
+
     public static void showSSLWarning(final String domain) {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-                
+
                 @Override
                 public void run() {
                     try {
@@ -1927,5 +1939,5 @@ public class FileOmCom extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-    
+
 }
