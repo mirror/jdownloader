@@ -179,7 +179,12 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);
         } else if (parameter.contains("go4up.com/")) {
             dllink = brc.getRedirectLocation();
-            if (dllink == null) dllink = brc.getRegex("window\\.location = (\"|\\')(http[^<>\"]*?)(\"|\\')").getMatch(1);
+            if (dllink == null) {
+                dllink = brc.getRegex("window\\.location = (\"|\\')(http[^<>\"]*?)(\"|\\')").getMatch(1);
+                if (dllink == null) {
+                    dllink = brc.getRegex("<b><a href=\"([^\"]+)").getMatch(0);
+                }
+            }
         } else if (parameter.contains("maxmirror.com/")) {
             dllink = brc.getRegex("\"(http[^<>\"]*?)\"><img border=\"0\" src=\"http://(www\\.)?maxmirror\\.com/").getMatch(0);
         } else if (parameter.matches(".+(qooy\\.com|multfile\\.com)/.+")) {
