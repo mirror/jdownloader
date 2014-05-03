@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author typek_pb
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(ws|bz|cc)|avaxho\\.me)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "avaxhome.ws" }, urls = { "http://(www\\.)?(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com)/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics)/.+" }, flags = { 0 })
 public class AvxHmeW extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -37,14 +37,14 @@ public class AvxHmeW extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(ws|bz|cc)|avaxho\\.me)))[\\S&]+";
+    private final String notThis = "https?://(?!(www\\.imdb\\.com|(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com)))[\\S&]+";
 
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
-        String parameter = cryptedLink.toString().replaceAll("(avaxhow\\.me|avahome\\.bz|avaxhome\\.ws)", "avaxhome.cc");
+        String parameter = cryptedLink.toString().replaceAll("(avaxhow\\.me|avahome\\.bz|avaxhome\\.ws|avaxhm\\.com)", "avaxhome.cc");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
