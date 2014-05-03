@@ -83,6 +83,7 @@ public class FileOmCom extends PluginForHost {
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final String[]             loginCookies                 = { "xfss", "login" };
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = true;
@@ -90,7 +91,7 @@ public class FileOmCom extends PluginForHost {
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
-    private final long                 useLoginIndividual           = 6 * 3480000;
+    private final long                 useLoginInterval             = 6 * 3480000;
     private final boolean              waitTimeSkipableReCaptcha    = true;
     private final boolean              waitTimeSkipableSolveMedia   = false;
     private final boolean              waitTimeSkipableKeyCaptcha   = false;
@@ -101,7 +102,7 @@ public class FileOmCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.5
+    // XfileShare Version 3.0.8.6
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: solvemedia
     // other: no redirects, uses cloudflare, maybe sister site billionupload.com?
@@ -445,7 +446,6 @@ public class FileOmCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         } catch (UnknownHostException e) {
             // Try catch required otherwise plugin logic wont work as intended. Also prevents infinite loops when dns record is missing.
-
             // dump the saved host from directlinkproperty
             downloadLink.setProperty(directlinkproperty, Property.NULL);
             // remove usedHost slot from hostMap
@@ -468,7 +468,6 @@ public class FileOmCom extends PluginForHost {
             if (dl.getConnection().getResponseCode() == 503 && dl.getConnection().getHeaderFields("server").contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
-
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Service unavailable. Try again later.", 15 * 60 * 1000l);
             } else {
                 logger.warning("The final dllink seems not to be a file!");
@@ -678,6 +677,12 @@ public class FileOmCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
         if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        // when Account used, it will validate browser cookies[] against expected loginCookies[]
+        if (account != null && !matchesLoginCookies()) {
+            resetAccount(account);
+            // if you retry, it can use another account...
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
     }
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
@@ -690,7 +695,7 @@ public class FileOmCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         try {
             // logic to manipulate full login.
-            if (useLoginIndividual >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginIndividual <= Long.parseLong(account.getStringProperty("lastlogin")))) {
+            if (useLoginInterval >= 1800000 && account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - useLoginInterval <= Long.parseLong(account.getStringProperty("lastlogin")))) {
                 login(account, ai, false, true);
             } else {
                 login(account, ai, true, true);
@@ -743,7 +748,7 @@ public class FileOmCom extends PluginForHost {
                     loginform = captchaForm(dummyLink, loginform);
                     // end of check form for login captcha crap.
                     sendForm(loginform);
-                    if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                    if (!matchesLoginCookies()) {
                         if ("de".equalsIgnoreCase(language)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
@@ -848,8 +853,7 @@ public class FileOmCom extends PluginForHost {
                     }
                 }
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                account.setProperty("lastlogin", Property.NULL);
+                resetAccount(account);
                 throw e;
             } finally {
                 br.setFollowRedirects(frd);
@@ -865,13 +869,7 @@ public class FileOmCom extends PluginForHost {
         if (account.getBooleanProperty("free")) {
             getPage(downloadLink.getDownloadURL());
             // if the cached cookie expired, relogin.
-            if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                synchronized (ACCLOCK) {
-                    account.setProperty("cookies", Property.NULL);
-                    // if you retry, it can use another account...
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
+            checkErrors(downloadLink, account, false);
             doFree(downloadLink, account);
         } else {
             br.setFollowRedirects(false);
@@ -881,29 +879,15 @@ public class FileOmCom extends PluginForHost {
                 getPage(downloadLink.getDownloadURL());
                 // required because we can't have redirects enabled for getDllink detection
                 if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex)) getPage(br.getRedirectLocation());
-                // if the cached cookie expired, relogin.
-                if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    synchronized (ACCLOCK) {
-                        account.setProperty("cookies", Property.NULL);
-                        // if you retry, it can use another account...
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                }
                 getDllink();
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, account, false);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
                     if (dlform == null) {
-                        Form freeDL = cbr.getFormbyProperty("op", "download1");
-                        if (freeDL != null) {
-                            synchronized (ACCLOCK) {
-                                account.setProperty("cookies", Property.NULL);
-                                account.setProperty("lastlogin", Property.NULL);
-                                /* will also recheck free property */
-                                fetchAccountInfo(account);
-                                // if you retry, it can use another account...
-                                throw new PluginException(LinkStatus.ERROR_RETRY);
-                            }
+                        if (cbr.getFormbyProperty("op", "download1") != null) {
+                            resetAccount(account);
+                            // if you retry, it can use another account...
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
                         }
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
@@ -1120,6 +1104,62 @@ public class FileOmCom extends PluginForHost {
     }
 
     /**
+     * resets provided accounts properties fields. This will allow next login to be a full login!
+     * 
+     * @author raztoki
+     * */
+    private void resetAccount(final Account account) {
+        synchronized (ACCLOCK) {
+            account.setProperty("cookies", Property.NULL);
+            account.setProperty("lastlogin", Property.NULL);
+        }
+    }
+
+    /**
+     * If default browser contains cookie key name with a value comparison against any of 'loginCookies' array, it will return true
+     * 
+     * @author raztoki
+     * */
+    @SuppressWarnings("unused")
+    private boolean containsLoginCookie() {
+        final Cookies cookies = br.getCookies(COOKIE_HOST);
+        if (cookies != null) {
+            for (String loginCookie : loginCookies) {
+                for (final Cookie cookie : cookies.getCookies()) {
+                    if (cookie.getKey().equalsIgnoreCase(loginCookie) && (cookie.getValue() != null || cookie.getValue().length() != 0)) return true;
+                }
+            }
+
+        }
+        return false;
+    }
+
+    /**
+     * If default browser contains ALL cookies within 'loginCookies' array, it will return true<br />
+     * <br />
+     * NOTE: loginCookies[] can only contain true names! Remove all dead names from array!
+     * 
+     * @author raztoki
+     * */
+    private boolean matchesLoginCookies() {
+        final Cookies cookies = br.getCookies(COOKIE_HOST);
+        // simple math logic here
+        int i = 0;
+        if (cookies != null) {
+            for (String loginCookie : loginCookies) {
+                for (final Cookie cookie : cookies.getCookies()) {
+                    if (cookie.getKey().equalsIgnoreCase(loginCookie) && (cookie.getValue() != null || cookie.getValue().length() != 0)) i++;
+                }
+            }
+
+        }
+        if (i != loginCookies.length)
+            return false;
+        else
+            return true;
+    }
+
+    /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
      * 
@@ -1159,7 +1199,8 @@ public class FileOmCom extends PluginForHost {
                 // author.
                 ScriptEngineManager mgr = new ScriptEngineManager();
                 ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                cloudflare.put("jschl_answer", String.valueOf(((Double) engine.eval("(" + math + ") + " + host.length())).longValue()));
+                final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
+                cloudflare.put("jschl_answer", String.valueOf(value));
                 Thread.sleep(5500);
                 br.submitForm(cloudflare);
                 if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
