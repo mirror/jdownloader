@@ -118,6 +118,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             String date = null;
             if (parameter.contains("justin.tv/")) {
                 filename = br.getRegex("<h2 class=\"clip_title\">([^<>\"]*?)</h2>").getMatch(0);
+                if (filename == null) filename = br.getRegex("\\'channel\\': \\'([^<>\"]*?)\\'").getMatch(0);
             } else {
                 // Testlink: http://www.twitch.tv/fiegsy/b/296921448
                 filename = br.getRegex("<span class='real_title js\\-title'>(.*?)</span>").getMatch(0);

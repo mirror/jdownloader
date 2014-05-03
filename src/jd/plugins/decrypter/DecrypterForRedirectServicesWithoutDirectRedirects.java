@@ -168,6 +168,11 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             br.postPage("http://zero10.net/link.php?id=" + damnID, "s=1");
             finallink = br.getRegex("onClick=.*?\\('(http:.*?)'").getMatch(0);
         } else if (parameter.contains("official.fm/")) {
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             finalfilename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
             if (finalfilename == null) {
                 finalfilename = br.getRegex("<title>(.*?) on Official\\.fm</title>").getMatch(0);

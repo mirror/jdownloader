@@ -143,8 +143,12 @@ public class ChoMikujPl extends PluginForDecrypt {
                     }
                     String ext = null;
                     if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
-
-                    dl.setProperty("fileid", fileid);
+                    if (fileid == null) {
+                        dl.setProperty("offline", true);
+                        dl.setAvailable(false);
+                    } else {
+                        dl.setProperty("fileid", fileid);
+                    }
                     dl.setName(filename);
                     if ((ext != null && ext.length() <= 5) && ext.matches(VIDEOENDINGS)) dl.setProperty("video", true);
                     try {

@@ -51,6 +51,10 @@ public class TvAdbCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Link offline (404): " + parameter);
+            return decryptedLinks;
+        }
         final String html5player = br.getRegex(",html5player:[^\r\n]+").getMatch(-1);
         if (html5player == null) return null;
         // parse for qualities

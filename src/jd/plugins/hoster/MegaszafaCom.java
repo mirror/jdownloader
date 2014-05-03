@@ -52,21 +52,22 @@ public class MegaszafaCom extends PluginForHost {
         return "http://www.megaszafa.com/strona,regulamin-serwisu,2.html";
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)*?(en\\.)*?megaszafa\\.com/html/.+";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
 
-        if (br.getURL().contains("Error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        String browserUrl = link.getBrowserUrl();
+        String addedUrl = link.getDownloadURL();
         String fileId = "";
-        if (browserUrl.contains("plik,"))
-            fileId = new Regex(browserUrl, "plik,(\\d+?)\\.html").getMatch(0);
+        if (addedUrl.contains("plik,"))
+            fileId = new Regex(addedUrl, "plik,(\\d+?)\\.html").getMatch(0);
         else {
 
-            fileId = new Regex(browserUrl, "megaszafa\\.com/([0-9A-Za-z]+)/").getMatch(0);
+            fileId = new Regex(addedUrl, "megaszafa\\.com/([0-9A-Za-z]+)/").getMatch(0);
             fileId = new Regex(fileId, "(\\d+)").getMatch(0);
         }
 
@@ -92,9 +93,12 @@ public class MegaszafaCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Free (unregistered) downloads are not supported!");
-        // requestFileInformation(downloadLink);
-        // doFree(downloadLink);
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {

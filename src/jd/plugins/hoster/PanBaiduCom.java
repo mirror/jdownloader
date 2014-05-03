@@ -102,6 +102,7 @@ public class PanBaiduCom extends PluginForHost {
             }
             br.getPage(original_url);
 
+            /* Experimental code */
             final String i_frame = br.getRegex("<iframe src=\"(http://pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+\\&t=[A-Za-z0-9]+)\"").getMatch(0);
             if (i_frame != null) {
                 logger.info("Found i_frame - accessing it!");
@@ -110,7 +111,7 @@ public class PanBaiduCom extends PluginForHost {
                 logger.info("Found no i_frame");
             }
 
-            // Fallback handling if the password cookie didn't work
+            /* Fallback handling if the password cookie didn't work */
             if (link_password != null && br.getURL().matches(TYPE_FOLDER_LINK_NORMAL_PASSWORD_PROTECTED)) {
                 br.postPage("http://pan.baidu.com/share/verify?" + "vcode=&shareid=" + shareid + "&uk=" + uk + "&t=" + System.currentTimeMillis(), "&pwd=" + Encoding.urlEncode(link_password));
                 if (!br.containsHTML("\"errno\":0")) {
@@ -143,7 +144,9 @@ public class PanBaiduCom extends PluginForHost {
                 br.postPage(postLink, "fid_list=%5B" + fsid + "%5D&input=" + Encoding.urlEncode(code) + "&vcode=" + captchaid);
             }
             if (getJson("img") != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (br.containsHTML("\"errno\":112")) {
+            if (br.containsHTML("\"errno\":\\-20")) {
+                handlePluginBroken(downloadLink, "unknownerror20", 3);
+            } else if (br.containsHTML("\"errno\":112")) {
                 handlePluginBroken(downloadLink, "unknownerror112", 3);
             }
             DLLINK = getJson("dlink");

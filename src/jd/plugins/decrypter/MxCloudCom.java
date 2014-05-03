@@ -65,7 +65,7 @@ public class MxCloudCom extends PluginForDecrypt {
             logger.info("Unsupported or offline link: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("<title>404 Error page")) {
+        if (br.containsHTML("<title>404 Error page") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Offline link: " + parameter);
             return decryptedLinks;
         }

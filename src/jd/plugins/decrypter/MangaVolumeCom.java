@@ -42,7 +42,7 @@ public class MangaVolumeCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         // Offline link
-        if (br.containsHTML("name=\"title\" content=\"404\"|<title>404</title>") || br.containsHTML(">403 Forbidden<")) {
+        if (br.containsHTML("name=\"title\" content=\"404\"|<title>404</title>") || br.containsHTML(">403 Forbidden<") || br.containsHTML("id=\"LicenseWarning\"")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

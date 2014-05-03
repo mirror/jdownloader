@@ -47,6 +47,10 @@ public class IvPasteCom extends PluginForDecrypt {
         String ID = new Regex(parameter, "ivpaste\\.com/(v/|view\\.php\\?id=)([A-Za-z0-9]+)").getMatch(1);
         if (ID == null) return null;
         br.getPage("http://ivpaste.com/v/" + ID);
+        if (br.containsHTML("NO Existe\\!")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         br.getPage("http://ivpaste.com/p/" + ID);
         if (br.containsHTML("<b>Acceda desde: <a")) {
             logger.info("Link offline: " + parameter);
@@ -96,11 +100,15 @@ public class IvPasteCom extends PluginForDecrypt {
             if ("CANCEL".equals(result)) throw new DecrypterException(DecrypterException.CAPTCHA);
             br.postPage(br.getURL(), "capcode=" + Encoding.urlEncode(result) + "&save=&save=");
         }
-        String content = br.getRegex("<td nowrap align.*?pre>(.*?)</pre").getMatch(0);
-        String[] links = new Regex(content, "<a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
+        final String content = br.getRegex("<td nowrap align.*?pre>(.*?)</pre").getMatch(0);
+        if (content == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        }
+        String[] links = new Regex(content, "<a href=\"(.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.info("Link offline (found no downloadable links): " + parameter);
+            return decryptedLinks;
         }
         for (String dl : links) {
             String ID2 = new Regex(dl, "ivpaste\\.com/(v/|view\\.php\\?id=)([A-Za-z0-9]+)").getMatch(1);
