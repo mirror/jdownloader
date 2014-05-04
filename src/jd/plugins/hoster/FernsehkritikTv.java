@@ -91,7 +91,7 @@ public class FernsehkritikTv extends PluginForHost {
     private static final String CUSTOM_DATE                           = "CUSTOM_DATE";
     private static final String CUSTOM_FILENAME_FKTV                  = "CUSTOM_FILENAME_FKTV";
     private static final String CUSTOM_FILENAME_FKTVPOST              = "CUSTOM_FILENAME_FKTVPOST";
-    private static final String CUSTOM_FILENAME_MASSENGESCHMACK_OTHER = "CUSTOM_FILENAME_MASSENGESCHMACK_OTHER";
+    private static final String CUSTOM_FILENAME_MASSENGESCHMACK_OTHER = "CUSTOM_FILENAME_MASSENGESCHMACK_OTHER_2";
     private static final String CUSTOM_PACKAGENAME                    = "CUSTOM_PACKAGENAME";
     private static final String FASTLINKCHECK                         = "FASTLINKCHECK";
 
@@ -204,7 +204,7 @@ public class FernsehkritikTv extends PluginForHost {
             if (title == null || episodenumber == null || date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             title = Encoding.htmlDecode(title).trim();
-            downloadLink.setProperty("directseriesname", title);
+            downloadLink.setProperty("directchannel", title);
             downloadLink.setProperty("directdate", date);
             downloadLink.setProperty("directepisodenumber", episodenumber);
             downloadLink.setProperty("directtype", DLLINK.substring(DLLINK.lastIndexOf(".")));
@@ -466,11 +466,11 @@ public class FernsehkritikTv extends PluginForHost {
     public String getMassengeschmack_other_FormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, defaultCustomFilename_massengeschmack_other);
-        if ((!formattedFilename.contains("*seriesname*") && !formattedFilename.contains("*episodenumber*")) || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename_fktvpost;
+        if ((!formattedFilename.contains("*channel*") && !formattedFilename.contains("*episodenumber*")) || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename_fktvpost;
 
         final String ext = downloadLink.getStringProperty("directtype", null);
         final String date = downloadLink.getStringProperty("directdate", null);
-        final String seriesname = downloadLink.getStringProperty("directseriesname", null);
+        final String channel = downloadLink.getStringProperty("directchannel", null);
         final String episodenumber = downloadLink.getStringProperty("directepisodenumber", null);
 
         String formattedDate = null;
@@ -502,8 +502,8 @@ public class FernsehkritikTv extends PluginForHost {
         if (formattedFilename.contains("*date*") && formattedDate != null) {
             formattedFilename = formattedFilename.replace("*date*", formattedDate);
         }
-        if (formattedFilename.contains("*seriesname*") && seriesname != null) {
-            formattedFilename = formattedFilename.replace("*seriesname*", seriesname);
+        if (formattedFilename.contains("*channel*") && channel != null) {
+            formattedFilename = formattedFilename.replace("*channel*", channel);
         }
         formattedFilename = formattedFilename.replace("*ext*", ext);
 
@@ -517,7 +517,7 @@ public class FernsehkritikTv extends PluginForHost {
 
     private final static String defaultCustomFilename                       = "Fernsehkritik-TV Folge *episodenumber* vom *date*_Teil*partnumber**ext*";
     private final static String defaultCustomFilename_fktvpost              = "Fernsehkritik-TV Postecke zur Episode *episodenumber* vom *date**ext*";
-    private final static String defaultCustomFilename_massengeschmack_other = "*seriesname* Episode *episodenumber* vom *date**ext*";
+    private final static String defaultCustomFilename_massengeschmack_other = "*channel* Episode *episodenumber* vom *date**ext*";
     private final static String defaultCustomPackagename                    = "Fernsehkritik.tv Folge *episodenumber* vom *date*";
     private final static String defaultCustomDate                           = "dd MMMMM yyyy";
     private static final String default_empty_tag_separation_mark           = "-";
@@ -561,7 +561,7 @@ public class FernsehkritikTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, JDL.L("plugins.hoster.fernsehkritiktv.customfilename_massengeschmack", "Define how the filenames should look:")).setDefaultValue(defaultCustomFilename_massengeschmack_other));
         final StringBuilder sb_other = new StringBuilder();
         sb_other.append("Explanation of the available tags:\r\n");
-        sb_other.append("*seriesname* = name of the series\r\n");
+        sb_other.append("*channel* = name of the series/channel\r\n");
         sb_other.append("*episodenumber* = number of the fktv episode\r\n");
         sb_other.append("*date* = date when the link was posted - appears in the user-defined format above\r\n");
         sb_other.append("*ext* = the extension of the file, in this case usually '.flv'");

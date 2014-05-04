@@ -52,6 +52,7 @@ public class ARDMediathek extends PluginForHost {
     private static final String Q_HIGH      = "Q_HIGH";
     private static final String Q_HD        = "Q_HD";
     private static final String Q_BEST      = "Q_BEST";
+    private static final String Q_HTTP_ONLY = "Q_HTTP_ONLY";
     private static final String AUDIO       = "AUDIO";
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
 
@@ -333,6 +334,7 @@ public class ARDMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.ard.best", "Load Best Version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HTTP_ONLY, JDL.L("plugins.hoster.ard.best", "Only download HTTP streams (avoid akamai/RTMP versions)")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.ard.loadlow", "Load Low Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.ard.loadmedium", "Load Medium Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));

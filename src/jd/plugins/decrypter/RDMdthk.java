@@ -44,9 +44,11 @@ public class RDMdthk extends PluginForDecrypt {
     private static final String Q_HIGH       = "Q_HIGH";
     private static final String Q_HD         = "Q_HD";
     private static final String Q_BEST       = "Q_BEST";
+    private static final String Q_HTTP_ONLY  = "Q_HTTP_ONLY";
     private static final String AUDIO        = "AUDIO";
     private static final String Q_SUBTITLES  = "Q_SUBTITLES";
     private boolean             BEST         = false;
+    private boolean             HTTP_ONLY    = false;
     private int                 notForStable = 0;
 
     public RDMdthk(final PluginWrapper wrapper) {
@@ -76,6 +78,7 @@ public class RDMdthk extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("ard.de");
         boolean includeAudio = cfg.getBooleanProperty(AUDIO, true);
         BEST = cfg.getBooleanProperty(Q_BEST, false);
+        HTTP_ONLY = cfg.getBooleanProperty(Q_HTTP_ONLY, false);
 
         final String title = br.getRegex("<meta name=\"dcterms\\.title\" content=\"([^\"]+)\"").getMatch(0);
         final String fsk = br.getRegex("(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)").getMatch(0);
@@ -236,6 +239,9 @@ public class RDMdthk extends PluginForDecrypt {
                     final String plain_name = title + "@" + quality_part;
                     final String full_name = plain_name + extension;
                     final String network = quality[4];
+
+                    /* Skip rtmp streams if user wants http only */
+                    if (network.equals("akamai") && HTTP_ONLY) continue;
 
                     final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt + "&network=" + network);
                     if (t == 1 ? false : true) link.setAvailable(true);

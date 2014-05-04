@@ -46,7 +46,7 @@ public class WdrDeMediathek extends PluginForHost {
     }
 
     private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
-    private static final String TYPE_INVALID    = "http://(www\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
+    private static final String TYPE_INVALID    = "http://([a-z0-9]+\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
 
     public void correctDownloadLink(final DownloadLink link) {
         final String player_part = new Regex(link.getDownloadURL(), "(\\-videoplayer(_size\\-[A-Z])?\\.html)").getMatch(0);
