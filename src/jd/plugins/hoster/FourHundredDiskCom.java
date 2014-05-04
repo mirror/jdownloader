@@ -50,14 +50,18 @@ public class FourHundredDiskCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getPage(link.getDownloadURL());
         if (br.getURL().equals("http://www.400disk.com/error.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<h1><img src=\\'[^<>\"]*?\\'>([^<>\"]*?)</h1>").getMatch(0);
-        final String filesize = br.getRegex("<b>文件大小 ：</b>([^<>\"]*?)</li>").getMatch(0);
+        String filename = br.getRegex("<h1><img src=\\'[^<>\"]*?\\'>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("class=\"nowrap file\\-name [A-Za-z0-9\\-_]+\">([^<>]*?)</h1>").getMatch(0);
+        String filesize = br.getRegex("<b>文件大小 ：</b>([^<>\"]*?)</li>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("\">文件大小：([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
-        final String md5 = br.getRegex(">M D 5值 ：</b>([a-z0-9]{32})</li>").getMatch(0);
+        String md5 = br.getRegex(">M D 5值 ：</b>([a-f0-9]{32})</li>").getMatch(0);
+        if (md5 == null) md5 = br.getRegex("文件MD5：([a-f0-9]{32})</td>").getMatch(0);
         if (md5 != null) link.setMD5Hash(md5);
         return AvailableStatus.TRUE;
     }
@@ -65,8 +69,10 @@ public class FourHundredDiskCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getPage("http://www.400disk.com/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=0&type=dx&t=" + System.currentTimeMillis());
-        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.400disk\\.com/[^<>\"]*?)\"").getMatch(0);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
+        // http://www.400disk.com/?ac=download&id=137241&share=1&type=dx&t=1399241475671
+        br.getPage("http://www.400disk.com/?ac=download&id=" + fid + "&share=1&type=dx&t=" + System.currentTimeMillis());
+        final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.400disk\\.com/file/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
