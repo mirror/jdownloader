@@ -20,17 +20,22 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://(www\\.)?([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunpan.cn" }, urls = { "http://(www\\.)?(([a-z0-9]+\\.[a-z0-9]+\\.)?yunpan\\.cn/lk/[A-Za-z0-9]+|yunpan\\.cn/[a-zA-Z0-9]{13})" }, flags = { 0 })
 public class YunPanCn extends PluginForHost {
+
+    private final String preDownloadPassword = "<input class=\"pwd-input\" type=\"password\">";
 
     public YunPanCn(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,18 +55,49 @@ public class YunPanCn extends PluginForHost {
         } catch (final UnknownHostException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML(preDownloadPassword)) {
+            // if the link was removed, it wouldn't have a password!
+            link.getLinkStatus().setStatusText("This file requires pre-download password!");
+            return AvailableStatus.TRUE;
+        }
         if (br.containsHTML("befrherthtu567mut")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("name : \\'([^<>\"]*?)\\'").getMatch(0);
-        final String filesize = br.getRegex("size: (\\d+),").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(Long.parseLong(filesize));
+        fileCheck(link);
         return AvailableStatus.TRUE;
+    }
+
+    private void fileCheck(final DownloadLink link) throws PluginException {
+        final String filename = br.getRegex("name\\s*:\\s*'(.*?)',").getMatch(0);
+        final String filesize = br.getRegex("size\\s*:\\s*'(\\d+)',").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        if (filesize != null) link.setDownloadSize(Long.parseLong(filesize));
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(preDownloadPassword)) {
+            for (int i = 0; i != 3; i++) {
+                String passCode = downloadLink.getStringProperty("pass", null);
+                if (passCode == null || "".equals(passCode)) passCode = Plugin.getUserInput("Password?", downloadLink);
+                if (passCode == null || "".equals(passCode)) {
+                    logger.info("User has entered blank password, exiting handlePassword");
+                    downloadLink.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Password required!");
+                }
+                Browser br2 = br.cloneBrowser();
+                br2.postPage(new Regex(br.getURL(), "https?://[^/]+").getMatch(-1) + "/share/verifyPassword", "shorturl=" + new Regex(br.getURL(), "/lk/([a-zA-Z0-9]+)$").getMatch(0) + "&linkpassword=" + Encoding.urlEncode(passCode));
+                if (br2.containsHTML("\"errno\":0,")) {
+                    downloadLink.setProperty("pass", passCode);
+                    break;
+                } else if (i + 1 == 3)
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Exausted Password Tries!");
+                else
+                    downloadLink.setProperty("pass", Property.NULL);
+            }
+            br.getPage(br.getURL());
+            fileCheck(downloadLink);
+        }
         final Regex urlRegex = new Regex(br.getURL(), "http://(www\\.)?([a-z0-9]+\\.[a-z0-9]+)\\.yunpan\\.cn/lk/(.+)");
         final String nid = br.getRegex("nid : \\'(\\d+)\\',").getMatch(0);
         final String domainPart = urlRegex.getMatch(1);
