@@ -62,7 +62,7 @@ public class VideoFCTwoCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 4;
     }
 
     public void correctDownloadLink(final DownloadLink link) {
