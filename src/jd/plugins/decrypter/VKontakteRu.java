@@ -113,6 +113,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     // TODO: Include already decrypted-count of links in reloop-links so the logger works fine for reloop links, also check if the maxoffset
     // changes, if so, maybe update it...maybe
+    /* General errorhandling language implementation: English | Rus | Polish */
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(param.toString()).replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
@@ -139,7 +140,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 CRYPTEDLINK_FUNCTIONAL = "https://vk.com/" + new Regex(CRYPTEDLINK_ORIGINAL, "(video(\\-)?\\d+_\\d+)$").getMatch(0);
             }
         }
-        /** Check/fix links before browser access END */
+        /* Check/fix links before browser access END */
         synchronized (LOCK) {
             boolean loggedIN = getUserLogin(false);
             try {
@@ -215,15 +216,14 @@ public class VKontakteRu extends PluginForDecrypt {
                     CRYPTEDLINK_FUNCTIONAL = newLink;
                     getPageSafe(newLink);
                 }
-                /** Replace section end */
+                /* Replace section end */
 
-                /** Errorhandling start */
-                // English | Rus | Polish
+                /* General errorhandling start */
                 if (br.containsHTML("Unknown error|Неизвестная ошибка|Nieznany b\\&#322;\\&#261;d")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-                if (br.containsHTML("Access denied")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-                /** Errorhandling end */
+                if (br.containsHTML("Access denied|Ошибка доступа")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+                /* General errorhandling end */
 
-                /** Decryption process START */
+                /* Decryption process START */
                 if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_GENERAL)) {
                     if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_ALBUM)) {
                         /** Audio album */
@@ -265,14 +265,15 @@ public class VKontakteRu extends PluginForDecrypt {
                         logger.info("Check your plugin settings -> They affect the results!");
                     }
                 } else {
-                    // Unsupported link -> Errorhandling -> Either link offline
-                    // or plugin broken
+                    /*
+                     * Unsupported link -> Errorhandling -> Either link offline or plugin broken
+                     */
                     if (!CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LINK)) {
                         if (br.containsHTML("class=\"profile_blocked\"")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
                         logger.warning("Cannot decrypt unsupported linktype: " + CRYPTEDLINK_FUNCTIONAL);
                         return null;
                     } else {
-                        if (br.containsHTML("You are not allowed to view this community\\&#39;s wall")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+                        if (br.containsHTML("You are not allowed to view this community\\&#39;s wall|Вы не можете просматривать стену этого сообщества|Nie mo\\&#380;esz ogl\\&#261;da\\&#263; \\&#347;ciany tej spo\\&#322;eczno\\&#347;ci")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
                         decryptWallLink();
                         logger.info("Decrypted " + decryptedLinks2.size() + " total links out of a wall-link");
                         if (decryptedLinks2.size() == 0) {
