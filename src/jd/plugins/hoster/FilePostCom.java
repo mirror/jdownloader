@@ -203,6 +203,11 @@ public class FilePostCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        if (!(account.getUser().matches(".+@.+"))) {
+            ai.setStatus("Please enter your E-Mail adress as username!");
+            account.setValid(false);
+            return ai;
+        }
         try {
             showAccountCaptcha = true;
             login(account, true);
