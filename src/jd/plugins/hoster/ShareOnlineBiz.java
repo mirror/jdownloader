@@ -96,7 +96,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0 || true) { return false; }
+        if (urls == null || urls.length == 0) { return false; }
         try {
             Browser br = new Browser();
             br.setCookiesExclusive(true);
@@ -738,7 +738,7 @@ public class ShareOnlineBiz extends PluginForHost {
         String id = getID(downloadLink);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        if (true || br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
+        if (br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
             String startURL = downloadLink.getDownloadURL();
             // workaround to bypass new layout and use old site
             br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
