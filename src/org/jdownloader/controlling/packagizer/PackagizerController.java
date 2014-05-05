@@ -262,8 +262,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers == null) return input;
                 Object property = link.getDownloadLink().getProperty(modifiers);
-
-                return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll(property + "");
+                if (property == null || !(property instanceof String)) {
+                    return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll("");
+                } else {
+                    return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll(property.toString());
+                }
 
             }
 
