@@ -104,18 +104,32 @@ public class Rlnks extends PluginForDecrypt {
                     if (f.containsHTML(cnlUrl)) cnlForm = f;
                 }
                 if (cnlForm != null) {
-                    String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
-                    cnlForm.remove("jk");
-                    cnlForm.put("jk", (jk != null ? jk.replaceAll("\\+", "%2B") : "nothing"));
-                    try {
-                        cnlbr.submitForm(cnlForm);
-                        if (cnlbr.containsHTML("success")) return decryptedLinks;
-                        if (cnlbr.containsHTML("^failed")) {
-                            logger.warning("relink.us: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
-                            logger.warning("relink.us: CNL2 Message: " + cnlbr.toString());
+
+                    if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+                        String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
+                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org?" + "crypted=" + cnlForm.getInputField("crypted").getValue() + "&jk=" + Encoding.urlEncode(jk) + "&source=" + cnlForm.getInputField("source").getValue());
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            /* does not exist in 09581 */
                         }
-                    } catch (Throwable e) {
-                        logger.info("relink.us: ExternInterface(CNL2) is disabled!");
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
+                    } else {
+
+                        String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
+                        cnlForm.remove("jk");
+                        cnlForm.put("jk", (jk != null ? jk.replaceAll("\\+", "%2B") : "nothing"));
+                        try {
+                            cnlbr.submitForm(cnlForm);
+                            if (cnlbr.containsHTML("success")) return decryptedLinks;
+                            if (cnlbr.containsHTML("^failed")) {
+                                logger.warning("relink.us: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
+                                logger.warning("relink.us: CNL2 Message: " + cnlbr.toString());
+                            }
+                        } catch (Throwable e) {
+                            logger.info("relink.us: ExternInterface(CNL2) is disabled!");
+                        }
                     }
                 }
             }

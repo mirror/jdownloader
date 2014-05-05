@@ -88,13 +88,26 @@ public class Lnksvn extends PluginForDecrypt {
             cnlform.put("jk", Encoding.formEncoding(jkvalue));
 
             if (jkvalue != null) {
-                final Browser cnlbr = br.cloneBrowser();
-                cnlbr.setConnectTimeout(5000);
-                cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
-                try {
-                    cnlbr.submitForm(cnlform);
-                    if (cnlbr.containsHTML("success")) { return decryptedLinks; }
-                } catch (final Throwable e) {
+
+                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+
+                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org?" + "crypted=" + cnlform.getInputField("crypted").getValue() + "&jk=" + cnlform.getInputField("jk").getValue() + "&source=" + cnlform.getInputField("source").getValue());
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                } else {
+                    final Browser cnlbr = br.cloneBrowser();
+                    cnlbr.setConnectTimeout(5000);
+                    cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+                    try {
+                        cnlbr.submitForm(cnlform);
+                        if (cnlbr.containsHTML("success")) { return decryptedLinks; }
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }

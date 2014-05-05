@@ -221,23 +221,43 @@ public class ShrLnksBz extends PluginForDecrypt {
                 if (encVars == null || encVars.length < 3) {
                     logger.warning("CNL code broken!");
                 } else {
-                    final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
-                    final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
-                    String pkgName = br.getRegex("<title>Share.*?\\.biz - (.*?)</title>").getMatch(0);
-                    if (pkgName != null && pkgName.length() > 0) {
-                        pkgName = "package=" + Encoding.formEncoding(pkgName) + "&";
-                    }
-                    flashVars = pkgName + "passwords=&crypted=" + Encoding.formEncoding(crypted) + "&jk=" + Encoding.formEncoding(jk) + "&source=" + Encoding.formEncoding(parameter);
-                    cnlbr.setConnectTimeout(5000);
-                    cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
-                    try {
-                        cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", flashVars);
-                        if (cnlbr.containsHTML("success")) {
-                            return decryptedLinks;
-                        } else {
-                            logger.warning("Click-N-Load failed!");
+                    if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+                        final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
+                        final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
+                        String pkgName = br.getRegex("<title>Share.*?\\.biz - (.*?)</title>").getMatch(0);
+                        if (pkgName != null && pkgName.length() > 0) {
+                            pkgName = "package=" + Encoding.formEncoding(pkgName) + "&";
                         }
-                    } catch (final Throwable e) {
+                        flashVars = pkgName + "passwords=&crypted=" + Encoding.formEncoding(crypted) + "&jk=" + Encoding.formEncoding(jk) + "&source=" + Encoding.formEncoding(parameter);
+
+                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org?" + flashVars);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            /* does not exist in 09581 */
+                        }
+                        decryptedLinks.add(dl);
+                        return decryptedLinks;
+
+                    } else {
+                        final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
+                        final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
+                        String pkgName = br.getRegex("<title>Share.*?\\.biz - (.*?)</title>").getMatch(0);
+                        if (pkgName != null && pkgName.length() > 0) {
+                            pkgName = "package=" + Encoding.formEncoding(pkgName) + "&";
+                        }
+                        flashVars = pkgName + "passwords=&crypted=" + Encoding.formEncoding(crypted) + "&jk=" + Encoding.formEncoding(jk) + "&source=" + Encoding.formEncoding(parameter);
+                        cnlbr.setConnectTimeout(5000);
+                        cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+                        try {
+                            cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", flashVars);
+                            if (cnlbr.containsHTML("success")) {
+                                return decryptedLinks;
+                            } else {
+                                logger.warning("Click-N-Load failed!");
+                            }
+                        } catch (final Throwable e) {
+                        }
                     }
                 }
             }
