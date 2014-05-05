@@ -113,14 +113,25 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
              */
             @Override
             public int compare(AbstractNode o1, AbstractNode o2) {
-                final long l1 = getHosterCounter(o1);
-                final long l2 = getHosterCounter(o2);
-                if (l1 == l2) { return 0; }
-                if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
-                    return l1 > l2 ? -1 : 1;
-                } else {
-                    return l1 < l2 ? -1 : 1;
+                if (o1 instanceof AbstractPackageNode && o2 instanceof AbstractPackageNode) {
+                    long l1 = ((AbstractPackageNode<?, ?>) o1).getView().getDomainInfos().length;
+                    long l2 = ((AbstractPackageNode<?, ?>) o2).getView().getDomainInfos().length;
+                    if (l1 == l2) { return 0; }
+                    if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                        return l1 > l2 ? -1 : 1;
+                    } else {
+                        return l1 < l2 ? -1 : 1;
+                    }
+                } else if (o1 instanceof AbstractPackageChildrenNode && o2 instanceof AbstractPackageChildrenNode) {
+                    String l1 = ((AbstractPackageChildrenNode<?>) o1).getDomainInfo().getTld();
+                    String l2 = ((AbstractPackageChildrenNode<?>) o2).getDomainInfo().getTld();
+                    if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
+                        return l1.compareTo(l2);
+                    } else {
+                        return l2.compareTo(l1);
+                    }
                 }
+                return 0;
             }
             
         });
@@ -282,13 +293,6 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     
     @Override
     public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
-    }
-    
-    private int getHosterCounter(AbstractNode value) {
-        if (value instanceof AbstractPackageNode) {
-            return ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos().length;
-        } else if (value instanceof AbstractPackageChildrenNode) { return ((AbstractPackageChildrenNode<?>) value).getDomainInfo().getTld().hashCode(); }
-        return 1;
     }
     
 }
