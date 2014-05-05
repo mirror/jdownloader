@@ -37,6 +37,18 @@ public class MegaConz extends PluginForDecrypt {
         super(wrapper);
     }
     
+    public static class MegaFolder {
+
+        public String  parent;
+        public String  name;
+        private String id;
+
+        public MegaFolder(String nodeID) {
+            id = nodeID;
+        }
+
+    }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -63,7 +75,7 @@ public class MegaConz extends PluginForDecrypt {
          * 
          * k = node key
          */
-        HashMap<String, FilePackage> filePackages = new HashMap<String, FilePackage>();
+        HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
         for (String node : nodes) {
             String encryptedNodeKey = new Regex(getField("k", node), ":(.*?)$").getMatch(0);
             if (encryptedNodeKey == null) {
@@ -79,18 +91,28 @@ public class MegaConz extends PluginForDecrypt {
             String nodeType = getField("t", node);
             if ("1".equals(nodeType)) {
                 /* folder */
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(nodeName);
-                filePackages.put(nodeID, fp);
+
+                MegaFolder fo = new MegaFolder(nodeID);
+                String nodeParentID = getField("p", node);
+                fo.parent = nodeParentID;
+                fo.name = nodeName;
+                folders.put(nodeID, fo);
+
             } else if ("0".equals(nodeType)) {
                 /* file */
                 String nodeParentID = getField("p", node);
-                FilePackage fp = filePackages.get(nodeParentID);
+                MegaFolder folder = folders.get(nodeParentID);
+
+                FilePackage fp = FilePackage.getInstance();
+                String path = getRelPath(folder, folders);
+                fp.setName(path.substring(1));
+                fp.setProperty("ALLOW_MERGE", true);
                 String nodeSize = getField("s", node);
                 if (nodeSize == null) continue;
                 String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
                 DownloadLink link = createDownloadlink("http://mega.co.nz/#N!" + nodeID + "!" + safeNodeKey);
                 link.setFinalFileName(nodeName);
+                link.setProperty("REL_PATH", path);
                 link.setAvailable(true);
                 try {
                     link.setVerifiedFileSize(Long.parseLong(nodeSize));
@@ -104,6 +126,23 @@ public class MegaConz extends PluginForDecrypt {
         return decryptedLinks;
     }
     
+    private String getRelPath(MegaFolder folder, HashMap<String, MegaFolder> folders) {
+        if (folder == null) return "/";
+        StringBuilder ret = new StringBuilder();
+        while (true) {
+
+            ret.insert(0, folder.name);
+            ret.insert(0, "/");
+            MegaFolder parent = folders.get(folder.parent);
+            if (parent == null || parent == folder) {
+                //
+                return ret.toString();
+            }
+            folder = parent;
+        }
+
+    }
+
     private String decryptNodeKey(String encryptedNodeKey, String masterKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         byte[] masterKeyBytes = b64decode(masterKey);
         byte[] encryptedNodeKeyBytes = b64decode(encryptedNodeKey);

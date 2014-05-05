@@ -257,7 +257,21 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
 
         });
+        addReplacer(new PackagizerReplacer() {
 
+            public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+                if (modifiers == null) return input;
+                Object property = link.getDownloadLink().getProperty(modifiers);
+
+                return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll(property + "");
+
+            }
+
+            public String getID() {
+                return "prop";
+            }
+
+        });
     }
 
     private void addReplacer(PackagizerReplacer replacer) {
