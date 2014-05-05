@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -94,7 +96,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0 || true) { return false; }
         try {
             Browser br = new Browser();
             br.setCookiesExclusive(true);
@@ -704,8 +706,29 @@ public class ShareOnlineBiz extends PluginForHost {
         }
     }
 
+    private String execJS(final String fun) throws Exception {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+
+            // // document.getElementById('id').href
+            // engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
+            // engine.eval(fun);
+            // tools.js
+            engine.eval("function info(a){a=a.split(\"\").reverse().join(\"\").split(\"a|b\");var b=a[1].split(\"\");a[1]=new Array();var i=0;for(j=0;j<b.length;j++){if(j%3==0&&j!=0){i++}if(typeof(a[1][i])==\"undefined\"){a[1][i]=\"\"}a[1][i]+=b[j]}b=new Array();a[0]=a[0].split(\"\");for(i=0;i<a[1].length;i++){a[1][i]=parseInt(a[1][i].toUpperCase(),16);b[a[1][i]]=parseInt(i)}a[1]=\"\";for(i=0;i<b.length;i++){if(typeof(a[0][b[i]])!=\"undefined\"){a[1]+=a[0][b[i]]}else{a[1]+=\" \"}}return a[1]}");
+            engine.eval("var result=info(nfo);");
+            result = engine.get("result");
+
+        } catch (final Throwable e) {
+            throw new Exception("JS Problem in Rev" + getVersion(), e);
+
+        }
+        return result == null ? null : result.toString();
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         hideID = false;
         correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
@@ -715,14 +738,24 @@ public class ShareOnlineBiz extends PluginForHost {
         String id = getID(downloadLink);
         br.setDebug(true);
         br.setFollowRedirects(true);
-        if (br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
+        if (true || br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
             String startURL = downloadLink.getDownloadURL();
             // workaround to bypass new layout and use old site
             br.getPage(startURL += startURL.contains("?") ? "&v2=1" : "?v2=1");
-            String[] strings = br.getRegex("</font> \\((.*?)\\) \\.</b></div></td>.*?<b>File name:</b>.*?<b>(.*?)</b></div></td>").getRow(0);
-            if (strings == null || strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setDownloadSize(SizeFormatter.getSize(strings[0].trim()));
-            downloadLink.setName(strings[1].trim());
+            // we only use this direct mode if the API failed twice! in this case this is the only way to get the information
+            String js = br.getRegex("var dl=[^\r\n]*").getMatch(-1);
+            js = execJS(js);
+            String[] strings = js.split(",");
+
+            if (strings == null || strings.length != 5) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            long size = -1;
+            downloadLink.setDownloadSize(size = Long.parseLong(strings[0].trim()));
+            if (size > 0) {
+                downloadLink.setProperty("VERIFIEDFILESIZE", size);
+            }
+            downloadLink.setName(strings[3].trim());
+            downloadLink.setMD5Hash(strings[1]);
+
             return AvailableStatus.TRUE;
         }
         String infos[] = br.getRegex("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32});(\\d+)").getRow(0);
