@@ -78,6 +78,20 @@ public class OBoomCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         Map<String, String> infos = loginAPI(account, true);
+        String max = infos.get("max");
+        String current = infos.get("current");
+        if (max != null && current != null) {
+            long limit = Long.parseLong(max);
+            long free = Long.parseLong(current);
+            if (limit > 0) {
+                ai.setTrafficMax(limit);
+                ai.setTrafficLeft(Math.max(0, free));
+            } else {
+                ai.setUnlimitedTraffic();
+            }
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         String premium = infos.get("premium");
         if (premium != null) {
             long premiumUntil = TimeFormatter.getMilliSeconds(premium, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
