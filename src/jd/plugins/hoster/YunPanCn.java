@@ -60,7 +60,7 @@ public class YunPanCn extends PluginForHost {
             link.getLinkStatus().setStatusText("This file requires pre-download password!");
             return AvailableStatus.TRUE;
         }
-        if (br.containsHTML("befrherthtu567mut")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("befrherthtu567mut|id=\"linkError\"") || br.getURL().contains("?")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         fileCheck(link);
         return AvailableStatus.TRUE;
     }

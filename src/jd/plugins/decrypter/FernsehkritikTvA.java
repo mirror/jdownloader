@@ -77,6 +77,7 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         br.getPage(parameter);
 
         DATE = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
+        if (DATE == null) DATE = br.getRegex("id=\"eptitle\" href=\"\\.\\./folge\\-\\d+/\">Folge \\d+ vom ([^<>\"/]*?)</a>").getMatch(0);
         if (DATE == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

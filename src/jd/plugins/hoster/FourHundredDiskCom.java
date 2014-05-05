@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -51,8 +52,13 @@ public class FourHundredDiskCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.400disk.com/error.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        try {
+            br.getPage(link.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw e;
+        }
+        if (br.getURL().equals("http://www.400disk.com/error.php") || br.containsHTML("class=\\'alert_error\\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1><img src=\\'[^<>\"]*?\\'>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("class=\"nowrap file\\-name [A-Za-z0-9\\-_]+\">([^<>]*?)</h1>").getMatch(0);
         String filesize = br.getRegex("<b>文件大小 ：</b>([^<>\"]*?)</li>").getMatch(0);

@@ -45,6 +45,10 @@ public class CpvLinkCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String finallink = null;
         final String rcid = br.getRegex("recaptcha/api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
         if (rcid != null) {
@@ -83,6 +87,7 @@ public class CpvLinkCom extends PluginForDecrypt {
             handleContinueLink();
             // No-ad link
             finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+(\\.\\d+)?; ?url=(http[^<>\"]*?)\"").getMatch(1);
+            if (finallink == null) finallink = br.getRegex("\\$\\(\\'a#loading\\'\\)\\.attr\\(\\'href\\',\"(htt[^<>\"]*?)\"\\)").getMatch(0);
             // ad-link
             if (finallink == null) finallink = br.getRegex("class=\"head\\-button\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
             if (finallink == null || finallink.contains("shr77.com/")) {

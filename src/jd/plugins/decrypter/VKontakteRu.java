@@ -397,7 +397,7 @@ public class VKontakteRu extends PluginForDecrypt {
         // Offline1
         if (br.containsHTML("(class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>|<div class=\"body\">[\t\n\r ]+Access denied)")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
         // Offline 2 & 3
-        if (br.containsHTML("was removed from public access by request of the copyright holder") || br.containsHTML("class=\"title\">Error</div>") || br.containsHTML("Это видео изъято из публичного доступа")) {
+        if (br.containsHTML("was removed from public access by request of the copyright holder") || br.containsHTML("class=\"title\">Error</div>") || br.containsHTML("This video has been removed from public access|Это видео изъято из публичного доступа|Plik Video zosta\\&#322;o usuni\\&#281;te z dost\\&#281;pu publicznego")) {
             // Check if it's really offline
             final String[] ids = findVideoIDs(parameter);
             final String oid = ids[0];
@@ -411,10 +411,8 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         } else {
             // Offline4
-            if (br.containsHTML("This video has been removed from public access")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-            // Offline5
             if (br.containsHTML("No videos found")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
-            // Offline6
+            // Offline5
             if (br.containsHTML("This video is protected by privacy settings")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
             findVideolinks(parameter, false);
         }

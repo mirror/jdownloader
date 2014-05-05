@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 24860 $", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "http://(www\\.)?tv\\.adobe\\.com/watch/[a-z0-9\\-]+/[a-z0-9\\-]+/?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tv.adobe.com" }, urls = { "http://(www\\.)?tv\\.adobe\\.com/watch/[a-z0-9\\-]+/[a-z0-9\\-]+/?" }, flags = { 0 })
 public class TvAdbCm extends PluginForDecrypt {
 
     // dev notes
@@ -52,7 +52,10 @@ public class TvAdbCm extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline (404): " + parameter);
+            final DownloadLink offline = createDownloadlink("http://content.tv.adobe.com/adobetv2/videos/xxx/" + System.currentTimeMillis() + ".mp4");
+            offline.setFinalFileName(new Regex(parameter, "([a-z0-9\\-]+)/?$").getMatch(0) + ".mp4");
+            offline.setAvailable(false);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String html5player = br.getRegex(",html5player:[^\r\n]+").getMatch(-1);
