@@ -4563,7 +4563,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "An unknown error occured. Please try again later or with a different eMail-address." })
     String specialdeals_oboom_dialog_request_error_forbidden();
 
-    @Default(lngs = { "en" }, values = { "This eMail-address has been rejected." })
+    @Default(lngs = { "en" }, values = { "This eMail-address has been rejected by OBOOM.com!" })
     String specialdeals_oboom_dialog_request_error_email_forbidden();
 
     @Default(lngs = { "en" }, values = { "This eMail-address has already been used to get a free Pro Account." })

@@ -124,7 +124,7 @@ public class OboomDialog extends AbstractDialog<Integer> {
             if (br.containsHTML("403,\"E_PREMIUM\"")) {
                 OboomDialog.track("Error_E_PREMIUM");
                 Dialog.getInstance().showMessageDialog(0, _GUI._.lit_error_occured(), _GUI._.specialdeals_oboom_dialog_request_error_e_premium());
-                retry();
+                setOfferActive();
                 return;
             } else if (br.containsHTML("403,\"Forbidden\"")) {
                 OboomDialog.track("Error_Forbidden");
@@ -134,12 +134,12 @@ public class OboomDialog extends AbstractDialog<Integer> {
             } else if (br.containsHTML("403,\"EMAIL_FORBIDDEN\"")) {
                 OboomDialog.track("Error_EMAIL_FORBIDDEN");
                 Dialog.getInstance().showMessageDialog(0, _GUI._.lit_error_occured(), _GUI._.specialdeals_oboom_dialog_request_error_email_forbidden());
-                retry();
+                setOfferActive();
                 return;
             } else if (br.containsHTML("403,\"USED\"")) {
                 OboomDialog.track("Error_USED");
                 Dialog.getInstance().showMessageDialog(0, _GUI._.lit_error_occured(), _GUI._.specialdeals_oboom_dialog_request_error_used());
-                retry();
+                setOfferActive();
                 return;
             } else if (br.containsHTML("200,\"EXISTING\"")) {
                 setOfferActive();
