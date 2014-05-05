@@ -20,6 +20,7 @@ import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -37,6 +38,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]+" }, flags = { 0 })
 public class Rlnks extends PluginForDecrypt {
@@ -107,7 +112,14 @@ public class Rlnks extends PluginForDecrypt {
 
                     if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
                         String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
-                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org?" + "crypted=" + cnlForm.getInputField("crypted").getValue() + "&jk=" + Encoding.urlEncode(jk) + "&source=" + cnlForm.getInputField("source").getValue());
+                        HashMap<String, String> infos = new HashMap<String, String>();
+                        infos.put("crypted", cnlForm.getInputField("crypted").getValue());
+                        infos.put("jk", jk);
+                        String source = cnlForm.getInputField("source").getValue();
+                        if (StringUtils.isEmpty(source)) source = parameter.toString();
+                        infos.put("source", source);
+                        String json = JSonStorage.toString(infos);
+                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
                         try {
                             distribute(dl);
                         } catch (final Throwable e) {

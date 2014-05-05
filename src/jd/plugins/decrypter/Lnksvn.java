@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.captcha.specials.Linksave;
@@ -39,6 +40,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "https?://(www\\.)?linksave\\.in/(view.php\\?id=)?(?!dl\\-)[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
@@ -90,8 +95,14 @@ public class Lnksvn extends PluginForDecrypt {
             if (jkvalue != null) {
 
                 if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-
-                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org?" + "crypted=" + cnlform.getInputField("crypted").getValue() + "&jk=" + cnlform.getInputField("jk").getValue() + "&source=" + cnlform.getInputField("source").getValue());
+                    HashMap<String, String> infos = new HashMap<String, String>();
+                    infos.put("crypted", cnlform.getInputField("crypted").getValue());
+                    infos.put("jk", cnlform.getInputField("jk").getValue());
+                    String source = cnlform.getInputField("source").getValue();
+                    if (StringUtils.isEmpty(source)) source = parameter.toString();
+                    infos.put("source", source);
+                    String json = JSonStorage.toString(infos);
+                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
                     try {
                         distribute(dl);
                     } catch (final Throwable e) {

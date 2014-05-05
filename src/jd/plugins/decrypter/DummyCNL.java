@@ -25,7 +25,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -33,6 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging.Log;
@@ -41,7 +42,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-@DecrypterPlugin(revision = "$Revision: 23722 $", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://dummycnl\\.jdownloader\\.org\\?.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 23722 $", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" }, flags = { 0 })
 public class DummyCNL extends PluginForDecrypt {
 
     public DummyCNL(final PluginWrapper wrapper) {
@@ -52,18 +53,15 @@ public class DummyCNL extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String[][] matches = new Regex(parameter, "[\\?\\&]([\\w\\d]+)\\=([^\\&]+)").getMatches();
-        HashMap<String, String> params = new HashMap<String, String>();
-        for (String[] match : matches) {
-            params.put(match[0], Encoding.urlDecode(match[1], false));
-        }
+        String hex = new Regex(parameter, "http://dummycnl\\.jdownloader\\.org/([a-f0-9A-F]+)").getMatch(0);
+
+        HashMap<String, String> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), new TypeRef<HashMap<String, String>>() {
+        }, null);
+
         String decrypted = decrypt(params.get("crypted"), params.get("jk"), params.get("k"));
-        // final String finalPasswords = request.getParameterbyKey("passwords");
-        // String source = request.getParameterbyKey("source");
-        // final String finalComment = request.getParameterbyKey("comment");
-        // LinkCollectingJob job = new LinkCollectingJob(origin, urls);
-        // final String finalDestination = request.getParameterbyKey("dir");
-        // job.setCustomSourceUrl(source);
+
+        String source = params.get("source");
+
         String packageName = params.get("package");
         FilePackage fp = null;
 
@@ -74,6 +72,7 @@ public class DummyCNL extends PluginForDecrypt {
 
         for (String s : Regex.getLines(decrypted)) {
             final DownloadLink dl = createDownloadlink(s);
+            if (source != null) dl.setBrowserUrl(source);
             if (fp != null) {
                 fp.add(dl);
             }

@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,6 +50,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
 public class ShrLnksBz extends PluginForDecrypt {
@@ -224,13 +228,17 @@ public class ShrLnksBz extends PluginForDecrypt {
                     if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
                         final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
                         final String crypted = new StringBuffer(Encoding.Base64Decode(encVars[2])).reverse().toString();
+                        HashMap<String, String> infos = new HashMap<String, String>();
+                        infos.put("crypted", crypted);
+                        infos.put("jk", jk);
+                        infos.put("source", parameter.toString());
                         String pkgName = br.getRegex("<title>Share.*?\\.biz - (.*?)</title>").getMatch(0);
                         if (pkgName != null && pkgName.length() > 0) {
-                            pkgName = "package=" + Encoding.formEncoding(pkgName) + "&";
+                            infos.put("package", pkgName);
                         }
-                        flashVars = pkgName + "passwords=&crypted=" + Encoding.formEncoding(crypted) + "&jk=" + Encoding.formEncoding(jk) + "&source=" + Encoding.formEncoding(parameter);
+                        String json = JSonStorage.toString(infos);
 
-                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org?" + flashVars);
+                        final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
                         try {
                             distribute(dl);
                         } catch (final Throwable e) {
