@@ -33,13 +33,13 @@ urls = { "http://(www\\.)?oxyl\\.me/(p|d)/[a-z0-9]+", "http://(www\\.)?linkguard
         "http://(www\\.)?lulusafe\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?doujinlinks\\.org/(p|d)/[a-z0-9]+", "http://(www\\.)?matthy\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?hydelink\\.in/(p|d)/[a-z0-9]+", "http://(www\\.)?safelinking\\.biz/(p|d)/[a-z0-9]+", "http://(www\\.)?securelinking\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?urlshrtnr\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?uniquerelink\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?filedp\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?keepyourlinkssafe\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?7pz\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?safemylink\\.net/(p|d)/[a-z0-9]+", "http://(www\\.)?mway\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?url\\-shortener\\.info/(p|d)/[a-z0-9]+", "http://(www\\.)?rgf\\.me/(p|d)/[a-z0-9]+", "http://(www\\.)?720pm\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?javaddiction\\.us/(p|d)/[a-z0-9]+",
         "https?://(www\\.)?hidemylinks\\.net/(p|d)/[a-z0-9]+", "https?://(www\\.)?r4dm\\.com/(p|d)/[a-z0-9]+", "https?://(www\\.)?xsharez\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?savelinks\\.net/(p|d)/[a-z0-9]+", },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class SaveLinksNet extends SflnkgNt {
-
+    
     // Use this as generic plugin until JD2 comes out as stable. Remove these type of and do it all within SflnkgNt class!
     // No need for individual classes for each of these sites, specially if they do not require differing steps.
     // This will reduce IO paging and increase over all performance. Also reduces updates
-
+    
     // Notes:
     // - forward and reversed dns results tell you the real story. these are just aliased domains of safelinking.net
     // - See https://safelinking.net/ucp/domain for more info.
@@ -47,7 +47,7 @@ public class SaveLinksNet extends SflnkgNt {
     // - the IP is OVH subnet.
     // - you can not switch up the uid between domains.
     // - whois indicates 'name server' services provided by cloudflare
-
+    
     // Name: oxyl.me Address: 5.135.187.149 (safelinking.net)
     // Name: resumable-link.info Address: 5.135.187.149 (safelinking.net)
     // Name: kids-funclub.com Address: 5.135.187.149 (safelinking.net)
@@ -83,17 +83,17 @@ public class SaveLinksNet extends SflnkgNt {
     // Name: r4dm.com Address: 5.135.187.149 (safelinking.net)
     // Name: xsharez.com Address: 5.135.187.149 (safelinking.net)
     // Name: savelinks.net Address: 5.135.187.149 (safelinking.net)
-
+    
     // Non safelink.net alias domains (maybe they have other ips we don't know about)?
     // Name: linkpacking.net Address: 184.170.132.98 (server12.hostwhitelabel.com)
     // Name: keeplinks.me Address: 192.196.156.84 (host.keeplinks.me)
     // ^^ has its own plugin for some reason... cant be bothered to figure out why.
     // Name: doridroz.com Address: 94.23.47.27 (ns369610.ovh.net)
-
+    
     public SaveLinksNet(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -107,13 +107,13 @@ public class SaveLinksNet extends SflnkgNt {
             throw e;
         }
         decryptedLinks = gsh.getDecryptedLinks();
-
+        
         return decryptedLinks;
     }
-
+    
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
+    
 }

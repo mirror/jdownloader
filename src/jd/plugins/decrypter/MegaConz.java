@@ -30,13 +30,13 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "https?://(www\\.)?mega\\.co\\.nz/#F(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-]+" }, flags = { 0 })
 public class MegaConz extends PluginForDecrypt {
-
+    
     private static AtomicLong CS = new AtomicLong(System.currentTimeMillis());
-
+    
     public MegaConz(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -72,10 +72,9 @@ public class MegaConz extends PluginForDecrypt {
             String nodeAttr = getField("a", node);
             String nodeID = getField("h", node);
             String nodeKey = decryptNodeKey(encryptedNodeKey, masterKey);
+            
             nodeAttr = decrypt(nodeAttr, nodeKey);
-            if (nodeAttr == null) {
-                continue;
-            }
+            if (nodeAttr == null) continue;
             String nodeName = new Regex(nodeAttr, "\"n\"\\s*?:\\s*?\"(.*?)\"").getMatch(0);
             String nodeType = getField("t", node);
             if ("1".equals(nodeType)) {
@@ -104,7 +103,7 @@ public class MegaConz extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
+    
     private String decryptNodeKey(String encryptedNodeKey, String masterKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         byte[] masterKeyBytes = b64decode(masterKey);
         byte[] encryptedNodeKeyBytes = b64decode(encryptedNodeKey);
@@ -118,19 +117,19 @@ public class MegaConz extends PluginForDecrypt {
             System.arraycopy(cipher.doFinal(Arrays.copyOfRange(encryptedNodeKeyBytes, index, index + 16)), 0, ret, index, 16);
         }
         return Base64.encodeToString(ret, false);
-
+        
     }
-
+    
     private String getField(String field, String input) {
         return new Regex(input, "\"" + field + "\":\\s*?\"?(.*?)(\"|,)").getMatch(0);
     }
-
+    
     private byte[] b64decode(String data) {
         data += "==".substring((2 - data.length() * 3) & 3);
         data = data.replace("-", "+").replace("_", "/").replace(",", "");
         return Base64.decode(data);
     }
-
+    
     private byte[] aInt_to_aByte(int... intKey) {
         byte[] buffer = new byte[intKey.length * 4];
         ByteBuffer bb = ByteBuffer.wrap(buffer);
@@ -139,7 +138,7 @@ public class MegaConz extends PluginForDecrypt {
         }
         return bb.array();
     }
-
+    
     private int[] aByte_to_aInt(byte[] bytes) {
         ByteBuffer bb = ByteBuffer.wrap(bytes);
         int[] res = new int[bytes.length / 4];
@@ -148,7 +147,7 @@ public class MegaConz extends PluginForDecrypt {
         }
         return res;
     }
-
+    
     private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
@@ -177,13 +176,13 @@ public class MegaConz extends PluginForDecrypt {
         }
         return ret;
     }
-
+    
     private String getFolderID(CryptedLink link) {
         return new Regex(link.getCryptedUrl(), "#F\\!([a-zA-Z0-9]+)\\!").getMatch(0);
     }
-
+    
     private String getMasterKey(CryptedLink link) {
         return new Regex(link.getCryptedUrl(), "#F\\![a-zA-Z0-9]+\\!([a-zA-Z0-9_,\\-]+)").getMatch(0);
     }
-
+    
 }
