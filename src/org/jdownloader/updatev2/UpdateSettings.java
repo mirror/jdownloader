@@ -39,7 +39,7 @@ public interface UpdateSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @RequiresRestart("A JDownloader Restart is Required")
-    @DescriptionForConfigEntry("If true, JDownloader will check for updates in an interval(see UpdateIntercal)")
+    @DescriptionForConfigEntry("If true, JDownloader will check for updates in an interval (see: Update Interval)")
     boolean isAutoUpdateCheckEnabled();
 
     void setAutoUpdateCheckEnabled(boolean enabled);
