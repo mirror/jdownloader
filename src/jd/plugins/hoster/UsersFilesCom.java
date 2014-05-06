@@ -180,7 +180,7 @@ public class UsersFilesCom extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[0] == null) fileInfo[0] = new Regex(correctedBR, "class=\"glyphicons file\"> <i></i>([^<>\"]*?) <").getMatch(0);
+        if (fileInfo[0] == null) fileInfo[0] = new Regex(correctedBR, "class=\"glyphicons (file|music)\">([\t\n\r ]+)?<i></i>([^<>\"]*?) <").getMatch(2);
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {

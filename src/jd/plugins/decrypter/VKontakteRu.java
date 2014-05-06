@@ -411,7 +411,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
         } else {
             // Offline4
-            if (br.containsHTML("No videos found")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
+            if (br.containsHTML("No videos found|Видеофайл не найден|Plik wideo nie zosta\\&#322; znaleziony")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
             // Offline5
             if (br.containsHTML("This video is protected by privacy settings")) { throw new DecrypterException(EXCEPTION_LINKOFFLINE); }
             findVideolinks(parameter, false);

@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehostup.com" }, urls = { "http://(www\\.)?filehostup\\.com/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filehostup.com" }, urls = { "http://(www\\.)?filehostup\\.com/[a-z0-9]{16}" }, flags = { 2 })
 public class FileHostUpCom extends PluginForHost {
 
     public FileHostUpCom(PluginWrapper wrapper) {
@@ -89,7 +89,7 @@ public class FileHostUpCom extends PluginForHost {
             link.getLinkStatus().setStatusText(SERVERERRORUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<th class=\"descr\"([^<>]*?)?>[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<br/>");
         final String filename = fInfo.getMatch(1);
         final String filesize = fInfo.getMatch(2);

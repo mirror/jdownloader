@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -74,7 +75,11 @@ public class MovikiRu extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            try {
+                con = br2.openGetConnection(DLLINK);
+            } catch (final SocketTimeoutException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (!con.getContentType().contains("html"))
                 downloadLink.setDownloadSize(con.getLongContentLength());
             else
