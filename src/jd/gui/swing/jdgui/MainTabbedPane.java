@@ -209,6 +209,15 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                             // CFG_GUI.CFG.setSpecialDealOboomDialogVisibleOnStartup(false);
                             //
                             // }
+                        } else {
+                            SPECIAL_DEALS_ENABLED = false;
+                            new EDTRunner() {
+
+                                @Override
+                                protected void runInEDT() {
+                                    repaint();
+                                }
+                            };
                         }
 
                     } catch (Exception e) {
