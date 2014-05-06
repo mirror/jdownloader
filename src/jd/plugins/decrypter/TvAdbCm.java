@@ -52,8 +52,12 @@ public class TvAdbCm extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("http://content.tv.adobe.com/adobetv2/videos/xxx/" + System.currentTimeMillis() + ".mp4");
+            // No need to randomise URL when exporting offline links!
+            // Please always use directhttp && property OFFLINE from decrypters! Using 'OFFLINE' property, ensures when the user checks
+            // online status again it will _always_ return offline status.
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "([a-z0-9\\-]+)/?$").getMatch(0) + ".mp4");
+            offline.setProperty("OFFLINE", true);
             offline.setAvailable(false);
             decryptedLinks.add(offline);
             return decryptedLinks;
@@ -68,7 +72,7 @@ public class TvAdbCm extends PluginForDecrypt {
             final String q = getJson(qual, "quality");
             final String u = getJson(qual, "src");
             if (q == null || u == null) continue;
-            final DownloadLink dl = createDownloadlink(u);
+            final DownloadLink dl = createDownloadlink("directhttp://" + u);
             dl.setFinalFileName(name + " - " + q + u.substring(u.lastIndexOf(".")));
             decryptedLinks.add(dl);
         }
@@ -85,7 +89,7 @@ public class TvAdbCm extends PluginForDecrypt {
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false)").getMatch(0);
+        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
         if (result != null) result = result.replaceAll("\\\\/", "/");
         return result;
