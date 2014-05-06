@@ -361,10 +361,8 @@ public class FilesMonsterCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            // CAPTCHA is shown after 30 successful logins since beginning of
-            // the day or after 5 unsuccessful login attempts.
-            // Make sure account service updates do not login more than once
-            // every 4 hours? so we only use up to 6 logins a day?
+            // CAPTCHA is shown after 30 successful logins since beginning of the day or after 5 unsuccessful login attempts.
+            // Make sure account service updates do not login more than once every 4 hours? so we only use up to 6 logins a day?
             if (account.getStringProperty("lastlogin") != null && (System.currentTimeMillis() - 14400000 <= Long.parseLong(account.getStringProperty("lastlogin"))))
                 login(account, false);
             else
@@ -373,8 +371,7 @@ public class FilesMonsterCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        // needed because of cached login and we need to have a browser
-        // containing html to regex against!
+        // needed because of cached login and we need to have a browser containing html to regex against!
         if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://filesmoster.com/")) br.getPage("http://filesmonster.com/");
         ai.setUnlimitedTraffic();
         String expires = br.getRegex("<span>Valid until: <span class=\\'green\\'>([^<>\"]*?)</span>").getMatch(0);
@@ -405,6 +402,8 @@ public class FilesMonsterCom extends PluginForHost {
             logger.info(downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4freeusers", "This file is only available for freeusers"));
         }
+        // will wipe cookies for quick fix of core issue
+        br.setCookiesExclusive(false);
         login(account, false);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
