@@ -33,6 +33,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?)?[A-Z0-9]{8}" }, flags = { 2 })
@@ -191,6 +192,52 @@ public class OBoomCom extends PluginForHost {
             } finally {
                 br.setFollowRedirects(follow);
             }
+        }
+    }
+    
+    @Override
+    public boolean checkLinks(DownloadLink[] links) {
+        if (links == null || links.length == 0) return true;
+        try {
+            StringBuilder sb = new StringBuilder();
+            HashMap<String, DownloadLink> idLinks = new HashMap<String, DownloadLink>();
+            for (DownloadLink link : links) {
+                String id = getFileID(link);
+                idLinks.put(id, link);
+                if (sb.length() > 0) sb.append(",");
+                sb.append(id);
+            }
+            br.setReadTimeout(60 * 1000);
+            br.getPage("https://api.oboom.com/1.0/info?items=" + sb.toString() + "&http_errors=0");
+            String fileInfos[] = br.getRegex("\\{(.*?)\\}").getColumn(0);
+            if (fileInfos != null) {
+                for (String fileInfo : fileInfos) {
+                    String id = getValue(fileInfo, "id");
+                    String size = getValue(fileInfo, "size");
+                    String name = getValue(fileInfo, "name");
+                    String state = getValue(fileInfo, "state");
+                    DownloadLink link = idLinks.get(id);
+                    if (link == null) continue;
+                    if (name != null) link.setFinalFileName(unescape(name));
+                    try {
+                        if (size != null) {
+                            link.setDownloadSize(Long.parseLong(size));
+                            link.setVerifiedFileSize(Long.parseLong(size));
+                        }
+                    } catch (final Throwable e) {
+                    }
+                    if ("online".equals(state)) {
+                        link.setAvailable(true);
+                    } else {
+                        link.setAvailable(false);
+                    }
+                }
+                return fileInfos.length == links.length;
+            }
+            return false;
+        } catch (final Throwable e) {
+            LogSource.exception(logger, e);
+            return false;
         }
     }
     
