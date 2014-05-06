@@ -33,6 +33,7 @@ import java.awt.font.TextAttribute;
 import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -64,25 +65,25 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, MouseListener {
-
+    
     private static final long     serialVersionUID      = -1531827591735215594L;
-
+    
     private static MainTabbedPane INSTANCE;
     protected View                latestSelection;
-    public static boolean         SPECIAL_DEALS_ENABLED = false;
-
+    public static AtomicBoolean   SPECIAL_DEALS_ENABLED = new AtomicBoolean(false);
+    
     private AbstractIcon          specialDealIcon;
-
+    
     private Font                  specialDealFont;
     private Color                 specialDealColor;
     private Rectangle             specialDealBounds;
     private boolean               specialDealMouseOver  = false;
-
+    
     public synchronized static MainTabbedPane getInstance() {
         if (INSTANCE == null) INSTANCE = new MainTabbedPane();
         return INSTANCE;
     }
-
+    
     /**
      * Use {@link MainTabbedPane#remove(View)}!
      */
@@ -90,7 +91,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     public void remove(Component component) {
         throw new RuntimeException("This method is not allowed!");
     }
-
+    
     @Override
     protected boolean processKeyBinding(KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
         boolean ret = super.processKeyBinding(ks, e, condition, pressed);
@@ -98,7 +99,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         if (getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(ks) != null) return false;
         return ret;
     }
-
+    
     public void remove(View view) {
         if (!this.contains(view)) return;
         boolean selected = (getSelectedView() == view);
@@ -106,7 +107,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         if (view != null) view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_REMOVE));
         if (selected && getTabCount() > 0) setSelectedComponent(getComponentAt(0));
     }
-
+    
     public void addTab(View view) {
         if (this.contains(view)) return;
         if (view instanceof ClosableView) {
@@ -117,33 +118,33 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             this.setFocusable(false);
         }
     }
-
+    
     private void addClosableTab(ClosableView view) {
-
+        
         super.addTab(view.getTitle(), view.getIcon(), view, view.getTooltip());
         view.getBroadcaster().fireEvent(new SwitchPanelEvent(view, SwitchPanelEvent.ON_ADD));
         this.setTabComponentAt(this.getTabCount() - 1, new ClosableTabHeader(view));
-
+        
         this.setFocusable(false);
-
+        
     }
-
+    
     private MainTabbedPane() {
         this.setMinimumSize(new Dimension(300, 100));
         this.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         this.setOpaque(false);
-
+        
         specialDealIcon = new AbstractIcon("osrlogo", 18);
-
+        
         JLabel dummyLbl = new JLabel();
         specialDealFont = dummyLbl.getFont();
         CFG_GUI.SPECIAL_DEALS_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-
+            
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 repaint();
             }
-
+            
             @Override
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
@@ -154,9 +155,9 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         addMouseMotionListener(this);
         addMouseListener(this);
         specialDealColor = dummyLbl.getForeground();
-
+        
         this.addChangeListener(new ChangeListener() {
-
+            
             public void stateChanged(ChangeEvent e) {
                 if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(true);
                 try {
@@ -169,58 +170,41 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     latestSelection = comp;
                     comp.setShown();
                     revalidate();
-
+                    
                 } catch (Exception e2) {
                     e2.printStackTrace();
                 }
             }
-
+            
         });
-
-        new Thread("Ask StatServ") {
+        
+        Thread thread = new Thread("Ask StatServ") {
             public void run() {
-
+                
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
+                
                 while (true) {
                     Browser br = new Browser();
                     try {
                         br.getPage("http://stats.appwork.org/data/db/getDealStatus");
-
+                        boolean newValue = false;
                         if (br.containsHTML("true") || !Application.isJared(null)) {
-                            SPECIAL_DEALS_ENABLED = true;
+                            newValue = true;
+                        }
+                        if (SPECIAL_DEALS_ENABLED.getAndSet(newValue) != newValue) {
                             new EDTRunner() {
-
-                                @Override
-                                protected void runInEDT() {
-                                    repaint();
-                                }
-                            };
-                            // if (CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup()) {
-                            // Thread.sleep(10000);
-                            //
-                            // OboomDialog d = new OboomDialog();
-                            //
-                            // UIOManager.I().show(null, d);
-                            // CFG_GUI.CFG.setSpecialDealOboomDialogVisibleOnStartup(false);
-                            //
-                            // }
-                        } else {
-                            SPECIAL_DEALS_ENABLED = false;
-                            new EDTRunner() {
-
+                                
                                 @Override
                                 protected void runInEDT() {
                                     repaint();
                                 }
                             };
                         }
-
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         e.printStackTrace();
                     }
                     try {
@@ -229,14 +213,16 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                         e.printStackTrace();
                     }
                 }
-
+                
             };
-        }.start();
+        };
+        thread.setDaemon(true);
+        thread.start();
     }
-
+    
     public void notifyCurrentTab() {
         new EDTRunner() {
-
+            
             @Override
             protected void runInEDT() {
                 View comp = (View) getSelectedComponent();
@@ -244,12 +230,12 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             }
         };
     }
-
+    
     @Override
     public void paint(Graphics g) {
         super.paint(g);
         if (JDGui.getInstance() != null) JDGui.getInstance().setWaiting(false);
-
+        
         if (isPaintSpecialDeal()) {
             int height = 22;
             specialDealIcon = new AbstractIcon("logo_oboom", 65);
@@ -259,7 +245,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
             //
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             String[] parts = _GUI._.special_deal_oboom().split("(?i)oboom(\\.com)?");
-
+            
             int totalWidth = 0;
             for (int i = 0; i < parts.length; i++) {
                 if (StringUtils.isEmpty(parts[i])) parts[i] = "";
@@ -271,7 +257,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                     totalWidth += specialDealIcon.getIconWidth();
                 }
             }
-
+            
             int x = getWidth() - totalWidth - 2;
             for (int i = 0; i < parts.length; i++) {
                 String s = parts[i];
@@ -281,44 +267,44 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
                 // x += 5;
                 // g2.setColor(Color.RED);
                 // g2.drawRect(getWidth() - width, 2, width, height);
-
+                
                 if (i < parts.length - 1) {
                     specialDealIcon.paintIcon(this, g2, x, 4 + (height - specialDealIcon.getIconHeight()) / 2);
                     x += specialDealIcon.getIconWidth();
                 }
             }
             specialDealBounds = new Rectangle(getWidth() - totalWidth, 2, totalWidth, height);
-
+            
             if (specialDealMouseOver) {
-
+                
                 g2.drawLine(getWidth() - totalWidth - 4, height, getWidth() - 2, height);
             } else {
                 // g2.drawLine(getWidth() - totalWidth - 3, height - 2, getWidth() - 2, height - 2);
             }
-
+            
         }
-
+        
     }
-
+    
     /**
      * gets called form the main frame if it gets closed
      */
     public void onClose() {
         getSelectedView().setHidden();
     }
-
+    
     /**
      * returns the currently selected View
      */
     public View getSelectedView() {
         return (View) super.getSelectedComponent();
     }
-
+    
     @Override
     public void setSelectedComponent(Component e) {
         super.setSelectedComponent(getComponentEquals((View) e));
     }
-
+    
     /**
      * returns the component in this tab that equals view
      * 
@@ -332,7 +318,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         }
         return null;
     }
-
+    
     /**
      * CHecks if there is already a tabbepanel of this type in this pane.
      * 
@@ -346,15 +332,15 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
         }
         return false;
     }
-
+    
     public boolean isLinkgrabberView() {
         return getSelectedView() instanceof LinkGrabberView;
     }
-
+    
     public boolean isDownloadView() {
         return getSelectedView() instanceof DownloadsView;
     }
-
+    
     // public void mouseClicked(MouseEvent e) {
     // try {
     // int tabNumber = getUI().tabForCoordinate(this, e.getX(), e.getY());
@@ -379,62 +365,62 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     //
     // public void mouseReleased(MouseEvent e) {
     // }
-
+    
     @Override
     public void mouseDragged(MouseEvent e) {
     }
-
+    
     @Override
     public void mouseMoved(MouseEvent e) {
-
+        
         if (specialDealBounds != null && specialDealBounds.contains(e.getPoint()) && !specialDealMouseOver && isPaintSpecialDeal()) {
             specialDealMouseOver = true;
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
-
+            
         } else if (specialDealMouseOver && (specialDealBounds == null || !specialDealBounds.contains(e.getPoint()))) {
             specialDealMouseOver = false;
             setCursor(null);
             repaint(specialDealBounds.x - 4, specialDealBounds.y, specialDealBounds.width + 6, specialDealBounds.height);
-
+            
         }
-
+        
     }
-
+    
     private boolean isPaintSpecialDeal() {
-        return (CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED && OboomDialog.isOfferActive());
+        return (OboomDialog.isOfferActive() && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED.get());
     }
-
+    
     @Override
     public void mouseClicked(MouseEvent e) {
         if (specialDealMouseOver && isPaintSpecialDeal()) {
             new Thread("OSR") {
                 public void run() {
-
+                    
                     OboomDialog d = new OboomDialog();
-
+                    
                     UIOManager.I().show(null, d);
                     OboomDialog.track("TabbedClick");
                 }
             }.start();
-
+            
         }
     }
-
+    
     @Override
     public void mousePressed(MouseEvent e) {
     }
-
+    
     @Override
     public void mouseReleased(MouseEvent e) {
     }
-
+    
     @Override
     public void mouseEntered(MouseEvent e) {
     }
-
+    
     @Override
     public void mouseExited(MouseEvent e) {
     }
-
+    
 }
