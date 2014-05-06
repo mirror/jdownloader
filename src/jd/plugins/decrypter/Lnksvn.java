@@ -47,20 +47,20 @@ import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Linksave.in" }, urls = { "https?://(www\\.)?linksave\\.in/(view.php\\?id=)?(?!dl\\-)[\\w]+" }, flags = { 0 })
 public class Lnksvn extends PluginForDecrypt {
-
+    
     private boolean isExternInterfaceActive() {
         // DO NOT check for the plugin here. compatzibility reasons to 0.9*
         // better: check port 9666 for a httpserver
-
+        
         return true;
     }
-
+    
     public Lnksvn(final PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     private static final String INVALIDLINKS = "http://(www\\.)?linksave\\.in/(news|api|partner|usercp|protect|faq|contact|language).*?";
-
+    
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         br.setRequestIntervalLimit(getHost(), 1000);
@@ -68,7 +68,7 @@ public class Lnksvn extends PluginForDecrypt {
         setBrowserExclusive();
         final String parameter = param.toString().replace("https://", "http://");
         br.forceDebug(true);
-
+        
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://linksave.in/", "Linksave_Language", "german");
         br.setRequestIntervalLimit("linksave.in", 1000);
@@ -91,15 +91,19 @@ public class Lnksvn extends PluginForDecrypt {
             /* 0.95xx comp */
             final String jkvalue = cnlform.getRegex("<INPUT TYPE=\"hidden\" NAME=\"jk\" VALUE=\"(.*?)\"").getMatch(0);
             cnlform.put("jk", Encoding.formEncoding(jkvalue));
-
+            
             if (jkvalue != null) {
-
+                
                 if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
                     HashMap<String, String> infos = new HashMap<String, String>();
-                    infos.put("crypted", cnlform.getInputField("crypted").getValue());
-                    infos.put("jk", cnlform.getInputField("jk").getValue());
+                    infos.put("crypted", Encoding.urlDecode(cnlform.getInputField("crypted").getValue(), false));
+                    infos.put("jk", Encoding.urlDecode(cnlform.getInputField("jk").getValue(), false));
                     String source = cnlform.getInputField("source").getValue();
-                    if (StringUtils.isEmpty(source)) source = parameter.toString();
+                    if (StringUtils.isEmpty(source)) {
+                        source = parameter.toString();
+                    } else {
+                        source = Encoding.urlDecode(source, true);
+                    }
                     infos.put("source", source);
                     String json = JSonStorage.toString(infos);
                     final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
@@ -203,11 +207,11 @@ public class Lnksvn extends PluginForDecrypt {
             Browser          browser;
             String           result;
             volatile boolean done = false;
-
+            
             public LsDirektLinkTH(final Browser browser) {
                 this.browser = browser;
             }
-
+            
             @Override
             public void run() {
                 try {
@@ -254,7 +258,7 @@ public class Lnksvn extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
+    
     private void getCaptcha(final CryptedLink param, final String extras) throws Exception {
         Form form = br.getFormbyProperty("name", "form");
         for (int retry = 0; retry < 5; retry++) {
@@ -296,7 +300,7 @@ public class Lnksvn extends PluginForDecrypt {
             }
         }
     }
-
+    
     private String getDirektLink(final Browser br) throws IOException {
         final String link = br.getRegex("<frame scrolling=\"auto\" noresize src=\"([^\"]*)\">").getMatch(0);
         final String url = br.getURL().toString();
@@ -362,10 +366,10 @@ public class Lnksvn extends PluginForDecrypt {
         }
         return null;
     }
-
+    
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
+    
 }

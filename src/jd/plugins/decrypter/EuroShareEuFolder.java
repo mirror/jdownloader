@@ -29,11 +29,11 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/folder/\\d+/[^\"<>\\' ]+" }, flags = { 0 })
 public class EuroShareEuFolder extends PluginForDecrypt {
-
+    
     public EuroShareEuFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("euroshare.sk/", "euroshare.eu/");
@@ -43,11 +43,11 @@ public class EuroShareEuFolder extends PluginForDecrypt {
         if (br.containsHTML(">error 404<")) return null;
         String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("href=\"(/file/\\d+/[^\"]+)").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(https?://euroshare\\.eu/file/\\d+/[^\"]+").getColumn(0);
+        if (links == null || links.length == 0) links = br.getRegex("\"(https?://euroshare\\.eu/file/[a-zA-Z0-9]+/[^\"]+").getColumn(0);
         if (links == null || links.length == 0) return null;
         if (links != null && links.length != 0) {
             for (String dl : links) {
-                if (dl.matches("/file/\\d+/[^\"]+"))
+                if (dl.matches("/file/[a-zA-Z0-9]+/[^\"]+"))
                     decryptedLinks.add(createDownloadlink("http://euroshare.eu" + dl));
                 else
                     decryptedLinks.add(createDownloadlink(dl));
@@ -60,10 +60,10 @@ public class EuroShareEuFolder extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
+    
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
+    
 }

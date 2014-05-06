@@ -45,20 +45,20 @@ import org.appwork.utils.formatter.HexFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]+" }, flags = { 0 })
 public class Rlnks extends PluginForDecrypt {
-
+    
     ProgressController   PROGRESS;
     private Form         ALLFORM = null;
     private String       UA      = RandomUserAgent.generate();
     public static Object LOCK    = new Object();
-
+    
     public Rlnks(final PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     private String correctCryptedLink(final String input) {
         return input.replaceAll("(go|view|container_captcha)\\.php\\?id=", "f/");
     }
-
+    
     private boolean decryptContainer(final String page, final String cryptedLink, final String containerFormat, final ArrayList<DownloadLink> decryptedLinks) throws IOException {
         final String containerURL = new Regex(page, "(download\\.php\\?id=[a-zA-z0-9]+\\&" + containerFormat + "=\\d+)").getMatch(0);
         if (containerURL != null) {
@@ -72,7 +72,7 @@ public class Rlnks extends PluginForDecrypt {
         }
         return false;
     }
-
+    
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -82,7 +82,7 @@ public class Rlnks extends PluginForDecrypt {
             setBrowserExclusive();
             br.setFollowRedirects(true);
             br.getHeaders().put("User-Agent", UA);
-
+            
             /* Handle Captcha and/or password */
             handleCaptchaAndPassword(parameter, param);
             if (!br.getURL().contains("relink.us/")) {
@@ -95,28 +95,32 @@ public class Rlnks extends PluginForDecrypt {
             }
             if (ALLFORM != null && ALLFORM.getRegex("password").matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
             if (ALLFORM != null && ALLFORM.getRegex("captcha").matches()) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-
+            
             final String page = br.toString();
             progress.setRange(0);
-
+            
             /* use cnl2 button if available */
             String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
             if (br.containsHTML(cnlUrl)) {
                 final Browser cnlbr = br.cloneBrowser();
-
+                
                 Form cnlForm = null;
                 for (Form f : cnlbr.getForms()) {
                     if (f.containsHTML(cnlUrl)) cnlForm = f;
                 }
                 if (cnlForm != null) {
-
+                    
                     if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
                         String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
                         HashMap<String, String> infos = new HashMap<String, String>();
-                        infos.put("crypted", cnlForm.getInputField("crypted").getValue());
+                        infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
                         infos.put("jk", jk);
                         String source = cnlForm.getInputField("source").getValue();
-                        if (StringUtils.isEmpty(source)) source = parameter.toString();
+                        if (StringUtils.isEmpty(source)) {
+                            source = parameter.toString();
+                        } else {
+                            source = Encoding.urlDecode(source, true);
+                        }
                         infos.put("source", source);
                         String json = JSonStorage.toString(infos);
                         final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
@@ -128,7 +132,7 @@ public class Rlnks extends PluginForDecrypt {
                         decryptedLinks.add(dl);
                         return decryptedLinks;
                     } else {
-
+                        
                         String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
                         cnlForm.remove("jk");
                         cnlForm.put("jk", (jk != null ? jk.replaceAll("\\+", "%2B") : "nothing"));
@@ -168,7 +172,7 @@ public class Rlnks extends PluginForDecrypt {
             return decryptedLinks;
         }
     }
-
+    
     private void decryptLinks(final ArrayList<DownloadLink> decryptedLinks, final CryptedLink param) throws Exception {
         br.setFollowRedirects(false);
         final String[] matches = br.getRegex("getFile\\('(cid=\\w*?&lid=\\d*?)'\\)").getColumn(0);
@@ -216,7 +220,7 @@ public class Rlnks extends PluginForDecrypt {
             br.setFollowRedirects(true);
         }
     }
-
+    
     private void handleCaptchaAndPassword(final String partLink, final CryptedLink param) throws Exception {
         br.getPage(partLink);
         ALLFORM = br.getFormbyProperty("name", "form");
@@ -257,10 +261,10 @@ public class Rlnks extends PluginForDecrypt {
             }
         }
     }
-
+    
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
     }
-
+    
 }

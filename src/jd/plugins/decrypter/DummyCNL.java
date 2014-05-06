@@ -44,32 +44,32 @@ import org.mozilla.javascript.Scriptable;
 
 @DecrypterPlugin(revision = "$Revision: 23722 $", interfaceVersion = 2, names = { "dummycnl.jdownloader.org" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" }, flags = { 0 })
 public class DummyCNL extends PluginForDecrypt {
-
+    
     public DummyCNL(final PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String hex = new Regex(parameter, "http://dummycnl\\.jdownloader\\.org/([a-f0-9A-F]+)").getMatch(0);
-
+        
         HashMap<String, String> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), new TypeRef<HashMap<String, String>>() {
         }, null);
-
+        
         String decrypted = decrypt(params.get("crypted"), params.get("jk"), params.get("k"));
-
+        
         String source = params.get("source");
-
+        
         String packageName = params.get("package");
         FilePackage fp = null;
-
+        
         if (packageName != null) {
             fp = FilePackage.getInstance();
             fp.setName(packageName);
         }
-
+        
         for (String s : Regex.getLines(decrypted)) {
             final DownloadLink dl = createDownloadlink(s);
             if (source != null) dl.setBrowserUrl(source);
@@ -85,7 +85,7 @@ public class DummyCNL extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
+    
     /* decrypt given crypted string with js encrypted aes key */
     public static String decrypt(String crypted, final String jk, String k) {
         byte[] key = null;
@@ -124,7 +124,7 @@ public class DummyCNL extends PluginForDecrypt {
         byte[] baseDecoded = Base64.decode(crypted);
         return decrypt(baseDecoded, key).trim();
     }
-
+    
     public static String decrypt(byte[] b, byte[] key) {
         Cipher cipher;
         try {
@@ -138,15 +138,15 @@ public class DummyCNL extends PluginForDecrypt {
         }
         return null;
     }
-
+    
     /* NOTE: no override to keep compatible to old stable */
     public int getMaxConcurrentProcessingInstances() {
         return 10;
     }
-
+    
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
+    
 }
