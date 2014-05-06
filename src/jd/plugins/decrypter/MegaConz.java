@@ -38,17 +38,17 @@ public class MegaConz extends PluginForDecrypt {
     }
     
     public static class MegaFolder {
-
+        
         public String  parent;
         public String  name;
         private String id;
-
+        
         public MegaFolder(String nodeID) {
             id = nodeID;
         }
-
+        
     }
-
+    
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -91,18 +91,18 @@ public class MegaConz extends PluginForDecrypt {
             String nodeType = getField("t", node);
             if ("1".equals(nodeType)) {
                 /* folder */
-
+                
                 MegaFolder fo = new MegaFolder(nodeID);
                 String nodeParentID = getField("p", node);
                 fo.parent = nodeParentID;
                 fo.name = nodeName;
                 folders.put(nodeID, fo);
-
+                
             } else if ("0".equals(nodeType)) {
                 /* file */
                 String nodeParentID = getField("p", node);
                 MegaFolder folder = folders.get(nodeParentID);
-
+                
                 FilePackage fp = FilePackage.getInstance();
                 String path = getRelPath(folder, folders);
                 fp.setName(path.substring(1));
@@ -130,7 +130,7 @@ public class MegaConz extends PluginForDecrypt {
         if (folder == null) return "/";
         StringBuilder ret = new StringBuilder();
         while (true) {
-
+            
             ret.insert(0, folder.name);
             ret.insert(0, "/");
             MegaFolder parent = folders.get(folder.parent);
@@ -140,9 +140,9 @@ public class MegaConz extends PluginForDecrypt {
             }
             folder = parent;
         }
-
+        
     }
-
+    
     private String decryptNodeKey(String encryptedNodeKey, String masterKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
         byte[] masterKeyBytes = b64decode(masterKey);
         byte[] encryptedNodeKeyBytes = b64decode(encryptedNodeKey);
@@ -164,8 +164,9 @@ public class MegaConz extends PluginForDecrypt {
     }
     
     private byte[] b64decode(String data) {
+        data = data.replace(",", "");
         data += "==".substring((2 - data.length() * 3) & 3);
-        data = data.replace("-", "+").replace("_", "/").replace(",", "");
+        data = data.replace("-", "+").replace("_", "/");
         return Base64.decode(data);
     }
     

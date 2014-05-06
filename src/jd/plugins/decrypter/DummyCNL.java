@@ -42,7 +42,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dummycnl.jdownloader.org" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dummycnl.jdownloader.org" }, urls = { "http://dummycnl\\.jdownloader\\.org/[a-f0-9A-F]+" }, flags = { 0 })
 public class DummyCNL extends PluginForDecrypt {
     
     public DummyCNL(final PluginWrapper wrapper) {
