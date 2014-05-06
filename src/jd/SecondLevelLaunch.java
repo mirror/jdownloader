@@ -131,9 +131,9 @@ public class SecondLevelLaunch {
     static {
         statics();
     }
-    
+
     private static LogSource                 LOG;
-    
+
     public final static SingleReachableState INIT_COMPLETE         = new SingleReachableState("INIT_COMPLETE");
     public final static SingleReachableState GUI_COMPLETE          = new SingleReachableState("GUI_COMPLETE");
     public final static SingleReachableState HOST_PLUGINS_COMPLETE = new SingleReachableState("HOST_PLG_COMPLETE");
@@ -141,9 +141,9 @@ public class SecondLevelLaunch {
     public final static SingleReachableState EXTENSIONS_LOADED     = new SingleReachableState("EXTENSIONS_LOADED");
     private static File                      FILE;
     public final static long                 startup               = System.currentTimeMillis();
-    
+
     // private static JSonWrapper webConfig;
-    
+
     /**
      * Sets special Properties for MAC
      */
@@ -156,10 +156,10 @@ public class SecondLevelLaunch {
             SecondLevelLaunch.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
             SecondLevelLaunch.LOG.log(e);
         }
-        
+
         // Use ScreenMenu in every LAF
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-        
+
         new Thread() {
             public void run() {
                 try {
@@ -198,7 +198,7 @@ public class SecondLevelLaunch {
                 }
             };
         }.start();
-        
+
         // native Mac just if User Choose Aqua as Skin
         // if (LookAndFeelController.getInstance().getPlaf().getName().equals("Apple Aqua")) {
         // // Mac Java from 1.3
@@ -210,20 +210,20 @@ public class SecondLevelLaunch {
         // System.setProperty("apple.laf.useScreenMenuBar", "true");
         // System.setProperty("apple.awt.showGrowBox", "true");
         // }
-        
+
         try {
             MacOSApplicationAdapter.enableMacSpecial();
         } catch (final Throwable e) {
             SecondLevelLaunch.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
             SecondLevelLaunch.LOG.log(e);
         }
-        
+
     }
-    
+
     public static void statics() {
-        
+
     }
-    
+
     /**
      * Checks if the user uses a correct java version
      */
@@ -245,18 +245,18 @@ public class SecondLevelLaunch {
             }
         }
     }
-    
+
     /**
      * Lädt ein Dynamicplugin.
      * 
      * 
      * @throws IOException
      */
-    
+
     public static void mainStart(final String args[]) {
-        
+
         SecondLevelLaunch.LOG = LogController.GL;
-        
+
         // Mac OS specific
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
@@ -275,7 +275,7 @@ public class SecondLevelLaunch {
                 e.printStackTrace();
             }
         }
-        
+
         /* hack for ftp plugin to use new ftp style */
         System.setProperty("ftpStyle", "new");
         /* random number: eg used for cnl2 without asking dialog */
@@ -321,9 +321,9 @@ public class SecondLevelLaunch {
         SecondLevelLaunch.LOG.info("MaxMemory=" + maxHeap + "bytes (" + (maxHeap / (1024 * 1024)) + "Megabytes)");
         vmOptionsWorkaround(maxHeap);
         SecondLevelLaunch.LOG.info("JDownloader2");
-        
+
         // checkSessionInstallLog();
-        
+
         boolean jared = Application.isJared(SecondLevelLaunch.class);
         String revision = JDUtilities.getRevision();
         if (!jared) {
@@ -335,7 +335,7 @@ public class SecondLevelLaunch {
         SecondLevelLaunch.preInitChecks();
         SecondLevelLaunch.start(args);
     }
-    
+
     private static void vmOptionsWorkaround(long maxHeap) {
         final IOErrorHandler errorHandler = IO.getErrorHandler();
         try {
@@ -353,7 +353,7 @@ public class SecondLevelLaunch {
                         }
                     }
                     File[] vmOptions = Application.getResource(".").listFiles(new FileFilter() {
-                        
+
                         @Override
                         public boolean accept(File arg0) {
                             return arg0.getName().endsWith(".vmoptions");
@@ -457,21 +457,21 @@ public class SecondLevelLaunch {
             IO.setErrorHandler(errorHandler);
         }
     }
-    
+
     private static void preInitChecks() {
         SecondLevelLaunch.javaCheck();
     }
-    
+
     private static void exitCheck() {
-        
+
         if (CrossSystem.isMac()) {
             // we need to check this on mac. use complain that it does not work. warning even if the exit via quit
-            
+
             return;
         }
-        
+
         FILE = Application.getTempResource("exitcheck");
-        
+
         try {
             if (FILE.exists()) {
                 final String error = IO.readFileToString(FILE);
@@ -482,19 +482,19 @@ public class SecondLevelLaunch {
                         String txt = "It seems that JDownloader did not exit properly on " + error + "\r\nThis might result in losing settings or your downloadlist!\r\n\r\nPlease make sure to close JDownloader using Menu->File->Exit or Window->Close [X]";
                         LOG.warning("BAD EXIT Detected!: " + txt);
                         Dialog.getInstance().showErrorDialog(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY, "Warning - Bad Exit!", txt);
-                        
+
                     };
                 }.start();
-                
+
             }
-            
+
             FileCreationManager.getInstance().delete(FILE, null);
             FileCreationManager.getInstance().mkdir(FILE.getParentFile());
             IO.writeToFile(FILE, (new SimpleDateFormat("dd.MMM.yyyy HH:mm").format(new Date())).getBytes("UTF-8"));
-            
+
         } catch (Exception e) {
             Log.exception(Level.WARNING, e);
-            
+
         }
         FILE.deleteOnExit();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
@@ -502,26 +502,26 @@ public class SecondLevelLaunch {
             public String toString() {
                 return "ShutdownEvent: Delete " + FILE;
             }
-            
+
             @Override
             public void setHookPriority(int priority) {
                 // try to call as last hook
                 super.setHookPriority(Integer.MIN_VALUE);
             }
-            
+
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
                 FileCreationManager.getInstance().delete(FILE, null);
             }
         });
     }
-    
+
     private static void start(final String args[]) {
         exitCheck();
         go();
-        
+
     }
-    
+
     private static void go() {
         SecondLevelLaunch.LOG.info("Initialize JDownloader2");
         try {
@@ -539,14 +539,14 @@ public class SecondLevelLaunch {
         Log.L.setLevel(Level.ALL);
         Log.L.addHandler(new Handler() {
             LogSource oldLogger = LogController.getInstance().getLogger("OldLogL");
-            
+
             @Override
             public void publish(LogRecord record) {
-                
+
                 LogSource ret = LogController.getInstance().getPreviousThreadLogSource();
-                
+
                 if (ret != null) {
-                    
+
                     record.setMessage("Utils>" + ret.getName() + ">" + record.getMessage());
                     ret.log(record);
                     return;
@@ -555,18 +555,18 @@ public class SecondLevelLaunch {
                 if (logger == null) logger = oldLogger;
                 logger.log(record);
             }
-            
+
             @Override
             public void flush() {
             }
-            
+
             @Override
             public void close() throws SecurityException {
             }
         });
-        
+
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
-            
+
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 LogSource logger = LogController.getInstance().getLogger("UncaughtExceptionHandler");
@@ -597,13 +597,13 @@ public class SecondLevelLaunch {
             @Override
             public void run() {
                 try {
-                    
+
                     CFG_GENERAL.BROWSER_COMMAND_LINE.getEventSender().addListener(new GenericConfigEventListener<String[]>() {
-                        
+
                         @Override
                         public void onConfigValidatorError(KeyHandler<String[]> keyHandler, String[] invalidValue, ValidationException validateException) {
                         }
-                        
+
                         @Override
                         public void onConfigValueModified(KeyHandler<String[]> keyHandler, String[] newValue) {
                             CrossSystem.setBrowserCommandLine(newValue);
@@ -616,11 +616,11 @@ public class SecondLevelLaunch {
                     } catch (final Throwable e) {
                         SecondLevelLaunch.LOG.log(e);
                     }
-                    
+
                     // init
-                    
+
                     Dialog.getInstance().setDefaultTimeout(Math.max(2000, JsonConfig.create(GraphicalUserInterfaceSettings.class).getDialogDefaultTimeoutInMS()));
-                    
+
                     /* set gloabel logger for browser */
                     Browser.setGlobalLogger(LogController.getInstance().getLogger("GlobalBrowser"));
                     /* init default global Timeouts */
@@ -631,7 +631,7 @@ public class SecondLevelLaunch {
                     Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy());
                     /* add global proxy change listener */
                     ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
-                        
+
                         public void onEvent(ProxyEvent<ProxyInfo> event) {
                             if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
                                 HTTPProxy proxy = null;
@@ -643,7 +643,7 @@ public class SecondLevelLaunch {
                                     }
                                 }
                             }
-                            
+
                         }
                     });
                     if (CFG_GENERAL.CFG.isWindowsJNAIdleDetectorEnabled() && CrossSystem.isWindows()) {
@@ -658,7 +658,7 @@ public class SecondLevelLaunch {
                 } catch (Throwable e) {
                     SecondLevelLaunch.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-                    
+
                     // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                 }
             }
@@ -676,19 +676,19 @@ public class SecondLevelLaunch {
                     for (int i = 0; i < j; i++) {
                         Window window = awindow[i];
                         LOG.info("Window: " + window);
-                        
+
                         boolean flag = !(window instanceof JWindow) && !(window instanceof JFrame) && !(window instanceof JDialog);
                         if (!window.getClass().getName().contains("Popup$HeavyWeightWindow") && !flag) {
                             LOG.info("Window: " + "Reshape: yes");
                         }
-                        
+
                     }
                 } catch (Exception e) {
                     LOG.log(e);
                 }
-                
+
                 Dialog.getInstance().initLaf();
-                
+
                 return null;
             }
         };
@@ -699,7 +699,7 @@ public class SecondLevelLaunch {
             CFG_SILENTMODE.MANUAL_ENABLED.setValue(false);
         }
         GUI_COMPLETE.executeWhenReached(new Runnable() {
-            
+
             public void run() {
                 new Thread() {
                     @Override
@@ -707,16 +707,16 @@ public class SecondLevelLaunch {
                         try {
                             final boolean jared = Application.isJared(SecondLevelLaunch.class);
                             new EDTHelper<Void>() {
-                                
+
                                 @Override
                                 public Void edtRun() {
                                     ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipDelay());
                                     return null;
                                 }
-                                
+
                             }.start(true);
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
-                            
+
                             if (!jared) {
                                 HostPluginController.getInstance().invalidateCache();
                                 CrawlerPluginController.invalidateCache();
@@ -773,7 +773,7 @@ public class SecondLevelLaunch {
                                                 ClipboardMonitoring.getINSTANCE().startMonitoring();
                                             }
                                             org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
-                                                
+
                                                 public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                                                     if (Boolean.TRUE.equals(newValue) && ClipboardMonitoring.getINSTANCE().isMonitoring() == false) {
                                                         ClipboardMonitoring.getINSTANCE().startMonitoring();
@@ -781,14 +781,14 @@ public class SecondLevelLaunch {
                                                         ClipboardMonitoring.getINSTANCE().stopMonitoring();
                                                     }
                                                 }
-                                                
+
                                                 public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
                                                 }
                                             });
                                             ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(DialogClickCaptchaSolver.getInstance());
-                                            ChallengeResponseController.getInstance().addSolver(CaptchaMyJDSolver.getInstance());
+                                            if (!Application.isJared(null)) ChallengeResponseController.getInstance().addSolver(CaptchaMyJDSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(CBSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(DeathByCaptchaSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(Captcha9kwSolver.getInstance());
@@ -803,24 +803,24 @@ public class SecondLevelLaunch {
                             boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
                             if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {
                                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-                                    
+
                                     @Override
                                     protected Void run() throws RuntimeException {
                                         /*
                                          * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
                                          */
                                         List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-                                            
+
                                             @Override
                                             public boolean acceptNode(DownloadLink node) {
                                                 return node.isEnabled() && node.getFinalLinkState() == null;
                                             }
-                                            
+
                                             @Override
                                             public int returnMaxResults() {
                                                 return 1;
                                             }
-                                            
+
                                         });
                                         if (dlAvailable.size() == 0) {
                                             /*
@@ -839,10 +839,10 @@ public class SecondLevelLaunch {
                                                     return;
                                                 }
                                                 if (JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isSilentRestart()) {
-                                                    
+
                                                     DownloadWatchDog.getInstance().startDownloads();
                                                 } else {
-                                                    
+
                                                     if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
                                                         ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
                                                         d.setTimeout(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() * 1000);
@@ -864,7 +864,7 @@ public class SecondLevelLaunch {
                                     }
                                 });
                             }
-                            
+
                         } catch (Throwable e) {
                             SecondLevelLaunch.LOG.log(e);
                             Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
@@ -872,7 +872,7 @@ public class SecondLevelLaunch {
                         } finally {
                             OperatingSystemEventSender.getInstance().init();
                         }
-                        
+
                         if (CFG_GENERAL.CFG.isSambaPrefetchEnabled()) {
                             ExtFileSystemView.runSambaScanner();
                         }
@@ -889,7 +889,7 @@ public class SecondLevelLaunch {
                         ShutdownController.getInstance().addShutdownVetoListener(RestartController.getInstance());
                     }
                     CFG_GUI.RLY_WARN_LEVEL.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
-                        
+
                         @Override
                         public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
                             if (CFG_GUI.CFG.getRlyWarnLevel() == RlyWarnLevel.HIGH) {
@@ -897,9 +897,9 @@ public class SecondLevelLaunch {
                             } else {
                                 ShutdownController.getInstance().removeShutdownVetoListener(RestartController.getInstance());
                             }
-                            
+
                         }
-                        
+
                         @Override
                         public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
                         }
@@ -910,18 +910,18 @@ public class SecondLevelLaunch {
                     // init Archivecontroller.init has to be done AFTER downloadcontroller and linkcollector
                     ArchiveController.getInstance();
                     Toolkit.getDefaultToolkit().addAWTEventListener(new CustomCopyPasteSupport(), AWTEvent.MOUSE_EVENT_MASK);
-                    
+
                     SecondLevelLaunch.LOG.info("GUIDONE->" + (System.currentTimeMillis() - SecondLevelLaunch.startup));
                 } catch (Throwable e) {
                     SecondLevelLaunch.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-                    
+
                     // org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                 }
                 return null;
             }
         }.waitForEDT();
-        
+
         try {
             /* thread should be finished here */
             thread.join(10000);
@@ -938,15 +938,15 @@ public class SecondLevelLaunch {
             }
         }
         JDGui.getInstance().badLaunchCheck();
-        
+
         SecondLevelLaunch.GUI_COMPLETE.setReached();
-        
+
         SecondLevelLaunch.LOG.info("Initialisation finished");
         SecondLevelLaunch.INIT_COMPLETE.setReached();
-        
+
         // init statsmanager
         StatsManager.I();
-        
+
         // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
         try {
             long t = System.currentTimeMillis();
@@ -959,6 +959,6 @@ public class SecondLevelLaunch {
         } catch (final Throwable e) {
             e.printStackTrace();
         }
-        
+
     }
 }

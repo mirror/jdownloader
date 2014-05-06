@@ -10,8 +10,24 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -32,9 +48,12 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.DefaultButtonPanel;
@@ -51,13 +70,25 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class OboomDialog extends AbstractDialog<Integer> {
 
-    private static boolean OFFER_IS_ACTIVE = !Application.getTempResource("oboom1").exists();
+    private static boolean OFFER_IS_ACTIVE = readOfferActive();
     private ExtTextField   input;
     private LogSource      logger;
 
     public OboomDialog() {
         super(0, _GUI._.specialdeals_oboom_dialog_title(), new AbstractIcon("logo_oboom_small", 64), _GUI._.lit_continue(), _GUI._.lit_close());
         logger = LogController.getInstance().getLogger("OboomDeal");
+    }
+
+    private static boolean readOfferActive() {
+
+        switch (CrossSystem.getOSFamily()) {
+        case WINDOWS:
+            return readRegistry() <= 0 && !Application.getTempResource("oboom1").exists();
+
+        default:
+            return !Application.getResource("cfg/deals.json").exists() && !Application.getTempResource("oboom1").exists();
+        }
+
     }
 
     @Override
@@ -113,13 +144,100 @@ public class OboomDialog extends AbstractDialog<Integer> {
         }
     }
 
+    public static final AtomicReference<String> KEY   = new AtomicReference<String>("afe38c");
+    public static final AtomicReference<byte[]> VALUE = new AtomicReference<byte[]>(new byte[] { 77, 100, 51, 54, 56, 100, 65, 53, 57, 48, 54, 99, 11, 51, 56, 48, 100, 100, 49, 56, 55, 101, 97, 100, 53, 53, 53, 56, 99, 48, 102, 49, 99, 57, 100, 102, 98, 48, 53, 55, 54, 101, 57, 52, 49, 51, 50, 51, 48, 55, 54, 97, 55, 48, 99, 100, 98, 50, 54, 52, 98, 53, 48, 56 });
+
+    private static int doLookup(final String hostName) throws NamingException {
+        DirContext ictx = null;
+        try {
+            Hashtable<String, String> env = new Hashtable<String, String>();
+
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
+            env.put("com.sun.jndi.dns.timeout.initial", "4000");
+            env.put("com.sun.jndi.dns.timeout.retries", "1");
+            ictx = new InitialDirContext(env);
+            final Attributes attrs = ictx.getAttributes(hostName, new String[] { "MX" });
+            final Attribute attr = attrs.get("MX");
+            if (attr == null) {
+                Socket socket = null;
+                try {
+                    /* last chance, no mx record -> let's check for smtp port open */
+                    socket = new Socket();
+                    socket.connect(new InetSocketAddress(hostName, 25), 1000);
+                    return 1;
+                } catch (final Throwable ignore) {
+                } finally {
+                    try {
+                        if (socket != null) {
+                            socket.close();
+                        }
+                    } catch (final Throwable ignore) {
+                    }
+                }
+                return 0;
+            }
+            return attr.size();
+        } finally {
+            try {
+                if (ictx != null) {
+                    ictx.close();
+                }
+            } catch (final Throwable ignore) {
+            }
+        }
+    }
+
+    protected static boolean validateEmail(final String email) {
+        if (new Regex(email, "..*?@.*?\\..+").matches()) {
+            try {
+                final String host = new Regex(email, ".*?@(.+)").getMatch(0);
+                if (StringUtils.isEmpty(host)) {
+                    return false;
+                } else {
+                    return doLookup(host) > 0;
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+        return false;
+    }
+
     protected void requestAccount(String email) {
         try {
-
-            OboomDialog.track("RequestAccount");
             Browser br = new Browser();
 
-            br.getPage("https://www.oboom.com/event/jdownloader?email=" + Encoding.urlEncode(email) + "&http_errors=0");
+            br.getPage("http://stats.appwork.org/data/db/getDealStatus");
+
+            if (!br.containsHTML("true") && Application.isJared(null)) {
+                Dialog.getInstance().showMessageDialog(0, _GUI._.lit_error_occured(), _GUI._.specialdeals_oboom_dialog_request_disabled());
+                MainTabbedPane.SPECIAL_DEALS_ENABLED = false;
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        MainTabbedPane.getInstance().repaint();
+                    }
+                };
+                return;
+            }
+            if (!validateEmail(email)) {
+                OboomDialog.track("InvalidEmail");
+                Dialog.getInstance().showMessageDialog(0, _GUI._.lit_error_occured(), _GUI._.specialdeals_oboom_dialog_request_invalidEmail());
+                retry();
+                return;
+            }
+            OboomDialog.track("RequestAccount");
+
+            long time = System.currentTimeMillis();
+            final Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+
+            final SecretKeySpec secret_key = new SecretKeySpec(VALUE.get(), "HmacSHA256");
+            sha256_HMAC.init(secret_key);
+            String sig = HexFormatter.byteArrayToHex(sha256_HMAC.doFinal((KEY.get() + ":" + email + ":" + time).getBytes("UTF-8")));
+            String url = "https://www.oboom.com/event/jdownloader/secure?email=" + Encoding.urlEncode(email) + "&rev=" + Encoding.urlEncode(KEY.get()) + "&sig=" + sig + "&ts=" + time + "&http_errors=0";
+            br.getPage(url);
 
             if (br.containsHTML("403,\"E_PREMIUM\"")) {
                 OboomDialog.track("Error_E_PREMIUM");
@@ -181,6 +299,7 @@ public class OboomDialog extends AbstractDialog<Integer> {
 
                 final Account ac = new Account(data[2].toString(), data[3].toString());
                 ac.setHoster("oboom.com");
+                ac.setProperty("DEAL", System.currentTimeMillis());
                 AccountController.getInstance().addAccount(ac);
 
                 Dialog.getInstance().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.specialdeals_oboom_dialog_request_success_title(), _GUI._.specialdeals_oboom_dialog_request_success_msg(), new AbstractIcon("logo_oboom", 100), _GUI._.lit_continue(), null);
@@ -188,6 +307,14 @@ public class OboomDialog extends AbstractDialog<Integer> {
             }
 
             System.out.println(1);
+
+        } catch (final NoSuchAlgorithmException e) {
+            logger.log(e);
+            OboomDialog.track("ERROR_EXCEPTION_" + e.getMessage());
+        } catch (final InvalidKeyException e) {
+            logger.log(e);
+            OboomDialog.track("ERROR_EXCEPTION_" + e.getMessage());
+
         } catch (IOException e) {
             logger.log(e);
 
@@ -206,14 +333,54 @@ public class OboomDialog extends AbstractDialog<Integer> {
 
     private void setOfferActive() {
         OFFER_IS_ACTIVE = false;
-        if (!Application.getTempResource("oboom1").exists()) {
-            try {
-                IO.writeStringToFile(Application.getTempResource("oboom1"), System.currentTimeMillis() + "");
-            } catch (IOException e) {
-                e.printStackTrace();
+        switch (CrossSystem.getOSFamily()) {
+        case WINDOWS:
+            writeRegistry(1);
+            break;
+        default:
+
+            if (!Application.getResource("cfg/deals.json").exists()) {
+                try {
+                    IO.writeStringToFile(Application.getResource("cfg/deals.json"), System.currentTimeMillis() + "");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+
         }
+
         MainTabbedPane.getInstance().repaint();
+    }
+
+    public static int readRegistry() {
+        try {
+            final String iconResult = IO.readInputStreamToString(Runtime.getRuntime().exec("reg query \"HKEY_CURRENT_USER\\Software\\JDownloader\" /v \"deal1\"").getInputStream());
+            final Matcher matcher = Pattern.compile("deal1\\s+REG_DWORD\\s+0x(.*)").matcher(iconResult);
+            matcher.find();
+            final String value = matcher.group(1);
+            return Integer.parseInt(value, 16);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
+    public static void writeRegistry(long value) {
+        try {
+
+            final Process p = Runtime.getRuntime().exec("reg add \"HKEY_CURRENT_USER\\Software\\JDownloader\" /v \"deal1\" /t REG_DWORD /d 0x" + Long.toHexString(value) + " /f");
+            IO.readInputStreamToString(p.getInputStream());
+            final int exitCode = p.exitValue();
+            if (exitCode == 0) {
+
+            } else {
+                throw new IOException("Reg add execution failed");
+            }
+        } catch (final IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 
     private void retry() {

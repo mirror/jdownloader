@@ -4580,4 +4580,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "We upgraded your existing OBOOM.com Account.\r\nPlease click continue to enter your password." })
     String specialdeals_oboom_dialog_request_successupdate_input_msg();
+
+    @Default(lngs = { "en" }, values = { "The entered eMail-address does not exist!" })
+    String specialdeals_oboom_dialog_request_invalidEmail();
+
+    @Default(lngs = { "en" }, values = { "An unknown problem occured. Please try again later!" })
+    String specialdeals_oboom_dialog_request_disabled();
 }
