@@ -1,31 +1,28 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -43,15 +40,12 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superload.cz" }, urls = { "http://\\w+\\.superload\\.eu/download\\.php\\?a=[a-z0-9]+" }, flags = { 2 })
-public class SuperLoadCz extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stahomat.cz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
+public class StahomatCz extends PluginForHost {
     /* IMPORTANT: superload.cz and stahomat.cz use the same api */
-    // DEV NOTES
-    // supports last09 based on pre-generated links and jd2
-
-    private static final String                            mName              = "superload.cz/";
+    private static final String                            mName              = "stahomat.cz/";
     private static final String                            mProt              = "http://";
-    private static final String                            mAPI               = "http://api.superload.cz/a-p-i";
+    private static final String                            mAPI               = "http://api.stahomat.cz/a-p-i";
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     private static final int                               MAX_SIMULTAN_DLS   = 5;
@@ -59,7 +53,7 @@ public class SuperLoadCz extends PluginForHost {
     private static Object                                  LOCK               = new Object();
     private String                                         TOKEN              = null;
 
-    public SuperLoadCz(PluginWrapper wrapper) {
+    public StahomatCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
     }
@@ -76,64 +70,6 @@ public class SuperLoadCz extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(3 * 60 * 1000);
         br.setReadTimeout(3 * 60 * 1000);
-    }
-
-    public boolean checkLinks(DownloadLink[] urls) {
-        prepBrowser();
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
-            if (accs == null || accs.size() == 0) {
-                logger.info("No account present, Please add a premium" + mName + "account.");
-                for (DownloadLink dl : urls) {
-                    /* no check possible */
-                    dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-                }
-                return false;
-            }
-            // login(accs.get(0), false);
-            br.setFollowRedirects(true);
-            for (DownloadLink dl : urls) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openGetConnection(dl.getDownloadURL());
-                    if (con.isContentDisposition()) {
-                        dl.setFinalFileName(getFileNameFromHeader(con));
-                        dl.setDownloadSize(con.getLongContentLength());
-                        dl.setAvailable(true);
-                    } else {
-                        dl.setAvailable(false);
-                    }
-                } finally {
-                    try {
-                        /* make sure we close connection */
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
-        checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        return getAvailableStatus(link);
-    }
-
-    private AvailableStatus getAvailableStatus(DownloadLink link) {
-        try {
-            final Field field = link.getClass().getDeclaredField("availableStatus");
-            field.setAccessible(true);
-            Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
-        } catch (final Throwable e) {
-        }
-        return AvailableStatus.UNCHECKED;
     }
 
     @Override
@@ -165,15 +101,6 @@ public class SuperLoadCz extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 0;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        // login(account, false);
-        showMessage(downloadLink, "Task 1: Check URL validity!");
-        requestFileInformation(downloadLink);
-        showMessage(downloadLink, "Task 2: Download begins!");
-        handleDL(account, downloadLink, downloadLink.getDownloadURL());
     }
 
     private void handleDL(Account account, DownloadLink link, String dllink) throws Exception {
@@ -393,6 +320,11 @@ public class SuperLoadCz extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return AvailableStatus.UNCHECKABLE;
     }
 
 }

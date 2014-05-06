@@ -800,7 +800,7 @@ public class ISaveLinkCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/acc_login.html");
+                getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/login.html");
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(language)) {

@@ -153,6 +153,7 @@ public class OneFichierCom extends PluginForHost {
             String siteFilesize = br.getRegex("<th>Taille :</th><td>([^<>\"]*?)</td>").getMatch(0);
             if (siteFilename == null || siteFilesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             link.setName(Encoding.htmlDecode(siteFilename));
+            siteFilesize = siteFilesize.replace("ko", "kb");
             siteFilesize = siteFilesize.replace("Mo", "MB");
             siteFilesize = siteFilesize.replace("Go", "GB");
             link.setDownloadSize(SizeFormatter.getSize(siteFilesize));
