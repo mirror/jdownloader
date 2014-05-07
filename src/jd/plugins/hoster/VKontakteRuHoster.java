@@ -86,6 +86,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @SuppressWarnings("unchecked")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         FINALLINK = null;
         this.setBrowserExclusive();
 
@@ -134,7 +135,6 @@ public class VKontakteRuHoster extends PluginForHost {
                     link.setProperty("directlink", FINALLINK);
                 }
             } else if (link.getDownloadURL().matches(VIDEOLINK)) {
-                if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 MAXCHUNKS = 0;
                 br.setFollowRedirects(true);
                 FINALLINK = link.getStringProperty("directlink", null);
