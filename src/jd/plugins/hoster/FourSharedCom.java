@@ -75,6 +75,7 @@ public class FourSharedCom extends PluginForHost {
     /**
      * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
      * */
+    /* IMPORTANT: When checking logs, look for these elements: class="warn", "limitErrorMsg" */
     private static final String DOWNLOADSTREAMS              = "DOWNLOADSTREAMS";
     private static final String DOWNLOADSTREAMSERRORHANDLING = "DOWNLOADSTREAMSERRORHANDLING";
     private static final String NOCHUNKS                     = "NOCHUNKS";
@@ -100,6 +101,11 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.viajd", ".com").replaceFirst("https:", "http:"));
+        final String locale = new Regex(link.getDownloadURL(), "((\\?|\\&)locale=[a-z]+)").getMatch(0);
+
+        /* Remove language parameters as they can destroy all of the errorhandling */
+        if (locale != null) link.setUrlDownload(link.getDownloadURL().replace(locale, ""));
+
         if (link.getDownloadURL().contains(".com/download")) {
             boolean fixLink = true;
             try {
@@ -212,10 +218,11 @@ public class FourSharedCom extends PluginForHost {
             }
         }
         if (url == null) {
+            handleFreeErrors(downloadLink);
             boolean downloadStreams = getPluginConfig().getBooleanProperty(DOWNLOADSTREAMS);
             if (downloadLink.getStringProperty("streamDownloadDisabled") == null && downloadStreams) {
                 url = getStreamLinks();
-                /** Shouldn't happen */
+                /* Shouldn't happen */
                 if (url != null && url.contains("4shared_Desktop_")) {
                     downloadLink.setProperty("streamDownloadDisabled", "true");
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -321,32 +328,16 @@ public class FourSharedCom extends PluginForHost {
         }
     }
 
-    private void handleFreeErrors(DownloadLink downloadLink) throws PluginException {
+    private void handleFreeErrors(final DownloadLink downloadLink) throws PluginException {
         // cau2=0759nousr&ua=LINUX&sop=true', title:"<div>You should log in to download this file.
-        // String cau2 = new Regex(br.getRequest().getUrl(), "cau2=([^&]+)").getMatch(0);
-        // logger.info("CAU2: " + cau2);
-        // if ("dow-lim".equals(cau2)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,
-        // "The download limit has been reached by you", 60 * 60 * 1000l); }
-
-        if (br.containsHTML(">The download limit has been reached")) {
-            //
-            // <div class="limitErrorMsg"> // "limitErrorMsg" can contain another message!
-            // <span>The download limit has been reached by you. Get your Premium account now to instantly download more</span>
-            // </div>
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached", 60 * 60 * 1000l);
-        }
+        String cau2 = new Regex(br.getRequest().getUrl(), "cau2=([^\\&]+)").getMatch(0);
+        logger.info("CAU2: " + cau2);
+        if ("dow-lim".equals(cau2) || br.containsHTML("\"limitErrorMsg\"|>The download limit has been reached")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached", 60 * 60 * 1000l); }
 
         if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short\\-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
+        if (br.containsHTML("The file link that you requested is not valid|This file is no longer available because of a claim")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
         if (ttt != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
-        if (br.containsHTML("Sorry, the file link that you requested is not valid")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered/premium users!");
-        }
     }
 
     private String handlePassword(DownloadLink link) throws Exception {
@@ -504,7 +495,7 @@ public class FourSharedCom extends PluginForHost {
             br2.getHeaders().put("X-Requested-With", null);
         }
         br.getPage("/web/account/settings/overview");
-        final String expire = br.getRegex(">Expires in:</div>[\t\n\r ]+<div[^>]+>(\\d+) days</div>").getMatch(0);
+        final String expire = br.getRegex(">Expires in:</div>[\t\n\r ]+<div class=\"[^<>\"]+\">[\t\n\r ]+<span>(\\d+) days</span>").getMatch(0);
         String accType = br.getRegex(">Account type:</div>[\t\n\r ]+<div[^>]+>(.*?)</div").getMatch(0);
         if (accType == null) accType = br.getRegex("accountType : \"AccType = (\\w+)\"").getMatch(0);
         final String usedSpace = br.getRegex(">Used space:</div>[\t\n\r ]+<div[^>]+>([0-9\\.]+(KB|MB|GB|TB)) of").getMatch(0);
@@ -533,6 +524,7 @@ public class FourSharedCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         try {
+            correctDownloadLink(downloadLink);
             setBrowserExclusive();
             prepBrowser(br);
             br.setFollowRedirects(true);
