@@ -39,21 +39,21 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /*Same script for AbelhasPt, LolaBitsEs*/
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://(www\\.)?lolabits\\.es/[^<>\"/]+/[^<>\"/]+/[^<>\"/]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lolabits.es" }, urls = { "http://(www\\.)?lolabits\\.es/[^<>\"/]+/[^<>\"/]+/[^<>\"]+" }, flags = { 2 })
 public class LolaBitsEs extends PluginForHost {
-    
+
     public LolaBitsEs(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://lolabits.es/action/Registration/Create");
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://lolabits.es/TerminosCondiciones.aspx";
     }
-    
+
     private static boolean pluginloaded = false;
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getDownloadURL().contains("lolabits.es/action/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -68,7 +68,7 @@ public class LolaBitsEs extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -102,10 +102,10 @@ public class LolaBitsEs extends PluginForHost {
         if (contentDisposition == null || !contentDisposition.contains("filename")) fixFilename(downloadLink);
         dl.startDownload();
     }
-    
+
     private static final String MAINPAGE = "http://lolabits.es";
     private static Object       LOCK     = new Object();
-    
+
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -153,7 +153,7 @@ public class LolaBitsEs extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -168,7 +168,7 @@ public class LolaBitsEs extends PluginForHost {
         ai.setStatus("Registered (free) user");
         return ai;
     }
-    
+
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -185,7 +185,7 @@ public class LolaBitsEs extends PluginForHost {
         if (contentDisposition == null || !contentDisposition.contains("filename")) fixFilename(link);
         dl.startDownload();
     }
-    
+
     private String get_dllink() throws IOException, PluginException {
         final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
         final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -197,7 +197,7 @@ public class LolaBitsEs extends PluginForHost {
         dllink = unescape(dllink);
         return dllink;
     }
-    
+
     private static synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
@@ -207,7 +207,7 @@ public class LolaBitsEs extends PluginForHost {
         }
         return jd.plugins.hoster.Youtube.unescape(s);
     }
-    
+
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -236,7 +236,7 @@ public class LolaBitsEs extends PluginForHost {
             FFN = orgNameExt;
         downloadLink.setFinalFileName(FFN);
     }
-    
+
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      * 
@@ -251,23 +251,23 @@ public class LolaBitsEs extends PluginForHost {
         else
             return false;
     }
-    
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
 }

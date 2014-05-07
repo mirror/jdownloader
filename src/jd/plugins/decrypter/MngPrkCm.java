@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -54,31 +55,22 @@ public class MngPrkCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("://manga", "://www.manga");
-        String[][] grabThis = null;
         HOST = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         prepBrowser();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("(>Sorry, the page you have requested cannot be found.<|Either the URL of your requested page is incorrect|page has been removed or moved to a new URL)")) {
-            logger.warning("Possible Plugin error, with finding download image: " + parameter);
-            return null;
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
-        // limit the results
-        grabThis = getThis(parameter);
-        if (grabThis == null || grabThis.length == 0) {
+        final String srv_link = br.getRegex("target=\"_blank\" href=\"(http://[a-z0-9]+\\.mpcdn\\.net/[^<>\"]*?)\\d+\\.jpg\"").getMatch(0);
+        String fpName = br.getRegex("</a> / ([^<>\"]*?)<em class=\"refresh\"").getMatch(0);
+        fpName = Encoding.htmlDecode(fpName).trim();
+        fpName = encodeUnicode(fpName);
+        if (srv_link == null || fpName == null) {
             logger.warning("Issue with getThis! : " + parameter);
             return null;
         }
-        // We get the title
-        String[][] title = new Regex(grabThis[0][0], "title=\"(.+?) ((Vol\\.\\d+ )?([ ]+)?Ch\\. ?([\\d\\.]+|extra|\\(Oneshot\\)).+?)(\\- | )?(image|Page) \\d+").getMatches();
-        if (title == null || title.length == 0) {
-            title = new Regex(grabThis[0][1], "title=\"(.+?) ((Vol\\.\\d+ )?([ ]+)?Ch\\. ?([\\d\\.]+|extra|\\(Oneshot\\)).+?)(\\- | )?(image|Page) \\d+").getMatches();
-            if (title == null || title.length == 0) {
-                logger.warning("Title not found! : " + parameter);
-                return null;
-            }
-        }
-        String useTitle = title[0][0].trim() + " – " + title[0][1].trim();
         // grab the total pages within viewer
         String totalPages = br.getRegex(">\\d+ of (\\d+)</a></em>").getMatch(0);
         if (totalPages == null) {
@@ -89,60 +81,41 @@ public class MngPrkCm extends PluginForDecrypt {
             }
         }
         int numberOfPages = Integer.parseInt(totalPages);
-        String format = "%02d";
-        if (numberOfPages > 0) {
-            format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
-        }
-
-        progress.setRange(numberOfPages);
         FilePackage fp = FilePackage.getInstance();
-        fp.setName(useTitle);
+        fp.setName(fpName);
 
-        // We load each page and retrieve the URL of the picture
+        final String extension = ".jpg";
         for (int i = 1; i <= numberOfPages; i++) {
-            String pageNumber = String.format(format, i);
-            String img = null;
-            if (i != 1) grabThis = getThis(parameter);
-            // grab the image source
-            if (grabThis != null && grabThis.length != 0) img = new Regex(grabThis[0][0], "href=\"(http[^\"]+)").getMatch(0);
-            if (img == null && (grabThis != null && grabThis.length != 0)) {
-                img = new Regex(grabThis[0][1], "src=\"(http[^\"]+)").getMatch(0);
-                if (img == null) {
-                    logger.warning("No images found for page : " + pageNumber + " : " + parameter);
-                    logger.warning("Continuing...");
-                    if (i != numberOfPages) {
-                        // load next page for the 'for' loop.
-                        br.getPage(parameter + "/" + (i + 1));
-                    }
-                    progress.increase(1);
-                    continue;
-                }
-            }
-            String extension = img.substring(img.lastIndexOf("."));
-            DownloadLink link = createDownloadlink("directhttp://" + img);
-            link.setFinalFileName((useTitle + " – page " + pageNumber + extension).replace(" ", "_"));
+            final String img = srv_link + i + extension;
+            final DownloadLink link = createDownloadlink("directhttp://" + img);
+            link.setFinalFileName((fpName + " – page " + i + extension).replace(" ", "_"));
+            link.setAvailable(true);
             fp.add(link);
-            try {
-                distribute(link);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
+            // try {
+            // distribute(link);
+            // } catch (final Throwable e) {
+            // /* does not exist in 09581 */
+            // }
             decryptedLinks.add(link);
-            if (i != numberOfPages) {
-                grabThis = null;
-                // load next page for the 'for' loop.
-                br.getPage(parameter + "/" + (i + 1));
-            }
-            progress.increase(1);
         }
         logger.warning("Task Complete! : " + parameter);
         HOST = "";
         return decryptedLinks;
     }
 
-    private String[][] getThis(String parameter) {
-        String[][] grabThis = br.getRegex("(<div class=\"tool\".+</span>[\r\n\t ]+</div>[\r\n\t ]+</div>).+(<a class=\"img\\-link\" href.+>[\r\n\t ]+</a>[\r\n\t ]+</div>)").getMatches();
-        return grabThis;
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     /* NO OVERRIDE!! */

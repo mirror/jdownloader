@@ -87,7 +87,11 @@ public class MikSeriNet extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            DownloadLink fina = getSingleLink(new Regex(parameter, "/(\\d+)/$").getMatch(0));
+            final DownloadLink fina = getSingleLink(new Regex(parameter, "/(\\d+)/$").getMatch(0));
+            if (br.containsHTML("<Error>No music to play\\!</Error>")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             if (fina == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

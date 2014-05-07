@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,16 +28,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onlinestoragesolution.com" }, urls = { "https://free\\.ols18\\.com/data/public/[a-z0-9]+\\.php" }, flags = { 0 })
-public class OnlineStorageSolutionCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3takeout.com" }, urls = { "http://(www\\.)?mp3takeout\\.com/download\\.php\\?file=[A-Za-z0-9\\-_\\.]+" }, flags = { 0 })
+public class Mp3TakeoutCom extends PluginForHost {
 
-    public OnlineStorageSolutionCom(PluginWrapper wrapper) {
+    public Mp3TakeoutCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.onlinestoragesolution.com/terms.html";
+        return "http://mp3takeout.com/index.php?page=tos";
     }
 
     @Override
@@ -44,8 +45,8 @@ public class OnlineStorageSolutionCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("404.html") || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("Click on the image to download <b>([^<>\"]*?)</b>").getMatch(0);
+        if (br.containsHTML("Invalid download link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("attempting to download the file ([^<>\"]*?)</b>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
@@ -54,8 +55,10 @@ public class OnlineStorageSolutionCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String dllink = br.getURL() + "?dl=true";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        /* Stream is same as download - skip captcha! */
+        final String dllink = "http://mp3takeout.com/storage/" + new Regex(downloadLink.getDownloadURL(), "download\\.php\\?file=(.+)").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

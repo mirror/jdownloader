@@ -44,6 +44,10 @@ public class OneFichierComFolder extends PluginForDecrypt {
         parameter = "http://www.1fichier.com/en/dir/" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         prepareBrowser(br);
         br.getPage(parameter + "?e=1");
+        if (br.toString().equals("bad")) {
+            logger.info("Link offline:" + parameter);
+            return decryptedLinks;
+        }
         String passCode = null;
         if (br.containsHTML("password")) {
             for (int i = 0; i <= 3; i++) {
