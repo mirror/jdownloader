@@ -24,7 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -40,6 +43,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -55,12 +59,15 @@ public class PutLockerCom extends PluginForHost {
     private static AtomicReference<String> agent              = new AtomicReference<String>(null);
     private static final String            NORESUME           = "NORESUME";
     private static final String            NOCHUNKS           = "NOCHUNKS";
+    private final String[]                 servers            = new String[] { "Original format (bigger size, better quality)", "Stream format [.flv] (smaller size, less quality)" };
+    private final String                   formats            = "formats";
 
     private static final String            PASSWORD_PROTECTED = "id=\"file_password_container\"";
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://auth.firedrive.com/signup");
+        this.setConfigElements();
     }
 
     public boolean isPremiumEnabled() {
@@ -261,7 +268,18 @@ public class PutLockerCom extends PluginForHost {
         if (br.containsHTML("prepare_continue_btn")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         checkForErrors();
 
-        final String dllink = getDllink(downloadLink);
+        String dllink;
+        if (getConfiguredServer() == 0) {
+            dllink = getDllink_General(downloadLink);
+        } else {
+            dllink = getStreamDl();
+            if (dllink == null) {
+                logger.info("Configured type stream was not found, falling back to original format");
+                dllink = getFileDllink();
+            }
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         boolean resume = true;
         if (downloadLink.getBooleanProperty(NORESUME, false)) resume = false;
         int chunks = 0;
@@ -350,14 +368,6 @@ public class PutLockerCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
                 }
 
-                /* Removed to test */
-                // if (downloadLink.getBooleanProperty(NORESUME, false)) {
-                // downloadLink.setProperty(NORESUME, Boolean.valueOf(false));
-                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
-                // }
-                // downloadLink.setProperty(NORESUME, Boolean.valueOf(true));
-                // downloadLink.setChunksProgress(null);
-                // throw new PluginException(LinkStatus.ERROR_RETRY, "ERROR_DOWNLOAD_INCOMPLETE");
             }
 
             logger.warning("firedrive.com: Unknown error2");
@@ -418,6 +428,7 @@ public class PutLockerCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
         if (account.getBooleanProperty("freeacc", false)) {
             doFree(link);
         } else {
@@ -497,24 +508,34 @@ public class PutLockerCom extends PluginForHost {
         }
     }
 
-    private String getDllink(DownloadLink downloadLink) throws IOException, PluginException {
+    private String getDllink_General(DownloadLink downloadLink) throws IOException, PluginException {
         String dllink = null;
         // get file_dllink
         dllink = getFileDllink();
         if (dllink == null) {
             // check if there is a video stream... this is generally of lesser quality!
-            final String stream_dl = br.getRegex("('|\")(http://dl\\.firedrive\\.com/\\?stream=[^<>\"]+)\\1").getMatch(1);
-            if (stream_dl != null) {
-                br.postPage(stream_dl, "");
-                dllink = br.toString();
-            }
+            dllink = getStreamDl();
         }
-        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        return dllink.replace("&amp;", "&");
+        return dllink;
+    }
+
+    private String getStreamDl() throws IOException {
+        String dllink = null;
+        final String stream_dl = br.getRegex("('|\")(http://dl\\.firedrive\\.com/\\?stream=[^<>\"]*?)\\'").getMatch(1);
+        if (stream_dl != null) {
+            final Browser br2 = br.cloneBrowser();
+            br2.postPage(stream_dl, "");
+            dllink = br2.toString();
+        }
+        if (dllink != null && (!dllink.startsWith("http") || dllink.length() > 500)) dllink = null;
+        if (dllink != null) dllink = dllink.replace("&amp;", "&");
+        return dllink;
     }
 
     private String getFileDllink() {
-        return br.getRegex("\"(https?://dl\\.firedrive\\.com/[^<>\"]+)\"").getMatch(0);
+        String dllink = br.getRegex("\"(https?://dl\\.firedrive\\.com/[^<>\"]+)\"").getMatch(0);
+        if (dllink != null) dllink = dllink.replace("&amp;", "&");
+        return dllink;
     }
 
     private String getFID(final DownloadLink dl) {
@@ -541,6 +562,24 @@ public class PutLockerCom extends PluginForHost {
             else
                 downloadLink.setFinalFileName(oldName + newExtension);
         }
+    }
+
+    private int getConfiguredServer() {
+        switch (getPluginConfig().getIntegerProperty(formats, -1)) {
+        case 0:
+            logger.fine("Original format is configured");
+            return 0;
+        case 1:
+            logger.fine("Stream format is configured");
+            return 1;
+        default:
+            logger.fine("No format is cunfigured, returning default format (original format)");
+            return 0;
+        }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, servers, JDL.L("plugins.host.firedrivecom.preferredformats", "Format selection - select your prefered format:\r\nBy default, JDownloader will download the original format if possible.\r\nIf the desired format isn't available, JDownloader will download the other one.\r\n\rPremium users can only download the original format.")).setDefaultValue(0));
     }
 
     @Override
