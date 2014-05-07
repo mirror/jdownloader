@@ -66,7 +66,6 @@ LOGINDIALOG_LABEL_PASSWORD=Palavra-passe
 LOGINDIALOG_LABEL_PASSWORD_REPEAT=Reperir palavra-passe
 LOGINDIALOG_LABEL_USERNAME=Entrar
 Layover_size=(px) Largura:%s1; Altura:%s2
-LockColumnWidthAction=Bloquear largura da coluna
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Nova palavra-passe:
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD_REPEAT=Confirme nova palavra-passe:
 PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Palavra-passe antiga:

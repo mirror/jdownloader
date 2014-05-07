@@ -26,7 +26,6 @@ errordialog_noconnection=JDownloader não conseguiu ligar ao servidor de actuali
 errordialog_not_enough_space=Não possui espaço suficiente no disco C:\.\nVerifique se possui pelo menos %s1 de espaço livre (%s2 mais) e reinicie a actualização.
 errordialog_selfupdate_failed=Erro instalar actualização. Tente novamente.\nSe problema persistir após algumas horas, contacte o suporte ou reinstale o JDownloader.
 errordialog_server_error=O servidor de actualizações está indisponível de momento. Tente mais tarde.
-errordialog_server_locked=O servidor de actualizações está indisponível de momento. Tente mais tarde.
 errordialog_server_offline=O servidor de actualizações está indisponível de momento. Tente mais tarde.
 guiless_you_are_up2date=Já possui a última versão
 installframe_frametitle=Actualizador JDownloader
