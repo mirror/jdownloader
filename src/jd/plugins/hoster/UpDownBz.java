@@ -63,9 +63,7 @@ public class UpDownBz extends PluginForHost {
     private static final String WEB_HOST                 = "updown.bz";
 
     /*
-     * hoster will be launched soon (https://updown.bz).
-     * 
-     * If someone likes to review this code, please contact dev@updown.bz for an account or some links.
+     * Hoster is online -> https://updown.bz
      */
 
     public UpDownBz(PluginWrapper wrapper) throws IOException {
@@ -370,7 +368,10 @@ public class UpDownBz extends PluginForHost {
                         Long size = (Long) ((JSonValue) json_data.get("size")).getValue();
                         String md5 = (String) ((JSonValue) json_data.get("md5")).getValue();
 
-                        data.put(id, new FileData(id, online, name, size, md5, protect));
+                        FileData fd = new FileData(id, online, name, size, md5, protect);
+                        System.err.println(id);
+                        System.err.println(fd.isOnline());
+                        data.put(id, fd);
                     } catch (NullPointerException e) {
                         e.printStackTrace();
                         continue;
@@ -385,6 +386,9 @@ public class UpDownBz extends PluginForHost {
         } catch (ParserException e) {
             e.printStackTrace();
         }
+
+        System.err.println(ids.length);
+        System.err.println(data.keySet());
 
         return data;
     }
