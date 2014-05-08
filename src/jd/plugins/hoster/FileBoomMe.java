@@ -88,6 +88,8 @@ public class FileBoomMe extends PluginForHost {
         doFree(downloadLink);
     }
 
+    private final String freeAccConLimit = "Free account does not allow to download more than one file at the same time";
+
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         checkShowFreeDialog();
         String dllink = checkDirectLink(downloadLink, "directlink");
@@ -104,6 +106,9 @@ public class FileBoomMe extends PluginForHost {
                     if (e instanceof PluginException) throw (PluginException) e;
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            } else if (br.containsHTML(freeAccConLimit)) {
+                // could be shared network or a download hasn't timed out yet or user downloading in another program?
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
             }
             if (br.containsHTML(">Downloading is not possible<")) {
                 final Regex waittime = br.getRegex("Please wait (\\d{2}):(\\d{2}):(\\d{2}) to download this");
@@ -142,6 +147,10 @@ public class FileBoomMe extends PluginForHost {
                 if (waittime != null) wait = Integer.parseInt(waittime);
                 this.sleep(wait * 1001l, downloadLink);
                 br.postPage(br.getURL(), "free=1&uniqueId=" + id);
+                if (br.containsHTML(freeAccConLimit)) {
+                    // could be shared network or a download hasn't timed out yet or user downloading in another program?
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Connection limit reached", 10 * 60 * 60 * 1001);
+                }
                 dllink = getDllink();
                 if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
