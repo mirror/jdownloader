@@ -98,7 +98,7 @@ public class OBoomCom extends PluginForHost {
         }
         String premium = infos.get("premium");
         if (premium != null) {
-            long premiumUntil = TimeFormatter.getMilliSeconds(premium, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+            long premiumUntil = parseExpireDate(premium);
             ai.setValidUntil(premiumUntil);
             if (!ai.isExpired()) {
                 ai.setStatus("Premium account");
@@ -130,7 +130,7 @@ public class OBoomCom extends PluginForHost {
                     }
                     String premium = infos.get("premium");
                     if (premium != null) {
-                        long timeStamp = TimeFormatter.getMilliSeconds(premium, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+                        long timeStamp = parseExpireDate(premium);
                         if (timeStamp <= System.currentTimeMillis()) {
                             infos.remove("premium");
                         }
@@ -152,6 +152,15 @@ public class OBoomCom extends PluginForHost {
                 br.setFollowRedirects(follow);
             }
         }
+    }
+
+    public long parseExpireDate(String premium) {
+        long timeStamp = TimeFormatter.getMilliSeconds(premium, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+        if (timeStamp < 0) {
+
+            timeStamp = TimeFormatter.getMilliSeconds(premium, "EEE MMM dd yyyy HH:mm:ss 'GMT+0000'", Locale.ENGLISH);
+        }
+        return timeStamp;
     }
 
     private String[] getKeys(String response) {
@@ -244,7 +253,7 @@ public class OBoomCom extends PluginForHost {
             return false;
         }
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         return fetchFileInformation(parameter, null);
