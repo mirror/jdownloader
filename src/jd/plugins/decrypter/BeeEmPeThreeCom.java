@@ -66,7 +66,14 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
             break;
         }
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String finallink = br.getRegex("Done#\\|#(http://.+)").getMatch(0);
+        if (br.containsHTML("Error#\\|# File not found")) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setFinalFileName(new Regex(parameter, "\\&song=(.+)").getMatch(0) + ".mp3");
+            offline.setAvailable(false);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
+        final String finallink = br.getRegex("Done#\\|#(http://.+)").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -74,7 +81,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         /**
          * Set filename if possible as filenames may be cut or broken if not set here
          */
-        DownloadLink dl = createDownloadlink("directhttp://" + finallink.trim());
+        final DownloadLink dl = createDownloadlink("directhttp://" + finallink.trim());
         if (finalFilename != null) dl.setFinalFileName(Encoding.htmlDecode(finalFilename) + ".mp3");
         decryptedLinks.add(dl);
 

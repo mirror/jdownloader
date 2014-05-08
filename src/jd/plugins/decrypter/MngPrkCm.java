@@ -59,15 +59,21 @@ public class MngPrkCm extends PluginForDecrypt {
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("(>Sorry, the page you have requested cannot be found.<|Either the URL of your requested page is incorrect|page has been removed or moved to a new URL)")) {
+        if (br.getURL().contains("search?") || br.containsHTML("(>Sorry, the page you have requested cannot be found.<|Either the URL of your requested page is incorrect|page has been removed or moved to a new URL)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String srv_link = br.getRegex("target=\"_blank\" href=\"(http://[a-z0-9]+\\.mpcdn\\.net/[^<>\"]*?)\\d+\\.jpg\"").getMatch(0);
+        final Regex srv_info = br.getRegex("target=\"_blank\" href=\"(http://[a-z0-9]+\\.mpcdn\\.net/[^<>\"]*?)(\\d+)(\\.(jpg|png))\"");
+        final String srv_link = srv_info.getMatch(0);
+        final String extension = srv_info.getMatch(2);
         String fpName = br.getRegex("</a> / ([^<>\"]*?)<em class=\"refresh\"").getMatch(0);
         fpName = Encoding.htmlDecode(fpName).trim();
         fpName = encodeUnicode(fpName);
-        if (srv_link == null || fpName == null) {
+        if (srv_link == null || fpName == null || extension == null) {
+            if (br.containsHTML("class=\"manga\"")) {
+                logger.info("Link offline (unsupported link): " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Issue with getThis! : " + parameter);
             return null;
         }
@@ -84,7 +90,6 @@ public class MngPrkCm extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
 
-        final String extension = ".jpg";
         for (int i = 1; i <= numberOfPages; i++) {
             final String img = srv_link + i + extension;
             final DownloadLink link = createDownloadlink("directhttp://" + img);

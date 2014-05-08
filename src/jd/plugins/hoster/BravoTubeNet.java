@@ -35,8 +35,10 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bravotube.net" }, urls = { "http://(www\\.)?bravotube\\.net/videos/[\\w\\-]+" }, flags = { 0 })
 public class BravoTubeNet extends PluginForHost {
 
-    private String DLLINK = null;
-    private String AHV    = "OTkwOGI4ZGMyYTgwMGY5NmY4NTQ1ZjczZGZmNWExYzM=";
+    /* All similar: TubeWolfCom, AlphaPornoCom, BravoTubeNet */
+    private String               DLLINK               = null;
+    private String               AHV                  = "OTkwOGI4ZGMyYTgwMGY5NmY4NTQ1ZjczZGZmNWExYzM=";
+    private static final boolean ENABLE_HIGH_SECURITY = false;
 
     public BravoTubeNet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -67,18 +69,6 @@ public class BravoTubeNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        /** No limits but we limit it so hoster won't be overloaded */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -4);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -99,9 +89,11 @@ public class BravoTubeNet extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + "." + ext);
 
-        final String time = checkTM();
-        final String ahv = checkMD(DLLINK, time);
-        DLLINK = DLLINK + "?time=" + time + "&ahv=" + ahv + "&cv=" + checkMD2(time);
+        if (ENABLE_HIGH_SECURITY) {
+            final String time = checkTM();
+            final String ahv = checkMD(DLLINK, time);
+            DLLINK = DLLINK + "?time=" + time + "&ahv=" + ahv + "&cv=" + checkMD2(time);
+        }
 
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -121,6 +113,18 @@ public class BravoTubeNet extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        /** No limits but we limit it so hoster won't be overloaded */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -4);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

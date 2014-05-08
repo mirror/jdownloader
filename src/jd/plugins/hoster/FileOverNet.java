@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.RandomUserAgent;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -46,6 +47,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileOverNet extends PluginForHost {
 
     private static final String MAINPAGE = "http://fileover.net/";
+    private String              DLLINK   = null;
 
     private static Object       LOCK     = new Object();
 
@@ -105,54 +107,56 @@ public class FileOverNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        int minutes = 0, seconds = 0;
-        Regex limits = br.getRegex(">You have to wait: (\\d+) minutes (\\d+) seconds");
-        String mins = limits.getMatch(0);
-        String secs = limits.getMatch(1);
-        if (secs == null) secs = br.getRegex(">You have to wait: (\\d+) seconds").getMatch(0);
-        if (mins != null) minutes = Integer.parseInt(mins);
-        if (secs != null) seconds = Integer.parseInt(secs);
-        int waittime = ((60 * minutes) + seconds + 1) * 1000;
-        if (waittime > 1000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
-        br.setFollowRedirects(false);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String fileID = new Regex(downloadLink.getDownloadURL(), "fileover\\.net/(\\d+)").getMatch(0);
-        br.getPage("https://fileover.net/ax/timereq.flo?" + fileID);
-        String hash = br.getRegex("hash\":\"(.*?)\"").getMatch(0);
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("https://fileover.net/ax/timepoll.flo?file=" + fileID + "&hash=" + hash);
-        Form recaptchaForm = new Form();
-        recaptchaForm.setMethod(MethodType.POST);
-        recaptchaForm.setAction("https://fileover.net/ax/timepoll.flo");
-        recaptchaForm.put("file", fileID);
-        recaptchaForm.put("hash", hash);
-        boolean failed = true;
-        for (int i = 0; i <= 5; i++) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setForm(recaptchaForm);
-            String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-            rc.setId(id);
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
-            if (br.containsHTML("google\\.com/recaptcha/api/")) {
-                rc.reload();
-                continue;
+        if (DLLINK == null) {
+            int minutes = 0, seconds = 0;
+            Regex limits = br.getRegex(">You have to wait: (\\d+) minutes (\\d+) seconds");
+            String mins = limits.getMatch(0);
+            String secs = limits.getMatch(1);
+            if (secs == null) secs = br.getRegex(">You have to wait: (\\d+) seconds").getMatch(0);
+            if (mins != null) minutes = Integer.parseInt(mins);
+            if (secs != null) seconds = Integer.parseInt(secs);
+            int waittime = ((60 * minutes) + seconds + 1) * 1000;
+            if (waittime > 1000) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
+            br.setFollowRedirects(false);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final String fileID = new Regex(downloadLink.getDownloadURL(), "fileover\\.net/(\\d+)").getMatch(0);
+            br.getPage("https://fileover.net/ax/timereq.flo?" + fileID);
+            String hash = br.getRegex("hash\":\"(.*?)\"").getMatch(0);
+            if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("https://fileover.net/ax/timepoll.flo?file=" + fileID + "&hash=" + hash);
+            Form recaptchaForm = new Form();
+            recaptchaForm.setMethod(MethodType.POST);
+            recaptchaForm.setAction("https://fileover.net/ax/timepoll.flo");
+            recaptchaForm.put("file", fileID);
+            recaptchaForm.put("hash", hash);
+            boolean failed = true;
+            for (int i = 0; i <= 5; i++) {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setForm(recaptchaForm);
+                String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                rc.setId(id);
+                rc.load();
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                rc.setCode(c);
+                if (br.containsHTML("google\\.com/recaptcha/api/")) {
+                    rc.reload();
+                    continue;
+                }
+                failed = false;
+                break;
             }
-            failed = false;
-            break;
+            if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("Not Ready")) {
+                logger.info(br.toString());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
+            DLLINK = br.getRegex("</style></head><body><a href=\"(http.*?)\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\"(http://\\d+\\.pool\\.fileover\\.net/\\d+/[a-z0-9]+/.*?)\"").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (br.containsHTML("Not Ready")) {
-            logger.info(br.toString());
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-        }
-        String dllink = br.getRegex("</style></head><body><a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.pool\\.fileover\\.net/\\d+/[a-z0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -234,19 +238,35 @@ public class FileOverNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/deleted/") || br.containsHTML("(<title>No such file \\| Fileover\\.Net\\! \\- Error</title>|>No such file<|The following file is unavailable\\.|>Not found or deleted by a user\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2 style=\"text\\-align: center; padding: 0 50px 10px 50px; word\\-wrap: break\\-word;\">(.*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\| Fileover\\.Net\\! \\- Download</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        // Filesize is only shown if no limits are reached
-        String filesize = br.getRegex(">File Size: (.*?)</h3>").getMatch(0);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        /* Check for direct links */
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!con.getContentType().contains("html")) {
+                link.setDownloadSize(con.getLongContentLength());
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
+                DLLINK = link.getDownloadURL();
+            } else {
+                if (br.getURL().contains("/deleted/") || br.containsHTML("(<title>No such file \\| Fileover\\.Net\\! \\- Error</title>|>No such file<|The following file is unavailable\\.|>Not found or deleted by a user\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                String filename = br.getRegex("<h2 style=\"text\\-align: center; padding: 0 50px 10px 50px; word\\-wrap: break\\-word;\">(.*?)</h2>").getMatch(0);
+                if (filename == null) filename = br.getRegex("<title>(.*?) \\| Fileover\\.Net\\! \\- Download</title>").getMatch(0);
+                if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                link.setName(filename.trim());
+                // Filesize is only shown if no limits are reached
+                String filesize = br.getRegex(">File Size: (.*?)</h3>").getMatch(0);
+                if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
         return AvailableStatus.TRUE;
     }
 

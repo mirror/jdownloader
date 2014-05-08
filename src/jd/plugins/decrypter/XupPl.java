@@ -45,8 +45,10 @@ public class XupPl extends PluginForDecrypt {
         br.getPage(parameter);
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
 
         decryptedLinks.add(createDownloadlink(finallink));
