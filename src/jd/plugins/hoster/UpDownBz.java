@@ -79,7 +79,7 @@ public class UpDownBz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return 1;
     }
 
     @Override
@@ -186,8 +186,7 @@ public class UpDownBz extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         // set share password if file is protected
         String share_password = null;
-        boolean is_protected = downloadLink.getBooleanProperty("protected", false);
-        if (is_protected) {
+        if (downloadLink.getBooleanProperty("protected", false)) {
             String dl_pass = downloadLink.getDownloadPassword();
             if (dl_pass != null && dl_pass.length() > 0) {
                 MessageDigest md = MessageDigest.getInstance("MD5");
@@ -216,51 +215,111 @@ public class UpDownBz extends PluginForHost {
 
         // try to open a download connection and check first chunks response
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, (-1) * 2);
-        int code = dl.getConnection().getResponseCode();
-        {
-            // file is not available
-            if (code == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "requested file is not available");
 
-            // you are not authorized
-            if (code == 401) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "invalid login data" + (is_protected ? " or wrong download password" : ""), 6 * 60 * 1000L);
-
-            // wrong request format
-            if (code == 400) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request format"); }
-
-            // wrong request method
-            if (code == 405) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request method"); }
-
-            // no connections available
-            if (code == 421) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "connection limit reached", 1 * 60 * 1000L); }
-
-            // is data to download available
-            if (code == 200) {
-                long downloadsize = dl.getConnection().getLongContentLength();
-                if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
-            } else if (code == 206) {
-                long downloadsize = -1;
-
-                String content_range = dl.getConnection().getHeaderField("Content-Range");
-                if (content_range != null) {
-                    Matcher m = Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+)").matcher(content_range);
-                    if (m.find()) {
-                        downloadsize = Long.parseLong(m.group(3));
-                    }
-                }
-
-                if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
-            }
-        }
+        // pass off to a shared error handling method
+        handleErrors(downloadLink, account);
 
         // nothing wrong, thus start the download
         dl.startDownload();
     }
 
+    private void handleErrors(final DownloadLink downloadLink, final Account account) throws PluginException {
+        int code = dl.getConnection().getResponseCode();
+        // file is not available
+        if (code == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "requested file is not available");
+
+        // you are not authorized
+        if (code == 401) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "invalid login data" + (downloadLink.getBooleanProperty("protected", false) ? " or wrong download password" : ""), 6 * 60 * 1000L);
+
+        // wrong request format
+        if (code == 400) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request format"); }
+
+        // wrong request method
+        if (code == 405) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "wrong request method"); }
+
+        // no connections available
+        if (code == 421) {
+            if (account != null)
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "connection limit reached", 1 * 60 * 1000L);
+            else
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "connection limit reached", 5 * 60 * 1000l);
+        }
+
+        // is data to download available
+        if (code == 200) {
+            long downloadsize = dl.getConnection().getLongContentLength();
+            if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+        } else if (code == 206) {
+            long downloadsize = -1;
+
+            String content_range = dl.getConnection().getHeaderField("Content-Range");
+            if (content_range != null) {
+                Matcher m = Pattern.compile("bytes (\\d+)-(\\d+)/(\\d+)").matcher(content_range);
+                if (m.find()) {
+                    downloadsize = Long.parseLong(m.group(3));
+                }
+            }
+
+            if (downloadsize != downloadLink.getDownloadSize() || !dl.getConnection().isContentDisposition()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no valid data to download found");
+        }
+    }
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        return;
+        final String fuid = getFileId(link.getDownloadURL());
+        if (fuid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can not find unique file ID");
+        long ttw = 0;
+        // cached links don't seem to be possible
+        String dl_host = null;
+        if (dl_host == null) {
+            requestFileInformation(link);
+            br.postPageRaw(HTTP_PROTOCOL + API_HOST, "{\"m\":\"pub\",\"a\":\"dl\",\"d\":{\"i\":\"" + fuid + "\"}}");
+
+            // try to parse api response
+            JSonObject json_response = (JSonObject) new JSonFactory(br.toString()).parse();
+            ApiStatus status = ApiStatus.UNKNOWN;
+            try {
+                status = ApiStatus.get((Long) ((JSonValue) json_response.get("c")).getValue());
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            } catch (ClassCastException e) {
+                e.printStackTrace();
+            }
+
+            // do, whats to do
+            if (status.isSuccess()) {
+                try {
+                    // extract json data object
+                    JSonObject json_data = (JSonObject) json_response.get("d");
+                    if (json_data == null) return;
+                    long wtime = (Long) ((JSonValue) json_data.get("t")).getValue();
+                    long ctime = (Long) ((JSonValue) json_response.get("t")).getValue();
+                    ttw = wtime - ctime;
+                    dl_host = (String) ((JSonValue) json_data.get("h")).getValue();
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                } catch (ClassCastException e) {
+                    e.printStackTrace();
+                }
+            } else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Status isn't Success, some error handling required here...");
+        }
+        if (dl_host != null) {
+            sleep(ttw * 1001, link);
+            final String url = HTTP_PROTOCOL + dl_host + "/d/?file=" + fuid;
+            // try to open a download connection and check first chunks response
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 1);
+
+            // pass off to a shared error handling method
+            handleErrors(link, null);
+
+            // nothing wrong, thus start the download
+            dl.startDownload();
+        } else
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find dl_host");
+
     }
 
     @Override
