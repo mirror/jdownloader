@@ -86,8 +86,11 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -1802,17 +1805,42 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             cnlbr.getRequest().setHtmlCode(decryptedJS);
             Form cnlForm = cnlbr.getForm(0);
+
             if (cnlForm != null) {
-                try {
-                    cnlbr.submitForm(cnlForm);
-                    if (cnlbr.containsHTML("success")) return decryptedLinks;
-                    if (cnlbr.containsHTML("^failed")) {
-                        logger.warning("linkcrypt.ws: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
-                        logger.warning("linkcrypt.ws: CNL2 Message: " + cnlbr.toString());
+
+                if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+                    HashMap<String, String> infos = new HashMap<String, String>();
+                    infos.put("crypted", Encoding.urlDecode(cnlForm.getInputField("crypted").getValue(), false));
+                    infos.put("jk", Encoding.urlDecode(cnlForm.getInputField("jk").getValue(), false));
+                    String source = cnlForm.getInputField("source").getValue();
+                    if (StringUtils.isEmpty(source)) {
+                        source = parameter.toString();
+                    } else {
+                        source = Encoding.urlDecode(source, true);
                     }
-                } catch (Throwable e) {
-                    logger.info("linkcrypt.ws: ExternInterface(CNL2) is disabled!");
+                    infos.put("source", source);
+                    String json = JSonStorage.toString(infos);
+                    final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                } else {
+                    try {
+                        cnlbr.submitForm(cnlForm);
+                        if (cnlbr.containsHTML("success")) return decryptedLinks;
+                        if (cnlbr.containsHTML("^failed")) {
+                            logger.warning("linkcrypt.ws: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
+                            logger.warning("linkcrypt.ws: CNL2 Message: " + cnlbr.toString());
+                        }
+                    } catch (Throwable e) {
+                        logger.info("linkcrypt.ws: ExternInterface(CNL2) is disabled!");
+                    }
                 }
+
             }
             map.remove("cnl");
         }
