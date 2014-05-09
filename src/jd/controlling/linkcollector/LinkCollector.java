@@ -1898,6 +1898,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
         final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getDownloadURL(), true);
         dllink.setProperties(link.getDownloadLink().getProperties());
+        // so plugins like youtube set inherent browserurl (not the youtubev2:// link)
+        dllink.setBrowserUrl(link.getDownloadLink().getBrowserUrl());
         final CrawledLink cl = new CrawledLink(dllink);
 
         cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), o);
