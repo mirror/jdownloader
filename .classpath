@@ -85,5 +85,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-http.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-util.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-xml.jar"/>
+	<classpathentry kind="lib" path="/AppWorkUtils/libs/proxyVole.jar" sourcepath="C:/Users/Thomas/Downloads/proxy-vole_20131209_src.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

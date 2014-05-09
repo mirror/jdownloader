@@ -55,8 +55,8 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.ProxyInfo;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.Reconnecter.ReconnectResult;
 import jd.controlling.reconnect.ReconnecterEvent;
@@ -65,6 +65,7 @@ import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.ProxySelectorInterface;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
@@ -102,8 +103,8 @@ import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.ProxyAuthException;
+import org.appwork.utils.net.httpconnection.ProxyConnectException;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
@@ -138,7 +139,6 @@ import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 import org.jdownloader.translate._JDT;
-import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.utils.JDFileUtils;
 
 public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, FileCreationListener {
@@ -391,7 +391,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             List<WaitingSkipReasonContainer> reconnects = proxyInfoHistory.list(WaitingSkipReason.CAUSE.IP_BLOCKED, null);
                             if (reconnects != null) {
                                 for (WaitingSkipReasonContainer reconnect : reconnects) {
-                                    if (!reconnect.getProxyInfo().isReconnectSupported()) continue;
+                                    if (!reconnect.getProxySelector().isReconnectSupported()) continue;
                                     reconnect.invalidate();
                                 }
                             }
@@ -664,7 +664,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate.getLink()))) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
                 } else {
-                    List<ProxyInfo> proxies = null;
+                    List<AbstractProxySelectorImpl> proxies = null;
                     if (selector.isDownloadLinkCandidateAllowed(candidate)) {
                         DownloadLink link = candidate.getLink();
                         switch (candidate.getCachedAccount().getType()) {
@@ -679,8 +679,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     }
                     if (proxies != null && proxies.size() > 0) {
-                        for (ProxyInfo proxy : proxies) {
-                            candidate = new DownloadLinkCandidate(candidate, getReplacement(proxy));
+                        for (AbstractProxySelectorImpl proxy : proxies) {
+                            candidate = new DownloadLinkCandidate(candidate, proxy);
                             if (selector.validateDownloadLinkCandidate(candidate)) {
                                 possibleCandidates.add(candidate);
                             }
@@ -1248,16 +1248,26 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return null;
     }
 
-    private ProxyInfo getReplacement(ProxyInfo proxy) {
-        // dirty hack to grab auth info from the updater Proxyselector
-        try {
-            HTTPProxy p = UpdateController.getInstance().getUpdatedProxy(proxy);
-            if (p != null) return new ProxyInfo(p);
-        } catch (Exception e) {
-            logger.log(e);
-        }
-        return proxy;
-    }
+    // private AbstractProxySelectorImpl getReplacement(AbstractProxySelectorImpl selector) {
+    // // dirty hack to grab auth info from the updater Proxyselector
+    // try {
+    // List<HTTPProxy> proxies = selector.getProxiesByUrl("http://update0.appwork.org/");
+    // if (proxies != null) {
+    // for (HTTPProxy proxy : proxies) {
+    // if (proxy instanceof ExtProxy) {
+    // HTTPProxy p = UpdateController.getInstance().getUpdatedProxy((ExtProxy) proxy);
+    // if(p)
+    // if(StringUtils.isNotEmpty(p.getUser())){
+    //
+    // }
+    // }
+    // }
+    // }
+    // } catch (Exception e) {
+    // logger.log(e);
+    // }
+    // return proxy;
+    // }
 
     /**
      * returns current pause state
@@ -1831,8 +1841,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             logger.severe("Could not attach to History: " + candidate);
         }
         final SingleDownloadController con = new SingleDownloadController(candidate, this);
-        if (candidate.getProxy() != null) {
-            candidate.getProxy().add(con);
+        if (candidate.getProxySelector() != null) {
+            candidate.getProxySelector().add(con);
         }
         candidate.getLink().setEnabled(true);
         getSession().getControllers().add(con);
@@ -1863,8 +1873,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                     DownloadLinkCandidate candidate = singleDownloadController.getDownloadLinkCandidate();
                     final DownloadLink link = candidate.getLink();
-                    if (candidate.getProxy() != null) {
-                        candidate.getProxy().remove(singleDownloadController);
+                    if (candidate.getProxySelector() != null) {
+                        candidate.getProxySelector().remove(singleDownloadController);
                     }
                     DownloadLinkCandidateResult result = null;
                     try {
@@ -2086,18 +2096,31 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 ret.setMessage(_JDT._.plugins_errors_disconnect());
                 return ret;
+            } else if (throwable instanceof ProxyConnectException) {
+                // do not use result.getController().getProxySelector(); it will just return a static proxyselector
+                ProxySelectorInterface proxySelector = result.getController().getProxySelector();
+                if (proxySelector != null && proxySelector instanceof AbstractProxySelectorImpl) {
+                    logger.info("Add Proxy Ban for " + proxySelector + " on domain " + latestPlugin.getHost() + " : " + JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout());
+                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, latestPlugin.getHost(), JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout(), _JDT._.plugins_errors_proxy_connection());
+                }
+
+                DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
+                ret.setWaitTime(10 * 1000l);
+                ret.setMessage(_JDT._.plugins_errors_proxy_connection());
+                return ret;
             } else if (throwable instanceof ProxyAuthException) {
-                HTTPProxy p = result.getController().getCurrentProxy();
-                if (p != null && p instanceof ProxyInfo) {
-                    if (p != ProxyController.getInstance().getNone()) {
-                        ProxyController.getInstance().setproxyRotationEnabled((ProxyInfo) p, false);
-                        if (ProxyController.getInstance().hasRotation() == false) {
-                            ProxyController.getInstance().setproxyRotationEnabled(ProxyController.getInstance().getNone(), true);
-                        }
+
+                ProxySelectorInterface proxySelector = result.getController().getProxySelector();
+                if (proxySelector != null && proxySelector instanceof AbstractProxySelectorImpl) {
+                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, null, -1, _JDT._.plugins_errors_proxy_auth());
+                    ProxyController.getInstance().setProxyRotationEnabled((AbstractProxySelectorImpl) proxySelector, false);
+                    if (ProxyController.getInstance().hasRotation() == false) {
+                        ProxyController.getInstance().setProxyRotationEnabled(ProxyController.getInstance().getNone(), true);
                     }
+
                 }
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
-                ret.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
+                ret.setWaitTime(30 * 1000l);
                 ret.setMessage(_JDT._.plugins_errors_proxy_auth());
                 return ret;
             } else if (throwable instanceof IOException) {
@@ -2308,7 +2331,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     private boolean isReconnectRequired(DownloadSession currentSession, WaitingSkipReasonContainer reconnectRequest) {
-        if (!reconnectRequest.getProxyInfo().isReconnectSupported()) return false;
+        if (!reconnectRequest.getProxySelector().isReconnectSupported()) return false;
         HashSet<DownloadLink> alreadyChecked = new HashSet<DownloadLink>();
         for (DownloadLink link : currentSession.getForcedLinks()) {
             if (alreadyChecked.add(link) == false || canRemove(link, true)) continue;

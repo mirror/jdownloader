@@ -1547,7 +1547,7 @@ public class YoutubeHelper {
             }
 
         }
-        this.br.setProxy(this.br.getThreadProxy());
+        this.br.setProxySelector(this.br.getThreadProxy());
     }
 
     public ArrayList<YoutubeSubtitleInfo> loadSubtitles(YoutubeClipData vid) throws IOException {

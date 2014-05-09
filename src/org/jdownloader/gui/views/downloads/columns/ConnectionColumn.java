@@ -200,7 +200,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 index++;
             }
             if (dli != null && sdc != null) {
-                HTTPProxy proxy = sdc.getCurrentProxy();
+                HTTPProxy proxy = sdc.getUsedProxy();
                 if (proxy != null && proxy.isRemote()) {
                     labels[index].setIcon(proxyConnection);
                     labels[index].setVisible(true);
@@ -281,7 +281,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             if (sdc != null) {
                 {
                     /* connection? */
-                    HTTPProxy proxy = sdc.getCurrentProxy();
+                    HTTPProxy proxy = sdc.getUsedProxy();
                     if (proxy == null) proxy = HTTPProxy.NONE;
                     panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxy), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);

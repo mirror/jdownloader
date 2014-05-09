@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
@@ -34,6 +33,7 @@ import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -161,7 +161,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         setPriority(Thread.MIN_PRIORITY);
         this.watchDog = watchDog;
         this.candidate = candidate;
-        super.setCurrentProxy(candidate.getProxy());
+        super.setProxySelector(candidate.getProxySelector());
         this.downloadLink = candidate.getLink();
         this.sizeBefore = Math.max(0, downloadLink.getView().getBytesLoaded());
         this.account = candidate.getCachedAccount().getAccount();
@@ -175,11 +175,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         linkStatus = new LinkStatus(downloadLink);
         setName("Download: " + downloadLink.getView().getDisplayName() + "_" + downloadLink.getHost());
 
-    }
-
-    @Override
-    public void setCurrentProxy(final HTTPProxy proxy) {
-        /* we dont allow external changes */
     }
 
     @Override
@@ -249,19 +244,38 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         PluginForHost livePlugin = null;
         PluginForHost originalPlugin = null;
         boolean validateChallenge = true;
-        final AtomicReference<HTTPProxy> proxyRef = new AtomicReference<HTTPProxy>();
+
         try {
             logger.info("DownloadCandidate: " + candidate);
             final PluginClassLoaderChild cl;
             this.setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
             livePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(cl);
-            usedProxy = getCurrentProxy();
+
             livePlugin.setBrowser(new Browser() {
                 @Override
                 public void setProxy(HTTPProxy proxy) {
                     super.setProxy(proxy);
-                    proxyRef.set(proxy);
+
                 }
+
+                @Override
+                protected HTTPProxy selectProxy(String url) {
+                    HTTPProxy ret = super.selectProxy(url);
+                    usedProxy = ret;
+
+                    return ret;
+                }
+
+                @Override
+                public void setProxySelector(ProxySelectorInterface proxy) {
+                    super.setProxySelector(proxy);
+
+                }
+                // @Override
+                // public void setProxy(HTTPProxy proxy) {
+                // super.setProxy(proxy);
+                // proxyRef.set(proxy);
+                // }
             });
             livePlugin.setLogger(downloadLogger);
             livePlugin.setDownloadLink(downloadLink);
@@ -357,7 +371,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             return ret;
         } finally {
             queueItem.queueLinks.remove(downloadLink);
-            usedProxy = proxyRef.get();
+
             DownloadInterface di = livePlugin.getDownloadInterface();
             resumed = di != null && di.isResumedDownload();
             downloadLink.setLivePlugin(null);

@@ -3,7 +3,8 @@ package org.jdownloader.gui.notify.downloads;
 import java.io.File;
 
 import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.proxy.ProxyInfo;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.NoProxySelector;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 
@@ -51,9 +52,9 @@ public class DownloadStartedContentPanel extends AbstractBubbleContentPanel {
                 this.account.setText(account.getUser() + "@" + account.getHoster());
             }
         }
-        ProxyInfo proxy = downloadController.getDownloadLinkCandidate().getProxy();
+        AbstractProxySelectorImpl proxy = downloadController.getDownloadLinkCandidate().getProxySelector();
         if (CFG_BUBBLE.DOWNLOAD_STARTED_BUBBLE_CONTENT_PROXY_VISIBLE.isEnabled()) {
-            if (proxy != null && !proxy.isNone()) {
+            if (proxy != null && !(proxy instanceof NoProxySelector)) {
 
                 this.proxy = addPair(this.proxy, _GUI._.lit_proxy() + ":", NewTheme.I().getIcon("proxy", 18));
                 this.proxy.setText(proxy.toString());

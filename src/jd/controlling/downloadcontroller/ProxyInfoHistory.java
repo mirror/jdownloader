@@ -12,7 +12,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
-import jd.controlling.proxy.ProxyInfo;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.plugins.Account;
 
 import org.appwork.utils.StringUtils;
@@ -22,43 +22,43 @@ import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 
 public class ProxyInfoHistory {
-    
+
     public static final class WaitingSkipReasonContainer {
         private final WaitingSkipReason         skipReason;
         private WaitWhileWaitingSkipReasonIsSet waitWhile = null;
         private final String                    acchost;
         private final String                    dlHost;
-        private final ProxyInfo                 proxyInfo;
+        private final AbstractProxySelectorImpl      proxySelector;
         private final Account                   account;
-        
+
         private WaitingSkipReasonContainer(WaitingSkipReason skipReason, DownloadLinkCandidate candidate) {
             this.skipReason = skipReason;
             this.acchost = candidate.getCachedAccount().getPlugin().getHost();
             this.dlHost = candidate.getLink().getHost();
-            this.proxyInfo = candidate.getProxy();
+            this.proxySelector = candidate.getProxySelector();
             this.account = candidate.getCachedAccount().getAccount();
         }
-        
+
         public final void invalidate() {
             skipReason.invalidate();
         }
-        
+
         public final String getAccHost() {
             return acchost;
         }
-        
+
         public final String getDlHost() {
             return dlHost;
         }
-        
+
         public final WaitingSkipReason getWaitingSkipReason() {
             return skipReason;
         }
-        
-        public final ProxyInfo getProxyInfo() {
-            return proxyInfo;
+
+        public final AbstractProxySelectorImpl getProxySelector() {
+            return proxySelector;
         }
-        
+
         /**
          * @return the account
          */
@@ -66,13 +66,13 @@ public class ProxyInfoHistory {
             return account;
         }
     }
-    
-    private final Map<WaitingSkipReason.CAUSE, Map<ProxyInfo, List<WaitingSkipReasonContainer>>> causeMapping = new LinkedHashMap<WaitingSkipReason.CAUSE, Map<ProxyInfo, List<WaitingSkipReasonContainer>>>();
-    
-    private final Map<ProxyInfo, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>    history      = new LinkedHashMap<ProxyInfo, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>();
-    
+
+    private final Map<WaitingSkipReason.CAUSE, Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>>> causeMapping = new LinkedHashMap<WaitingSkipReason.CAUSE, Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>>>();
+
+    private final Map<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>    history      = new LinkedHashMap<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>();
+
     private List<WaitingSkipReasonContainer> getInteralWaitingSkipReasonList(DownloadLinkCandidate candidate) {
-        ProxyInfo proxy = candidate.getProxy();
+        AbstractProxySelectorImpl proxy = candidate.getProxySelector();
         Map<String, Map<Account, List<WaitingSkipReasonContainer>>> map1 = history.get(proxy);
         if (map1 == null) {
             map1 = new HashMap<String, Map<Account, List<WaitingSkipReasonContainer>>>();
@@ -92,12 +92,12 @@ public class ProxyInfoHistory {
         }
         return ret;
     }
-    
-    private void add(WaitingSkipReasonContainer waitingSkipReason, ProxyInfo proxyInfo) {
+
+    private void add(WaitingSkipReasonContainer waitingSkipReason, AbstractProxySelectorImpl proxyInfo) {
         CAUSE cause = waitingSkipReason.getWaitingSkipReason().getCause();
-        Map<ProxyInfo, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
+        Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
         if (map == null) {
-            map = new HashMap<ProxyInfo, List<WaitingSkipReasonContainer>>();
+            map = new HashMap<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>>();
             causeMapping.put(cause, map);
         }
         List<WaitingSkipReasonContainer> list = map.get(proxyInfo);
@@ -107,11 +107,11 @@ public class ProxyInfoHistory {
         }
         list.add(waitingSkipReason);
     }
-    
-    private void remove(WaitingSkipReasonContainer waitingSkipReason, ProxyInfo proxyInfo) {
+
+    private void remove(WaitingSkipReasonContainer waitingSkipReason, AbstractProxySelectorImpl proxyInfo) {
         waitingSkipReason.invalidate();
         CAUSE cause = waitingSkipReason.getWaitingSkipReason().getCause();
-        Map<ProxyInfo, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
+        Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
         if (map == null) return;
         List<WaitingSkipReasonContainer> list = map.get(proxyInfo);
         if (list == null) return;
@@ -123,15 +123,15 @@ public class ProxyInfoHistory {
             }
         }
     }
-    
-    public Set<ProxyInfo> list(WaitingSkipReason.CAUSE cause) {
-        Map<ProxyInfo, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
+
+    public Set<AbstractProxySelectorImpl> list(WaitingSkipReason.CAUSE cause) {
+        Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
         if (map != null) return map.keySet();
         return null;
     }
-    
-    public List<WaitingSkipReasonContainer> list(WaitingSkipReason.CAUSE cause, ProxyInfo proxyInfo) {
-        Map<ProxyInfo, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
+
+    public List<WaitingSkipReasonContainer> list(WaitingSkipReason.CAUSE cause, AbstractProxySelectorImpl proxyInfo) {
+        Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>> map = causeMapping.get(cause);
         if (map != null) {
             if (proxyInfo == null) {
                 List<WaitingSkipReasonContainer> ret = new ArrayList<ProxyInfoHistory.WaitingSkipReasonContainer>();
@@ -144,13 +144,13 @@ public class ProxyInfoHistory {
         }
         return null;
     }
-    
+
     public List<WaitingSkipReasonContainer> list(String host) {
         if (StringUtils.isEmpty(host)) return null;
         ArrayList<WaitingSkipReasonContainer> ret = new ArrayList<WaitingSkipReasonContainer>();
-        Iterator<Entry<ProxyInfo, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>> it = history.entrySet().iterator();
+        Iterator<Entry<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>> it = history.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<ProxyInfo, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>> next = it.next();
+            Entry<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>> next = it.next();
             Map<String, Map<Account, List<WaitingSkipReasonContainer>>> map = next.getValue();
             Map<Account, List<WaitingSkipReasonContainer>> map2 = map.get(host);
             if (map2 != null) {
@@ -161,10 +161,10 @@ public class ProxyInfoHistory {
         }
         return ret;
     }
-    
+
     public DownloadLinkCandidateResult getBlockingHistory(DownloadLinkCandidate candidate) {
-        if (candidate.getProxy() == null) return null;
-        List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), candidate.getProxy());
+        if (candidate.getProxySelector() == null) return null;
+        List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), candidate.getProxySelector());
         if (list != null && list.size() > 0) {
             final WaitingSkipReason waitingSkipReason = list.get(0).getWaitingSkipReason();
             return new DownloadLinkCandidateResult(RESULT.PROXY_UNAVAILABLE, null, null) {
@@ -176,8 +176,8 @@ public class ProxyInfoHistory {
         }
         return null;
     }
-    
-    private List<WaitingSkipReasonContainer> cleanup(List<WaitingSkipReasonContainer> list, ProxyInfo proxyInfo) {
+
+    private List<WaitingSkipReasonContainer> cleanup(List<WaitingSkipReasonContainer> list, AbstractProxySelectorImpl proxyInfo) {
         if (list == null) return list;
         Iterator<WaitingSkipReasonContainer> it = list.iterator();
         while (it.hasNext()) {
@@ -189,11 +189,11 @@ public class ProxyInfoHistory {
         }
         return list;
     }
-    
+
     protected void validate() {
-        Iterator<Entry<ProxyInfo, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>> it1 = history.entrySet().iterator();
+        Iterator<Entry<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>> it1 = history.entrySet().iterator();
         while (it1.hasNext()) {
-            Entry<ProxyInfo, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>> next1 = it1.next();
+            Entry<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>> next1 = it1.next();
             Iterator<Entry<String, Map<Account, List<WaitingSkipReasonContainer>>>> it2 = next1.getValue().entrySet().iterator();
             while (it2.hasNext()) {
                 Entry<String, Map<Account, List<WaitingSkipReasonContainer>>> next2 = it2.next();
@@ -222,10 +222,10 @@ public class ProxyInfoHistory {
             }
         }
     }
-    
+
     public ConditionalSkipReason getConditionalSkipReason(DownloadLinkCandidate candidate) {
-        if (candidate.getProxy() == null) return null;
-        List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), candidate.getProxy());
+        if (candidate.getProxySelector() == null) return null;
+        List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), candidate.getProxySelector());
         if (list.size() > 0) {
             WaitingSkipReasonContainer first = list.get(0);
             WaitWhileWaitingSkipReasonIsSet ret = first.waitWhile;
@@ -237,11 +237,11 @@ public class ProxyInfoHistory {
         }
         return null;
     }
-    
+
     public boolean putIntoHistory(DownloadLinkCandidate candidate, WaitingSkipReason waitingSkipReason) {
-        if (candidate.getProxy() == null) throw new IllegalArgumentException("candidate.getProxy() == null");
+        if (candidate.getProxySelector() == null) throw new IllegalArgumentException("candidate.getProxy() == null");
         if (!(waitingSkipReason.getCause() == WaitingSkipReason.CAUSE.HOST_TEMP_UNAVAILABLE || waitingSkipReason.getCause() == WaitingSkipReason.CAUSE.IP_BLOCKED)) throw new IllegalArgumentException("putIntoHistory cannot be used with " + waitingSkipReason.getCause());
-        ProxyInfo proxyInfo = candidate.getProxy();
+        AbstractProxySelectorImpl proxyInfo = candidate.getProxySelector();
         List<WaitingSkipReasonContainer> list = cleanup(getInteralWaitingSkipReasonList(candidate), proxyInfo);
         Iterator<WaitingSkipReasonContainer> it = list.iterator();
         boolean add = true;
@@ -261,7 +261,7 @@ public class ProxyInfoHistory {
             list.add(container);
             add(container, proxyInfo);
             Collections.sort(list, new Comparator<WaitingSkipReasonContainer>() {
-                
+
                 @Override
                 public int compare(WaitingSkipReasonContainer o1, WaitingSkipReasonContainer o2) {
                     long x = o1.skipReason.getTimeOutTimeStamp();

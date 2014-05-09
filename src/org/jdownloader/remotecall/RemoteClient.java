@@ -20,7 +20,6 @@ import org.appwork.remotecall.server.ParsingException;
 import org.appwork.remotecall.server.Requestor;
 import org.appwork.remotecall.server.ServerInvokationException;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.reflection.Clazz;
 
 public class RemoteClient extends RemoteCallClient {
@@ -100,7 +99,7 @@ public class RemoteClient extends RemoteCallClient {
         try {
             String url = "http://" + this.host + "/" + serviceName + "/" + URLEncoder.encode(routine.getName(), "UTF-8");
             Log.L.finer(url + "?" + serialise);
-            HTTPProxy proxy = br.getProxy();
+            // HTTPProxy proxy = br.getProxy();
             String red = br.postPageRaw(url, serialise);
 
             URLConnectionAdapter con = br.getHttpConnection();

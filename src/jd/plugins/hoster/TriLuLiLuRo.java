@@ -424,7 +424,7 @@ public class TriLuLiLuRo extends PluginForHost {
                 }
             }
         }
-        br.setProxy(br.getThreadProxy());
+        br.setProxySelector(br.getThreadProxy());
     }
 
     private boolean isEmpty(String ip) {

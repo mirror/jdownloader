@@ -15,7 +15,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
-import jd.controlling.proxy.ProxyInfo;
+import jd.controlling.proxy.ExtProxy;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
@@ -507,7 +507,7 @@ public class UpdateController implements UpdateCallbackInterface {
         return handler.getOptionalsList();
     }
 
-    public HTTPProxy getUpdatedProxy(ProxyInfo proxy) {
+    public HTTPProxy getUpdatedProxy(ExtProxy proxy) {
         if (handler == null) return null;
         return handler.getUpdatedProxy(proxy);
     }

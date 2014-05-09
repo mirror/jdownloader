@@ -51,9 +51,9 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyEvent;
-import jd.controlling.proxy.ProxyInfo;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
@@ -83,7 +83,6 @@ import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
@@ -630,16 +629,16 @@ public class SecondLevelLaunch {
                     /* init global proxy stuff */
                     Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy());
                     /* add global proxy change listener */
-                    ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
+                    ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
 
-                        public void onEvent(ProxyEvent<ProxyInfo> event) {
+                        public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
                             if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
-                                HTTPProxy proxy = null;
+                                AbstractProxySelectorImpl proxy = null;
                                 if ((proxy = ProxyController.getInstance().getDefaultProxy()) != Browser._getGlobalProxy()) {
                                     try {
                                         Browser.setGlobalProxy(proxy);
                                     } finally {
-                                        SecondLevelLaunch.LOG.info("Set new DefaultProxy: " + proxy);
+                                        SecondLevelLaunch.LOG.info("Set new Default Proxy Selector: " + proxy);
                                     }
                                 }
                             }

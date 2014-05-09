@@ -14,6 +14,10 @@ import javax.swing.event.CaretListener;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
+import jd.controlling.proxy.PacProxySelectorImpl;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -29,7 +33,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
-public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListener {
+public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> implements CaretListener {
 
     private JComboBox       cmbType;
     private ExtTextField    txtHost;
@@ -37,7 +41,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
     private JTextField      txtUser;
     private JTextField      txtPass;
 
-    private final String[]  types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI._.jd_gui_swing_dialog_ProxyDialog_direct() };
+    private final String[]  types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI._.jd_gui_swing_dialog_ProxyDialog_direct(), _GUI._.jd_gui_swing_dialog_ProxyDialog_pac() };
     private JLabel          lblUser;
     private JLabel          lblPass;
     private JLabel          lblPort;
@@ -56,7 +60,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
 
     @Override
     public JComponent layoutDialogContent() {
-        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 4", "[][grow 10,fill][][grow 3,fill]"));
+        JPanel panel = new JPanel(new MigLayout("ins 0, wrap 2", "[][grow 10,fill]"));
 
         panel.add(new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_type()));
         panel.add(cmbType = new JComboBox(types), "spanx");
@@ -70,7 +74,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
 
             }
 
-        });
+        }, " split 3,pushx,growx");
 
         this.delayer = new DelayedRunnable(ToolTipController.EXECUTER, 2000) {
 
@@ -94,8 +98,8 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
 
         };
         txtHost.addCaretListener(this);
-        panel.add(lblPort = new JLabel(":"));
-        panel.add(txtPort = new JTextField(), "shrinkx");
+        panel.add(lblPort = new JLabel(":"), "shrinkx,hidemode 2,gapleft 0");
+        panel.add(txtPort = new JTextField(), "wmin 50, shrinkx, hidemode 2,gapleft 0");
         txtPort.setText("8080");
         txtPort.addCaretListener(this);
 
@@ -127,7 +131,12 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
         for (int i = 0; i < 2; i++) {
             try {
                 URL url = new URL(myText);
-                txtHost.setText(url.getHost());
+                if (cmbType.getSelectedIndex() == 4) {
+                    txtHost.setText(url + "");
+                } else {
+                    txtHost.setText(url.getHost());
+                }
+
                 if (url.getPort() > 0) {
                     txtPort.setText(url.getPort() + "");
                 }
@@ -166,6 +175,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
                 lblUser.setVisible(true);
                 txtUser.setVisible(true);
                 lblPort.setVisible(true);
+                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("8080");
                 }
@@ -178,6 +188,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
                 lblUser.setVisible(true);
                 txtUser.setVisible(true);
                 lblPort.setVisible(true);
+                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("1080");
                 }
@@ -190,6 +201,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
                 lblUser.setVisible(true);
                 txtUser.setVisible(true);
                 lblPort.setVisible(true);
+                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("1080");
                 }
@@ -202,6 +214,19 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
                 lblUser.setVisible(false);
                 txtUser.setVisible(false);
                 lblPort.setVisible(false);
+                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_host());
+                break;
+
+            case 4:
+                // pac
+                txtPass.setVisible(true);
+                lblPass.setVisible(true);
+                txtPort.setVisible(false);
+                lblPort.setVisible(false);
+                lblUser.setVisible(true);
+                txtUser.setVisible(true);
+                lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_pac_url());
+
                 break;
             default:
                 txtPass.setVisible(false);
@@ -223,7 +248,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
      * returns HTTPProxy for given settings
      */
     @Override
-    protected HTTPProxy createReturnValue() {
+    protected AbstractProxySelectorImpl createReturnValue() {
         final int mask = getReturnmask();
         if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) return null;
         if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) return null;
@@ -238,7 +263,11 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
                 type = HTTPProxy.TYPE.SOCKS4;
             } else if (cmbType.getSelectedIndex() == 3) {
                 type = HTTPProxy.TYPE.DIRECT;
-                return HTTPProxy.parseHTTPProxy("direct://" + txtHost.getText());
+                return new SingleDirectGatewaySelector(HTTPProxy.parseHTTPProxy("direct://" + txtHost.getText()));
+
+            } else if (cmbType.getSelectedIndex() == 4) {
+                type = HTTPProxy.TYPE.DIRECT;
+                return new PacProxySelectorImpl(txtHost.getText(), txtUser.getText(), txtPass.getText());
             } else {
                 return null;
             }
@@ -247,7 +276,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
             ret.setPass(txtPass.getText());
             ret.setUser(txtUser.getText());
 
-            return ret;
+            return new SingleBasicProxySelectorImpl(ret);
         } catch (final Throwable e) {
             LogController.CL().log(e);
             return null;

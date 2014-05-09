@@ -142,6 +142,12 @@ public interface GeneralSettings extends ConfigInterface {
     public void setDownloadHostUnavailableRetryWaittime(long r);
 
     @AboutConfig
+    @DefaultLongValue(15 * 60 * 1000l)
+    long getProxyHostBanTimeout();
+
+    public void setProxyHostBanTimeout(long r);
+
+    @AboutConfig
     @DefaultLongValue(10 * 60 * 1000l)
     @DescriptionForConfigEntry("Waittime in ms if a Download had unknown IOException")
     long getDownloadUnknownIOExceptionWaittime();

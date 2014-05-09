@@ -2,6 +2,8 @@ package org.jdownloader.updatev2;
 
 import java.util.ArrayList;
 
+import jd.controlling.proxy.FilterList;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -75,4 +77,9 @@ public interface InternetConnectionSettings extends ConfigInterface {
     void setLatestProfile(String absolutePath);
 
     String getLatestProfile();
+
+    @AboutConfig
+    void setNoneFilter(FilterList filter);
+
+    FilterList getNoneFilter();
 }

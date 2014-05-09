@@ -83,6 +83,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.DomainInfo;
@@ -825,7 +826,12 @@ public class YoutubeDashV2 extends PluginForHost {
 
             chunkOffset = data.getDashVideoSize();
         }
-        request.setProxy(br.getProxy());
+        {
+            // scope just to highlight the jd2 code
+            // Do not copy to jd09 plugins.. this is jd2 code!
+            List<HTTPProxy> possibleProxies = br.getProxy().getProxiesByUrl(request.getUrl());
+            request.setProxy((possibleProxies == null || possibleProxies.size() == 0) ? null : possibleProxies.get(0));
+        }
         final String dashPath = new File(downloadLink.getDownloadDirectory(), dashName).getAbsolutePath();
         final DownloadLink dashLink = new DownloadLink(this, dashName, getHost(), request.getUrl(), true);
         dashLink.setLivePlugin(this);

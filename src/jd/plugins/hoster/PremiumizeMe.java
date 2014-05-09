@@ -300,6 +300,11 @@ public class PremiumizeMe extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         String status = br.getRegex("type\":\"(.*?)\"").getMatch(0);
+
+        // https://secure.premiumize.me/<extuid>/<port>/proxy.pac
+        String extuid = br.getRegex("extuid\":\"(.*?)\"").getMatch(0);
+        account.setProperty("extuid", extuid);
+
         if (status == null) status = "Unknown Account Type";
         ai.setStatus(status);
         String expire = br.getRegex("\"expires\":(\\d+)").getMatch(0);
@@ -331,6 +336,7 @@ public class PremiumizeMe extends PluginForHost {
         String HostsJSON = new Regex(hostsSup, "\"tldlist\":\\[([^\\]]+)\\]").getMatch(0);
         String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+
         ai.setProperty("multiHostSupport", supportedHosts);
         ai.setProperty("connection_settings", response.get("connection_settings"));
         return ai;

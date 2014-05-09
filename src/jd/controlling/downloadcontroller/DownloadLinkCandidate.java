@@ -1,18 +1,18 @@
 package jd.controlling.downloadcontroller;
 
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.proxy.ProxyInfo;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.plugins.DownloadLink;
 
 public class DownloadLinkCandidate {
-    private final boolean       forced;
-    private final DownloadLink  link;
-    private final CachedAccount cachedAccount;
-    private final ProxyInfo     proxy;
-    private final boolean       customizedAccount;
+    private final boolean              forced;
+    private final DownloadLink         link;
+    private final CachedAccount        cachedAccount;
+    private final AbstractProxySelectorImpl proxySelector;
+    private final boolean              customizedAccount;
 
-    public ProxyInfo getProxy() {
-        return proxy;
+    public AbstractProxySelectorImpl getProxySelector() {
+        return proxySelector;
     }
 
     public CachedAccount getCachedAccount() {
@@ -29,7 +29,7 @@ public class DownloadLinkCandidate {
 
     @Override
     public String toString() {
-        return "DownloadCandidate:" + link + "|Host " + link.getHost() + "|Account:" + cachedAccount + "|Proxy:" + proxy;
+        return "DownloadCandidate:" + link + "|Host " + link.getHost() + "|Account:" + cachedAccount + "|Proxy:" + proxySelector;
     }
 
     public DownloadLinkCandidate(DownloadLink link, boolean forced) {
@@ -44,15 +44,15 @@ public class DownloadLinkCandidate {
         this(candidate.getLink(), candidate.isForced(), cachedAccount, null, customizedAccount);
     }
 
-    public DownloadLinkCandidate(DownloadLink link, boolean forced, CachedAccount cachedAccount, ProxyInfo proxy, boolean customizedAccount) {
+    public DownloadLinkCandidate(DownloadLink link, boolean forced, CachedAccount cachedAccount, AbstractProxySelectorImpl proxy, boolean customizedAccount) {
         this.link = link;
         this.forced = forced;
         this.cachedAccount = cachedAccount;
-        this.proxy = proxy;
+        this.proxySelector = proxy;
         this.customizedAccount = customizedAccount;
     }
 
-    public DownloadLinkCandidate(DownloadLinkCandidate candidate, ProxyInfo proxy) {
+    public DownloadLinkCandidate(DownloadLinkCandidate candidate, AbstractProxySelectorImpl proxy) {
         this(candidate.getLink(), candidate.isForced(), candidate.getCachedAccount(), proxy, candidate.isCustomizedAccount());
     }
 

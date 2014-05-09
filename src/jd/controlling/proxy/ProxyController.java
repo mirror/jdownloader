@@ -10,11 +10,13 @@ import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
 import jd.config.SubConfiguration;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -27,6 +29,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -37,26 +40,29 @@ import org.jdownloader.updatev2.ProxyData;
 
 public class ProxyController {
 
-    private static final ProxyController              INSTANCE      = new ProxyController();
+    private static final ProxyController                         INSTANCE      = new ProxyController();
 
-    private java.util.List<ProxyInfo>                 proxies       = new ArrayList<ProxyInfo>();
-    private java.util.List<ProxyInfo>                 directs       = new ArrayList<ProxyInfo>();
-    private ProxyInfo                                 defaultproxy  = null;
-    private final ProxyInfo                           none;
+    private java.util.List<SingleBasicProxySelectorImpl>                    proxies       = new ArrayList<SingleBasicProxySelectorImpl>();
+    private List<SingleDirectGatewaySelector>                             directs       = new ArrayList<SingleDirectGatewaySelector>();
+    private java.util.List<PacProxySelectorImpl>                      pacs          = new ArrayList<PacProxySelectorImpl>();
+    private AbstractProxySelectorImpl                                 defaultproxy  = null;
+    private final NoProxySelector                               none;
 
-    private DefaultEventSender<ProxyEvent<ProxyInfo>> eventSender   = null;
+    private DefaultEventSender<ProxyEvent<AbstractProxySelectorImpl>> eventSender   = null;
 
-    private InternetConnectionSettings                config;
+    private InternetConnectionSettings                           config;
 
-    private GeneralSettings                           generalConfig = null;
+    private GeneralSettings                                      generalConfig = null;
 
-    private final Object                              LOCK          = new Object();
+    private final Object                                         LOCK          = new Object();
+
+    private LogSource                                            logger;
 
     public static final ProxyController getInstance() {
         return INSTANCE;
     }
 
-    public DefaultEventSender<ProxyEvent<ProxyInfo>> getEventSender() {
+    public DefaultEventSender<ProxyEvent<AbstractProxySelectorImpl>> getEventSender() {
         return eventSender;
     }
 
@@ -72,13 +78,13 @@ public class ProxyController {
     public static final String USE_SOCKS        = "USE_SOCKS";
 
     private ProxyController() {
-        eventSender = new DefaultEventSender<ProxyEvent<ProxyInfo>>();
+        eventSender = new DefaultEventSender<ProxyEvent<AbstractProxySelectorImpl>>();
         /* init needed configs */
         config = JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class);
         generalConfig = JsonConfig.create(GeneralSettings.class);
-
+        logger = LogController.getInstance().getLogger(ProxyController.class.getName());
         /* init our NONE proxy */
-        none = new ProxyInfo(HTTPProxy.NONE);
+        none = new NoProxySelector();
         loadProxySettings();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -93,7 +99,7 @@ public class ProxyController {
             }
         });
 
-        eventSender.addListener(new DefaultEventListener<ProxyEvent<ProxyInfo>>() {
+        eventSender.addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
             DelayedRunnable asyncSaving = new DelayedRunnable(5000l, 60000l) {
                                             @Override
                                             public String getID() {
@@ -107,7 +113,7 @@ public class ProxyController {
 
                                         };
 
-            public void onEvent(ProxyEvent<ProxyInfo> event) {
+            public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
                 asyncSaving.resetAndStart();
             }
         });
@@ -170,12 +176,19 @@ public class ProxyController {
     }
 
     private void saveProxySettings() {
-        ProxyInfo ldefaultproxy = defaultproxy;
+        AbstractProxySelectorImpl ldefaultproxy = defaultproxy;
         {
             /* use own scope */
             ArrayList<ProxyData> ret = new ArrayList<ProxyData>(proxies.size());
-            java.util.List<ProxyInfo> lproxies = proxies;
-            for (ProxyInfo proxy : lproxies) {
+            List<SingleBasicProxySelectorImpl> lproxies = proxies;
+            for (AbstractProxySelectorImpl proxy : lproxies) {
+                ProxyData pd = proxy.toProxyData();
+                pd.setDefaultProxy(proxy == ldefaultproxy);
+                ret.add(pd);
+            }
+
+            List<PacProxySelectorImpl> lPacs = pacs;
+            for (PacProxySelectorImpl proxy : lPacs) {
                 ProxyData pd = proxy.toProxyData();
                 pd.setDefaultProxy(proxy == ldefaultproxy);
                 ret.add(pd);
@@ -185,8 +198,8 @@ public class ProxyController {
         {
             /* use own scope */
             ArrayList<ProxyData> ret = new ArrayList<ProxyData>();
-            java.util.List<ProxyInfo> ldirects = directs;
-            for (ProxyInfo proxy : ldirects) {
+            List<SingleDirectGatewaySelector> ldirects = directs;
+            for (AbstractProxySelectorImpl proxy : ldirects) {
                 ProxyData pd = proxy.toProxyData();
                 pd.setDefaultProxy(proxy == ldefaultproxy);
                 ret.add(pd);
@@ -195,6 +208,7 @@ public class ProxyController {
         }
         config.setNoneDefault(none == ldefaultproxy);
         config.setNoneRotationEnabled(none.isProxyRotationEnabled());
+        config.setNoneFilter(none.getFilter());
         config._getStorageHandler().write();
     }
 
@@ -239,12 +253,13 @@ public class ProxyController {
     }
 
     private void loadProxySettings() {
-        ProxyInfo newDefaultProxy = null;
+        AbstractProxySelectorImpl newDefaultProxy = null;
         boolean rotCheck = false;
-        java.util.List<ProxyInfo> proxies = new ArrayList<ProxyInfo>();
-        java.util.List<ProxyInfo> directs = new ArrayList<ProxyInfo>();
-        java.util.List<HTTPProxy> dupeCheck = new ArrayList<HTTPProxy>();
-        ProxyInfo proxy = null;
+        java.util.List<SingleBasicProxySelectorImpl> proxies = new ArrayList<SingleBasicProxySelectorImpl>();
+        java.util.List<SingleDirectGatewaySelector> directs = new ArrayList<SingleDirectGatewaySelector>();
+        java.util.List<PacProxySelectorImpl> pacs = new ArrayList<PacProxySelectorImpl>();
+        HashSet<AbstractProxySelectorImpl> dupeCheck = new HashSet<AbstractProxySelectorImpl>();
+        AbstractProxySelectorImpl proxy = null;
         {
             /* restore customs proxies */
             /* use own scope */
@@ -253,22 +268,47 @@ public class ProxyController {
                 /* config available */
                 restore: for (ProxyData proxyData : ret) {
                     try {
-                        HTTPProxy proxyTemplate = HTTPProxy.getHTTPProxy(proxyData.getProxy());
-                        if (proxyTemplate != null) {
-                            proxy = new ProxyInfo(proxyData, proxyTemplate);
-                            for (HTTPProxy p : dupeCheck) {
-                                if (p.sameProxy(proxy)) {
-                                    /* proxy already got restored */
-                                    continue restore;
-                                }
+                        // HTTPProxy proxyTemplate = HTTPProxy.getHTTPProxy(proxyData.getProxy());
+                        // if (proxyTemplate != null) {
+                        if (proxyData.isPac()) {
+                            proxy = new PacProxySelectorImpl(proxyData);
+                        } else {
+                            ;
+                            switch (proxyData.getProxy().getType()) {
+                            case DIRECT:
+                                proxy = new SingleDirectGatewaySelector(proxyData);
+                                break;
+                            case HTTP:
+                            case SOCKS4:
+                            case SOCKS5:
+                                proxy = new SingleBasicProxySelectorImpl(proxyData);
+                                break;
+                            case NONE:
+
+                                System.out.println(1);
+
+                            default:
+                                continue;
                             }
-                            dupeCheck.add(proxy);
-                            proxies.add(proxy);
-                            if (proxyData.isDefaultProxy()) {
-                                newDefaultProxy = proxy;
-                            }
-                            if (proxy.isProxyRotationEnabled()) rotCheck = true;
                         }
+                        if (proxy == null) continue;
+                        if (!dupeCheck.add(proxy)) continue restore;
+                        dupeCheck.add(proxy);
+                        if (proxy instanceof PacProxySelectorImpl) {
+                            pacs.add((PacProxySelectorImpl) proxy);
+                        } else if (proxy instanceof SingleDirectGatewaySelector) {
+                            directs.add((SingleDirectGatewaySelector) proxy);
+                        } else if (proxy instanceof SingleBasicProxySelectorImpl) {
+                            proxies.add((SingleBasicProxySelectorImpl) proxy);
+                        } else {
+                            throw new WTFException("Unknown Type: " + proxy.getClass());
+                        }
+
+                        if (proxyData.isDefaultProxy()) {
+                            newDefaultProxy = proxy;
+                        }
+                        if (proxy.isProxyRotationEnabled()) rotCheck = true;
+                        // }
                     } catch (final Throwable e) {
                         Log.exception(e);
                     }
@@ -278,15 +318,28 @@ public class ProxyController {
                 List<HTTPProxy> reto = restoreFromOldConfig();
                 restore: for (HTTPProxy proxyData : reto) {
                     try {
-                        proxy = new ProxyInfo(proxyData);
-                        for (HTTPProxy p : dupeCheck) {
-                            if (p.sameProxy(proxy)) {
-                                /* proxy already got restored */
-                                continue restore;
-                            }
+                        switch (proxyData.getType()) {
+                        case DIRECT:
+                            proxy = new SingleDirectGatewaySelector(proxyData);
+                            break;
+                        case HTTP:
+                        case SOCKS4:
+                        case SOCKS5:
+                            proxy = new SingleBasicProxySelectorImpl(proxyData);
+                            break;
+
+                        default:
+                            continue;
                         }
-                        dupeCheck.add(proxy);
-                        proxies.add(proxy);
+                        if (proxy == null) continue;
+                        if (!dupeCheck.add(proxy)) continue restore;
+
+                        if (proxy instanceof SingleBasicProxySelectorImpl) {
+                            proxies.add((SingleBasicProxySelectorImpl) proxy);
+                        } else {
+                            throw new WTFException("Unknown Type: " + proxy.getClass());
+                        }
+
                         /* in old system we only had one possible proxy */
                         newDefaultProxy = proxy;
                         if (proxy.isProxyRotationEnabled()) rotCheck = true;
@@ -299,15 +352,12 @@ public class ProxyController {
             List<HTTPProxy> sproxy = HTTPProxy.getFromSystemProperties();
             restore: for (HTTPProxy proxyData : sproxy) {
                 try {
-                    proxy = new ProxyInfo(proxyData);
-                    for (HTTPProxy p : dupeCheck) {
-                        if (p.sameProxy(proxy)) {
-                            /* proxy already got restored */
-                            continue restore;
-                        }
-                    }
-                    dupeCheck.add(proxy);
-                    proxies.add(proxy);
+                    proxy = new SingleBasicProxySelectorImpl(proxyData);
+
+                    if (!dupeCheck.add(proxy)) continue restore;
+
+                    proxies.add((SingleBasicProxySelectorImpl) proxy);
+
                     /* in old system we only had one possible proxy */
                     newDefaultProxy = proxy;
                     if (proxy.isProxyRotationEnabled()) rotCheck = true;
@@ -325,33 +375,32 @@ public class ProxyController {
                 restore: for (ProxyData proxyData : ret) {
                     /* check if the local IP is still avilable */
                     try {
-                        HTTPProxy proxyTemplate = HTTPProxy.getHTTPProxy(proxyData.getProxy());
-                        if (proxyTemplate != null) {
-                            proxy = new ProxyInfo(proxyData, proxyTemplate);
-                            for (HTTPProxy p : dupeCheck) {
-                                if (p.sameProxy(proxy)) {
-                                    /* proxy already got restored */
-                                    continue restore;
-                                }
+
+                        proxy = new SingleDirectGatewaySelector(proxyData);
+                        if (proxy == null) continue;
+
+                        if (!dupeCheck.add(proxy)) continue restore;
+                        dupeCheck.add(proxy);
+
+                        boolean localIPAvailable = false;
+                        for (HTTPProxy p : availableDirects) {
+                            if (p.equals(((SingleDirectGatewaySelector) proxy).getProxy())) {
+                                localIPAvailable = true;
+                                break;
                             }
-                            boolean localIPAvailable = false;
-                            for (HTTPProxy p : availableDirects) {
-                                if (p.sameProxy(proxy)) {
-                                    localIPAvailable = true;
-                                    break;
-                                }
-                            }
-                            if (localIPAvailable == false) {
-                                /* local ip no longer available */
-                                continue restore;
-                            }
-                            dupeCheck.add(proxy);
-                            directs.add(proxy);
-                            if (proxyData.isDefaultProxy()) {
-                                newDefaultProxy = proxy;
-                            }
-                            if (proxy.isProxyRotationEnabled()) rotCheck = true;
                         }
+                        if (localIPAvailable == false) {
+                            /* local ip no longer available */
+                            continue restore;
+                        }
+
+                        directs.add((SingleDirectGatewaySelector) proxy);
+
+                        if (proxyData.isDefaultProxy()) {
+                            newDefaultProxy = proxy;
+                        }
+                        if (proxy.isProxyRotationEnabled()) rotCheck = true;
+
                     } catch (final Throwable e) {
                         Log.exception(e);
                     }
@@ -368,6 +417,8 @@ public class ProxyController {
         }
         /* is NONE Proxy included in rotation */
         none.setProxyRotationEnabled(config.isNoneRotationEnabled());
+        none.setFilter(config.getNoneFilter());
+
         if (none.isProxyRotationEnabled()) rotCheck = true;
         if (!rotCheck) {
             // we need at least one rotation
@@ -379,7 +430,8 @@ public class ProxyController {
         /* set new proxies live */
         this.directs = directs;
         this.proxies = proxies;
-        eventSender.fireEvent(new ProxyEvent<ProxyInfo>(ProxyController.this, ProxyEvent.Types.REFRESH, null));
+        this.pacs = pacs;
+        eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(ProxyController.this, ProxyEvent.Types.REFRESH, null));
     }
 
     /**
@@ -387,11 +439,13 @@ public class ProxyController {
      * 
      * @return
      */
-    public java.util.List<ProxyInfo> getList() {
-        java.util.List<ProxyInfo> ret = new ArrayList<ProxyInfo>(directs.size() + proxies.size() + 1);
+    public java.util.List<AbstractProxySelectorImpl> getList() {
+        java.util.List<AbstractProxySelectorImpl> ret = new ArrayList<AbstractProxySelectorImpl>(directs.size() + proxies.size() + pacs.size() + 1);
         ret.add(none);
+
         ret.addAll(directs);
         ret.addAll(proxies);
+        ret.addAll(pacs);
         return ret;
     }
 
@@ -400,7 +454,7 @@ public class ProxyController {
      * 
      * @return
      */
-    public ProxyInfo getDefaultProxy() {
+    public AbstractProxySelectorImpl getDefaultProxy() {
         return defaultproxy;
     }
 
@@ -409,14 +463,14 @@ public class ProxyController {
      * 
      * @param def
      */
-    public void setDefaultProxy(ProxyInfo def) {
+    public void setDefaultProxy(AbstractProxySelectorImpl def) {
         if (def != null && defaultproxy == def) return;
         if (def == null) {
             defaultproxy = none;
         } else {
             defaultproxy = def;
         }
-        eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
+        eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(this, ProxyEvent.Types.REFRESH, null));
         // exportUpdaterProxy();
     }
 
@@ -425,131 +479,221 @@ public class ProxyController {
      * 
      * @param proxy
      */
-    public void addProxy(HTTPProxy proxy) {
+    public void addProxy(AbstractProxySelectorImpl proxy) {
         if (proxy == null) return;
-        ProxyInfo ret = null;
+
         synchronized (LOCK) {
-            java.util.List<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
-            for (ProxyInfo info : nproxies) {
-                /* duplicate check */
-                if (info.sameProxy(proxy)) return;
+
+            switch (proxy.getType()) {
+            case HTTP:
+            case SOCKS4:
+            case SOCKS5:
+                if (!new HashSet<AbstractProxySelectorImpl>(proxies).add(proxy)) return;
+                ArrayList<SingleBasicProxySelectorImpl> nproxies = new ArrayList<SingleBasicProxySelectorImpl>(proxies);
+                nproxies.add((SingleBasicProxySelectorImpl) proxy);
+                proxies = nproxies;
+                break;
+            case DIRECT:
+                if (!new HashSet<AbstractProxySelectorImpl>(directs).add(proxy)) return;
+                ArrayList<SingleDirectGatewaySelector> ndirects = new ArrayList<SingleDirectGatewaySelector>(directs);
+                ndirects.add((SingleDirectGatewaySelector) proxy);
+                directs = ndirects;
+                break;
+            case PAC:
+                if (!new HashSet<AbstractProxySelectorImpl>(pacs).add(proxy)) return;
+                ArrayList<PacProxySelectorImpl> npacs = new ArrayList<PacProxySelectorImpl>(pacs);
+                npacs.add((PacProxySelectorImpl) proxy);
+                pacs = npacs;
+                break;
+
+            default:
+                logger.info("Invalid Type " + proxy.getType());
+                return;
             }
-            nproxies.add(ret = new ProxyInfo(proxy));
-            proxies = nproxies;
+
         }
-        eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.ADDED, ret));
+        eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(this, ProxyEvent.Types.ADDED, proxy));
     }
 
-    public void addProxy(List<HTTPProxy> proxy) {
-        if (proxy == null || proxy.size() == 0) return;
-        int changes = 0;
+    public void addProxy(List<HTTPProxy> nProxies) {
+        if (nProxies == null) return;
+        ExtProxy ret = null;
+        boolean changes = false;
         synchronized (LOCK) {
-            java.util.List<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
-            changes = nproxies.size();
-            main: for (HTTPProxy newP : proxy) {
-                if (newP == null) continue;
-                for (ProxyInfo info : nproxies) {
-                    /* duplicate check */
-                    if (info.sameProxy(newP)) continue main;
-                }
-                nproxies.add(new ProxyInfo(newP));
+            HashSet<AbstractProxySelectorImpl> dupe = new HashSet<AbstractProxySelectorImpl>(proxies);
+            ArrayList<SingleBasicProxySelectorImpl> nproxies = new ArrayList<SingleBasicProxySelectorImpl>(proxies);
 
+            for (HTTPProxy proxy : nProxies) {
+                AbstractProxySelectorImpl proxyFac = new SingleBasicProxySelectorImpl(proxy);
+                if (proxyFac == null || !(proxyFac instanceof SingleBasicProxySelectorImpl) || !dupe.add(proxyFac)) continue;
+
+                changes = true;
+                nproxies.add((SingleBasicProxySelectorImpl) proxyFac);
             }
+
             proxies = nproxies;
-            if (changes != nproxies.size()) changes = -1;
         }
-        if (changes == -1) {
-            eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.ADDED, null));
-            eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
+
+        if (changes) {
+            eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(this, ProxyEvent.Types.ADDED, null));
+            eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(this, ProxyEvent.Types.REFRESH, null));
         }
     }
 
-    /**
-     * enable/disable given proxy, enables none-proxy in case no proxy would be enabled anymore
-     * 
-     * @param proxy
-     * @param enabled
-     */
-    public void setproxyRotationEnabled(ProxyInfo proxy, boolean enabled) {
-        if (proxy == null) return;
-        if (proxy.isProxyRotationEnabled() == enabled) return;
-        proxy.setProxyRotationEnabled(enabled);
-        eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REFRESH, null));
+    public void setProxyRotationEnabled(AbstractProxySelectorImpl p, boolean enabled) {
+        if (p == null) return;
+
+        if (p.isProxyRotationEnabled() == enabled) return;
+        p.setProxyRotationEnabled(enabled);
+
+        eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(this, ProxyEvent.Types.REFRESH, null));
     }
 
     /** removes given proxy from proxylist */
-    public void remove(ProxyInfo proxy) {
+    public void remove(AbstractProxySelectorImpl proxy) {
         if (proxy == null) return;
         boolean removed = false;
         synchronized (LOCK) {
-            java.util.List<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
-            if (nproxies.remove(proxy)) {
-                removed = true;
-                if (proxy == defaultproxy) {
-                    setDefaultProxy(none);
+            if (proxy instanceof SingleBasicProxySelectorImpl) {
+
+                java.util.List<SingleBasicProxySelectorImpl> nproxies = new ArrayList<SingleBasicProxySelectorImpl>(proxies);
+                if (nproxies.remove(proxy)) {
+                    removed = true;
+                    if (proxy == defaultproxy) {
+                        setDefaultProxy(none);
+                    }
                 }
+                proxies = nproxies;
+            } else if (proxy instanceof PacProxySelectorImpl) {
+                java.util.List<PacProxySelectorImpl> npacs = new ArrayList<PacProxySelectorImpl>(pacs);
+                if (npacs.remove(proxy)) {
+                    removed = true;
+                    if (proxy == defaultproxy) {
+                        setDefaultProxy(none);
+                    }
+                }
+                this.pacs = npacs;
+            } else {
+                throw new WTFException("bad Type: " + proxy.getClass());
             }
-            proxies = nproxies;
+
         }
-        if (removed) eventSender.fireEvent(new ProxyEvent<ProxyInfo>(this, ProxyEvent.Types.REMOVED, proxy));
+        if (removed) eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(this, ProxyEvent.Types.REMOVED, proxy));
     }
 
-    public List<ProxyInfo> getPossibleProxies(String host, boolean accountInUse, int maxActive) {
-        List<ProxyInfo> ret = new ArrayList<ProxyInfo>();
+    public List<AbstractProxySelectorImpl> getPossibleProxies(String host, boolean accountInUse, int maxActive) {
+        List<AbstractProxySelectorImpl> ret = new ArrayList<AbstractProxySelectorImpl>();
         host = host.toLowerCase(Locale.ENGLISH);
         if (accountInUse) {
-            ProxyInfo ldefaultProxy = defaultproxy;
-            int active = ldefaultProxy.activeDownloadsbyHosts(host);
-            if (active < maxActive) ret.add(ldefaultProxy);
+            AbstractProxySelectorImpl ldefaultProxy = defaultproxy;
+            if (ldefaultProxy.isAllowedByFilter(host)) {
+                int active = ldefaultProxy.activeDownloadsbyHosts(host);
+                if (active < maxActive) ret.add(ldefaultProxy);
+                return ret;
+            }
+            // no proxy found. search first one in rotation
+            if (none.isProxyRotationEnabled()) {
+                if (none.isAllowedByFilter(host)) {
+                    int active = none.activeDownloadsbyHosts(host);
+                    if (active < maxActive) ret.add(none);
+                    return ret;
+                }
+            }
+            List<SingleDirectGatewaySelector> ldirects = directs;
+
+            for (SingleDirectGatewaySelector info : ldirects) {
+                if (!info.isAllowedByFilter(host)) continue;
+                collect(host, maxActive, ret, info);
+                return ret;
+            }
+            List<PacProxySelectorImpl> lpacs = pacs;
+            for (PacProxySelectorImpl info : lpacs) {
+                if (!info.isAllowedByFilter(host)) continue;
+                collect(host, maxActive, ret, info);
+                return ret;
+            }
+
+            List<SingleBasicProxySelectorImpl> lProxies = proxies;
+            for (SingleBasicProxySelectorImpl info : lProxies) {
+                if (!info.isAllowedByFilter(host)) continue;
+                collect(host, maxActive, ret, info);
+                return ret;
+            }
         } else {
             if (none.isProxyRotationEnabled()) {
-                int active = none.activeDownloadsbyHosts(host);
-                if (active < maxActive) ret.add(none);
-            }
-            java.util.List<ProxyInfo> ldirects = directs;
-            for (ProxyInfo info : ldirects) {
-                if (info.isProxyRotationEnabled()) {
-                    int active = info.activeDownloadsbyHosts(host);
-                    if (active < maxActive) ret.add(info);
+                if (none.isAllowedByFilter(host)) {
+                    int active = none.activeDownloadsbyHosts(host);
+                    if (active < maxActive) ret.add(none);
                 }
             }
-            java.util.List<ProxyInfo> lproxies = proxies;
-            for (ProxyInfo info : lproxies) {
-                if (info.isProxyRotationEnabled()) {
-                    int active = info.activeDownloadsbyHosts(host);
-                    if (active < maxActive) ret.add(info);
-                }
+            List<SingleDirectGatewaySelector> ldirects = directs;
+
+            for (SingleDirectGatewaySelector info : ldirects) {
+                if (!info.isAllowedByFilter(host)) continue;
+                collect(host, maxActive, ret, info);
+            }
+            List<PacProxySelectorImpl> lpacs = pacs;
+            for (PacProxySelectorImpl info : lpacs) {
+                if (!info.isAllowedByFilter(host)) continue;
+                collect(host, maxActive, ret, info);
+            }
+
+            List<SingleBasicProxySelectorImpl> lProxies = proxies;
+            for (SingleBasicProxySelectorImpl info : lProxies) {
+                if (!info.isAllowedByFilter(host)) continue;
+                collect(host, maxActive, ret, info);
             }
         }
         return ret;
     }
 
+    public void collect(String host, int maxActive, List<AbstractProxySelectorImpl> ret, AbstractProxySelectorImpl selector) {
+        if (selector.isProxyRotationEnabled()) {
+            if (selector.isBanned(host)) return;
+            int active = selector.activeDownloadsbyHosts(host);
+            if (active < maxActive) ret.add(selector);
+
+        }
+    }
+
     public boolean hasRotation() {
         if (none.isProxyRotationEnabled()) return true;
-        java.util.List<ProxyInfo> ldirects = directs;
-        for (ProxyInfo pi : ldirects) {
+        List<SingleDirectGatewaySelector> ldirects = directs;
+        for (SingleDirectGatewaySelector pi : ldirects) {
             if (pi.isProxyRotationEnabled()) return true;
         }
-        java.util.List<ProxyInfo> lproxies = proxies;
-        for (ProxyInfo pi : lproxies) {
+        List<SingleBasicProxySelectorImpl> lproxies = proxies;
+        for (SingleBasicProxySelectorImpl pi : lproxies) {
+            if (pi.isProxyRotationEnabled()) return true;
+        }
+
+        List<PacProxySelectorImpl> lpacs = pacs;
+        for (PacProxySelectorImpl pi : lpacs) {
             if (pi.isProxyRotationEnabled()) return true;
         }
         return false;
     }
 
-    public ProxyInfo getNone() {
+    public NoProxySelector getNone() {
         return none;
     }
 
     public void exportTo(File saveTo) throws UnsupportedEncodingException, IOException {
         ProxyExportImport save = new ProxyExportImport();
 
-        ProxyInfo ldefaultproxy = defaultproxy;
+        AbstractProxySelectorImpl ldefaultproxy = defaultproxy;
         {
             /* use own scope */
             ArrayList<ProxyData> ret = new ArrayList<ProxyData>(proxies.size());
-            java.util.List<ProxyInfo> lproxies = proxies;
-            for (ProxyInfo proxy : lproxies) {
+            List<SingleBasicProxySelectorImpl> lproxies = proxies;
+            for (SingleBasicProxySelectorImpl proxy : lproxies) {
+                ProxyData pd = proxy.toProxyData();
+                pd.setDefaultProxy(proxy == ldefaultproxy);
+                ret.add(pd);
+            }
+
+            List<PacProxySelectorImpl> lpacs = pacs;
+            for (PacProxySelectorImpl proxy : lpacs) {
                 ProxyData pd = proxy.toProxyData();
                 pd.setDefaultProxy(proxy == ldefaultproxy);
                 ret.add(pd);
@@ -575,6 +719,10 @@ public class ProxyController {
         config.setNoneDefault(restore.isNoneDefault());
         config.setNoneRotationEnabled(restore.isNoneRotationEnabled());
         loadProxySettings();
+    }
+
+    public void setBan(AbstractProxySelectorImpl proxy, String bannedDomain, long proxyHostBanTimeout, String explain) {
+        proxy.addBan(new ProxyBan(bannedDomain, proxyHostBanTimeout <= 0 ? -1 : proxyHostBanTimeout + System.currentTimeMillis(), explain));
     }
 
 }

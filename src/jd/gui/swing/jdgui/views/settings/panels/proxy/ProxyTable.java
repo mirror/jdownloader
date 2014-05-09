@@ -8,19 +8,18 @@ import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
 
 import jd.controlling.ClipboardMonitoring;
-import jd.controlling.proxy.ProxyInfo;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class ProxyTable extends BasicJDTable<ProxyInfo> {
+public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
 
     /**
      * 
@@ -40,59 +39,32 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, ProxyInfo contextObject, java.util.List<ProxyInfo> selection, ExtColumn<ProxyInfo> column, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, AbstractProxySelectorImpl contextObject, java.util.List<AbstractProxySelectorImpl> selection, ExtColumn<AbstractProxySelectorImpl> column, MouseEvent ev) {
         popup.add(new JMenuItem(new ProxyAddAction()));
         popup.add(new JMenuItem(new ProxyDeleteAction(selection, false)));
         return popup;
     }
 
     @Override
-    protected boolean onShortcutDelete(final java.util.List<ProxyInfo> selectedObjects, final KeyEvent evt, final boolean direct) {
+    protected boolean onShortcutDelete(final java.util.List<AbstractProxySelectorImpl> selectedObjects, final KeyEvent evt, final boolean direct) {
 
         new ProxyDeleteAction(selectedObjects, direct).actionPerformed(null);
         return true;
     }
 
-    protected boolean onShortcutCopy(final java.util.List<ProxyInfo> selectedObjects, final KeyEvent evt) {
+    protected boolean onShortcutCopy(final java.util.List<AbstractProxySelectorImpl> selectedObjects, final KeyEvent evt) {
         export(selectedObjects);
         return true;
     }
 
-    public static void export(java.util.List<ProxyInfo> selectedObjects) {
+    public static void export(java.util.List<AbstractProxySelectorImpl> selectedObjects) {
         StringBuilder sb = new StringBuilder();
-        for (ProxyInfo pi : selectedObjects) {
+        for (AbstractProxySelectorImpl pi : selectedObjects) {
+            String str = pi.toExportString();
+            if (str == null) continue;
             if (sb.length() > 0) sb.append("\r\n");
-            boolean hasUSerInfo = false;
-            switch (pi.getType()) {
-            case HTTP:
-                sb.append("http://");
-                break;
-            case SOCKS4:
-                sb.append("socks4://");
-                break;
-            case SOCKS5:
-                sb.append("socks5://");
-                break;
-            default:
-                continue;
-            }
-            if (!StringUtils.isEmpty(pi.getUser())) {
-                sb.append(pi.getUser());
-                hasUSerInfo = true;
-            }
-            if (!StringUtils.isEmpty(pi.getPass())) {
-                if (hasUSerInfo) sb.append(":");
-                hasUSerInfo = true;
-                sb.append(pi.getPass());
-            }
-            if (hasUSerInfo) {
-                sb.append("@");
-            }
-            sb.append(pi.getHost());
-            if (pi.getPort() > 0) {
-                sb.append(":");
-                sb.append(pi.getPort());
-            }
+            sb.append(str);
+
         }
         ClipboardMonitoring.getINSTANCE().setCurrentContent(sb.toString());
         try {

@@ -103,8 +103,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Captcha for %s1 to continue!" })
     String gui_captchaWindow_askForInput(String hoster);
 
-    @Default(lngs = { "en" }, values = { "Host/IP" })
-    String gui_column_host();
+    @Default(lngs = { "en" }, values = { "Host/IP/Address" })
+    String gui_column_host2();
 
     @Default(lngs = { "en" }, values = { "Password" })
     String gui_column_pass();
@@ -4586,4 +4586,64 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "An unknown problem occured. Please try again later!" })
     String specialdeals_oboom_dialog_request_disabled();
+
+    @Default(lngs = { "en" }, values = { "Autoproxy(PAC) Script address" })
+    String gui_column_proxytype_pac_tt();
+
+    @Default(lngs = { "en" }, values = { "Autoproxy(PAC)" })
+    String gui_column_proxytype_pac();
+
+    @Default(lngs = { "en" }, values = { "Status" })
+    String gui_column_status();
+
+    @Default(lngs = { "en" }, values = { "Details" })
+    String lit_details();
+
+    @Default(lngs = { "en" }, values = { "Proxy Details: %s1" })
+    String proxyDetailsDialog_title(String name);
+
+    @Default(lngs = { "en" }, values = { "Filter list" })
+    String proxyDetailsDialog_white_blacklist();
+
+    @Default(lngs = { "en" }, values = { "Blacklist -  Do not use this proxy for all domains below" })
+    String proxyDetailsDialog_combo_blacklist();
+
+    @Default(lngs = { "en" }, values = { "Whitelist -  Only use this proxy for the domains below" })
+    String proxyDetailsDialog_combo_whitelist();
+
+    @Default(lngs = { "en" }, values = { "Enter a list (Newline seperated) of domains to use this proxy either only for these domains (whitelist), or never for these domains (blacklist)" })
+    String proxyDetailsDialog_white_blacklist_explain();
+
+    @Default(lngs = { "en" }, values = { "Domain Problems" })
+    String proxyDetailsDialog_white_bans();
+
+    @Default(lngs = { "en" }, values = { "If this proxy does not work with certain domains, JDownloader will ban the proxy for a few minutes. If the proxy is banned right now, you will see an entry here." })
+    String proxyDetailsDialog_white_bans_explain();
+
+    @Default(lngs = { "en" }, values = { " - %s1 banned for %s2 until %s3" })
+    String proxyDetailsDialog_ban(String proxy, String domain, String string2);
+
+    @Default(lngs = { "en" }, values = { "Auto Proxy.pac" })
+    String jd_gui_swing_dialog_ProxyDialog_pac();
+
+    @Default(lngs = { "en" }, values = { "Local IP" })
+    String jd_gui_swing_dialog_ProxyDialog_host();
+
+    @Default(lngs = { "en" }, values = { "Proxy.pac url" })
+    String jd_gui_swing_dialog_ProxyDialog_pac_url();
+
+    @Default(lngs = { "en" }, values = { "Proxy is disabled until %s1" })
+    String proxyDetailsDialog_ban_time_global(String string);
+
+    @Default(lngs = { "en" }, values = { "Proxy is disabled forever" })
+    String proxyDetailsDialog_ban_endless_global();
+
+    @Default(lngs = { "en" }, values = { "Proxy is disabled for %s1 until %s2" })
+    String proxyDetailsDialog_ban_time_domain(String domain, String string);
+
+    @Default(lngs = { "en" }, values = { "Proxy is disabled for %s1 forever" })
+    String proxyDetailsDialog_ban_endless_domain(String domain);
+
+    @Default(lngs = { "en" }, values = { "There is no known problem right now." })
+    String proxyDetailsDialog_ban_noban();
 }

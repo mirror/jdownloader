@@ -514,4 +514,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Any Extension" })
     String LinkSource_EXTENSION();
 
+    @Default(lngs = { "en" }, values = { "Proxy connection failed" })
+    String plugins_errors_proxy_connection();
+
 }

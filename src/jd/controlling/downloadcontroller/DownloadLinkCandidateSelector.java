@@ -208,7 +208,6 @@ public class DownloadLinkCandidateSelector {
                 switch (candidateResult.getResult()) {
                 case CONNECTION_UNAVAILABLE:
                     continue linkLoop;
-                case PLUGIN_DEFECT:
                 case OFFLINE_UNTRUSTED:
                 case ACCOUNT_REQUIRED:
                 case FATAL_ERROR:
