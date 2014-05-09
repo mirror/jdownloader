@@ -84,7 +84,7 @@ public class TriLuLiLuRo extends PluginForHost {
             throw e;
         }
         // Link offline
-        if (br.getURL().equals("http://www.trilulilu.ro/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.trilulilu.ro/") || br.getURL().contains("no_file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(COUNTRYBLOCK)) {
             // try {
             // localProxy(true);
