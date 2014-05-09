@@ -72,6 +72,7 @@ public class UploadsWs extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://srv.upl.me/d.php", "s=" + s + "&k=" + new Regex(downloadLink.getDownloadURL(), "uploads\\.ws/(.+)").getMatch(0), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Access denied for user 'www-data'@'localhost'")) throw new PluginException(LinkStatus.ERROR_FATAL, "Hoster problem, Please contact hoster for resolution");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
