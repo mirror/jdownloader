@@ -6,12 +6,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.SecretKeyFactory;
@@ -35,26 +31,25 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "oboom.com" }, urls = { "https?://(www\\.)?oboom\\.com/(#(id=)?)?[A-Z0-9]{8}" }, flags = { 2 })
 public class OBoomCom extends PluginForHost {
-    
+
     private static Map<Account, Map<String, String>> ACCOUNTINFOS = new HashMap<Account, Map<String, String>>();
     private final String                             APPID        = "43340D9C23";
-    
+
     public OBoomCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("https://www.oboom.com");
     }
-    
+
     @Override
     public String getAGBLink() {
         return "https://www.oboom.com/#agb";
     }
-    
+
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         // clean links so prevent dupes and has less side effects with multihosters...
@@ -65,7 +60,7 @@ public class OBoomCom extends PluginForHost {
         } catch (final Throwable e) {
         }
     }
-    
+
     /**
      * defines custom browser requirements.
      * */
@@ -77,10 +72,10 @@ public class OBoomCom extends PluginForHost {
         }
         // enable debug for older versions of JD
         if (System.getProperty("jd.revision.jdownloaderrevision") == null) prepBr.setDebug(true);
-        
+
         return prepBr;
     }
-    
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -99,9 +94,9 @@ public class OBoomCom extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        String premium = infos.get("premium");
+        String premium = infos.get("premium_unix");
         if (premium != null) {
-            long premiumUntil = parseExpireDate(premium);
+            long premiumUntil = Long.parseLong(premium) * 1000l;
             ai.setValidUntil(premiumUntil);
             if (!ai.isExpired()) {
                 ai.setStatus("Premium account");
@@ -112,7 +107,7 @@ public class OBoomCom extends PluginForHost {
         ai.setStatus("Free Account");
         return ai;
     }
-    
+
     private Map<String, String> loginAPI(Account account, boolean forceLogin) throws Exception {
         synchronized (ACCOUNTINFOS) {
             boolean follow = br.isFollowingRedirects();
@@ -131,9 +126,9 @@ public class OBoomCom extends PluginForHost {
                         String value = getValue(response, key);
                         if (value != null) infos.put(key, value);
                     }
-                    String premium = infos.get("premium");
+                    String premium = infos.get("premium_unix");
                     if (premium != null) {
-                        long timeStamp = parseExpireDate(premium);
+                        long timeStamp = Long.parseLong(premium) * 1000l;
                         if (timeStamp <= System.currentTimeMillis()) {
                             infos.remove("premium");
                         }
@@ -156,34 +151,17 @@ public class OBoomCom extends PluginForHost {
             }
         }
     }
-    
-    public long parseExpireDate(String premium) {
-        long timeStamp = TimeFormatter.getMilliSeconds(premium, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
-        if (timeStamp < 0) {
-            /* needed because -1 is unlimited for an account */
-            timeStamp = Integer.MIN_VALUE;
-            try {
-                SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT+0000'", Locale.UK);
-                sdf.setTimeZone(TimeZone.getTimeZone("GMT+0000"));
-                Date date = sdf.parse(premium);
-                if (date != null) timeStamp = date.getTime();
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return timeStamp;
-    }
-    
+
     private String[] getKeys(String response) {
         return new Regex(response, "\"([a-zA-Z0-9]+)\":").getColumn(0);
     }
-    
+
     private String getValue(String response, String key) {
         String ret = new Regex(response, "\"" + key + "\":\\s*?\"(.*?)\"").getMatch(0);
         if (ret == null) ret = new Regex(response, "\"" + key + "\":\\s*?(\\d+)").getMatch(0);
         return ret;
     }
-    
+
     private static String PBKDF2Key(String password) throws NoSuchAlgorithmException, InvalidKeySpecException, UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder(password);
         byte[] salt = sb.reverse().toString().getBytes("UTF-8");
@@ -192,7 +170,7 @@ public class OBoomCom extends PluginForHost {
         byte[] hash = skf.generateSecret(spec).getEncoded();
         return HexFormatter.byteArrayToHex(hash);
     }
-    
+
     private Map<String, String> getGuestSession(boolean forceNew, String forceNewIfSession, AtomicBoolean newSignal) throws Exception {
         synchronized (ACCOUNTINFOS) {
             boolean follow = br.isFollowingRedirects();
@@ -218,7 +196,7 @@ public class OBoomCom extends PluginForHost {
             }
         }
     }
-    
+
     @Override
     public boolean checkLinks(DownloadLink[] links) {
         if (links == null || links.length == 0) return true;
@@ -264,12 +242,12 @@ public class OBoomCom extends PluginForHost {
             return false;
         }
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         return fetchFileInformation(parameter, null);
     }
-    
+
     protected AvailableStatus fetchFileInformation(DownloadLink link, String session) throws Exception {
         prepBrowser(br);
         final String response;
@@ -278,7 +256,7 @@ public class OBoomCom extends PluginForHost {
         } else {
             response = br.getPage("https://api.oboom.com/1.0/info?items=" + getFileID(link) + "&http_errors=0");
         }
-        
+
         if (response.contains("404,\"token") || response.contains("403,\"token")) {
             if (session != null) {
                 return AvailableStatus.UNCHECKABLE;
@@ -300,7 +278,7 @@ public class OBoomCom extends PluginForHost {
         if (!"online".equals(state)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
     }
-    
+
     public String unescape(String s) {
         if (s == null) return null;
         char ch;
@@ -313,52 +291,52 @@ public class OBoomCom extends PluginForHost {
             // prevents StringIndexOutOfBoundsException with ending char equals case trigger
             if (s.length() != i + 1) {
                 switch (ch) {
-                    case '%':
-                    case '\\':
-                        ch2 = ch;
-                        ch = s.charAt(++i);
-                        StringBuilder sb2 = null;
-                        switch (ch) {
-                            case 'u':
-                                /* unicode */
-                                sb2 = new StringBuilder();
-                                i++;
-                                ii = i + 4;
-                                for (; i < ii; i++) {
-                                    ch = s.charAt(i);
-                                    if (sb2.length() > 0 || ch != '0') {
-                                        sb2.append(ch);
-                                    }
-                                }
-                                i--;
-                                sb.append((char) Long.parseLong(sb2.toString(), 16));
-                                continue;
-                            case 'x':
-                                /* normal hex coding */
-                                sb2 = new StringBuilder();
-                                i++;
-                                ii = i + 2;
-                                for (; i < ii; i++) {
-                                    ch = s.charAt(i);
-                                    sb2.append(ch);
-                                }
-                                i--;
-                                sb.append((char) Long.parseLong(sb2.toString(), 16));
-                                continue;
-                            default:
-                                if (ch2 == '%') {
-                                    sb.append(ch2);
-                                }
-                                sb.append(ch);
-                                continue;
+                case '%':
+                case '\\':
+                    ch2 = ch;
+                    ch = s.charAt(++i);
+                    StringBuilder sb2 = null;
+                    switch (ch) {
+                    case 'u':
+                        /* unicode */
+                        sb2 = new StringBuilder();
+                        i++;
+                        ii = i + 4;
+                        for (; i < ii; i++) {
+                            ch = s.charAt(i);
+                            if (sb2.length() > 0 || ch != '0') {
+                                sb2.append(ch);
+                            }
                         }
+                        i--;
+                        sb.append((char) Long.parseLong(sb2.toString(), 16));
+                        continue;
+                    case 'x':
+                        /* normal hex coding */
+                        sb2 = new StringBuilder();
+                        i++;
+                        ii = i + 2;
+                        for (; i < ii; i++) {
+                            ch = s.charAt(i);
+                            sb2.append(ch);
+                        }
+                        i--;
+                        sb.append((char) Long.parseLong(sb2.toString(), 16));
+                        continue;
+                    default:
+                        if (ch2 == '%') {
+                            sb.append(ch2);
+                        }
+                        sb.append(ch);
+                        continue;
+                    }
                 }
             }
             sb.append(ch);
         }
         return sb.toString();
     }
-    
+
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         Map<String, String> usedInfos = null;
@@ -394,7 +372,7 @@ public class OBoomCom extends PluginForHost {
         }
         dl.startDownload();
     }
-    
+
     private void downloadErrorHandling(Account account) throws PluginException {
         if (br.containsHTML("403,\"(abused|blocked|deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("410,\"(abused|blocked|deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -412,7 +390,7 @@ public class OBoomCom extends PluginForHost {
         String waitTime = br.getRegex("421,\"ip_blocked\",(\\d+)").getMatch(0);
         if (waitTime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l); }
     }
-    
+
     private void refreshTokenHandling(Map<String, String> usedInfos, Account account, final boolean freshInfos) throws PluginException {
         if ((br.containsHTML("403,\"token") || br.containsHTML("404,\"token") || br.containsHTML("403,\"resume") || br.containsHTML("421,\"connections")) && freshInfos == false) {
             /* only retry on NON-fresh tokens */
@@ -424,16 +402,16 @@ public class OBoomCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
     }
-    
+
     private String getFileID(DownloadLink link) {
         return new Regex(link.getDownloadURL(), "oboom\\.com/(#(id=)?)?([A-Z0-9]{8})").getMatch(2);
     }
-    
+
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         handleFree(link, null);
     }
-    
+
     private void checkShowFreeDialog() {
         SubConfiguration config = null;
         try {
@@ -460,7 +438,7 @@ public class OBoomCom extends PluginForHost {
             }
         }
     }
-    
+
     protected void showFreeDialog(final String domain) {
         if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
@@ -468,7 +446,7 @@ public class OBoomCom extends PluginForHost {
         }
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-                
+
                 @Override
                 public void run() {
                     try {
@@ -498,13 +476,13 @@ public class OBoomCom extends PluginForHost {
         } catch (Throwable e) {
         }
     }
-    
+
     @Override
     public boolean hasCaptcha(DownloadLink link, Account acc) {
         if (acc != null && acc.getMaxSimultanDownloads() == 0) return false;
         return true;
     }
-    
+
     public void handleFree(DownloadLink link, Account account) throws Exception {
         AtomicBoolean freshInfos = new AtomicBoolean(false);
         Map<String, String> usedInfos = null;
@@ -560,7 +538,7 @@ public class OBoomCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error: " + br.toString());
             }
-            
+
         }
         sleep(30 * 1000l, link);
         br.getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + getFileID(link) + "&auth=" + urlInfos[1] + "&http_errors=0");
@@ -582,20 +560,20 @@ public class OBoomCom extends PluginForHost {
         }
         dl.startDownload();
     }
-    
+
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (account != null && account.getMaxSimultanDownloads() == 0) return true;
         if (downloadLink.getVerifiedFileSize() >= 0) return downloadLink.getVerifiedFileSize() < 1024 * 1024 * 1024l;
         return true;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
 }

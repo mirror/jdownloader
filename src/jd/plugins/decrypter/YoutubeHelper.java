@@ -956,6 +956,10 @@ public class YoutubeHelper {
                 // try to bypass
                 getVideoInfoWorkaroundUsed = true;
                 cw.getPage(this.base + "/get_video_info?video_id=" + vid.videoID);
+                if (cw.containsHTML("requires_purchase=1")) {
+                    logger.warning("Download not possible: You have to pay to watch this video");
+                    throw new Exception("Paid Video");
+                }
                 final String errorcode = cw.getRegex("errorcode=(\\d+)").getMatch(0);
                 if ("150".equals(errorcode)) {
                     // http://www.youtube.com/watch?v=xxWHMmiOTVM
@@ -1094,6 +1098,14 @@ public class YoutubeHelper {
         if (StringUtils.isNotEmpty(rentalText)) {
             logger.warning("Download not possible: " + rentalText);
             throw new Exception("Rental Video: " + rentalText);
+        }
+        if (br.containsHTML("<meta itemprop=\"paid\" content=\"True\">")) {
+            logger.warning("Download not possible: You have to pay to watch this video");
+            throw new Exception("Paid Video: " + rentalText);
+        }
+        if (br.containsHTML("watch-checkout-offers")) {
+            logger.warning("Download not possible: You have to pay to watch this video");
+            throw new Exception("Paid Video: " + rentalText);
         }
     }
 
@@ -1563,6 +1575,8 @@ public class YoutubeHelper {
 
         ttsUrl = ttsUrl.replace("&v=" + vid.videoID, "");
         ttsUrl = ttsUrl.replace("?v=" + vid.videoID, "");
+        ttsUrl = ttsUrl.replace("timedtext&", "timedtext?");
+
         String[] matches = br.getRegex("<track id=\"(.*?)\".*?/>").getColumn(0);
 
         for (String trackID : matches) {

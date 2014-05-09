@@ -66,9 +66,10 @@ public enum YoutubeITAG {
     // very different audio bitrates!!!
     THREEGP_VIDEO_144P_H264_AUDIO_AAC(17, "MPEG-4 Visual", "144p", "AAC", "24kbit", 144.0 + YoutubeITAG.AAC32_ESTIMATE),
     // LIve stream?
-    THREEGP_VIDEO_240P_H263_AUDIO_AAC(132, "MPEG-4 Visual", "240p", "AAC", "48kbit", 240.0 + YoutubeITAG.AAC_48_ESTIMATE),
+    // I tested several streams, and this itag contains 180p and 32kbit audio
+    THREEGP_VIDEO_240P_H263_AUDIO_AAC(132, "MPEG-4 Visual", "180p", "AAC", "32kbit", 180.0 + YoutubeITAG.AAC32_ESTIMATE),
 
-    THREEGP_VIDEO_240P_H264_AUDIO_AAC(36, "MPEG-4 Visual", "240p", "AAC", "48kbit", 240.01 + YoutubeITAG.AAC_48_ESTIMATE),
+    THREEGP_VIDEO_240P_H264_AUDIO_AAC(36, "MPEG-4 Visual", "180p", "AAC", "32kbit", 180.01 + YoutubeITAG.AAC32_ESTIMATE),
 
     // not sure - did not find testvideos
     WEBM_VIDEO_1080P_VP8_AUDIO_VORBIS(46, "VP8", "1080p", "Vorbis", "192kbit", 1080.3 + YoutubeITAG.VORBIS_192),

@@ -522,13 +522,17 @@ public class YoutubeDashV2 extends PluginForHost {
                         UrlCollection urls = getUrlPair(downloadLink);
 
                         if (StringUtils.isNotEmpty(urls.video)) {
-                            br.openRequestConnection(new HeadRequest(urls.video)).disconnect();
+                            String url = "http://www.youtube.com/" + new Regex(urls.video, "(/videoplayback.*)").getMatch(0);
+                            // + "&cmo=pf%3D1"
+                            br.openRequestConnection(new HeadRequest(url)).disconnect();
                             con = br.getHttpConnection();
                             if (con.getResponseCode() == 200) {
+                                downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_VIDEO, br.getRequest().getUrl());
                                 totalSize += con.getLongContentLength();
                                 data.setDashVideoSize(con.getLongContentLength());
 
                             } else {
+
                                 if (i == 0) {
                                     resetStreamUrls(downloadLink);
                                     continue;
@@ -539,9 +543,12 @@ public class YoutubeDashV2 extends PluginForHost {
                         }
 
                         if (StringUtils.isNotEmpty(urls.audio)) {
-                            br.openRequestConnection(new HeadRequest(urls.audio)).disconnect();
+                            String url = "http://www.youtube.com/" + new Regex(urls.audio, "(/videoplayback.*)").getMatch(0);
+                            // + "&cmo=pf%3D1"
+                            br.openRequestConnection(new HeadRequest(url)).disconnect();
                             con = br.getHttpConnection();
                             if (con.getResponseCode() == 200) {
+                                downloadLink.setProperty(YoutubeHelper.YT_STREAMURL_AUDIO, br.getRequest().getUrl());
                                 totalSize += con.getLongContentLength();
                                 data.setDashAudioSize(con.getLongContentLength());
 
