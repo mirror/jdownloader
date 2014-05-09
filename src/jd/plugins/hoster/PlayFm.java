@@ -68,6 +68,7 @@ public class PlayFm extends PluginForHost {
         if (id == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
         br.getPage(MAINPAGE + "/flexRead/recording?rec%5Fid=" + id);
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<error><\\!\\[CDATA\\[\\]\\]></error>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML("Sorry, we are down for maintenance")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Sorry, we are down for maintenance", 5 * 60 * 1000l); }
         if (br.containsHTML("<error>")) {
             br.getPage(downloadLink.getDownloadURL());

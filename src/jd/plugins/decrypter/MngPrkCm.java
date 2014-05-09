@@ -67,8 +67,6 @@ public class MngPrkCm extends PluginForDecrypt {
         final String srv_link = srv_info.getMatch(0);
         final String extension = srv_info.getMatch(2);
         String fpName = br.getRegex("</a> / ([^<>\"]*?)<em class=\"refresh\"").getMatch(0);
-        fpName = Encoding.htmlDecode(fpName).trim();
-        fpName = encodeUnicode(fpName);
         if (srv_link == null || fpName == null || extension == null) {
             if (br.containsHTML("class=\"manga\"")) {
                 logger.info("Link offline (unsupported link): " + parameter);
@@ -77,6 +75,8 @@ public class MngPrkCm extends PluginForDecrypt {
             logger.warning("Issue with getThis! : " + parameter);
             return null;
         }
+        fpName = Encoding.htmlDecode(fpName).trim();
+        fpName = encodeUnicode(fpName);
         // grab the total pages within viewer
         String totalPages = br.getRegex(">\\d+ of (\\d+)</a></em>").getMatch(0);
         if (totalPages == null) {

@@ -70,17 +70,15 @@ public class MyMailRu extends PluginForDecrypt {
                     br.getPage("http://my.mail.ru/" + dirname + "/" + username + "/ajax?ajax_call=1&func_name=photo.photostream&mna=false&mnb=false&encoding=windows-1251&arg_offset=" + offset + "&arg_marker=" + new Random().nextInt(1000) + "&arg_album_id=" + albumID);
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 }
-                final String[][] links = br.getRegex("\\(http://content\\.[^<>\"/]*?\\.mail\\.ru/mail/[^<>\"/]*?/[^<>\"/]*?/p\\-\\d+(\\.[a-z]{1,5})\\);\".*?<a class=\"l\\-catalog_link\" href=\"(http://foto\\.mail\\.ru/[^<>\"/]+/[^<>\"/]+/[^<>\"/]+/\\d+\\.html)\"").getMatches();
-                if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                for (final String singleLink[] : links) {
-                    final String ending = singleLink[0];
+                final String[] items = br.getRegex("(<div class=\"l\\-catalog_item\" data\\-bubble\\-config=.*?</div>)").getColumn(0);
+                for (final String item : items) {
+                    final String url = new Regex(item, "style=\"background\\-image:url\\((http://content[a-z0-9\\-_\\.]+\\.my\\.mail\\.ru/[^<>\"]+p\\-\\d+\\.jpg)\\);").getMatch(0);
+                    final String mainlink = new Regex(item, "\"(http://my\\.mail\\.ru/[^<>\"]+/photo/\\d+/\\d+\\.html)\"").getMatch(0);
+                    final String ending = url.substring(url.lastIndexOf("."));
                     final DownloadLink dl = createDownloadlink("http://my.mail.ru/jdeatme" + System.currentTimeMillis() + new Random().nextInt(100000));
-                    dl.setProperty("mainlink", singleLink[1]);
+                    dl.setProperty("mainlink", mainlink);
                     dl.setProperty("ext", ending);
-                    dl.setFinalFileName(new Regex(singleLink[1], "(\\d+)\\.html").getMatch(0) + ending);
+                    dl.setFinalFileName(new Regex(mainlink, "(\\d+)\\.html").getMatch(0) + ending);
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }

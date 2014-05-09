@@ -63,9 +63,10 @@ public class SflnkgNt extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            /* Check if it redirects to another safelinking redirect link */
             if (!newparameter.matches("https?://(www\\.)?safelinking\\.net/(p|d)/[a-z0-9]+")) {
-                logger.warning("Decrypter broken for link (received invalid redirect link): " + parameter);
-                return null;
+                decryptedLinks.add(createDownloadlink(newparameter));
+                return decryptedLinks;
             }
             newparameter = newparameter.replaceAll("http://", "https://");
             gsh.setAddedLink(newparameter);

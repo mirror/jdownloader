@@ -73,9 +73,11 @@ public class MvWrldNt extends PluginForDecrypt {
         if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) {
             logger.info("Link offline (offline): " + parameter);
             return decryptedLinks;
-        }
-        if (br.getURL().contains("mov-world.net/error.html?error=404") || br.containsHTML(">404 Not Found<")) {
+        } else if (br.getURL().contains("mov-world.net/error.html?error=404") || br.containsHTML(">404 Not Found<")) {
             logger.info("Link offline (error 404): " + parameter);
+            return decryptedLinks;
+        } else if (br.getURL().equals("http://mov-world.net/")) {
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
 

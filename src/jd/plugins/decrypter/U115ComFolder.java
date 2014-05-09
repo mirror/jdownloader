@@ -93,7 +93,7 @@ public class U115ComFolder extends PluginForDecrypt {
         br.getPage("http://web.api.115.com/folder/file?aid=" + aid + "&cid=" + cid + "&user_id=" + uid + "&offset=0&limit=1000&_t=" + Integer.toString(new Random().nextInt(100000000)));
 
         // Errorhandling
-        if (br.containsHTML("\"total_size\":\"0B\",\"count\":0")) {
+        if (br.containsHTML("\"count\":0")) {
             logger.info("This folder is empty: " + parameter);
             return decryptedLinks;
         }

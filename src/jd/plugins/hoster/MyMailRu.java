@@ -63,6 +63,7 @@ public class MyMailRu extends PluginForHost {
             br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             final String urlpart = getUrlpart(link);
             br.getPage("http://my.mail.ru/video/" + urlpart + ".html?ajax=photoitem&ajax_call=1&func_name=&mna=&mnb=&encoding=windows-1251");
+            if (br.containsHTML("b\\-video__layer\\-error")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             final String signvideourl = getJson("signVideoUrl");
             final String filename = getJson("videoTitle");
@@ -87,12 +88,15 @@ public class MyMailRu extends PluginForHost {
             }
         } else {
             final String originalLink = link.getStringProperty("mainlink", null);
-            final Regex linkInfo = new Regex(originalLink, "http://foto\\.mail\\.ru/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/(\\d+)\\.html");
+            // final Regex linkInfo = new Regex(originalLink, "\\.mail\\.ru/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/(\\d+)\\.html");
+            final String fid = new Regex(originalLink, "(\\d+)\\.html$").getMatch(0);
             br.getPage(originalLink);
             if (br.containsHTML(">Данная страница не найдена на нашем сервере")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             for (int i = 1; i <= 2; i++) {
-                if (i == 1) DLLINK = br.getRegex("\"(http://content\\.foto\\.mail\\.ru/[^<>\"/]*?/[^<>\"/]*?/[^<>\"/]*?/s\\-\\d+\\.[A-Za-z]{1,5})\"").getMatch(0);
-                if (DLLINK == null) DLLINK = "http://content.foto.mail.ru/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/" + linkInfo.getMatch(2) + "/i-" + linkInfo.getMatch(3) + link.getStringProperty("ext", null);
+                if (i == 1) DLLINK = br.getRegex("data\\-filedimageurl=\"(http://[^<>\"]+\\-" + fid + "[^<>\"]*?)\"").getMatch(0);
+                // if (DLLINK == null) DLLINK = "http://content.foto.mail.ru/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/" +
+                // linkInfo.getMatch(2) + "/i-" + linkInfo.getMatch(3) + link.getStringProperty("ext", null);
+                if (DLLINK == null) continue;
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openGetConnection(DLLINK);
@@ -103,11 +107,11 @@ public class MyMailRu extends PluginForHost {
                     }
                     if (!con.getContentType().contains("html")) {
                         link.setDownloadSize(con.getLongContentLength());
-                        link.setFinalFileName(linkInfo.getMatch(3) + link.getStringProperty("ext", null));
+                        link.setFinalFileName(fid + link.getStringProperty("ext", null));
+                        break;
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    return AvailableStatus.TRUE;
                 } finally {
                     try {
                         con.disconnect();
@@ -146,7 +150,7 @@ public class MyMailRu extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        fixFilename(downloadLink);
+        // fixFilename(downloadLink);
         dl.startDownload();
     }
 
