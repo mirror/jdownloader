@@ -407,6 +407,16 @@ public class FilesMonsterCom extends PluginForHost {
         login(account, false);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
+
+        Regex r = br.getRegex("Please try again in <b>(\\d+)</b> hours and <b>(\\d+)</b> minutes.");
+        if (r.count() > 0) {
+            long sec = 60 * (Long.parseLong(r.getMatch(0)) * 60 + Long.parseLong(r.getMatch(1)));
+            if (sec == 0) { // minimum time of 1 sec
+                sec = 1;
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, sec * 1000l);
+        }
+
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"), 120 * 60 * 1000l);
         if (br.containsHTML("\">Today you have already downloaded ") || br.containsHTML("\">You have not enough traffic in your account to download this file")) {
             logger.info("Traffic limit reached!");
