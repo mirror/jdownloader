@@ -59,8 +59,10 @@ public class ZippyShareComFolder extends PluginForDecrypt {
             if (count == 1) br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("http://www.zippyshare.com/fragments/publicDir/filetable.jsp", "page=" + count + "&user=" + user + "&dir=" + dir + "&sort=nameasc&pageSize=50&search=&viewType=default");
             links = br.getRegex("\"(http://www\\d+\\.zippyshare\\.com/v/\\d+/file\\.html)\"").getColumn(0);
-            for (String singleLink : links)
-                decryptedLinks.add(createDownloadlink(singleLink));
+            if (links != null) {
+                for (String singleLink : links)
+                    decryptedLinks.add(createDownloadlink(singleLink));
+            }
             count++;
         }
 
