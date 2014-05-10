@@ -11,6 +11,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.ProxySelectorInterface;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.ProxyData;
 
 public abstract class AbstractProxySelectorImpl implements ProxySelectorInterface {

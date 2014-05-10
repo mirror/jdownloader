@@ -1,6 +1,5 @@
 package org.jdownloader.updatev2;
 
-import jd.controlling.proxy.FilterList;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;

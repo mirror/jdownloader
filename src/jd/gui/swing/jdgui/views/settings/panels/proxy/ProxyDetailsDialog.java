@@ -14,8 +14,6 @@ import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
 
 import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.FilterList;
-import jd.controlling.proxy.FilterList.Type;
 import jd.controlling.proxy.ProxyBan;
 import net.miginfocom.swing.MigLayout;
 
@@ -25,6 +23,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.updatev2.FilterList;
+import org.jdownloader.updatev2.FilterList.Type;
 
 public class ProxyDetailsDialog extends AbstractDialog<Object> {
 

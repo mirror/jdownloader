@@ -2,7 +2,6 @@ package org.jdownloader.updatev2;
 
 import java.util.ArrayList;
 
-import jd.controlling.proxy.FilterList;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
