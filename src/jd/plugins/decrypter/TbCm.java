@@ -435,7 +435,8 @@ public class TbCm extends PluginForDecrypt {
                 return;
             }
         }
-        br.setProxySelector(br.getThreadProxy());
+
+        br.setProxy(br.getThreadProxy());
     }
 
     private boolean isEmpty(String ip) {

@@ -341,7 +341,7 @@ public class GrooveShark extends PluginForHost {
                 return;
             }
         }
-        br.setProxySelector(br.getThreadProxy());
+        br.setProxy(br.getThreadProxy());
     }
 
     private boolean isEmpty(String ip) {

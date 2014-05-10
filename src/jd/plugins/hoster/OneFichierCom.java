@@ -340,6 +340,9 @@ public class OneFichierCom extends PluginForHost {
         isBlocked |= br.containsHTML(">Please wait a few seconds before downloading new ones");
         isBlocked |= br.containsHTML(">You must wait for another download");
         isBlocked |= br.containsHTML("Without premium status, you can download only one file at a time");
+        // <div style="text-align:center;margin:auto;color:red">Warning ! Without premium status, you must wait between each
+        // downloads<br/>Your last download finished 05 minutes ago</div>
+
         isBlocked |= br.containsHTML("you must wait between each downloads");
 
         if (isBlocked) {
