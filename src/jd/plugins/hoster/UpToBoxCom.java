@@ -153,6 +153,9 @@ public class UpToBoxCom extends PluginForHost {
                 filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
                 if (filename == null) {
                     filename = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    if (filename == null) {
+                        filename = new Regex(correctedBR, ">([^\r\n]+) \\(\\d+(\\.\\d+)? [A-Z]{2,}\\)<").getMatch(0);
+                    }
                 }
             }
         }
