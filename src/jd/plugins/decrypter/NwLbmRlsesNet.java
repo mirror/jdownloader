@@ -32,7 +32,7 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?newalbumreleases\\.net/(date|category|about|comments|page|feed)";
+    private static final String INVALIDLINKS = "http://(www\\.)?newalbumreleases\\.net/(date/[0-9/]+|category/.+|about/?|comments/feed/?|feed/?|page)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -43,6 +43,10 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
         }
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.matches("http://(www\\.)?newalbumreleases\\.net/\\d+/?")) {
             final String[] links = br.getRegex("\"(http://newalbumreleases\\.net/[^<>\"]*?)\">DOWNLOAD</a>").getColumn(0);
             if (links == null || links.length == 0) {

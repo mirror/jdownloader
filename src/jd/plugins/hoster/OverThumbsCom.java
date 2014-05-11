@@ -59,10 +59,10 @@ public class OverThumbsCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/galleries/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("cdn\\.overthumbs\\.com/img/movieicon\\.jpg\" width=\"46\" height=\"43\" alt=\"\" /><h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) tube clips at Over Thumbs</title>").getMatch(0);
-        String vid = br.getRegex("var VideoID = \"(\\d+)\";").getMatch(0);
+        String filename = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
+        String vid = br.getRegex("\"/jwplayer/playvideo\\.php\\?id=(\\d+)\"").getMatch(0);
         if (vid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        /* New/Alternative way: jwplayer/playvideo.php?id= */
         br.getPage("http://overthumbs.com/flvplayer/player/xml_connect.php?code=" + vid);
         DLLINK = br.getRegex("<urlMOV1>(http://.*?)</urlMOV1>").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\\'(http://cdn\\.empflix\\.com/empflv/.*?)\\'").getMatch(0);
