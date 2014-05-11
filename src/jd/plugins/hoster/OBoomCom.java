@@ -153,7 +153,7 @@ public class OBoomCom extends PluginForHost {
     }
 
     private String[] getKeys(String response) {
-        return new Regex(response, "\"([a-zA-Z0-9]+)\":").getColumn(0);
+        return new Regex(response, "\"([a-zA-Z0-9\\_]+)\":").getColumn(0);
     }
 
     private String getValue(String response, String key) {
