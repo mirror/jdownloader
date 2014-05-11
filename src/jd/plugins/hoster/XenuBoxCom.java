@@ -37,6 +37,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -46,6 +47,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DdlStorageCom.StringContainer;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -55,20 +57,22 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xenubox.com" }, urls = { "https?://(www\\.)?xenubox\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class XenuBoxCom extends PluginForHost {
 
-    private String               correctedBR                  = "";
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://xenubox.com";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private String                 correctedBR                  = "";
+    private static final String    PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String           COOKIE_HOST                  = "http://xenubox.com";
+    private static final String    MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String    MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String    ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String    PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String    PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger   totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private final boolean          ENABLE_RANDOM_UA             = true;
+    private static StringContainer agent                        = new StringContainer();
     // don't touch
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
+    private static AtomicInteger   maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger   maxPrem                      = new AtomicInteger(1);
+    private static Object          LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.4-raz
@@ -120,6 +124,14 @@ public class XenuBoxCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        if (ENABLE_RANDOM_UA) {
+            if (agent.string == null) {
+                /* we first have to load the plugin, before we can reference it */
+                JDUtilities.getPluginForHost("mediafire.com");
+                agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            }
+            br.getHeaders().put("User-Agent", agent.string);
+        }
     }
 
     @Override
@@ -617,7 +629,18 @@ public class XenuBoxCom extends PluginForHost {
                 /* They switch betweenv https and http */
                 String action = br.getRegex("action=\"(https?://xenubox\\.com/[^<>\"/]*?)\" name=\"FL\"").getMatch(0);
                 if (action == null) action = "http://xenubox.com/";
-                br.postPage(action, "op=login&redirect=http%3A%2F%2Fxenubox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage(action, "op=login&redirect=http%3A%2F%2Fxenubox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (correctedBR.contains(">Your account was banned ")) {
+                    logger.info("xenubox.com: Account " + account.getUser() + " was banned!");
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        account.setError(AccountError.INVALID, "Dein Account wurde gesperrt!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Dein Account wurde gesperrt!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        account.setError(AccountError.INVALID, "Your account was banned!");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account was banned!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (new Regex(correctedBR, ">Apply Premium Key:<").matches()) {
