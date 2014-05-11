@@ -54,7 +54,7 @@ public class UberShaRe extends PluginForHost {
     private final String        MAINPAGE                                     = "http://uber-sha.re";
     private final String        TYPE                                         = "html";
     private final boolean       RESUME                                       = true;
-    private final int           MAXCHUNKS                                    = 0;
+    private final int           MAXCHUNKS                                    = 1;
     private static final String SIMULTANDLS_LIMIT                            = "?e=You+have+reached+the+maximum+concurrent+downloads";
     private static final String SIMULTANDLSLIMIT_USERTEXT                    = "Max. simultan downloads limit reached, wait to start more downloads from this host";
     private static final String WAIT_BETWEEN_DOWNLOADS_LIMIT                 = "e=You+must+wait+";
