@@ -156,6 +156,7 @@ plugins_errors_hosteroffline=Servidor offline?
 plugins_errors_hosterproblem=Problema com o servidor?
 plugins_errors_nointernetconn=Sem conexão de Internet?
 plugins_errors_proxy_auth=Falha ao Autenticação Proxy
+plugins_errors_proxy_connection=Falha na conexão proxy
 plugins_errors_wrongpassword=Senha errada
 reconnectmanager_wizard=Assistente de Reconexão
 settings_sidebar_tooltip_enable_extension=Ativar/Desativar esta Extensão
