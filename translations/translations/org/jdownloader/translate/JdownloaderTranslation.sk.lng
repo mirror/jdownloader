@@ -94,6 +94,7 @@ gui_mainframe_title_updatemessage2=%s1 aktualizácie sú k dispozícii
 gui_menu_extensions=Nástroje
 gui_setting_folderchooser_title=Vybrať priečinok
 gui_settings_advanced_description=Všetky nastavenia, ktoré tu nájdete, sú len pre pokročilých užívateľov! Nič tu nemeňte, ak si nie ste na 100% istý čo robíte!
+gui_settings_basicauth_description=Tu možete pridať prihlasovacie údaje pre HTTP a FTP. Jednoduché overenie možno použiť pre základné prihlásenie, ktoré nevyžaduje žiadny ďalší špeciálny doplnok.\n\nPre prémiové / zlaté / platinové účty použijte správcu účtov!
 gui_settings_basicauth_title=Jednoduché overenie
 gui_settings_downloadcontroll_description=Limity rýchlosti, poradie sťahovania, priority... tu môžete meniť nastavenia pre sťahovanie.
 gui_settings_downloadcontroll_title=Správa sťahovania
