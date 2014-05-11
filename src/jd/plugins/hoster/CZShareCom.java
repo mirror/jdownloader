@@ -40,7 +40,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz", "czshare.com" }, urls = { "http://(www\\.)?sdilej\\.cz/\\d+/.{1}", "fhirtogjnrogjmrogowcertvntzjuilthbfrwefdDELETE_MErvrgjzjz7ef" }, flags = { 0, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz", "czshare.com" }, urls = { "http://(www\\.)?sdilej\\.cz/\\d+/.{1}", "fhirtogjnrogjmrogowcertvntzjuilthbfrwefdDELETE_MErvrgjzjz7ef" }, flags = { 2, 0 })
 public class CZShareCom extends PluginForHost {
 
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
@@ -51,6 +51,24 @@ public class CZShareCom extends PluginForHost {
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://sdilej.cz/registrace");
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        return false;
+    }
+
+    // do not add @Override here to keep 0.* compatibility
+    public boolean hasAutoCaptcha() {
+        return false;
     }
 
     public Boolean rewriteHost(DownloadLink link) {
@@ -197,11 +215,6 @@ public class CZShareCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @SuppressWarnings("unchecked")
     private void login(Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -261,16 +274,4 @@ public class CZShareCom extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }
