@@ -340,7 +340,7 @@ public class DebridLinkFr extends PluginForHost {
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false)").getMatch(0);
+        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
         if (result == null) result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
         if (result != null) result = result.replaceAll("\\\\/", "/");
         return result;
