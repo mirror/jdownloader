@@ -211,72 +211,94 @@ public class DebridLinkFr extends PluginForHost {
         if (account != null && r != null) {
             br.getPage(apiHost + "?r=" + r + (sign ? "&token=" + getValue(account, "token") + "&sign=" + getSign(account, r) : "") + (other != null ? (!other.startsWith("&") ? "&" : "") + other : ""));
             if (errChk()) {
-                errHandling(account, downloadLink);
+                errHandling(account, downloadLink, false);
             }
         } else
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private void errHandling(final Account account, final DownloadLink downloadLink) throws PluginException {
-        final String error = getJson("ERR");
-        if (error != null) {
-
-            // generic errors not specific to download routine!
-
-            if ("unknowR".equals(error)) {
-                // Bad r argument
-                // changes with the API? this shouldn't happen
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if ("badSign".equals(error)) {
-                // Check the sign parameter
-                dump(account);
+    private void errHandling(final Account account, final DownloadLink downloadLink, final boolean postDl) throws PluginException {
+        if (postDl) {
+            // <p>
+            // Download error
+            // </p>
+            // <p>
+            // Unable to retrieve the file from the host.<br/>
+            // Code erreur: #DEB-536e7081927b8<br>
+            // </p>
+            // </div>
+            // <div class='clearfix'></div><div class='alert alert-info'>
+            // <p> - The download server may be offline.<br/>
+            // - Our server was banned by the host.<br/>
+            // - A script problem due to a change in the host.</p>
+            // </div><div class='col-sm-8'><p>Renew your request.<br/>
+            // If the problem continues, please contact us.</div>
+            if (br.containsHTML("Unable to retrieve the file from the host\\.<")) {
+                tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if ("badRequest".equals(error)) {
-                // not in error table yet..........
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if ("hidedToken".equals(error)) {
-                // The token is not enabled. Redirect the user to validTokenUrl
-                // this is done automatic at this stage, as users will hate dialog/popups!
-                dump(account);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if ("badToken".equals(error)) {
-                // Token expired or not valid
-                dump(account);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if ("notToken".equals(error)) {
-                // The request need token argument
-                // should never happen, unless API changes!
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else {
+            final String error = getJson("ERR");
 
-            // handling for download routines!
+            if (error != null) {
 
-            else if (downloadLink != null) {
+                // generic errors not specific to download routine!
 
-                if ("notDebrid".equals(error)) {
-                    // Maybe the filehoster is down or the link is not online
-                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
-                } else if ("fileNotFound".equals(error)) {
-                    // The filehoster return a 'file not found' error.
-                    // let another download method kick in? **
-                    // NOTE: ** = jiaz new handling behaviour
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                } else if ("badFileUrl".equals(error)) {
-                    // The link format is not valid
-                    // link generation?? lets go into another plugin **
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                } else if ("hostNotValid".equals(error)) {
-                    // The filehoster is not supported
-                    // shouldn't happen as we check supported array and remove hosts that are disabled/down etc.
-                    tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
-                } else if ("disabledHost".equals(error)) {
-                    // The filehoster are disabled
-                    // remove from array!
-                    tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
-                } else if ("noGetFilename".equals(error)) {
-                    // Unable to retrieve the file name
-                    // what todo here? revert to another plugin **
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                if ("unknowR".equals(error)) {
+                    // Bad r argument
+                    // changes with the API? this shouldn't happen
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if ("badSign".equals(error)) {
+                    // Check the sign parameter
+                    dump(account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if ("badRequest".equals(error)) {
+                    // not in error table yet..........
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else if ("hidedToken".equals(error)) {
+                    // The token is not enabled. Redirect the user to validTokenUrl
+                    // this is done automatic at this stage, as users will hate dialog/popups!
+                    dump(account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if ("badToken".equals(error)) {
+                    // Token expired or not valid
+                    dump(account);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if ("notToken".equals(error)) {
+                    // The request need token argument
+                    // should never happen, unless API changes!
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+
+                // handling for download routines!
+
+                else if (downloadLink != null) {
+
+                    if ("notDebrid".equals(error)) {
+                        // Maybe the filehoster is down or the link is not online
+                        tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+                    } else if ("fileNotFound".equals(error)) {
+                        // The filehoster return a 'file not found' error.
+                        // let another download method kick in? **
+                        // NOTE: ** = jiaz new handling behaviour
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    } else if ("badFileUrl".equals(error)) {
+                        // The link format is not valid
+                        // link generation?? lets go into another plugin **
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    } else if ("hostNotValid".equals(error)) {
+                        // The filehoster is not supported
+                        // shouldn't happen as we check supported array and remove hosts that are disabled/down etc.
+                        tempUnavailableHoster(account, downloadLink, 6 * 60 * 60 * 1000l);
+                    } else if ("disabledHost".equals(error)) {
+                        // The filehoster are disabled
+                        // remove from array!
+                        tempUnavailableHoster(account, downloadLink, 1 * 60 * 60 * 1000l);
+                    } else if ("noGetFilename".equals(error)) {
+                        // Unable to retrieve the file name
+                        // what todo here? revert to another plugin **
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    }
                 }
             }
         }
@@ -397,6 +419,7 @@ public class DebridLinkFr extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            errHandling(account, downloadLink, true);
             if (br.containsHTML("<img src='http://debrid-link\\.fr/images/logo\\.png")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             logger.warning("Unhandled download error on debrid-link.fr:");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
