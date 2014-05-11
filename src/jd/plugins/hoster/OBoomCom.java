@@ -126,12 +126,14 @@ public class OBoomCom extends PluginForHost {
                         String value = getValue(response, key);
                         if (value != null) infos.put(key, value);
                     }
-                    String premium = infos.get("premium_unix");
-                    if (premium != null) {
-                        long timeStamp = Long.parseLong(premium) * 1000l;
+                    String premium_unix = infos.get("premium_unix");
+                    if (premium_unix != null) {
+                        long timeStamp = Long.parseLong(premium_unix) * 1000l;
                         if (timeStamp <= System.currentTimeMillis()) {
                             infos.remove("premium");
                         }
+                    } else {
+                        infos.remove("premium");
                     }
                     if (infos.get("premium") != null) {
                         account.setConcurrentUsePossible(true);
