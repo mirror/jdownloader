@@ -18,15 +18,12 @@ package jd.plugins.decrypter;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.nutils.encoding.Base64;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -34,35 +31,21 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili\\-warez\\.net/[^<>\"]+\\d+\\.html" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)" }, flags = { 0 })
 public class MvWrldNt extends PluginForDecrypt {
+
+    // DEV NOTES
+    // variants of X4fChWa
 
     public MvWrldNt(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String redirectLinks            = "http://(www\\.)?mov\\-world\\.net/[a-z]{2}-[a-zA-Z0-9]+/";
-    private static final String UNSUPPORTEDLINKS         = "http://(www\\.)?(xxx\\-4\\-free\\.net|mov\\-world\\.net|chili\\-warez\\.net)//?(news/|topliste/|premium_zugang|suche/|faq|pics/index|clips/index|movies/index|movies/seite|streams/index|stories/index|partner/anmelden|kontakt).*?\\.html";
-    private static final String SPECIALUNSUPPORTEDLINKS  = "http://(www\\.)?chili\\-warez\\.net//[a-z0-9\\-_]+/[a-z0-9\\-_]+/seite\\-\\d+\\.html";
-    private static final String SPECIALUNSUPPORTEDLINKS2 = "http://(www\\.)?xxx\\-4\\-free\\.net/stories/[a-z0-9\\-]+\\.html";
-    private static final String XXX4FREESTREAMLINK       = "http://(www\\.)?xxx\\-4\\-free\\.net/streams/[a-z0-9\\-]+\\.html";
-
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches(UNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS2)) {
-            logger.info("Invalid link: " + parameter);
-            return decryptedLinks;
-        }
-        // redirect links
-        if (parameter.matches(redirectLinks)) {
-            br.setFollowRedirects(false);
-            br.getPage(parameter);
-            String rd = br.getRedirectLocation();
-            if (rd != null) decryptedLinks.add(createDownloadlink(rd));
-            return decryptedLinks;
-        }
+
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
@@ -81,68 +64,36 @@ public class MvWrldNt extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        if (parameter.matches(XXX4FREESTREAMLINK)) {
-            String externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
-            if (externID != null) {
-                br.getPage(externID);
-                if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) {
-                    final DownloadLink offline = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=7684385859" + new Random().nextInt(10000000));
-                    offline.setName(externID);
-                    offline.setAvailable(false);
-                    decryptedLinks.add(offline);
-                    return decryptedLinks;
-                }
-                externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
-                if (externID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                decryptedLinks.add(createDownloadlink(externID));
-                return decryptedLinks;
-            }
-        }
-
         final String MAINPAGE = "http://" + br.getHost();
         final String password = br.getRegex("class=\"password\">Password: (.*?)</p>").getMatch(0);
         ArrayList<String> pwList = null;
-        String captchaUrl = br.getRegex("\"(/captcha/\\w+\\.gif)\"").getMatch(0);
-        final Form captchaForm = br.getForm(0);
-        if (captchaUrl == null && !captchaForm.containsHTML("Captcha")) { return null; }
-        captchaUrl = captchaForm.getRegex("img src=\"(.*?)\"").getMatch(0);
+        final Form captchaForm = br.getFormbyProperty("id", "mirrorlist-form");
         Browser brc = br.cloneBrowser();
-        captchaUrl = MAINPAGE + captchaUrl;
-        final File captchaFile = getLocalCaptchaFile();
-        brc.getDownload(captchaFile, captchaUrl);
-        String code = null;
-        for (int i = 0; i <= 5; i++) {
-            if (i > 0) {
-                // Recognition failed, ask the user!
-                code = getCaptchaCode(null, captchaFile, param);
-            } else {
-                code = getCaptchaCode("mov-world.net", captchaFile, param);
+        // captcha can be null, after you solve once... re-testing code doesn't invoke captcha again!
+        if (captchaForm != null) {
+            String captchaUrl = captchaForm.getRegex("\"(/captcha/[^\"]+\\.gif)\"").getMatch(0);
+            captchaUrl = MAINPAGE + captchaUrl;
+            final File captchaFile = getLocalCaptchaFile();
+            brc.getDownload(captchaFile, captchaUrl);
+            String code = null;
+            for (int i = 0; i <= 5; i++) {
+                if (i > 0) {
+                    // Recognition failed, ask the user!
+                    code = getCaptchaCode(null, captchaFile, param);
+                } else {
+                    code = getCaptchaCode("mov-world.net", captchaFile, param);
+                }
+                captchaForm.put("security-code", code);
+                br.submitForm(captchaForm);
+                if (br.getFormbyProperty("id", "mirrorlist-form") != null && i + 1 == 5)
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                else if (br.getFormbyProperty("id", "mirrorlist-form") != null)
+                    continue;
+                else
+                    break;
             }
-            captchaForm.put("code", code);
-            br.submitForm(captchaForm);
-            if (br.containsHTML("\"Der Sicherheits Code")) {
-                continue;
-            }
-            break;
         }
-        if (br.containsHTML("\"Der Sicherheits Code")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-        /* Base64 Decode */
-        final byte[] cDecode = Base64.decodeFast(br.getRegex("html\":\"(.*?)\"").getMatch(0).replace("\\", "").toCharArray());
-        if (cDecode == null || cDecode.length == 0) { return null; }
-        final StringBuilder sb = new StringBuilder();
-        for (int e : cDecode) {
-            // Abweichung vom Standard Base64 Decoder
-            if (e < 0) {
-                e = e + 256;
-            }
-            sb.append(String.valueOf((char) e));
-        }
-        /* lzw Decompress */
-        final String result = lzwDecompress(sb.toString());
-        final String[] links = new Regex(result, "<td class=\"link\"><p><a href=\"([^<>]+)\" target=\"_blank\" title=\"[^<>]+\" class=\"(online|unknown)\"[^<>]+>\\d+</a>").getColumn(0);
+        final String[] links = br.getRegex("<td class=\"link\"><p><a href=\"http://anonym.to/\\?([^\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("mov-world.net: The content of this link is completly offline");
             logger.warning("mov-world.net: Please confirm via browser, and report any bugs to developement team. :" + parameter);
@@ -157,6 +108,8 @@ public class MvWrldNt extends PluginForDecrypt {
             if (!dl.startsWith("http")) {
                 dl = MAINPAGE + dl;
             }
+            // new formats are urlencoded
+            dl = Encoding.urlDecode(dl, false);
             brc = br.cloneBrowser();
             brc.setFollowRedirects(false);
             if (dl.startsWith(MAINPAGE)) {
@@ -192,47 +145,6 @@ public class MvWrldNt extends PluginForDecrypt {
             decryptedLinks.add(downLink);
         }
         return decryptedLinks;
-    }
-
-    public String lzwDecompress(final String a) throws Exception {
-        final List<Integer> b = new ArrayList<Integer>();
-        for (int i = 0, dict_count = 256, bits = 8, rest = 0, rest_length = 0; i < a.length(); i++) {
-            rest = (rest << 8) + a.codePointAt(i);
-            rest_length += 8;
-            if (rest_length >= bits) {
-                rest_length -= bits;
-                b.add(rest >> rest_length);
-                rest &= (1 << rest_length) - 1;
-                dict_count++;
-                if (dict_count >> bits > 0) {
-                    bits++;
-                }
-            }
-        }
-        final List<String> c = new ArrayList<String>();
-        for (int i = 0; i <= 255; i++) {
-            c.add(String.valueOf((char) i));
-        }
-        final List<String> d = new ArrayList<String>();
-        String element = "";
-        String word = "";
-        for (int i = 0; i <= b.size() - 1; i++) {
-            if (b.get(i) >= c.size()) {
-                element = word + word.charAt(0);
-            } else {
-                element = c.get(b.get(i));
-            }
-            d.add(element);
-            if (i > 0) {
-                c.add(word + element.charAt(0));
-            }
-            word = element;
-        }
-        final StringBuilder sb = new StringBuilder();
-        for (final String e : d) {
-            sb.append(e);
-        }
-        return sb.toString();
     }
 
     /* NO OVERRIDE!! */
