@@ -31,7 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net" }, urls = { "http://(www\\.)?mov\\-world\\.net/([A-Za-z0-9\\-\\._]+/){2}" }, flags = { 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     // DEV NOTES
