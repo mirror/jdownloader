@@ -614,6 +614,7 @@ public class UpToBoxCom extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
+        final boolean before = br.isFollowingRedirects();
         synchronized (LOCK) {
             try {
                 /** Load cookies */
@@ -633,7 +634,8 @@ public class UpToBoxCom extends PluginForHost {
                         return;
                     }
                 }
-                getPage(COOKIE_HOST + "/login.html");
+                br.setFollowRedirects(true);
+                getPage("https://login.uptobox.com/");
                 // Form loginform = br.getForm(0);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -659,6 +661,8 @@ public class UpToBoxCom extends PluginForHost {
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(before);
             }
         }
     }
