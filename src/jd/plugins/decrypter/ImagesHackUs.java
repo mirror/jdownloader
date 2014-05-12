@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
@@ -54,13 +55,16 @@ public class ImagesHackUs extends PluginForDecrypt {
         } catch (final UnknownHostException e) {
             logger.info("Link offline (server error): " + parameter);
             return decryptedLinks;
+        } catch (final SocketTimeoutException e) {
+            logger.info("Link offline (timeout): " + parameter);
+            return decryptedLinks;
         }
-        if (br.getURL().equals("http://imageshack.com/")) {
+        if (br.getURL().equals("https://imageshack.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         if (br.getURL() != parameter) parameter = br.getURL();
-        if (parameter.matches(TYPE_PHOTO)) {
+        if (br.getURL().matches(TYPE_PHOTO)) {
             if (br.containsHTML("Looks like the image is no longer here")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -80,7 +84,7 @@ public class ImagesHackUs extends PluginForDecrypt {
                 }
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (parameter.matches(TYPE_USER)) {
+        } else if (br.getURL().matches(TYPE_USER)) {
             final String username = new Regex(parameter, "imageshack\\.com/user/(.+)").getMatch(0);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(username);

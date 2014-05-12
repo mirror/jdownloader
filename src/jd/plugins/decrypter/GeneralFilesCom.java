@@ -67,7 +67,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
         String fpName = br.getRegex("<h4 class=\"file\\-header\\-2\">([^<>\"]*?)</h4>").getMatch(0);
         if (fpName == null) fpName = new Regex(parameter, "/download/[a-z0-9]+/([^<>\"/]*?)\\.html").getMatch(0);
         fpName = Encoding.htmlDecode(fpName.trim());
-        final String goLink = br.getRegex("\"(/go/\\d+)\"").getMatch(0);
+        final String goLink = br.getRegex("\\'(/go/\\d+)(\\?ajax=1)?\\'").getMatch(0);
         if (goLink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

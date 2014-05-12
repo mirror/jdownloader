@@ -76,7 +76,7 @@ public class MultiupOrg extends PluginForDecrypt {
         param.setCryptedUrl(parameter);
 
         br.getPage(parameter.replace("/en/download/", "/en/miror/"));
-        if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found")) {
+        if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
