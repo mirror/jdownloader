@@ -156,6 +156,7 @@ plugins_errors_hosteroffline=Αποσυνδεδεμένος Πάροχος;
 plugins_errors_hosterproblem=Προβληματικός Πάροχος;
 plugins_errors_nointernetconn=Πρόβλημα σύνδεσης
 plugins_errors_proxy_auth=Η πιστοποίηση του διακομιστή απέτυχε
+plugins_errors_proxy_connection=Η σύνδεση με το διακομιστή απέτυχε
 plugins_errors_wrongpassword=Λάθος κωδικός
 reconnectmanager_wizard=Οδηγός Επανασύνδεσης
 settings_sidebar_tooltip_enable_extension=Ενεργοποίηση/Απενεργοποίηση αυτού του Προσθέτου
