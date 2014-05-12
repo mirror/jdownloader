@@ -9,12 +9,16 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.config.SubConfiguration;
+import jd.http.Request;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -24,39 +28,46 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
+import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ProxyDialog;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.ProxyData;
 
 public class ProxyController {
 
-    private static final ProxyController                         INSTANCE      = new ProxyController();
+    private static final ProxyController                              INSTANCE      = new ProxyController();
 
-    private java.util.List<SingleBasicProxySelectorImpl>                    proxies       = new ArrayList<SingleBasicProxySelectorImpl>();
-    private List<SingleDirectGatewaySelector>                             directs       = new ArrayList<SingleDirectGatewaySelector>();
+    private java.util.List<SingleBasicProxySelectorImpl>              proxies       = new ArrayList<SingleBasicProxySelectorImpl>();
+    private List<SingleDirectGatewaySelector>                         directs       = new ArrayList<SingleDirectGatewaySelector>();
     private java.util.List<PacProxySelectorImpl>                      pacs          = new ArrayList<PacProxySelectorImpl>();
     private AbstractProxySelectorImpl                                 defaultproxy  = null;
-    private final NoProxySelector                               none;
+    private final NoProxySelector                                     none;
 
     private DefaultEventSender<ProxyEvent<AbstractProxySelectorImpl>> eventSender   = null;
 
-    private InternetConnectionSettings                           config;
+    private InternetConnectionSettings                                config;
 
-    private GeneralSettings                                      generalConfig = null;
+    private GeneralSettings                                           generalConfig = null;
 
-    private final Object                                         LOCK          = new Object();
+    private final Object                                              LOCK          = new Object();
 
-    private LogSource                                            logger;
+    private LogSource                                                 logger;
 
     public static final ProxyController getInstance() {
         return INSTANCE;
@@ -723,6 +734,148 @@ public class ProxyController {
 
     public void setBan(AbstractProxySelectorImpl proxy, String bannedDomain, long proxyHostBanTimeout, String explain) {
         proxy.addBan(new ProxyBan(bannedDomain, proxyHostBanTimeout <= 0 ? -1 : proxyHostBanTimeout + System.currentTimeMillis(), explain));
+    }
+
+    public boolean updateProxy(AbstractProxySelectorImpl selector, Request request, int retryCounter) {
+        List<String> proxyAuths = request.getHttpConnection().getHeaderFields("proxy-authenticate");
+        HTTPProxy usedProxy = request.getProxy();
+        URL url;
+        try {
+            url = new URL(request.getUrl());
+
+            // pd = new ProxyDialog(usedProxy, T.T.TranslationProxyDialogAuthRequired(url.getHost()));
+            // pd.setTitle(_AWU.T.proxydialog_title());
+            if (usedProxy == null) return false;
+
+            if (proxyAuths != null) {
+                for (final String authMethod : proxyAuths) {
+                    if ("NTLM".equalsIgnoreCase(authMethod)) {
+                        if (usedProxy.isPreferNativeImplementation() == false) {
+                            /* enable nativeImplementation for NTLM */
+                            usedProxy.setPreferNativeImplementation(true);
+                            return true;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (selector instanceof PacProxySelectorImpl) {
+                HTTPProxy ret = askForProxyAuth(UIOManager.LOGIC_COUNTDOWN, false, usedProxy, url, _JDT._.ProxyController_updateProxy_proxy_auth_required_msg(url.getHost()), _JDT._.ProxyController_updateProxy_proxy_auth_required_title());
+                if (ret != null) {
+                    ((PacProxySelectorImpl) selector).setTempAuth(usedProxy, ret.getUser(), ret.getPass());
+                    return true;
+                }
+            } else if (selector instanceof SingleBasicProxySelectorImpl) {
+                HTTPProxy ret = askForProxyAuth(UIOManager.LOGIC_COUNTDOWN, false, usedProxy, url, _JDT._.ProxyController_updateProxy_proxy_auth_required_msg(url.getHost()), _JDT._.ProxyController_updateProxy_proxy_auth_required_title());
+                if (ret != null) {
+                    ((SingleBasicProxySelectorImpl) selector).setTempAuth(ret.getUser(), ret.getPass());
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (Throwable e) {
+            logger.log(e);
+        }
+        return false;
+    }
+
+    public HTTPProxy updateProxyAuthForUpdater(HTTPProxy usedProxy, List<String> proxyAuths, URL url) {
+        // pd = new ProxyDialog(usedProxy, T.T.TranslationProxyDialogAuthRequired(url.getHost()));
+        // pd.setTitle(_AWU.T.proxydialog_title());
+        if (usedProxy == null) return null;
+
+        if (proxyAuths != null) {
+            for (final String authMethod : proxyAuths) {
+                if ("NTLM".equalsIgnoreCase(authMethod)) {
+                    if (usedProxy.isPreferNativeImplementation() == false) {
+                        /* enable nativeImplementation for NTLM */
+                        usedProxy.setPreferNativeImplementation(true);
+                        return usedProxy;
+                    }
+                    break;
+                }
+            }
+        }
+
+        try {
+            return askForProxyAuth(0, true, usedProxy, url, _JDT._.ProxyController_updateProxy_proxy_auth_required_msg_updater(url.getHost()), _AWU.T.proxydialog_title());
+
+        } catch (Throwable e) {
+            logger.log(e);
+        }
+        return null;
+
+    }
+
+    private ConcurrentHashMap<String, HTTPProxy> replaceMap     = new ConcurrentHashMap<String, HTTPProxy>();
+    private AtomicInteger                        requestCounter = new AtomicInteger(0);
+
+    private HTTPProxy                            manualProxy;
+
+    public HTTPProxy askForProxyAuth(final int flags, boolean typeEditable, HTTPProxy usedProxy, URL url, String msg, String title) throws DialogClosedException, DialogCanceledException {
+
+        System.out.println("Wait for");
+        String proxyID = toProxyID(usedProxy);
+        // HTTPProxy replaced = replaceMap.get(proxyID);
+        // if (replaced != null) {
+        // //
+        // return replaced;
+        // }
+        // requestCounter.incrementAndGet();
+        if (manualProxy != null && manualProxy.equals(usedProxy)) {
+            manualProxy = null;
+        }
+        if (manualProxy != null) {
+            //
+            return manualProxy;
+        }
+        synchronized (this) {
+            try {
+                if (manualProxy != null && manualProxy.equals(usedProxy)) {
+                    manualProxy = null;
+                }
+                if (manualProxy != null) {
+                    //
+                    return manualProxy;
+                }
+                ProxyDialog pd = new ProxyDialog(usedProxy, msg) {
+                    {
+                        flagMask |= flags;
+                    }
+                };
+                pd.setTimeout(5 * 60 * 1000);
+                pd.setAuthRequired(true);
+                pd.setTypeEditable(typeEditable);
+                pd.setHostEditable(typeEditable);
+                pd.setPortEditable(typeEditable);
+                pd.setTitle(title);
+
+                HTTPProxy ret = Dialog.getInstance().showDialog(pd);
+                if (ret == null) {
+                    //
+                    manualProxy = null;
+                    return null;
+                }
+                if (toProxyID(ret).equals(proxyID)) {
+                    //
+                    return ret;
+                }
+                manualProxy = ret;
+                // replaceMap.put(proxyID, ret);
+
+                return ret;
+            } finally {
+                // if (requestCounter.decrementAndGet() == 0) {
+                // replaceMap.clear();
+                // }
+            }
+        }
+    }
+
+    public String toProxyID(HTTPProxy usedProxy) {
+        return usedProxy.getUser() + ":" + usedProxy.getPass() + "@" + usedProxy.getHost() + ":" + usedProxy.getPort() + "(Native: " + usedProxy.isPreferNativeImplementation() + ")";
     }
 
 }

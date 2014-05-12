@@ -1,5 +1,7 @@
 package jd.controlling.proxy;
 
+import jd.http.Request;
+
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.updatev2.ProxyData;
 
@@ -17,6 +19,11 @@ public class SingleDirectGatewaySelector extends SingleBasicProxySelectorImpl {
     public boolean equals(Object obj) {
         if (obj == null || obj.getClass() != SingleDirectGatewaySelector.class) return false;
         return getProxy().equals(((SingleDirectGatewaySelector) obj).getProxy());
+    }
+
+    @Override
+    public boolean updateProxy(Request request, int retryCounter) {
+        return false;
     }
 
     @Override

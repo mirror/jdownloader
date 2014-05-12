@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public interface UpdateHandler {
 
@@ -52,8 +51,6 @@ public interface UpdateHandler {
     void stopIntervalChecker();
 
     LogSource getLogger();
-
-    HTTPProxy getUpdatedProxy(HTTPProxy proxy);
 
     List<InstallLog> clearInstallLogs();
 

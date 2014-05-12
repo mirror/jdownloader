@@ -3,13 +3,15 @@ package jd.controlling.proxy;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.http.Request;
+
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.jdownloader.updatev2.ProxyData;
 
 public class NoProxySelector extends AbstractProxySelectorImpl {
 
-    private ExtProxy       proxy;
+    private ExtProxy        proxy;
     private List<HTTPProxy> list;
 
     public NoProxySelector() {
@@ -105,6 +107,11 @@ public class NoProxySelector extends AbstractProxySelectorImpl {
     @Override
     protected boolean isLocal() {
         return true;
+    }
+
+    @Override
+    public boolean updateProxy(Request request, int retryCounter) {
+        return false;
     }
 
 }

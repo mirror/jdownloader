@@ -517,4 +517,13 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Proxy connection failed" })
     String plugins_errors_proxy_connection();
 
+    @Default(lngs = { "en" }, values = { "Proxy authentication is required to connect to %s1" })
+    String ProxyController_updateProxy_proxy_auth_required_msg(String url);
+
+    @Default(lngs = { "en" }, values = { "Proxy authentication is required!" })
+    String ProxyController_updateProxy_proxy_auth_required_title();
+
+    @Default(lngs = { "en", "de" }, values = { "JDownloader cannot connect to %s1! Your Proxy Server requires authentication. \r\nCheck your credentials...", "JDownloader kann nicht nach %s1 verbinden! Dein Proxyserver benötigt Anmeldedaten.\r\nBitte überprüfe die Zugangsdaten..." })
+    String ProxyController_updateProxy_proxy_auth_required_msg_updater(String host);
+
 }

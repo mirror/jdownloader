@@ -3,9 +3,12 @@ package org.jdownloader.updatev2;
 import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 import javax.swing.ImageIcon;
+
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public interface UpdateCallbackInterface {
 
@@ -41,5 +44,7 @@ public interface UpdateCallbackInterface {
     void onResults(boolean app, boolean updater, int clientRevision, int clientDestRevision, int selfRevision, int selfDestRevision, File clientAWF, File selfAWF, File selfWOrkingDir, boolean jdLaunched) throws InterruptedException, IOException, Exception;
 
     Process runExeAsynch(List<String> call, File root) throws IOException;
+
+    HTTPProxy updateProxyAuth(HTTPProxy usedProxy, List<String> proxyAuths, URL url);
 
 }

@@ -54,10 +54,10 @@
 			<classpath refid="classpath" />
 
 		</javac>
-		
+
 		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
-		
+
 		</javac>
 
 
@@ -65,13 +65,13 @@
 		<javac srcdir="${dep.updateclient}/src" excludes="" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
-			
+
 		</javac>
 
 
 		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
-			  <compilerarg line="-proc:none"/>
+			<compilerarg line="-proc:none" />
 
 		</javac>
 		<javac srcdir="${dep.jdupdateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
@@ -79,11 +79,11 @@
 
 		</javac>
 		<echo message="Finished." />
-		
-		
-		
-		
-		
+
+
+
+
+
 	</target>
 
 
@@ -148,7 +148,7 @@
 			<fileset dir="translations" includes="**/*.lng" />
 
 		</copy>
-	
+
 	</target>
 
 	<!-- Make the default jar -->
@@ -321,6 +321,7 @@
 		</manifest>
 		<jar file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
+			<zipfileset src="${dep.awu}/libs/proxyVole.jar" excludes="META-INF/*" />
 			<zipfileset src="${dep.updateclient}/libs/xz.jar" excludes="META-INF/*" />
 			<fileset dir="${working}">
 				<include name="version.nfo" />
@@ -334,7 +335,7 @@
 				<include name="org/jdownloader/update/**/*.class" />
 				<include name="org/jdownloader/uninstaller/**/*.class" />
 				<include name="org/jdownloader/installer/**/*.class" />
-				
+
 				<include name="org/appwork/**/*" />
 				<exclude name="org/appwork/update/server/**/*" />
 			</fileset>

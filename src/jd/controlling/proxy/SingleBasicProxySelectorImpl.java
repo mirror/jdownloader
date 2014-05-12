@@ -3,14 +3,17 @@ package jd.controlling.proxy;
 import java.util.ArrayList;
 import java.util.List;
 
+import jd.http.Request;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.updatev2.ProxyData;
 
 public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
-    private ExtProxy       proxy;
+    private ExtProxy        proxy;
     private List<HTTPProxy> list;
 
     @Override
@@ -23,14 +26,28 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         return ret;
     }
 
+    private String username;
+    private String password;
+    private String tempUser;
+    private String tempPass;
+
     public ProxyData toProxyData() {
         ProxyData ret = new ProxyData();
         ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
         ret.setFilter(getFilter());
-        ret.setProxy(HTTPProxy.getStorable(proxy));
+        HTTPProxyStorable storable = HTTPProxy.getStorable(proxy);
+        storable.setUsername(username);
+        storable.setPassword(password);
+        ret.setProxy(storable);
         ret.setID(this.ID);
         ret.setRangeRequestsSupported(isResumeAllowed());
         return ret;
+    }
+
+    @Override
+    public boolean updateProxy(Request request, int retryCounter) {
+
+        return ProxyController.getInstance().updateProxy(this, request, retryCounter);
     }
 
     public SingleBasicProxySelectorImpl(ProxyData proxyData) {
@@ -41,6 +58,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         proxy.setConnectMethodPrefered(proxyData.getProxy().isConnectMethodPrefered());
         setResumeAllowed(proxyData.isRangeRequestsSupported());
         setProxyRotationEnabled(proxyData.isProxyRotationEnabled());
+        username = proxy.getUser();
+        password = proxy.getPass();
         if (ID == null) {
             if (proxy.isNone()) {
                 this.ID = "NONE";
@@ -104,6 +123,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     public void setUser(String user) {
         if (StringUtils.equals(user, proxy.getUser())) return;
+        username = user;
+        tempUser = null;
+        tempPass = null;
         proxy.setUser(user);
         // reset banlist
         banList = new ArrayList<ProxyBan>();
@@ -112,17 +134,22 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     public void setPassword(String password) {
         if (StringUtils.equals(password, proxy.getPass())) return;
         proxy.setPass(password);
+        this.password = password;
+        tempUser = null;
+        tempPass = null;
         // reset banlist
         banList = new ArrayList<ProxyBan>();
 
     }
 
     public String getPassword() {
-        return proxy.getPass();
+        if (tempPass != null) return "(Temp)" + tempPass;
+        return password;
     }
 
     public String getUser() {
-        return proxy.getUser();
+        if (tempUser != null) return "(Temp)" + tempUser;
+        return username;
     }
 
     @Override
@@ -218,6 +245,14 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     @Override
     protected boolean isLocal() {
         return false;
+    }
+
+    public void setTempAuth(String user, String pass) {
+
+        proxy.setUser(user == null ? username : user);
+        proxy.setPass(pass == null ? password : pass);
+        tempUser = user;
+        this.tempPass = pass;
     }
 
 }

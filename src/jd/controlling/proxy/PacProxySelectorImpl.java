@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 
+import jd.http.Request;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -27,11 +29,11 @@ import com.btr.proxy.util.Logger.LogLevel;
 
 public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
-    private String                     pacUrl;
+    private String                    pacUrl;
 
-    private LogSource                  logger;
+    private LogSource                 logger;
 
-    private PacProxySelector           selector;
+    private PacProxySelector          selector;
 
     private HashMap<String, ExtProxy> cacheMap;
 
@@ -117,6 +119,8 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                                 cached = new ExtProxy(this, httpProxy);
                                 cacheMap.put(p.toString(), cached);
                             }
+
+                            cached.setPreferNativeImplementation(isPreferNativeImplementation());
                             if (!cached.isNone()) {
                                 cached.setPass(getPassword());
                                 cached.setUser(getUser());
@@ -265,4 +269,15 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         return false;
     }
 
+    @Override
+    public boolean updateProxy(Request request, int retryCounter) {
+        return ProxyController.getInstance().updateProxy(this, request, retryCounter);
+    }
+
+    public void setTempAuth(HTTPProxy usedProxy, String user2, String pass) {
+        if (!cacheMap.containsKey(usedProxy.toString())) return;
+        usedProxy.setUser(user2 == null ? getUser() : user2);
+        usedProxy.setPass(pass == null ? getPassword() : pass);
+
+    }
 }

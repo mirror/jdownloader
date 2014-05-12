@@ -6,6 +6,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -15,7 +16,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
-import jd.controlling.proxy.ExtProxy;
+import jd.controlling.proxy.ProxyController;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
 
@@ -507,9 +508,9 @@ public class UpdateController implements UpdateCallbackInterface {
         return handler.getOptionalsList();
     }
 
-    public HTTPProxy getUpdatedProxy(ExtProxy proxy) {
-        if (handler == null) return null;
-        return handler.getUpdatedProxy(proxy);
+    @Override
+    public HTTPProxy updateProxyAuth(HTTPProxy usedProxy, List<String> proxyAuths, URL url) {
+        return ProxyController.getInstance().updateProxyAuthForUpdater(usedProxy, proxyAuths, url);
     }
 
 }
