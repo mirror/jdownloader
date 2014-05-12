@@ -158,15 +158,15 @@ public class NoPremiumPl extends PluginForHost {
                 /* Host not supported */
                 tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             }
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", 0);
+            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
                 timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", timesFailed);
+                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", timesFailed);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started");
             } else {
-                link.setProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", Property.NULL);
-                logger.info(NICE_HOST + ": Known error - disabling current host!");
+                link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", Property.NULL);
+                logger.info(NICE_HOST + ": Unknown error - disabling current host!");
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
         }
