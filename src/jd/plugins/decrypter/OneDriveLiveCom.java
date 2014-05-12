@@ -78,13 +78,15 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 authkey = new Regex(redirect, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
             } else {
                 cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-                id = new Regex(parameter, "\\&id=([A-Za-z0-9]+\\!\\d+)(\\&authkey=\\![A-Za-z0-9\\-]+)?$").getMatch(0);
+                id = getLastID(parameter);
             }
             if (authkey == null) authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
             if (cid == null || id == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            cid = cid.toUpperCase();
+
             parameter = "https://onedrive.live.com/?cid=" + cid + "&id=" + id;
             param.setCryptedUrl(parameter);
             prepBrAPI(this.br);
@@ -231,15 +233,17 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     }
 
     public static void accessItems_API(final Browser br, final String original_link, final String cid, final String id, final String additional) throws IOException {
+        final boolean disable_inthint_handling = true;
+        final String v = "0.0025289807153050514";
         String data = null;
-        if (original_link.contains("ithint=")) {
+        if (original_link.contains("ithint=") && !disable_inthint_handling) {
             data = "&cid=" + Encoding.urlEncode(cid) + additional;
-            br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=root&group=0&qt=&ft=&sb=1&sd=1&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565" + data);
+            br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=root&group=0&qt=&ft=&sb=1&sd=1&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
         } else {
             data = "&cid=" + Encoding.urlEncode(cid) + "&id=" + Encoding.urlEncode(id) + additional;
             boolean failed = false;
             try {
-                br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565" + data);
+                br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
             } catch (final BrowserException e) {
                 if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
                     failed = true;
@@ -249,12 +253,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             }
             /* Maybe the folder is empty but we can move one up and get its contents... */
             if (failed || getLinktext(br) == null) {
-                br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.4213298695524278" + data);
+                br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
                 final String parentID = getJson("parentId", br.toString());
                 if (parentID != null) {
                     /* Error 500 will happen on invalid API requests */
                     data = "&cid=" + Encoding.urlEncode(cid) + "&id=" + Encoding.urlEncode(parentID) + "&sid=" + Encoding.urlEncode(id) + additional;
-                    br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=0.9853249325176565" + data);
+                    br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
                 }
             }
         }

@@ -47,6 +47,8 @@ public class OneHundredNineteenGCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">404 \\- 找不到文件或目录。")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        /* Abused */
+        if (br.containsHTML("\\- 该文件涉及违法，已经屏蔽\\!</font>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"downfile\\-type kz\\-[a-z0-9]+\"></i>([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex("<strong>文件大小：</strong>([^<>\"]*?)</div>").getMatch(0);
         String extension = br.getRegex("<strong>文件类型：</strong>([^<>\"]*?)</div>").getMatch(0);
