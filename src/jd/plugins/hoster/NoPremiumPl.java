@@ -45,6 +45,8 @@ public class NoPremiumPl extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
+    private static final String                            NICE_HOST          = "nopremium.pl";
+    private static final String                            NICE_HOSTproperty  = "nopremiumpl";
 
     public NoPremiumPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -125,8 +127,8 @@ public class NoPremiumPl extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    /* no override to keep plugin compatible to old stable */
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         final String url = Encoding.urlEncode(link.getDownloadURL());
 
         String postData = "username=" + acc.getUser() + "&password=" + Hash.getSHA1(Hash.getMD5(acc.getPass())) + "&info=0&url=" + url + "&site=nopremium";
@@ -152,8 +154,21 @@ public class NoPremiumPl extends PluginForHost {
             } else if (br.containsHTML("Konto")) {
                 /* Account Expired */
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (br.containsHTML("15=Hosting nie obslugiwany")) {
+                /* Host not supported */
+                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", 0);
+            link.getLinkStatus().setRetryCount(0);
+            if (timesFailed <= 2) {
+                timesFailed++;
+                link.setProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", timesFailed);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started");
+            } else {
+                link.setProperty(NICE_HOSTproperty + "timesfailed_knowndlerror", Property.NULL);
+                logger.info(NICE_HOST + ": Known error - disabling current host!");
+                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+            }
         }
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
@@ -172,7 +187,7 @@ public class NoPremiumPl extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
