@@ -212,6 +212,10 @@ public class SendspaceCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        if (br.containsHTML("Please complete the form below:")) {
+            logger.info("Unsupported captcha detected!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported captcha - please contact our support!");
+        }
         if (!downloadLink.getDownloadURL().contains("/pro/dl/")) {
             // Re-use old directlinks to avoid captchas, especially good after
             // reconnects
