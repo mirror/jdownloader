@@ -82,7 +82,8 @@ public class NoProxySelector extends AbstractProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != NoProxySelector.class) return false;
+        if (obj == null || obj.getClass() != NoProxySelector.class)
+            return false;
         return proxy.equals(((NoProxySelector) obj).getProxy());
     }
 
@@ -98,7 +99,8 @@ public class NoProxySelector extends AbstractProxySelectorImpl {
 
     @Override
     public boolean setRotationEnabled(ExtProxy p, boolean enabled) {
-        if (isProxyRotationEnabled() == enabled) return false;
+        if (isProxyRotationEnabled() == enabled)
+            return false;
 
         setProxyRotationEnabled(enabled);
         return true;
@@ -114,4 +116,15 @@ public class NoProxySelector extends AbstractProxySelectorImpl {
         return false;
     }
 
+    @Override
+    protected void onBanListUpdate() {
+        if (isBanned(proxy)) {
+            // empty
+            list = new ArrayList<HTTPProxy>();
+        } else {
+            ArrayList<HTTPProxy> tmp = new ArrayList<HTTPProxy>();
+            tmp.add(proxy);
+            list = tmp;
+        }
+    }
 }

@@ -22,7 +22,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
         if (StringUtils.isNotEmpty(getUser())) {
 
-        return getUser() + "@" + ret.toString(); }
+            return getUser() + "@" + ret.toString();
+        }
         return ret;
     }
 
@@ -61,12 +62,20 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         username = proxy.getUser();
         password = proxy.getPass();
         if (ID == null) {
-            if (proxy.isNone()) {
-                this.ID = "NONE";
-            } else {
-                ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
-            }
+
+            ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
+
         }
+        list = new ArrayList<HTTPProxy>();
+        list.add(proxy);
+
+    }
+
+    public SingleBasicProxySelectorImpl(HTTPProxy rawProxy) {
+        proxy = new ExtProxy(this, rawProxy);
+        username = proxy.getUser();
+        password = proxy.getPass();
+        this.ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
         list = new ArrayList<HTTPProxy>();
         list.add(proxy);
 
@@ -80,16 +89,6 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     public ExtProxy getProxy() {
         return proxy;
-    }
-
-    public SingleBasicProxySelectorImpl(HTTPProxy rawProxy) {
-        proxy = new ExtProxy(this, rawProxy);
-
-        if (proxy.isNone()) {
-            this.ID = "NONE";
-        } else {
-            this.ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
-        }
     }
 
     @Override
@@ -122,7 +121,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public void setUser(String user) {
-        if (StringUtils.equals(user, proxy.getUser())) return;
+        if (StringUtils.equals(user, proxy.getUser()))
+            return;
         username = user;
         tempUser = null;
         tempPass = null;
@@ -132,7 +132,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public void setPassword(String password) {
-        if (StringUtils.equals(password, proxy.getPass())) return;
+        if (StringUtils.equals(password, proxy.getPass()))
+            return;
         proxy.setPass(password);
         this.password = password;
         tempUser = null;
@@ -143,12 +144,14 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public String getPassword() {
-        if (tempPass != null) return "(Temp)" + tempPass;
+        if (tempPass != null)
+            return "(Temp)" + tempPass;
         return password;
     }
 
     public String getUser() {
-        if (tempUser != null) return "(Temp)" + tempUser;
+        if (tempUser != null)
+            return "(Temp)" + tempUser;
         return username;
     }
 
@@ -165,7 +168,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public boolean setRotationEnabled(ExtProxy p, boolean enabled) {
-        if (isProxyRotationEnabled() == enabled) return false;
+        if (isProxyRotationEnabled() == enabled)
+            return false;
 
         setProxyRotationEnabled(enabled);
         return true;
@@ -209,7 +213,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
             hasUSerInfo = true;
         }
         if (!StringUtils.isEmpty(getPassword())) {
-            if (hasUSerInfo) sb.append(":");
+            if (hasUSerInfo)
+                sb.append(":");
             hasUSerInfo = true;
             sb.append(getPassword());
         }
@@ -228,7 +233,8 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != SingleBasicProxySelectorImpl.class) return false;
+        if (obj == null || obj.getClass() != SingleBasicProxySelectorImpl.class)
+            return false;
         return proxy.equals(((SingleBasicProxySelectorImpl) obj).getProxy());
     }
 
@@ -253,6 +259,18 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         proxy.setPass(pass == null ? password : pass);
         tempUser = user;
         this.tempPass = pass;
+    }
+
+    @Override
+    protected void onBanListUpdate() {
+        if (isBanned(proxy)) {
+            // empty
+            list = new ArrayList<HTTPProxy>();
+        } else {
+            ArrayList<HTTPProxy> tmp = new ArrayList<HTTPProxy>();
+            tmp.add(proxy);
+            list = tmp;
+        }
     }
 
 }

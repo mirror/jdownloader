@@ -29,8 +29,8 @@ import org.jdownloader.updatev2.FilterList.Type;
 public class ProxyDetailsDialog extends AbstractDialog<Object> {
 
     private AbstractProxySelectorImpl factory;
-    private JComboBox<Type>      combo;
-    private ExtTextArea          input;
+    private JComboBox<Type>           combo;
+    private ExtTextArea               input;
 
     public ProxyDetailsDialog(AbstractProxySelectorImpl factory) {
         super(0, _GUI._.proxyDetailsDialog_title(factory.toString()), null, _GUI._.lit_save(), _GUI._.lit_close());
@@ -44,7 +44,7 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
     }
 
     protected int getPreferredWidth() {
-        return 650;
+        return 728;
     }
 
     @Override
@@ -74,7 +74,8 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
 
             @Override
             public Component getListCellRendererComponent(JList<? extends Type> list, Type value, int index, boolean isSelected, boolean cellHasFocus) {
-                if (value == null) return org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value == null)
+                    return org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 switch (value) {
                 case BLACKLIST:
                     return org.getListCellRendererComponent(list, _GUI._.proxyDetailsDialog_combo_blacklist(), index, isSelected, cellHasFocus);
@@ -97,20 +98,38 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
         if (banList != null && banList.size() > 0) {
             for (ProxyBan b : banList) {
                 problem = true;
-                if (StringUtils.isEmpty(b.getDomain())) {
-                    if (b.getUntil() > 0) {
-                        content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_global(new Date(b.getUntil()).toString()))), "gapleft 32");
+                if (b.getProxy() != null) {
+                    if (StringUtils.isEmpty(b.getDomain())) {
+                        if (b.getUntil() > 0) {
+                            content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_global_proxySpecific(b.getProxy().toString(), new Date(b.getUntil()).toString()))), "gapleft 32");
+                        } else {
+                            content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_global_proxySpecific(b.getProxy().toString()))), "gapleft 32");
+                        }
                     } else {
-                        content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_global())), "gapleft 32");
+                        if (b.getUntil() > 0) {
+                            content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_domain_proxySpecific(b.getProxy().toString(), b.getDomain(), new Date(b.getUntil()).toString()))), "gapleft 32");
+                        } else {
+                            content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_domain_proxySpecific(b.getProxy().toString(), b.getDomain()))), "gapleft 32");
+                        }
+
                     }
                 } else {
-                    if (b.getUntil() > 0) {
-                        content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_domain(b.getDomain(), new Date(b.getUntil()).toString()))), "gapleft 32");
+                    if (StringUtils.isEmpty(b.getDomain())) {
+                        if (b.getUntil() > 0) {
+                            content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_global(new Date(b.getUntil()).toString()))), "gapleft 32");
+                        } else {
+                            content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_global())), "gapleft 32");
+                        }
                     } else {
-                        content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_domain(b.getDomain()))), "gapleft 32");
-                    }
+                        if (b.getUntil() > 0) {
+                            content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_domain(b.getDomain(), new Date(b.getUntil()).toString()))), "gapleft 32");
+                        } else {
+                            content.add(new JLabel("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_domain(b.getDomain()))), "gapleft 32");
+                        }
 
+                    }
                 }
+
             }
         }
         if (!problem) {
@@ -125,7 +144,8 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
         StringBuilder sb = new StringBuilder();
         if (factory.getFilter() != null) {
             for (String line : factory.getFilter().getEntries()) {
-                if (sb.length() > 0) sb.append("\r\n");
+                if (sb.length() > 0)
+                    sb.append("\r\n");
                 sb.append(line);
             }
         }
@@ -135,7 +155,8 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
     }
 
     private String appendDescription(String description, String proxyDetailsDialog_ban_time_global) {
-        if (StringUtils.isEmpty(description)) return proxyDetailsDialog_ban_time_global;
+        if (StringUtils.isEmpty(description))
+            return proxyDetailsDialog_ban_time_global;
 
         return proxyDetailsDialog_ban_time_global + " (" + description + ")";
     }

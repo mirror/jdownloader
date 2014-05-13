@@ -2,7 +2,6 @@ package org.jdownloader.updatev2;
 
 import java.util.ArrayList;
 
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -81,4 +80,9 @@ public interface InternetConnectionSettings extends ConfigInterface {
     void setNoneFilter(FilterList filter);
 
     FilterList getNoneFilter();
+
+    @AboutConfig
+    void setLocalPacScript(String script);
+
+    String getLocalPacScript();
 }

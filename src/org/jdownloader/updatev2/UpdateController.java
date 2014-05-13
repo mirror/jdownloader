@@ -7,6 +7,7 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -92,7 +93,8 @@ public class UpdateController implements UpdateCallbackInterface {
         this.handler = handler;
         LogSource newLogger = handler.getLogger();
         if (newLogger != null) {
-            if (logger != null) logger.close();
+            if (logger != null)
+                logger.close();
             logger = newLogger;
         }
 
@@ -116,7 +118,8 @@ public class UpdateController implements UpdateCallbackInterface {
         // cleanup
         for (Iterator<Thread> it = confirmedThreads.iterator(); it.hasNext();) {
             Thread th = it.next();
-            if (!th.isAlive()) it.remove();
+            if (!th.isAlive())
+                it.remove();
         }
 
     }
@@ -144,13 +147,17 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public String getAppID() {
         UpdateHandler lhandler = handler;
-        if (lhandler == null) { return "NotConnected"; }
+        if (lhandler == null) {
+            return "NotConnected";
+        }
         return lhandler.getAppID();
     }
 
     public void runUpdateChecker(boolean manually) {
         UpdateHandler lhandler = handler;
-        if (lhandler == null) { return; }
+        if (lhandler == null) {
+            return;
+        }
         lhandler.runUpdateCheck(manually);
     }
 
@@ -181,13 +188,15 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     protected IconedProcessIndicator lazyGetIcon() {
-        if (icon != null) return icon;
+        if (icon != null)
+            return icon;
 
         icon = new EDTHelper<UpdateProgress>() {
 
             @Override
             public UpdateProgress edtRun() {
-                if (icon != null) return icon;
+                if (icon != null)
+                    return icon;
                 UpdateProgress icon = new UpdateProgress();
                 ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setBackground(Color.LIGHT_GRAY);
                 ((org.appwork.swing.components.circlebar.ImagePainter) icon.getValueClipPainter()).setForeground(Color.GREEN);
@@ -230,7 +239,8 @@ public class UpdateController implements UpdateCallbackInterface {
 
     public void setGuiVisible(boolean b) {
         UpdateHandler lhandler = handler;
-        if (lhandler != null) lhandler.setGuiVisible(b, true);
+        if (lhandler != null)
+            lhandler.setGuiVisible(b, true);
     }
 
     @Override
@@ -287,8 +297,10 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public boolean doContinueUpdateAvailable(boolean app, boolean updater, long appDownloadSize, long updaterDownloadSize, int appRevision, int updaterRevision, int appDestRevision, int updaterDestRevision) {
 
-        if (!settings.isDoAskBeforeDownloadingAnUpdate()) return true;
-        if (isThreadConfirmed()) return true;
+        if (!settings.isDoAskBeforeDownloadingAnUpdate())
+            return true;
+        if (isThreadConfirmed())
+            return true;
         try {
             if (app && appDownloadSize < 0 || updater && updaterDownloadSize < 0) {
                 confirm(0, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_message(), _UPDATE._.confirmdialog_new_update_available_answer_now(), _UPDATE._.confirmdialog_new_update_available_answer_later());
@@ -338,7 +350,8 @@ public class UpdateController implements UpdateCallbackInterface {
             if (handler.hasPendingSelfupdate()) {
                 fireUpdatesAvailable(false, handler.createAWFInstallLog());
                 if (!isThreadConfirmed()) {
-                    if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
+                    if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled())
+                        return;
                     logger.info("ASK for installing selfupdate");
 
                     confirm(UIOManager.LOGIC_COUNTDOWN, _UPDATE._.confirmdialog_new_update_available_frametitle(), _UPDATE._.confirmdialog_new_update_available_for_install_message(), _UPDATE._.confirmdialog_new_update_available_answer_now_install(), _UPDATE._.confirmdialog_new_update_available_answer_later_install());
@@ -358,7 +371,8 @@ public class UpdateController implements UpdateCallbackInterface {
                 logger.info("Nothing to install");
                 // Thread.sleep(1000);
                 handler.setGuiFinished(null);
-                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) handler.setGuiVisible(false, false);
+                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled())
+                    handler.setGuiVisible(false, false);
                 fireUpdatesAvailable(false, null);
                 return;
             }
@@ -367,7 +381,8 @@ public class UpdateController implements UpdateCallbackInterface {
                 logger.info("Nothing to install2");
                 UpdateController.getInstance().installUpdates(awfoverview);
                 handler.setGuiFinished(null);
-                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) handler.setGuiVisible(false, false);
+                if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled())
+                    handler.setGuiVisible(false, false);
                 fireUpdatesAvailable(false, null);
                 return;
             }
@@ -393,7 +408,8 @@ public class UpdateController implements UpdateCallbackInterface {
                 logger.info("set gui finished");
                 handler.setGuiFinished(_UPDATE._.updatedplugins());
 
-                if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled()) handler.setGuiVisible(false, false);
+                if (settings.isAutohideGuiIfSilentUpdatesWereInstalledEnabled())
+                    handler.setGuiVisible(false, false);
                 fireUpdatesAvailable(false, null);
                 return;
 
@@ -405,7 +421,8 @@ public class UpdateController implements UpdateCallbackInterface {
                 fireUpdatesAvailable(false, null);
             } else {
 
-                if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled()) return;
+                if (!handler.isGuiVisible() && settings.isDoNotAskJustInstallOnNextStartupEnabled())
+                    return;
                 List<String> rInstalls = handler.getRequestedInstalls();
                 List<String> ruInstalls = handler.getRequestedUnInstalls();
                 if (rInstalls.size() > 0 || ruInstalls.size() > 0) {
@@ -448,7 +465,8 @@ public class UpdateController implements UpdateCallbackInterface {
 
             @Override
             protected Window getDesiredRootFrame() {
-                if (handler == null) return null;
+                if (handler == null)
+                    return null;
                 return handler.getGuiFrame();
             }
 
@@ -463,7 +481,8 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     public boolean hasPendingUpdates() {
-        if (handler == null) return false;
+        if (handler == null)
+            return false;
         return handler.hasPendingUpdates();
     }
 
@@ -509,8 +528,18 @@ public class UpdateController implements UpdateCallbackInterface {
     }
 
     @Override
-    public HTTPProxy updateProxyAuth(HTTPProxy usedProxy, List<String> proxyAuths, URL url) {
-        return ProxyController.getInstance().updateProxyAuthForUpdater(usedProxy, proxyAuths, url);
+    public HTTPProxy updateProxyAuth(int retries, HTTPProxy usedProxy, List<String> proxyAuths, URL url) {
+        return ProxyController.getInstance().updateProxyAuthForUpdater(retries, usedProxy, proxyAuths, url);
+    }
+
+    @Override
+    public List<HTTPProxy> selectProxy(URL url) {
+        ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+        List<HTTPProxy> lst = ProxyController.getInstance().getProxiesByUrl(url);
+        for (HTTPProxy p : lst) {
+            ret.add(new ProxyClone(p));
+        }
+        return ret;
     }
 
 }

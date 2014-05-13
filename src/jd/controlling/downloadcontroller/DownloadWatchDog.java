@@ -2101,7 +2101,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 ProxySelectorInterface proxySelector = result.getController().getProxySelector();
                 if (proxySelector != null && proxySelector instanceof AbstractProxySelectorImpl) {
                     logger.info("Add Proxy Ban for " + proxySelector + " on domain " + latestPlugin.getHost() + " : " + JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout());
-                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, latestPlugin.getHost(), JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout(), _JDT._.plugins_errors_proxy_connection());
+                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, null, latestPlugin.getHost(), JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout(), _JDT._.plugins_errors_proxy_connection());
                 }
 
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
@@ -2112,7 +2112,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 ProxySelectorInterface proxySelector = result.getController().getProxySelector();
                 if (proxySelector != null && proxySelector instanceof AbstractProxySelectorImpl) {
-                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, null, -1, _JDT._.plugins_errors_proxy_auth());
+                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, null, null, -1, _JDT._.plugins_errors_proxy_auth());
                     ProxyController.getInstance().setProxyRotationEnabled((AbstractProxySelectorImpl) proxySelector, false);
                     if (ProxyController.getInstance().hasRotation() == false) {
                         ProxyController.getInstance().setProxyRotationEnabled(ProxyController.getInstance().getNone(), true);

@@ -45,6 +45,8 @@ public interface UpdateCallbackInterface {
 
     Process runExeAsynch(List<String> call, File root) throws IOException;
 
-    HTTPProxy updateProxyAuth(HTTPProxy usedProxy, List<String> proxyAuths, URL url);
+    HTTPProxy updateProxyAuth(int retries, HTTPProxy usedProxy, List<String> proxyAuths, URL url);
+
+    List<HTTPProxy> selectProxy(URL url);
 
 }

@@ -17,7 +17,8 @@ public class SingleDirectGatewaySelector extends SingleBasicProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != SingleDirectGatewaySelector.class) return false;
+        if (obj == null || obj.getClass() != SingleDirectGatewaySelector.class)
+            return false;
         return getProxy().equals(((SingleDirectGatewaySelector) obj).getProxy());
     }
 

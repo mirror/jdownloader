@@ -4632,6 +4632,18 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Proxy.pac url" })
     String jd_gui_swing_dialog_ProxyDialog_pac_url();
 
+    @Default(lngs = { "en" }, values = { "%s1 is disabled until %s2" })
+    String proxyDetailsDialog_ban_time_global_proxySpecific(String proxy, String string);
+
+    @Default(lngs = { "en" }, values = { "%s1 is disabled forever" })
+    String proxyDetailsDialog_ban_endless_global_proxySpecific(String proxy);
+
+    @Default(lngs = { "en" }, values = { "%s1 is disabled for %s2 until %s3" })
+    String proxyDetailsDialog_ban_time_domain_proxySpecific(String proxy, String domain, String string);
+
+    @Default(lngs = { "en" }, values = { "%s1 is disabled for %s2 forever" })
+    String proxyDetailsDialog_ban_endless_domain_proxySpecific(String proxy, String domain);
+
     @Default(lngs = { "en" }, values = { "Proxy is disabled until %s1" })
     String proxyDetailsDialog_ban_time_global(String string);
 

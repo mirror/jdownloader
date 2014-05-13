@@ -31,7 +31,8 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public boolean isAllowedByFilter(String host) {
-        if (filter == null) return true;
+        if (filter == null)
+            return true;
 
         return filter.validate(host);
     }
@@ -81,6 +82,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         if (proxyRotationEnabled) {
             // reset banlist on enable/disable
             banList = new ArrayList<ProxyBan>();
+            onBanListUpdate();
         }
     }
 
@@ -98,11 +100,13 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public int activeDownloadsbyHosts(String host) {
-        if (host == null) return 0;
+        if (host == null)
+            return 0;
         host = host.toLowerCase(Locale.ENGLISH);
         synchronized (activeSingleDownloadControllers) {
             HashSet<SingleDownloadController> ret = this.activeSingleDownloadControllers.get(host);
-            if (ret != null) return ret.size();
+            if (ret != null)
+                return ret.size();
         }
         return 0;
     }
@@ -114,7 +118,8 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public boolean add(final SingleDownloadController singleDownloadController) {
-        if (singleDownloadController == null) return false;
+        if (singleDownloadController == null)
+            return false;
         String host = singleDownloadController.getDownloadLink().getHost().toLowerCase(Locale.ENGLISH);
         synchronized (activeSingleDownloadControllers) {
             HashSet<SingleDownloadController> ret = this.activeSingleDownloadControllers.get(host);
@@ -127,14 +132,16 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public boolean remove(final SingleDownloadController singleDownloadController) {
-        if (singleDownloadController == null) return false;
+        if (singleDownloadController == null)
+            return false;
         String host = singleDownloadController.getDownloadLink().getHost().toLowerCase(Locale.ENGLISH);
         boolean remove = false;
         synchronized (activeSingleDownloadControllers) {
             HashSet<SingleDownloadController> ret = this.activeSingleDownloadControllers.get(host);
             if (ret != null) {
                 remove = ret.remove(singleDownloadController);
-                if (ret.size() == 0) activeSingleDownloadControllers.remove(host);
+                if (ret.size() == 0)
+                    activeSingleDownloadControllers.remove(host);
             }
         }
         return remove;
@@ -145,7 +152,8 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public boolean isResumeAllowed() {
-        if (this.isLocal()) return true;
+        if (this.isLocal())
+            return true;
         return resumeIsAllowed;
     }
 
@@ -161,11 +169,42 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         ArrayList<ProxyBan> newList = new ArrayList<ProxyBan>(banList);
         newList.add(proxyBan);
         banList = newList;
+        onBanListUpdate();
 
     }
 
+    abstract protected void onBanListUpdate();
+
     public ArrayList<ProxyBan> getBanList() {
         return banList;
+    }
+
+    public boolean isBanned(HTTPProxy cached) {
+        ArrayList<ProxyBan> cleanUp = null;
+        try {
+            for (ProxyBan pb : banList) {
+                if (pb.getProxy() == null)
+                    continue;
+                if (pb.getUntil() > 0 && pb.getUntil() < System.currentTimeMillis()) {
+                    if (cleanUp == null)
+                        cleanUp = new ArrayList<ProxyBan>();
+                    cleanUp.add(pb);
+                    continue;
+                }
+                if (pb.getProxy().equals(cached)) {
+                    //
+                    return true;
+                }
+            }
+        } finally {
+            if (cleanUp != null) {
+                ArrayList<ProxyBan> newList = new ArrayList<ProxyBan>(banList);
+                newList.removeAll(cleanUp);
+                banList = newList;
+                onBanListUpdate();
+            }
+        }
+        return false;
     }
 
     public boolean isBanned(String host) {
@@ -173,8 +212,11 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         ArrayList<ProxyBan> cleanUp = null;
         try {
             for (ProxyBan pb : banList) {
+                if (pb.getProxy() != null)
+                    continue;
                 if (pb.getUntil() > 0 && pb.getUntil() < System.currentTimeMillis()) {
-                    if (cleanUp == null) cleanUp = new ArrayList<ProxyBan>();
+                    if (cleanUp == null)
+                        cleanUp = new ArrayList<ProxyBan>();
                     cleanUp.add(pb);
                     continue;
                 }
@@ -184,9 +226,12 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
                 }
             }
         } finally {
-            ArrayList<ProxyBan> newList = new ArrayList<ProxyBan>(banList);
-            if (cleanUp != null) newList.removeAll(cleanUp);
-            banList = newList;
+            if (cleanUp != null) {
+                ArrayList<ProxyBan> newList = new ArrayList<ProxyBan>(banList);
+                newList.removeAll(cleanUp);
+                banList = newList;
+                onBanListUpdate();
+            }
         }
         return false;
 
