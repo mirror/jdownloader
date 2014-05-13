@@ -1,8 +1,10 @@
 package jd.controlling.proxy;
 
+import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -15,10 +17,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Level;
 
 import jd.config.SubConfiguration;
 import jd.http.Request;
-import jd.http.Request.StaticProxy;
+import jd.http.StaticProxy;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -36,6 +39,7 @@ import org.appwork.utils.event.DefaultEventSender;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -48,6 +52,19 @@ import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.ProxyClone;
 import org.jdownloader.updatev2.ProxyData;
+
+import com.btr.proxy.search.ProxySearchStrategy;
+import com.btr.proxy.search.browser.firefox.FirefoxProxySearchStrategy;
+import com.btr.proxy.search.desktop.DesktopProxySearchStrategy;
+import com.btr.proxy.search.env.EnvProxySearchStrategy;
+import com.btr.proxy.search.java.JavaProxySearchStrategy;
+import com.btr.proxy.selector.pac.PacProxySelector;
+import com.btr.proxy.selector.pac.PacScriptParser;
+import com.btr.proxy.selector.pac.PacScriptSource;
+import com.btr.proxy.selector.pac.UrlPacScriptSource;
+import com.btr.proxy.util.Logger;
+import com.btr.proxy.util.Logger.LogBackEnd;
+import com.btr.proxy.util.Logger.LogLevel;
 
 public class ProxyController {
 
@@ -252,58 +269,97 @@ public class ProxyController {
         }
     }
 
-    public HTTPProxy askForProxyAuth(final int flags, final boolean typeEditable, final HTTPProxy usedCopy, HTTPProxy orgReference, final URL url, final String msg, final String title) {
-
-        System.out.println("Wait for");
-        // final String proxyID = this.toProxyID(usedProxy);
-        // HTTPProxy replaced = replaceMap.get(proxyID);
-        // if (replaced != null) {
-        // //
-        // return replaced;
-        // }
-        // requestCounter.incrementAndGet();
+    public boolean askForProxyAuth(AbstractProxySelectorImpl selector, final int flags, final boolean typeEditable, final HTTPProxy usedCopy, HTTPProxy orgReference, final URL url, final String msg, final String title) {
+        HTTPProxy ret = null;
+        boolean remember = false;
         if (usedCopy != null && !usedCopy.equals(orgReference)) {
-            // proxy has been updated already
-            return orgReference;
-        }
-        synchronized (this) {
-            try {
-                if (usedCopy != null && !usedCopy.equals(orgReference)) {
+
+            ret = orgReference;
+        } else {
+            synchronized (this) {
+
+                if (orgReference instanceof ExtProxy && ((ExtProxy) orgReference).getFactory().isBanned(orgReference)) {
+                    ret = null;
+
+                } else if (usedCopy != null && !usedCopy.equals(orgReference)) {
                     // proxy has been updated already
-                    return orgReference;
-                }
-                if (orgReference instanceof ExtProxy) {
-                    if (((ExtProxy) orgReference).getFactory().isBanned(orgReference)) {
-                        return null;
+                    ret = orgReference;
+                } else {
+                    try {
+
+                        final ProxyDialog pd = new ProxyDialog(orgReference, msg) {
+                            {
+                                this.flagMask |= flags;
+                            }
+
+                            @Override
+                            protected boolean isShowRemember() {
+                                return true;
+                            }
+
+                            @Override
+                            public void pack() {
+                                getDialog().setMinimumSize(new Dimension(450, getPreferredSize().height));
+                                super.pack();
+                            }
+                        };
+                        pd.setTimeout(5 * 60 * 1000);
+                        pd.setAuthRequired(true);
+                        pd.setTypeEditable(typeEditable);
+                        pd.setHostEditable(typeEditable);
+                        pd.setPortEditable(typeEditable);
+                        pd.setTitle(title);
+
+                        ret = Dialog.getInstance().showDialog(pd);
+                        remember = pd.isRememberChecked();
+                    } catch (DialogClosedException e) {
+                        ret = null;
+                    } catch (DialogCanceledException e) {
+                        ret = null;
                     }
                 }
-                final ProxyDialog pd = new ProxyDialog(orgReference, msg) {
-                    {
-                        this.flagMask |= flags;
-                    }
-                };
-                pd.setTimeout(5 * 60 * 1000);
-                pd.setAuthRequired(true);
-                pd.setTypeEditable(typeEditable);
-                pd.setHostEditable(typeEditable);
-                pd.setPortEditable(typeEditable);
-                pd.setTitle(title);
+            }
 
-                final HTTPProxy ret = Dialog.getInstance().showDialog(pd);
+        }
 
-                // replaceMap.put(proxyID, ret);
+        if (selector instanceof PacProxySelectorImpl) {
 
-                return ret;
-            } catch (DialogClosedException e) {
-                return null;
-            } catch (DialogCanceledException e) {
-                return null;
-            } finally {
-                // if (requestCounter.decrementAndGet() == 0) {
-                // replaceMap.clear();
-                // }
+            if (ret != null) {
+                if (remember) {
+                    ((PacProxySelectorImpl) selector).setUser(ret.getUser());
+                    ((PacProxySelectorImpl) selector).setPassword(ret.getPass());
+                    ((PacProxySelectorImpl) selector).setTempAuth(orgReference, ret.getUser(), ret.getPass());
+
+                } else {
+                    ((PacProxySelectorImpl) selector).setTempAuth(orgReference, ret.getUser(), ret.getPass());
+                }
+                return true;
+            } else {
+                ((PacProxySelectorImpl) selector).setTempAuth(orgReference, null, null);
+                if (!selector.isBanned(orgReference)) {
+                    this.setBan(selector, orgReference, null, 60 * 60 * 1000l, _JDT._.ProxyController_updateProxy_baned_auth());
+                }
+
+            }
+        } else if (selector instanceof SingleBasicProxySelectorImpl) {
+            if (ret != null) {
+                if (remember) {
+                    ((SingleBasicProxySelectorImpl) selector).setUser(ret.getUser());
+                    ((SingleBasicProxySelectorImpl) selector).setPassword(ret.getPass());
+
+                } else {
+                    ((SingleBasicProxySelectorImpl) selector).setTempAuth(ret.getUser(), ret.getPass());
+                }
+                return true;
+            } else {
+                ((SingleBasicProxySelectorImpl) selector).setTempAuth(null, null);
+                if (!selector.isBanned(orgReference)) {
+
+                    this.setBan(selector, orgReference, null, 60 * 60 * 1000l, _JDT._.ProxyController_updateProxy_baned_auth());
+                }
             }
         }
+        return false;
     }
 
     public void collect(final String host, final int maxActive, final List<AbstractProxySelectorImpl> ret, final AbstractProxySelectorImpl selector) {
@@ -525,16 +581,20 @@ public class ProxyController {
         final java.util.List<PacProxySelectorImpl> pacs = new ArrayList<PacProxySelectorImpl>();
         final HashSet<AbstractProxySelectorImpl> dupeCheck = new HashSet<AbstractProxySelectorImpl>();
         AbstractProxySelectorImpl proxy = null;
+        logger.info("Load Proxy Settings");
         {
             /* restore customs proxies */
             /* use own scope */
             final java.util.List<ProxyData> ret = this.config.getCustomProxyList();
+
+            logger.info("Customs: " + (ret == null ? 0 : ret.size()));
             if (ret != null) {
                 /* config available */
                 restore: for (final ProxyData proxyData : ret) {
                     try {
                         // HTTPProxy proxyTemplate = HTTPProxy.getHTTPProxy(proxyData.getProxy());
                         // if (proxyTemplate != null) {
+                        logger.info(JSonStorage.serializeToJson(proxyData));
                         if (proxyData.isPac()) {
                             proxy = new PacProxySelectorImpl(proxyData);
                         } else {
@@ -585,6 +645,123 @@ public class ProxyController {
                     }
                 }
             } else {
+                logger.info("Init Proxy Controller fresh");
+                Logger.setBackend(new LogBackEnd() {
+
+                    @Override
+                    public void log(final Class<?> arg0, final LogLevel arg1, final String arg2, final Object... arg3) {
+
+                        logger.log(Level.ALL, arg2, arg3);
+                    }
+
+                    @Override
+                    public boolean isLogginEnabled(final LogLevel arg0) {
+
+                        return true;
+                    }
+                });
+
+                ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
+                strategies.add(new DesktopProxySearchStrategy());
+                strategies.add(new FirefoxProxySearchStrategy());
+                strategies.add(new EnvProxySearchStrategy());
+                strategies.add(new JavaProxySearchStrategy());
+
+                for (ProxySearchStrategy s : strategies) {
+                    logger.info("Selector: " + s);
+                    ProxySelector selector;
+                    try {
+                        selector = s.getProxySelector();
+                        if (selector == null)
+                            continue;
+                        if (selector instanceof PacProxySelector) {
+                            Field field = PacProxySelector.class.getDeclaredField("pacScriptParser");
+                            field.setAccessible(true);
+                            PacScriptParser source = (PacScriptParser) field.get(selector);
+                            PacScriptSource pacSource = source.getScriptSource();
+                            if (pacSource != null && pacSource instanceof UrlPacScriptSource) {
+                                field = UrlPacScriptSource.class.getDeclaredField("scriptUrl");
+                                field.setAccessible(true);
+
+                                Object pacURL = field.get(pacSource);
+                                if (StringUtils.isNotEmpty((String) pacURL)) {
+                                    PacProxySelectorImpl pac = new PacProxySelectorImpl((String) pacURL, null, null);
+                                    pac.setProxyRotationEnabled(true);
+                                    if (dupeCheck.add(pac)) {
+                                        logger.info("Add pac: " + pacURL);
+                                        pacs.add(pac);
+                                        if (newDefaultProxy == null) {
+                                            newDefaultProxy = pac;
+                                            config.setNoneDefault(false);
+                                        }
+                                    }
+
+                                }
+                            }
+                        } else {
+                            List<Proxy> sproxies = selector.select(new URI("http://google.com"));
+                            if (sproxies != null) {
+                                for (Proxy p : sproxies) {
+                                    HTTPProxy httpProxy = null;
+                                    switch (p.type()) {
+                                    case DIRECT:
+                                        if (p.address() == null) {
+                                            httpProxy = new HTTPProxy(TYPE.NONE);
+
+                                        } else {
+
+                                            httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
+                                            SingleDirectGatewaySelector dir = new SingleDirectGatewaySelector(httpProxy);
+                                            dir.setProxyRotationEnabled(true);
+                                            if (dupeCheck.add(dir)) {
+                                                logger.info("Add Direct: " + httpProxy);
+                                                directs.add(dir);
+                                                if (newDefaultProxy == null) {
+                                                    newDefaultProxy = dir;
+                                                    config.setNoneDefault(false);
+                                                }
+                                            }
+
+                                        }
+                                        break;
+                                    case HTTP:
+                                        httpProxy = new HTTPProxy(TYPE.HTTP, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
+                                        SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(httpProxy);
+                                        basic.setProxyRotationEnabled(true);
+                                        if (dupeCheck.add(basic)) {
+                                            logger.info("Add Basic: " + httpProxy);
+                                            proxies.add(basic);
+                                            if (newDefaultProxy == null) {
+                                                newDefaultProxy = basic;
+                                                config.setNoneDefault(false);
+                                            }
+                                        }
+                                        break;
+                                    case SOCKS:
+
+                                        httpProxy = new HTTPProxy(TYPE.SOCKS5, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
+                                        SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(httpProxy);
+                                        socks.setProxyRotationEnabled(true);
+                                        if (dupeCheck.add(socks)) {
+                                            logger.info("Add Basic: " + httpProxy);
+                                            proxies.add(socks);
+                                            if (newDefaultProxy == null) {
+                                                newDefaultProxy = socks;
+                                                config.setNoneDefault(false);
+                                            }
+                                        }
+                                        break;
+                                    }
+
+                                }
+                            }
+                        }
+
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                }
+
                 /* convert from old system */
                 final List<HTTPProxy> reto = this.restoreFromOldConfig();
                 restore: for (final HTTPProxy proxyData : reto) {
@@ -610,6 +787,7 @@ public class ProxyController {
                         }
 
                         if (proxy instanceof SingleBasicProxySelectorImpl) {
+                            logger.info("Old Restore: " + JSonStorage.serializeToJson(proxyData));
                             proxies.add((SingleBasicProxySelectorImpl) proxy);
                         } else {
                             throw new WTFException("Unknown Type: " + proxy.getClass());
@@ -634,7 +812,7 @@ public class ProxyController {
                     if (!dupeCheck.add(proxy)) {
                         continue restore;
                     }
-
+                    logger.info("Add System Proxy: " + JSonStorage.serializeToJson(proxyData));
                     proxies.add((SingleBasicProxySelectorImpl) proxy);
 
                     /* in old system we only had one possible proxy */
@@ -678,7 +856,7 @@ public class ProxyController {
                             /* local ip no longer available */
                             continue restore;
                         }
-
+                        logger.info("Add Direct " + JSonStorage.serializeToJson(proxyData));
                         directs.add((SingleDirectGatewaySelector) proxy);
 
                         if (proxyData.isDefaultProxy()) {
@@ -707,6 +885,7 @@ public class ProxyController {
             if (!localEntry) {
                 final PacProxySelectorImpl pac = new PacProxySelectorImpl("local://AdvancedConfig.LocalePacScript", null, null);
                 pac.setProxyRotationEnabled(true);
+                logger.info("Add Local pac");
                 pacs.add(pac);
             }
 
@@ -942,32 +1121,9 @@ public class ProxyController {
                     // proxy has been updated already
                     return true;
                 }
-                if (selector instanceof PacProxySelectorImpl) {
 
-                    final HTTPProxy ret = this.askForProxyAuth(UIOManager.LOGIC_COUNTDOWN, false, usedProxy, orgReference, url, _JDT._.ProxyController_updateProxy_proxy_auth_required_msg(url.getHost()), _JDT._.ProxyController_updateProxy_proxy_auth_required_title());
-                    if (ret != null) {
-                        ((PacProxySelectorImpl) selector).setTempAuth(orgReference, ret.getUser(), ret.getPass());
-                        return true;
-                    } else {
-                        ((PacProxySelectorImpl) selector).setTempAuth(orgReference, null, null);
-                        if (!selector.isBanned(orgReference)) {
-                            this.setBan(selector, orgReference, null, 60 * 60 * 1000l, _JDT._.ProxyController_updateProxy_baned_auth());
-                        }
+                this.askForProxyAuth(selector, UIOManager.LOGIC_COUNTDOWN, false, usedProxy, orgReference, url, _JDT._.ProxyController_updateProxy_proxy_auth_required_msg(url.getHost()), _JDT._.ProxyController_updateProxy_proxy_auth_required_title());
 
-                    }
-                } else if (selector instanceof SingleBasicProxySelectorImpl) {
-                    final HTTPProxy ret = this.askForProxyAuth(UIOManager.LOGIC_COUNTDOWN, false, usedProxy, orgReference, url, _JDT._.ProxyController_updateProxy_proxy_auth_required_msg(url.getHost()), _JDT._.ProxyController_updateProxy_proxy_auth_required_title());
-                    if (ret != null) {
-                        ((SingleBasicProxySelectorImpl) selector).setTempAuth(ret.getUser(), ret.getPass());
-                        return true;
-                    } else {
-                        ((SingleBasicProxySelectorImpl) selector).setTempAuth(null, null);
-                        if (!selector.isBanned(orgReference)) {
-
-                            this.setBan(selector, orgReference, null, 60 * 60 * 1000l, _JDT._.ProxyController_updateProxy_baned_auth());
-                        }
-                    }
-                }
             }
             return false;
         } catch (final Throwable e) {
