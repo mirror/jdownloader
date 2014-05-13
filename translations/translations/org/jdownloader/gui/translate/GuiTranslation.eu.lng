@@ -1004,7 +1004,6 @@ ffmpeg_install_now=Instalatu FFmpeg (TM) orain
 filecolumn_title=Izena
 gui_btn_select=Hautatu
 gui_captchaWindow_askForInput=Sartu %s1 -entzako Captcha eta jarraitu!
-gui_column_host=Ostalaria
 gui_column_nativeauth=Jatorrizko identifikazioa
 gui_column_pass=Pasahitza
 gui_column_port=Portua
