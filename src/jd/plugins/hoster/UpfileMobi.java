@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfile.mobi" }, urls = { "http://(www\\.)?upfile\\.mobi/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "upfile.mobi" }, urls = { "http://(www\\.)?upfile\\.mobi/\\d+" }, flags = { 0 })
 public class UpfileMobi extends PluginForHost {
 
     public UpfileMobi(PluginWrapper wrapper) {
