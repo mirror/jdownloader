@@ -156,6 +156,7 @@ plugins_errors_hosteroffline=Hostitel offline?
 plugins_errors_hosterproblem=Problém s hostitelem?
 plugins_errors_nointernetconn=Žádné připojení k Internetu?
 plugins_errors_proxy_auth=Ověření proxy selhalo
+plugins_errors_proxy_connection=Proxy připojení selhalo
 plugins_errors_wrongpassword=Chybné heslo
 reconnectmanager_wizard=Průvodce znovupřipojením
 settings_sidebar_tooltip_enable_extension=Povolit/Zakázat toto rozšíření
