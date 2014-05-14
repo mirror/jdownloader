@@ -568,8 +568,9 @@ public class ProxyController implements ProxySelectorInterface {
                         ProxySelector selector;
                         try {
                             selector = s.getProxySelector();
-                            if (selector == null)
+                            if (selector == null) {
                                 continue;
+                            }
                             if (selector instanceof PacProxySelector) {
                                 Field field = PacProxySelector.class.getDeclaredField("pacScriptParser");
                                 field.setAccessible(true);
@@ -917,8 +918,9 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     public HTTPProxy updateProxyAuthForUpdater(int retries, final HTTPProxy updaterProxy, final List<String> proxyAuths, final URL url) {
-        if (retries++ > 10)
+        if (retries++ > 10) {
             return null;
+        }
         if (updaterProxy == null) {
             return null;
         }
@@ -936,8 +938,9 @@ public class ProxyController implements ProxySelectorInterface {
                     return new ProxyClone(orgRef);
                 } else {
                     // no change. ask again
-                    if (retries++ > 10)
+                    if (retries++ > 10) {
                         return null;
+                    }
                     continue;
                 }
             }
