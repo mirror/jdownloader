@@ -111,14 +111,18 @@ public class Wrdprss extends PluginForDecrypt {
         }
         /* Passwort suchen */
         String password = br.getRegex(Pattern.compile("<.*?>Passwort[<|:].*?[>|:]\\s*(.*?)[\\||<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (password != null) link_passwds.add(password.trim());
+        if (password != null)
+            link_passwds.add(password.trim());
         /* Alle Parts suchen */
-        String[] links = br.getRegex(Pattern.compile("href=.*?(http://[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String[] links = br.getRegex(Pattern.compile("href=.*?((http:)?//[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         for (String link : links) {
+            if (!link.startsWith("http:"))
+                link = "http:" + link;
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true) && !link.matches(".+\\.(css|xml)(.*)?")) {
                 DownloadLink dLink = createDownloadlink(link);
-                if (link_passwds != null && link_passwds.size() > 0) dLink.setSourcePluginPasswordList(link_passwds);
+                if (link_passwds != null && link_passwds.size() > 0)
+                    dLink.setSourcePluginPasswordList(link_passwds);
                 if (!customHeaders.isEmpty()) {
                     dLink.setProperty("customHeader", customHeaders);
                 }

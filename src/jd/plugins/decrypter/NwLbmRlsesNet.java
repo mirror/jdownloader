@@ -41,7 +41,7 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
             logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
-        if (parameter.matches("http://(www\\.)?newalbumreleases\\.net/\\d+/?")) {
+        if (parameter.matches("http://(www\\.)?newalbumreleases\\.net/\\d+(/.+)")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404) {

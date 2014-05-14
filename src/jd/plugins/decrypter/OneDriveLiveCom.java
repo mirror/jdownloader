@@ -72,18 +72,21 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     redirect = br.getRedirectLocation();
                 }
                 cid = new Regex(redirect, "cid=([A-Za-z0-9]*)").getMatch(0);
-                if (cid == null) cid = new Regex(redirect, "resid=([A-Z0-9]+)").getMatch(0);
+                if (cid == null)
+                    cid = new Regex(redirect, "resid=([A-Z0-9]+)").getMatch(0);
                 id = new Regex(redirect, "resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
-                if (id == null) id = getLastID(parameter);
+                if (id == null)
+                    id = getLastID(parameter);
                 authkey = new Regex(redirect, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
             } else {
                 cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
                 id = getLastID(parameter);
             }
-            if (authkey == null) authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
+            if (authkey == null)
+                authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
             if (cid == null || id == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Probably unsupported / offline link: " + parameter);
+                return decryptedLinks;
             }
             cid = cid.toUpperCase();
 
@@ -91,7 +94,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             param.setCryptedUrl(parameter);
             prepBrAPI(this.br);
             String additional_data = "&ps=" + MAX_ENTRIES_PER_REQUEST;
-            if (authkey != null) additional_data += "&authkey=" + Encoding.urlEncode(authkey);
+            if (authkey != null)
+                additional_data += "&authkey=" + Encoding.urlEncode(authkey);
             accessItems_API(this.br, original_link, cid, id, additional_data);
         } catch (final BrowserException e) {
             main.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
@@ -104,9 +108,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         /* Improvised way to get foldername */
         final String[] names = br.getRegex("\"modifiedDate\":\\d+,\"name\":\"([^<>\"]*?)\"").getColumn(0);
         String folderName = br.getRegex("\"group\":0,\"iconType\":\"NonEmptyDocumentFolder\".*?\"name\":\"([^<>\"]*?)\"").getMatch(0);
-        if (folderName == null && names != null && names.length > 0) folderName = names[names.length - 1];
-        if (folderName == null) folderName = br.getRegex("\"name\":\"([^<>\"]*?)\",\"orderedFriendlyName\"").getMatch(0);
-        if (folderName == null) folderName = "onedrive.live.com content of user " + cid + " - folder - " + id;
+        if (folderName == null && names != null && names.length > 0)
+            folderName = names[names.length - 1];
+        if (folderName == null)
+            folderName = br.getRegex("\"name\":\"([^<>\"]*?)\",\"orderedFriendlyName\"").getMatch(0);
+        if (folderName == null)
+            folderName = "onedrive.live.com content of user " + cid + " - folder - " + id;
 
         main.setProperty("mainlink", parameter);
         main.setProperty("original_link", original_link);
@@ -203,7 +210,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
 
     public static String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        if (result == null)
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
         return result;
     }
 
@@ -216,7 +224,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
 
     public static String getLinktext(final Browser br) {
         String linktext = br.getRegex("\"children\":\\[(.*?)\\],\"covers\":").getMatch(0);
-        if (linktext == null) linktext = br.getRegex("\"children\":\\[(.*?)\\],\"defaultSort\":").getMatch(0);
+        if (linktext == null)
+            linktext = br.getRegex("\"children\":\\[(.*?)\\],\"defaultSort\":").getMatch(0);
         return linktext;
     }
 

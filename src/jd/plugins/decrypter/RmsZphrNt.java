@@ -49,12 +49,17 @@ public class RmsZphrNt extends PluginForDecrypt {
         }
         final String file = br.getRegex(patternDownload).getMatch(0);
         if (file == null) {
+            if (!br.containsHTML("class=\"tcat\"")) {
+                logger.info("Link offline (unsupported linktype): " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         final String size = br.getRegex("<b>Filesize</b></td>.*?<td align=\"right\">(\\d+(\\.\\d+)? (KB|MB|B))</td>").getMatch(0);
         final DownloadLink dlLink = createDownloadlink(file);
-        if (size != null) dlLink.setDownloadSize(SizeFormatter.getSize(size));
+        if (size != null)
+            dlLink.setDownloadSize(SizeFormatter.getSize(size));
         dlLink.setName(new Regex(parameter, "/([^<>\"/]*?)\\.html").getMatch(0));
 
         decryptedLinks.add(dlLink);

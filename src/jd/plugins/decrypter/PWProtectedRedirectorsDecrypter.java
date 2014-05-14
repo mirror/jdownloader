@@ -27,7 +27,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliccami.info", "mylink4u.info", "urlaxe.net", "cbuz.com", "shorten.ws" }, urls = { "http://[\\w\\.]*?cliccami\\.info/[0-9a-z]+", "http://[\\w\\.]*?mylink4u\\.info/[a-z0-9]+", "http://[\\w\\.]*?urlaxe\\.net/[0-9]+", "http://[\\w\\.]*?cbuz\\.com/[a-z0-9]+", "http://(www\\.)?shorten\\.ws/[a-z0-9-]+" }, flags = { 0, 0, 0, 0, 0 })
 public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
@@ -41,11 +40,15 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        if (parameter.contains("http://dwarfurl")) parameter = parameter.replace("http://", "http://www.");
+        if (parameter.contains("http://dwarfurl"))
+            parameter = parameter.replace("http://", "http://www.");
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String domain = new Regex(parameter, "([a-z-]+)\\.").getMatch(0);
-        if (br.containsHTML("(non ci sono URL|There is no such URL in our database|Esa url no se encuentra|Taki skrót <b>nie istnieje|Witaj na l-x.pl|URL proibito|questo URL e' scaduto|This URL expired)") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains(domain))) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(non ci sono URL|There is no such URL in our database|Esa url no se encuentra|Taki skrót <b>nie istnieje|Witaj na l-x.pl|URL proibito|questo URL e' scaduto|This URL expired|>This URL deleted)") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains(domain))) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String finallink = br.getRedirectLocation();
         if (finallink == null) {
             // For iframe stuff
@@ -53,7 +56,8 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
             if (finallink == null && (br.containsHTML("(name=\"pass\"|name=\"p\"|name=\"shortcut_password\"|name=\"urlpass\")"))) {
                 for (int i = 0; i <= 2; i++) {
                     Form pwform = br.getForm(0);
-                    if (pwform == null) return null;
+                    if (pwform == null)
+                        return null;
                     String passCode = getUserInput(null, param);
                     if (parameter.contains("urlaxe.net")) {
                         pwform.put("p", passCode);
@@ -61,11 +65,14 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
                         pwform.put("pass", passCode);
                     }
                     br.submitForm(pwform);
-                    if (br.containsHTML("(Wrong password|Not valid password|name=\"p\"|incorrecta|name=\"pass\"|name=\"pass\"|name=\"shortcut_password\"|name=\"urlpass\")")) continue;
+                    if (br.containsHTML("(Wrong password|Not valid password|name=\"p\"|incorrecta|name=\"pass\"|name=\"pass\"|name=\"shortcut_password\"|name=\"urlpass\")"))
+                        continue;
                     // Iframe handling
                     finallink = br.getRegex("id=\"frame\" src=\"(.*?)\"").getMatch(0);
-                    if (finallink == null) finallink = br.getRegex("download URL.*?href=\"(.*?)\"").getMatch(0);
-                    if (finallink == null) finallink = br.getRedirectLocation();
+                    if (finallink == null)
+                        finallink = br.getRegex("download URL.*?href=\"(.*?)\"").getMatch(0);
+                    if (finallink == null)
+                        finallink = br.getRedirectLocation();
                     break;
                 }
                 if (br.containsHTML("(Wrong password|Not valid password|name=\"p\"|incorrecta|name=\"pass\"|name=\"pass\"|name=\"shortcut_password\"|name=\"urlpass\")")) {
@@ -73,9 +80,11 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
 
-            } else if (finallink == null) finallink = br.getURL();
+            } else if (finallink == null)
+                finallink = br.getURL();
         }
-        if (finallink == null || finallink.matches(parameter)) return null;
+        if (finallink == null || finallink.matches(parameter))
+            return null;
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;

@@ -40,7 +40,8 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         String externID = br.getRegex("\"file\",\"(http://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"\\);").getMatch(0);
-        if (externID == null) externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\"").getMatch(0);
+        if (externID == null)
+            externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
             return decryptedLinks;
@@ -73,6 +74,11 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("url=(http%3A%2F%2Fapi\\.soundcloud\\.com%2Ftracks%2F[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?break\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
             return decryptedLinks;

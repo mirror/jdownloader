@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?break\\.com/(index|usercontent|skittles|video)/[A-Za-z0-9\\-_/]+\\-\\d+$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?(break\\.com/(index|usercontent|skittles|video)/[A-Za-z0-9\\-_/]+\\-\\d+$|break\\.com/embed/\\d+)" }, flags = { 0 })
 public class BreakComDecrypter extends PluginForDecrypt {
 
     public BreakComDecrypter(PluginWrapper wrapper) {
@@ -37,7 +37,8 @@ public class BreakComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString();
-        br.getPage("http://www.break.com/embed/" + new Regex(parameter, "(\\d+)$").getMatch(0));
+        final String fid = new Regex(parameter, "(\\d+)$").getMatch(0);
+        br.getPage("http://www.break.com/embed/" + fid);
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String externID = br.getRegex("(http://(www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
@@ -49,7 +50,7 @@ public class BreakComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http:" + externID));
             return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink(parameter.replace("break.com/", "breakdecrypted.com/")));
+        decryptedLinks.add(createDownloadlink("http://breakdecrypted.com/video/xyz-" + fid));
 
         return decryptedLinks;
     }

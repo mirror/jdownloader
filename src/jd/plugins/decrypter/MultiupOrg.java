@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|miror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}/[^<> \"'&%]+|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+)" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
 
     // DEV NOTES:
@@ -48,7 +48,7 @@ public class MultiupOrg extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String parameter = param.toString();
         // link structure parser!
-        String reg = "org/(fichiers/download/([0-9a-z]{32})_([^<> \"'&%]+)?|([a-z]{2}/)?(download|miror)/([a-z0-9]{32})/([^<> \"'&%]+)|\\?lien=([a-z0-9]{32})_([^<> \"'&%]+))";
+        String reg = "org/(fichiers/download/([0-9a-z]{32})_([^<> \"'&%]+)?|([a-z]{2}/)?(download|mirror)/([a-z0-9]{32})/([^<> \"'&%]+)|\\?lien=([a-z0-9]{32})_([^<> \"'&%]+))";
         String[][] matches = new Regex(parameter, reg).getMatches();
         String uid = matches[0][1];
         if (uid == null) {
@@ -75,7 +75,7 @@ public class MultiupOrg extends PluginForDecrypt {
         parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0).replace("www.", "") + "/en/download/" + uid + "/" + filename;
         param.setCryptedUrl(parameter);
 
-        br.getPage(parameter.replace("/en/download/", "/en/miror/"));
+        br.getPage(parameter.replace("/en/download/", "/en/mirror/"));
         if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

@@ -36,11 +36,11 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">Error: Not valid ID") || (!br.containsHTML("up\\.4share\\.vn/d/") && !br.containsHTML("up\\.4share\\.vn/f/"))) {
+        if (br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("(http://up\\.4share\\.vn/(d/[a-z0-9]{1,}|f/[a-z0-9]+/[^<>\"]{1,}))").getColumn(0);
+        final String[] links = br.getRegex("(http://(up\\.)?4share\\.vn/(d/[a-z0-9]{1,}|f/[a-z0-9]+/[^<>\"]{1,}))").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
