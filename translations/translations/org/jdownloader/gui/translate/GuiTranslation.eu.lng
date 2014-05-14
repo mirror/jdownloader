@@ -1447,6 +1447,7 @@ literally_save=Gorde
 literally_warning=Abisua
 literally_yes=Bai
 memory_chat=Txat-zerbitzua
+osr_dialog_message=<html><b>JDownloader</b>  <b>Fedrich-Alexander University Erlangen- Nurnberg-en Open Source ikerketa taldearekin</b> elkarlanean aritzen da inkestak zuzentzeko. Ikerkuntza saiatzen da JDownloader esperientzia hobetzen eta/edo software garapenean ikerkuntza akademikoa sustatzen. Ez da diru sarietan oinarritzen elkarkidetzan baizik, baina JDownloader projektuaren irabazi osoak inkesten emaitzetara bideratzenda.<br>Mesedes kontua hartu ikerkuntza</html>
 osr_dialog_title=Ireki inkestaren iturburua
 osr_label=Inkesta berria eskuragarri!
 osr_start=Hasi inkesta
