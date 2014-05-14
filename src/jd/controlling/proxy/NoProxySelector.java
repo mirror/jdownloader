@@ -1,5 +1,6 @@
 package jd.controlling.proxy;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,20 +24,39 @@ public class NoProxySelector extends AbstractProxySelectorImpl {
 
     }
 
+    public NoProxySelector(ProxyData proxyData) {
+
+        setEnabled(proxyData.isEnabled());
+
+        setFilter(proxyData.getFilter());
+        proxy = new ExtProxy(this, new HTTPProxy(TYPE.NONE));
+        // setFilter(proxyData.getFilter());
+        list = new ArrayList<HTTPProxy>();
+        list.add(proxy);
+
+    }
+
     public ProxyData toProxyData() {
-        ProxyData ret = new ProxyData();
-        ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
+        ProxyData ret = super.toProxyData();
         ret.setProxy(HTTPProxy.getStorable(proxy));
-        ret.setFilter(getFilter());
-        ret.setID(this.ID);
-        ret.setRangeRequestsSupported(isResumeAllowed());
         return ret;
     }
 
     @Override
     public List<HTTPProxy> getProxiesByUrl(String url) {
+        if (banList == null || banList.size() == 0)
+            return list;
 
-        return list;
+        try {
+            if (!isBanned(new URL(url).getHost(), proxy)) {
+                return list;
+            } else {
+                return new ArrayList<HTTPProxy>();
+            }
+        } catch (Exception e) {
+            return new ArrayList<HTTPProxy>();
+        }
+
     }
 
     public ExtProxy getProxy() {
@@ -93,20 +113,6 @@ public class NoProxySelector extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public List<HTTPProxy> listProxies() {
-        return list;
-    }
-
-    @Override
-    public boolean setRotationEnabled(ExtProxy p, boolean enabled) {
-        if (isProxyRotationEnabled() == enabled)
-            return false;
-
-        setProxyRotationEnabled(enabled);
-        return true;
-    }
-
-    @Override
     protected boolean isLocal() {
         return true;
     }
@@ -118,13 +124,14 @@ public class NoProxySelector extends AbstractProxySelectorImpl {
 
     @Override
     protected void onBanListUpdate() {
-        if (isBanned(proxy)) {
-            // empty
-            list = new ArrayList<HTTPProxy>();
-        } else {
-            ArrayList<HTTPProxy> tmp = new ArrayList<HTTPProxy>();
-            tmp.add(proxy);
-            list = tmp;
-        }
+        // if (isBanned(proxy)) {
+        // // empty
+        // list = new ArrayList<HTTPProxy>();
+        // } else {
+        // ArrayList<HTTPProxy> tmp = new ArrayList<HTTPProxy>();
+        // tmp.add(proxy);
+        // list = tmp;
+        // }
     }
+
 }

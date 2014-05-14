@@ -1,6 +1,5 @@
 package org.jdownloader.updatev2;
 
-
 import org.appwork.storage.Storable;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 
@@ -11,10 +10,8 @@ public class ProxyData implements Storable {
         // required by Storable
     }
 
-    private boolean           proxyRotationEnabled   = true;
-    private boolean           defaultProxy           = false;
     private HTTPProxyStorable proxy                  = null;
-    private String            ID                     = null;
+    // private String ID = null;
 
     private boolean           rangeRequestsSupported = true;
 
@@ -25,35 +22,56 @@ public class ProxyData implements Storable {
         return rangeRequestsSupported;
     }
 
-    public String getID() {
-        return ID;
-    }
-
-    public void setID(String iD) {
-        ID = iD;
-    }
-
-    public boolean isDefaultProxy() {
-        return defaultProxy;
-    }
-
-    public void setDefaultProxy(boolean defaultProxy) {
-        this.defaultProxy = defaultProxy;
-    }
+    // public String getID() {
+    // return ID;
+    // }
+    //
+    // public void setID(String iD) {
+    // ID = iD;
+    // }
 
     /**
      * @return the enabled
      */
-    public boolean isProxyRotationEnabled() {
-        return proxyRotationEnabled;
-    }
 
     /**
      * @param enabled
      *            the enabled to set
      */
+    @Deprecated
     public void setProxyRotationEnabled(boolean enabled) {
-        this.proxyRotationEnabled = enabled;
+        setEnabled(enabled);
+        // setUseForPremiumEnabled(enabled);
+    }
+
+    private boolean enabled;
+
+    // private boolean useForFreeEnabled;
+    //
+    // public boolean isUseForFreeEnabled() {
+    // return useForFreeEnabled;
+    // }
+    //
+    // public void setUseForFreeEnabled(boolean useForFreeEnabled) {
+    // this.useForFreeEnabled = useForFreeEnabled;
+    // }
+    //
+    // public boolean isUseForPremiumEnabled() {
+    // return useForPremiumEnabled;
+    // }
+    //
+    // public void setUseForPremiumEnabled(boolean useForPremiumEnabled) {
+    // this.useForPremiumEnabled = useForPremiumEnabled;
+    // }
+    //
+    // private boolean useForPremiumEnabled;
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     /**

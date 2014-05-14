@@ -1,5 +1,6 @@
 package jd.controlling.proxy;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,15 +34,13 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     private String tempPass;
 
     public ProxyData toProxyData() {
-        ProxyData ret = new ProxyData();
-        ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
-        ret.setFilter(getFilter());
+        ProxyData ret = super.toProxyData();
+
         HTTPProxyStorable storable = HTTPProxy.getStorable(proxy);
         storable.setUsername(username);
         storable.setPassword(password);
         ret.setProxy(storable);
-        ret.setID(this.ID);
-        ret.setRangeRequestsSupported(isResumeAllowed());
+
         return ret;
     }
 
@@ -53,19 +52,20 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     public SingleBasicProxySelectorImpl(ProxyData proxyData) {
 
-        ID = proxyData.getID();
+        // ID = proxyData.getID();
         proxy = new ExtProxy(this, HTTPProxy.getHTTPProxy(proxyData.getProxy()));
         setFilter(proxyData.getFilter());
         proxy.setConnectMethodPrefered(proxyData.getProxy().isConnectMethodPrefered());
         setResumeAllowed(proxyData.isRangeRequestsSupported());
-        setProxyRotationEnabled(proxyData.isProxyRotationEnabled());
+        setEnabled(proxyData.isEnabled());
+
         username = proxy.getUser();
         password = proxy.getPass();
-        if (ID == null) {
-
-            ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
-
-        }
+        // if (ID == null) {
+        //
+        // ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
+        //
+        // }
         list = new ArrayList<HTTPProxy>();
         list.add(proxy);
 
@@ -75,7 +75,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         proxy = new ExtProxy(this, rawProxy);
         username = proxy.getUser();
         password = proxy.getPass();
-        this.ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
+        // this.ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
         list = new ArrayList<HTTPProxy>();
         list.add(proxy);
 
@@ -83,8 +83,19 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public List<HTTPProxy> getProxiesByUrl(String url) {
+        if (banList == null || banList.size() == 0)
+            return list;
 
-        return list;
+        try {
+            if (!isBanned(new URL(url).getHost(), proxy)) {
+                return list;
+            } else {
+                return new ArrayList<HTTPProxy>();
+            }
+        } catch (Exception e) {
+            return new ArrayList<HTTPProxy>();
+        }
+
     }
 
     public ExtProxy getProxy() {
@@ -166,15 +177,6 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         proxy.setPreferNativeImplementation(preferNativeImplementation);
     }
 
-    @Override
-    public boolean setRotationEnabled(ExtProxy p, boolean enabled) {
-        if (isProxyRotationEnabled() == enabled)
-            return false;
-
-        setProxyRotationEnabled(enabled);
-        return true;
-    }
-
     public int getPort() {
         return proxy.getPort();
     }
@@ -244,11 +246,6 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public List<HTTPProxy> listProxies() {
-        return list;
-    }
-
-    @Override
     protected boolean isLocal() {
         return false;
     }
@@ -263,14 +260,14 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     protected void onBanListUpdate() {
-        if (isBanned(proxy)) {
-            // empty
-            list = new ArrayList<HTTPProxy>();
-        } else {
-            ArrayList<HTTPProxy> tmp = new ArrayList<HTTPProxy>();
-            tmp.add(proxy);
-            list = tmp;
-        }
+        // if (isBanned(proxy)) {
+        // // empty
+        // list = new ArrayList<HTTPProxy>();
+        // } else {
+        // ArrayList<HTTPProxy> tmp = new ArrayList<HTTPProxy>();
+        // tmp.add(proxy);
+        // list = tmp;
+        // }
     }
 
 }

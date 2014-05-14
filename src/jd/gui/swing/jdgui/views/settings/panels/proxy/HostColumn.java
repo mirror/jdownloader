@@ -6,11 +6,12 @@ import java.net.UnknownHostException;
 import javax.swing.Icon;
 
 import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
 import jd.controlling.proxy.NoProxySelector;
 import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.translate._GUI;
 
@@ -30,6 +31,11 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
     protected Icon getIcon(AbstractProxySelectorImpl value) {
 
         return super.getIcon(value);
+    }
+
+    @Override
+    public boolean isSortable(final AbstractProxySelectorImpl obj) {
+        return false;
     }
 
     @Override
@@ -59,14 +65,21 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
 
     @Override
     public String getStringValue(AbstractProxySelectorImpl value) {
-        if (value instanceof NoProxySelector) {
-            return "";
-        } else if (value instanceof SingleDirectGatewaySelector) {
-            return ((SingleDirectGatewaySelector) value).getProxy().getLocalIP().getHostAddress();
-        } else if (value instanceof SingleBasicProxySelectorImpl) {
-            return ((SingleBasicProxySelectorImpl) value).getProxy().getHost();
-        } else if (value instanceof PacProxySelectorImpl) { return ((PacProxySelectorImpl) value).getPACUrl(); }
-        throw new IllegalStateException("Unknown Factory Type: " + value.getClass());
+        try {
+            if (value instanceof NoProxySelector) {
+                return "";
+            } else if (value instanceof SingleDirectGatewaySelector) {
+                return ((SingleDirectGatewaySelector) value).getProxy().getLocalIP().getHostAddress();
+            } else if (value instanceof SingleBasicProxySelectorImpl) {
+                return ((SingleBasicProxySelectorImpl) value).getProxy().getHost();
+            } else if (value instanceof PacProxySelectorImpl) {
+
+                return ((PacProxySelectorImpl) value).getPACUrl();
+            }
+            throw new IllegalStateException("Unknown Factory Type: " + value.getClass());
+        } catch (Throwable e) {
+            return "Invalid Proxy: " + JSonStorage.serializeToJson(value.toProxyData());
+        }
 
     }
 
@@ -74,7 +87,9 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
     public boolean isEditable(AbstractProxySelectorImpl value) {
         if (value instanceof NoProxySelector) {
             return false;
-        } else if (value instanceof SingleDirectGatewaySelector) { return true; }
+        } else if (value instanceof SingleDirectGatewaySelector) {
+            return true;
+        }
         return true;
     }
 

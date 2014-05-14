@@ -11,10 +11,10 @@ import java.util.List;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
 import jd.controlling.proxy.PacProxySelectorImpl;
 import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -74,7 +74,8 @@ public class ProxyAutoAction extends AppAction {
                     ProxySelector selector;
                     try {
                         selector = s.getProxySelector();
-                        if (selector == null) continue;
+                        if (selector == null)
+                            continue;
                         if (selector instanceof PacProxySelector) {
                             Field field = PacProxySelector.class.getDeclaredField("pacScriptParser");
                             field.setAccessible(true);
@@ -151,13 +152,15 @@ public class ProxyAutoAction extends AppAction {
     }
 
     protected void addProxy(AbstractProxySelectorImpl enable) {
-        ProxyController.getInstance().setProxyRotationEnabled(ProxyController.getInstance().getNone(), false);
+        ProxyController.getInstance().setEnabled(ProxyController.getInstance().getNone(), false);
+
         ProxyController.getInstance().addProxy(enable);
-        ProxyController.getInstance().setDefaultProxy(enable);
+
     }
 
     protected AbstractProxySelectorImpl enable(AbstractProxySelectorImpl pacProxyFactory) {
-        pacProxyFactory.setProxyRotationEnabled(true);
+        pacProxyFactory.setEnabled(true);
+
         return pacProxyFactory;
     }
 }

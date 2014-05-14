@@ -4,9 +4,7 @@ import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -40,27 +38,6 @@ public interface InternetConnectionSettings extends ConfigInterface {
     void setHttpReadTimeout(int seconds);
 
     @AboutConfig
-    @DescriptionForConfigEntry("List of all available direct gateways. Invalid entries will be removed")
-    void setDirectGatewayList(ArrayList<ProxyData> ret);
-
-    @DefaultJsonObject("[]")
-    ArrayList<ProxyData> getDirectGatewayList();
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Is direct connection (no proxy) the default connection?")
-    void setNoneDefault(boolean b);
-
-    @DefaultBooleanValue(true)
-    boolean isNoneDefault();
-
-    @AboutConfig
-    @DescriptionForConfigEntry("Use direct connection (no proxy) for proxy rotation?")
-    void setNoneRotationEnabled(boolean proxyRotationEnabled);
-
-    @DefaultBooleanValue(true)
-    boolean isNoneRotationEnabled();
-
-    @AboutConfig
     void setRouterIPCheckConnectTimeout(int timeout);
 
     @DefaultIntValue(2000)
@@ -77,12 +54,8 @@ public interface InternetConnectionSettings extends ConfigInterface {
     String getLatestProfile();
 
     @AboutConfig
-    void setNoneFilter(FilterList filter);
-
-    FilterList getNoneFilter();
-
-    @AboutConfig
     void setLocalPacScript(String script);
 
     String getLocalPacScript();
+
 }

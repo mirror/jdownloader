@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.proxy;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
+import javax.swing.DropMode;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.ListSelectionModel;
@@ -12,7 +13,9 @@ import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.gui.swing.jdgui.BasicJDTable;
 
 import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtTransferHandler;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -29,6 +32,13 @@ public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
     public ProxyTable() {
         super(new ProxyTableModel());
         setSearchEnabled(true);
+        this.setDragEnabled(true);
+
+        setTransferHandler(new ExtTransferHandler<AbstractProxySelectorImpl>());
+        if (Application.getJavaVersion() >= Application.JAVA16) {
+            setDropMode(DropMode.INSERT_ROWS);
+        }
+
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     }
 
@@ -61,8 +71,10 @@ public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
         StringBuilder sb = new StringBuilder();
         for (AbstractProxySelectorImpl pi : selectedObjects) {
             String str = pi.toExportString();
-            if (str == null) continue;
-            if (sb.length() > 0) sb.append("\r\n");
+            if (str == null)
+                continue;
+            if (sb.length() > 0)
+                sb.append("\r\n");
             sb.append(str);
 
         }

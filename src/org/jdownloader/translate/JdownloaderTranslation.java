@@ -529,4 +529,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Authentication failed" })
     String ProxyController_updateProxy_baned_auth();
 
+    @Default(lngs = { "en" }, values = { "How to use the Connection Manager: \r\nYou can add several proxies or gateways to this list. Use the filter option to enable or disable a proxy for a certain domain only. For Free Downloads, JDownloader will try to use all available proxies simultanous. For Premium Downloads, the first available Proxy will be used." })
+    String gui_settings_proxy_description_new();
+
+    @Default(lngs = { "en" }, values = { "No Gateway or Proxy found." })
+    String plugins_errors_proxy_connection_nogateway();
+
 }

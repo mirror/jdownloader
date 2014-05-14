@@ -33,12 +33,13 @@ public class ProxyAddAction extends AbstractAddAction {
         ProxyDialog proxyDialog = new ProxyDialog();
         try {
             final AbstractProxySelectorImpl proxy = Dialog.getInstance().showDialog(proxyDialog);
-            if (proxy == null) return;
+            if (proxy == null)
+                return;
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
-                    proxy.setProxyRotationEnabled(true);
+                    proxy.setEnabled(true);
 
                     ProxyController.getInstance().addProxy(proxy);
                     return null;

@@ -1,14 +1,14 @@
 package jd.controlling.proxy;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.ProxySelectorInterface;
+import jd.http.Request;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.updatev2.FilterList;
@@ -24,6 +24,39 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         PAC
     }
 
+    // private boolean useForPremiumEnabled = true;
+    //
+    // public boolean isUseForPremiumEnabled() {
+    // return useForPremiumEnabled;
+    // }
+
+    // public void setUseForPremiumEnabled(boolean useForPremiumEnabled) {
+    // this.useForPremiumEnabled = useForPremiumEnabled;
+    // if (useForPremiumEnabled) {
+    // // reset banlist on enable/disable
+    // banList = new ArrayList<ProxyBan>();
+    // onBanListUpdate();
+    // }
+    // }
+    @Override
+    public boolean reportConnectException(Request request, int retryCounter, IOException e) {
+        return ProxyController.getInstance().reportConnectException(request, retryCounter, e);
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean useForFreeEnabled) {
+        this.enabled = useForFreeEnabled;
+        if (useForFreeEnabled) {
+            // reset banlist on enable/disable
+            banList = new ArrayList<ProxyBan>();
+            onBanListUpdate();
+        }
+    }
+
+    private boolean    enabled = true;
     private FilterList filter;
 
     public FilterList getFilter() {
@@ -41,11 +74,21 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         this.filter = filter;
     }
 
-    final protected static AtomicLong IDs = new AtomicLong(0);
+    // final protected static AtomicLong IDs = new AtomicLong(0);
+    //
+    // protected String ID = null;
 
-    protected String                  ID  = null;
+    public ProxyData toProxyData() {
 
-    abstract public ProxyData toProxyData();
+        ProxyData ret = new ProxyData();
+        ret.setEnabled(isEnabled());
+
+        ret.setFilter(getFilter());
+        // ret.setID(this.ID);
+        ret.setRangeRequestsSupported(isResumeAllowed());
+
+        return ret;
+    }
 
     abstract public Type getType();
 
@@ -57,11 +100,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
 
     abstract public void setPreferNativeImplementation(boolean preferNativeImplementation);
 
-    abstract public boolean setRotationEnabled(ExtProxy p, boolean enabled);
-
     abstract public String toExportString();
-
-    abstract public List<HTTPProxy> listProxies();
 
     private final HashMap<String, HashSet<SingleDownloadController>> activeSingleDownloadControllers = new HashMap<String, HashSet<SingleDownloadController>>();
 
@@ -69,22 +108,8 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
      * by default a proxy supports resume
      */
     private boolean                                                  resumeIsAllowed                 = true;
-    private boolean                                                  proxyRotationEnabled;
 
     protected ArrayList<ProxyBan>                                    banList;
-
-    public boolean isProxyRotationEnabled() {
-        return proxyRotationEnabled;
-    }
-
-    public void setProxyRotationEnabled(boolean noneRotationEnabled) {
-        this.proxyRotationEnabled = noneRotationEnabled;
-        if (proxyRotationEnabled) {
-            // reset banlist on enable/disable
-            banList = new ArrayList<ProxyBan>();
-            onBanListUpdate();
-        }
-    }
 
     public boolean isReconnectSupported() {
         switch (getType()) {
@@ -179,7 +204,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         return banList;
     }
 
-    public boolean isBanned(HTTPProxy cached) {
+    public boolean isBanned(String domain, HTTPProxy cached) {
         ArrayList<ProxyBan> cleanUp = null;
         try {
             for (ProxyBan pb : banList) {
@@ -220,7 +245,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
                     cleanUp.add(pb);
                     continue;
                 }
-                if (host.equalsIgnoreCase(pb.getDomain())) {
+                if (pb.getDomain() == null || host.equalsIgnoreCase(pb.getDomain())) {
                     //
                     return true;
                 }

@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -43,9 +44,27 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     private ConcurrentHashMap<String, ExtProxy> cacheMap;
 
     public PacProxySelectorImpl(String url, String user, String pass) {
+        logger = LogController.getInstance().getLogger(PacProxySelectorImpl.class.getName());
         this.pacUrl = url;
         this.user = user;
         this.password = pass;
+        Logger.setBackend(new LogBackEnd() {
+
+            @Override
+            public void log(final Class<?> arg0, final LogLevel arg1, final String arg2, final Object... arg3) {
+
+                logger.log(Level.ALL, arg2, arg3);
+            }
+
+            @Override
+            public boolean isLogginEnabled(final LogLevel arg0) {
+
+                return true;
+            }
+        });
+
+        cacheMap = new ConcurrentHashMap<String, ExtProxy>();
+
     }
 
     @Override
@@ -58,7 +77,8 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         this.pacUrl = proxyData.getProxy().getAddress();
         this.user = proxyData.getProxy().getUsername();
         this.password = proxyData.getProxy().getPassword();
-        setProxyRotationEnabled(proxyData.isProxyRotationEnabled());
+        setEnabled(proxyData.isEnabled());
+
         setPreferNativeImplementation(proxyData.getProxy().isPreferNativeImplementation());
         setFilter(proxyData.getFilter());
         // Setup ProxyVole Logger
@@ -144,7 +164,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                                 cached.setUser(us);
                             }
 
-                            if (!isBanned(cached)) {
+                            if (!isBanned(url.getHost(), cached)) {
                                 ret.add(cached);
                             }
                         } catch (Throwable e) {
@@ -170,7 +190,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     private AtomicLong latestValidation = new AtomicLong(-1);
 
     private void updatePacScript() {
-        if (pacUrl.startsWith("local://")) {
+        if (pacUrl.startsWith("pac://")) {
             // JsonConfig.create(InternetConnectionSettings.PATH,
             // InternetConnectionSettings.class)._getStorageHandler().getKeyHandler("LocalPacScript").getEventSender().addListener(this,
             // true);
@@ -178,7 +198,13 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
                 @Override
                 public String getScriptContent() throws IOException {
-                    return JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).getLocalPacScript();
+
+                    if (StringUtils.equalsIgnoreCase(pacUrl, "pac://")) {
+
+                        return JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).getLocalPacScript();
+                    } else {
+                        return Encoding.urlDecode(pacUrl.substring(6), false);
+                    }
                 }
 
                 @Override
@@ -242,23 +268,16 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         return ret;
     }
 
-    @Override
-    public List<HTTPProxy> listProxies() {
-        return null;
-    }
-
     public ProxyData toProxyData() {
-        ProxyData ret = new ProxyData();
-        ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
+        ProxyData ret = super.toProxyData();
+
         HTTPProxyStorable proxy = new HTTPProxyStorable();
         proxy.setUsername(getUser());
         proxy.setPassword(getPassword());
         proxy.setAddress(getPACUrl());
         proxy.setPreferNativeImplementation(isPreferNativeImplementation());
         ret.setProxy(proxy);
-        ret.setFilter(getFilter());
         ret.setPac(true);
-        ret.setID(this.ID);
 
         return ret;
     }
@@ -324,7 +343,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public String toExportString() {
-        return getPACUrl();
+        return null;
     }
 
     @Override
@@ -335,15 +354,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     @Override
     public void setPreferNativeImplementation(boolean preferNativeImplementation) {
 
-    }
-
-    @Override
-    public boolean setRotationEnabled(ExtProxy p, boolean enabled) {
-        if (isProxyRotationEnabled() == enabled)
-            return false;
-
-        setProxyRotationEnabled(enabled);
-        return true;
     }
 
     @Override

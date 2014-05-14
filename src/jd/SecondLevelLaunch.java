@@ -51,9 +51,7 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.ProxyEvent;
 import jd.gui.swing.MacOSApplicationAdapter;
 import jd.gui.swing.jdgui.JDGui;
 import jd.http.Browser;
@@ -79,7 +77,6 @@ import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
@@ -175,7 +172,8 @@ public class SecondLevelLaunch {
                                 LOG.info("Disable App Nap");
                             } finally {
                                 try {
-                                    if (process != null) process.destroy();
+                                    if (process != null)
+                                        process.destroy();
                                 } catch (final Throwable e) {
                                 }
                             }
@@ -186,7 +184,8 @@ public class SecondLevelLaunch {
                                 LOG.info("App Defaults: \r\n" + ret);
                             } finally {
                                 try {
-                                    if (process != null) process.destroy();
+                                    if (process != null)
+                                        process.destroy();
                                 } catch (final Throwable e) {
                                 }
                             }
@@ -227,7 +226,8 @@ public class SecondLevelLaunch {
      * Checks if the user uses a correct java version
      */
     private static void javaCheck() {
-        if (Application.getResource("disableJavaCheck").exists()) return;
+        if (Application.getResource("disableJavaCheck").exists())
+            return;
         if (Application.getJavaVersion() < Application.JAVA15) {
             SecondLevelLaunch.LOG.warning("Javacheck: JDownloader needs at least Java 1.5 or higher!");
             System.exit(0);
@@ -369,7 +369,8 @@ public class SecondLevelLaunch {
                                     i++;
                                     backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
                                 }
-                                if (backup.exists()) backup.delete();
+                                if (backup.exists())
+                                    backup.delete();
                                 vmOption.renameTo(backup);
                             } else {
                                 SecondLevelLaunch.LOG.info("Modify " + vmOption + " because the exe launcher contains too low Xmx VM arg!");
@@ -379,7 +380,8 @@ public class SecondLevelLaunch {
                                     i++;
                                     backup = new File(vmOption.getAbsolutePath() + ".backup_" + i);
                                 }
-                                if (backup.exists()) backup.delete();
+                                if (backup.exists())
+                                    backup.delete();
                                 if (vmOption.renameTo(backup)) {
                                     StringBuilder sb = new StringBuilder();
                                     if (CrossSystem.isWindows()) {
@@ -388,14 +390,16 @@ public class SecondLevelLaunch {
                                     } else if (CrossSystem.isLinux()) {
                                         sb.append("-Xmx256m\n\n");
                                     }
-                                    if (vmOption.exists() == false || vmOption.delete()) IO.writeStringToFile(vmOption, sb.toString());
+                                    if (vmOption.exists() == false || vmOption.delete())
+                                        IO.writeStringToFile(vmOption, sb.toString());
                                 }
                             }
                         }
                     }
                     if (xmxArgFound) {
                         String launcher = System.getProperty("exe4j.launchName");
-                        if (StringUtils.isEmpty(launcher)) launcher = System.getProperty("exe4j.moduleName");
+                        if (StringUtils.isEmpty(launcher))
+                            launcher = System.getProperty("exe4j.moduleName");
                         SecondLevelLaunch.LOG.info("Create .vmoptions for " + launcher + " because the exe launcher contains too low Xmx VM arg!");
                         if (StringUtils.isNotEmpty(launcher)) {
                             if (CrossSystem.isWindows()) {
@@ -411,7 +415,8 @@ public class SecondLevelLaunch {
                             } else if (CrossSystem.isLinux()) {
                                 sb.append("-Xmx256m\n\n");
                             }
-                            if (vmOption.exists() == false || vmOption.delete()) IO.writeStringToFile(vmOption, sb.toString());
+                            if (vmOption.exists() == false || vmOption.delete())
+                                IO.writeStringToFile(vmOption, sb.toString());
                         }
                     }
                 } else if (CrossSystem.isMac()) {
@@ -428,7 +433,8 @@ public class SecondLevelLaunch {
                                 str = str.replace("<string>-Xms64m</string>", "<string>-Xmx256m</string>");
                                 writeChanges = true;
                             }
-                            if (writeChanges) SecondLevelLaunch.LOG.info("Workaround for buggy Java 1.7 update 5");
+                            if (writeChanges)
+                                SecondLevelLaunch.LOG.info("Workaround for buggy Java 1.7 update 5");
                         } else if (str.contains("<string>-Xmx64m</string>")) {
                             str = str.replace("<string>-Xmx64m</string>", "<string>-Xms64m</string>");
                             writeChanges = true;
@@ -441,9 +447,11 @@ public class SecondLevelLaunch {
                                 i++;
                                 backup = new File(file.getCanonicalPath() + ".backup_" + i);
                             }
-                            if (backup.exists()) backup.delete();
+                            if (backup.exists())
+                                backup.delete();
                             IO.copyFile(file, backup);
-                            if (file.exists() == false || file.delete()) IO.writeStringToFile(file, str);
+                            if (file.exists() == false || file.delete())
+                                IO.writeStringToFile(file, str);
                         } else {
                             SecondLevelLaunch.LOG.info("User needs to modify Pinfo.list to specify higher Xmx vm arg!");
                         }
@@ -551,7 +559,8 @@ public class SecondLevelLaunch {
                     return;
                 }
                 LogSource logger = LogController.getRebirthLogger();
-                if (logger == null) logger = oldLogger;
+                if (logger == null)
+                    logger = oldLogger;
                 logger.log(record);
             }
 
@@ -627,24 +636,8 @@ public class SecondLevelLaunch {
                     Browser.setGlobalReadTimeout(config.getHttpReadTimeout());
                     Browser.setGlobalConnectTimeout(config.getHttpConnectTimeout());
                     /* init global proxy stuff */
-                    Browser.setGlobalProxy(ProxyController.getInstance().getDefaultProxy());
-                    /* add global proxy change listener */
-                    ProxyController.getInstance().getEventSender().addListener(new DefaultEventListener<ProxyEvent<AbstractProxySelectorImpl>>() {
+                    Browser.setGlobalProxy(ProxyController.getInstance());
 
-                        public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
-                            if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
-                                AbstractProxySelectorImpl proxy = null;
-                                if ((proxy = ProxyController.getInstance().getDefaultProxy()) != Browser._getGlobalProxy()) {
-                                    try {
-                                        Browser.setGlobalProxy(proxy);
-                                    } finally {
-                                        SecondLevelLaunch.LOG.info("Set new Default Proxy Selector: " + proxy);
-                                    }
-                                }
-                            }
-
-                        }
-                    });
                     if (CFG_GENERAL.CFG.isWindowsJNAIdleDetectorEnabled() && CrossSystem.isWindows()) {
                         try {
                             /* speed up the init of the following libs */
@@ -787,7 +780,8 @@ public class SecondLevelLaunch {
                                             ChallengeResponseController.getInstance().addSolver(JACSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(DialogBasicCaptchaSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(DialogClickCaptchaSolver.getInstance());
-                                            if (!Application.isJared(null)) ChallengeResponseController.getInstance().addSolver(CaptchaMyJDSolver.getInstance());
+                                            if (!Application.isJared(null))
+                                                ChallengeResponseController.getInstance().addSolver(CaptchaMyJDSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(CBSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(DeathByCaptchaSolver.getInstance());
                                             ChallengeResponseController.getInstance().addSolver(Captcha9kwSolver.getInstance());
@@ -928,7 +922,8 @@ public class SecondLevelLaunch {
         }
         while (true) {
             Thread initThread = JDGui.getInstance().getInitThread();
-            if (initThread == null || initThread.isAlive() == false) break;
+            if (initThread == null || initThread.isAlive() == false)
+                break;
             try {
                 initThread.join(100);
             } catch (InterruptedException e1) {

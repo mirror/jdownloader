@@ -15,9 +15,9 @@ import javax.swing.event.CaretListener;
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.PacProxySelectorImpl;
 import jd.controlling.proxy.SingleBasicProxySelectorImpl;
 import jd.controlling.proxy.SingleDirectGatewaySelector;
-import jd.controlling.proxy.PacProxySelectorImpl;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -111,7 +111,8 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
         this.okButton.setEnabled(false);
         ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
         String clipboardTxt = "";
-        if (content != null) clipboardTxt = content.getContent();
+        if (content != null)
+            clipboardTxt = content.getContent();
         set(clipboardTxt);
 
         return panel;
@@ -126,8 +127,12 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
 
         int carPos = txtHost.getCaretPosition();
         String myText = text;
-        if (myText == null) myText = "";
-        if (myText.endsWith(":")) return;
+        if (myText == null)
+            myText = "";
+        if (myText.endsWith(":"))
+            return;
+        if (myText.startsWith("pac://") && cmbType.getSelectedIndex() == 4)
+            return;
         for (int i = 0; i < 2; i++) {
             try {
                 URL url = new URL(myText);
@@ -250,8 +255,10 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
     @Override
     protected AbstractProxySelectorImpl createReturnValue() {
         final int mask = getReturnmask();
-        if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED)) return null;
-        if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL)) return null;
+        if (BinaryLogic.containsSome(mask, Dialog.RETURN_CLOSED))
+            return null;
+        if (BinaryLogic.containsSome(mask, Dialog.RETURN_CANCEL))
+            return null;
         try {
 
             HTTPProxy.TYPE type = null;

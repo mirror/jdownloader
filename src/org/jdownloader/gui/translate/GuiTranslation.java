@@ -4599,8 +4599,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Details" })
     String lit_details();
 
-    @Default(lngs = { "en" }, values = { "Proxy Details: %s1" })
-    String proxyDetailsDialog_title(String name);
+    @Default(lngs = { "en" }, values = { "Domain Filter for %s1" })
+    String proxyDetailsDialog_filter_title(String name);
 
     @Default(lngs = { "en" }, values = { "Filter list" })
     String proxyDetailsDialog_white_blacklist();
@@ -4658,4 +4658,34 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "There is no known problem right now." })
     String proxyDetailsDialog_ban_noban();
+
+    @Default(lngs = { "en" }, values = { "Use for Account Connections (Premium Downloads)" })
+    String gui_column_use_premium();
+
+    @Default(lngs = { "en" }, values = { "To download through Premium Accounts, JDownloader requires at least one active Gateway or Proxy!" })
+    String proxytablemodel_atleastone_premium();
+
+    @Default(lngs = { "en" }, values = { "To download, JDownloader requires at least one active Gateway or Proxy!" })
+    String proxytablemodel_atleastone_free();
+
+    @Default(lngs = { "en" }, values = { "Use for Free Connections (Download without an Account)" })
+    String gui_column_use_free();
+
+    @Default(lngs = { "en" }, values = { "Problems" })
+    String lit_problems();
+
+    @Default(lngs = { "en" }, values = { "%s1" })
+    String proxytablemodel_problems(int i);
+
+    @Default(lngs = { "en" }, values = { "Filter" })
+    String lit_filter();
+
+    @Default(lngs = { "en" }, values = { "edit" })
+    String lit_edit();
+
+    @Default(lngs = { "en" }, values = { "edit (B%s1)" })
+    String proxytable_edit_btn_blacklist(int string);
+
+    @Default(lngs = { "en" }, values = { "edit (W%s1)" })
+    String proxytable_edit_btn_whitelist(int string);
 }

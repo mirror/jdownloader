@@ -1,8 +1,9 @@
 package org.jdownloader.updatev2;
 
+import java.util.regex.Pattern;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.Storable;
-import org.appwork.utils.StringUtils;
 
 public class FilterList implements Storable {
     public enum Type {
@@ -11,7 +12,9 @@ public class FilterList implements Storable {
 
     }
 
-    private Type type;
+    private Type      type;
+    private Pattern[] patterns;
+    private int       size;
 
     public FilterList(/* Storable */) {
 
@@ -19,7 +22,8 @@ public class FilterList implements Storable {
 
     public FilterList(FilterList.Type selectedItem, String[] lines) {
         this.type = selectedItem;
-        this.entries = lines;
+        size = 0;
+        setEntries(lines);
     }
 
     public Type getType() {
@@ -36,6 +40,20 @@ public class FilterList implements Storable {
 
     public void setEntries(String[] entries) {
         this.entries = entries;
+        patterns = new Pattern[entries.length];
+        for (int i = 0; i < entries.length; i++) {
+            if (entries[i] == null || entries[i].trim().length() == 0 || entries[i].trim().startsWith("//") || entries[i].trim().startsWith("#")) {
+                patterns[i] = null;
+            } else {
+                size++;
+                try {
+                    patterns[i] = Pattern.compile(".*" + entries[i] + ".*", Pattern.CASE_INSENSITIVE);
+                } catch (Throwable e) {
+
+                    patterns[i] = Pattern.compile(".*" + Pattern.quote(entries[i]) + ".*", Pattern.CASE_INSENSITIVE);
+                }
+            }
+        }
     }
 
     private String[] entries;
@@ -43,21 +61,38 @@ public class FilterList implements Storable {
     public boolean validate(String host) {
         switch (type) {
         case BLACKLIST:
-            for (String s : entries) {
-                if (StringUtils.equalsIgnoreCase(host, s)) { return false; }
+            for (Pattern s : patterns) {
+                if (s == null)
+                    continue;
+                if (s.matcher(host).find()) {
+                    //
+                    return false;
+                }
+
             }
             return true;
 
         case WHITELIST:
 
-            for (String s : entries) {
-                if (StringUtils.equalsIgnoreCase(host, s)) { return true; }
+            for (Pattern s : patterns) {
+                if (s == null)
+                    continue;
+                if (s.matcher(host).find()) {
+                    //
+                    return true;
+                }
+
             }
+
             return false;
 
         default:
             throw new WTFException("Unknown Type: " + type);
         }
 
+    }
+
+    public int size() {
+        return size;
     }
 }
