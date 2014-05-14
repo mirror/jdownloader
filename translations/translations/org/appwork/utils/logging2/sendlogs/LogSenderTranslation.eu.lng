@@ -6,4 +6,5 @@ LogModel_initColumns_time_=Denbora
 LogModel_initColumns_x_=Egiaztatu
 LogTable_onContextMenu_disable_=Aukera kendu
 LogTable_onContextMenu_enable_=Aukeratu
+SendLogDialog_SendLogDialog_title_=Bidali akats txostena
 SendLogDialog_layoutDialogContent_desc_=Noiz gertatzen da arazoa? Mesedez egiaztatu beharrezko ikusten dituzun sarrera guztiak!
