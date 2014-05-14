@@ -1,6 +1,6 @@
 action_tooltip=Baimendu itzaltzeko ordenagailua deskargak amaitu ondoren
-addons_jdshutdown_statusmessage_disabled=Jdownloaderrek EZ du Sistema itzaliko
-addons_jdshutdown_statusmessage_enabled=Jdownloaderrek zure sistema itzaliko du deskkargak amaitzean!
+addons_jdshutdown_statusmessage_disabled=Jdownloader-ek EZ du sistema itzaliko
+addons_jdshutdown_statusmessage_enabled=Jdownloader-ek zure sistema itzaliko du deskkargak amaitzean!
 config_active_by_default=Gorde itzaltzea gaituta
 config_toolbarbutton=Tresna-barraren botoia bistaratuta
 gui_config_jdshutdown_close=Jdownloader Itxi
