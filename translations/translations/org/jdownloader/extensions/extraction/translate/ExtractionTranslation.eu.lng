@@ -13,6 +13,7 @@ archive_status=Egoera:
 archivename=Fitxategi izena
 ask_for_password=Fitxategi pasahitza beharrezkoa!
 bubble_text=Fitxategia erauzten!
+bubblecontent_progress=Aurrerapen ikonoa
 bubbletype=fitxategi erauzketa martxan dago
 cannot_extract_incopmplete=Ezin da %s1 erauzi.  Fitxategia ez da osoa!
 close=Itxi
