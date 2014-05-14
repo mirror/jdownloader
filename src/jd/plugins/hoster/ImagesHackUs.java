@@ -49,7 +49,7 @@ public class ImagesHackUs extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("imageshack.us/", "imageshack.com/").replace("http://", "https://"));
     }
 
-    private static final String TYPE_DOWNLOAD = "https?://(www\\.)?imageshack\\.(us|com)/(i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)";
+    private static final String TYPE_DOWNLOAD = "https?://(www\\.)?imageshack\\.(us|com)/f/\\d+/[^<>\"/]+";
     private static final String TYPE_IMAGE    = "https?://(www\\.)?imageshack\\.(us|com)/i/[A-Za-z0-9]+";
     private String              DLLINK        = null;
 
