@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -27,6 +28,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -35,11 +37,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(www\\.)?up\\.4share\\.vn/f/[a-z0-9]+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(www\\.)?(up\\.)?4share\\.vn/f/[a-z0-9]+/.+" }, flags = { 2 })
 public class Up4ShareVn extends PluginForHost {
 
     private static final String MAINPAGE = "http://up.4share.vn/";
@@ -51,14 +54,21 @@ public class Up4ShareVn extends PluginForHost {
         this.enablePremium("http://up.4share.vn/?act=gold");
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("up.4share.vn/", "4share.vn/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        correctDownloadLink(link);
         prepBR();
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link.getDownloadURL());
-            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (con.getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             br.followConnection();
         } finally {
             try {
@@ -66,10 +76,15 @@ public class Up4ShareVn extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.containsHTML(">FID Không hợp lệ\\!|file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("Downloading: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        final String filesize = br.getRegex("Kích thước: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(">FID Không hợp lệ\\!|file not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Regex fInfo = br.getRegex(">Filename:  <strong>([^<>\"]*?)</strong>   \\(<strong>([^<>\"]*?)</strong> \\)<");
+        final String filename = fInfo.getMatch(0);
+        final String filesize = fInfo.getMatch(1);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -116,25 +131,39 @@ public class Up4ShareVn extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (!br.containsHTML("captcha1\\.html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(false);
         String dllink = null;
         // Can be skipped
-        int wait = 60;
-        final String waittime = br.getRegex("var counter=(\\d+);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
+        // int wait = 60;
+        // final String waittime = br.getRegex("var counter=(\\d+);").getMatch(0);
+        // if (waittime != null) {
+        // wait = Integer.parseInt(waittime);
+        // }
+        // sleep(wait * 1001l, downloadLink);
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.findID();
         for (int i = 0; i <= 3; i++) {
-            final String code = getCaptchaCode("http://up.4share.vn/library/captcha1.html", downloadLink);
-            br.postPage(downloadLink.getDownloadURL(), "&submit=DOWNLOAD&s=&security_code=" + code);
+            rc.load();
+            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            final String c = getCaptchaCode(cf, downloadLink);
+            br.postPage(downloadLink.getDownloadURL(), "submit=DOWNLOAD+FREE&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
             dllink = br.getRedirectLocation();
-            if (dllink == null && br.containsHTML("captcha1\\.html")) continue;
+            if (dllink == null && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                continue;
+            }
             break;
         }
-        if (dllink == null && br.containsHTML("captcha1\\.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int maxChunks = -2;
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (dllink == null && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        int maxChunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -143,7 +172,9 @@ public class Up4ShareVn extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -170,13 +201,17 @@ public class Up4ShareVn extends PluginForHost {
         login(account, false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("class=\\'\\'> <a href=\\'(http://.*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\\'|\")(http://sv\\d+\\.4share\\.vn/[^<>\"]*?)(\\'|\")").getMatch(1);
+        if (dllink == null) {
+            dllink = br.getRegex("(\\'|\")(http://sv\\d+\\.4share\\.vn/[^<>\"]*?)(\\'|\")").getMatch(1);
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         int maxChunks = 0;
-        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -186,7 +221,9 @@ public class Up4ShareVn extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -222,7 +259,9 @@ public class Up4ShareVn extends PluginForHost {
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {

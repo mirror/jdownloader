@@ -72,20 +72,30 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     redirect = br.getRedirectLocation();
                 }
                 cid = new Regex(redirect, "cid=([A-Za-z0-9]*)").getMatch(0);
-                if (cid == null)
+                if (cid == null) {
                     cid = new Regex(redirect, "resid=([A-Z0-9]+)").getMatch(0);
+                }
                 id = new Regex(redirect, "resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
-                if (id == null)
+                if (id == null) {
                     id = getLastID(parameter);
+                }
                 authkey = new Regex(redirect, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
             } else {
                 cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
                 id = getLastID(parameter);
             }
-            if (authkey == null)
+            if (authkey == null) {
                 authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
+            }
             if (cid == null || id == null) {
-                logger.info("Probably unsupported / offline link: " + parameter);
+                if (cid != null) {
+                    main.setFinalFileName(cid);
+                } else {
+                    main.setFinalFileName(new Regex(parameter, "\\.com/(.+)").getMatch(0));
+                }
+                main.setAvailable(false);
+                main.setProperty("offline", true);
+                decryptedLinks.add(main);
                 return decryptedLinks;
             }
             cid = cid.toUpperCase();
@@ -94,8 +104,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             param.setCryptedUrl(parameter);
             prepBrAPI(this.br);
             String additional_data = "&ps=" + MAX_ENTRIES_PER_REQUEST;
-            if (authkey != null)
+            if (authkey != null) {
                 additional_data += "&authkey=" + Encoding.urlEncode(authkey);
+            }
             accessItems_API(this.br, original_link, cid, id, additional_data);
         } catch (final BrowserException e) {
             main.setFinalFileName(new Regex(parameter, "onedrive\\.live\\.com/(.+)").getMatch(0));
@@ -108,12 +119,15 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         /* Improvised way to get foldername */
         final String[] names = br.getRegex("\"modifiedDate\":\\d+,\"name\":\"([^<>\"]*?)\"").getColumn(0);
         String folderName = br.getRegex("\"group\":0,\"iconType\":\"NonEmptyDocumentFolder\".*?\"name\":\"([^<>\"]*?)\"").getMatch(0);
-        if (folderName == null && names != null && names.length > 0)
+        if (folderName == null && names != null && names.length > 0) {
             folderName = names[names.length - 1];
-        if (folderName == null)
+        }
+        if (folderName == null) {
             folderName = br.getRegex("\"name\":\"([^<>\"]*?)\",\"orderedFriendlyName\"").getMatch(0);
-        if (folderName == null)
+        }
+        if (folderName == null) {
             folderName = "onedrive.live.com content of user " + cid + " - folder - " + id;
+        }
 
         main.setProperty("mainlink", parameter);
         main.setProperty("original_link", original_link);
@@ -136,7 +150,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         }
 
         String linktext = getLinktext(this.br);
-        if (linktext == null) {
+        if (linktext == null || linktext.equals("")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -164,13 +178,24 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 String filename = getJson("name", singleinfo);
                 String view_url = getJson("viewInBrowser", singleinfo);
                 String download_url = getJson("download", singleinfo);
+
+                /* For single pictures, get the highest quality pic */
+                if ("Photo".equals(getJson("iconType", singleinfo))) {
+                    /* Download and view of the original picture only possible via account */
+                    // br.getPage("https://onedrive.live.com/download.aspx?cid=" + cid + "&resid=" + Encoding.urlEncode(id) + "&canary=");
+                    // download_url = br.getRedirectLocation();
+                    final String photoLinks[] = new Regex(singleinfo, "\"streamVersion\":\\d+,\"url\":\"([^<>\"]*?)\"").getColumn(0);
+                    if (photoLinks != null && photoLinks.length != 0) {
+                        download_url = "https://dm" + photoLinks[photoLinks.length - 1];
+                    }
+                }
+
                 final String ext = getJson("extension", singleinfo);
-                if (filesize == null || filename == null || view_url == null || download_url == null || ext == null) {
+                if (filesize == null || filename == null || download_url == null || ext == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 final DownloadLink dl = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                view_url = view_url.replace("\\", "");
                 download_url = download_url.replace("\\", "");
                 filename = Encoding.htmlDecode(filename.trim()) + ext;
                 final long cursize = Long.parseLong(filesize);
@@ -181,7 +206,10 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 dl.setProperty("original_link", original_link);
                 dl.setProperty("plain_name", filename);
                 dl.setProperty("plain_size", filesize);
-                dl.setProperty("plain_view_url", view_url);
+                if (view_url != null) {
+                    view_url = view_url.replace("\\", "");
+                    dl.setProperty("plain_view_url", view_url);
+                }
                 dl.setProperty("plain_download_url", download_url);
                 dl.setProperty("plain_cid", cid);
                 dl.setProperty("plain_id", id);
@@ -210,8 +238,9 @@ public class OneDriveLiveCom extends PluginForDecrypt {
 
     public static String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null)
+        if (result == null) {
             result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
         return result;
     }
 
@@ -224,8 +253,13 @@ public class OneDriveLiveCom extends PluginForDecrypt {
 
     public static String getLinktext(final Browser br) {
         String linktext = br.getRegex("\"children\":\\[(.*?)\\],\"covers\":").getMatch(0);
-        if (linktext == null)
+        // Check for single pictures: https://onedrive.live.com/?cid=E0615573A3471F93&id=E0615573A3471F93!1567
+        if (linktext == null) {
+            linktext = br.getRegex("\"items\":\\[(.*?)\\]").getMatch(0);
+        }
+        if (linktext == null) {
             linktext = br.getRegex("\"children\":\\[(.*?)\\],\"defaultSort\":").getMatch(0);
+        }
         return linktext;
     }
 
@@ -239,6 +273,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         br.getHeaders().put("Referer", "https://skyapi.onedrive.live.com/api/proxy?v=3");
         br.getHeaders().put("AppId", "1141147648");
         br.setCustomCharset("utf-8");
+        br.setFollowRedirects(false);
     }
 
     public static void accessItems_API(final Browser br, final String original_link, final String cid, final String id, final String additional) throws IOException {
@@ -252,7 +287,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             data = "&cid=" + Encoding.urlEncode(cid) + "&id=" + Encoding.urlEncode(id) + additional;
             boolean failed = false;
             try {
-                br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
+                br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=unauth&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
             } catch (final BrowserException e) {
                 if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
                     failed = true;

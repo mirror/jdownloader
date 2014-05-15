@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(www\\.)?up\\.4share\\.vn/(d|dlist)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(www\\.)?(up\\.)?4share\\.vn/(d|dlist)/[a-z0-9]+" }, flags = { 0 })
 public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
 
     public Up4ShareVnFolderdecrypter(PluginWrapper wrapper) {
@@ -34,7 +34,7 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("up.4share.vn/", "4share.vn/");
         br.getPage(parameter);
         if (br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) {
             logger.info("Link offline: " + parameter);
@@ -45,8 +45,9 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String dl : links)
+        for (String dl : links) {
             decryptedLinks.add(createDownloadlink(dl));
+        }
 
         return decryptedLinks;
     }

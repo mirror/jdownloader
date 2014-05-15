@@ -56,28 +56,32 @@ public class ImagesHackUs extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (link.getDownloadURL().matches(TYPE_DOWNLOAD)) {
+        if (link.getDownloadURL().matches(TYPE_DOWNLOAD) || br.containsHTML("class=\"download-block\"")) {
             br.setFollowRedirects(true);
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML("Looks like the image is no longer here"))
+            if (br.containsHTML("Looks like the image is no longer here")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             DLLINK = br.getRegex("\"(https?://imageshack\\.us/download/[^<>\"]*?)\"").getMatch(0);
         } else {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
-            if (br.getRedirectLocation() != null)
+            if (br.getRedirectLocation() != null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             DLLINK = br.getRegex("data\\-width=\"0\" data\\-height=\"0\" alt=\"\" src=\"(//imagizer\\.imageshack[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null)
+            if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = "http" + DLLINK;
         }
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(DLLINK);
-            if (con.getContentType().contains("html"))
+            if (con.getContentType().contains("html")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             link.setName(getFileNameFromHeader(con));
             link.setDownloadSize(con.getLongContentLength());
         } catch (final Throwable e) {
@@ -93,12 +97,13 @@ public class ImagesHackUs extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
 
-        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE)) {
+        if (downloadLink.getDownloadURL().matches(TYPE_IMAGE) && !br.containsHTML("class=\"download-block\"")) {
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
             DLLINK = br.getRegex("/rss\\+xml\" href=\"(.*?)\\.comments\\.xml\"").getMatch(0);
-            if (DLLINK == null)
+            if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
 
         // More is possible but 1 chunk is good to prevent errors
