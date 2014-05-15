@@ -2793,7 +2793,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 public void execute(DownloadSession currentSession) {
                                     for (DownloadLink item : list) {
                                         if (item instanceof DownloadLink) {
-                                            removeLink((DownloadLink) item, currentSession);
+                                            removeLink(item, currentSession);
                                         }
                                     }
                                 }
