@@ -849,7 +849,7 @@ public class YoutubeHelper {
         if (clone == null) clone = br;
         if (id == null) id = absolute;
         PluginCache pluginCache = Plugin.getCache("youtube.com-" + br.getProxy());
-        Object page = pluginCache.get(id, null);
+        Object page = pluginCache.getCache(id, null);
         if (page != null && page instanceof MinTimeWeakReference) {
             String content = ((MinTimeWeakReference<String>) page).get();
             if (StringUtils.isNotEmpty(content)) {
@@ -861,7 +861,7 @@ public class YoutubeHelper {
         
         clone.getPage(absolute);
         if (clone.getRequest().getHttpConnection().getResponseCode() == 200) {
-            pluginCache.set(id, new MinTimeWeakReference<String>(clone.getRequest().getHtmlCode(), 30000, id));
+            pluginCache.setCache(id, new MinTimeWeakReference<String>(clone.getRequest().getHtmlCode(), 30000, id));
         }
         return clone.getRequest().getHtmlCode();
         
