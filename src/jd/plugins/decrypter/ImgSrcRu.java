@@ -108,13 +108,13 @@ public class ImgSrcRu extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
-            username = br.getRegex("on ([^\">\r\n ]+)\\.iMGSRC\\.RU( @ iMGSRC\\.RU)?").getMatch(0);
+            username = br.getRegex("@ ([^\">\r\n ]+)\\.iMGSRC\\.RU</title>").getMatch(0);
             if (username == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
 
-            String fpName = br.getRegex("(хостинг фото, |>)([^>\r\n]+) on " + username + "\\.iMGSRC\\.RU( @ iMGSRC\\.RU)?").getMatch(1);
+            String fpName = br.getRegex(", ([^>\r\n]+) @ " + username + "\\.iMGSRC\\.RU</title>").getMatch(0);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -183,10 +183,12 @@ public class ImgSrcRu extends PluginForDecrypt {
         // br.getURL() is the correct upid.
         if (br.getURL().contains("/a" + uaid)) {
             String currentID = br.getRegex("<img class=(cur|big) src=('|\")?https?://.+imgsrc\\.ru/[a-z]/" + username + "/\\d+/(\\d+)").getMatch(2);
-            if (currentID == null) currentID = br.getRegex("/abuse\\.php\\?id=(\\d+)").getMatch(0);
+            if (currentID == null)
+                currentID = br.getRegex("/abuse\\.php\\?id=(\\d+)").getMatch(0);
             if (currentID != null) {
                 currentID = "/" + username + "/" + currentID + ".html";
-                if (pwd != null) currentID += "?pwd=" + pwd;
+                if (pwd != null)
+                    currentID += "?pwd=" + pwd;
                 imgs.add(currentID);
             } else {
                 logger.warning("ERROR parsePage");
@@ -211,7 +213,8 @@ public class ImgSrcRu extends PluginForDecrypt {
                 img.setProperty("Referer", currentLink);
                 img.setFinalFileName(upid);
                 img.setAvailable(true);
-                if (password != null) img.setProperty("password", password);
+                if (password != null)
+                    img.setProperty("password", password);
                 decryptedLinks.add(img);
             }
         }
@@ -220,7 +223,9 @@ public class ImgSrcRu extends PluginForDecrypt {
     private boolean parseNextPage(CryptedLink param) throws Exception {
         String nextPage = br.getRegex("<a href=(\"|')?(/" + username + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)(\"|')?>(▶|&#9654;)</a>").getMatch(1);
         if (nextPage != null) {
-            if (!getPage(nextPage, param)) { return false; }
+            if (!getPage(nextPage, param)) {
+                return false;
+            }
             parsePage(param);
             parseNextPage(param);
             return true;
@@ -229,8 +234,10 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private boolean getPage(String url, CryptedLink param) throws Exception {
-        if (url == null || parameter == null) return false;
-        if (pwd != null && !url.matches(".+?pwd=[a-z0-9]{32}")) url += "?pwd=" + pwd;
+        if (url == null || parameter == null)
+            return false;
+        if (pwd != null && !url.matches(".+?pwd=[a-z0-9]{32}"))
+            url += "?pwd=" + pwd;
         boolean failed = false;
         int repeat = 4;
         for (int i = 0; i <= repeat; i++) {
