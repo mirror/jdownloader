@@ -156,6 +156,7 @@ plugins_errors_hosteroffline=ホストがオフラインです.
 plugins_errors_hosterproblem=ホストに問題があります
 plugins_errors_nointernetconn=インターネットに接続されていません。
 plugins_errors_proxy_auth=プロキシ認証失敗
+plugins_errors_proxy_connection=プロキシ接続失敗
 plugins_errors_wrongpassword=パスワードが誤っています
 reconnectmanager_wizard=再接続ウィザード
 settings_sidebar_tooltip_enable_extension=この拡張機能を有効/無効にする
