@@ -38,27 +38,27 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FilesMailRu extends PluginForHost {
     private static String       UA            = RandomUserAgent.generate();
     private boolean             keepCookies   = false;
-
+    
     public static final String  DLLINKREGEX   = "<div id=\"dlinklinkOff\\d+\".*?<a href=\"(http[^<>\"]*?)\"";
     public static final String  UNAVAILABLE1  = ">В обработке<";
     public static final String  UNAVAILABLE2  = ">In process<";
     private static final String INFOREGEX     = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
     public static final String  LINKOFFLINE   = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>|>Page cannot be displayed<)";
     public static final String  DLMANAGERPAGE = "class=\"download_type_choose_l\"";
-
+    
     private static final String TYPE_VIDEO    = "http://my\\.mail\\.ru/video/top#?video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+";
     private String              DLLINK        = null;
-
+    
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://en.reg.mail.ru/cgi-bin/signup");
     }
-
+    
     public void correctDownloadLink(DownloadLink link) {
         // Rename the decrypted links to make them work
         link.setUrlDownload(link.getDownloadURL().replaceAll("filesmailrudecrypted://", ""));
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (!keepCookies) this.setBrowserExclusive();
@@ -124,13 +124,13 @@ public class FilesMailRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) requestFileInformation(downloadLink);
         doFree(downloadLink, false);
     }
-
+    
     private void doFree(DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
         keepCookies = premium;
         requestFileInformation(downloadLink);
@@ -162,7 +162,7 @@ public class FilesMailRu extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads!");
         dl.startDownload();
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -185,22 +185,22 @@ public class FilesMailRu extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://files.mail.ru/cgi-bin/files/fagreement";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
+    
     public void goToSleep(DownloadLink downloadLink) throws PluginException {
         String ttt = br.getRegex("файлы через.*?(\\d+).*?сек").getMatch(0);
         if (ttt == null) ttt = br.getRegex("download files in.*?(\\d+).*?sec").getMatch(0);
@@ -209,7 +209,7 @@ public class FilesMailRu extends PluginForHost {
         logger.info("Waiting " + tt + " seconds...");
         sleep((tt + 1) * 1001, downloadLink);
     }
-
+    
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         br.getHeaders().put("User-Agent", UA);
@@ -217,7 +217,7 @@ public class FilesMailRu extends PluginForHost {
         br.setFollowRedirects(false);
         doFree(link, true);
     }
-
+    
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         prepareBrowser();
@@ -226,15 +226,15 @@ public class FilesMailRu extends PluginForHost {
         br.getPage("http://files.mail.ru/eng?back=%2Fsms-services");
         if (!br.containsHTML(">You have a VIP status<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
-
+    
     private void prepareBrowser() {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.1; de; rv:1.9.2.18) Gecko/20110614 Firefox/3.6.18");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.getHeaders().put("Accept-Encoding", "");
+        br.getHeaders().put("Accept-Encoding", "identity");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
     }
-
+    
     private void prepareBrowserForDlManager(Browser browser) {
         browser.getHeaders().put("Pragma", null);
         browser.getHeaders().put("Cache-Control", null);
@@ -246,7 +246,7 @@ public class FilesMailRu extends PluginForHost {
         browser.getHeaders().put("Referer", null);
         browser.getHeaders().put("Content-Type", null);
     }
-
+    
     public String fixFilesize(String filesize, final Browser br) {
         filesize = filesize.replace("Г", "G");
         filesize = filesize.replace("М", "M");
@@ -255,26 +255,26 @@ public class FilesMailRu extends PluginForHost {
         filesize = filesize + "b";
         return filesize;
     }
-
+    
     public String fixLink(String dllink, final Browser br) {
         logger.info("Correcting link...");
         String replaceThis = new Regex(dllink, "http://(content\\d+-n)\\.files\\.mail\\.ru.*?").getMatch(0);
         if (replaceThis != null) dllink = dllink.replace(replaceThis, replaceThis.replace("-n", ""));
         return dllink;
     }
-
+    
     /* Avoid multi-hosters from downloading links from this host because links come from a decrypter */
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
 }

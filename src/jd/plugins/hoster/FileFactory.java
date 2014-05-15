@@ -58,15 +58,15 @@ import org.mozilla.javascript.Scriptable;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "https?://(www\\.)?filefactory\\.com(/|//)(file/[\\w]+/?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
-
+    
     // DEV NOTES
     // other: currently they 302 redirect all non www. to www. which kills most of this plugin.
     // Adjust COOKIE_HOST to suite future changes, or remove COOKIE_HOST from that section of the script.
-
+    
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-
+    
     private static AtomicInteger       maxPrem                      = new AtomicInteger(1);
     private static AtomicInteger       maxFree                      = new AtomicInteger(1);
     private final String               NO_SLOT                      = ">All free download slots";
@@ -83,18 +83,18 @@ public class FileFactory extends PluginForHost {
     private final String               TRAFFICSHARETEXT             = ">Download with FileFactory TrafficShare<";
     private final String               PASSWORDPROTECTED            = ">You are trying to access a password protected file|This File has been password protected by the uploader\\.";
     private final String               DBCONNECTIONFAILED           = "Couldn't get valid connection to DB";
-
+    
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/info/premium.php");
     }
-
+    
     private static StringContainer agent = new StringContainer();
-
+    
     public static class StringContainer {
         public String string = null;
     }
-
+    
     /**
      * defines custom browser requirements.
      * */
@@ -114,7 +114,7 @@ public class FileFactory extends PluginForHost {
         prepBr.setConnectTimeout(3 * 60 * 1000);
         return prepBr;
     }
-
+    
     public void checkErrors(final boolean freeDownload, final boolean postDownload) throws PluginException {
         if (isPremiumOnly(br)) {
             throwPremiumRequiredException();
@@ -162,7 +162,7 @@ public class FileFactory extends PluginForHost {
         if (br.containsHTML(SERVER_DOWN)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
         if (br.containsHTML(DBCONNECTIONFAILED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l); }
     }
-
+    
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
@@ -172,7 +172,7 @@ public class FileFactory extends PluginForHost {
         if (!useAPI.get()) {
             final Browser br = new Browser();
             br.setCookiesExclusive(true);
-            br.getHeaders().put("Accept-Encoding", "");
+            br.getHeaders().put("Accept-Encoding", "identity");
             // logic to grab account cookie to do fast linkchecking vs one at a time.
             boolean loggedIn = false;
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
@@ -261,7 +261,7 @@ public class FileFactory extends PluginForHost {
         }
         return true;
     }
-
+    
     @Override
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com//", ".com/"));
@@ -277,7 +277,7 @@ public class FileFactory extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -301,7 +301,7 @@ public class FileFactory extends PluginForHost {
                 ai.setStatus("Registered (free) User");
                 ai.setUnlimitedTraffic();
                 account.setProperty("free", true);
-
+                
             } else {
                 account.setProperty("free", false);
                 if (br.containsHTML(">Lifetime Member<")) {
@@ -342,32 +342,32 @@ public class FileFactory extends PluginForHost {
         }
         return ai;
     }
-
+    
     private boolean isMail(final String parameter) {
         return parameter.matches(".+@.+");
     }
-
+    
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/legal/terms.php";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
     }
-
+    
     @Override
     public int getTimegapBetweenConnections() {
         return 200;
     }
-
+    
     public String getUrl() throws IOException, PluginException {
         String url = br.getRegex("\"(http://[a-z0-9\\-]+\\.filefactory\\.com/dl/[^<>\"]*?)\"").getMatch(0);
         if (url == null) url = br.getRegex("id=\"downloadLinkTarget\" style=\"display: none;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -402,9 +402,9 @@ public class FileFactory extends PluginForHost {
             }
         }
         return url;
-
+        
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         if (useAPI.get()) {
@@ -418,7 +418,7 @@ public class FileFactory extends PluginForHost {
             }
         }
     }
-
+    
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         String passCode = downloadLink.getStringProperty("pass", null);
         try {
@@ -456,7 +456,7 @@ public class FileFactory extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     br.getPage(urlWithFilename);
-
+                    
                     // Sometimes there is an ad
                     final String skipAds = br.getRegex("\"(http://(www\\.)?filefactory\\.com/dlf/[^<>\"]+)\"").getMatch(0);
                     if (skipAds != null) br.getPage(skipAds);
@@ -471,7 +471,7 @@ public class FileFactory extends PluginForHost {
                         logger.warning("getUrl is broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-
+                    
                     wait = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
                     waittime = 60 * 1000l;
                     if (wait != null) {
@@ -518,7 +518,7 @@ public class FileFactory extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         if (useAPI.get()) {
@@ -574,11 +574,11 @@ public class FileFactory extends PluginForHost {
             }
         }
     }
-
+    
     public void handleTrafficShare(final DownloadLink downloadLink, final Account account) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
-         * Unknown until proven otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl, Unknown until proven
+         * otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/get/t/[^\"]+)\"[^\r\n]*Download with FileFactory TrafficShare").getMatch(0);
@@ -598,7 +598,7 @@ public class FileFactory extends PluginForHost {
             controlSlot(-1, account);
         }
     }
-
+    
     public String handleRecaptcha(final DownloadLink link) throws Exception {
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -622,12 +622,12 @@ public class FileFactory extends PluginForHost {
         if (url.startsWith("http")) { return url; }
         return COOKIE_HOST + url;
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return false;
     }
-
+    
     private void login(final Account account, final boolean force, final Browser lbr) throws Exception {
         synchronized (LOCK) {
             // Load cookies
@@ -668,7 +668,7 @@ public class FileFactory extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -745,11 +745,11 @@ public class FileFactory extends PluginForHost {
                 if (fileSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
                 downloadLink.setAvailable(true);
             }
-
+            
         }
         return AvailableStatus.TRUE;
     }
-
+    
     private boolean isPremiumOnly(Browser tbr) {
         if ((tbr.getURL() != null && tbr.getURL().contains("/error.php?code=258")) || tbr.containsHTML("(Please purchase an account to download this file\\.|>This file is only available to Premium Members|Sorry, this file can only be downloaded by Premium members|Please purchase an account in order to instantly download this file|Currently only Premium Members can download files larger)")) {
             return true;
@@ -757,16 +757,16 @@ public class FileFactory extends PluginForHost {
             return false;
         }
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         link.setProperty("retry_701", Property.NULL);
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
@@ -779,12 +779,12 @@ public class FileFactory extends PluginForHost {
         }
         return false;
     }
-
+    
     private String getFUID(DownloadLink downloadLink) {
         final String fuid = new Regex(downloadLink.getDownloadURL(), "file/([\\w]+)").getMatch(0);
         return fuid;
     }
-
+    
     private boolean checkLinks_API(final DownloadLink[] urls, Account account) {
         if (account == null) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
@@ -859,15 +859,15 @@ public class FileFactory extends PluginForHost {
         }
         return true;
     }
-
+    
     private final String        api     = "https://api.filefactory.com/v1";
     private final AtomicBoolean useAPI  = new AtomicBoolean(true);
-
+    
     private String              dllink  = null;
     private int                 chunks  = 0;
     private boolean             resumes = true;
     private boolean             isFree  = true;
-
+    
     private void setConstants(final Account account, final boolean trafficShare) {
         if (trafficShare) {
             // traffic share download
@@ -898,7 +898,7 @@ public class FileFactory extends PluginForHost {
             }
         }
     }
-
+    
     private void handleDownload_API(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account, false);
         prepApiBrowser(br);
@@ -998,7 +998,7 @@ public class FileFactory extends PluginForHost {
             controlSlot(-1, account);
         }
     }
-
+    
     private String loginKey(final Account account) throws Exception {
         final Browser nbr = new Browser();
         prepApiBrowser(nbr);
@@ -1014,7 +1014,7 @@ public class FileFactory extends PluginForHost {
         }
         return apiKey;
     }
-
+    
     private synchronized String getApiKey(final Account account) throws Exception {
         String apiKey = account.getStringProperty("apiKey", null);
         if (apiKey == null) {
@@ -1022,11 +1022,11 @@ public class FileFactory extends PluginForHost {
         }
         return apiKey;
     }
-
+    
     private Browser prepApiBrowser(final Browser ibr) {
         return ibr;
     }
-
+    
     private synchronized void getPage(final Browser ibr, final String url, final Account account) throws Exception {
         if (account != null) {
             String apiKey = getApiKey(account);
@@ -1055,13 +1055,13 @@ public class FileFactory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "\r\n" + errorMsg(ibr));
         }
     }
-
+    
     private String errorMsg(final Browser ibr) {
         final String message = getJson("message", ibr);
         logger.warning(message);
         return message;
     }
-
+    
     private boolean sessionKeyInValid(final Account account, final Browser ibr) {
         if ("error".equalsIgnoreCase(getJson("type", ibr)) && ("710".equalsIgnoreCase(getJson("code", ibr)) || "711".equalsIgnoreCase(getJson("code", ibr)))) {
             // 710 ERR_API_SESS_KEY_INVALID The session key has expired or is invalid. Please obtain a new one via getSessionKey.
@@ -1072,7 +1072,7 @@ public class FileFactory extends PluginForHost {
             return false;
         }
     }
-
+    
     private AccountInfo fetchAccountInfo_API(final Account account, final AccountInfo ai) throws Exception {
         try {
             loginKey(account);
@@ -1096,7 +1096,7 @@ public class FileFactory extends PluginForHost {
         }
         return ai;
     }
-
+    
     private void throwPremiumRequiredException() throws PluginException {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -1105,17 +1105,17 @@ public class FileFactory extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
     }
-
+    
     private String getJson(final String key, final Browser ibr) {
         return getJson(key, ibr.toString());
     }
-
+    
     private String getJson(final String key, String source) {
         String result = new Regex(source, "\"" + key + "\":\"([^\r\n\"]+)\"").getMatch(0);
         if (result == null) result = new Regex(source, "\"" + key + "\":(true|false|null|\\d+)").getMatch(0);
         return result;
     }
-
+    
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
      * 
@@ -1130,18 +1130,18 @@ public class FileFactory extends PluginForHost {
         else
             return false;
     }
-
+    
     private static Object CTRLLOCK = new Object();
-
+    
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlSlot
      *            (+1|-1)
@@ -1160,5 +1160,5 @@ public class FileFactory extends PluginForHost {
             }
         }
     }
-
+    
 }

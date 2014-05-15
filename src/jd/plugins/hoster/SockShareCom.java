@@ -47,7 +47,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 /** Works exactly like putlocker.com */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sockshare.com" }, urls = { "http://(www\\.)?sockshare.com/(mobile/)?(file|embed)/[A-Z0-9]+" }, flags = { 2 })
 public class SockShareCom extends PluginForHost {
-
+    
     private static final String MAINPAGE          = "http://sockshare.com";
     private static final String SERVERUNAVAILABLE = "(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)";
     private static Object       LOCK              = new Object();
@@ -56,22 +56,22 @@ public class SockShareCom extends PluginForHost {
     /** The list of quality values displayed to the user */
     private final String[]      servers           = new String[] { "Prefer Original format (bigger size, better quality)", "Prefer Stream format [.flv] (smaller size, less quality)" };
     private final String        formats           = "formats";
-
+    
     public SockShareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.sockshare.com/gopro.php");
         setConfigElements();
     }
-
+    
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/mobile", "").replace("/embed/", "/file/"));
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.sockshare.com/page.php?terms";
     }
-
+    
     public void prepBrowser() {
         br.setCookiesExclusive(true);
         // define custom browser headers and language settings.
@@ -83,7 +83,7 @@ public class SockShareCom extends PluginForHost {
         }
         br.getHeaders().put("User-Agent", agent);
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -105,7 +105,7 @@ public class SockShareCom extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         AvailableStatus availableStatus = requestFileInformation(downloadLink);
@@ -168,19 +168,13 @@ public class SockShareCom extends PluginForHost {
         }
         long[] cp = downloadLink.getChunksProgress();
         if (cp != null && cp.length > 0) {
-
+            
         }
-
+        
         fixChunks(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-
-            if (dl.getConnection().getResponseCode() == 416) {
-
-                downloadLink.reset();
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("pass", passCode);
@@ -196,15 +190,15 @@ public class SockShareCom extends PluginForHost {
             }
         }
     }
-
+    
     private void fixChunks(DownloadLink downloadLink) {
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -226,7 +220,7 @@ public class SockShareCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
-
+    
     private void login(final Account account, final boolean fetchInfo) throws Exception {
         synchronized (LOCK) {
             try {
@@ -300,7 +294,7 @@ public class SockShareCom extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -322,31 +316,31 @@ public class SockShareCom extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
+    
     /** Same code for putlocker.com and sockshare.com START */
     private int getConfiguredServer() {
         switch (getPluginConfig().getIntegerProperty(formats, -1)) {
-        case 0:
-            logger.fine("Original format is configured");
-            return 0;
-        case 1:
-            logger.fine("Stream format is configured");
-            return 1;
-        default:
-            logger.fine("No format is cunfigured, returning default format (original format)");
-            return 0;
+            case 0:
+                logger.fine("Original format is configured");
+                return 0;
+            case 1:
+                logger.fine("Stream format is configured");
+                return 1;
+            default:
+                logger.fine("No format is cunfigured, returning default format (original format)");
+                return 0;
         }
     }
-
+    
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), formats, servers, JDL.L("plugins.host.putlockerandsocksharecom.preferredformats", "Format selection - select your prefered format:\r\nBy default, JDownloader will download the original format if possible.\r\nIf the desired format isn't available, JDownloader will download the other one.\r\n\rPremium users can only download the original format.")).setDefaultValue(0));
     }
-
+    
     private String getDllink(final DownloadLink downloadLink) throws IOException, PluginException {
         String dllink = null;
         final int selectedFormat = getConfiguredServer();
@@ -366,7 +360,7 @@ public class SockShareCom extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return dllink.replace("&amp;", "&");
     }
-
+    
     private String getStreamLink() throws IOException, PluginException {
         String dllink = br.getRegex("\\'(/get_file\\.php\\?stream=[^<>\"/]*?)\\'").getMatch(0);
         if (dllink != null) {
@@ -376,7 +370,7 @@ public class SockShareCom extends PluginForHost {
         }
         return dllink;
     }
-
+    
     private String getOriginalFormatLink() throws IOException, PluginException {
         String dllink = br.getRegex("\"(/get_file\\.php\\?id=[^<>\"/]*?)\"").getMatch(0);
         if (dllink != null) {
@@ -386,11 +380,11 @@ public class SockShareCom extends PluginForHost {
         }
         return dllink;
     }
-
+    
     private String getCaptchaIMG() {
         return br.getRegex("<img src=\"(/include/captcha\\.php\\?[^<>\"]+)\".*?/>").getMatch(0);
     }
-
+    
     private void fixFilename(final DownloadLink downloadLink) {
         String oldName = downloadLink.getFinalFileName();
         if (oldName == null) oldName = downloadLink.getName();
@@ -412,16 +406,16 @@ public class SockShareCom extends PluginForHost {
                 downloadLink.setFinalFileName(oldName + newExtension);
         }
     }
-
+    
     /** Same code for putlocker.com and sockshare.com END */
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
     private Form getFormByHTML(final String regex) {
         Form[] workaround = br.getForms();
         if (workaround != null) {
@@ -431,7 +425,7 @@ public class SockShareCom extends PluginForHost {
         }
         return null;
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {

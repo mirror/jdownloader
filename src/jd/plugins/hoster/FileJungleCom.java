@@ -46,24 +46,24 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filejungle.com" }, urls = { "http://(www\\.)?filejungle\\.com/f/[A-Za-z0-9]+" }, flags = { 2 })
 public class FileJungleCom extends PluginForHost {
-
+    
     private static final String CAPTCHAFAILED       = "\"error\":\"incorrect\\-captcha\\-sol\"";
     private static final String MAINPAGE            = "http://filejungle.com/";
     private static Object       LOCK                = new Object();
     private static final String DLYOURFILESUSERTEXT = "You can only download files which YOU uploaded!";
     private static final String DLYOURFILESTEXT     = "(>You can only retrieve files from FileJungle after logging in to your file manager|>Only files you have uploaded personally can be retrieved)";
-
+    
     public FileJungleCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filejungle.com/premium.php");
     }
-
+    
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
         try {
             final Browser checkbr = new Browser();
-            checkbr.getHeaders().put("Accept-Encoding", "");
+            checkbr.getHeaders().put("Accept-Encoding", "identity");
             checkbr.setCustomCharset("utf-8");
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
@@ -142,7 +142,7 @@ public class FileJungleCom extends PluginForHost {
         }
         return true;
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -160,22 +160,22 @@ public class FileJungleCom extends PluginForHost {
         ai.setStatus("Premium User");
         return ai;
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.filejungle.com/terms_and_conditions.php";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
+    
     private void handleErrors() throws PluginException {
         final String theURL = br.getURL();
         if (theURL.contains("filejungle.com/landing-1703")) {
@@ -188,7 +188,7 @@ public class FileJungleCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown landing error " + landing + "found, please contact our support!");
         }
     }
-
+    
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -254,7 +254,7 @@ public class FileJungleCom extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
@@ -287,17 +287,17 @@ public class FileJungleCom extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return true;
     }
-
+    
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
     }
-
+    
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
@@ -330,7 +330,7 @@ public class FileJungleCom extends PluginForHost {
             account.setProperty("cookies", cookies);
         }
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         checkLinks(new DownloadLink[] { link });
@@ -339,7 +339,7 @@ public class FileJungleCom extends PluginForHost {
         } else if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return getAvailableStatus(link);
     }
-
+    
     private AvailableStatus getAvailableStatus(DownloadLink link) {
         try {
             final Field field = link.getClass().getDeclaredField("availableStatus");
@@ -350,15 +350,15 @@ public class FileJungleCom extends PluginForHost {
         }
         return AvailableStatus.UNCHECKED;
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {

@@ -44,19 +44,19 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-rapid.cz" }, urls = { "http://(www\\.)?(share\\-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|srapid|share\\-free)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz)/(stahuj|soubor)/([0-9]+/.+|[a-z0-9]+)" }, flags = { 2 })
 public class ShareRapidCz extends PluginForHost {
-
+    
     private static AtomicInteger maxPrem                         = new AtomicInteger(1);
-
+    
     private static final String  MAINPAGE                        = "http://sharerapid.cz/";
     private static Object        LOCK                            = new Object();
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanPremiumDownload = new AtomicInteger(1);
-
+    
     public ShareRapidCz(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://sharerapid.cz/dobiti/?zeme=1");
     }
-
+    
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         // Complete list of all domains, maybe they buy more....
@@ -67,7 +67,7 @@ public class ShareRapidCz extends PluginForHost {
         }
         link.setUrlDownload(downloadlinklink);
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
@@ -86,11 +86,11 @@ public class ShareRapidCz extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
-
+    
     private void checkOffline() throws PluginException {
         if (br.containsHTML("Nastala chyba 404") || br.containsHTML("Soubor byl smazán")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
-
+    
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -177,23 +177,23 @@ public class ShareRapidCz extends PluginForHost {
         account.setValid(true);
         return ai;
     }
-
+    
     @Override
     public String getAGBLink() {
         return MAINPAGE + "informace/";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -218,7 +218,7 @@ public class ShareRapidCz extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String dllink = null;
@@ -257,12 +257,12 @@ public class ShareRapidCz extends PluginForHost {
             br2.getHeaders().put("Accept-Language", "en");
             br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
             br2.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-
+            
             br2.getPage(MAINPAGE + "userinfo.php");
             br2.getPage(MAINPAGE + "login.php");
-
+            
             br2.getHeaders().put("Accept", "*/*");
-
+            
             br2.postPageRaw(MAINPAGE + "checkfiles.php", "files=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
             br = br2.cloneBrowser();
             dllink = downloadLink.getDownloadURL();
@@ -297,7 +297,7 @@ public class ShareRapidCz extends PluginForHost {
             controlPremium(-1);
         }
     }
-
+    
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
@@ -358,23 +358,23 @@ public class ShareRapidCz extends PluginForHost {
             }
         }
     }
-
+    
     private void prepBr(final Browser br) {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:26.0) Gecko/20100101 Firefox/26.0");
         br.setCustomCharset("UTF-8");
         br.setCookie(MAINPAGE, "lang", "cs");
     }
-
+    
     public synchronized void controlPremium(final int num) {
         logger.info("maxPrem was = " + maxPrem.get());
         maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), totalMaxSimultanPremiumDownload.get()));
         logger.info("maxPrem now = " + maxPrem.get());
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }

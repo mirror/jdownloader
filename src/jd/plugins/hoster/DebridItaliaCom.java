@@ -37,32 +37,32 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOMasdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridItaliaCom extends PluginForHost {
-
+    
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-
+    
     public DebridItaliaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.debriditalia.com/premium.php");
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.debriditalia.com/index.php";
     }
-
+    
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return maxPrem.get();
     }
-
+    
     private static final String  NOCHUNKS                                          = "NOCHUNKS";
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload                      = new AtomicInteger(20);
     // don't touch the following!
     private static AtomicInteger maxPrem                                           = new AtomicInteger(1);
-
+    
     private static final int     MAXRETRIES_timesfaileddebriditalia_unknowndlerror = 50;
-
+    
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
@@ -90,7 +90,7 @@ public class DebridItaliaCom extends PluginForHost {
             return ac;
         }
         ac.setValidUntil(Long.parseLong(expire) * 1000l);
-
+        
         // now let's get a list of all supported hosts:
         br.getPage("http://debriditalia.com/api.php?hosts");
         hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
@@ -113,20 +113,20 @@ public class DebridItaliaCom extends PluginForHost {
         ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 0;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
-
+    
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-
+        
         showMessage(link, "Generating link");
         String dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
@@ -144,7 +144,7 @@ public class DebridItaliaCom extends PluginForHost {
                     link.setProperty("timesfaileddebriditalia", Property.NULL);
                     tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
                 }
-
+                
             }
             dllink = br.getRegex("(https?://(\\w+\\.)?debriditalia\\.com/dl/.+)").getMatch(0);
             if (dllink == null) {
@@ -162,12 +162,12 @@ public class DebridItaliaCom extends PluginForHost {
                 }
             }
         }
-
+        
         int chunks = 0;
         if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false)) {
             chunks = 1;
         }
-
+        
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -186,7 +186,7 @@ public class DebridItaliaCom extends PluginForHost {
                 }
             }
             logger.info("debriditalia.com: Unknown download error 2" + br.toString());
-
+            
             int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_unknowndlerror2", 0);
             link.getLinkStatus().setRetryCount(0);
             if (timesFailed <= 2) {
@@ -198,7 +198,7 @@ public class DebridItaliaCom extends PluginForHost {
                 link.setProperty("timesfaileddebriditalia_unknowndlerror2", Property.NULL);
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
             }
-
+            
         }
         // Directlinks can be used for up to 2 days
         link.setProperty("debriditaliadirectlink", dllink);
@@ -206,7 +206,7 @@ public class DebridItaliaCom extends PluginForHost {
             // add a download slot
             controlPrem(+1);
             // start the dl
-
+            
             try {
                 if (!this.dl.startDownload()) {
                     try {
@@ -226,7 +226,7 @@ public class DebridItaliaCom extends PluginForHost {
                     link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-
+                
                 throw e;
             }
         } finally {
@@ -234,18 +234,18 @@ public class DebridItaliaCom extends PluginForHost {
             controlPrem(-1);
         }
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
     }
-
+    
     private boolean loginAPI(final Account acc) throws IOException {
         br.getPage("http://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
         if (!br.containsHTML("<status>valid</status>")) return false;
         return true;
     }
-
+    
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         synchronized (hostUnavailableMap) {
@@ -259,7 +259,7 @@ public class DebridItaliaCom extends PluginForHost {
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
-
+    
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         synchronized (hostUnavailableMap) {
@@ -276,11 +276,11 @@ public class DebridItaliaCom extends PluginForHost {
         }
         return true;
     }
-
+    
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
     }
-
+    
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (downloadLink.getDownloadURL().contains("clz.to/")) dllink = downloadLink.getDownloadURL();
@@ -300,16 +300,16 @@ public class DebridItaliaCom extends PluginForHost {
         }
         return dllink;
     }
-
+    
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -319,13 +319,13 @@ public class DebridItaliaCom extends PluginForHost {
         maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
         logger.info("maxFree now = " + maxPrem.get());
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
 }

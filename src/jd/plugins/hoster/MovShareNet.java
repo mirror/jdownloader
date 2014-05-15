@@ -35,31 +35,31 @@ import jd.plugins.PluginForHost;
 //movshare by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
 public class MovShareNet extends PluginForHost {
-
+    
     private static final String HUMANTEXT = "We need you to prove you\\'re human";
     private static final String EPRON     = "epornik.com/";
-
+    
     public MovShareNet(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.movshare.net/terms.php";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     // This plugin is 99,99% copy the same as the DivxStageNet plugin, if this
     // gets broken please also check the other one!
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         setBrowserExclusive();
-        br.getHeaders().put("Accept-Encoding", "");
+        br.getHeaders().put("Accept-Encoding", "identity");
         br.getPage(downloadLink.getDownloadURL());
         if (!br.getURL().contains(EPRON)) {
             if (br.containsHTML(HUMANTEXT)) {
@@ -93,7 +93,7 @@ public class MovShareNet extends PluginForHost {
         }
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -142,7 +142,7 @@ public class MovShareNet extends PluginForHost {
         }
         dl.startDownload();
     }
-
+    
     private HashMap<String, String> unWise() {
         String result = null;
         String fn = br.getRegex("eval\\((function\\(.*?\'\\))\\);").getMatch(0);
@@ -175,17 +175,17 @@ public class MovShareNet extends PluginForHost {
         }
         return values;
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }
-
+    
 }

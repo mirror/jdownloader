@@ -17,7 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,11 +39,11 @@ import jd.plugins.download.SimpleFTPDownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?(?<!(hdmekani))\\.[a-zA-Z0-9]{2,}(:\\d+)?/[^\"\r\n ]+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
-
+    
     public Ftp(PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     public String getCustomFavIconURL(DownloadLink link) {
         if (link != null) {
             String domain = Browser.getHost(link.getDownloadURL(), true);
@@ -49,7 +51,7 @@ public class Ftp extends PluginForHost {
         }
         return null;
     }
-
+    
     public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws Exception {
         SimpleFTP ftp = new SimpleFTP();
         try {
@@ -106,22 +108,22 @@ public class Ftp extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://jdownloader.org";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         download(downloadLink.getDownloadURL(), downloadLink, false);
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         SimpleFTP ftp = new SimpleFTP();
@@ -165,6 +167,10 @@ public class Ftp extends PluginForHost {
                 downloadLink.setFinalFileName(name);
             }
             if (name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (ConnectException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } catch (UnknownHostException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } catch (IOException e) {
             logger.severe(e.getMessage());
             if (e.getMessage().contains("530")) {
@@ -183,16 +189,16 @@ public class Ftp extends PluginForHost {
         }
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.setProperty("RESUME", true);
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }

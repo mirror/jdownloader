@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ard.de" }, urls = { "decrypted://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+(\\?documentId=\\d+)?\\&quality=\\w+\\&network=\\w+" }, flags = { 32 })
 public class ARDMediathek extends PluginForHost {
-
+    
     private static final String Q_LOW       = "Q_LOW";
     private static final String Q_MEDIUM    = "Q_MEDIUM";
     private static final String Q_HIGH      = "Q_HIGH";
@@ -55,27 +55,27 @@ public class ARDMediathek extends PluginForHost {
     private static final String Q_HTTP_ONLY = "Q_HTTP_ONLY";
     private static final String AUDIO       = "AUDIO";
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
-
+    
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
-
+    
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.ardmediathek.de/ard/servlet/content/3606532";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, GeneralSecurityException {
         if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -84,12 +84,12 @@ public class ARDMediathek extends PluginForHost {
             setBrowserExclusive();
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
-
+            
             if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) {
                 logger.info("ARD-Mediathek: Nicht mehr verfügbar: " + downloadLink.getDownloadURL());
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-
+            
             String newUrl[] = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (" + downloadLink.getStringProperty("directQuality", "1") + "), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getRow(0);
             // http
             if (newUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -110,7 +110,7 @@ public class ARDMediathek extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            br2.getHeaders().put("Accept-Encoding", "");
+            br2.getHeaders().put("Accept-Encoding", "identity");
             con = br2.openGetConnection(downloadLink.getStringProperty("directURL").split("@")[0]);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -125,7 +125,7 @@ public class ARDMediathek extends PluginForHost {
             }
         }
     }
-
+    
     private String getTitle(Browser br) {
         String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
         String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
@@ -135,13 +135,13 @@ public class ARDMediathek extends PluginForHost {
         if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
         return title;
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
     }
-
+    
     private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setPlayPath(stream[1]);
@@ -149,7 +149,7 @@ public class ARDMediathek extends PluginForHost {
         rtmp.setResume(true);
         rtmp.setTimeOut(10);
     }
-
+    
     private void download(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getStringProperty("directURL", null) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String stream[] = downloadLink.getStringProperty("directURL").split("@");
@@ -166,7 +166,7 @@ public class ARDMediathek extends PluginForHost {
             boolean resume = true;
             int maxChunks = 0;
             if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
-                br.getHeaders().put("Accept-Encoding", "");
+                br.getHeaders().put("Accept-Encoding", "identity");
                 downloadLink.setDownloadSize(0);
                 resume = false;
                 maxChunks = 1;
@@ -182,7 +182,7 @@ public class ARDMediathek extends PluginForHost {
             }
         }
     }
-
+    
     private void postprocess(final DownloadLink downloadLink) {
         if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
             if (!convertSubtitle(downloadLink)) {
@@ -192,7 +192,7 @@ public class ARDMediathek extends PluginForHost {
             }
         }
     }
-
+    
     /**
      * Converts the ZDF Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      * 
@@ -200,18 +200,18 @@ public class ARDMediathek extends PluginForHost {
      */
     public boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-
+        
         BufferedWriter dest;
         try {
             dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
         } catch (IOException e1) {
             return false;
         }
-
+        
         final StringBuilder xml = new StringBuilder();
         int counter = 1;
         final String lineseparator = System.getProperty("line.separator");
-
+        
         Scanner in = null;
         try {
             in = new Scanner(new FileReader(source));
@@ -224,7 +224,7 @@ public class ARDMediathek extends PluginForHost {
             in.close();
         }
         final String xmlContent = xml.toString();
-
+        
         final String[] matches = new Regex(xmlContent, "(<p id=\"subtitle\\d+\".*?</p>)").getColumn(0);
         try {
             for (final String info : matches) {
@@ -239,7 +239,7 @@ public class ARDMediathek extends PluginForHost {
                 final String start = df.format(startHour) + ":" + startInfo.getMatch(1).replace(".", ",");
                 final String end = df.format(endHour) + ":" + endInfo.getMatch(1).replace(".", ",");
                 dest.write(start + " --> " + end + lineseparator);
-
+                
                 String text = new Regex(info, "style=\"s\\d+\">?(.*?)</p>").getMatch(0);
                 final String[] toRemove = new Regex(info, "(tts:backgroundColor=\"[a-z]+\")").getColumn(0);
                 if (toRemove != null && toRemove.length != 0) {
@@ -278,12 +278,12 @@ public class ARDMediathek extends PluginForHost {
             } catch (IOException e) {
             }
         }
-
+        
         source.delete();
-
+        
         return true;
     }
-
+    
     private static String getColorCode(final String colorName) {
         String colorCode = "FFFFFF";
         if (colorName.equals("blue")) {
@@ -297,36 +297,36 @@ public class ARDMediathek extends PluginForHost {
         }
         return colorCode;
     }
-
+    
     private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
+    
     private String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         if (!yt_loaded.getAndSet(true)) JDUtilities.getPluginForHost("youtube.com");
         return jd.plugins.hoster.Youtube.unescape(s);
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }
-
+    
     @Override
     public String getDescription() {
         return "JDownloader's ARD Plugin helps downloading videoclips from ardmediathek.de and daserste.de. You can choose between different video qualities.";
     }
-
+    
     private boolean isEmpty(String ip) {
         return ip == null || ip.trim().length() == 0;
     }
-
+    
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.ardmediathek.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -345,5 +345,5 @@ public class ARDMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUDIO, JDL.L("plugins.hoster.ard.audio", "Load Audio Content")).setDefaultValue(false));
     }
-
+    
 }

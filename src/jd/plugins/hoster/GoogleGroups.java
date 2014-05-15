@@ -30,18 +30,17 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "googlegroups.com" }, urls = { "http://[\\w\\.]*?googlegroups.com/web/.*" }, flags = { 0 })
 public class GoogleGroups extends PluginForHost {
-
+    
     public GoogleGroups(PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
     }
-
+    
     // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         br.setCookiesExclusive(true);
@@ -69,7 +68,7 @@ public class GoogleGroups extends PluginForHost {
                     na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
                     for (String[] strings : infos) {
                         if (strings[0].contains(na) || downloadLink.getName().equals(strings[1])) {
-
+                            
                             downloadLink.setAvailable(true);
                             downloadLink.setFinalFileName(strings[1]);
                             downloadLink.setDownloadSize(SizeFormatter.getSize(strings[2]));
@@ -86,22 +85,22 @@ public class GoogleGroups extends PluginForHost {
         }
         return true;
     }
-
+    
     // @Override
     public String getAGBLink() {
         return "http://groups.google.com/intl/de/googlegroups/terms_of_service3.html";
     }
-
+    
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-
+    
     // @Override
     /*
      * public String getVersion() { return getVersion("$Revision$"); }
      */
-
+    
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -110,20 +109,16 @@ public class GoogleGroups extends PluginForHost {
         na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, na);
-        try {
-            ((RAFDownload) dl).setFilesizeCheck(false);
-        } catch (final Throwable e) {
-        }
         dl.startDownload();
     }
-
+    
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         checkLinks(new DownloadLink[] { downloadLink });
         if (getAvailableStatus(downloadLink) == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return getAvailableStatus(downloadLink);
     }
-
+    
     private AvailableStatus getAvailableStatus(DownloadLink link) {
         try {
             final Field field = link.getClass().getDeclaredField("availableStatus");
@@ -134,15 +129,15 @@ public class GoogleGroups extends PluginForHost {
         }
         return AvailableStatus.UNCHECKED;
     }
-
+    
     // @Override
     public void reset() {
     }
-
+    
     // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
+    
     // @Override
     public void resetPluginGlobals() {
     }
