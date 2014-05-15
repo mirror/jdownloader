@@ -81,7 +81,8 @@ public class Rdrctr extends PluginForDecrypt {
         // Workaround for preview.tinyurl.com Links
         parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
         // Workaround for 0856.com links
-        if (parameter.contains("0845.com")) parameter = parameter + "/";
+        if (parameter.contains("0845.com"))
+            parameter = parameter + "/";
 
         // Workaround for ponyurl.com Links
         parameter = parameter.replace("ponyurl.com/", "ponyurl.com/forward.php?");
@@ -95,9 +96,12 @@ public class Rdrctr extends PluginForDecrypt {
         String declink2 = null;
 
         declink = redirectcheck;
-        if (declink == null) declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
-        if (declink == null) declink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+; url=(https?://[^<>\"]*?)\">").getMatch(0);
-        if (declink == null) declink = br.getRegex("<script type=(\"|')text/javascript(\"|')> window\\.location\\.href=(\"|')(https?[^\"'<>]+)(\"|');</script>").getMatch(3);
+        if (declink == null)
+            declink = br.getRegex("<iframe frameborder=\"0\"\\s*src=\"(.*?)\"").getMatch(0);
+        if (declink == null)
+            declink = br.getRegex("<meta http-equiv=\"refresh\"\\s*content=\"\\d+;\\s*url=(https?://[^<>\"]+)\">").getMatch(0);
+        if (declink == null)
+            declink = br.getRegex("<script type=(\"|')text/javascript\\1>\\s*window\\.location\\.href=(\"|')(https?[^\"'<>]+)\\2;</script>").getMatch(2);
         if (declink == null) {
             declink = declink2;
         }
@@ -109,17 +113,18 @@ public class Rdrctr extends PluginForDecrypt {
                 offline = true;
             } else if (parameter.contains("tinyurl.com/") & (br.containsHTML("tinyurl.com/errorb\\.php\\?") || br.containsHTML(">Error: TinyURL redirects to a TinyURL|>The URL you followed redirects back to a TinyURL") || br.containsHTML(">Error: Unable to find site\\'s URL to redirect to|>Please check that the URL entered is correct"))) {
                 offline = true;
-            } else if (parameter.contains("bit.ly/") && br.containsHTML(">Something\\'s wrong here|>Uh oh, bitly couldn\\'t find a link for the|Page Not Found")) {
+            } else if (parameter.contains("bit.ly/") && br.containsHTML(">Something's wrong here|>Uh oh, bitly couldn't find a link for the|Page Not Found")) {
                 offline = true;
             } else if (parameter.contains("yep.it") && br.containsHTML(">Put your URL here<")) {
                 offline = true;
             } else if (parameter.toLowerCase().contains("hex.io/") && declink == null) {
-                declink = br.getRegex("<div class=\"third grid\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+                declink = br.getRegex("<div class=\"third grid\">[\t\n\r ]+<a href=\"(http[^<>\"]+)\"").getMatch(0);
                 if (declink != null) {
                     decryptedLinks.add(createDownloadlink(declink));
                     return decryptedLinks;
                 }
-                if (br.containsHTML(">404 Page Not Found|bannedsextapes\\.com/|\"error\":\"Please enter a valid URL") || br.getRequest().getHttpConnection().getResponseCode() == 404) offline = true;
+                if (br.containsHTML(">404 Page Not Found|bannedsextapes\\.com/|\"error\":\"Please enter a valid URL") || br.getRequest().getHttpConnection().getResponseCode() == 404)
+                    offline = true;
             }
             if (offline) {
                 logger.info("Link offline or invalid: " + parameter);

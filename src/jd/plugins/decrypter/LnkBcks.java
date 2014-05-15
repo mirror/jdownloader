@@ -124,14 +124,16 @@ public class LnkBcks extends PluginForDecrypt {
             for (String j : jss) {
                 // cleanup
                 j = j.replaceAll("[\r\n\\s]+\\/\\/\\s*[^\r\n]+", "");
-                if (new Regex(j, "\\s*var\\s*f\\s*=\\s*window\\['init'\\s*\\+\\s*'Lb'\\s*\\+\\s*'js'\\s*\\+\\s*''\\];[\r\n\\s]+").matches()) js = j;
+                if (new Regex(j, "\\s*var\\s*f\\s*=\\s*window\\['init'\\s*\\+\\s*'Lb'\\s*\\+\\s*'js'\\s*\\+\\s*''\\];[\r\n\\s]+").matches())
+                    js = j;
             }
             if (js == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             String token = new Regex(js, "Token\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
-            if (token == null) token = new Regex(js, "\\?t=([a-f0-9]{40})").getMatch(0);
+            if (token == null)
+                token = new Regex(js, "\\?t=([a-f0-9]{40})").getMatch(0);
             final String authKeyMatchStr = "A(?:'\\s*\\+\\s*')?u(?:'\\s*\\+\\s*')?t(?:'\\s*\\+\\s*')?h(?:'\\s*\\+\\s*')?K(?:'\\s*\\+\\s*')?e(?:'\\s*\\+\\s*')?y";
             final String l1 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s*(\\d+?);").getMatch(0);
             final String l2 = new Regex(js, "\\s*params\\['" + authKeyMatchStr + "'\\]\\s*=\\s?params\\['" + authKeyMatchStr + "'\\]\\s*\\+\\s*(\\d+?);").getMatch(0);
@@ -143,7 +145,8 @@ public class LnkBcks extends PluginForDecrypt {
             Browser br2 = br.cloneBrowser();
             br2.getPage("/director/?t=" + token);
             final long timeLeft = 5033 - (System.currentTimeMillis() - firstGet);
-            if (timeLeft > 0) sleep(timeLeft, param);
+            if (timeLeft > 0)
+                sleep(timeLeft, param);
             Browser br3 = br.cloneBrowser();
             br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey);
             link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);

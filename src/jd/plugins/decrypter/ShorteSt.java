@@ -51,7 +51,8 @@ public class ShorteSt extends PluginForDecrypt {
             return null;
         }
         int t = 5;
-        if (timer != null) t = Integer.parseInt(timer);
+        if (timer != null)
+            t = Integer.parseInt(timer);
         sleep(t * 1001, param);
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("Accept", "application/json, text/javascript");
@@ -73,9 +74,11 @@ public class ShorteSt extends PluginForDecrypt {
         // js
         String test = ibr.getRegex(s + ":\\s*(\"|')(.*?)\\1").getMatch(1);
         // json(finallink)
-        if (test == null) test = ibr.getRegex("\"" + s + "\":\"(.*?)\"").getMatch(0);
+        if (test == null)
+            test = ibr.getRegex("\"" + s + "\":\"(.*?)\"").getMatch(0);
         // int/long/boolean
-        if (test == null) test = ibr.getRegex(s + ":\\s*(\\d+|true|false)").getMatch(0);
+        if (test == null)
+            test = ibr.getRegex(s + ":\\s*(\\d+|true|false)").getMatch(0);
         return test;
     }
 
