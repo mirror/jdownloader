@@ -99,7 +99,9 @@ public class TurboBitNet extends PluginForHost {
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         // correct link stuff goes here, stable is lame!
         for (DownloadLink link : urls) {
             if (link.getProperty("LINKUID") == null) {
@@ -113,7 +115,9 @@ public class TurboBitNet extends PluginForHost {
                         if (uid == null) {
                             // support for public premium links
                             uid = new Regex(link.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
-                            if (uid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                            if (uid == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                         }
                     }
                     if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+(/[^/]+)?\\.html")) {
@@ -154,12 +158,14 @@ public class TurboBitNet extends PluginForHost {
                 sb.delete(0, sb.capacity());
                 sb.append("links_to_check=");
                 for (final DownloadLink dl : links) {
-                    sb.append("http://" + getHost() + "/" + dl.getProperty("LINKUID") + ".html");
+                    sb.append(Encoding.urlEncode("http://" + getHost() + "/" + dl.getProperty("LINKUID") + ".html"));
                     sb.append("%0A");
                 }
+                // remove last
+                sb.delete(sb.length() - 3, sb.length());
                 br.postPage("http://" + getHost() + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final Regex fileInfo = br.getRegex("<td>" + dllink.getProperty("LINKUID") + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
+                    final Regex fileInfo = br.getRegex("<td>" + dllink.getProperty("LINKUID") + "</td>[\t\n\r ]+<td>([^<>/\"]+)</td>[\t\n\r ]+<td style=\"text-align:center;\"><img src=\"[^\"]+/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         dllink.setAvailable(false);
                         logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
@@ -203,7 +209,9 @@ public class TurboBitNet extends PluginForHost {
         try {
             login(account, true);
         } catch (final PluginException e) {
-            if (br.containsHTML("Our service is currently unavailable in your country\\.")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTurbobit.net is currently unavailable in your country!\r\nTurbobit.net ist in deinem Land momentan nicht verfügbar!", PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nTurbobit.net is currently unavailable in your country!\r\nTurbobit.net ist in deinem Land momentan nicht verfügbar!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             throw e;
         }
         ai.setUnlimitedTraffic();
@@ -268,7 +276,8 @@ public class TurboBitNet extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            if (JOptionPane.OK_OPTION == result)
+                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
                         }
                     } catch (Throwable e) {
                     }
@@ -322,7 +331,9 @@ public class TurboBitNet extends PluginForHost {
         br.setCookie(MAINPAGE, "JD", "1");
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fileSize = br.getRegex("File size:</b>(.*?)</div>").getMatch(0);
         if (fileSize == null) {
             fileSize = br.getRegex("<span class=\\'file\\-icon.*?\\'>.*?</span>.*?\\((.*?)\\)").getMatch(0);
@@ -342,7 +353,9 @@ public class TurboBitNet extends PluginForHost {
         if (id == null) {
             id = new Regex(dllink, "turbobit\\.net/(.*?)\\.html").getMatch(0);
         }
-        if (id == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage("/download/free/" + id);
 
         Form captchaform = null;
@@ -369,11 +382,15 @@ public class TurboBitNet extends PluginForHost {
                 }
             }
             waittime = br.getRegex(tb(1)).getMatch(0);
-            if (waittime != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l); }
+            if (waittime != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime) * 1001l);
+            }
         }
 
         if (captchaform == null) {
-            if (br.containsHTML("Our service is currently unavailable in your country\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country."); }
+            if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
+            }
             logger.warning("captchaform equals null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -403,7 +420,9 @@ public class TurboBitNet extends PluginForHost {
         } else {
             logger.info("Handling normal captchas");
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
-            if (captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (captchaUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (int i = 1; i <= 2; i++) {
                 String captchaCode;
                 if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 2) {
@@ -438,8 +457,10 @@ public class TurboBitNet extends PluginForHost {
         int maxWait = 9999, realWait = 0;
         for (String s : br.getRegex(tb(11)).getColumn(0)) {
             realWait = Integer.parseInt(s);
-            if (realWait == 0) continue;
-            if (realWait < maxWait) maxWait = realWait;
+            if (realWait == 0)
+                continue;
+            if (realWait < maxWait)
+                maxWait = realWait;
         }
         int tt = 60;
         if (ttt != null) {
@@ -447,11 +468,15 @@ public class TurboBitNet extends PluginForHost {
             tt = tt < realWait ? tt : realWait;
             if (tt < 30 || tt > 600) {
                 ttt = parseImageUrl(tb(2) + tt + "};" + br.getRegex(tb(3)).getMatch(0), false);
-                if (ttt == null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1001l); }
+                if (ttt == null) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1001l);
+                }
                 tt = Integer.parseInt(ttt);
             }
             logger.info(" Waittime detected, waiting " + String.valueOf(tt) + " seconds from now on...");
-            if (tt > 250) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l); }
+            if (tt > 250) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached or IP already loading", tt * 1001l);
+            }
         }
 
         final Browser tOut = br.cloneBrowser();
@@ -510,7 +535,9 @@ public class TurboBitNet extends PluginForHost {
         }
         if (downloadUrl == null) {
             getPluginConfig().setProperty("isUpdateNeeded", true);
-            if (br.containsHTML("The file is not avaliable now because of technical problems")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
+            if (br.containsHTML("The file is not avaliable now because of technical problems")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
+            }
 
             if (attemps > 1) {
                 getPluginConfig().setProperty("isUpdateNeeded", false);
@@ -533,7 +560,8 @@ public class TurboBitNet extends PluginForHost {
         }
         if (downloadUrl.matches(".+&md5=[a-z0-9]{32}.+")) {
             String md5sum = new Regex(downloadUrl, "md5=([a-z0-9]{32})").getMatch(0);
-            if (md5sum != null) downloadLink.setMD5Hash(md5sum);
+            if (md5sum != null)
+                downloadLink.setMD5Hash(md5sum);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -545,7 +573,9 @@ public class TurboBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.followConnection();
-            if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
+            if (br.containsHTML("Try to download it once again after")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
         }
         handleServerErrors();
@@ -575,7 +605,9 @@ public class TurboBitNet extends PluginForHost {
                 logger.info("No traffic available");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            if (br.containsHTML("Our service is currently unavailable in your country\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country."); }
+            if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
+            }
             logger.warning("dllink equals null, plugin seems to be broken!");
             if (br.getCookie("http://turbobit.net", "user_isloggedin") == null || "deleted".equalsIgnoreCase(br.getCookie("http://turbobit.net", "user_isloggedin"))) {
                 synchronized (LOCK) {
@@ -625,7 +657,8 @@ public class TurboBitNet extends PluginForHost {
         }
         if (dllink.matches(".+&md5=[a-z0-9]{32}.+")) {
             String md5sum = new Regex(dllink, "md5=([a-z0-9]{32})").getMatch(0);
-            if (md5sum != null) link.setMD5Hash(md5sum);
+            if (md5sum != null)
+                link.setMD5Hash(md5sum);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -658,7 +691,9 @@ public class TurboBitNet extends PluginForHost {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = br2.openGetConnection(directlink);
-            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) { return false; }
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                return false;
+            }
             con.disconnect();
         } catch (final Exception e) {
             return false;
@@ -682,7 +717,8 @@ public class TurboBitNet extends PluginForHost {
         }
         if (dllink.matches(".+&md5=[a-z0-9]{32}.+")) {
             String md5sum = new Regex(dllink, "md5=([a-z0-9]{32})").getMatch(0);
-            if (md5sum != null) link.setMD5Hash(md5sum);
+            if (md5sum != null)
+                link.setMD5Hash(md5sum);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -704,7 +740,9 @@ public class TurboBitNet extends PluginForHost {
             }
             br.followConnection();
             logger.warning("dllink doesn't seem to be a file...");
-            if (br.containsHTML("Our service is currently unavailable in your country\\.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country."); }
+            if (br.containsHTML("Our service is currently unavailable in your country\\.")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Turbobit.net is currently unavailable in your country.");
+            }
             handleGeneralServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -713,14 +751,21 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private void handleGeneralServerErrors() throws PluginException {
-        if (br.containsHTML("<h1>404 Not Found</h1>") || br.getHttpConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l); }
-        if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Try again later'", 20 * 60 * 1000l); }
+        if (br.containsHTML("<h1>404 Not Found</h1>") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        }
+        if (br.containsHTML("Try to download it once again after")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Try again later'", 20 * 60 * 1000l);
+        }
         /* Either user waited too long for the captcha or maybe slow servers */
-        if (br.containsHTML(">Ссылка просрочена\\. Пожалуйста получите")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 5 * 60 * 1000l); }
+        if (br.containsHTML(">Ссылка просрочена\\. Пожалуйста получите")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 5 * 60 * 1000l);
+        }
     }
 
     private void handleServerErrors() throws PluginException {
-        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, server sends empty file", 5 * 60 * 1000l);
+        if (dl.getConnection().getLongContentLength() == 0)
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, server sends empty file", 5 * 60 * 1000l);
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -778,13 +823,15 @@ public class TurboBitNet extends PluginForHost {
                     if (captchaLink != null) {
                         final String code = getCaptchaCode("NOTOLDTRBT", captchaLink, dummyLink);
                         String captchaSubtype = "3";
-                        if (captchaLink.contains("/basic/")) captchaSubtype = "5";
+                        if (captchaLink.contains("/basic/"))
+                            captchaSubtype = "5";
                         br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bcaptcha_response%5D=" + Encoding.urlEncode(code) + "&user%5Bcaptcha_type%5D=securimg&user%5Bcaptcha_subtype%5D=" + captchaSubtype + "&user%5Bsubmit%5D=Login");
                     } else {
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                         final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                        if (id == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin failed, please contact our support!\r\nLogin fehlgeschlagen, bitte kontaktiere unseren Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        if (id == null)
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin failed, please contact our support!\r\nLogin fehlgeschlagen, bitte kontaktiere unseren Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         rc.setId(id);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -793,8 +840,10 @@ public class TurboBitNet extends PluginForHost {
                     }
                 }
                 // valid premium (currently no traffic)|valid premium (traffic available)
-                if (!br.containsHTML("/banturbo\\.png\\'>|icon/yesturbo\\.png\\'>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid accounttype (no premium account)!\r\nUngültiger Accounttyp (kein Premiumaccount)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (br.getCookie(MAINPAGE + "/", "sid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML("/banturbo\\.png\\'>|icon/yesturbo\\.png\\'>"))
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid accounttype (no premium account)!\r\nUngültiger Accounttyp (kein Premiumaccount)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE + "/", "sid") == null)
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(br.getHost());
@@ -814,12 +863,16 @@ public class TurboBitNet extends PluginForHost {
     }
 
     private String parseImageUrl(String fun, final boolean NULL) {
-        if (fun == null) { return null; }
+        if (fun == null) {
+            return null;
+        }
         if (!NULL) {
             final String[] next = fun.split(tb(9));
             if (next == null || next.length != 2) {
                 fun = rhino(fun, 0);
-                if (fun == null) { return null; }
+                if (fun == null) {
+                    return null;
+                }
                 fun = new Regex(fun, tb(4)).getMatch(0);
                 return fun == null ? new Regex(fun, tb(5)).getMatch(0) : rhino(fun, 2);
             }
@@ -843,8 +896,12 @@ public class TurboBitNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         /** Old linkcheck code can be found in rev 16195 */
         checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
-        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
