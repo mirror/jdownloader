@@ -47,11 +47,13 @@ public class PromptFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.promptfile.com/?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.promptfile.com/?404"))
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<span style=\"text\\-decoration:none;cursor:text;\" title=\"([^<>\"]*?)\">([^<>\"]*?) \\((\\d+(\\.\\d{1,2})? [A-Za-z]{2,5})\\)</span>");
         final String filename = fInfo.getMatch(1);
         final String filesize = fInfo.getMatch(2);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null)
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -62,15 +64,23 @@ public class PromptFileCom extends PluginForHost {
         requestFileInformation(downloadLink);
         // if (isStable()) throw new PluginException(LinkStatus.ERROR_FATAL, "Only supported in the JDownloader 2 BETA!");
         final String cHash = br.getRegex("name=\"chash\" value=\"([a-z0-9]+)\"").getMatch(0);
-        if (cHash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (cHash == null)
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(br.getURL(), "chash=" + cHash);
-        final String dllink = br.getRegex("clip: \\{\\s+url: \\'(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]+)(\\'|\")").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("clip: \\{\\s+url: \\'(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]+)(\\'|\")").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex(">Download<.+\\s+.+\\s+<a href=\"(http://www\\.promptfile\\.com[^<>\"]+)\"").getMatch(0);
+            logger.info("dllink = " + dllink);
+        }
+        if (dllink == null)
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 404)
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             br.followConnection();
-            if (br.containsHTML("file unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File unavailable", 30 * 60 * 1000l);
+            if (br.containsHTML("file unavailable"))
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: File unavailable", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
