@@ -49,23 +49,32 @@ public class NwLbmRlsesNet extends PluginForDecrypt {
                 return decryptedLinks;
             }
             br.setFollowRedirects(false);
-            final String[] links = br.getRegex("\"(http://newalbumreleases\\.net/[^<>\"]*?)\">DOWNLOAD</a>").getColumn(0);
+            final String[] links = br.getRegex("\"(https?://[^<>\"]*?)\">DOWNLOAD</a>").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String singleLink : links) {
-                br.getPage(singleLink);
-                final String finallink = br.getRedirectLocation();
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                String finallink;
+                if (singleLink.contains("newalbumreleases.net/")) {
+                    br.getPage(singleLink);
+                    finallink = br.getRedirectLocation();
+                    if (finallink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                } else {
+                    finallink = singleLink;
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         } else {
             br.setFollowRedirects(false);
             br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

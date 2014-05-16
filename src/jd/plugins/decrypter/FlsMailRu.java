@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -90,14 +91,28 @@ public class FlsMailRu extends PluginForDecrypt {
                     statusText = JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload");
                 }
                 String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
-                if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
-                if (directlink == null || filename == null) {
+                if (filename == null) {
+                    filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
+                }
+                if (filename == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+                boolean offline = false;
                 String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
-                directlink = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixLink(directlink, br);
+                if (directlink != null) {
+                    directlink = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixLink(directlink, br);
+                } else {
+                    offline = true;
+                    directlink = LINKREPLACE + "files.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(10000);
+                }
                 final DownloadLink finallink = createDownloadlink(directlink.replace("http://", LINKREPLACE));
+                if (offline) {
+                    finallink.setAvailable(false);
+                    finallink.setProperty("offline", true);
+                } else {
+                    finallink.setAvailable(true);
+                }
                 // if (statusText != null) finallink.getLinkStatus().setStatusText(statusText);
                 // Maybe that helps id jd gets the english version of the site!
                 if (filesize != null) {
@@ -108,7 +123,6 @@ public class FlsMailRu extends PluginForDecrypt {
                 finallink.setProperty("realfilename", filename);
                 filename = Encoding.htmlDecode(filename.trim());
                 finallink.setFinalFileName(filename);
-                finallink.setAvailable(true);
                 decryptedLinks.add(finallink);
             }
         }

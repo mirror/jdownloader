@@ -36,7 +36,7 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("up.4share.vn/", "4share.vn/");
         br.getPage(parameter);
-        if (br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) {
+        if ((br.containsHTML(">Error: Not valid ID") && !br.containsHTML("up\\.4share\\.vn/f/")) || br.containsHTML("\\[Empty Folder\\]")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

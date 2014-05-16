@@ -32,6 +32,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" }, flags = { 2 })
 public class OneDriveLiveCom extends PluginForHost {
 
@@ -51,7 +53,9 @@ public class OneDriveLiveCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         prepBR();
         final String cid = link.getStringProperty("plain_cid", null);
@@ -59,7 +63,9 @@ public class OneDriveLiveCom extends PluginForHost {
         final String authkey = link.getStringProperty("plain_authkey", null);
         final String original_link = link.getStringProperty("original_link", null);
         String additional_data = "&ps=" + MAX_ENTRIES_PER_REQUEST;
-        if (authkey != null) additional_data += "&authkey=" + Encoding.urlEncode(authkey);
+        if (authkey != null) {
+            additional_data += "&authkey=" + Encoding.urlEncode(authkey);
+        }
         if (isCompleteFolder(link)) {
             /* Case is not yet present */
         } else {
@@ -72,20 +78,36 @@ public class OneDriveLiveCom extends PluginForHost {
                 }
                 throw e;
             }
-            if (br.containsHTML("\"code\":154")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("\"code\":154")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         final String filename = link.getStringProperty("plain_name", null);
         final String filesize = link.getStringProperty("plain_size", null);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(filename);
-        link.setDownloadSize(Long.parseLong(filesize));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 30 * 60 * 1000l);
+        if (downloadLink.getBooleanProperty("account_only", false)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+        }
+        if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 30 * 60 * 1000l);
+        }
         final String dllink = getdllink(downloadLink);
         boolean resume = true;
         int maxchunks = 0;
@@ -96,7 +118,9 @@ public class OneDriveLiveCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
 
@@ -118,7 +142,9 @@ public class OneDriveLiveCom extends PluginForHost {
         if (isCompleteFolder(dl)) {
         } else {
             dllink = dl.getStringProperty("plain_download_url", null);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         return dllink;
     }

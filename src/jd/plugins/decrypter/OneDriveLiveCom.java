@@ -33,6 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+)|(1|s)drv\\.ms/[A-Za-z0-9]+)" }, flags = { 0 })
 public class OneDriveLiveCom extends PluginForDecrypt {
 
@@ -174,7 +176,10 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 final DownloadLink dl = createDownloadlink("https://onedrive.live.com/?cid=" + folder_cid + "&id=" + folder_id);
                 decryptedLinks.add(dl);
             } else {
-                final String filesize = getJson("size", singleinfo);
+                String filesize = getJson("size", singleinfo);
+                if (filesize == null) {
+                    filesize = getJson("displaySize", singleinfo);
+                }
                 String filename = getJson("name", singleinfo);
                 String view_url = getJson("viewInBrowser", singleinfo);
                 String download_url = getJson("download", singleinfo);
@@ -191,14 +196,13 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 }
 
                 final String ext = getJson("extension", singleinfo);
-                if (filesize == null || filename == null || download_url == null || ext == null) {
+                if (filesize == null || filename == null || ext == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 final DownloadLink dl = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                download_url = download_url.replace("\\", "");
                 filename = Encoding.htmlDecode(filename.trim()) + ext;
-                final long cursize = Long.parseLong(filesize);
+                final long cursize = SizeFormatter.getSize(filesize);
                 dl.setDownloadSize(cursize);
                 totalSize += cursize;
                 dl.setFinalFileName(filename);
@@ -210,7 +214,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     view_url = view_url.replace("\\", "");
                     dl.setProperty("plain_view_url", view_url);
                 }
-                dl.setProperty("plain_download_url", download_url);
+                if (download_url != null) {
+                    download_url = download_url.replace("\\", "");
+                    dl.setProperty("plain_download_url", download_url);
+                } else {
+                    dl.setProperty("account_only", true);
+                }
                 dl.setProperty("plain_cid", cid);
                 dl.setProperty("plain_id", id);
                 dl.setProperty("plain_authkey", authkey);

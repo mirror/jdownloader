@@ -43,6 +43,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -225,7 +226,14 @@ public class LomaFileCom extends PluginForHost {
             altAvailStat(downloadLink, fileInfo);
         }
 
-        getPage(downloadLink.getDownloadURL());
+        try {
+            getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
+        }
 
         if (br.getURL().matches(".+(\\?|&)op=login(.*)?")) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
@@ -248,7 +256,9 @@ public class LomaFileCom extends PluginForHost {
             }
         }
 
-        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (cbr.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|<li>The file (expired|deleted by (its owner|administration)))")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (cbr.containsHTML(MAINTENANCE)) {
             downloadLink.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
@@ -279,9 +289,15 @@ public class LomaFileCom extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
         downloadLink.setName(fileInfo[0].trim());
-        if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) downloadLink.setAvailable(true);
-        if (!inValidate(fileInfo[1])) downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
-        if (!inValidate(fileInfo[2])) downloadLink.setMD5Hash(fileInfo[2].trim());
+        if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
+            downloadLink.setAvailable(true);
+        }
+        if (!inValidate(fileInfo[1])) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+        }
+        if (!inValidate(fileInfo[2])) {
+            downloadLink.setMD5Hash(fileInfo[2].trim());
+        }
         return getAvailableStatus(downloadLink);
     }
 
@@ -327,7 +343,9 @@ public class LomaFileCom extends PluginForHost {
                 }
             }
         }
-        if (inValidate(fileInfo[2])) fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        if (inValidate(fileInfo[2])) {
+            fileInfo[2] = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        }
         return fileInfo;
     }
 
@@ -345,12 +363,16 @@ public class LomaFileCom extends PluginForHost {
         String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
-            if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) fileInfo[1] = linkInformation[1];
+            if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) {
+                fileInfo[1] = linkInformation[1];
+            }
         } else {
             // not found! <td>link</td><td style="color:red;">Not found!</td><td></td>
             downloadLink.setAvailable(false);
         }
-        if (!inValidate(fuid) && inValidate(fileInfo[0])) fileInfo[0] = fuid;
+        if (!inValidate(fuid) && inValidate(fileInfo[0])) {
+            fileInfo[0] = fuid;
+        }
         return fileInfo;
     }
 
@@ -366,7 +388,9 @@ public class LomaFileCom extends PluginForHost {
         // First, bring up saved final links
         dllink = checkDirectLink(downloadLink);
         // Second, check for streaming links on the first page
-        if (inValidate(dllink)) getDllink();
+        if (inValidate(dllink)) {
+            getDllink();
+        }
         // Third, do they provide video hosting?
         if (inValidate(dllink) && (useVidEmbed || (useAltEmbed && downloadLink.getName().matches(".+\\.(asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm)$")))) {
             final Browser obr = br.cloneBrowser();
@@ -406,7 +430,9 @@ public class LomaFileCom extends PluginForHost {
         }
         if (inValidate(dllink)) {
             Form dlForm = getFormByKey(cbr, "op", "download2");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // how many forms deep do you want to try.
             int repeat = 2;
             for (int i = 0; i <= repeat; i++) {
@@ -417,7 +443,9 @@ public class LomaFileCom extends PluginForHost {
                 // md5 can be on the subsequent pages
                 if (inValidate(downloadLink.getMD5Hash())) {
                     String md5hash = cbr.getRegex("<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
+                    if (md5hash != null) {
+                        downloadLink.setMD5Hash(md5hash.trim());
+                    }
                 }
                 if (cbr.containsHTML(PASSWORDTEXT)) {
                     logger.info("The downloadlink seems to be password protected.");
@@ -426,16 +454,19 @@ public class LomaFileCom extends PluginForHost {
                 /* Captcha START */
                 dlForm = captchaForm(downloadLink, dlForm);
                 /* Captcha END */
-                if (!skipWaitTime) waitTime(timeBefore, downloadLink);
+                if (!skipWaitTime) {
+                    waitTime(timeBefore, downloadLink);
+                }
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, account, true);
                 getDllink();
                 if (inValidate(dllink) && (getFormByKey(cbr, "op", "download2") == null || i == repeat)) {
-                    if (i == repeat)
+                    if (i == repeat) {
                         logger.warning("Exausted repeat count, after 'dllink == null'");
-                    else
+                    } else {
                         logger.warning("Couldn't find 'download2' and 'dllink == null'");
+                    }
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (inValidate(dllink) && getFormByKey(cbr, "op", "download2") != null) {
                     dlForm = getFormByKey(cbr, "op", "download2");
@@ -445,7 +476,9 @@ public class LomaFileCom extends PluginForHost {
                 }
             }
         }
-        if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
+        if (!inValidate(passCode)) {
+            downloadLink.setProperty("pass", passCode);
+        }
         // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
         controlHost(account, downloadLink, true);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -549,7 +582,9 @@ public class LomaFileCom extends PluginForHost {
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
                         decodeDownloadLink(crypted);
-                        if (!inValidate(dllink)) break;
+                        if (!inValidate(dllink)) {
+                            break;
+                        }
                     }
                 }
             }
@@ -559,13 +594,17 @@ public class LomaFileCom extends PluginForHost {
     private void waitTime(final long timeBefore, final DownloadLink downloadLink) throws PluginException {
         /** Ticket Time */
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (inValidate(ttt)) ttt = cbr.getRegex("id=\"countdown_str\"[^>]*>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        if (inValidate(ttt)) {
+            ttt = cbr.getRegex("id=\"countdown_str\"[^>]*>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+        }
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
             final long passedTime = ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
             final long tt = Long.parseLong(ttt) - passedTime;
             logger.info("WaitTime detected: " + ttt + " second(s). Elapsed Time: " + (passedTime > 0 ? passedTime : 0) + " second(s). Remaining Time: " + tt + " second(s)");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
+            if (tt > 0) {
+                sleep(tt * 1000l, downloadLink);
+            }
         }
     }
 
@@ -618,9 +657,13 @@ public class LomaFileCom extends PluginForHost {
             // adjust this Regex to catch the wait time string for COOKIE_HOST
             String WAIT = cbr.getRegex("((You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (inValidate(tmphrs)) tmphrs = cbr.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (inValidate(tmphrs)) {
+                tmphrs = cbr.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            }
             String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (inValidate(tmpmin)) tmpmin = cbr.getRegex("You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (inValidate(tmpmin)) {
+                tmpmin = cbr.getRegex("You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            }
             String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (inValidate(tmphrs) && inValidate(tmpmin) && inValidate(tmpsec) && inValidate(tmpdays)) {
@@ -628,10 +671,18 @@ public class LomaFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
-                if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
-                if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
-                if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
+                if (!inValidate(tmpdays)) {
+                    days = Integer.parseInt(tmpdays);
+                }
+                if (!inValidate(tmphrs)) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (!inValidate(tmpmin)) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (!inValidate(tmpsec)) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
                 long waittime = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /** Not enough wait time to reconnect->Wait and try again */
@@ -642,8 +693,12 @@ public class LomaFileCom extends PluginForHost {
                 }
             }
         }
-        if (cbr.containsHTML("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-        if (cbr.containsHTML("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (cbr.containsHTML("You're using all download slots for IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
+        if (cbr.containsHTML("Error happened when generating Download Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        }
         /** Error handling for account based restrictions */
         // non account && free account (you would hope..)
         final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users)";
@@ -655,7 +710,9 @@ public class LomaFileCom extends PluginForHost {
         if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
             String msg = null;
             String fileSizeLimit = cbr.getRegex("You can download files up to(.*?)only").getMatch(0);
-            if (!inValidate(fileSizeLimit)) fileSizeLimit = " :: You can download files up to " + fileSizeLimit.trim();
+            if (!inValidate(fileSizeLimit)) {
+                fileSizeLimit = " :: You can download files up to " + fileSizeLimit.trim();
+            }
             if (account != null) {
                 msg = account.getUser() + " @ " + acctype;
                 if (account.getBooleanProperty("free", false) && cbr.containsHTML(an + "|" + fa + "|" + pr)) {
@@ -680,16 +737,24 @@ public class LomaFileCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, msg);
         }
-        if (cbr.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (cbr.containsHTML(MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        }
     }
 
     private void checkServerErrors() throws NumberFormatException, PluginException {
-        if (cbr.containsHTML("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        if (cbr.containsHTML("No file")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
+        if (cbr.containsHTML("(File Not Found|<h1>404 Not Found</h1>|<h1>The page cannot be found</h1>)")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -751,11 +816,21 @@ public class LomaFileCom extends PluginForHost {
                 String tmpmin = new Regex(expireSecond, "(\\d+)\\s+minutes?").getMatch(0);
                 String tmpsec = new Regex(expireSecond, "(\\d+)\\s+seconds?").getMatch(0);
                 long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                if (!inValidate(tmpYears)) years = Integer.parseInt(tmpYears);
-                if (!inValidate(tmpdays)) days = Integer.parseInt(tmpdays);
-                if (!inValidate(tmphrs)) hours = Integer.parseInt(tmphrs);
-                if (!inValidate(tmpmin)) minutes = Integer.parseInt(tmpmin);
-                if (!inValidate(tmpsec)) seconds = Integer.parseInt(tmpsec);
+                if (!inValidate(tmpYears)) {
+                    years = Integer.parseInt(tmpYears);
+                }
+                if (!inValidate(tmpdays)) {
+                    days = Integer.parseInt(tmpdays);
+                }
+                if (!inValidate(tmphrs)) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (!inValidate(tmpmin)) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (!inValidate(tmpsec)) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
                 expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
             }
         }
@@ -797,7 +872,9 @@ public class LomaFileCom extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -876,7 +953,9 @@ public class LomaFileCom extends PluginForHost {
             if (inValidate(dllink)) {
                 getPage(downloadLink.getDownloadURL());
                 // required because we can't have redirects enabled for getDllink detection
-                if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex)) getPage(br.getRedirectLocation());
+                if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches(dllinkRegex)) {
+                    getPage(br.getRedirectLocation());
+                }
                 // if the cached cookie expired, relogin.
                 if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     synchronized (ACCLOCK) {
@@ -889,9 +968,11 @@ public class LomaFileCom extends PluginForHost {
                 if (inValidate(dllink)) {
                     checkErrors(downloadLink, account, false);
                     Form dlform = cbr.getFormbyProperty("name", "F1");
-                    if (dlform == null)
+                    if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    else if (cbr.containsHTML(PASSWORDTEXT)) dlform = handlePassword(dlform, downloadLink);
+                    } else if (cbr.containsHTML(PASSWORDTEXT)) {
+                        dlform = handlePassword(dlform, downloadLink);
+                    }
                     sendForm(dlform);
                     checkErrors(downloadLink, account, true);
                     getDllink();
@@ -901,7 +982,9 @@ public class LomaFileCom extends PluginForHost {
                     }
                 }
             }
-            if (!inValidate(passCode)) downloadLink.setProperty("pass", passCode);
+            if (!inValidate(passCode)) {
+                downloadLink.setProperty("pass", passCode);
+            }
             // Process usedHost within hostMap. We do it here so that we can probe if slots are already used before openDownload.
             controlHost(account, downloadLink, true);
             logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -1008,13 +1091,13 @@ public class LomaFileCom extends PluginForHost {
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         // Prevent another download method of the same account type from starting, when downloadLink marked as requiring premium account to
         // download.
-        if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false)))
+        if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
             return false;
-        // Prevent another non account download method from starting, when account been determined as required.
-        else if (downloadLink.getBooleanProperty("requiresAnyAccount", false) && account == null)
+        } else if (downloadLink.getBooleanProperty("requiresAnyAccount", false) && account == null) {
             return false;
-        else
+        } else {
             return true;
+        }
     }
 
     @SuppressWarnings("unused")
@@ -1070,8 +1153,12 @@ public class LomaFileCom extends PluginForHost {
         AccountInfo ai = account.getAccountInfo();
         String message = "";
         message += "Account type: " + acctype + "\r\n";
-        if (ai.getUsedSpace() != -1) message += "  Used Space: " + Formatter.formatReadable(ai.getUsedSpace()) + "\r\n";
-        if (ai.getPremiumPoints() != -1) message += "Premium Points: " + ai.getPremiumPoints() + "\r\n";
+        if (ai.getUsedSpace() != -1) {
+            message += "  Used Space: " + Formatter.formatReadable(ai.getUsedSpace()) + "\r\n";
+        }
+        if (ai.getPremiumPoints() != -1) {
+            message += "Premium Points: " + ai.getPremiumPoints() + "\r\n";
+        }
 
         jd.gui.UserIO.getInstance().requestMessageDialog(this.getHost() + " Account", message);
     }
@@ -1111,29 +1198,40 @@ public class LomaFileCom extends PluginForHost {
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {
-        if (page == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (page == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             br.getPage(page);
         } catch (Exception e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
             // should only be picked up now if not JD2
             if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
                 logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
-            } else
+            } else {
                 throw e;
+            }
         }
         // prevention is better than cure
         if (br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderFields("server").contains("cloudflare-nginx")) {
             String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-            if (cloudflare == null) cloudflare = br.getFormbyProperty("id", "challenge-form");
+            if (cloudflare == null) {
+                cloudflare = br.getFormbyProperty("id", "challenge-form");
+            }
             if (cloudflare != null) {
                 String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                if (math == null) math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                if (math == null) {
+                    math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
+                }
                 if (math == null) {
                     String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\(\'#jschl_answer\'\\);").getMatch(0);
-                    if (variableName != null) variableName = variableName.trim();
+                    if (variableName != null) {
+                        variableName = variableName.trim();
+                    }
                     math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
                 }
                 if (math == null) {
@@ -1155,7 +1253,9 @@ public class LomaFileCom extends PluginForHost {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) cookies.put(c.getKey(), c.getValue());
+                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
                 }
                 synchronized (cloudflareCookies) {
                     cloudflareCookies.clear();
@@ -1168,9 +1268,13 @@ public class LomaFileCom extends PluginForHost {
 
     @SuppressWarnings("unused")
     private void postPage(String page, final String postData) throws Exception {
-        if (page == null || postData == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (page == null || postData == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // stable sucks
-        if (isJava7nJDStable() && page.startsWith("https")) page = page.replaceFirst("https://", "http://");
+        if (isJava7nJDStable() && page.startsWith("https")) {
+            page = page.replaceFirst("https://", "http://");
+        }
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         try {
             br.postPage(page, postData);
@@ -1181,11 +1285,15 @@ public class LomaFileCom extends PluginForHost {
     }
 
     private void sendForm(final Form form) throws Exception {
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
-            if (form.getAction() == null || form.getAction().equals("")) form.setAction(br.getURL());
+            if (form.getAction() == null || form.getAction().equals("")) {
+                form.setAction(br.getURL());
+            }
             if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
                 if (!form.getAction().startsWith("http") && br.getURL().contains("https://")) {
                     // change relative path into full path, with protocol correction
@@ -1193,19 +1301,22 @@ public class LomaFileCom extends PluginForHost {
                     String basedomain = new Regex(br.getURL(), "(https?://[^/]+)").getMatch(0);
                     String path = form.getAction();
                     String finalpath = null;
-                    if (path.startsWith("/"))
+                    if (path.startsWith("/")) {
                         finalpath = basedomain.replaceFirst("https://", "http://") + path;
-                    else if (!path.startsWith("."))
+                    } else if (!path.startsWith(".")) {
                         finalpath = basepath.replaceFirst("https://", "http://") + path;
-                    else {
+                    } else {
                         // lacking builder for ../relative paths. this will do for now.
                         logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }
                     form.setAction(finalpath);
-                } else
+                } else {
                     form.setAction(form.getAction().replaceFirst("https?://", "http://"));
-                if (!stableSucks.get()) showSSLWarning(this.getHost());
+                }
+                if (!stableSucks.get()) {
+                    showSSLWarning(this.getHost());
+                }
             }
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         }
@@ -1237,29 +1348,36 @@ public class LomaFileCom extends PluginForHost {
         String servName = null;
         String servExt = null;
         String orgNameExt = downloadLink.getFinalFileName();
-        if (orgNameExt == null) orgNameExt = downloadLink.getName();
-        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
-        if (!inValidate(orgExt))
+        if (orgNameExt == null) {
+            orgNameExt = downloadLink.getName();
+        }
+        if (!inValidate(orgNameExt) && orgNameExt.contains(".")) {
+            orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        }
+        if (!inValidate(orgExt)) {
             orgName = new Regex(orgNameExt, "(.+)" + orgExt).getMatch(0);
-        else
+        } else {
             orgName = orgNameExt;
+        }
         // if (orgName.endsWith("...")) orgName = orgName.replaceFirst("\\.\\.\\.$", "");
         String servNameExt = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         if (!inValidate(servNameExt) && servNameExt.contains(".")) {
             servExt = servNameExt.substring(servNameExt.lastIndexOf("."));
             servName = new Regex(servNameExt, "(.+)" + servExt).getMatch(0);
-        } else
+        } else {
             servName = servNameExt;
+        }
         String FFN = null;
-        if (orgName.equalsIgnoreCase(fuid.toLowerCase()))
+        if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
-        else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName)))
+        } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
             // when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster.
             FFN = servNameExt;
-        else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt))
+        } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
-        else
+        } else {
             FFN = orgNameExt;
+        }
         downloadLink.setFinalFileName(FFN);
     }
 
@@ -1290,7 +1408,9 @@ public class LomaFileCom extends PluginForHost {
             return null;
         }
         passCode = downloadLink.getStringProperty("pass", null);
-        if (inValidate(passCode)) passCode = Plugin.getUserInput("Password?", downloadLink);
+        if (inValidate(passCode)) {
+            passCode = Plugin.getUserInput("Password?", downloadLink);
+        }
         if (inValidate(passCode)) {
             logger.info("User has entered blank password, exiting handlePassword");
             passCode = null;
@@ -1345,7 +1465,9 @@ public class LomaFileCom extends PluginForHost {
                         con = testcap.openGetConnection(link);
                         if (con.getResponseCode() == 200) {
                             code = getCaptchaCode("xfilesharingprobasic", link, downloadLink);
-                            if (!inValidate(code)) break;
+                            if (!inValidate(code)) {
+                                break;
+                            }
                         }
                     } catch (Exception e) {
                         continue;
@@ -1364,7 +1486,9 @@ public class LomaFileCom extends PluginForHost {
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
             final String id = form.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-            if (inValidate(id)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (inValidate(id)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             rc.setId(id);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -1396,7 +1520,9 @@ public class LomaFileCom extends PluginForHost {
             final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(captcha);
             final String result = kc.showDialog(downloadLink.getDownloadURL());
-            if (result != null && "CANCEL".equals(result)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
+            if (result != null && "CANCEL".equals(result)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            }
             form.put("capcode", result);
             skipWaitTime = waitTimeSkipableKeyCaptcha;
         }
@@ -1410,7 +1536,9 @@ public class LomaFileCom extends PluginForHost {
      * @return String result
      * */
     private String regexDllink(final String source) {
-        if (inValidate(source)) return null;
+        if (inValidate(source)) {
+            return null;
+        }
         String result = null;
         // using the following logic to help pick up URL that contains encoded ' character. Very hard to make generic regular expressions at
         // 100% accuracy when using [^\"']+
@@ -1425,8 +1553,12 @@ public class LomaFileCom extends PluginForHost {
                 }
             }
         }
-        if (inValidate(result)) result = new Regex(source, "\"(" + dllinkRegex + ")\"").getMatch(0);
-        if (inValidate(result)) result = new Regex(source, "'(" + dllinkRegex + ")'").getMatch(0);
+        if (inValidate(result)) {
+            result = new Regex(source, "\"(" + dllinkRegex + ")\"").getMatch(0);
+        }
+        if (inValidate(result)) {
+            result = new Regex(source, "'(" + dllinkRegex + ")'").getMatch(0);
+        }
         return result;
     }
 
@@ -1448,7 +1580,9 @@ public class LomaFileCom extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
             }
 
             decoded = p;
@@ -1497,7 +1631,9 @@ public class LomaFileCom extends PluginForHost {
      * */
     private void controlSimHost(final Account account) {
         synchronized (CTRLLOCK) {
-            if (usedHost == null) return;
+            if (usedHost == null) {
+                return;
+            }
             int was, current;
             if (account != null && account.getBooleanProperty("free")) {
                 // free account
@@ -1540,10 +1676,11 @@ public class LomaFileCom extends PluginForHost {
             // xfileshare valid links are either https://((sub.)?domain|IP)(:port)?/blah
             usedHost = new Regex(dllink, "https?://([^/\\:]+)").getMatch(0);
             if (inValidate(dllink) || usedHost == null) {
-                if (inValidate(dllink))
+                if (inValidate(dllink)) {
                     logger.warning("Invalid URL given to controlHost");
-                else
+                } else {
                     logger.warning("Regex on usedHost failed, Please report this to JDownloader Development Team");
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
@@ -1590,7 +1727,9 @@ public class LomaFileCom extends PluginForHost {
             if (!action) {
                 // download finished (completed, failed, etc), check for value and remove a value
                 Integer usedSlots = getHashedHashedValue(account);
-                if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (usedSlots == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 setHashedHashKeyValue(account, -1);
                 if (usedSlots.equals(1)) {
                     logger.info("controlHost = " + user + " -> " + usedHost + " :: No longer used!");
@@ -1607,7 +1746,9 @@ public class LomaFileCom extends PluginForHost {
                  */
                 if (isHashedHashedKey(account, usedHost)) {
                     Integer usedSlots = getHashedHashedValue(account);
-                    if (usedSlots == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (usedSlots == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     if (!usedSlots.equals(simHost)) {
                         setHashedHashKeyValue(account, 1);
                         logger.info("controlHost = " + user + " -> " + usedHost + " :: " + getHashedHashedValue(account) + " simulatious connection(s)");
@@ -1634,13 +1775,17 @@ public class LomaFileCom extends PluginForHost {
      *            Integer positive or negative. Positive adds slots. Negative integer removes slots.
      * */
     private synchronized void setHashedHashKeyValue(final Account account, final Integer x) {
-        if (usedHost == null || x == null) return;
+        if (usedHost == null || x == null) {
+            return;
+        }
         HashMap<String, Integer> holder = new HashMap<String, Integer>();
         if (!hostMap.isEmpty()) {
             // load hostMap within holder if not empty
             holder = hostMap.get(account);
             // remove old hashMap reference, prevents creating duplicate entry of 'account' when returning result.
-            if (holder.containsKey(account)) hostMap.remove(account);
+            if (holder.containsKey(account)) {
+                hostMap.remove(account);
+            }
         }
         String currentKey = getHashedHashedKey(account);
         Integer currentValue = getHashedHashedValue(account);
@@ -1673,7 +1818,9 @@ public class LomaFileCom extends PluginForHost {
      *            Account that's been used, can be null
      * */
     private synchronized String getHashedHashedKey(final Account account) {
-        if (usedHost == null) return null;
+        if (usedHost == null) {
+            return null;
+        }
         if (hostMap.containsKey(account)) {
             final HashMap<String, Integer> accKeyValue = hostMap.get(account);
             if (accKeyValue.containsKey(usedHost)) {
@@ -1693,7 +1840,9 @@ public class LomaFileCom extends PluginForHost {
      *            Account that's been used, can be null
      * */
     private synchronized Integer getHashedHashedValue(final Account account) {
-        if (usedHost == null) return null;
+        if (usedHost == null) {
+            return null;
+        }
         if (hostMap.containsKey(account)) {
             final HashMap<String, Integer> accKeyValue = hostMap.get(account);
             if (accKeyValue.containsKey(usedHost)) {
@@ -1715,12 +1864,16 @@ public class LomaFileCom extends PluginForHost {
      *            String of what ever you want to find
      * */
     private synchronized boolean isHashedHashedKey(final Account account, final String key) {
-        if (key == null) return false;
+        if (key == null) {
+            return false;
+        }
         final HashMap<String, Integer> accKeyValue = hostMap.get(account);
         if (accKeyValue != null) {
             if (accKeyValue.containsKey(key)) {
                 for (final Entry<String, Integer> keyValue : accKeyValue.entrySet()) {
-                    if (keyValue.getKey().equals(key)) return true;
+                    if (keyValue.getKey().equals(key)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -1736,10 +1889,11 @@ public class LomaFileCom extends PluginForHost {
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals("")))
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
@@ -1759,8 +1913,12 @@ public class LomaFileCom extends PluginForHost {
             for (Form f : workaround) {
                 for (InputField field : f.getInputFields()) {
                     if (key != null && key.equals(field.getKey())) {
-                        if (value == null && field.getValue() == null) return f;
-                        if (value != null && value.equals(field.getValue())) return f;
+                        if (value == null && field.getValue() == null) {
+                            return f;
+                        }
+                        if (value != null && value.equals(field.getValue())) {
+                            return f;
+                        }
                     }
                 }
             }
@@ -1777,7 +1935,9 @@ public class LomaFileCom extends PluginForHost {
      * @author raztoki
      * */
     private Form cleanForm(Form form) {
-        if (form == null) return null;
+        if (form == null) {
+            return null;
+        }
         String data = form.getHtmlCode();
         ArrayList<String> cleanupRegex = new ArrayList<String>();
         cleanupRegex.add("(\\w+\\s*=\\s*\"[^\"]+\")");
@@ -1857,17 +2017,20 @@ public class LomaFileCom extends PluginForHost {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
             Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
     }
 
     private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
@@ -1889,33 +2052,38 @@ public class LomaFileCom extends PluginForHost {
                             message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
                             message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
                             message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            else
+                            } else {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         } else if ("es".equalsIgnoreCase(lng)) {
                             title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
                             message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
                             message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
                             message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
                             message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            else
+                            } else {
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         } else {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
                             message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
                             message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
                             message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
                             message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            else
+                            } else {
                                 message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         }
                         int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        if (xSystem && JOptionPane.OK_OPTION == result) {
+                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        }
                         stableSucks.set(true);
                     } catch (Throwable e) {
                     }
