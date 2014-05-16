@@ -28,6 +28,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -70,19 +71,25 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         FilePackage fp;
         final String parameter = param.toString();
         EPISODENUMBER = new Regex(parameter, "folge\\-(\\d+)").getMatch(0);
-        if (CFG.getBooleanProperty(FASTLINKCHECK, false)) FASTCHECKENABLED = true;
+        if (CFG.getBooleanProperty(FASTLINKCHECK, false)) {
+            FASTCHECKENABLED = true;
+        }
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
 
         DATE = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
-        if (DATE == null) DATE = br.getRegex("id=\"eptitle\" href=\"\\.\\./folge\\-\\d+/\">Folge \\d+ vom ([^<>\"/]*?)</a>").getMatch(0);
+        if (DATE == null) {
+            DATE = br.getRegex("id=\"eptitle\" href=\"\\.\\./folge\\-\\d+/\">Folge \\d+ vom ([^<>\"/]*?)</a>").getMatch(0);
+        }
         if (DATE == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         DATE = Encoding.htmlDecode(DATE.trim());
+
+        final boolean episode_is_old = Integer.valueOf(EPISODENUMBER) < 69;
 
         if (CFG.getBooleanProperty(GRAB_POSTECKE, false)) {
             /* Check for external links */
@@ -92,9 +99,27 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             } else {
                 String posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
                 // Only use episode number of fktv episode if postecke episodenumber is not available
-                if (posteckeepisode == null) posteckeepisode = EPISODENUMBER;
+                if (posteckeepisode == null) {
+                    posteckeepisode = EPISODENUMBER;
+                }
                 String posteckelink = br.getRegex("\"(http://(www\\.)?fernsehkritik\\.tv/inline\\-video/postecke\\.php\\?[^<>\"]*?)\"").getMatch(0);
-                if (posteckelink == null) posteckelink = br.getRegex("\"(http://massengeschmack\\.tv/play/\\d+/postecke\\d+)\"").getMatch(0);
+                if (posteckelink == null) {
+                    posteckelink = br.getRegex("\"(http://massengeschmack\\.tv/play/\\d+/postecke\\d+)\"").getMatch(0);
+                }
+
+                /* No postecke link there? Check if they forgot to add it! */
+                if (posteckelink == null && !episode_is_old) {
+                    try {
+                        final Browser br2 = br.cloneBrowser();
+                        final String postecke_check_link = "http://massengeschmack.tv/play/1/postecke" + EPISODENUMBER;
+                        br2.getPage(postecke_check_link);
+                        if (!br2.containsHTML(">Clip nicht gefunden")) {
+                            posteckelink = postecke_check_link;
+                        }
+                    } catch (final Throwable e) {
+                    }
+                }
+
                 if (posteckelink != null) {
                     final DownloadLink posteckedl = createDownloadlink(posteckelink);
                     posteckedl.setProperty("directposteckeepisode", posteckeepisode);
@@ -103,20 +128,24 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                     posteckedl.setProperty("directtype", ".flv");
                     final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVPost_FormattedFilename(posteckedl);
                     posteckedl.setFinalFileName(formattedFilename);
-                    if (FASTCHECKENABLED) posteckedl.setAvailable(true);
+                    if (FASTCHECKENABLED) {
+                        posteckedl.setAvailable(true);
+                    }
                     decryptedLinks.add(posteckedl);
                 }
             }
         }
 
-        if (Integer.valueOf(EPISODENUMBER) < 69) {
+        if (episode_is_old) {
             fp = FilePackage.getInstance();
             final String formattedpackagename = getFormattedPackagename(EPISODENUMBER, DATE);
             fp.setName(formattedpackagename);
 
             final String[] finallinks = br.getRegex("\n\\s+<a href=\"(.*?)\">.*?").getColumn(0);
             final String title = br.getRegex("<a id=\"eptitle\".*?>(.*?)<").getMatch(0);
-            if (finallinks == null || finallinks.length == 0 || title == null) { return null; }
+            if (finallinks == null || finallinks.length == 0 || title == null) {
+                return null;
+            }
             for (final String finallink : finallinks) {
                 // mms not supported
                 if (finallink.startsWith("mms")) {
@@ -129,7 +158,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 dlLink.setProperty("originallink", finallink);
                 final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVFormattedFilename(dlLink);
                 dlLink.setFinalFileName(formattedFilename);
-                if (FASTCHECKENABLED) dlLink.setAvailable(true);
+                if (FASTCHECKENABLED) {
+                    dlLink.setAvailable(true);
+                }
                 decryptedLinks.add(dlLink);
                 fp.add(dlLink);
             }
@@ -172,7 +203,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                 decryptedLinks.addAll(dllinks);
             }
         }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) { return null; }
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            return null;
+        }
 
         fp = FilePackage.getInstance();
         final String formattedpackagename = getFormattedPackagename(EPISODENUMBER, DATE);
@@ -192,8 +225,11 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         }
         ArrayList<String> parts = new ArrayList<String>();
         parts.add("1");
-        for (String jump : jumps)
-            if (!parts.contains(jump)) parts.add(jump);
+        for (String jump : jumps) {
+            if (!parts.contains(jump)) {
+                parts.add(jump);
+            }
+        }
         final String formattedpackagename = getFormattedPackagename(EPISODENUMBER, DATE);
         for (final String part : parts) {
             String directlink = "http://fernsehkritik.tv/js/directme.php?file=";
@@ -210,7 +246,9 @@ public class FernsehkritikTvA extends PluginForDecrypt {
             dlLink.setProperty("originallink", directlink);
             final String formattedFilename = ((jd.plugins.hoster.FernsehkritikTv) HOSTPLUGIN).getFKTVFormattedFilename(dlLink);
             dlLink.setFinalFileName(formattedFilename);
-            if (FASTCHECKENABLED) dlLink.setAvailable(true);
+            if (FASTCHECKENABLED) {
+                dlLink.setAvailable(true);
+            }
             decryptedLinks.add(dlLink);
         }
         return decryptedLinks;
@@ -228,8 +266,12 @@ public class FernsehkritikTvA extends PluginForDecrypt {
 
     private String getFormattedPackagename(final String episodenumber, final String date) throws ParseException {
         String formattedpackagename = CFG.getStringProperty(CUSTOM_PACKAGENAME, defaultCustomPackagename);
-        if (formattedpackagename == null || formattedpackagename.equals("")) formattedpackagename = defaultCustomPackagename;
-        if (!formattedpackagename.contains("*episodenumber*")) formattedpackagename = defaultCustomPackagename;
+        if (formattedpackagename == null || formattedpackagename.equals("")) {
+            formattedpackagename = defaultCustomPackagename;
+        }
+        if (!formattedpackagename.contains("*episodenumber*")) {
+            formattedpackagename = defaultCustomPackagename;
+        }
 
         String formattedDate = null;
         if (date != null && formattedpackagename.contains("*date*")) {
@@ -249,10 +291,11 @@ public class FernsehkritikTvA extends PluginForDecrypt {
                     formattedDate = "";
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedpackagename = formattedpackagename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedpackagename = formattedpackagename.replace("*date*", "");
+            }
         }
         if (formattedpackagename.contains("*episodenumber*")) {
             formattedpackagename = formattedpackagename.replace("*episodenumber*", episodenumber);
