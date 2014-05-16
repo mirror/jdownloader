@@ -166,7 +166,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         long totalSize = 0;
         for (final String singleinfo : links) {
             /* Check if it's a folder */
-            if ("32".equals(getJson("itemType", singleinfo))) {
+            final String itemType = getJson("itemType", singleinfo);
+            /* Check for invalid data */
+            if (itemType == null) {
+                continue;
+            }
+            if (itemType.equals("32")) {
                 final String folder_id = new Regex(singleinfo, "\"((Non)?EmptyDocumentFolder|NonEmptyAlbum)\",\"id\":\"([^<>\"]*?)\"").getMatch(2);
                 final String folder_cid = getJson("creatorCid", singleinfo);
                 if (folder_id == null || folder_cid == null) {
@@ -261,10 +266,10 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     }
 
     public static String getLinktext(final Browser br) {
-        String linktext = br.getRegex("\"children\":\\[(.*?)\\],\"covers\":").getMatch(0);
+        String linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"covers\":").getMatch(0);
         // Check for single pictures: https://onedrive.live.com/?cid=E0615573A3471F93&id=E0615573A3471F93!1567
         if (linktext == null) {
-            linktext = br.getRegex("\"items\":\\[(.*?)\\]").getMatch(0);
+            linktext = br.getRegex("\"items\":\\[(\\{.*?\\})\\]").getMatch(0);
         }
         if (linktext == null) {
             linktext = br.getRegex("\"children\":\\[(.*?)\\],\"defaultSort\":").getMatch(0);
