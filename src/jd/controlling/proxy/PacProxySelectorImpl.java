@@ -15,6 +15,7 @@ import java.util.logging.Level;
 
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Plugin;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
@@ -67,10 +68,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
     }
 
-    @Override
-    protected void onBanListUpdate() {
-    }
-
     public PacProxySelectorImpl(ProxyData proxyData) {
 
         logger = LogController.getInstance().getLogger(PacProxySelectorImpl.class.getName());
@@ -105,8 +102,9 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     public List<HTTPProxy> getProxiesByUrl(String urlOrDomain) {
         updatePacScript();
         PacProxySelector lSelector = selector;
-        if (lSelector == null)
+        if (lSelector == null) {
             return null;
+        }
         ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
 
         URL url = null;
@@ -133,7 +131,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                                 switch (p.type()) {
                                 case DIRECT:
                                     if (p.address() == null) {
-                                        httpProxy = new HTTPProxy(TYPE.NONE);
+                                        httpProxy = HTTPProxy.NONE;
                                     } else {
 
                                         httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
@@ -149,6 +147,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
                                 cached = new ExtProxy(this, httpProxy);
                                 cacheMap.put(p.toString(), cached);
+
                             }
 
                             cached.setPreferNativeImplementation(isPreferNativeImplementation());
@@ -163,10 +162,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                                 cached.setPass(pw);
                                 cached.setUser(us);
                             }
-
-                            if (!isBanned(url.getHost(), cached)) {
-                                ret.add(cached);
-                            }
+                            ret.add(cached);
                         } catch (Throwable e) {
                             logger.log(e);
                         }
@@ -290,21 +286,23 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public void setUser(String user) {
-        if (StringUtils.equals(user, this.user))
+        if (StringUtils.equals(user, this.user)) {
             return;
+        }
         this.user = user;
         // reset banlist
-        banList = new ArrayList<ProxyBan>();
-        cacheMap.clear();
+
+        // cacheMap.clear();
     }
 
     public void setPassword(String password) {
-        if (StringUtils.equals(password, this.password))
+        if (StringUtils.equals(password, this.password)) {
             return;
+        }
         this.password = password;
         // reset banlist
-        banList = new ArrayList<ProxyBan>();
-        cacheMap.clear();
+
+        // cacheMap.clear();
 
     }
 
@@ -323,22 +321,24 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != PacProxySelectorImpl.class)
+        if (obj == null || obj.getClass() != PacProxySelectorImpl.class) {
             return false;
+        }
         return StringUtils.equalsIgnoreCase(pacUrl, ((PacProxySelectorImpl) obj).getPACUrl());
     }
 
     @Override
     public int hashCode() {
-        if (pacUrl == null)
+        if (pacUrl == null) {
             return "".hashCode();
+        }
         return pacUrl.hashCode();
     }
 
     public void setPACUrl(String value) {
         this.pacUrl = value;
         selector = null;
-        cacheMap.clear();
+        // cacheMap.clear();
     }
 
     @Override
@@ -376,7 +376,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
             // es.getValue().setUser(user2 == null ? getUser() : user2)
 
         }
-        cacheMap.clear();
+        // cacheMap.clear();
 
     }
 
@@ -384,4 +384,25 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         return usedProxy.getHost() + ":" + usedProxy.getPort();
     }
 
+    @Override
+    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread) {
+        // can orgRef be null? I doubt that. TODO:ensure
+        if (!cacheMap.contains(orgReference)) {
+            return false;
+        }
+        return super.isProxyBannedFor(orgReference, url, pluginFromThread);
+    }
+
+    @Override
+    public boolean isSelectorBannedFor(Plugin pluginForHost) {
+        // actually, we cannot ban a pac selector at all, because there might always be a new proxy available.
+        // in most cases however, once the selector is banned for a plugin - it is banned. This should work on most cases.
+        // only pac scripts that have some kind of random proxy selection active would fail here
+        return super.isSelectorBannedFor(pluginForHost);
+    }
+
+    public boolean isSelectorBannedFor(URL url) {
+        // pac might always have a working proxy, and thus is never blocked by an url only
+        return false;
+    }
 }

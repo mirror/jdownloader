@@ -112,7 +112,9 @@ public class LinkChecker<E extends CheckableLink> {
 
     @SuppressWarnings("unchecked")
     protected void linkChecked(InternCheckableLink link) {
-        if (link == null) return;
+        if (link == null) {
+            return;
+        }
         boolean stopped = linksDone.incrementAndGet() == linksRequested.get();
         if (stopped) {
             CHECKER.decrementAndGet();
@@ -125,21 +127,27 @@ public class LinkChecker<E extends CheckableLink> {
     }
 
     public void check(List<E> links) {
-        if (links == null) throw new IllegalArgumentException("links is null?");
+        if (links == null) {
+            throw new IllegalArgumentException("links is null?");
+        }
         for (E link : links) {
             check(link);
         }
     }
 
     public void check(E link) {
-        if (link == null || link.getDownloadLink() == null) throw new IllegalArgumentException("links is null?");
+        if (link == null || link.getDownloadLink() == null) {
+            throw new IllegalArgumentException("links is null?");
+        }
         DownloadLink dlLink = link.getDownloadLink();
         /* get Host of the link */
         String host = dlLink.getHost();
         if (Plugin.FTP_HOST.equalsIgnoreCase(host) || Plugin.DIRECT_HTTP_HOST.equalsIgnoreCase(host) || Plugin.HTTP_LINKS_HOST.equalsIgnoreCase(host)) {
             /* direct and ftp links are divided by their hostname */
             String specialHost = Browser.getHost(dlLink.getDownloadURL());
-            if (specialHost != null) host = host + "_" + specialHost;
+            if (specialHost != null) {
+                host = host + "_" + specialHost;
+            }
         }
         InternCheckableLink checkableLink = new InternCheckableLink(link, this);
         if (linksRequested.getAndIncrement() == linksDone.get()) {
@@ -202,8 +210,10 @@ public class LinkChecker<E extends CheckableLink> {
     /* start a new linkCheckThread for the given host */
     private static void startNewThread(final String threadHost) {
         synchronized (LOCK) {
-            if (CHECK_THREADS.size() >= MAX_THREADS) return;
-            final LinkCheckerThread newThread = new LinkCheckerThread(new Runnable() {
+            if (CHECK_THREADS.size() >= MAX_THREADS) {
+                return;
+            }
+            final LinkCheckerThread newThread = new LinkCheckerThread() {
 
                 public void run() {
                     int stopDelay = 1;
@@ -243,7 +253,9 @@ public class LinkChecker<E extends CheckableLink> {
                                         stopDelay = 1;
                                         HashSet<DownloadLink> massLinkCheck = new HashSet<DownloadLink>();
                                         for (InternCheckableLink link : roundSplit) {
-                                            if (link.linkCheckAllowed()) massLinkCheck.add(link.getCheckableLink().getDownloadLink());
+                                            if (link.linkCheckAllowed()) {
+                                                massLinkCheck.add(link.getCheckableLink().getDownloadLink());
+                                            }
                                         }
                                         /* now we check the links */
                                         if (plg == null && massLinkCheck.size() > 0) {
@@ -259,40 +271,47 @@ public class LinkChecker<E extends CheckableLink> {
                                             plg.setBrowser(new Browser());
                                             plg.init();
                                         }
-                                        boolean massCheck = false;
+                                        this.plugin = plg;
                                         try {
-                                            /* try mass link check */
-                                            logger.clear();
-                                            plg.setBrowser(new Browser());
-                                            logger.info("Check Multiple FileInformation");
-                                            massCheck = plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
-                                        } catch (final Throwable e) {
-                                            logger.log(e);
-                                            logger.flush();
-                                        } finally {
-                                            logger.clear();
-                                            massLinkCheck = null;
+                                            boolean massCheck = false;
                                             try {
-                                                plg.getBrowser().getHttpConnection().disconnect();
-                                            } catch (Throwable e) {
-                                            }
-                                        }
-                                        logger.info("Multiple FileInformation Available: " + massCheck);
-                                        if (massCheck == false) {
-                                            HashSet<DownloadLink> dupCheck = new HashSet<DownloadLink>();
-                                            for (InternCheckableLink link : roundSplit) {
-                                                if (link.linkCheckAllowed() && plg != null) {
-                                                    /*
-                                                     * this will check the link, if not already checked
-                                                     */
-                                                    if (dupCheck.add(link.getCheckableLink().getDownloadLink())) LinkChecker.updateAvailableStatus(plg, link.getCheckableLink().getDownloadLink(), logger);
+                                                /* try mass link check */
+                                                logger.clear();
+                                                plg.setBrowser(new Browser());
+                                                logger.info("Check Multiple FileInformation");
+                                                massCheck = plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
+                                            } catch (final Throwable e) {
+                                                logger.log(e);
+                                                logger.flush();
+                                            } finally {
+                                                logger.clear();
+                                                massLinkCheck = null;
+                                                try {
+                                                    plg.getBrowser().getHttpConnection().disconnect();
+                                                } catch (Throwable e) {
                                                 }
-                                                link.getLinkChecker().linkChecked(link);
                                             }
-                                        } else {
-                                            for (InternCheckableLink link : roundSplit) {
-                                                link.getLinkChecker().linkChecked(link);
+                                            logger.info("Multiple FileInformation Available: " + massCheck);
+                                            if (massCheck == false) {
+                                                HashSet<DownloadLink> dupCheck = new HashSet<DownloadLink>();
+                                                for (InternCheckableLink link : roundSplit) {
+                                                    if (link.linkCheckAllowed() && plg != null) {
+                                                        /*
+                                                         * this will check the link, if not already checked
+                                                         */
+                                                        if (dupCheck.add(link.getCheckableLink().getDownloadLink())) {
+                                                            LinkChecker.updateAvailableStatus(plg, link.getCheckableLink().getDownloadLink(), logger);
+                                                        }
+                                                    }
+                                                    link.getLinkChecker().linkChecked(link);
+                                                }
+                                            } else {
+                                                for (InternCheckableLink link : roundSplit) {
+                                                    link.getLinkChecker().linkChecked(link);
+                                                }
                                             }
+                                        } finally {
+                                            this.plugin = null;
                                         }
                                     }
                                 }
@@ -339,7 +358,6 @@ public class LinkChecker<E extends CheckableLink> {
                         }
                     }
                 }
-            }) {
 
                 @Override
                 public boolean isDebug() {
@@ -440,7 +458,9 @@ public class LinkChecker<E extends CheckableLink> {
                 logger.flush();
                 break;
             case TRUE:
-                if (FinalLinkState.OFFLINE.equals(link.getFinalLinkState())) link.setFinalLinkState(null);
+                if (FinalLinkState.OFFLINE.equals(link.getFinalLinkState())) {
+                    link.setFinalLinkState(null);
+                }
             case FALSE:
             default:
                 logger.clear();

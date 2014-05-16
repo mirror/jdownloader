@@ -92,7 +92,9 @@ public class LinkCrawler {
     protected final static ScheduledExecutorService TIMINGQUEUE = DelayedRunnable.getNewScheduledExecutorService();
 
     public boolean isDoDuplicateFinderFinalCheck() {
-        if (parentCrawler != null) parentCrawler.isDoDuplicateFinderFinalCheck();
+        if (parentCrawler != null) {
+            parentCrawler.isDoDuplicateFinderFinalCheck();
+        }
         return doDuplicateFinderFinalCheck;
     }
 
@@ -110,7 +112,9 @@ public class LinkCrawler {
          */
         threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new PriorityBlockingQueue<Runnable>(100, new Comparator<Runnable>() {
             public int compare(Runnable o1, Runnable o2) {
-                if (o1 == o2) return 0;
+                if (o1 == o2) {
+                    return 0;
+                }
                 long l1 = ((LinkCrawlerRunnable) o1).getAverageRuntime();
                 long l2 = ((LinkCrawlerRunnable) o2).getAverageRuntime();
                 return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
@@ -206,7 +210,9 @@ public class LinkCrawler {
                     /* for generic ftp sites */
                     ftp = pHost;
                 }
-                if (ftp != null && directHTTP != null) break;
+                if (ftp != null && directHTTP != null) {
+                    break;
+                }
             }
             if (ftp != null) {
                 /* generic ftp handling is done at the end */
@@ -219,7 +225,9 @@ public class LinkCrawler {
     }
 
     public long getCreated() {
-        if (parentCrawler != null) return parentCrawler.getCreated();
+        if (parentCrawler != null) {
+            return parentCrawler.getCreated();
+        }
         return created;
     }
 
@@ -233,7 +241,9 @@ public class LinkCrawler {
      * @return
      */
     protected int getCrawlerGeneration(boolean thisGeneration) {
-        if (!thisGeneration && parentCrawler != null) { return Math.max(crawlerGeneration.get(), parentCrawler.getCrawlerGeneration(false)); }
+        if (!thisGeneration && parentCrawler != null) {
+            return Math.max(crawlerGeneration.get(), parentCrawler.getCrawlerGeneration(false));
+        }
         return crawlerGeneration.get();
     }
 
@@ -259,12 +269,16 @@ public class LinkCrawler {
     }
 
     public boolean isBlacklisted(LazyCrawlerPlugin plugin) {
-        if (parentCrawler != null && parentCrawler.isBlacklisted(plugin)) return true;
+        if (parentCrawler != null && parentCrawler.isBlacklisted(plugin)) {
+            return true;
+        }
         return crawlerPluginBlacklist.contains(plugin.getDisplayName());
     }
 
     public boolean isBlacklisted(LazyHostPlugin plugin) {
-        if (parentCrawler != null && parentCrawler.isBlacklisted(plugin)) return true;
+        if (parentCrawler != null && parentCrawler.isBlacklisted(plugin)) {
+            return true;
+        }
         return hostPluginBlacklist.contains(plugin.getDisplayName());
     }
 
@@ -280,14 +294,20 @@ public class LinkCrawler {
 
     public void crawl(final String text, final String url, final boolean allowDeep) {
         final int generation = this.getCrawlerGeneration(true);
-        if (!checkStartNotify()) return;
+        if (!checkStartNotify()) {
+            return;
+        }
         try {
-            if (StringUtils.isEmpty(text)) return;
+            if (StringUtils.isEmpty(text)) {
+                return;
+            }
             if (insideCrawlerPlugin()) {
                 java.util.List<CrawledLink> links = _crawl(text, url, allowDeep);
                 crawl(links);
             } else {
-                if (!checkStartNotify()) return;
+                if (!checkStartNotify()) {
+                    return;
+                }
                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
                     @Override
@@ -305,7 +325,9 @@ public class LinkCrawler {
 
     private java.util.List<CrawledLink> _crawl(String text, String url, boolean allowDeep) {
         String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
-        if (possibleLinks == null || possibleLinks.length == 0) return null;
+        if (possibleLinks == null || possibleLinks.length == 0) {
+            return null;
+        }
         final java.util.List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
         for (String possibleLink : possibleLinks) {
             CrawledLink link;
@@ -317,9 +339,13 @@ public class LinkCrawler {
 
     public void crawl(final java.util.List<CrawledLink> possibleCryptedLinks) {
         final int generation = this.getCrawlerGeneration(true);
-        if (!checkStartNotify()) return;
+        if (!checkStartNotify()) {
+            return;
+        }
         try {
-            if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
+            if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) {
+                return;
+            }
             if (insideCrawlerPlugin()) {
                 /*
                  * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
@@ -331,7 +357,9 @@ public class LinkCrawler {
                 /*
                  * enqueue this cryptedLink for decrypting
                  */
-                if (!checkStartNotify()) return;
+                if (!checkStartNotify()) {
+                    return;
+                }
                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
                     @Override
@@ -349,7 +377,9 @@ public class LinkCrawler {
     public static boolean insideCrawlerPlugin() {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             Object owner = ((LinkCrawlerThread) Thread.currentThread()).getCurrentOwner();
-            if (owner != null && owner instanceof PluginForDecrypt) return true;
+            if (owner != null && owner instanceof PluginForDecrypt) {
+                return true;
+            }
         }
         return false;
     }
@@ -357,7 +387,9 @@ public class LinkCrawler {
     public static boolean insideHosterPlugin() {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             Object owner = ((LinkCrawlerThread) Thread.currentThread()).getCurrentOwner();
-            if (owner != null && owner instanceof PluginForHost) return true;
+            if (owner != null && owner instanceof PluginForHost) {
+                return true;
+            }
         }
         return false;
     }
@@ -408,7 +440,9 @@ public class LinkCrawler {
     private boolean checkStartNotify() {
         boolean started = false;
         synchronized (this) {
-            if (!allowCrawling) return false;
+            if (!allowCrawling) {
+                return false;
+            }
             if (crawler.get() == 0) {
                 started = true;
                 /* this LinkCrawler instance started, notify static counter */
@@ -424,12 +458,18 @@ public class LinkCrawler {
     }
 
     protected void crawlDeeper(CrawledLink source) {
-        if (!checkStartNotify()) return;
+        if (!checkStartNotify()) {
+            return;
+        }
         try {
-            if (source == null) return;
+            if (source == null) {
+                return;
+            }
             synchronized (duplicateFinderDeep) {
                 /* did we already crawlDeeper this url */
-                if (!duplicateFinderDeep.add(source.getURL())) { return; }
+                if (!duplicateFinderDeep.add(source.getURL())) {
+                    return;
+                }
             }
             Browser br = null;
             try {
@@ -452,7 +492,9 @@ public class LinkCrawler {
                         } catch (Throwable e) {
                         }
                         url = br.getRedirectLocation();
-                        if (loopAvoid.add(url) == false) break;
+                        if (loopAvoid.add(url) == false) {
+                            break;
+                        }
                         br.openGetConnection(url);
                     } else {
                         break;
@@ -468,7 +510,9 @@ public class LinkCrawler {
                      * downloadable content, we use directhttp and distribute the url
                      */
                     possibleCryptedLinks = _crawl("directhttp://" + url, null, false);
-                    if (possibleCryptedLinks != null) crawl(possibleCryptedLinks);
+                    if (possibleCryptedLinks != null) {
+                        crawl(possibleCryptedLinks);
+                    }
                 } else {
                     /* try to load the webpage and find links on it */
                     br.setLoadLimit(limit);
@@ -488,7 +532,9 @@ public class LinkCrawler {
                                 public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                                     /* unhandled url, lets parse the content on it */
                                     List<CrawledLink> possibleCryptedLinks2 = lc._crawl(browserContent, finalBaseUrl, false);
-                                    if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) lc.crawl(possibleCryptedLinks2);
+                                    if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
+                                        lc.crawl(possibleCryptedLinks2);
+                                    }
                                 }
                             });
                         }
@@ -511,9 +557,13 @@ public class LinkCrawler {
 
     protected void distribute(java.util.List<CrawledLink> possibleCryptedLinks) {
         final int generation = this.getCrawlerGeneration(true);
-        if (!checkStartNotify()) return;
+        if (!checkStartNotify()) {
+            return;
+        }
         try {
-            if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
+            if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) {
+                return;
+            }
             mainloop: for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
                 if (generation != this.getCrawlerGeneration(false)) {
                     /* LinkCrawler got aborted! */
@@ -547,7 +597,9 @@ public class LinkCrawler {
                                             if (pCon.hideLinks()) {
                                                 /* we hide the links */
                                                 DownloadLink dl = link.getDownloadLink();
-                                                if (dl != null) dl.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                                                if (dl != null) {
+                                                    dl.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                                                }
                                             }
                                         }
                                     });
@@ -569,7 +621,9 @@ public class LinkCrawler {
                                              * enqueue these cryptedLinks for decrypting
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
-                                                if (!checkStartNotify()) return;
+                                                if (!checkStartNotify()) {
+                                                    return;
+                                                }
                                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
                                                     @Override
@@ -591,7 +645,9 @@ public class LinkCrawler {
                          */
                         for (final LazyCrawlerPlugin pDecrypt : getCrawlerPlugins()) {
 
-                            if (isBlacklisted(pDecrypt)) continue;
+                            if (isBlacklisted(pDecrypt)) {
+                                continue;
+                            }
 
                             if (pDecrypt.canHandle(url)) {
 
@@ -615,7 +671,9 @@ public class LinkCrawler {
                                              * enqueue these cryptedLinks for decrypting
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
-                                                if (!checkStartNotify()) return;
+                                                if (!checkStartNotify()) {
+                                                    return;
+                                                }
                                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
                                                     public long getAverageRuntime() {
@@ -649,7 +707,9 @@ public class LinkCrawler {
                     }
                     /* now we will walk through all available hoster plugins */
                     for (final LazyHostPlugin pHost : pHosts) {
-                        if (isBlacklisted(pHost)) continue;
+                        if (isBlacklisted(pHost)) {
+                            continue;
+                        }
                         if (!isDirectHttpEnabled() && (pHost.getDisplayName().equals(DIRECT_HTTP) || pHost.getDisplayName().equals(HTTP_LINKS))) {
                             continue;
                         }
@@ -662,7 +722,9 @@ public class LinkCrawler {
                                 }
                                 processHostPlugin(pHost, possibleCryptedLink);
                             } else {
-                                if (!checkStartNotify()) return;
+                                if (!checkStartNotify()) {
+                                    return;
+                                }
                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
                                     @Override
                                     public long getAverageRuntime() {
@@ -720,7 +782,9 @@ public class LinkCrawler {
                                 }
                                 processHostPlugin(directHTTP, modifiedPossibleCryptedLink);
                             } else {
-                                if (!checkStartNotify()) return;
+                                if (!checkStartNotify()) {
+                                    return;
+                                }
                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
                                     @Override
                                     public long getAverageRuntime() {
@@ -746,7 +810,9 @@ public class LinkCrawler {
                                 }
                                 processHostPlugin(ftp, possibleCryptedLink);
                             } else {
-                                if (!checkStartNotify()) return;
+                                if (!checkStartNotify()) {
+                                    return;
+                                }
                                 threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
                                     @Override
@@ -772,7 +838,9 @@ public class LinkCrawler {
                             }
                             crawlDeeper(possibleCryptedLink);
                         } else {
-                            if (!checkStartNotify()) return;
+                            if (!checkStartNotify()) {
+                                return;
+                            }
                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
                                 @Override
@@ -794,8 +862,12 @@ public class LinkCrawler {
     }
 
     protected List<LazyCrawlerPlugin> getCrawlerPlugins() {
-        if (parentCrawler != null) return parentCrawler.getCrawlerPlugins();
-        if (cHosts != null) return cHosts;
+        if (parentCrawler != null) {
+            return parentCrawler.getCrawlerPlugins();
+        }
+        if (cHosts != null) {
+            return cHosts;
+        }
         cHosts = CrawlerPluginController.getInstance().list();
         return cHosts;
     }
@@ -855,7 +927,9 @@ public class LinkCrawler {
         final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
         possibleCryptedLink.setCustomCrawledLinkModifier(null);
         final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
-        if (!checkStartNotify()) return;
+        if (!checkStartNotify()) {
+            return;
+        }
         ClassLoader oldClassLoader = null;
         try {
             oldClassLoader = Thread.currentThread().getContextClassLoader();
@@ -962,7 +1036,9 @@ public class LinkCrawler {
     }
 
     private void forwardCrawledLinkInfos(CrawledLink source, CrawledLink dest, final CrawledLinkModifier linkModifier, final String sourceURLs[]) {
-        if (source == null || dest == null) return;
+        if (source == null || dest == null) {
+            return;
+        }
         dest.setSourceLink(source);
         dest.setOrigin(source.getOrigin());
         dest.setSourceUrls(sourceURLs);
@@ -976,7 +1052,9 @@ public class LinkCrawler {
 
                 @Override
                 public void modifyCrawledLink(CrawledLink link) {
-                    if (linkModifier != null) linkModifier.modifyCrawledLink(link);
+                    if (linkModifier != null) {
+                        linkModifier.modifyCrawledLink(link);
+                    }
                     childCustomModifier.modifyCrawledLink(link);
                 }
             });
@@ -991,7 +1069,9 @@ public class LinkCrawler {
         }
 
         ArchiveInfo d = null;
-        if (dest.hasArchiveInfo()) d = dest.getArchiveInfo();
+        if (dest.hasArchiveInfo()) {
+            d = dest.getArchiveInfo();
+        }
         if (source.hasArchiveInfo()) {
             if (d == null) {
                 dest.setArchiveInfo(new ArchiveInfo().migrate(source.getArchiveInfo()));
@@ -1006,7 +1086,9 @@ public class LinkCrawler {
     private PackageInfo convertFilePackageInfos(CrawledLink link) {
         if (link.getDownloadLink() != null && !FilePackage.isDefaultFilePackage(link.getDownloadLink().getFilePackage())) {
             PackageInfo fpi = link.getDesiredPackageInfo();
-            if (fpi == null) fpi = new PackageInfo();
+            if (fpi == null) {
+                fpi = new PackageInfo();
+            }
             FilePackage dp = link.getDownloadLink().getFilePackage();
             if (dp.getDownloadDirectory() != null && !dp.getDownloadDirectory().equals(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder())) {
                 // do not set downloadfolder if it is the defaultfolder
@@ -1058,17 +1140,23 @@ public class LinkCrawler {
     }
 
     protected void forwardDownloadLinkInfos(DownloadLink source, List<DownloadLink> dests) {
-        if (source == null || dests == null || dests.size() == 0) return;
+        if (source == null || dests == null || dests.size() == 0) {
+            return;
+        }
         // source.getFilePackage().remove(source);
         for (DownloadLink dl : dests) {
             /* create copy of ArrayList */
             List<String> srcPWs = source.getSourcePluginPasswordList();
-            if (srcPWs != null && srcPWs.size() > 0) dl.setSourcePluginPasswordList(new ArrayList<String>(srcPWs));
+            if (srcPWs != null && srcPWs.size() > 0) {
+                dl.setSourcePluginPasswordList(new ArrayList<String>(srcPWs));
+            }
             dl.setComment(source.getComment());
             dl.setName(source.getView().getDisplayName());
             dl.forceFileName(source.getForcedFileName());
             dl.setFinalFileName(source.getFinalFileName());
-            if (source.gotBrowserUrl()) dl.setBrowserUrl(source.getBrowserUrl());
+            if (source.gotBrowserUrl()) {
+                dl.setBrowserUrl(source.getBrowserUrl());
+            }
             dl.setAvailableStatus(source.getAvailableStatus());
             Map<String, Object> props = source.getProperties();
             if (props != null && !props.isEmpty()) {
@@ -1116,14 +1204,20 @@ public class LinkCrawler {
         cryptedLink.setCustomCrawledLinkModifier(null);
         final String[] sourceURLs = getAndClearSourceURLs(cryptedLink);
         final int generation = this.getCrawlerGeneration(true);
-        if (!checkStartNotify()) return;
+        if (!checkStartNotify()) {
+            return;
+        }
         ClassLoader oldClassLoader = null;
         try {
             oldClassLoader = Thread.currentThread().getContextClassLoader();
-            if (oplg == null || cryptedLink.getURL() == null) return;
+            if (oplg == null || cryptedLink.getURL() == null) {
+                return;
+            }
             synchronized (duplicateFinderContainer) {
                 /* did we already decrypt this crypted link? */
-                if (!duplicateFinderContainer.add(cryptedLink.getURL())) { return; }
+                if (!duplicateFinderContainer.add(cryptedLink.getURL())) {
+                    return;
+                }
             }
             if (this.isCrawledLinkFiltered(cryptedLink)) {
                 /* link is filtered, stop here */
@@ -1176,7 +1270,9 @@ public class LinkCrawler {
                         for (CrawledLink decryptedPossibleLink : decryptedPossibleLinks) {
                             forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink, parentLinkModifier, sourceURLs);
                         }
-                        if (!checkStartNotify()) return;
+                        if (!checkStartNotify()) {
+                            return;
+                        }
                         /* enqueue distributing of the links */
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
@@ -1214,20 +1310,26 @@ public class LinkCrawler {
         final int generation = this.getCrawlerGeneration(true);
         final BrokenCrawlerHandler brokenCrawler = cryptedLink.getBrokenCrawlerHandler();
         cryptedLink.setBrokenCrawlerHandler(null);
-        if (!checkStartNotify()) return;
+        if (!checkStartNotify()) {
+            return;
+        }
         ClassLoader oldClassLoader = null;
         try {
             oldClassLoader = Thread.currentThread().getContextClassLoader();
             synchronized (duplicateFinderCrawler) {
                 /* did we already decrypt this crypted link? */
-                if (!duplicateFinderCrawler.add(cryptedLink.getURL())) { return; }
+                if (!duplicateFinderCrawler.add(cryptedLink.getURL())) {
+                    return;
+                }
             }
             if (this.isCrawledLinkFiltered(cryptedLink)) {
                 /* link is filtered, stop here */
                 return;
             }
             processedLinksCounter.incrementAndGet();
-            if (lazyC == null || cryptedLink.getCryptedLink() == null) return;
+            if (lazyC == null || cryptedLink.getCryptedLink() == null) {
+                return;
+            }
             PluginForDecrypt wplg = null;
             /*
              * we want a fresh pluginClassLoader here
@@ -1239,6 +1341,7 @@ public class LinkCrawler {
                 LogController.CL().log(e1);
                 return;
             }
+
             wplg.setBrowser(new Browser());
             LogSource logger = null;
             Logger oldLogger = null;
@@ -1277,12 +1380,16 @@ public class LinkCrawler {
                         /* we are now in IOEQ, thats why we create copy and then push work back into LinkCrawler */
                         java.util.List<CrawledLink> linksToDistribute = null;
                         synchronized (distributedLinks) {
-                            if (distributedLinks.size() == 0) return;
+                            if (distributedLinks.size() == 0) {
+                                return;
+                            }
                             linksToDistribute = new ArrayList<CrawledLink>(distributedLinks);
                             distributedLinks.clear();
                         }
                         final java.util.List<CrawledLink> linksToDistributeFinal = linksToDistribute;
-                        if (!checkStartNotify()) { return; }
+                        if (!checkStartNotify()) {
+                            return;
+                        }
                         /* enqueue distributing of the links */
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
@@ -1315,7 +1422,9 @@ public class LinkCrawler {
                 wplg.setDistributer(dist = new LinkCrawlerDistributer() {
 
                     public void distribute(DownloadLink... links) {
-                        if (links == null || links.length == 0) return;
+                        if (links == null || links.length == 0) {
+                            return;
+                        }
                         final java.util.List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
                         for (DownloadLink link : links) {
                             CrawledLink ret;
@@ -1332,7 +1441,9 @@ public class LinkCrawler {
                             distributeLinksDelayerFinal.run();
                         } else {
                             /* we do not delay the distribute */
-                            if (!checkStartNotify()) { return; }
+                            if (!checkStartNotify()) {
+                                return;
+                            }
                             /* enqueue distributing of the links */
                             threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
@@ -1435,7 +1546,9 @@ public class LinkCrawler {
     }
 
     protected void handleCrawledLink(CrawledLink link) {
-        if (link == null) return;
+        if (link == null) {
+            return;
+        }
         link.setCreated(getCreated());
         CrawledLink origin = link.getOriginLink();
         CrawledLinkModifier customModifier = link.getCustomCrawledLinkModifier();
@@ -1455,7 +1568,9 @@ public class LinkCrawler {
         boolean specialHandling = origin != null && (origin != link) && (origin.getLinkID().equals(link.getLinkID()));
         if (isDoDuplicateFinderFinalCheck()) {
             synchronized (duplicateFinderFinal) {
-                if (!duplicateFinderFinal.add(link.getLinkID()) && !specialHandling) { return; }
+                if (!duplicateFinderFinal.add(link.getLinkID()) && !specialHandling) {
+                    return;
+                }
             }
         }
         if (isCrawledLinkFiltered(link) == false) {
@@ -1467,7 +1582,9 @@ public class LinkCrawler {
 
     protected boolean isCrawledLinkFiltered(CrawledLink link) {
         if (parentCrawler != null && getFilter() != parentCrawler.getFilter()) {
-            if (parentCrawler.isCrawledLinkFiltered(link)) return true;
+            if (parentCrawler.isCrawledLinkFiltered(link)) {
+                return true;
+            }
         }
         if (getFilter().dropByUrl(link)) {
             filteredLinksCounter.incrementAndGet();
@@ -1543,12 +1660,16 @@ public class LinkCrawler {
     }
 
     public void setFilter(LinkCrawlerFilter filter) {
-        if (filter == null) throw new IllegalArgumentException("filter is null");
+        if (filter == null) {
+            throw new IllegalArgumentException("filter is null");
+        }
         this.filter = filter;
     }
 
     public void setHandler(LinkCrawlerHandler handler) {
-        if (handler == null) throw new IllegalArgumentException("handler is null");
+        if (handler == null) {
+            throw new IllegalArgumentException("handler is null");
+        }
         this.handler = handler;
     }
 

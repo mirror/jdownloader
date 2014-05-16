@@ -132,8 +132,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     public DownloadInterface getDownloadInstance() {
         PluginForHost plugin = processingPlugin.get();
-        if (plugin != null)
+        if (plugin != null) {
             return plugin.getDownloadInterface();
+        }
         return null;
     }
 
@@ -222,8 +223,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                             LogSource.exception(logger, e);
                         }
                         synchronized (activityFlag) {
-                            if (activityFlag.get() == false)
+                            if (activityFlag.get() == false) {
                                 return;
+                            }
                             try {
                                 activityFlag.wait(1000);
                             } catch (final InterruptedException e) {
@@ -262,9 +264,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 }
 
                 @Override
-                protected HTTPProxy selectProxy(String url) throws IOException {
-                    HTTPProxy ret = super.selectProxy(url);
-                    usedProxy = ret;
+                protected List<HTTPProxy> selectProxies(String url) throws IOException {
+                    List<HTTPProxy> ret = super.selectProxies(url);
+
+                    usedProxy = ret.get(0);
 
                     return ret;
                 }
@@ -326,8 +329,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 case MULTI:
                     processingPlugin.set(originalPlugin);
                     originalPlugin.init();
-                    if (AvailableStatus.FALSE == originalPlugin.requestFileInformation(downloadLink))
+                    if (AvailableStatus.FALSE == originalPlugin.requestFileInformation(downloadLink)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                     break;
                 }
                 processingPlugin.set(livePlugin);
@@ -537,8 +541,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     @Override
     public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
         try {
-            if (downloadlink != this.downloadLink)
+            if (downloadlink != this.downloadLink) {
                 return;
+            }
             if (property.getProperty() == DownloadLinkProperty.Property.PLUGIN_PROGRESS) {
                 PluginProgress newProgress = (PluginProgress) property.getValue();
                 PluginProgressTask task = null;

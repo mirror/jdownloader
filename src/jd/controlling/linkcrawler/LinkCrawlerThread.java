@@ -3,6 +3,7 @@ package jd.controlling.linkcrawler;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.http.BrowserSettingsThread;
+import jd.plugins.PluginForDecrypt;
 
 public class LinkCrawlerThread extends BrowserSettingsThread {
 
@@ -38,6 +39,9 @@ public class LinkCrawlerThread extends BrowserSettingsThread {
      */
     public void setCurrentOwner(Object owner) {
         this.owner = owner;
+    }
+
+    public void setActivePlugin(PluginForDecrypt wplg) {
     }
 
 }

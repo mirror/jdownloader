@@ -535,4 +535,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Gateway or Proxy found." })
     String plugins_errors_proxy_connection_nogateway();
 
+    @Default(lngs = { "en" }, values = { "No Gateway or Proxy found." })
+    String AccountController_updateAccountInfo_no_gateway();
+
 }

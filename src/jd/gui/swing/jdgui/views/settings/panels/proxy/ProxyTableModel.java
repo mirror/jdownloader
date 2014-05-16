@@ -6,7 +6,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.swing.DefaultComboBoxModel;
@@ -17,9 +16,9 @@ import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
 
 import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.ConnectionBan;
 import jd.controlling.proxy.NoProxySelector;
 import jd.controlling.proxy.PacProxySelectorImpl;
-import jd.controlling.proxy.ProxyBan;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.SingleBasicProxySelectorImpl;
 import jd.controlling.proxy.SingleDirectGatewaySelector;
@@ -161,8 +160,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
             @Override
             public boolean isEditable(AbstractProxySelectorImpl obj) {
-                if (obj == null)
+                if (obj == null) {
                     return false;
+                }
                 switch (obj.getType()) {
 
                 case NONE:
@@ -754,8 +754,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
                 editing = value;
                 int entries = 0;
-                if (value.getFilter() != null)
+                if (value.getFilter() != null) {
                     entries = value.getFilter().size();
+                }
                 if ((value.getFilter() == null || value.getFilter().getType() == FilterList.Type.BLACKLIST)) {
                     editorBtn.setText(_GUI._.proxytable_edit_btn_blacklist(entries));
                 } else {
@@ -767,8 +768,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             @Override
             public void configureRendererComponent(AbstractProxySelectorImpl value, boolean isSelected, boolean hasFocus, int row, int column) {
                 int entries = 0;
-                if (value.getFilter() != null)
+                if (value.getFilter() != null) {
                     entries = value.getFilter().size();
+                }
                 if ((value.getFilter() == null || value.getFilter().getType() == FilterList.Type.BLACKLIST)) {
                     rendererBtn.setText(_GUI._.proxytable_edit_btn_blacklist(entries));
                 } else {
@@ -876,7 +878,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
 
             @Override
             public boolean isEnabled(AbstractProxySelectorImpl obj) {
-                ArrayList<ProxyBan> bl = obj.getBanList();
+                List<ConnectionBan> bl = obj.getBanList();
 
                 if (bl == null || bl.size() == 0) {
                     return true;
@@ -888,7 +890,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             @Override
             public void configureRendererComponent(AbstractProxySelectorImpl value, boolean isSelected, boolean hasFocus, int row, int column) {
 
-                ArrayList<ProxyBan> bl = value.getBanList();
+                List<ConnectionBan> bl = value.getBanList();
                 if (bl == null || bl.size() == 0) {
                     rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 16));
                     rendererBtn.setText(_GUI._.proxytablemodel_problems(0));
@@ -902,7 +904,7 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             public void configureEditorComponent(AbstractProxySelectorImpl value, boolean isSelected, int row, int column) {
 
                 editing = value;
-                ArrayList<ProxyBan> bl = value.getBanList();
+                List<ConnectionBan> bl = value.getBanList();
                 if (bl == null || bl.size() == 0) {
                     editorBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_UP, 16));
                     editorBtn.setText(_GUI._.proxytablemodel_problems(0));
@@ -914,8 +916,9 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             }
 
             private String appendDescription(String description, String proxyDetailsDialog_ban_time_global) {
-                if (StringUtils.isEmpty(description))
+                if (StringUtils.isEmpty(description)) {
                     return proxyDetailsDialog_ban_time_global;
+                }
 
                 return proxyDetailsDialog_ban_time_global + " (" + description + ")";
             }
@@ -923,59 +926,16 @@ public class ProxyTableModel extends ExtTableModel<AbstractProxySelectorImpl> {
             @Override
             public ExtTooltip createToolTip(Point position, AbstractProxySelectorImpl obj) {
 
-                ArrayList<ProxyBan> banList = obj.getBanList();
+                List<ConnectionBan> bl = obj.getBanList();
 
                 StringBuilder sb = new StringBuilder();
-                if (banList != null && banList.size() > 0) {
-                    for (ProxyBan b : banList) {
+                if (bl != null && bl.size() > 0) {
+                    for (ConnectionBan b : bl) {
 
-                        if (b.getProxy() != null) {
-                            if (StringUtils.isEmpty(b.getDomain())) {
-                                if (b.getUntil() > 0) {
-                                    if (sb.length() > 0)
-                                        sb.append("\r\n");
-                                    sb.append("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_global_proxySpecific(b.getProxy().toString(), new Date(b.getUntil()).toString())));
-                                } else {
-                                    if (sb.length() > 0)
-                                        sb.append("\r\n");
-                                    sb.append("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_global_proxySpecific(b.getProxy().toString())));
-                                }
-                            } else {
-                                if (b.getUntil() > 0) {
-                                    if (sb.length() > 0)
-                                        sb.append("\r\n");
-                                    sb.append("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_domain_proxySpecific(b.getProxy().toString(), b.getDomain(), new Date(b.getUntil()).toString())));
-                                } else {
-                                    if (sb.length() > 0)
-                                        sb.append("\r\n");
-                                    sb.append("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_domain_proxySpecific(b.getProxy().toString(), b.getDomain())));
-                                }
-
-                            }
-                        } else {
-                            if (StringUtils.isEmpty(b.getDomain())) {
-                                if (b.getUntil() > 0) {
-                                    if (sb.length() > 0)
-                                        sb.append("\r\n");
-                                    sb.append("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_global(new Date(b.getUntil()).toString())));
-                                } else {
-                                    if (sb.length() > 0)
-                                        sb.append("\r\n");
-                                    sb.append("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_global()));
-                                }
-                            } else {
-                                if (b.getUntil() > 0) {
-                                    if (sb.length() > 0)
-                                        sb.append("\r\n");
-                                    sb.append("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_time_domain(b.getDomain(), new Date(b.getUntil()).toString())));
-                                } else {
-                                    if (sb.length() > 0)
-                                        sb.append("\r\n");
-                                    sb.append("- " + appendDescription(b.getDescription(), _GUI._.proxyDetailsDialog_ban_endless_domain(b.getDomain())));
-                                }
-
-                            }
+                        if (sb.length() > 0) {
+                            sb.append("\r\n");
                         }
+                        sb.append("- " + b.toString());
 
                     }
                 }

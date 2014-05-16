@@ -535,7 +535,7 @@ public class UpdateController implements UpdateCallbackInterface {
     @Override
     public List<HTTPProxy> selectProxy(URL url) {
         ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-        List<HTTPProxy> lst = ProxyController.getInstance().getProxiesByUrl(url);
+        List<HTTPProxy> lst = ProxyController.getInstance().getProxiesForUpdater(url);
         for (HTTPProxy p : lst) {
             ret.add(new ProxyClone(p));
         }

@@ -29,6 +29,10 @@ public class AccountChecker {
             }
         }
 
+        public Account getAccount() {
+            return account;
+        }
+
         public AccountCheckJob(Account account) {
             this(account, false);
         }
@@ -63,7 +67,9 @@ public class AccountChecker {
         public AccountInfo waitChecked() {
             while (isChecked == false) {
                 synchronized (AccountCheckJob.this) {
-                    if (isChecked == true) break;
+                    if (isChecked == true) {
+                        break;
+                    }
                     try {
                         AccountCheckJob.this.wait();
                     } catch (InterruptedException e) {
@@ -106,7 +112,9 @@ public class AccountChecker {
         synchronized (AccountChecker.this) {
             /* get joblist for same host */
             final String hoster = account.getHoster();
-            if (hoster == null) throw new WTFException("no hoster?");
+            if (hoster == null) {
+                throw new WTFException("no hoster?");
+            }
             LinkedList<AccountCheckJob> list = jobs.get(hoster);
             if (list == null) {
                 list = new LinkedList<AccountCheckJob>();
@@ -120,8 +128,8 @@ public class AccountChecker {
             Thread thread = checkThreads.get(hoster);
             if (thread == null || !thread.isAlive()) {
                 started = checkThreads.isEmpty();
-                thread = new AccountCheckerThread(new Runnable() {
-
+                thread = new AccountCheckerThread() {
+                    @Override
                     public void run() {
                         AccountCheckJob job = null;
                         boolean stopped = false;
@@ -138,17 +146,20 @@ public class AccountChecker {
                                 }
                             }
                             try {
+                                this.job = job;
                                 job.check();
                             } catch (final Throwable e) {
                                 e.printStackTrace();
+                            } finally {
+                                this.job = null;
                             }
                         }
                         if (stopped) {
                             eventSender.fireEvent(new AccountCheckerEvent(AccountChecker.this, AccountCheckerEvent.Types.CHECK_STOPPED, null));
                         }
+
                     }
 
-                }) {
                     @Override
                     public boolean isVerbose() {
                         return true;
@@ -165,7 +176,9 @@ public class AccountChecker {
                 thread.start();
             }
         }
-        if (started) this.eventSender.fireEvent(new AccountCheckerEvent(this, AccountCheckerEvent.Types.CHECK_STARTED, null));
+        if (started) {
+            this.eventSender.fireEvent(new AccountCheckerEvent(this, AccountCheckerEvent.Types.CHECK_STARTED, null));
+        }
         return ret;
     }
 

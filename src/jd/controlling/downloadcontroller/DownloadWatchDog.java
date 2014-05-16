@@ -688,10 +688,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         case ORIGINAL:
                         case MULTI:
                             Account acc = candidate.getCachedAccount().getAccount();
-                            proxies = ProxyController.getInstance().getPossibleProxies(acc.getHoster(), true, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, acc));
+                            proxies = ProxyController.getInstance().runBanFilter(ProxyController.getInstance().getProxiesForDownloadWatchDog(candidate.getCachedAccount().getPlugin(), true, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, acc)), candidate);
                             break;
                         case NONE:
-                            proxies = ProxyController.getInstance().getPossibleProxies(link.getHost(), false, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, null));
+                            proxies = ProxyController.getInstance().runBanFilter(ProxyController.getInstance().getProxiesForDownloadWatchDog(candidate.getCachedAccount().getPlugin(), false, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, null)), candidate);
                             break;
                         }
                     }
@@ -2212,8 +2212,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             } else if (throwable instanceof NoGateWayException) {
                 ProxySelectorInterface proxySelector = result.getController().getProxySelector();
                 if (proxySelector != null && proxySelector instanceof AbstractProxySelectorImpl) {
-                    logger.info("Add Proxy Ban for " + proxySelector + " on domain " + latestPlugin.getHost() + " : " + JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout());
-                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, null, latestPlugin.getHost(), JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout(), _JDT._.plugins_errors_proxy_connection_nogateway());
+                    // logger.info("Add Proxy Ban for " + proxySelector + " on domain " + latestPlugin.getHost() + " : " +
+                    // JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout());
+                    // ProxyController.getInstance().addSessionBan((AbstractProxySelectorImpl) proxySelector, null, latestPlugin.getHost(),
+                    // JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout(),
+                    // _JDT._.plugins_errors_proxy_connection_nogateway());
                 }
 
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
@@ -2227,7 +2230,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 if (proxySelector != null && proxySelector instanceof AbstractProxySelectorImpl) {
                     logger.info("Add Proxy Ban for " + proxySelector + " on domain " + latestPlugin.getHost() + " : " + JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout());
-                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, ((ProxyConnectException) throwable).getProxy(), latestPlugin.getHost(), JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout(), _JDT._.plugins_errors_proxy_connection());
+                    // (AbstractProxySelectorImpl) proxySelector, ((ProxyConnectException) throwable).getProxy(), latestPlugin.getHost(),
+                    // JsonConfig.create(GeneralSettings.class).getProxyHostBanTimeout(),
+                    // ProxyController.getInstance().addSessionBan(new ConnectExceptionInPluginBan(candidate, (AbstractProxySelectorImpl)
+                    // proxySelector, ((ProxyConnectException) throwable).getProxy()));
                 }
 
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);
@@ -2238,11 +2244,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 ProxySelectorInterface proxySelector = result.getController().getProxySelector();
                 if (proxySelector != null && proxySelector instanceof AbstractProxySelectorImpl) {
-                    ProxyController.getInstance().setBan((AbstractProxySelectorImpl) proxySelector, ((ProxyAuthException) throwable).getProxy(), null, -1, _JDT._.plugins_errors_proxy_auth());
-                    // ProxyController.getInstance().setEnabled((AbstractProxySelectorImpl) proxySelector, false);
-                    if (ProxyController.getInstance().hasGateway() == false) {
-                        ProxyController.getInstance().setEnabled(ProxyController.getInstance().getNone(), true);
-                    }
+                    // ProxyController.getInstance().addSessionBan(new AuthExceptionDuringPluginBan(candidate, (AbstractProxySelectorImpl)
+                    // proxySelector, ((ProxyAuthException) throwable).getProxy(), null));
+
+                    // // ProxyController.getInstance().setEnabled((AbstractProxySelectorImpl) proxySelector, false);
+                    // if (ProxyController.getInstance().hasGateway() == false) {
+                    // ProxyController.getInstance().setEnabled(ProxyController.getInstance().getNone(), true);
+                    // }
 
                 }
                 DownloadLinkCandidateResult ret = new DownloadLinkCandidateResult(RESULT.CONNECTION_ISSUES, throwable, pluginHost);

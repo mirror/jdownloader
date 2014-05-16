@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.http.Request;
+import jd.plugins.Plugin;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
@@ -83,18 +84,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public List<HTTPProxy> getProxiesByUrl(String url) {
-        if (banList == null || banList.size() == 0)
-            return list;
-
-        try {
-            if (!isBanned(new URL(url).getHost(), proxy)) {
-                return list;
-            } else {
-                return new ArrayList<HTTPProxy>();
-            }
-        } catch (Exception e) {
-            return new ArrayList<HTTPProxy>();
-        }
+        return list;
 
     }
 
@@ -132,37 +122,38 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public void setUser(String user) {
-        if (StringUtils.equals(user, proxy.getUser()))
+        if (StringUtils.equals(user, proxy.getUser())) {
             return;
+        }
         username = user;
         tempUser = null;
         tempPass = null;
         proxy.setUser(user);
-        // reset banlist
-        banList = new ArrayList<ProxyBan>();
+
     }
 
     public void setPassword(String password) {
-        if (StringUtils.equals(password, proxy.getPass()))
+        if (StringUtils.equals(password, proxy.getPass())) {
             return;
+        }
         proxy.setPass(password);
         this.password = password;
         tempUser = null;
         tempPass = null;
-        // reset banlist
-        banList = new ArrayList<ProxyBan>();
 
     }
 
     public String getPassword() {
-        if (tempPass != null)
+        if (tempPass != null) {
             return "(Temp)" + tempPass;
+        }
         return password;
     }
 
     public String getUser() {
-        if (tempUser != null)
+        if (tempUser != null) {
             return "(Temp)" + tempUser;
+        }
         return username;
     }
 
@@ -215,8 +206,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
             hasUSerInfo = true;
         }
         if (!StringUtils.isEmpty(getPassword())) {
-            if (hasUSerInfo)
+            if (hasUSerInfo) {
                 sb.append(":");
+            }
             hasUSerInfo = true;
             sb.append(getPassword());
         }
@@ -235,8 +227,9 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != SingleBasicProxySelectorImpl.class)
+        if (obj == null || obj.getClass() != SingleBasicProxySelectorImpl.class) {
             return false;
+        }
         return proxy.equals(((SingleBasicProxySelectorImpl) obj).getProxy());
     }
 
@@ -250,24 +243,21 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         return false;
     }
 
+    @Override
+    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread) {
+        // can orgRef be null? I doubt that. TODO:ensure
+        if (!proxy.equals(orgReference)) {
+            return false;
+        }
+        return super.isProxyBannedFor(orgReference, url, pluginFromThread);
+    }
+
     public void setTempAuth(String user, String pass) {
 
         proxy.setUser(user == null ? username : user);
         proxy.setPass(pass == null ? password : pass);
         tempUser = user;
         this.tempPass = pass;
-    }
-
-    @Override
-    protected void onBanListUpdate() {
-        // if (isBanned(proxy)) {
-        // // empty
-        // list = new ArrayList<HTTPProxy>();
-        // } else {
-        // ArrayList<HTTPProxy> tmp = new ArrayList<HTTPProxy>();
-        // tmp.add(proxy);
-        // list = tmp;
-        // }
     }
 
 }
