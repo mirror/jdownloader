@@ -205,16 +205,20 @@ public class RealDebridCom extends PluginForHost {
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     br2.followConnection();
                     // $.msgbox("You can not download this file because you have exceeded your traffic on this hoster !", {type: "error"});
-                    final String msg = br2.getRegex("msgbox\\(\"([^\"]+)").getMatch(0);
+                    String msg = br2.getRegex("msgbox\\(\"([^\"]+)").getMatch(0);
+                    if (msg == null)
+                        msg = br2.getRegex("<div class=\"alert alert-danger\">(.*?)</div>").getMatch(0);
                     if (msg != null) {
                         link.getLinkStatus().setErrorMessage(msg);
                         logger.info(msg);
                         if (new Regex(msg, "You can not download this file because you already have download\\(s\\) currently downloading and this hoster is limited").matches()) {
-                            // You can not download this file because you already have download(s) currently downloading and this hoster is limited.
+                            // You can not download this file because you already have download(s) currently downloading and this hoster is
+                            // limited.
                             tempUnavailableHoster(acc, link, 5 * 60 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         } else if (new Regex(msg, "You can not download this file because you have too many download\\(s\\) currently downloading").matches()) {
-                            // You can not download this file because you have too many download(s) currently downloading set upper max sim dl ?
+                            // You can not download this file because you have too many download(s) currently downloading set upper max sim
+                            // dl ?
                             errTooManySimCon(acc, link);
                         } else if (new Regex(msg, "You can not download this file because you have exceeded your traffic on this hoster").matches()) {
                             errNoHosterTrafficLeft(acc, link);
@@ -226,16 +230,23 @@ public class RealDebridCom extends PluginForHost {
                             tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         } else if (new Regex(msg, "An error occurr?ed while generating a premium link").matches()) {
-                            // An error occured while generating a premium link, please contact an Administrator with these following informations :<br/><br/>Link: h<br/>Server: 31<br/>Code: 64i4u284w2v293333033", {type: "error"});
-                            // An error occured while generating a premium link, please contact an Administrator with these following informations :<br/><br/>Link:<br/>Server: 31<br/>Code: 64i4u284w23383634237", {type: "error"});
+                            // An error occured while generating a premium link, please contact an Administrator with these following
+                            // informations :<br/><br/>Link: h<br/>Server: 31<br/>Code: 64i4u284w2v293333033", {type: "error"});
+                            // An error occured while generating a premium link, please contact an Administrator with these following
+                            // informations :<br/><br/>Link:<br/>Server: 31<br/>Code: 64i4u284w23383634237", {type: "error"});
                             tempUnavailableHoster(acc, link, 15 * 60 * 1000l);
                             throw new PluginException(LinkStatus.ERROR_RETRY);
                         } else if (new Regex(msg, "An error occurr?ed while attempting to download the file").matches()) {
-                            // An error occured while attempting to download the file. Too many attempts, please contact an Administrator with these following informations :
-                            // An error occured while attempting to download the file. Multiple "Location:" headers, please contact an Administrator with these following informations : issue with THIS downloadlink, throw instantly to next download routine. ** Using Jiaz new handling..
+                            // An error occured while attempting to download the file. Too many attempts, please contact an Administrator
+                            // with these following informations :
+                            // An error occured while attempting to download the file. Multiple "Location:" headers, please contact an
+                            // Administrator with these following informations : issue with THIS downloadlink, throw instantly to next
+                            // download routine. ** Using Jiaz new handling..
                             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         } else if (new Regex(msg, "An error occurr?ed while read your file on the remote host").matches()) {
-                            // An error occured while read your file on the remote host ! Timeout of 90s exceeded !<br/>The download server is down or ban from our server, please contact an Administrator with these following informations :<br/><br/>Link:*****) 
+                            // An error occured while read your file on the remote host ! Timeout of 90s exceeded !<br/>The download server
+                            // is down or ban from our server, please contact an Administrator with these following informations
+                            // :<br/><br/>Link:*****)
                             // An error occured while read your file on the remote host ! Timeout of 15s exceeded (Passive FTP Mode) !
                             // An error occured while read your file on the remote host ! Timeout of 15s exceeded (FTP Mode) !
                             tempUnavailableHoster(acc, link, 15 * 60 * 60 * 1000l);
@@ -258,11 +269,13 @@ public class RealDebridCom extends PluginForHost {
                                 logger.info("Suspended Account!");
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                             } else {
-                                // handleFree :: no account in jd account manager.. could be copy paste someone else' generated link, or manually import links, without an account
+                                // handleFree :: no account in jd account manager.. could be copy paste someone else' generated link, or
+                                // manually import links, without an account
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium required, or Account has been disabled");
                             }
                         } else if (new Regex(msg, "You can not change your server manually on this hoster").matches()) {
-                            // as title says user changed the premium link server... would only happen if a user manually imports final links!
+                            // as title says user changed the premium link server... would only happen if a user manually imports final
+                            // links!
                             if (new Regex(link.getDownloadURL(), this.getLazyP().getPattern()).matches()) {
                                 // manually imported
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium required, or Account has been disabled");
