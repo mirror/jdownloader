@@ -3939,13 +3939,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Video Title" })
     String YoutubeHelper_getDescription_title();
 
-    @Default(lngs = { "en" }, values = { "Publishing Date(Year,month,day). *date* or e.g. *date[YYYY/MM/DD]*" })
+    @Default(lngs = { "en" }, values = { "Publishing Date(Year,month,day). *date* or e.g. *date[YYYY/MM/dd]*" })
     String YoutubeHelper_getDescription_date();
 
-    @Default(lngs = { "en" }, values = { "Accurate publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[YYYY/MM/DD hh:mm]*" })
+    @Default(lngs = { "en" }, values = { "Accurate publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[YYYY/MM/dd hh:mm]*" })
     String YoutubeHelper_getDescription_date_accurate();
 
-    @Default(lngs = { "en" }, values = { "Accurate updated publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[YYYY/MM/DD hh:mm]*" })
+    @Default(lngs = { "en" }, values = { "Accurate updated publishing Date (incl. hours, minutes). *date_time* or e.g. *date_time[YYYY/MM/dd hh:mm]*" })
     String YoutubeHelper_getDescription_updatedate_accurate();
 
     @Default(lngs = { "en" }, values = { "Playlist Number. *videonumber* or e.g. *videonumber[000]*" })

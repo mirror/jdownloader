@@ -466,7 +466,7 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeVariantInterface variant = getVariant(downloadLink);
         URLConnectionAdapter con;
         long totalSize = -1;
-        // youtube uses redirects - maybe for loadbalancing
+        // youtube uses redirects - maybe for load balancing
         br.setFollowRedirects(true);
         switch (variant.getType()) {
         case SUBTITLES:
@@ -2161,6 +2161,13 @@ public class YoutubeDashV2 extends PluginForHost {
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
+    }
+
+    /**
+     * prevent showing up in AccountTooltip, re: multiHostSupport.
+     */
+    public String[] allowHandle() {
+        return new String[] { "youtube.com", "youtu.be" };
     }
 
     protected void setConfigElements() {
