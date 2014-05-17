@@ -770,7 +770,7 @@ public class FilePlanetaCom extends PluginForHost {
         } else {
             account.setProperty("free", false);
         }
-        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) of (KB|MB|GB|TB)?</b>").getRow(0);
+        final String space[] = cbr.getRegex(">Used space:</td>.*?<td.*?b>([0-9\\.]+) of \\d+ (KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (!inValidate(space[0]) && !inValidate(space[1]))) {
             // free users it's provided by default
             ai.setUsedSpace(space[0] + " " + space[1]);

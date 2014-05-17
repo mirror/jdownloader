@@ -390,7 +390,7 @@ public class GoldBytezCom extends PluginForHost {
                 // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 download1 = cleanForm(download1);
                 // end of backward compatibility
-                download1.remove("method_premium");
+                while (download1.hasInputFieldByName("method_premium")) download1.remove("method_premium");
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
