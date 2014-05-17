@@ -67,6 +67,7 @@ public class SuperdownComBr extends PluginForHost {
     private void prepBrowser() {
         br = new Browser();
         br.setCookiesExclusive(true);
+        br.setCustomCharset("utf-8");
         // define custom browser headers and language settings.
         br.setCookie(DOMAIN, "locale", "en");
     }
@@ -90,7 +91,9 @@ public class SuperdownComBr extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -117,7 +120,9 @@ public class SuperdownComBr extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         int maxChunks = 0;
-        if (link.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -138,7 +143,9 @@ public class SuperdownComBr extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 logger.info("Download failed -> Maybe re-trying with only 1 chunk");
@@ -190,6 +197,10 @@ public class SuperdownComBr extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* request Download */
             br.getPage("http://www.superdown.com.br/_gerar?link=" + Encoding.urlEncode(link.getDownloadURL()) + "&rnd=0." + System.currentTimeMillis());
+            if (br.containsHTML("Sua sess[^ ]+ expirou por inatividade. Efetue o login novamente\\.")) {
+                account.setProperty("cookies", Property.NULL);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             dllink = br.getRegex("(http://[^<>\"]*?)\\|").getMatch(0);
             if (dllink == null || (dllink != null && dllink.length() > 500)) {
                 logger.info(NICE_HOST + ": Unknown error");
@@ -297,7 +308,9 @@ public class SuperdownComBr extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -319,7 +332,9 @@ public class SuperdownComBr extends PluginForHost {
                 prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
