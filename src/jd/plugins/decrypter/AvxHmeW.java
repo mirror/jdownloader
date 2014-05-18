@@ -43,8 +43,9 @@ public class AvxHmeW extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // for when you're testing
         br.clearCookies(getHost());
-        String parameter = cryptedLink.toString().replaceAll("(avaxhow\\.me|avahome\\.bz|avaxhome\\.ws|avaxhm\\.com)", "avaxhome.cc");
+        String parameter = cryptedLink.toString().replaceAll("(avaxhome\\.(ws|bz|cc)|avaxho\\.me|avaxhm\\.com)", "avaxhm.com");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);
@@ -57,7 +58,9 @@ public class AvxHmeW extends PluginForDecrypt {
         String[] links = br.getRegex("<a href=\"(" + notThis + ")\" target=\"_blank\" rel=\"nofollow\">(?!<img)").getColumn(0);
         if (links != null && links.length != 0) {
             for (String link : links) {
-                if (!link.matches(this.getSupportedLinks().pattern())) decryptedLinks.add(createDownloadlink(link));
+                if (!link.matches(this.getSupportedLinks().pattern())) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
             }
         }
 
@@ -66,7 +69,9 @@ public class AvxHmeW extends PluginForDecrypt {
         links = br.getRegex("(" + notThis + ")<br/>").getColumn(0);
         if (links != null && links.length != 0) {
             for (String link : links) {
-                if (!link.matches(this.getSupportedLinks().pattern())) decryptedLinks.add(createDownloadlink(link));
+                if (!link.matches(this.getSupportedLinks().pattern())) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
             }
         }
 
