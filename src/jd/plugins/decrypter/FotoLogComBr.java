@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -28,14 +29,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotolog.com.br" }, urls = { "http://(www\\.)?fotolog\\.com\\.br/[a-z0-9\\-_/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotolog.com.br" }, urls = { "http://(www\\.)?fotolog\\.com(\\.br)?/[a-z0-9\\-_/]+" }, flags = { 0 })
 public class FotoLogComBr extends PluginForDecrypt {
 
     public FotoLogComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String INVALIDLINKS = "http://(www\\.)?fotolog\\.com\\.br/(mobile_apps|about|privacy|register|community_guide|search|faq|login|advertise|gallery|terms_of_use|contact_us|directory).*?";
+    private final String INVALIDLINKS = "http://(www\\.)?fotolog\\.com(\\.br)?/(mobile_apps|about|privacy|register|community_guide|search|faq|login|advertise|gallery|terms_of_use|contact_us|directory).*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -44,7 +45,7 @@ public class FotoLogComBr extends PluginForDecrypt {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
         }
-        br.setCookie("http://www.fotolog.com.br/", "foto-lang", "en");
+        br.setCookie(Browser.getHost(parameter), "foto-lang", "en");
         br.getPage(parameter);
         if (br.containsHTML(">Error 404 :") || br.getRedirectLocation() != null) {
             logger.info("Link offline: " + parameter);
