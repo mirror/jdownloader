@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download|blog)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/((folder|view)/[a-z0-9]+|[a-z0-9]+#[a-z0-9]+|(?!select_account_type\\.php|reseller|policies|tell_us_what_you_think\\.php|about\\.php|lost_password\\.php|blank\\.html|js/|common_questions/|software/|error\\.php|favicon|acceptable_use_policy\\.php|privacy_policy\\.php|terms_of_service\\.php)(imageview|i/\\?|\\\\?sharekey=|view/\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))[a-z0-9,]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(?!download|blog)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(imageview|folder/|view/|i/\\?|\\\\?sharekey=|view/\\?|\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php))[a-z0-9,#]+" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     public MdfrFldr(PluginWrapper wrapper) {
@@ -49,12 +49,20 @@ public class MdfrFldr extends PluginForDecrypt {
     private final String        APPLICATIONID = "27112";
     private String              ERRORCODE     = null;
     private static final String OFFLINE       = ">Unknown or invalid FolderKey<";
+    private static final String INVALIDLINKS  = "https?://(download|blog)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(select_account_type\\.php|reseller|policies|tell_us_what_you_think\\.php|about\\.php|lost_password\\.php|blank\\.html|js/|common_questions/|software/|error\\.php|favicon|acceptable_use_policy\\.php|privacy_policy\\.php|terms_of_service\\.php).*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("mfi.re/", "mediafire.com/").trim();
-        if (parameter.matches("http://(\\w+\\.)?mediafire\\.com/view/\\?.+")) parameter = parameter.replace("/view", "");
-        if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) return decryptedLinks;
+        if (parameter.matches("http://(\\w+\\.)?mediafire\\.com/view/\\?.+")) {
+            parameter = parameter.replace("/view", "");
+        }
+        if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) {
+            return decryptedLinks;
+        } else if (parameter.matches(INVALIDLINKS)) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         parameter = parameter.replaceAll("(&.+)", "");
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
@@ -62,7 +70,9 @@ public class MdfrFldr extends PluginForDecrypt {
         if (parameter.matches("http://download\\d+\\.mediafire.+")) {
             /* direct download */
             String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
-            if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
+            if (ID == null) {
+                ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
+            }
             if (ID != null) {
                 DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
                 decryptedLinks.add(link);
@@ -89,7 +99,7 @@ public class MdfrFldr extends PluginForDecrypt {
             return null;
         } else if (parameter.contains(",")) {
             // Multiple files in one link
-            final String linksText = new Regex(parameter, "mediafire\\.com/\\?(.+)").getMatch(0);
+            final String linksText = new Regex(parameter, "mediafire\\.com/(\\?|folder/)([a-z0-9,]+)").getMatch(1);
             if (linksText == null) {
                 logger.warning("Unhandled case for link: " + parameter);
                 return null;
@@ -193,11 +203,15 @@ public class MdfrFldr extends PluginForDecrypt {
                                     link.setProperty("privatefile", true);
                                 }
                                 link.setAvailable(true);
-                                if (fp != null) fp.add(link);
+                                if (fp != null) {
+                                    fp.add(link);
+                                }
                                 decryptedLinks.add(link);
                             }
                         }
-                        if (files == null || files.length < 100) break;
+                        if (files == null || files.length < 100) {
+                            break;
+                        }
                     }
                 }
                 if (folder_count != null && (foldersNum = Long.parseLong(folder_count)) > 0) {
@@ -214,7 +228,9 @@ public class MdfrFldr extends PluginForDecrypt {
                                 decryptedLinks.add(link);
                             }
                         }
-                        if (subFolders == null || subFolders.length < 100) break;
+                        if (subFolders == null || subFolders.length < 100) {
+                            break;
+                        }
                     }
                 }
                 if (foldersNum == -1 && filesNum == -1) {
@@ -292,10 +308,11 @@ public class MdfrFldr extends PluginForDecrypt {
     }
 
     private void apiRequest(final Browser br, final String url, final String data) throws IOException {
-        if (SESSIONTOKEN == null)
+        if (SESSIONTOKEN == null) {
             br.getPage(url + data);
-        else
+        } else {
             br.getPage(url + data + "&session_token=" + SESSIONTOKEN);
+        }
         ERRORCODE = getXML("error", br.toString());
     }
 
