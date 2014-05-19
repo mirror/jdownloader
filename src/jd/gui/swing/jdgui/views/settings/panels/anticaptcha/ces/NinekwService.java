@@ -522,15 +522,15 @@ public class NinekwService implements CESService {
                 add(toolbar9a, "gapleft 33,spanx,pushx,growx");
 
                 this.addHeader("Options", NewTheme.I().getIcon(IconKey.ICON_FOLDER_ADD, 32));
-                MigPanel toolbar9b = new MigPanel("ins 0", "[][][][]", "[]");
-                toolbar9b.add(label(_GUI._.NinekwService_createPanel_useragent()), "width 130!");
-                toolbar9b.add(useragent, "pushx,growx");
-                add(toolbar9b, "gapleft 33,spanx,pushx,growx");
+                // MigPanel toolbar9b = new MigPanel("ins 0", "[][][][]", "[]");
+                // toolbar9b.add(label(_GUI._.NinekwService_createPanel_useragent()), "width 130!");
+                // toolbar9b.add(useragent, "pushx,growx");
+                // add(toolbar9b, "gapleft 33,spanx,pushx,growx");
 
                 MigPanel toolbar9c = new MigPanel("ins 0", "[][][][]", "[]");
                 toolbar9c.add(label(_GUI._.NinekwService_createPanel_hosteroptions()), "width 130!");
                 toolbar9c.add(hosteroptions, "pushx,growx");
-                addDescription(_GUI._.NinekwService_createPanel_useragent_description());
+                // addDescription(_GUI._.NinekwService_createPanel_useragent_description());
                 add(toolbar9c, "gapleft 33,spanx,pushx,growx");
                 addDescription(_GUI._.NinekwService_createPanel_hosteroptions_description1());
                 addDescription(_GUI._.NinekwService_createPanel_hosteroptions_description2());
