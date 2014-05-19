@@ -40,7 +40,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz", "czshare.com" }, urls = { "http://(www\\.)?sdilej\\.cz/\\d+/.{1}", "fhirtogjnrogjmrogowcertvntzjuilthbfrwefdDELETE_MErvrgjzjz7ef" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz", "czshare.com" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/.{1}", "fhirtogjnrogjmrogowcertvntzjuilthbfrwefdDELETE_MErvrgjzjz7ef" }, flags = { 2, 0 })
 public class CZShareCom extends PluginForHost {
 
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
@@ -71,6 +71,11 @@ public class CZShareCom extends PluginForHost {
         return false;
     }
 
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
+
     public Boolean rewriteHost(DownloadLink link) {
         if (link != null && "czshare.com".equals(link.getHost())) {
             link.setHost("sdilej.cz");
@@ -90,16 +95,22 @@ public class CZShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         /* Mark old links as offline */
-        if (downloadLink.getDownloadURL().contains("czshare.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().contains("czshare.com/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>([^<>\"]*?)<span>\\&nbsp;</span>").getMatch(0);
         final String filesize = br.getRegex("Velikost: (.*?)<").getMatch(0);
-        if (filename == null || filesize == null || "0 B".equals(filesize)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null || "0 B".equals(filesize)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Set final filename here because server sends html encoded filenames
         downloadLink.setFinalFileName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
@@ -147,31 +158,49 @@ public class CZShareCom extends PluginForHost {
     }
 
     private void handleErrors() throws PluginException {
-        if (br.containsHTML("Z Vaší IP adresy momentálně probíhá jiné stahování\\. Využijte PROFI")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.czsharecom.ipalreadydownloading", "IP already downloading"), 12 * 60 * 1001);
+        if (br.containsHTML("Z Vaší IP adresy momentálně probíhá jiné stahování\\. Využijte PROFI")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.czsharecom.ipalreadydownloading", "IP already downloading"), 12 * 60 * 1001);
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         handleErrors();
-        if (!br.containsHTML("Stáhnout FREE(</span>)?</a><a href=\"/download\\.php\\?id=")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
+        if (!br.containsHTML("Stáhnout FREE(</span>)?</a><a href=\"/download\\.php\\?id=")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.CZShareCom.nofreeslots", "No free slots available"), 60 * 1000);
+        }
         br.setFollowRedirects(true);
         String freeLink = br.getRegex("allowTransparency=\"true\"></iframe><a href=\"(/.*?)\"").getMatch(0);
-        if (freeLink == null) freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+.*?code=.*?)\"").getMatch(0);
-        if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (freeLink == null) {
+            freeLink = br.getRegex("\"(/download\\.php\\?id=\\d+.*?code=.*?)\"").getMatch(0);
+        }
+        if (freeLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage("http://sdilej.cz" + Encoding.htmlDecode(freeLink));
         handleErrors();
         String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
         String size = br.getRegex("name=\"size\" value=\"(\\d+)\"").getMatch(0);
         String server = br.getRegex("name=\"server\" value=\"(.*?)\"").getMatch(0);
-        if (!br.containsHTML(CAPTCHATEXT) || file == null || size == null || server == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.containsHTML(CAPTCHATEXT) || file == null || size == null || server == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String code = getCaptchaCode("http://sdilej.cz/captcha.php", downloadLink);
         br.postPage("http://sdilej.cz/download.php", "id=" + new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/.*?").getMatch(0) + "&file=" + file + "&size=" + size + "&server=" + server + "&captchastring2=" + Encoding.urlEncode(code) + "&freedown=Ov%C4%9B%C5%99it+a+st%C3%A1hnout");
-        if (br.containsHTML("Chyba 6 / Error 6")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
-        if (br.containsHTML(">Zadaný ověřovací kód nesouhlasí") || br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("Chyba 6 / Error 6")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000);
+        }
+        if (br.containsHTML(">Zadaný ověřovací kód nesouhlasí") || br.containsHTML(CAPTCHATEXT)) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex("<p class=\"button2\" id=\"downloadbtn\" style=\"display:none\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.sdilej\\.cz/download\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://www\\d+\\.sdilej\\.cz/download\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /** Waittime can be skipped */
         // int wait = 50;
         // final String waittime =
@@ -181,7 +210,9 @@ public class CZShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("unknown")) {
             br.followConnection();
-            if (br.containsHTML("Soubor je dočasně nedostupný\\.") || dl.getConnection().getContentType().contains("unknown")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("Soubor je dočasně nedostupný\\.") || dl.getConnection().getContentType().contains("unknown")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
@@ -196,9 +227,13 @@ public class CZShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
         String code = br.getRegex("<input type=\"hidden\" name=\"code\" value=\"(.*?)\"").getMatch(0);
-        if (code == null) code = br.getRegex("\\&amp;code=(.*?)\"").getMatch(0);
+        if (code == null) {
+            code = br.getRegex("\\&amp;code=(.*?)\"").getMatch(0);
+        }
         String linkID = new Regex(downloadLink.getDownloadURL(), "sdilej\\.cz/(\\d+)/").getMatch(0);
-        if (linkID == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (linkID == null || code == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.postPage("http://sdilej.cz/profi_down.php", "id=" + linkID + "&code=" + code);
         final String dllink = br.getRedirectLocation();
         if (dllink == null) {
@@ -223,7 +258,9 @@ public class CZShareCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (cookies.containsKey("SSL") && account.isValid()) {

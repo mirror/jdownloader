@@ -53,7 +53,8 @@ public class SuperLoadCzDecrypter extends PluginForDecrypt {
         final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("superload.cz");
         final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
         if (aa == null) {
-            logger.info("Can't decrypt links without account...");
+            logger.info("Can't decrypt superload.cz links without account...");
+            return decryptedLinks;
         }
         final String token = aa.getStringProperty("token", null);
         br.getPage("http://api.superload.cz/a-p-i/getoriginurl?token=" + token + "&url=" + Encoding.urlEncode(parameter));
@@ -74,7 +75,9 @@ public class SuperLoadCzDecrypter extends PluginForDecrypt {
 
     private String getJson(final String key) {
         String result = br.getRegex("\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + key + "\":([^\"\\}\\,]+)").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + key + "\":([^\"\\}\\,]+)").getMatch(0);
+        }
         return result;
     }
 

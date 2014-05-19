@@ -38,7 +38,7 @@ public class StereoMoodCom extends PluginForDecrypt {
             } catch (Throwable e) {
             }
         }
-        if (br.getURL().contains("/search/")) {
+        if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -57,7 +57,9 @@ public class StereoMoodCom extends PluginForDecrypt {
             }
             br.getPage(link + add);
             String locations2[] = br.getRegex("location\":\"(http:.*?)\"").getColumn(0);
-            if (locations2 == null || locations2.length == 0) break;
+            if (locations2 == null || locations2.length == 0) {
+                break;
+            }
             for (String loc : locations2) {
                 locations.add(loc);
             }
@@ -69,7 +71,9 @@ public class StereoMoodCom extends PluginForDecrypt {
             br2.setFollowRedirects(false);
             br2.getPage(location);
             final String url = br2.getRedirectLocation();
-            if (url == null) continue;
+            if (url == null) {
+                continue;
+            }
             final DownloadLink dl = this.createDownloadlink(url);
             // Don't create too many requests
             dl.setAvailable(true);

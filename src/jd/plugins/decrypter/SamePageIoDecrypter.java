@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "samepage.io" }, urls = { "https://samepage\\.io/[a-z0-9]+/share/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "samepage.io" }, urls = { "https://samepage\\.io/([a-z0-9]+/share/[a-z0-9]+|app/#\\!/[a-z0-9]+/page\\-\\d+)" }, flags = { 0 })
 public class SamePageIoDecrypter extends PluginForDecrypt {
 
     public SamePageIoDecrypter(PluginWrapper wrapper) {
@@ -39,21 +39,28 @@ public class SamePageIoDecrypter extends PluginForDecrypt {
 
     private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
 
+    private static final String TYPE_APP     = "https://samepage\\.io/app/#\\!/[a-z0-9]+/page\\-[a-z0-9]+";
+    private static final String TYPE_SHARE   = "https://samepage\\.io/[a-z0-9]+/share/[a-z0-9]+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final Regex param_info = new Regex(parameter, "samepage\\.io/([a-z0-9]+)/share/([a-z0-9]+)");
-        final String id_1 = param_info.getMatch(0);
-        String id_2;
         final DownloadLink main = createDownloadlink("http://samepagedecrypted.io/" + System.currentTimeMillis() + new Random().nextInt(100000));
         main.setProperty("mainlink", parameter);
-
         prepBR();
-        br.getPage(parameter);
-        id_2 = new Regex(br.getURL(), "samepage\\.io/app/#\\!/[a-z0-9]+/page\\-(\\d+)[A-Za-z0-9\\-_]+").getMatch(0);
-        if (id_2 == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        String id_1;
+        String id_2;
+        if (parameter.matches(TYPE_APP)) {
+            id_1 = new Regex(parameter, "samepage\\.io/app/#\\!/([a-z0-9]+)/").getMatch(0);
+            id_2 = new Regex(parameter, "samepage\\.io/app/#\\!/[a-z0-9]+/page\\-(\\d+)").getMatch(0);
+        } else {
+            id_1 = new Regex(parameter, "samepage\\.io/([a-z0-9]+)/share/([a-z0-9]+)").getMatch(0);
+            br.getPage(parameter);
+            id_2 = new Regex(br.getURL(), "samepage\\.io/app/#\\!/[a-z0-9]+/page\\-(\\d+)[A-Za-z0-9\\-_]+").getMatch(0);
+            if (id_2 == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
         }
 
         br.getPage("https://samepage.io/app/");
@@ -98,7 +105,9 @@ public class SamePageIoDecrypter extends PluginForDecrypt {
         }
         long totalSize = 0;
         for (final String singleinfo : links) {
-            if (!singleinfo.contains("\"file\"")) continue;
+            if (!singleinfo.contains("\"file\"")) {
+                continue;
+            }
             final DownloadLink dl = createDownloadlink("http://samepagedecrypted.io/" + System.currentTimeMillis() + new Random().nextInt(100000));
             final String filesize = getJson("size", singleinfo);
             String filename = getJson("name", singleinfo);
@@ -149,7 +158,9 @@ public class SamePageIoDecrypter extends PluginForDecrypt {
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
         return result;
     }
 
