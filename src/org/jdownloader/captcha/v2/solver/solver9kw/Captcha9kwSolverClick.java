@@ -100,8 +100,11 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         checkInterruption();
         ClickCaptchaChallenge captchaChallenge = (ClickCaptchaChallenge) solverJob.getChallenge();
 
+        int cph = config.gethour();
         int priothing = config.getprio();
         int timeoutthing = (JsonConfig.create(CaptchaSettings.class).getCaptchaDialog9kwTimeout() / 1000);
+        boolean selfsolve = config.isSelfsolve();
+        boolean confirm = config.ismouseconfirm();
 
         if (!config.getApiKey().matches("^[a-zA-Z0-9]+$")) {
             jd.gui.UserIO.getInstance().requestMessageDialog("API Key is not correct!\nOnly a-z, A-Z and 0-9\n");
@@ -183,9 +186,71 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             }
         }
 
+        String moreoptions = "";
+        if (config.gethosteroptions().length() > 5) {
+            String[] list = config.gethosteroptions().split(";");
+            for (String hosterline : list) {
+                if (hosterline.contains(captchaChallenge.getTypeID())) {
+                    String[] listdetail = hosterline.split(":");
+                    for (String hosterlinedetail : listdetail) {
+                        if (!listdetail[0].equals(hosterlinedetail)) {
+                            String[] detailvalue = hosterlinedetail.split("=");
+                            if (detailvalue[0].equals("timeout") && detailvalue[1].matches("^[0-9]+$")) {
+                                timeoutthing = Integer.parseInt(detailvalue[1]);
+                            }
+                            if (detailvalue[0].equals("prio") && detailvalue[1].matches("^[0-9]+$")) {
+                                priothing = Integer.parseInt(detailvalue[1]);
+                            }
+                            if (detailvalue[0].equals("cph") && detailvalue[1].matches("^[0-9]+$")) {
+                                cph = Integer.parseInt(detailvalue[1]);
+                            }
+                            if (detailvalue[0].equals("nomd5") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&nomd5=" + detailvalue[1];
+                            }
+                            if (detailvalue[0].equals("ocr") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&ocr=" + detailvalue[1];
+                            }
+                            if (detailvalue[0].equals("min") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&min_len=" + detailvalue[1];
+                            }
+                            if (detailvalue[0].equals("max") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&max_len=" + detailvalue[1];
+                            }
+                            if (detailvalue[0].equals("phrase") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&phrase=" + detailvalue[1];
+                            }
+                            if (detailvalue[0].equals("math") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&math=" + detailvalue[1];
+                            }
+                            if (detailvalue[0].equals("numeric") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&numeric=" + detailvalue[1];
+                            }
+                            if (detailvalue[0].equals("case-sensitive") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&case-sensitive=" + detailvalue[1];
+                            }
+                            if (detailvalue[0].equals("confirm") && detailvalue[1].matches("^[0-9]+$")) {
+                                if (detailvalue[1].equals("1")) {
+                                    confirm = true;
+                                } else {
+                                    confirm = false;
+                                }
+                            }
+                            if (detailvalue[0].equals("selfsolve") && detailvalue[1].matches("^[0-9]+$")) {
+                                if (detailvalue[1].equals("1")) {
+                                    selfsolve = true;
+                                } else {
+                                    selfsolve = false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         setdebug(solverJob, "Upload Captcha to 9kw.eu. GetTypeID: " + captchaChallenge.getTypeID() + " - Plugin: " + captchaChallenge.getPlugin());
-        solverJob.showBubble(this);
         try {
+            solverJob.showBubble(this);
             click9kw_counter.incrementAndGet();
             solverJob.setStatus(SolverStatus.UPLOADING);
             byte[] data = IO.readFile(captchaChallenge.getImageFile());
@@ -193,7 +258,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             br.setAllowedResponseCodes(new int[] { 500 });
             String ret = "";
             for (int i = 0; i <= 5; i++) {
-                ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2&captchaperhour=" + config.gethour() + "&mouse=1&prio=" + priothing + "&selfsolve=" + config.isSelfsolve() + "&confirm=" + config.ismouseconfirm() + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
+                ret = br.postPage(getAPIROOT() + "index.cgi", "action=usercaptchaupload&jd=2&source=jd2" + moreoptions + "&captchaperhour=" + cph + "&mouse=1&prio=" + priothing + "&selfsolve=" + selfsolve + "&confirm=" + confirm + "&oldsource=" + Encoding.urlEncode(captchaChallenge.getTypeID()) + "&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&captchaSource=jdPlugin&maxtimeout=" + timeoutthing + "&version=1.2&base64=1&file-upload-01=" + Encoding.urlEncode(org.appwork.utils.encoding.Base64.encodeToString(data, false)));
                 if (ret.startsWith("OK-")) {
                     click9kw_counterSend.incrementAndGet();
                     break;
@@ -215,13 +280,17 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             // Error-No Credits
             String captchaID = ret.substring(3);
             data = null;
-            int count9kw = 5;
+            long startTime = System.currentTimeMillis();
+
             Thread.sleep(5000);
             while (true) {
-                count9kw += 2;
-                solverJob.getLogger().info("9kw.eu Ask " + captchaID);
+                setdebug(solverJob, "9kw.eu CaptchaID " + captchaID + ": Ask");
                 ret = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchacorrectdata&jd=2&source=jd2&mouse=1&apikey=" + Encoding.urlEncode(config.getApiKey()) + "&id=" + Encoding.urlEncode(captchaID) + "&version=1.1");
-                setdebug(solverJob, "9kw.eu Answer " + count9kw + "s: " + ret);
+                if (StringUtils.isEmpty(ret)) {
+                    setdebug(solverJob, "9kw.eu CaptchaID " + captchaID + " - NO answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s ");
+                } else {
+                    setdebug(solverJob, "9kw.eu CaptchaID " + captchaID + " - Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
+                }
                 if (ret.startsWith("OK-answered-")) {
                     click9kw_counterSolved.incrementAndGet();
                     String antwort = ret.substring("OK-answered-".length());
@@ -230,12 +299,13 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                     solverJob.setAnswer(new Captcha9kwClickResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100, captchaID));
                     return;
                 }
+
                 checkInterruption();
                 Thread.sleep(3000);
             }
 
         } catch (IOException e) {
-            org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().setdebug_short("9kw.eu Interrupted: " + e);
+            setdebug(solverJob, "9kw.eu Interrupted: " + e);
             click9kw_counterInterrupted.incrementAndGet();
             solverJob.getLogger().log(e);
         } finally {

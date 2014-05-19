@@ -41,6 +41,9 @@ public class JACMethod implements Comparable<JACMethod> {
         for (JACMethod method : getMethods()) {
             if (service.equalsIgnoreCase(method.getServiceName())) {
                 if (JsonConfig.create(Captcha9kwSettings.class).isEnabled() && method.getFileName().equalsIgnoreCase("captcha9kw") || JsonConfig.create(CaptchaBrotherHoodSettings.class).isEnabled() && method.getFileName().equalsIgnoreCase("captchaBrotherhood")) {
+                    if (JsonConfig.create(Captcha9kwSettings.class).isEnabled() && method.getFileName().equalsIgnoreCase("captcha9kw")) {
+                        jd.gui.UserIO.getInstance().requestMessageDialog("9kw old method captcha9kw ", "Please delete old method captcha9kw and use jd2 with 9kw.\n");
+                    }
                     LogController.CL().info("Inactive JAC method for the service " + service + " in directory " + method.getFileName());
                 } else {
                     LogController.CL().info("Found JAC method for the service " + service + " in directory " + method.getFileName());
@@ -53,7 +56,9 @@ public class JACMethod implements Comparable<JACMethod> {
     }
 
     public static synchronized java.util.List<JACMethod> getMethods() {
-        if (methods != null) return methods;
+        if (methods != null) {
+            return methods;
+        }
         java.util.List<JACMethod> methods = new ArrayList<JACMethod>();
         for (File methodDir : getMethodDirs()) {
             java.util.List<JACMethod> meths = parseJACInfo(methodDir);
@@ -76,7 +81,9 @@ public class JACMethod implements Comparable<JACMethod> {
 
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                if (!pathname.isDirectory()) return false;
+                if (!pathname.isDirectory()) {
+                    return false;
+                }
                 File method = new File(pathname.getAbsoluteFile() + "/jacinfo.xml");
                 return (method.exists() && isAvailableExternMethod(method));
             }
@@ -87,7 +94,9 @@ public class JACMethod implements Comparable<JACMethod> {
     public static java.util.List<JACMethod> parseJACInfo(File dir) {
         String filecontent = JDIO.readFileToString(new File(dir.getAbsolutePath() + "/jacinfo.xml"));
         Document doc = JDUtilities.parseXmlString(filecontent, false);
-        if (doc == null) return null;
+        if (doc == null) {
+            return null;
+        }
 
         String[] services = null;
 
@@ -118,9 +127,13 @@ public class JACMethod implements Comparable<JACMethod> {
     }
 
     public static boolean hasMethod(String service) {
-        if (service == null) return false;
+        if (service == null) {
+            return false;
+        }
         JACMethod methodName = forServiceName(service);
-        if (methodName == null) return false;
+        if (methodName == null) {
+            return false;
+        }
         File method = JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory() + "/" + methodName.getFileName() + "/jacinfo.xml");
         return (method.exists() && isAvailableExternMethod(method));
     }
@@ -131,9 +144,15 @@ public class JACMethod implements Comparable<JACMethod> {
 
     private static boolean isAvailableExternMethod(String content) {
         if (content != null && content.contains("extern")) {
-            if (CrossSystem.isLinux() && !content.contains("linux")) return false;
-            if (CrossSystem.isMac() && !content.contains("mac")) return false;
-            if (CrossSystem.isWindows() && !content.contains("windows")) return false;
+            if (CrossSystem.isLinux() && !content.contains("linux")) {
+                return false;
+            }
+            if (CrossSystem.isMac() && !content.contains("mac")) {
+                return false;
+            }
+            if (CrossSystem.isWindows() && !content.contains("windows")) {
+                return false;
+            }
         }
         return true;
     }
@@ -144,7 +163,9 @@ public class JACMethod implements Comparable<JACMethod> {
 
     public JACMethod(String filename, String servicename) {
         this.filename = filename;
-        if (servicename != null) this.servicename = servicename.toLowerCase();
+        if (servicename != null) {
+            this.servicename = servicename.toLowerCase();
+        }
     }
 
     public String getFileName() {

@@ -38,6 +38,32 @@ public interface Captcha9kwSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the Puzzle Captchas")
+    boolean ispuzzle();
+
+    void setpuzzle(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the Slider Captchas")
+    boolean isslider();
+
+    void setslider(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Hosteroptions for 9kw.eu")
+    String gethosteroptions();
+
+    void sethosteroptions(String jser);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Useragent for 9kw.eu")
+    String getuseragent();
+
+    void setuseragent(String jser);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Confirm option for captchas (Cost +6)")
     boolean isconfirm();
 

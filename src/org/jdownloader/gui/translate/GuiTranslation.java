@@ -2774,6 +2774,132 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Api Key" })
     String NinekwService_createPanel_apikey();
 
+    @Default(lngs = { "en" }, values = { "API Key" })
+    String NinekwService_createPanel_apikey_helptext();
+
+    @Default(lngs = { "en" }, values = { "Field for entering the API key to use 9kw.eu." })
+    String NinekwService_createPanel_apikey_tooltipText();
+
+    @Default(lngs = { "en" }, values = { "Hosteroptions" })
+    String NinekwService_createPanel_hosteroptions();
+
+    @Default(lngs = { "en" }, values = { "Some options like a timeout hoster exactly define." })
+    String NinekwService_createPanel_hosteroptions_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "List crawler" })
+    String NinekwService_createPanel_btnUserDebug3crawler();
+
+    @Default(lngs = { "en" }, values = { "List all Linkhoster from JDownloader." })
+    String NinekwService_createPanel_btnUserDebug3crawler_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "List hoster" })
+    String NinekwService_createPanel_btnUserDebug3hoster();
+
+    @Default(lngs = { "en" }, values = { "List all Downloadhoster from JDownloader." })
+    String NinekwService_createPanel_btnUserDebug3hoster_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Clear log" })
+    String NinekwService_createPanel_btnUserDebug2();
+
+    @Default(lngs = { "en" }, values = { "Debuglog cleared" })
+    String NinekwService_createPanel_btnUserDebug2_text();
+
+    @Default(lngs = { "en" }, values = { "Clear the debug log to get a new log." })
+    String NinekwService_createPanel_btnUserDebug2_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Log to clipboard" })
+    String NinekwService_createPanel_btnUserDebug1clipboard();
+
+    @Default(lngs = { "en" }, values = { "No data" })
+    String NinekwService_createPanel_btnUserDebug1clipboard_text();
+
+    @Default(lngs = { "en" }, values = { "Save the debug log to the clipboard." })
+    String NinekwService_createPanel_btnUserDebug1clipboard_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Debuglog" })
+    String NinekwService_createPanel_btnUserDebug1();
+
+    @Default(lngs = { "en" }, values = { "No data" })
+    String NinekwService_createPanel_btnUserDebug1_text();
+
+    @Default(lngs = { "en" }, values = { "Opens the recorded debug log if debugging was enabled." })
+    String NinekwService_createPanel_btnUserDebug1_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Debug" })
+    String NinekwService_createPanel_debugcaptchas();
+
+    @Default(lngs = { "en" }, values = { "Activates a debug log for operations with captchas" })
+    String NinekwService_createPanel_debugcaptchas_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Log to file" })
+    String NinekwService_createPanel_btnUserDebug1file();
+
+    @Default(lngs = { "en" }, values = { "No data" })
+    String NinekwService_createPanel_btnUserDebug1file_text();
+
+    @Default(lngs = { "en" }, values = { "Save the debug log to a text file." })
+    String NinekwService_createPanel_btnUserDebug1file_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Errorlog from your api key" })
+    String NinekwService_createPanel_btnUserDebug3();
+
+    @Default(lngs = { "en" }, values = { "No data" })
+    String NinekwService_createPanel_btnUserDebug3_text();
+
+    @Default(lngs = { "en" }, values = { "List all Downloadhoster from JDownloader." })
+    String NinekwService_createPanel_btnUserDebug3_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Register" })
+    String NinekwService_createPanel_btnRegister();
+
+    @Default(lngs = { "en" }, values = { "Register new account at 9kw.eu." })
+    String NinekwService_createPanel_btnRegister_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Plugins" })
+    String NinekwService_createPanel_btnPlugins();
+
+    @Default(lngs = { "en" }, values = { "Show all plugins for 9kw.eu in your browser." })
+    String NinekwService_createPanel_btnPlugins_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "FAQ" })
+    String NinekwService_createPanel_btnFAQ();
+
+    @Default(lngs = { "en" }, values = { "Show faq from 9kw.eu in your browser." })
+    String NinekwService_createPanel_btnFAQ_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Help" })
+    String NinekwService_createPanel_btnHelp();
+
+    @Default(lngs = { "en" }, values = { "Show helpsite from 9kw.eu in your browser." })
+    String NinekwService_createPanel_btnHelp_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "API management" })
+    String NinekwService_createPanel_btnApi();
+
+    @Default(lngs = { "en" }, values = { "Show api management from 9kw.eu in your browser." })
+    String NinekwService_createPanel_btnApi_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "History" })
+    String NinekwService_createPanel_btnUserhistory();
+
+    @Default(lngs = { "en" }, values = { "Show history from 9kw.eu in your browser." })
+    String NinekwService_createPanel_btnUserhistory_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Support" })
+    String NinekwService_createPanel_btnSupport();
+
+    @Default(lngs = { "en" }, values = { "Buy credits" })
+    String NinekwService_createPanel_btnUserbuy();
+
+    @Default(lngs = { "en" }, values = { "Opens the browser to buy credits." })
+    String NinekwService_createPanel_btnUserbuy_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Activates to send feedback of submitted captchas to OK or NotOK as response" })
+    String NinekwService_createPanel_feedback_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Use support from 9kw.eu in your browser." })
+    String NinekwService_createPanel_btnSupport_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Enter your 9kw.eu API Key below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String NinekwService_createPanel_logins_();
 
@@ -2783,8 +2909,35 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable 9kw.eu Service" })
     String NinekwService_createPanel_enabled();
 
+    @Default(lngs = { "en" }, values = { "Text Captchas" })
+    String NinekwService_createPanel_textcaptchas();
+
+    @Default(lngs = { "en" }, values = { "Activates text captchas" })
+    String NinekwService_createPanel_textcaptchas_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Mouse Captchas" })
+    String NinekwService_createPanel_mousecaptchas();
+
+    @Default(lngs = { "en" }, values = { "Activates mouse captchas" })
+    String NinekwService_createPanel_mousecaptchas_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Puzzle Captchas" })
+    String NinekwService_createPanel_puzzlecaptchas();
+
+    @Default(lngs = { "en" }, values = { "Activates puzzle captchas" })
+    String NinekwService_createPanel_puzzlecaptchas_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Slider Captchas" })
+    String NinekwService_createPanel_slidercaptchas();
+
+    @Default(lngs = { "en" }, values = { "Activates slider captchas" })
+    String NinekwService_createPanel_slidercaptchas_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Blacklist" })
     String NinekwService_createPanel_blacklist();
+
+    @Default(lngs = { "en" }, values = { "Disallow some hosts for 9kw and captchas." })
+    String NinekwService_createPanel_blacklist_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Blacklistcheck" })
     String NinekwService_createPanel_blacklistcheck();
@@ -2792,11 +2945,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Whitelist" })
     String NinekwService_createPanel_whitelist();
 
+    @Default(lngs = { "en" }, values = { "Allow some hosts for 9kw and captchas." })
+    String NinekwService_createPanel_whitelist_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Whitelistcheck" })
     String NinekwService_createPanel_whitelistcheck();
 
     @Default(lngs = { "en" }, values = { "Blacklist (Prio)" })
     String NinekwService_createPanel_blacklistprio();
+
+    @Default(lngs = { "en" }, values = { "Disallow some hosts for 9kw and captchas in relation to priority." })
+    String NinekwService_createPanel_blacklistprio_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Blacklistcheck (Prio)" })
     String NinekwService_createPanel_blacklistpriocheck();
@@ -2804,11 +2963,17 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Whitelist (Prio)" })
     String NinekwService_createPanel_whitelistprio();
 
+    @Default(lngs = { "en" }, values = { "Allow some hosts for 9kw and captchas in relation to priority." })
+    String NinekwService_createPanel_whitelistprio_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Whitelistcheck (Prio)" })
     String NinekwService_createPanel_whitelistpriocheck();
 
     @Default(lngs = { "en" }, values = { "Blacklist (Timeout)" })
     String NinekwService_createPanel_blacklisttimeout();
+
+    @Default(lngs = { "en" }, values = { "Disallow some hosts for 9kw and captchas in relation to new timeout." })
+    String NinekwService_createPanel_blacklisttimeout_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Blacklistcheck (Timeout)" })
     String NinekwService_createPanel_blacklisttimeoutcheck();
@@ -2816,26 +2981,44 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Whitelist (Timeout)" })
     String NinekwService_createPanel_whitelisttimeout();
 
+    @Default(lngs = { "en" }, values = { "Allow some hosts for 9kw and captchas in relation to new timeout." })
+    String NinekwService_createPanel_whitelisttimeout_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Whitelistcheck (Timeout)" })
     String NinekwService_createPanel_whitelisttimeoutcheck();
-
-    @Default(lngs = { "en" }, values = { "With Mouse" })
-    String NinekwService_createPanel_mouse();
 
     @Default(lngs = { "en" }, values = { "Feedback" })
     String NinekwService_createPanel_feedback();
 
+    @Default(lngs = { "en" }, values = { "Check" })
+    String NinekwService_createPanel_btnUserCheck();
+
+    @Default(lngs = { "en" }, values = { "Test the API key for functionality." })
+    String NinekwService_createPanel_btnUserCheck_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Warn on low credits" })
     String NinekwService_createPanel_lowcredits();
+
+    @Default(lngs = { "en" }, values = { "Warn if the balance is not enough." })
+    String NinekwService_createPanel_lowcredits_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Https" })
     String NinekwService_createPanel_https();
 
+    @Default(lngs = { "en" }, values = { "Activates encrypted connections in the form of HTTPS (SSL / TLS)" })
+    String NinekwService_createPanel_https_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Confirm (Cost +6)" })
     String NinekwService_createPanel_confirm();
 
+    @Default(lngs = { "en" }, values = { "Activates a confirmation of the solution in the form of a Confirm captchas." })
+    String NinekwService_createPanel_confirm_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Mouse Confirm (Cost +6)" })
     String NinekwService_createPanel_mouseconfirm();
+
+    @Default(lngs = { "en" }, values = { "Activates a confirmation of the solution in the form of a Confirm Mouse captchas." })
+    String NinekwService_createPanel_mouseconfirm_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Debug" })
     String NinekwService_createPanel_debug();
@@ -2843,20 +3026,62 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Selfsolve" })
     String NinekwService_createPanel_selfsolve();
 
+    @Default(lngs = { "en" }, values = { "Activates Selfsolve function to own captchas to solve over 9kw.eu itself." })
+    String NinekwService_createPanel_selfsolve_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "Prio 1-20 (Cost +1-20)" })
     String NinekwService_createPanel_prio();
 
-    @Default(lngs = { "en" }, values = { "Captcha per hour" })
+    @Default(lngs = { "en" }, values = { "Activates an increased priority in the system of 9kw.eu to get a quicker solution." })
+    String NinekwService_createPanel_prio_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Captchas per hour" })
     String NinekwService_createPanel_hour();
+
+    @Default(lngs = { "en" }, values = { "Activates a limit per hour to not submit too many captchas." })
+    String NinekwService_createPanel_hour_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Max. Captchas Parallel" })
     String NinekwService_createPanel_threadsizepool();
 
+    @Default(lngs = { "en" }, values = { "Specifies how many tasks at the same time are maximum submitted." })
+    String NinekwService_createPanel_threadsizepool_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "ms - Max. Timeout (60-3999s)" })
     String NinekwService_createPanel_9kwtimeout();
 
+    @Default(lngs = { "en" }, values = { "Specifies the maximum waiting time for processes of captchas in milliseconds." })
+    String NinekwService_createPanel_9kwtimeout_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "New Timeout (60-3999s)" })
     String NinekwService_createPanel_9kwtimeoutother();
+
+    @Default(lngs = { "en" }, values = { "Activates a new timeout as the maximum value for the selected hoster." })
+    String NinekwService_createPanel_9kwtimeoutother_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "ms" })
+    String NinekwService_createPanel_ms();
+
+    @Default(lngs = { "en" }, values = { "Useragent" })
+    String NinekwService_createPanel_useragent();
+
+    @Default(lngs = { "en" }, values = { "Field for the user agent. More than 20 characters and the function is automatically activated." })
+    String NinekwService_createPanel_useragent_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "A user agent may have an effect for captchas of Recaptcha and Solvemedia have to get any easier images." })
+    String NinekwService_createPanel_useragent_description();
+
+    @Default(lngs = { "en" }, values = { "Records on activation all processes with captchas and 9kw.eu in a temporary log." })
+    String NinekwService_createPanel_debug_description();
+
+    @Default(lngs = { "en" }, values = { "Format: pluginname:prio=1:timeout=999;pluginname2:prio=0:timeout=999:min=2:max=50;" })
+    String NinekwService_createPanel_hosteroptions_description1();
+
+    @Default(lngs = { "en" }, values = { "Allowed values: : prio, max, min, case-sensitive, numeric, cph, phrase, math, selfsolfe, confirm, ocr, nomd5, timeout" })
+    String NinekwService_createPanel_hosteroptions_description2();
+
+    @Default(lngs = { "en" }, values = { "Specifies whether certain Hoster are allowed or forbidden." })
+    String NinekwService_createPanel_blackwhitelist_des();
 
     @Default(lngs = { "en" }, values = { "Enter your Captcha Brotherhood Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String captchabrotherhoodService_createPanel_logins_();

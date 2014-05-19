@@ -100,6 +100,16 @@ public class CFG_9KWCAPTCHA {
     public static final BooleanKeyHandler                  MOUSE                 = SH.getKeyHandler("mouse", BooleanKeyHandler.class);
 
     /**
+     * Activate the Puzzle Captchas
+     **/
+    public static final BooleanKeyHandler                  PUZZLE                = SH.getKeyHandler("puzzle", BooleanKeyHandler.class);
+
+    /**
+     * Activate the Slider Captchas
+     **/
+    public static final BooleanKeyHandler                  SLIDER                = SH.getKeyHandler("slider", BooleanKeyHandler.class);
+
+    /**
      * Activate the whitelist with prio
      **/
     public static final BooleanKeyHandler                  WHITELISTPRIOCHECK    = SH.getKeyHandler("whitelistpriocheck", BooleanKeyHandler.class);
@@ -158,6 +168,16 @@ public class CFG_9KWCAPTCHA {
      * Captcha whitelist for hoster
      **/
     public static final StringKeyHandler                   WHITELIST             = SH.getKeyHandler("whitelist", StringKeyHandler.class);
+
+    /**
+     * Captcha hosteroptions for hoster with 9kw
+     **/
+    public static final StringKeyHandler                   HOSTEROPTIONS         = SH.getKeyHandler("hosteroptions", StringKeyHandler.class);
+
+    /**
+     * Captcha useragent for hoster with 9kw
+     **/
+    public static final StringKeyHandler                   USERAGENT             = SH.getKeyHandler("useragent", StringKeyHandler.class);
 
     /**
      * Confirm option for mouse captchas (Cost +6)
