@@ -43,6 +43,7 @@ public class OBoomCom extends PluginForHost {
     public OBoomCom(PluginWrapper wrapper) {
         super(wrapper);
 
+        //
         enablePremium("https://www.oboom.com");
     }
 
