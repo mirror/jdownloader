@@ -21,37 +21,39 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotolog.com.br" }, urls = { "http://(www\\.)?fotolog\\.com(\\.br)?/[a-z0-9\\-_/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotolog.com.br" }, urls = { "http://(www\\.)?fotolog\\.com(\\.br)?/[a-z0-9\\-_]+/(\\d+|mosaic|archive)" }, flags = { 0 })
 public class FotoLogComBr extends PluginForDecrypt {
 
     public FotoLogComBr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String INVALIDLINKS = "http://(www\\.)?fotolog\\.com(\\.br)?/(mobile_apps|about|privacy|register|community_guide|search|faq|login|advertise|gallery|terms_of_use|contact_us|directory).*?";
+    private final String domain = "http://(www\\.)?fotolog\\.com(\\.br)?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Invalid link: " + parameter);
-            return decryptedLinks;
+        // don't support calendar, always switch to Mosaic
+        String parameter = param.toString().replace("/archive", "/mosaic");
+        if (!parameter.endsWith("/")) {
+            parameter += "/";
         }
-        br.setCookie(Browser.getHost(parameter), "foto-lang", "en");
+        br.clearCookies(null);
+        br.setCookie(getHost(parameter), "foto-lang", "en");
         br.getPage(parameter);
-        if (br.containsHTML(">Error 404 :") || br.getRedirectLocation() != null) {
+        if (br.containsHTML(">Error 404 :") || br.getRedirectLocation() != null || br.containsHTML(">Account closed or deactivated<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("itemprop=\"image\"")) {
+        if (parameter.matches(domain + "/[a-z0-9\\-_]+/\\d+")) {
+            // single image urls
             final String finallink = br.getRegex("itemprop=\"image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -59,6 +61,7 @@ public class FotoLogComBr extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         } else {
+            // mosaic / album urls
             if (br.containsHTML(">Latest popular photos<")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -69,7 +72,9 @@ public class FotoLogComBr extends PluginForDecrypt {
                 return null;
             }
             fpName = Encoding.htmlDecode(fpName.trim()).replace(":", "-");
-            if (!parameter.endsWith("/")) parameter += "/";
+            if (!parameter.endsWith("/")) {
+                parameter += "/";
+            }
             int counter = 1;
             final DecimalFormat df = new DecimalFormat("0000");
             int offset = 0;
@@ -77,7 +82,9 @@ public class FotoLogComBr extends PluginForDecrypt {
             int picsPerPageMax = 30;
             int picsPerPageGrabbed = picsPerPageMax;
             final String lastPage = br.getRegex("/(\\d+)\">Last ›</a>").getMatch(0);
-            if (lastPage != null) maxOffset = Integer.parseInt(lastPage);
+            if (lastPage != null) {
+                maxOffset = Integer.parseInt(lastPage);
+            }
             while (offset != (maxOffset + picsPerPageMax) && picsPerPageGrabbed == picsPerPageMax) {
                 try {
                     if (this.isAbort()) {
@@ -95,28 +102,36 @@ public class FotoLogComBr extends PluginForDecrypt {
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
-                }
-                for (final String singleLink : links) {
-                    final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace("_t.jpg", "_f.jpg"));
-                    dl.setFinalFileName(fpName + "_" + df.format(counter) + ".jpg");
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        // Not available in old 0.9.581 Stable
+                } else {
+                    for (final String singleLink : links) {
+                        final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace("_t.jpg", "_f.jpg"));
+                        dl.setFinalFileName(fpName + "_" + df.format(counter) + ".jpg");
+                        dl.setAvailable(true);
+                        decryptedLinks.add(dl);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            // Not available in old 0.9.581 Stable
+                        }
+                        counter++;
                     }
-                    counter++;
+                    picsPerPageGrabbed = links.length;
+                    offset += picsPerPageMax;
+                    logger.info("Decrypted offset " + offset + " / " + maxOffset);
                 }
-                picsPerPageGrabbed = links.length;
-                offset += picsPerPageMax;
-                logger.info("Decrypted offset " + offset + " / " + maxOffset);
             }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
+            if (!decryptedLinks.isEmpty()) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName);
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
+    }
+
+    private String getHost(final String s) {
+        final String t = new Regex(s, domain.replaceFirst("http://(www\\.)?", "")).getMatch(-1);
+        return t;
     }
 
     /* NO OVERRIDE!! */
