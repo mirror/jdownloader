@@ -52,7 +52,7 @@ public class FotoLogComBr extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (parameter.matches(domain + "/[a-z0-9\\-_]+/\\d+")) {
+        if (parameter.matches(domain + "/[a-z0-9\\-_]+/\\d+/")) {
             // single image urls
             final String finallink = br.getRegex("itemprop=\"image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
