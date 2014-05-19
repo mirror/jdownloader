@@ -42,6 +42,7 @@ public class OBoomCom extends PluginForHost {
 
     public OBoomCom(PluginWrapper wrapper) {
         super(wrapper);
+
         enablePremium("https://www.oboom.com");
     }
 
@@ -71,8 +72,9 @@ public class OBoomCom extends PluginForHost {
         } catch (Throwable e) {
         }
         // enable debug for older versions of JD
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null)
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
             prepBr.setDebug(true);
+        }
 
         return prepBr;
     }
@@ -117,19 +119,23 @@ public class OBoomCom extends PluginForHost {
                 if (infos == null || forceLogin) {
                     prepBrowser(br);
                     br.setFollowRedirects(true);
-                    if (account.getUser() == null || account.getUser().trim().length() == 0)
+                    if (account.getUser() == null || account.getUser().trim().length() == 0) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    if (account.getPass() == null || account.getPass().trim().length() == 0)
+                    }
+                    if (account.getPass() == null || account.getPass().trim().length() == 0) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     String response = br.getPage("https://www.oboom.com/1.0/login?auth=" + Encoding.urlEncode(account.getUser()) + "&pass=" + PBKDF2Key(account.getPass()) + "&source=" + APPID);
-                    if (br.containsHTML("400,\"Invalid Login") || !response.startsWith("[200"))
+                    if (br.containsHTML("400,\"Invalid Login") || !response.startsWith("[200")) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     infos = new HashMap<String, String>();
                     String keys[] = getKeys(response);
                     for (String key : keys) {
                         String value = getValue(response, key);
-                        if (value != null)
+                        if (value != null) {
                             infos.put(key, value);
+                        }
                     }
                     String premium_unix = infos.get("premium_unix");
                     if (premium_unix != null) {
@@ -165,8 +171,9 @@ public class OBoomCom extends PluginForHost {
 
     private String getValue(String response, String key) {
         String ret = new Regex(response, "\"" + key + "\":\\s*?\"(.*?)\"").getMatch(0);
-        if (ret == null)
+        if (ret == null) {
             ret = new Regex(response, "\"" + key + "\":\\s*?(\\d+)").getMatch(0);
+        }
         return ret;
     }
 
@@ -188,16 +195,19 @@ public class OBoomCom extends PluginForHost {
                     br.setFollowRedirects(true);
                     br.getPage("https://www.oboom.com/1.0/guestsession?source=" + APPID);
                     String guestSession = br.getRegex("200,.*?\"(.*?)\"").getMatch(0);
-                    if (guestSession == null)
+                    if (guestSession == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     infos = new HashMap<String, String>();
                     infos.put("guestSession", guestSession);
-                    if (newSignal != null)
+                    if (newSignal != null) {
                         newSignal.set(true);
+                    }
                     ACCOUNTINFOS.put(null, infos);
                 }
-                if (newSignal != null)
+                if (newSignal != null) {
                     newSignal.set(false);
+                }
                 return infos;
             } catch (final Exception e) {
                 ACCOUNTINFOS.remove(null);
@@ -210,16 +220,18 @@ public class OBoomCom extends PluginForHost {
 
     @Override
     public boolean checkLinks(DownloadLink[] links) {
-        if (links == null || links.length == 0)
+        if (links == null || links.length == 0) {
             return true;
+        }
         try {
             StringBuilder sb = new StringBuilder();
             HashMap<String, DownloadLink> idLinks = new HashMap<String, DownloadLink>();
             for (DownloadLink link : links) {
                 String id = getFileID(link);
                 idLinks.put(id, link);
-                if (sb.length() > 0)
+                if (sb.length() > 0) {
                     sb.append(",");
+                }
                 sb.append(id);
             }
             br.setReadTimeout(60 * 1000);
@@ -232,10 +244,12 @@ public class OBoomCom extends PluginForHost {
                     String name = getValue(fileInfo, "name");
                     String state = getValue(fileInfo, "state");
                     DownloadLink link = idLinks.get(id);
-                    if (link == null)
+                    if (link == null) {
                         continue;
-                    if (name != null)
+                    }
+                    if (name != null) {
                         link.setFinalFileName(unescape(name));
+                    }
                     try {
                         if (size != null) {
                             link.setDownloadSize(Long.parseLong(size));
@@ -282,8 +296,9 @@ public class OBoomCom extends PluginForHost {
         String size = getValue(response, "size");
         String name = getValue(response, "name");
         String state = getValue(response, "state");
-        if (name != null)
+        if (name != null) {
             link.setFinalFileName(unescape(name));
+        }
         try {
             if (size != null) {
                 link.setDownloadSize(Long.parseLong(size));
@@ -291,14 +306,16 @@ public class OBoomCom extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-        if (!"online".equals(state))
+        if (!"online".equals(state)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return AvailableStatus.TRUE;
     }
 
     public String unescape(String s) {
-        if (s == null)
+        if (s == null) {
             return null;
+        }
         char ch;
         char ch2;
         final StringBuilder sb = new StringBuilder();
@@ -398,18 +415,24 @@ public class OBoomCom extends PluginForHost {
     }
 
     private void downloadErrorHandling(Account account) throws PluginException {
-        if (br.containsHTML("403,\"(abused|blocked|deleted)"))
+        if (br.containsHTML("403,\"(abused|blocked|deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("410,\"(abused|blocked|deleted)"))
+        }
+        if (br.containsHTML("410,\"(abused|blocked|deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("403,\"permission"))
+        }
+        if (br.containsHTML("403,\"permission")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, PluginException.VALUE_ID_PREMIUM_ONLY);
-        if (br.containsHTML("500,\"internal"))
+        }
+        if (br.containsHTML("500,\"internal")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal server error", 15 * 60 * 1000l);
-        if (br.containsHTML("503,\"download"))
+        }
+        if (br.containsHTML("503,\"download")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download currently unavailable", 15 * 60 * 1000l);
-        if (br.containsHTML("404,\"ticket"))
+        }
+        if (br.containsHTML("404,\"ticket")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download ticket invalid", 1 * 60 * 1000l);
+        }
         if (br.containsHTML("509,\"bandwidth limit exceeded")) {
             if (account != null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Bandwidth limit exceeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -499,8 +522,9 @@ public class OBoomCom extends PluginForHost {
                         }
                         if (CrossSystem.isOpenBrowserSupported()) {
                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result)
+                            if (JOptionPane.OK_OPTION == result) {
                                 CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                            }
                         }
                     } catch (Throwable e) {
                     }
@@ -512,8 +536,9 @@ public class OBoomCom extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(DownloadLink link, Account acc) {
-        if (acc != null && acc.getMaxSimultanDownloads() == 0)
+        if (acc != null && acc.getMaxSimultanDownloads() == 0) {
             return false;
+        }
         return true;
     }
 
@@ -536,8 +561,9 @@ public class OBoomCom extends PluginForHost {
             refreshTokenHandling(usedInfos, account, freshInfos.get());
         }
         checkShowFreeDialog();
-        if (session == null)
+        if (session == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             br.setAllowedResponseCodes(421, 509);
         } catch (Throwable e) {
@@ -559,8 +585,9 @@ public class OBoomCom extends PluginForHost {
             }
             break;
         }
-        if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout"))
+        if (br.containsHTML("incorrect-captcha-sol") || br.containsHTML("400,\"captcha-timeout")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         if (br.containsHTML("400,\"slot_error\"")) {
             // country slot block. try again in 5 minutes
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Try again later.", 5 * 60 * 1000l);
@@ -568,8 +595,9 @@ public class OBoomCom extends PluginForHost {
         String waitTime = br.getRegex("403,(\\-?\\d+)").getMatch(0);
         if (waitTime != null) {
             // there is already a download running.
-            if (Integer.parseInt(waitTime) < 0)
+            if (Integer.parseInt(waitTime) < 0) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         downloadErrorHandling(account);
@@ -586,8 +614,9 @@ public class OBoomCom extends PluginForHost {
         br.getPage("https://api.oboom.com/1.0/dl?token=" + urlInfos[0] + "&item=" + getFileID(link) + "&auth=" + urlInfos[1] + "&http_errors=0");
         downloadErrorHandling(account);
         urlInfos = br.getRegex("200,\"(.*?)\",\"(.*?)\"").getRow(0);
-        if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null)
+        if (urlInfos == null || urlInfos[0] == null || urlInfos[1] == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String url = "http://" + urlInfos[0] + "/1.0/dlh?ticket=" + urlInfos[1] + "&http_errors=0";
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, false, 1);
@@ -606,10 +635,12 @@ public class OBoomCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (account != null && account.getMaxSimultanDownloads() == 0)
+        if (account != null && account.getMaxSimultanDownloads() == 0) {
             return true;
-        if (downloadLink.getVerifiedFileSize() >= 0)
+        }
+        if (downloadLink.getVerifiedFileSize() >= 0) {
             return downloadLink.getVerifiedFileSize() < 1024 * 1024 * 1024l;
+        }
         return true;
     }
 
