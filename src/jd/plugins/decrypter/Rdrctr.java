@@ -44,7 +44,7 @@ public class Rdrctr extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         StringBuilder completePattern = new StringBuilder();
 
-        String[] list = { "https?://(www\\.)?ift\\.tt/[A-Za-z0-9]+", "https?://(www\\.)?doujin\\.us/link/\\d+/\\d+", "http://(www\\.)?(share\\.wf|links\\.tc)/[A-Za-z0-9]+", "https?://(www\\.)?urlm\\.in/[a-zA-Z0-9]+", "http://(www\\.)?cutmy\\.name/(?!#|.+\\.php)(u/[a-f0-9]{6,8}|[a-z0-9]+)", "https?://(www\\.)?tinyw\\.in/[a-zA-Z0-9]+", "http://(www\\.)?baidu\\.com/link\\?url=[A-Za-z0-9\\-_]+", "http://(www\\.)?sharedpartners\\.com/in/\\d+/\\d+", "http://(www\\.)?relink\\.ws/[A-Za-z0-9]+", "http://(www\\.)?clck\\.ru/(d/[A-Za-z0-9\\-_]+|[A-Za-z0-9\\-_]+)", "http://(www\\.)?goo\\.gl/[A-Za-z0-9]+", "http://[\\w\\.]*?youtu\\.be/[a-z_A-Z0-9\\-]+", "http://[\\w\\.]*?readthis\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?redirects\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?goshrink\\.com(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?clickthru\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?atu\\.ca(/[a-zA-Z0-9]+)?",
+        String[] list = { "http://(www\\.)?ift\\.tt/[a-zA-Z0-9]+", "https?://(www\\.)?doujin\\.us/link/\\d+/\\d+", "http://(www\\.)?(share\\.wf|links\\.tc)/[A-Za-z0-9]+", "https?://(www\\.)?urlm\\.in/[a-zA-Z0-9]+", "http://(www\\.)?cutmy\\.name/(?!#|.+\\.php)(u/[a-f0-9]{6,8}|[a-z0-9]+)", "https?://(www\\.)?tinyw\\.in/[a-zA-Z0-9]+", "http://(www\\.)?baidu\\.com/link\\?url=[A-Za-z0-9\\-_]+", "http://(www\\.)?sharedpartners\\.com/in/\\d+/\\d+", "http://(www\\.)?relink\\.ws/[A-Za-z0-9]+", "http://(www\\.)?clck\\.ru/(d/[A-Za-z0-9\\-_]+|[A-Za-z0-9\\-_]+)", "http://(www\\.)?goo\\.gl/[A-Za-z0-9]+", "http://[\\w\\.]*?youtu\\.be/[a-z_A-Z0-9\\-]+", "http://[\\w\\.]*?readthis\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?redirects\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?goshrink\\.com(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?clickthru\\.ca(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?atu\\.ca(/[a-zA-Z0-9]+)?",
                 "http://[\\w\\.]*?easyurl\\.net(/[a-zA-Z0-9]+)?", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", "http://[\\w\\.]*?rurl\\.org(/[a-zA-Z0-9]+)?", "http://(www\\.)?tinyurl\\.com/(?!favicon|preview)[a-z0-9]+(/[a-z0-9]+)?", "http://[\\w\\.]*?smarturl\\.eu/\\?[a-zA-Z0-9]+", "http://[\\w\\.]*?linkmize\\.com(/[a-zA-Z0-9]+)?", "http://go2\\.u6e\\.de/[a-zA-Z0-9]+", "http://[\\w\\.]*?shrinkify\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?s7y\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?rln\\.me/[0-9a-zA-Z]+", "http://[\\w\\.]*?sp2\\.ro/[0-9a-zA-Z]+", "http://[\\w\\.]*?s7y.us/[a-zA-Z0-9]+", "http://[\\w\\.]*?ow\\.ly/[\\w]+", "http://(www\\.)?(bit\\.ly|maticulo\\.us)/[\\w]+", "http://[\\w\\.]*?vb\\.ly/[\\w]+", "http://[\\w\\.]*?ponyurl\\.com/[\\w]+", "http://[\\w\\.]*?budurl\\.com/[a-zA-Z0-9]+",
                 "http://(www\\.)?yep\\.it/(?!preview|stat|favicon|css|js|apipage|go|yepsrc|contacts|about|cloud|icon|rssfeed)[A-Za-z0-9]+", "http://[\\w\\.]*?urlite\\.com/[\\d]+", "http://[\\w\\.]*?urlcini\\.com/[\\w]+", "http://[\\w\\.]*?tra\\.kz/[\\w_\\-,()*:]+", "http://[\\w\\.]*?tiny\\.pl/[\\w]+", "http://[\\w\\.]*?clop\\.in/[a-zA-Z0-9]+", "http://[\\w\\.]*?linkth\\.at/[a-z]+", "http://[\\w\\.]*?url(Pass|pass)\\.com/[0-9a-z]+", "http://[\\w\\.]*?bacn\\.me/[0-9a-z]+", "http://[\\w\\.]*?moourl\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?thnlnk\\.com/[a-zA-Z0-9]+/[a-zA-Z0-9]+/[0-9]+", "http://[\\w\\.]*?editurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?ri\\.ms/[a-z0-9]+", "http://[\\w\\.]*?gelen\\.org/[0-9]+", "http://[\\w\\.]*?(kingurl|shrinkurl|happyurl|tinyhiny|url-url)\\.com/[0-9a-z]+", "http://[\\w\\.]*?pettyurl\\.com/[0-9a-z]+", "http://[\\w\\.]*?9mmo\\.com/[a-z0-9]+",
                 "http://[\\w\\.]*?bmi-group\\.99k\\.org/go\\.php\\?id=[0-9]+", "http://[\\w\\.]*?\\.decenturl\\.com/[a-z0-9.-]+", "http://[\\w\\.]*?shor7\\.com/\\?[A-Z]+", "http://[\\w\\.]*?f5y\\.info/[a-zA-Z-]+", "http://[\\w\\.]*?starturl\\.com/[a-z_]+", "http://[\\w\\.]*?plzlink\\.me/[0-9a-z]+", "http://[\\w\\.]*?(2s8\\.org|kno\\.li)/[0-9a-z]+", "http://[\\w\\.]*?elurl\\.com/[0-9a-z]+", "http://[\\w\\.]*?wapurl\\.co\\.uk/\\?[0-9A-Z]+", "http://[\\w\\.]*?micurl\\.com/[a-zA-Z]+", "http://[\\w\\.]*?urlcantik\\.com/[a-z0-9]+", "http://[\\w\\.]*?0845\\.com/[a-zA-Z0-9]+", "http://[\\w\\.]*?piurl\\.com/[a-z0-9]+", "http://[\\w\\.]*?tren\\.tk/[a-z0-9]+", "http://[\\w\\.]*?twurl\\.nl/[a-z0-9]+", "http://[\\w\\.]*?shortlinks\\.co\\.uk/[0-9a-z]+", "http://[\\w\\.]*?urlal\\.com/[0-9a-z]+", "http://[\\w\\.]*?urloid\\.com/[0-9a-z]+", "http://[\\w\\.]*?rubyurl\\.com/[0-9a-zA-Z]+",
@@ -77,7 +77,6 @@ public class Rdrctr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String declink;
         // Workaround for preview.tinyurl.com Links
         parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
         // Workaround for 0856.com links
@@ -93,52 +92,47 @@ public class Rdrctr extends PluginForDecrypt {
             logger.info("Link offline (server offline?): " + parameter);
             return decryptedLinks;
         }
-        String redirectcheck = br.getRedirectLocation();
-        String declink2 = null;
-
-        declink = redirectcheck;
+        String declink = br.getRedirectLocation();
         if (declink == null) {
             declink = br.getRegex("<iframe frameborder=\"0\"\\s*src=\"(.*?)\"").getMatch(0);
-        }
-        if (declink == null) {
-            declink = br.getRegex("<meta http-equiv=\"refresh\"\\s*content=\"\\d+;\\s*url=(https?://[^<>\"]+)\">").getMatch(0);
-        }
-        if (declink == null) {
-            declink = br.getRegex("<script type=(\"|')text/javascript\\1>\\s*window\\.location\\.href=(\"|')(https?[^\"'<>]+)\\2;</script>").getMatch(2);
-        }
-        if (declink == null) {
-            declink = declink2;
-        }
-        if (declink == null) {
-            boolean offline = false;
-            if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
-                offline = true;
-            } else if (parameter.contains("goo.gl/") && br.containsHTML(">404: Page not found|this URL has been disabled")) {
-                offline = true;
-            } else if (parameter.contains("tinyurl.com/") & (br.containsHTML("tinyurl.com/errorb\\.php\\?") || br.containsHTML(">Error: TinyURL redirects to a TinyURL|>The URL you followed redirects back to a TinyURL") || br.containsHTML(">Error: Unable to find site\\'s URL to redirect to|>Please check that the URL entered is correct"))) {
-                offline = true;
-            } else if (parameter.contains("bit.ly/") && br.containsHTML(">Something's wrong here|>Uh oh, bitly couldn't find a link for the|Page Not Found")) {
-                offline = true;
-            } else if (parameter.contains("yep.it") && br.containsHTML(">Put your URL here<")) {
-                offline = true;
-            } else if (parameter.toLowerCase().contains("hex.io/") && declink == null) {
-                declink = br.getRegex("<div class=\"third grid\">[\t\n\r ]+<a href=\"(http[^<>\"]+)\"").getMatch(0);
-                if (declink != null) {
-                    decryptedLinks.add(createDownloadlink(declink));
-                    return decryptedLinks;
-                }
-                if (br.containsHTML(">404 Page Not Found|bannedsextapes\\.com/|\"error\":\"Please enter a valid URL") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
-                    offline = true;
+            if (declink == null) {
+                declink = br.getRegex("<meta http-equiv=\"refresh\"\\s*content=\"\\d+;\\s*url=(https?://[^<>\"]+)\">").getMatch(0);
+                if (declink == null) {
+                    declink = br.getRegex("<script type=(\"|')text/javascript\\1>\\s*window\\.location\\.href=(\"|')(https?[^\"'<>]+)\\2;</script>").getMatch(2);
+                    if (declink == null) {
+                        boolean offline = false;
+                        if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                            offline = true;
+                        } else if (parameter.contains("goo.gl/") && br.containsHTML(">404: Page not found|this URL has been disabled")) {
+                            offline = true;
+                        } else if (parameter.contains("tinyurl.com/") & (br.containsHTML("tinyurl.com/errorb\\.php\\?") || br.containsHTML(">Error: TinyURL redirects to a TinyURL|>The URL you followed redirects back to a TinyURL") || br.containsHTML(">Error: Unable to find site\\'s URL to redirect to|>Please check that the URL entered is correct"))) {
+                            offline = true;
+                        } else if (parameter.contains("bit.ly/") && br.containsHTML(">Something's wrong here|>Uh oh, bitly couldn't find a link for the|Page Not Found")) {
+                            offline = true;
+                        } else if (parameter.contains("yep.it") && br.containsHTML(">Put your URL here<")) {
+                            offline = true;
+                        } else if (parameter.toLowerCase().contains("hex.io/") && declink == null) {
+                            declink = br.getRegex("<div class=\"third grid\">[\t\n\r ]+<a href=\"(http[^<>\"]+)\"").getMatch(0);
+                            if (declink != null) {
+                                decryptedLinks.add(createDownloadlink(declink));
+                                return decryptedLinks;
+                            }
+                            if (br.containsHTML(">404 Page Not Found|bannedsextapes\\.com/|\"error\":\"Please enter a valid URL") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                                offline = true;
+                            }
+                        }
+                        if (offline) {
+                            logger.info("Link offline or invalid: " + parameter);
+                            return decryptedLinks;
+                        }
+                    }
                 }
             }
-            if (offline) {
-                logger.info("Link offline or invalid: " + parameter);
-                return decryptedLinks;
-            }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
         }
-        decryptedLinks.add(createDownloadlink(declink));
+        // when empty it's not always an error, specially when we use lazy regex!
+        if (declink != null) {
+            decryptedLinks.add(createDownloadlink(declink));
+        }
         return decryptedLinks;
     }
 
