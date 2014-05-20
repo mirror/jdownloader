@@ -133,6 +133,10 @@ public class CrhyRllCom extends PluginForDecrypt {
                 logger.info("Video is not released yet -> Cannot decrypt link: " + cryptedLink.getCryptedUrl());
                 return decryptedLinks;
             }
+            if (br.containsHTML("disabled=true")) {
+                logger.info("You cannot watch this video (yet): " + cryptedLink.getCryptedUrl());
+                return decryptedLinks;
+            }
 
             // Get the episode name
             String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());

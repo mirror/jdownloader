@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.msn.com" }, urls = { "decrypted://video.msn.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bing.com", "video.msn.com" }, urls = { "decrypted://bing.com/\\d+", "bteji456z90ubetkmnerlDELETE_MEfhtrjkhrdrfd" }, flags = { 2, 2 })
 public class VideoMsnCom extends PluginForHost {
 
     public VideoMsnCom(PluginWrapper wrapper) {
@@ -54,18 +54,23 @@ public class VideoMsnCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DLLINK = link.getStringProperty("directURL", null);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(link.getStringProperty("directName", null));
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -88,17 +93,17 @@ public class VideoMsnCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's MSNVideo Plugin helps downloading videoclips from video.msn.com. MSNVideo provides different video qualities.";
+        return "JDownloader's Bing Plugin helps downloading videoclips from bing.com. Bing.com provides different video qualities.";
     }
 
     private void setConfigElements() {
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.videomsncom.best", "Load Best Version ONLY")).setDefaultValue(false);
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.bingcom.best", "Load Best Version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.videomsncom.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SD, JDL.L("plugins.hoster.videomsncom.loadsd", "Load SD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.videomsncom.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH_FLV, JDL.L("plugins.hoster.videomsncom.loadhighflv", "Load high-flv Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.bingcom.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SD, JDL.L("plugins.hoster.bingcom.loadsd", "Load SD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.bingcom.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH_FLV, JDL.L("plugins.hoster.bingcom.loadhighflv", "Load high-flv Version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
     }
 
     @Override

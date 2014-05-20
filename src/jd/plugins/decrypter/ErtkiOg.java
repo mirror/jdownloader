@@ -52,19 +52,39 @@ public class ErtkiOg extends PluginForDecrypt {
             }
             // set packagename
             String fpName = br.getRegex("<title>(.*?) \\&raquo\\;").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<h1 class=\"title_h\">(.*?)</h1>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("<meta name=\"description\" content=\"NUDolls (.*?)\" />").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<h1 class=\"title_h\">(.*?)</h1>").getMatch(0);
+            }
+            if (fpName == null) {
+                fpName = br.getRegex("<meta name=\"description\" content=\"NUDolls (.*?)\" />").getMatch(0);
+            }
             // now we find
+            boolean b64 = true;
             String[] finallink = br.getRegex("url=([^<>\"\\']+)").getColumn(0);
             if (finallink == null || finallink.length == 0) {
                 finallink = br.getRegex("<a href=\"([^\"\\'<>]+)\" target=\"_blank\"><b>").getColumn(0);
+            }
+            if (finallink == null || finallink.length == 0) {
+                b64 = false;
+                finallink = br.getRegex("href=\"(http://(www\\.)?erotelki\\.org/uploads/posts/[^<>\"]*?)\" onclick=\"return hs\\.expand").getColumn(0);
                 if (finallink == null || finallink.length == 0) {
-                    logger.warning("erotelki Decrypter: Can't find links for " + parameter);
-                    return null;
+                    finallink = br.getRegex("\"(http://(www\\.)?erotelki\\.org/uploads/posts/[^<>\"]*?)\"").getColumn(0);
                 }
             }
-            for (String link : finallink)
-                decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(Encoding.htmlDecode(link))));
+            if (finallink == null || finallink.length == 0) {
+                logger.warning("erotelki Decrypter: Can't find links for " + parameter);
+                return null;
+            }
+            for (String link : finallink) {
+                String final_link;
+                if (b64) {
+                    final_link = Encoding.Base64Decode(Encoding.htmlDecode(link));
+                } else {
+                    final_link = link;
+                }
+                final_link = "directhttp://" + final_link;
+                decryptedLinks.add(createDownloadlink(final_link));
+            }
 
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();

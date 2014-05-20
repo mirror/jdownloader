@@ -57,7 +57,7 @@ public class FaceBookComVideos extends PluginForHost {
     public static String        Agent                      = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
     private boolean             pluginloaded               = false;
     private static final String TYPE_PHOTO                 = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
-    private static final String TYPE_VIDEO                 = "http://facebook\\.com/video/video\\.php\\?v=\\d+";
+    private static final String TYPE_VIDEO                 = "https?://(www\\.)?facebook\\.com/video/video\\.php\\?v=\\d+";
 
     private String              DLLINK                     = null;
     private static final String FASTLINKCHECK_PICTURES     = "FASTLINKCHECK_PICTURES";
@@ -253,7 +253,11 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private boolean accountNeeded(final DownloadLink dl) {
-        return (!dl.getBooleanProperty("nologin", false) && !dl.getDownloadURL().matches(TYPE_VIDEO));
+        boolean login_needed = !dl.getBooleanProperty("nologin", false);
+        if (login_needed) {
+            login_needed = !dl.getDownloadURL().matches(TYPE_VIDEO);
+        }
+        return login_needed;
     }
 
     private String getHigh() {

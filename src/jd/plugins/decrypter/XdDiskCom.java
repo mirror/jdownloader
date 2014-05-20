@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "7958.com" }, urls = { "^https?://(www\\.)?xddisk\\.com/(space_\\d+\\.html|space\\.php?username=\\d+)$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xddisk.com" }, urls = { "^https?://(www\\.)?xddisk\\.com/(space_\\d+\\.html|space\\.php?username=\\d+)$" }, flags = { 0 })
 public class XdDiskCom extends PluginForDecrypt {
 
     private String id = null;
@@ -90,15 +90,21 @@ public class XdDiskCom extends PluginForDecrypt {
         for (String filter : filted) {
             String link = new Regex(filter, "(https?://(www\\.)?xddisk\\.com/file-\\d+\\.html)").getMatch(0);
             String folder = new Regex(filter, "hahahahadoesn't exist?").getMatch(0);
-            if (link == null && folder == null) break;
+            if (link == null && folder == null) {
+                break;
+            }
             String fuid = new Regex(link, "file-(\\d+)").getMatch(0);
             if (link != null && !list.contains(link)) {
                 DownloadLink dl = createDownloadlink(link);
                 String filename = new Regex(filter, "<a href=\"file-" + fuid + "\\.html\"[^>]+>(.*?)</a>").getMatch(0);
                 String filesize = new Regex(filter, ">(\\d+(\\.\\d+)? ?(B|KB?|MB?|GB?))</td>").getMatch(0);
-                if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                if (filesize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
                 if (filename != null) {
-                    if (filename.endsWith("...")) filename = filename.replaceFirst("...$", "");
+                    if (filename.endsWith("...")) {
+                        filename = filename.replaceFirst("...$", "");
+                    }
                     dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
                     dl.setAvailable(true);
                 }

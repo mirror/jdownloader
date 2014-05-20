@@ -44,6 +44,8 @@ public class ProtectUrlNet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
+        br.setCookie("http://protect-url.net/", "PURL_Lang", "en");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:29.0) Gecko/20100101 Firefox/29.0");
         br.getPage(parameter);
         if (br.containsHTML("=images/erreur\\-redirect") || br.getURL().contains("/erreurflood.php")) {
             logger.info("Limit reached, cannot decrypt at the moment: " + parameter);
@@ -59,8 +61,8 @@ public class ProtectUrlNet extends PluginForDecrypt {
         // }
         for (int i = 0; i <= 3; i++) {
             String postData = null;
-            if (br.containsHTML(">Sécurité Anti\\-Robot:") || br.getURL().contains("protect-url.net/check.")) {
-                postData = "captx=ok&linkid=" + new Regex(parameter, "protect\\-url\\.net/([^<>\"]*?)\\-lnk\\.html").getMatch(0) + "&";
+            if (br.containsHTML(">Sécurité Anti\\-Robot:|id=captx name=captx") || br.getURL().contains("protect-url.net/check.")) {
+                postData = "captx=ok&linkid=" + new Regex(parameter, "protect\\-url\\.net/([^<>\"]*?)\\-lnk\\.html").getMatch(0) + "&ref=";
             }
             if (br.containsHTML(">Mot de Passe:<")) {
                 final String passCode = getUserInput("Enter password for: " + parameter, param);
@@ -75,16 +77,23 @@ public class ProtectUrlNet extends PluginForDecrypt {
             }
             break;
         }
-        if (br.containsHTML(PASSWRONG)) throw new DecrypterException(DecrypterException.PASSWORD);
+        if (br.containsHTML(PASSWRONG)) {
+            throw new DecrypterException(DecrypterException.PASSWORD);
+        }
         String fpName = br.getRegex("<b>Titre:</b>[\t\n\r ]+</td>[\t\n\r ]+<td style=\\'border:1px;font\\-weight:bold;font\\-size:90%;font\\-family:Arial,Helvetica,sans\\-serif;\\'>([^<>\"]*?)</td>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<img id=\\'gglload\\' src=\\'images/icon\\-magnify\\.png\\' style=\"vertical\\-align: middle;\"></span>([^<>\"]*?) </td>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<img id=\\'gglload\\' src=\\'images/icon\\-magnify\\.png\\' style=\"vertical\\-align: middle;\"></span>([^<>\"]*?) </td>").getMatch(0);
+        }
         String[] links = HTMLParser.getHttpLinks(br.toString(), null);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
-            if (!this.canHandle(singleLink)) decryptedLinks.add(createDownloadlink(singleLink));
+        for (String singleLink : links) {
+            if (!this.canHandle(singleLink)) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

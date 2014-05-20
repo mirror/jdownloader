@@ -83,11 +83,15 @@ public class FlickrCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* Login is not always needed but we force it to get all pictures */
-        if (!getUserLogin()) {
+        final boolean logged_in = getUserLogin();
+        if (!logged_in) {
             logger.info("Login failed or no accounts active/existing -> Continuing without account");
         }
         br.getPage(parameter);
-        if (br.containsHTML("doesn\\'t have anything available to you")) {
+        if (br.containsHTML("class=\"ThinCase Interst\"") && !logged_in) {
+            logger.info("Account needed to decrypt this link: " + parameter);
+            return decryptedLinks;
+        } else if (br.containsHTML("doesn\\'t have anything available to you")) {
             logger.info("Link offline (empty): " + parameter);
             return decryptedLinks;
         }

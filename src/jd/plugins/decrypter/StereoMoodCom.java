@@ -40,6 +40,9 @@ public class StereoMoodCom extends PluginForDecrypt {
         }
         if (br.getURL().contains("/search/") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
