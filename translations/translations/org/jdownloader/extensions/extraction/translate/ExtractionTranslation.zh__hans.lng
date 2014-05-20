@@ -85,6 +85,7 @@ settings_cpupriority_middle=中
 settings_extract_to_archive_folder=提取到下列文件夹
 settings_extract_to_path=提取到
 settings_extractto=提取目标文件夹
+settings_if_file_exists=如果文件存在...
 settings_multi=特殊设置(仅用于 rar、7z 和 zip。而不是用于分割文件)
 settings_multi_use_original_file_date=如果可以的话使用原始文件日期
 settings_overwrite=覆盖存在的文件吗?
