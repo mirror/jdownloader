@@ -202,9 +202,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public Property getTempProperties() {
         while (true) {
             Property ret = tempProperties.get();
-            if (ret != null) return ret;
+            if (ret != null) {
+                return ret;
+            }
             ret = new Property();
-            if (tempProperties.compareAndSet(null, ret)) { return ret; }
+            if (tempProperties.compareAndSet(null, ret)) {
+                return ret;
+            }
         }
     }
 
@@ -311,9 +315,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public UniqueAlltimeID getUniqueID() {
-        if (uniqueID != null) return uniqueID;
+        if (uniqueID != null) {
+            return uniqueID;
+        }
         synchronized (this) {
-            if (uniqueID != null) return uniqueID;
+            if (uniqueID != null) {
+                return uniqueID;
+            }
             uniqueID = new UniqueAlltimeID();
         }
         return uniqueID;
@@ -352,7 +360,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (limit == 0) {
             setProperty(PROPERTY_SPEEDLIMIT, Property.NULL);
         } else {
-            if (limit < 0) limit = 1;
+            if (limit < 0) {
+                limit = 1;
+            }
             setProperty(PROPERTY_SPEEDLIMIT, limit);
         }
     }
@@ -373,13 +383,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (pr >= -1 && pr < 4) {
             priority = pr;
         }
-        if (oldPrio == priority) return;
+        if (oldPrio == priority) {
+            return;
+        }
         if (priority == 0) {
             this.setProperty(PROPERTY_PRIORITY, Property.NULL);
         } else {
             this.setProperty(PROPERTY_PRIORITY, priority);
         }
-        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PRIORITY, priority));
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PRIORITY, priority));
+        }
     }
 
     /**
@@ -438,7 +452,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public long getDownloadSpeed() {
         SingleDownloadController dlc = getDownloadLinkController();
         DownloadInterface dli = null;
-        if (dlc != null && (dli = dlc.getDownloadInstance()) != null) { return dli.getManagedConnetionHandler().getSpeed(); }
+        if (dlc != null && (dli = dlc.getDownloadInstance()) != null) {
+            return dli.getManagedConnetionHandler().getSpeed();
+        }
         return 0;
     }
 
@@ -447,14 +463,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public DownloadLinkView setView(DownloadLinkView status) {
-        if (status == null) throw new NullPointerException();
+        if (status == null) {
+            throw new NullPointerException();
+        }
         status.setLink(this);
         DownloadLinkView old = view.getAndSet(status);
         return old;
     }
 
     public void compareAndSetView(DownloadLinkView expect, DownloadLinkView set) {
-        if (set == null) throw new NullPointerException();
+        if (set == null) {
+            throw new NullPointerException();
+        }
         if (view.compareAndSet(expect, set)) {
             set.setLink(this);
         }
@@ -465,7 +485,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public String getBrowserUrl() {
-        if (browserurl != null) return browserurl;
+        if (browserurl != null) {
+            return browserurl;
+        }
         return getDownloadURL();
     }
 
@@ -498,9 +520,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return new File(downloadDirectory, fileName).getAbsolutePath();
         }
         fileName = getName(ignoreUnsafe);
-        if (StringUtils.isEmpty(fileName)) return null;
+        if (StringUtils.isEmpty(fileName)) {
+            return null;
+        }
         String customAppend = getCustomFileOutputFilenameAppend();
-        if (!StringUtils.isEmpty(customAppend) && !ignoreCustom) fileName = fileName + customAppend;
+        if (!StringUtils.isEmpty(customAppend) && !ignoreCustom) {
+            fileName = fileName + customAppend;
+        }
         return new File(downloadDirectory, fileName).getAbsolutePath();
     }
 
@@ -511,7 +537,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             /* downloadLink has no longer a FilePackage parent, so fetch latest downloadDirectory from property(set by setFilePackage) */
             downloadDirectory = getStringProperty(PROPERTY_LASTFPDEST, null);
         }
-        if (StringUtils.isEmpty(downloadDirectory)) throw new WTFException("what the fuck just happened here? defaultFilePackage: " + FilePackage.isDefaultFilePackage(fp));
+        if (StringUtils.isEmpty(downloadDirectory)) {
+            throw new WTFException("what the fuck just happened here? defaultFilePackage: " + FilePackage.isDefaultFilePackage(fp));
+        }
         return downloadDirectory;
     }
 
@@ -570,7 +598,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public FilePackage getFilePackage() {
         FilePackage lFilePackage = filePackage;
-        if (lFilePackage == null) return FilePackage.getDefaultFilePackage();
+        if (lFilePackage == null) {
+            return FilePackage.getDefaultFilePackage();
+        }
         return lFilePackage;
     }
 
@@ -584,7 +614,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setHost(String newHost) {
-        if (newHost == null) return;
+        if (newHost == null) {
+            return;
+        }
         if (Application.getJavaVersion() >= Application.JAVA17) {
             host = newHost.toLowerCase(Locale.ENGLISH).intern();
         } else {
@@ -594,9 +626,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public LinkStatus getLinkStatus() {
         Thread current = Thread.currentThread();
-        if (current instanceof UseSetLinkStatusThread) { return currentLinkStatus.get(); }
+        if (current instanceof UseSetLinkStatusThread) {
+            return currentLinkStatus.get();
+        }
         SingleDownloadController controller = getDownloadLinkController();
-        if (controller != null) return controller.getLinkStatus();
+        if (controller != null) {
+            return controller.getLinkStatus();
+        }
         throw new WTFException("Cannot use getLinkStatus outside UseSetLinkStatusThread/SingleDownloadController");
     }
 
@@ -604,8 +640,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         Thread current = Thread.currentThread();
         if (current instanceof UseSetLinkStatusThread) {
             currentLinkStatus.set(linkStatus);
-        } else
+        } else {
             throw new WTFException("Cannot setLinkStatus outside UseSetLinkStatusThread");
+        }
     }
 
     public int getLinkType() {
@@ -633,16 +670,26 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public String getName(boolean ignoreUnsafe) {
 
         String ret = this.getForcedFileName();
-        if (ret != null) return ret;
+        if (ret != null) {
+            return ret;
+        }
         ret = this.getFinalFileName();
-        if (ret != null) return ret;
-        if (ignoreUnsafe) return null;
+        if (ret != null) {
+            return ret;
+        }
+        if (ignoreUnsafe) {
+            return null;
+        }
         try {
 
-            if (name != null) return name;
+            if (name != null) {
+                return name;
+            }
             if (this.getDownloadURL() != null) {
                 String urlName = new File(new URL(this.getDownloadURL()).toURI()).getName();
-                if (urlName != null) return urlName;
+                if (urlName != null) {
+                    return urlName;
+                }
             }
             return UNKNOWN_FILE_NAME;
         } catch (Exception e) {
@@ -668,7 +715,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public String getNameSetbyPlugin() {
         String ret = this.getFinalFileName();
-        if (ret != null) return ret;
+        if (ret != null) {
+            return ret;
+        }
         return name;
     }
 
@@ -692,7 +741,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     @Deprecated
     public List<String> getSourcePluginPasswordList() {
         Object ret = this.getProperty(PROPERTY_PWLIST);
-        if (ret != null && ret instanceof List) return (List<String>) ret;
+        if (ret != null && ret instanceof List) {
+            return (List<String>) ret;
+        }
         return null;
     }
 
@@ -762,17 +813,25 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
-        if (this.availableStatus == availableStatus) return;
+        if (this.availableStatus == availableStatus) {
+            return;
+        }
         this.availableStatus = availableStatus;
         switch (availableStatus) {
         case FALSE:
-            if (getFinalLinkState() == null) setFinalLinkState(FinalLinkState.OFFLINE);
+            if (getFinalLinkState() == null) {
+                setFinalLinkState(FinalLinkState.OFFLINE);
+            }
             break;
         case TRUE:
-            if (FinalLinkState.OFFLINE.equals(getFinalLinkState())) setFinalLinkState(null);
+            if (FinalLinkState.OFFLINE.equals(getFinalLinkState())) {
+                setFinalLinkState(null);
+            }
             break;
         }
-        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.AVAILABILITY, availableStatus));
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.AVAILABILITY, availableStatus));
+        }
     }
 
     private void notifyChanges(AbstractNodeNotifier.NOTIFY notify, Object param) {
@@ -782,14 +841,20 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return;
         }
         AbstractNodeNotifier pl2 = filePackage;
-        if (pl2 != null) pl2.nodeUpdated(this, notify, param);
+        if (pl2 != null) {
+            pl2.nodeUpdated(this, notify, param);
+        }
     }
 
     public boolean hasNotificationListener() {
         AbstractNodeNotifier pl = propertyListener;
-        if (pl != null && pl.hasNotificationListener()) return true;
+        if (pl != null && pl.hasNotificationListener()) {
+            return true;
+        }
         pl = filePackage;
-        if (pl != null && pl.hasNotificationListener()) return true;
+        if (pl != null && pl.hasNotificationListener()) {
+            return true;
+        }
         return false;
     }
 
@@ -801,7 +866,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
         long size = getView().getBytesTotal();
         setVerifiedFileSize(-1);
-        if (size >= 0) setDownloadSize(size);
+        if (size >= 0) {
+            setDownloadSize(size);
+        }
         setChunksProgress(null);
         setDownloadCurrent(0);
         setFinishedDate(-1l);
@@ -817,11 +884,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } catch (final Throwable e) {
             LogController.CL().log(e);
         }
-        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESET, null));
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESET, null));
+        }
     }
 
     public void resume() {
         try {
+            setAvailableStatus(AvailableStatus.UNCHECKED);
             getDefaultPlugin().resumeDownloadlink(this);
         } catch (final Throwable e) {
             LogController.CL().log(e);
@@ -850,15 +920,21 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setDownloadCurrent(long downloadedCurrent) {
 
-        if (getDownloadCurrentRaw() == downloadedCurrent) return;
+        if (getDownloadCurrentRaw() == downloadedCurrent) {
+            return;
+        }
         downloadCurrent = downloadedCurrent;
-        if (hasNotificationListener() && this.getCurrentDownloadInterface() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
+        if (hasNotificationListener() && this.getCurrentDownloadInterface() == null) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
+        }
     }
 
     private DownloadInterface getCurrentDownloadInterface() {
         SingleDownloadController dlc = getDownloadLinkController();
         DownloadInterface dli = null;
-        if (dlc != null && (dli = dlc.getDownloadInstance()) != null) return dli;
+        if (dlc != null && (dli = dlc.getDownloadInstance()) != null) {
+            return dli;
+        }
         return null;
     }
 
@@ -879,9 +955,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Die Groesse der Datei
      */
     public void setDownloadSize(long downloadMax) {
-        if (this.downloadMax == downloadMax) return;
+        if (this.downloadMax == downloadMax) {
+            return;
+        }
         this.downloadMax = Math.max(-1, downloadMax);
-        if (hasNotificationListener() && this.getCurrentDownloadInterface() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
+        if (hasNotificationListener() && this.getCurrentDownloadInterface() == null) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, null);
+        }
     }
 
     /**
@@ -897,13 +977,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * changes the enabled status of this DownloadLink, aborts download if its currently running
      */
     public void setEnabled(boolean isEnabled) {
-        if (enabled.getAndSet(isEnabled) == isEnabled) { return; }
+        if (enabled.getAndSet(isEnabled) == isEnabled) {
+            return;
+        }
         if (isEnabled == false) {
             setProperty(PROPERTY_ENABLED, isEnabled);
         } else {
             setProperty(PROPERTY_ENABLED, Property.NULL);
         }
-        if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ENABLED, isEnabled));
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ENABLED, isEnabled));
+        }
     }
 
     /**
@@ -921,7 +1005,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public SkipReason setSkipReason(SkipReason skipReason) {
         SkipReason old = this.skipReason.getAndSet(skipReason);
         if (old != skipReason) {
-            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SKIPPED, skipReason));
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SKIPPED, skipReason));
+            }
         }
         return old;
     }
@@ -941,7 +1027,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             if (finalLinkState != FinalLinkState.FAILED_FATAL) {
                 setProperty(PROPERTY_CUSTOM_MESSAGE, Property.NULL);
             }
-            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.FINAL_STATE, finalLinkState));
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.FINAL_STATE, finalLinkState));
+            }
         }
         return old;
     }
@@ -953,7 +1041,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public ConditionalSkipReason setConditionalSkipReason(ConditionalSkipReason conditionalSkipReason) {
         ConditionalSkipReason old = this.conditionalSkipReason.getAndSet(conditionalSkipReason);
         if (old != conditionalSkipReason) {
-            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CONDITIONAL_SKIPPED, conditionalSkipReason));
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.CONDITIONAL_SKIPPED, conditionalSkipReason));
+            }
         }
         return old;
     }
@@ -967,7 +1057,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public void setLinkType(int linktypeContainer) {
-        if (linktypeContainer == linkType) return;
+        if (linktypeContainer == linkType) {
+            return;
+        }
         if (linkType == LINKTYPE_CONTAINER) {
             System.out.println("You are not allowd to Change the Linktype of " + this);
             return;
@@ -1000,17 +1092,23 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setName(String name) {
         String oldName = getName();
-        if (StringUtils.isEmpty(name)) name = Plugin.extractFileNameFromURL(getDownloadURL());
+        if (StringUtils.isEmpty(name)) {
+            name = Plugin.extractFileNameFromURL(getDownloadURL());
+        }
         if (!StringUtils.isEmpty(name)) {
             name = CrossSystem.alleviatePathParts(name);
         }
-        if (StringUtils.isEmpty(name)) name = UNKNOWN_FILE_NAME;
+        if (StringUtils.isEmpty(name)) {
+            name = UNKNOWN_FILE_NAME;
+        }
         this.name = name;
         setPartInfo(null);
         this.setIcon(null);
         if (hasNotificationListener()) {
             String newName = getName();
-            if (!StringUtils.equals(oldName, newName)) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
+            if (!StringUtils.equals(oldName, newName)) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
+            }
         }
     }
 
@@ -1030,7 +1128,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setIcon(null);
         if (hasNotificationListener()) {
             String newName = getName();
-            if (!StringUtils.equals(oldName, newName)) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
+            if (!StringUtils.equals(oldName, newName)) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
+            }
         }
     }
 
@@ -1069,10 +1169,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setCustomFinalName(String name) {
 
         String oldName = getCustomFinalName();
-        if (StringUtils.isEmpty(oldName)) oldName = getName();
+        if (StringUtils.isEmpty(oldName)) {
+            oldName = getName();
+        }
         if (StringUtils.equals(name, oldName)) {
 
-        return; }
+            return;
+        }
 
         customFinalName = CrossSystem.alleviatePathParts(name);
         setIcon(null);
@@ -1110,7 +1213,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         setPartInfo(null);
         if (hasNotificationListener()) {
             String newName = getName();
-            if (!StringUtils.equals(oldName, newName)) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
+            if (!StringUtils.equals(oldName, newName)) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.NAME, newName));
+            }
         }
     }
 
@@ -1123,7 +1228,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setUrlDownload(String urlDownload) {
         String previousURLDownload = this.urlDownload;
         if (urlDownload != null) {
-            if (previousURLDownload != null && previousURLDownload.equals(urlDownload)) return;
+            if (previousURLDownload != null && previousURLDownload.equals(urlDownload)) {
+                return;
+            }
             this.urlDownload = new String(urlDownload.trim());
         } else {
             this.urlDownload = null;
@@ -1142,8 +1249,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     @Override
     public String toString() {
-        if (getPreviousParentNodeID() == null) { return getName(); }
-        if (getPreviousParentNodeID().equals(getParentNode().getUniqueID())) return getName();
+        if (getPreviousParentNodeID() == null) {
+            return getName();
+        }
+        if (getPreviousParentNodeID().equals(getParentNode().getUniqueID())) {
+            return getName();
+        }
         return getName() + " previousParentNode:" + getPreviousParentNodeID();
 
     }
@@ -1155,7 +1266,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public long getKnownDownloadSize() {
         long ret = getVerifiedFileSize();
-        if (ret >= 0) return ret;
+        if (ret >= 0) {
+            return ret;
+        }
         return downloadMax;
     }
 
@@ -1206,14 +1319,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public PluginProgress setPluginProgress(PluginProgress progress) {
         PluginProgress ret = pluginProgress.getAndSet(progress);
         if (ret != progress) {
-            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, progress));
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, progress));
+            }
         }
         return ret;
     }
 
     public boolean compareAndSetPluginProgress(PluginProgress expect, PluginProgress set) {
         if (pluginProgress.compareAndSet(expect, set)) {
-            if (hasNotificationListener()) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, set));
+            if (hasNotificationListener()) {
+                notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.PLUGIN_PROGRESS, set));
+            }
             return true;
         } else {
             return false;
@@ -1275,7 +1392,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public boolean isResumeable() {
-        if (resumeable != null) return resumeable;
+        if (resumeable != null) {
+            return resumeable;
+        }
         resumeable = getBooleanProperty(PROPERTY_RESUMEABLE, false);
         return resumeable;
     }
@@ -1304,7 +1423,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 LogController.CL().log(e);
             }
         }
-        if (newIcon == null) newIcon = NewTheme.I().getIcon("url", 16);
+        if (newIcon == null) {
+            newIcon = NewTheme.I().getIcon("url", 16);
+        }
         return newIcon;
     }
 
@@ -1336,7 +1457,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             previousParent = null;
             return;
         }
-        if (FilePackage.isDefaultFilePackage(filePackage)) filePackage = null;
+        if (FilePackage.isDefaultFilePackage(filePackage)) {
+            filePackage = null;
+        }
         if (this.filePackage != null && filePackage != null) {
             this.filePackage.remove(this);
         }
@@ -1399,11 +1522,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public ExtractionStatus getExtractionStatus() {
-        if (extractionStatus.isValueSet()) return extractionStatus.get();
+        if (extractionStatus.isValueSet()) {
+            return extractionStatus.get();
+        }
         String string = getStringProperty(PROPERTY_EXTRACTION_STATUS, null);
         ExtractionStatus ret = null;
         try {
-            if (string != null) ret = ExtractionStatus.valueOf(string);
+            if (string != null) {
+                ret = ExtractionStatus.valueOf(string);
+            }
         } catch (Exception e) {
         }
         extractionStatus.set(ret);
@@ -1412,7 +1539,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setExtractionStatus(ExtractionStatus newExtractionStatus) {
         ExtractionStatus old = extractionStatus.getAndSet(newExtractionStatus);
-        if (old == newExtractionStatus) return;
+        if (old == newExtractionStatus) {
+            return;
+        }
         if (newExtractionStatus == null) {
             setProperty(DownloadLink.PROPERTY_EXTRACTION_STATUS, Property.NULL);
         } else {
@@ -1455,11 +1584,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                     throw new WTFException("Only Setter and getter are allowed");
                 }
                 Key keyAnnotation = method.getAnnotation(Key.class);
-                if (keyAnnotation != null) key = keyAnnotation.value();
+                if (keyAnnotation != null) {
+                    key = keyAnnotation.value();
+                }
 
                 if (setter) {
-                    if (method.getParameterTypes().length != 1) { throw new WTFException("Setter " + method + " should have 1 parameter. instead: " + Arrays.toString(method.getParameterTypes())); }
-                    if (!Clazz.isVoid(method.getReturnType())) { throw new WTFException("Setter " + method + " must not have any return type. Has: " + method.getReturnType()); }
+                    if (method.getParameterTypes().length != 1) {
+                        throw new WTFException("Setter " + method + " should have 1 parameter. instead: " + Arrays.toString(method.getParameterTypes()));
+                    }
+                    if (!Clazz.isVoid(method.getReturnType())) {
+                        throw new WTFException("Setter " + method + " must not have any return type. Has: " + method.getReturnType());
+                    }
 
                     if (Clazz.isBoolean(method.getParameterTypes()[0])) {
                         if (args[0].equals(Boolean.FALSE)) {
@@ -1510,38 +1645,80 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                     setProperty(key, args[0]);
                 } else {
                     Type returnType = method.getGenericReturnType();
-                    if (method.getParameterTypes().length != 0) { throw new WTFException("Getter " + method + " must not have any parameter. instead: " + Arrays.toString(method.getParameterTypes())); }
-                    if (Clazz.isVoid(method.getReturnType())) { throw new WTFException("Getter " + method + " must have a return type. is Void."); }
+                    if (method.getParameterTypes().length != 0) {
+                        throw new WTFException("Getter " + method + " must not have any parameter. instead: " + Arrays.toString(method.getParameterTypes()));
+                    }
+                    if (Clazz.isVoid(method.getReturnType())) {
+                        throw new WTFException("Getter " + method + " must have a return type. is Void.");
+                    }
 
                     Object value = getProperty(key);
                     if (Clazz.isBoolean(returnType)) {
-                        if (value == null) return false;
-                        if (value instanceof Boolean) return value;
+                        if (value == null) {
+                            return false;
+                        }
+                        if (value instanceof Boolean) {
+                            return value;
+                        }
                     } else if (Clazz.isByte(returnType)) {
-                        if (value == null) return (byte) 0;
-                        if (value instanceof Number) return ((Number) value).byteValue();
+                        if (value == null) {
+                            return (byte) 0;
+                        }
+                        if (value instanceof Number) {
+                            return ((Number) value).byteValue();
+                        }
                     } else if (Clazz.isDouble(returnType)) {
-                        if (value == null) return 0d;
-                        if (value instanceof Number) return ((Number) value).doubleValue();
+                        if (value == null) {
+                            return 0d;
+                        }
+                        if (value instanceof Number) {
+                            return ((Number) value).doubleValue();
+                        }
                     } else if (Clazz.isEnum(returnType)) {
-                        if (value == null) return null;
-                        if (value instanceof Enum) return value;
-                        if (value instanceof String) { return Enum.valueOf(((Enum<?>) returnType).getDeclaringClass(), (String) value); }
+                        if (value == null) {
+                            return null;
+                        }
+                        if (value instanceof Enum) {
+                            return value;
+                        }
+                        if (value instanceof String) {
+                            return Enum.valueOf(((Enum<?>) returnType).getDeclaringClass(), (String) value);
+                        }
                     } else if (Clazz.isFloat(returnType)) {
-                        if (value == null) return 0f;
-                        if (value instanceof Number) return ((Number) value).floatValue();
+                        if (value == null) {
+                            return 0f;
+                        }
+                        if (value instanceof Number) {
+                            return ((Number) value).floatValue();
+                        }
                     } else if (Clazz.isInteger(returnType)) {
-                        if (value == null) return 0;
-                        if (value instanceof Number) return ((Number) value).intValue();
+                        if (value == null) {
+                            return 0;
+                        }
+                        if (value instanceof Number) {
+                            return ((Number) value).intValue();
+                        }
                     } else if (Clazz.isLong(returnType)) {
-                        if (value == null) return 0l;
-                        if (value instanceof Number) return ((Number) value).longValue();
+                        if (value == null) {
+                            return 0l;
+                        }
+                        if (value instanceof Number) {
+                            return ((Number) value).longValue();
+                        }
                     } else if (Clazz.isShort(returnType)) {
-                        if (value == null) return (short) 0;
-                        if (value instanceof Number) return ((Number) value).shortValue();
+                        if (value == null) {
+                            return (short) 0;
+                        }
+                        if (value instanceof Number) {
+                            return ((Number) value).shortValue();
+                        }
                     } else if (Clazz.isString(returnType)) {
-                        if (value == null) return null;
-                        if (value instanceof String) return value;
+                        if (value == null) {
+                            return null;
+                        }
+                        if (value instanceof String) {
+                            return value;
+                        }
                     } else {
                         return value;
                     }
