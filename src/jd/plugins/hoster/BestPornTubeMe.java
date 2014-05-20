@@ -3,6 +3,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -56,14 +57,14 @@ public class BestPornTubeMe extends PluginForHost {
         br.getHeaders().put("Accept-Charset", null);
 
         br.setFollowRedirects(true);
+        String id = new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.flv$").getMatch(0);
+        if (id != null) {
+            // workaround to support old links. changed this on 20th may 2014. can be removed in july
+            downloadLink.setUrlDownload("http://www.bestporntube.me/video/" + id + "/");
+        }
         br.openGetConnection(downloadLink.getDownloadURL());
         try {
-            if (!"text/html".equals(br.getRequest().getResponseHeader("Content-Type"))) {
-                // workaround to support old links. changed this on 24th april 2014. can be removed in june
-                dlUrl = downloadLink.getDownloadURL();
-                return AvailableStatus.TRUE;
 
-            }
             br.followConnection();
         } catch (IOException e) {
             if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
