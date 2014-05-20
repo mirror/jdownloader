@@ -81,6 +81,13 @@ public class SpeedyShareCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
@@ -114,15 +121,27 @@ public class SpeedyShareCom extends PluginForHost {
             }
         } else {
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(class=sizetagtext>not found<|File not found|It has been deleted<|>or it never existed at all)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String filename = br.getRegex("\"(og:title|name)\" content=\"Download File: ([^\"]+)").getMatch(1);
-            if (filename == null) filename = br.getRegex("<title>(.+) \\- Speedy Share \\- .+</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.+) \\- Speedy Share \\- .+</title>").getMatch(0);
+            }
             String filesize = br.getRegex("<div class=sizetagtext>(.*?)</div>").getMatch(0);
-            if (filesize == null) filesize = br.getRegex("([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filesize == null) {
+                filesize = br.getRegex("([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setName(Encoding.htmlDecode(filename));
-            if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-            if (br.containsHTML(PREMIUMONLY)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
+            if (filesize != null) {
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
+            if (br.containsHTML(PREMIUMONLY)) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.speedysharecom.errors.only4premium", PREMIUMONLYTEXT));
+            }
             br.setFollowRedirects(false);
         }
         return AvailableStatus.TRUE;
@@ -136,7 +155,9 @@ public class SpeedyShareCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
@@ -159,34 +180,48 @@ public class SpeedyShareCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
         }
         if (!br.containsHTML(CAPTCHATEXT)) {
             finallink = br.getRegex("class=downloadfilename href=\\'(.*?)\\'").getMatch(0);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (finallink == null) {
             final long timeBefore = System.currentTimeMillis();
             String postLink = br.getRegex("\"(/files?/[A-Za-z0-9]+/download/.*?)\"").getMatch(0);
             String captchaLink = br.getRegex("(/captcha\\.php\\?uid=file\\d+)").getMatch(0);
-            if (postLink == null || captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (postLink == null || captchaLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String code = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
             final int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
             final String waittime = br.getRegex("</div>\\';[\t\n\r ]+secondscounter\\((\\d+)\\);").getMatch(0);
             int wait = 15;
-            if (waittime != null) wait = Integer.parseInt(waittime) / 10;
+            if (waittime != null) {
+                wait = Integer.parseInt(waittime) / 10;
+            }
             wait -= passedTime;
-            if (wait > 0) sleep(wait * 1001l, downloadLink);
+            if (wait > 0) {
+                sleep(wait * 1001l, downloadLink);
+            }
             br.postPage(MAINPAGE + postLink, "captcha=" + Encoding.urlEncode(code));
             finallink = br.getRedirectLocation();
         }
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(CAPTCHATEXT)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             logger.warning("Downloadlink doesn't lead to a file!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -202,7 +237,9 @@ public class SpeedyShareCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -230,7 +267,9 @@ public class SpeedyShareCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                if (!br.getURL().endsWith("speedyshare.com/user.php")) br.getPage("http://speedyshare.com/user.php");
+                if (!br.getURL().endsWith("speedyshare.com/user.php")) {
+                    br.getPage("http://speedyshare.com/user.php");
+                }
                 if (br.getCookie(MAINPAGE, "S") == null || !br.containsHTML("<td>Account type:</td><td><b style=\\'color: green\\'>Premium</b>")) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -274,7 +313,9 @@ public class SpeedyShareCom extends PluginForHost {
             try {
                 br.getPage("/remote_downloader.php");
                 final String[] hosts = br.getRegex("src=/gf/ru/([A-Za-z0-9\\.]+)\\.png width=").getColumn(0);
-                if (hosts == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (hosts == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
                 /*
                  * set ArrayList<String> with all supported multiHosts of this service
@@ -302,12 +343,16 @@ public class SpeedyShareCom extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage(link.getDownloadURL());
             finallink = br.getRedirectLocation();
-            if (finallink == null) finallink = br.getRegex("class=downloadfilename href=\\'((file/)?[^<>\"]*?)\\'").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("class=downloadfilename href=\\'((file/)?[^<>\"]*?)\\'").getMatch(0);
+            }
             if (finallink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!finallink.startsWith("http")) finallink = "http://www.speedyshare.com" + finallink;
+            if (!finallink.startsWith("http")) {
+                finallink = "http://www.speedyshare.com" + finallink;
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
         if (dl.getConnection().getContentType().contains("html") && !link.getDownloadURL().matches(REMOTELINK)) {
@@ -322,7 +367,9 @@ public class SpeedyShareCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!finallink.startsWith("http")) finallink = "http://www.speedyshare.com" + finallink;
+        if (!finallink.startsWith("http")) {
+            finallink = "http://www.speedyshare.com" + finallink;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(finallink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -341,7 +388,9 @@ public class SpeedyShareCom extends PluginForHost {
         if (dllink == null) {
             br.postPage("http://www.speedyshare.com/remote_downloader.php", "urls=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = br.getRegex("\"(http://(www\\.)?speedyshare\\.com/remote/[A-Za-z0-9\\-_/]+)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -357,7 +406,9 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -384,7 +435,9 @@ public class SpeedyShareCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

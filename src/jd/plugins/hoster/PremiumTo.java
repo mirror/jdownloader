@@ -117,7 +117,9 @@ public class PremiumTo extends PluginForHost {
         String hoster[] = new Regex(hosts.trim(), "(.+?)(;|$)").getColumn(0);
         if (hoster != null) {
             for (String host : hoster) {
-                if (hosts == null || host.length() == 0) continue;
+                if (hosts == null || host.length() == 0) {
+                    continue;
+                }
                 supportedHosts.add(host.trim());
             }
         }
@@ -226,8 +228,12 @@ public class PremiumTo extends PluginForHost {
             showMessage(link, "Phase 2/3: Get link");
 
             int connections = getConnections(link.getHost());
-            if (link.getChunks() != -1) connections = link.getChunks();
-            if (link.getBooleanProperty(PremiumTo.NOCHUNKS, false)) connections = 1;
+            if (link.getChunks() != -1) {
+                connections = link.getChunks();
+            }
+            if (link.getBooleanProperty(PremiumTo.NOCHUNKS, false)) {
+                connections = 1;
+            }
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium.to/getfile.php?link=" + url, true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
@@ -289,6 +295,13 @@ public class PremiumTo extends PluginForHost {
         }
     }
 
+    /**
+     * JD 2 Code. DO NOT USE OVERRIDE FOR COMPATIBILITY REASONS
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
 
@@ -314,7 +327,9 @@ public class PremiumTo extends PluginForHost {
                         // filter the filename from content disposition and decode it...
                         name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
                         name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
-                        if (name != null) link.setFinalFileName(name);
+                        if (name != null) {
+                            link.setFinalFileName(name);
+                        }
                     }
                     link.setDownloadSize(fileSize);
                     return AvailableStatus.TRUE;
@@ -347,7 +362,9 @@ public class PremiumTo extends PluginForHost {
                                 // filter the filename from content disposition and decode it...
                                 name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
                                 name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
-                                if (name != null) link.setFinalFileName(name);
+                                if (name != null) {
+                                    link.setFinalFileName(name);
+                                }
                             }
                             return AvailableStatus.TRUE;
                         }
@@ -364,7 +381,9 @@ public class PremiumTo extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -388,12 +407,16 @@ public class PremiumTo extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
         if (downloadLink.getHost().equals("share-online.biz")) {
-            if (shareOnlineLocked.get()) { return false; }
+            if (shareOnlineLocked.get()) {
+                return false;
+            }
             shareOnlineLocked.set(true);
         }
         return true;
@@ -412,7 +435,9 @@ public class PremiumTo extends PluginForHost {
     }
 
     private int getConnections(String host) {
-        if (connectionLimits.containsKey(host)) { return connectionLimits.get(host); }
+        if (connectionLimits.containsKey(host)) {
+            return connectionLimits.get(host);
+        }
         // default is up to 10 connections
         return -10;
     }

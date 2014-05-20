@@ -111,7 +111,9 @@ public class OnlineNoLifeTvCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, ONLYPREMIUMUSERTEXT);
         }
@@ -161,7 +163,9 @@ public class OnlineNoLifeTvCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 final String pwhash = JDHash.getMD5(account.getPass());
                 br.postPage("http://forum.nolife-tv.com/login.php?do=login", "vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&cookieuser=1&vb_login_password=&s=&securitytoken=guest&do=login&vb_login_md5password=" + pwhash + "&vb_login_md5password_utf=" + pwhash);
-                if (br.getCookie(MAINPAGE, "bbuserid") == null || br.getCookie(MAINPAGE, "bbpassword") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (br.getCookie(MAINPAGE, "bbuserid") == null || br.getCookie(MAINPAGE, "bbpassword") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);
@@ -176,6 +180,13 @@ public class OnlineNoLifeTvCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
     }
 
     @Override
@@ -195,7 +206,9 @@ public class OnlineNoLifeTvCom extends PluginForHost {
         String filename = br.getRegex("<title>Nolife Online \\- ([^<>\"]+)</title>").getMatch(0);
         if (filename == null) {
             filename = dllink.substring(dllink.lastIndexOf("/") + 1);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         filename = Encoding.htmlDecode(filename);
         if (!br.containsHTML("flashvars")) {
@@ -211,7 +224,9 @@ public class OnlineNoLifeTvCom extends PluginForHost {
 
             long ts = System.currentTimeMillis();
             br.postPage("/_nlfplayer/api/api_player.php", "a=UEM%7CSEM%7CMEM%7CCH%7CSWQ&id%5Fnlshow=" + getId(dllink) + "&timestamp=" + ts + "&skey=" + getSKey(ts) + "&quality=0");
-            if (br.containsHTML("message=Je ne trouve pas cette émission")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("message=Je ne trouve pas cette émission")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (br.containsHTML("Pour voir l'émission complète, abonnez\\-vous")) {
                 notDownloadable = true;
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onlinenolifetvcom.only4premium", ONLYPREMIUMUSERTEXT));
@@ -219,7 +234,9 @@ public class OnlineNoLifeTvCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             DLLINK = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             filename = filename.trim();
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             if (ext == null) {
@@ -253,7 +270,9 @@ public class OnlineNoLifeTvCom extends PluginForHost {
 
     private String getId(String s) {
         String id = new Regex(s, "\\?id=(\\d+)").getMatch(0);
-        if (id == null) id = new Regex(s, "/([\\d]{5})/").getMatch(0);
+        if (id == null) {
+            id = new Regex(s, "/([\\d]{5})/").getMatch(0);
+        }
         return id;
     }
 

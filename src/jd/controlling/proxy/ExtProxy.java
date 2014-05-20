@@ -4,20 +4,20 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public class ExtProxy extends HTTPProxy {
 
-    private AbstractProxySelectorImpl factory;
+    private AbstractProxySelectorImpl selector;
 
     public ExtProxy(AbstractProxySelectorImpl factory, HTTPProxy proxy) {
-        this.factory = factory;
+        this.selector = factory;
         cloneProxy(proxy);
 
     }
 
     @Override
     public HTTPProxy clone() {
-        return new ExtProxy(factory, this);
+        return new ExtProxy(selector, this);
     }
 
-    public AbstractProxySelectorImpl getFactory() {
-        return factory;
+    public AbstractProxySelectorImpl getSelector() {
+        return selector;
     }
 }

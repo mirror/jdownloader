@@ -40,7 +40,9 @@ public class WallBaseCc extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (!getUserLogin(false)) return decryptedLinks;
+        if (!getUserLogin(false)) {
+            return decryptedLinks;
+        }
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -67,6 +69,13 @@ public class WallBaseCc extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {

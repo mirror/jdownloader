@@ -100,6 +100,13 @@ public class FernsehkritikTv extends PluginForHost {
         return requestFileInformation(downloadLink, AccountController.getInstance().getValidAccount(this));
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink, Account account) throws Exception {
         DLLINK = null;
         String final_filename = null;
@@ -108,11 +115,15 @@ public class FernsehkritikTv extends PluginForHost {
             if (downloadLink.getDownloadURL().matches(TYPE_POSTECKE_OLD)) {
                 br.getPage("http://fernsehkritik.tv/folge-" + episodenumber + "/Start/");
                 String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
-                if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (date == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 date = Encoding.htmlDecode(date.trim());
                 String posteckeepisode = br.getRegex(">Zuschauerreaktionen: Postecke (\\d+)</a>").getMatch(0);
                 // Only use episode number of fktv episode if postecke episodenumber is not available
-                if (posteckeepisode == null) posteckeepisode = episodenumber;
+                if (posteckeepisode == null) {
+                    posteckeepisode = episodenumber;
+                }
                 downloadLink.setProperty("directposteckeepisode", posteckeepisode);
                 downloadLink.setProperty("directdate", date);
                 downloadLink.setProperty("directepisodenumber", episodenumber);
@@ -120,14 +131,22 @@ public class FernsehkritikTv extends PluginForHost {
 
                 br.getPage(downloadLink.getDownloadURL());
                 DLLINK = br.getRegex("playlist = \\[ \\{ url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-                if (DLLINK == null) DLLINK = br.getRegex("\\'(http://dl\\d+\\.fernsehkritik\\.tv/postecke/postecke\\d+\\.flv)\\'").getMatch(0);
-                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (DLLINK == null) {
+                    DLLINK = br.getRegex("\\'(http://dl\\d+\\.fernsehkritik\\.tv/postecke/postecke\\d+\\.flv)\\'").getMatch(0);
+                }
+                if (DLLINK == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             } else {
                 br.getPage(downloadLink.getDownloadURL());
-                if (br.containsHTML(">Clip nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.containsHTML(">Clip nicht gefunden")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 /* Get date without time */
                 final String date = br.getRegex("<p class=\"muted\">([^<>\"]*?) / \\d{2}:\\d{2}:\\d{2}</p>").getMatch(0);
-                if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (date == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 getMassengeschmackDLLINK();
                 /* Massengeschmack postecke episodes have no own episodenumber */
                 downloadLink.setProperty("directposteckeepisode", default_empty_tag_separation_mark);
@@ -157,13 +176,17 @@ public class FernsehkritikTv extends PluginForHost {
             br.getPage("http://couch.fernsehkritik.tv/dl/getData2.php?mode=stream&ep=" + episodenumber + "&id=" + id + "&hash=" + hash + "&stamp=" + stamp + "&j=0");
             DLLINK = "http://couch.fernsehkritik.tv" + br.getRegex("\'file\': \"(/dl/\\d+-[a-z0-9]+-[a-z0-9]+-\\d+\\.flv)\"").getMatch(0);
 
-            if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (date == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final_filename = "Fernsehkritik-TV Folge " + episodenumber + " vom " + date + ".flv";
         } else if (downloadLink.getDownloadURL().matches(TYPE_COUCH)) {
             final String episodenumber = new Regex(downloadLink.getDownloadURL(), "fernsehkritik(\\d+)\\..*?$").getMatch(0);
             br.getPage("http://fernsehkritik.tv/folge-" + episodenumber + "/Start/");
             final String date = br.getRegex("var flattr_tle = \\'Fernsehkritik\\-TV Folge \\d+ vom(.*?)\\'").getMatch(0);
-            if (date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (date == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (account != null) {
                 try {
                     login(account, false);
@@ -175,17 +198,23 @@ public class FernsehkritikTv extends PluginForHost {
             }
 
             String extension = new Regex(downloadLink.getDownloadURL(), "fernsehkritik(\\d+)\\.(.*?)$").getMatch(1);
-            if (extension == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (extension == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final_filename = "Fernsehkritik-TV Folge " + episodenumber + " vom " + date + "." + extension;
         } else if (downloadLink.getDownloadURL().matches(TYPE_FOLGE_NEW)) {
             br.getPage(downloadLink.getStringProperty("originallink", null));
             DLLINK = br.getRedirectLocation();
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final_filename = getFKTVFormattedFilename(downloadLink);
         } else if (downloadLink.getDownloadURL().matches(TYPE_FOLGE_OLD)) {
             br.getPage(downloadLink.getStringProperty("originallink", null));
             DLLINK = br.getRedirectLocation();
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final_filename = getFKTVFormattedFilename(downloadLink);
         } else if (downloadLink.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL)) {
             br.getPage(downloadLink.getDownloadURL());
@@ -198,16 +227,24 @@ public class FernsehkritikTv extends PluginForHost {
             }
             /* Prefer download, highest quality (usually not available for free users) */
             DLLINK = br.getRegex("\"(/dl/[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK != null) DLLINK = "http://massengeschmack.tv" + DLLINK;
+            if (DLLINK != null) {
+                DLLINK = "http://massengeschmack.tv" + DLLINK;
+            }
             /* Sometimes different qualities are available - prefer webm, highest quality */
-            if (DLLINK == null) DLLINK = br.getRegex("type=\"video/webm\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("type=\"video/webm\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
             /* Nothing there? Download stream! */
-            if (DLLINK == null) getMassengeschmackDLLINK();
+            if (DLLINK == null) {
+                getMassengeschmackDLLINK();
+            }
             String channel = br.getRegex("<li><a href=\"/u/\\d+\">([^<>\"]*?)</a> <span class=\"divider\"").getMatch(0);
             String episodename = br.getRegex("<li class=\"active\">(Folge \\d+[^<>]*?)<").getMatch(0);
             /* Get date without time */
             final String date = br.getRegex("<p class=\"muted\">([^<>\"]*?) / (\\d{2}:\\d{2}:\\d{2}|[A-Za-z0-9\\-_ ]+)</p>").getMatch(0);
-            if (channel == null || episodename == null || date == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (channel == null || episodename == null || date == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String episodenumber = new Regex(episodename, "Folge (\\d+)").getMatch(0);
 
             channel = Encoding.htmlDecode(channel).trim();
@@ -247,7 +284,9 @@ public class FernsehkritikTv extends PluginForHost {
     private void getMassengeschmackDLLINK() throws PluginException {
         final String base = br.getRegex("var base = \\'(http://[^<>\"]*?)\\';").getMatch(0);
         final String link = br.getRegex("playlist = \\[\\{url: base \\+ \\'([^<>\"]*?)\\'").getMatch(0);
-        if (base == null || link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (base == null || link == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = base + link;
     }
 
@@ -279,14 +318,18 @@ public class FernsehkritikTv extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
             }
         } else if (downloadLink.getDownloadURL().matches(TYPE_MASSENGESCHMACK_GENERAL) && DLLINK == null && br.containsHTML(">Keine kostenlose Version gefunden")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
             }
         }
@@ -308,11 +351,15 @@ public class FernsehkritikTv extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
             }
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
         // if (link.getDownloadURL().matches("http://fernsehkritik\\.tv/folge-.*")) {
@@ -336,7 +383,9 @@ public class FernsehkritikTv extends PluginForHost {
                 br.getHeaders().put("Accept-Language", "de-de,de;q=0.8");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -352,8 +401,12 @@ public class FernsehkritikTv extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(HOST_COUCH);
                 br.postPage(HOST_COUCH + "/login.php", "location=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&setCookie=set");
-                if (br.containsHTML(LOGIN_ERROR)) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-                if (br.getCookie(HOST_COUCH, "couchlogin") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+                if (br.containsHTML(LOGIN_ERROR)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.getCookie(HOST_COUCH, "couchlogin") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(HOST_COUCH);
                 for (final Cookie c : add.getCookies()) {
@@ -384,8 +437,12 @@ public class FernsehkritikTv extends PluginForHost {
     public String getFKTVFormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_FKTV, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
-        if (!formattedFilename.contains("*episodenumber*") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        if (formattedFilename == null || formattedFilename.equals("")) {
+            formattedFilename = defaultCustomFilename;
+        }
+        if (!formattedFilename.contains("*episodenumber*") || !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename;
+        }
 
         final String ext = downloadLink.getStringProperty("directtype", null);
         final String date = downloadLink.getStringProperty("directdate", null);
@@ -410,10 +467,11 @@ public class FernsehkritikTv extends PluginForHost {
                     formattedDate = default_empty_tag_separation_mark;
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*date*", "");
+            }
         }
         if (formattedFilename.contains("*episodenumber*") && episodenumber != null) {
             formattedFilename = formattedFilename.replace("*episodenumber*", episodenumber);
@@ -434,8 +492,12 @@ public class FernsehkritikTv extends PluginForHost {
     public String getFKTVPost_FormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_FKTVPOST, defaultCustomFilename_fktvpost);
-        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename_fktvpost;
-        if (!formattedFilename.contains("*episodenumber*") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename_fktvpost;
+        if (formattedFilename == null || formattedFilename.equals("")) {
+            formattedFilename = defaultCustomFilename_fktvpost;
+        }
+        if (!formattedFilename.contains("*episodenumber*") || !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename_fktvpost;
+        }
 
         final String ext = downloadLink.getStringProperty("directtype", null);
         final String date = downloadLink.getStringProperty("directdate", null);
@@ -460,10 +522,11 @@ public class FernsehkritikTv extends PluginForHost {
                     formattedDate = default_empty_tag_separation_mark;
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*date*", "");
+            }
         }
         if (formattedFilename.contains("*episodenumber*") && episodenumber != null) {
             formattedFilename = formattedFilename.replace("*episodenumber*", episodenumber);
@@ -482,7 +545,9 @@ public class FernsehkritikTv extends PluginForHost {
     public String getMassengeschmack_other_FormattedFilename(final DownloadLink downloadLink) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig("fernsehkritik.tv");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_MASSENGESCHMACK_OTHER, defaultCustomFilename_massengeschmack_other);
-        if ((!formattedFilename.contains("*episodenumber*") && !formattedFilename.contains("*episodename*")) || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename_massengeschmack_other;
+        if ((!formattedFilename.contains("*episodenumber*") && !formattedFilename.contains("*episodename*")) || !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename_massengeschmack_other;
+        }
 
         final String ext = downloadLink.getStringProperty("directtype", null);
         final String date = downloadLink.getStringProperty("directdate", null);
@@ -508,10 +573,11 @@ public class FernsehkritikTv extends PluginForHost {
                     formattedDate = default_empty_tag_separation_mark;
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*date*", "");
+            }
         }
         if (formattedFilename.contains("*episodenumber*") && episodenumber != null) {
             formattedFilename = formattedFilename.replace("*episodenumber*", episodenumber);

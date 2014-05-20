@@ -130,6 +130,13 @@ public class LiveMistapesComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     private boolean getUserLogin() throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("livemixtapes.com");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);

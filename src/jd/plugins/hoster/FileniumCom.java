@@ -87,7 +87,9 @@ public class FileniumCom extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             List<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
             if (accs == null || accs.size() == 0) {
@@ -126,10 +128,19 @@ public class FileniumCom extends PluginForHost {
         return true;
     }
 
+    /**
+     * JD 2 Code. DO NOT USE OVERRIDE FOR COMPATIBILITY REASONS
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
         checkLinks(new DownloadLink[] { link });
-        if (AvailableStatus.FALSE == getAvailableStatus(link)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (AvailableStatus.FALSE == getAvailableStatus(link)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return getAvailableStatus(link);
     }
 
@@ -138,7 +149,9 @@ public class FileniumCom extends PluginForHost {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
             Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
@@ -154,7 +167,9 @@ public class FileniumCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -166,7 +181,9 @@ public class FileniumCom extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
@@ -187,7 +204,9 @@ public class FileniumCom extends PluginForHost {
         // connection limits change, it could help
         final boolean chunkError = link.getBooleanProperty("chunkerror", false);
         int maxChunks = 1;
-        if (chunkError) maxChunks = 1;
+        if (chunkError) {
+            maxChunks = 1;
+        }
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
@@ -234,7 +253,9 @@ public class FileniumCom extends PluginForHost {
             }
             generalErrorhandling(link, account);
             /* Seems like we're on the mainpage -> Maybe traffic exhausted */
-            if (br.containsHTML("filenium\\.com/favicon\\.ico\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (br.containsHTML("filenium\\.com/favicon\\.ico\"")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
         }
 
         /* temp disabled the host */
@@ -247,7 +268,9 @@ public class FileniumCom extends PluginForHost {
         showMessage(link, "Task 1: Generating ink");
         String dllink = br.getPage("http://" + SELECTEDDOMAIN + "/?filenium&filez=" + Encoding.urlEncode(link.getDownloadURL()));
         generalErrorhandling(link, acc);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");
         handleDL(link, dllink, true, acc);
@@ -310,7 +333,9 @@ public class FileniumCom extends PluginForHost {
                 br = newBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -348,7 +373,9 @@ public class FileniumCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {

@@ -36,11 +36,20 @@ public class PutIO extends PluginForHost {
     private static final String COOKIE_HOST = "http://put.io";
     private static Object       LOCK        = new Object();
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     /** APU removed in rev 18471 new API: https://developers.google.com/accounts/docs/OAuth2InstalledApp */
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) { return requestFileInformation_intern(parameter, aa); }
+        if (aa != null) {
+            return requestFileInformation_intern(parameter, aa);
+        }
         return AvailableStatus.UNCHECKABLE;
     }
 
@@ -51,7 +60,9 @@ public class PutIO extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (account == null) { return false; }
+        if (account == null) {
+            return false;
+        }
         return true;
     }
 
@@ -78,7 +89,9 @@ public class PutIO extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -121,7 +134,9 @@ public class PutIO extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
@@ -137,10 +152,14 @@ public class PutIO extends PluginForHost {
     private AvailableStatus requestFileInformation_intern(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File Not Found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("data\\-file\\-id=\"\\d+\">([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex("</a> \\(([^<>\"]*?)\\)[\t\n\r ]+</li>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim()) + "b"));
         return AvailableStatus.TRUE;
@@ -151,7 +170,9 @@ public class PutIO extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation_intern(link, account);
         final String url = br.getRegex("\"(https?://put\\.io/v2/files/\\d+/download[^<>\"]*?)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

@@ -524,7 +524,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         UrlCollection urls = getUrlPair(downloadLink);
 
                         if (StringUtils.isNotEmpty(urls.video)) {
-                            String url = "http://www.youtube.com/" + new Regex(urls.video, "(/videoplayback.*)").getMatch(0);
+                            String url = "http://www.youtube.com/" + new Regex(urls.video, "/(videoplayback.*)").getMatch(0);
                             // + "&cmo=pf%3D1"
                             br.openRequestConnection(new HeadRequest(url)).disconnect();
                             con = br.getHttpConnection();
@@ -545,7 +545,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         }
 
                         if (StringUtils.isNotEmpty(urls.audio)) {
-                            String url = "http://www.youtube.com/" + new Regex(urls.audio, "(/videoplayback.*)").getMatch(0);
+                            String url = "http://www.youtube.com/" + new Regex(urls.audio, "/(videoplayback.*)").getMatch(0);
                             // + "&cmo=pf%3D1"
                             br.openRequestConnection(new HeadRequest(url)).disconnect();
                             con = br.getHttpConnection();

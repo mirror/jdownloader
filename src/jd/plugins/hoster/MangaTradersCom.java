@@ -53,7 +53,9 @@ public class MangaTradersCom extends PluginForHost {
 
     public boolean checkLinks(DownloadLink[] urls) {
         br.setFollowRedirects(false);
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null || !aa.isValid()) {
@@ -114,24 +116,39 @@ public class MangaTradersCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Download does only work with account");
     }
 
+    /**
+     * JD 2 Code. DO NOT USE OVERRIDE FOR COMPATIBILITY REASONS
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         // Don't check the links because the download will then fail ;)
         // requestFileInformation(downloadLink);
         // Usually JD is already logged in after the linkcheck so if JD is
         // logged in we don't have to log in again here
-        if (!weAreAlreadyLoggedIn || br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) login(account);
+        if (!weAreAlreadyLoggedIn || br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) {
+            login(account);
+        }
         br.getPage(downloadLink.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1999l);
+            if (br.containsHTML(FILEOFFLINE)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML(ACCESSBLOCK)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1999l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(ACCESSBLOCK)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1000l);
+            if (br.containsHTML(ACCESSBLOCK)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, wait some minutes!", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -144,7 +161,9 @@ public class MangaTradersCom extends PluginForHost {
         br.getHeaders().put("Referer", "");
         br.setFollowRedirects(false);
         br.postPage("http://www.mangatraders.com/login/processlogin", "login-user=" + Encoding.urlEncode(account.getUser()) + "&login-pass=" + Encoding.urlEncode(account.getPass()) + "&rememberme=on");
-        if (br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.mangatraders.com/", COOKIENAME) == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         weAreAlreadyLoggedIn = true;
     }
 
@@ -163,7 +182,9 @@ public class MangaTradersCom extends PluginForHost {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
             Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;

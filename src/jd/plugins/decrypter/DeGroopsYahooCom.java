@@ -56,7 +56,9 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
-        if (parameter.contains("photos/album/")) parameter += "?mode=tn&count=10000";
+        if (parameter.contains("photos/album/")) {
+            parameter += "?mode=tn&count=10000";
+        }
         br.setCookiesExclusive(false);
         br.getPage("https://login.yahoo.com/config/login?");
         synchronized (LOCK) {
@@ -104,7 +106,9 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                 String fpName = br.getRegex("<div class=\"ygrp-box\\-content\">[\t\n\r ]+<h3>(.*?)</h3>").getMatch(0);
                 // Handling for photos and albums
                 String[] galleries = br.getRegex("<div class=\"ygrp\\-right\\-album\">[\t\n\r ]+<div>[\t\n\r]+<a href=\"(/.*?)\"").getColumn(0);
-                if (galleries == null || galleries.length == 0) galleries = br.getRegex("<a href=\"(/group/[a-z0-9]+/photos/album/\\d+/pic/list)\"").getColumn(0);
+                if (galleries == null || galleries.length == 0) {
+                    galleries = br.getRegex("<a href=\"(/group/[a-z0-9]+/photos/album/\\d+/pic/list)\"").getColumn(0);
+                }
                 if (galleries != null && galleries.length != 0) {
                     for (String gallery : galleries) {
                         gallery = "http://de.groups.yahoo.com" + gallery;
@@ -141,6 +145,13 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
 
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
     private boolean getUserLogin() throws Exception {
         br.setFollowRedirects(true);
@@ -152,9 +163,13 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
             final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
             if (aa == null) {
                 username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                if (username == null) return false;
+                if (username == null) {
+                    return false;
+                }
                 password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                if (password == null) return false;
+                if (password == null) {
+                    return false;
+                }
             } else {
                 this.getPluginConfig().setProperty("user", aa.getUser());
                 this.getPluginConfig().setProperty("pass", aa.getPass());
@@ -168,7 +183,9 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                 boolean acmatch = aa != null;
                 if (acmatch) {
                     acmatch = username.matches(this.getPluginConfig().getStringProperty("user"));
-                    if (acmatch) acmatch = password.matches(this.getPluginConfig().getStringProperty("pass"));
+                    if (acmatch) {
+                        acmatch = password.matches(this.getPluginConfig().getStringProperty("pass"));
+                    }
                 }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
@@ -193,9 +210,13 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
                     this.getPluginConfig().setProperty("user", Property.NULL);
                     this.getPluginConfig().setProperty("pass", Property.NULL);
                     username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                    if (username == null) return false;
+                    if (username == null) {
+                        return false;
+                    }
                     password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                    if (password == null) return false;
+                    if (password == null) {
+                        return false;
+                    }
                     loginForm = br.getFormbyProperty("name", "login_form");
                     if (loginForm == null) {
                         logger.warning("Login broken!");

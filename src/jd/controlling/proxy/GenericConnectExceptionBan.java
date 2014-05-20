@@ -1,14 +1,14 @@
 package jd.controlling.proxy;
 
-import jd.plugins.Plugin;
+import java.net.URL;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.translate._JDT;
 
-public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
+public class GenericConnectExceptionBan extends AuthExceptionGenericBan {
 
-    public ConnectExceptionInPluginBan(Plugin plg, AbstractProxySelectorImpl proxySelector, HTTPProxy proxy) {
-        super(plg, proxySelector, proxy);
+    public GenericConnectExceptionBan(AbstractProxySelectorImpl selector, HTTPProxy orgReference, URL url) {
+        super(selector, orgReference, url);
         created = System.currentTimeMillis();
 
     }

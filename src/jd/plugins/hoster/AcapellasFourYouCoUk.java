@@ -102,7 +102,9 @@ public class AcapellasFourYouCoUk extends PluginForHost {
                 }
             }
         }
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (hash == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.acapellas4u.co.uk/download_file.php?&filehash=" + hash + "&confirm=1/", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -119,7 +121,9 @@ public class AcapellasFourYouCoUk extends PluginForHost {
             br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("acas4u_sevul_u") && account.isValid()) {
@@ -132,7 +136,9 @@ public class AcapellasFourYouCoUk extends PluginForHost {
                 }
             }
             br.postPage("http://www.acapellas4u.co.uk/ucp.php?mode=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&sid=&redirect=index.php&login=Login&autologin=on");
-            if (br.getCookie(MAINPAGE, "acas4u_sevul_u") == null || "1".equals(br.getCookie(MAINPAGE, "acas4u_sevul_u"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "acas4u_sevul_u") == null || "1".equals(br.getCookie(MAINPAGE, "acas4u_sevul_u"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
@@ -143,6 +149,13 @@ public class AcapellasFourYouCoUk extends PluginForHost {
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
         }
+    }
+
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
     }
 
     @Override
@@ -156,7 +169,9 @@ public class AcapellasFourYouCoUk extends PluginForHost {
         login(aa, false);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/download_list.php") || br.containsHTML("<title>ACAPELLAS4U \\&bull; Browse Artists</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/download_list.php") || br.containsHTML("<title>ACAPELLAS4U \\&bull; Browse Artists</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>ACAPELLAS4U \\&bull; File Download \\&bull; (.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\"title\" : \"(.*?)\"").getMatch(0);
@@ -168,7 +183,9 @@ public class AcapellasFourYouCoUk extends PluginForHost {
             }
         }
         String filesize = br.getRegex("File Size: ([^<>\"\\']+)").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

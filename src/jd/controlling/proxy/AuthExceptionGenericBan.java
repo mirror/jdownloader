@@ -5,11 +5,12 @@ import java.net.URL;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.translate._JDT;
 
 public class AuthExceptionGenericBan extends AbstractBan {
 
-    private HTTPProxy proxy;
-    private URL       url;
+    protected HTTPProxy proxy;
+    protected URL       url;
 
     public AuthExceptionGenericBan(AbstractProxySelectorImpl proxySelector, HTTPProxy proxy, URL url) {
 
@@ -19,20 +20,15 @@ public class AuthExceptionGenericBan extends AbstractBan {
     }
 
     // _JDT._.plugins_errors_proxy_connection()
-
-    @Override
-    public boolean validate(AbstractProxySelectorImpl selector, HTTPProxy orgReference, URL url) {
-        return false;
-    }
+    //
+    // @Override
+    // public boolean validate(AbstractProxySelectorImpl selector, HTTPProxy orgReference, URL url) {
+    // return false;
+    // }
 
     @Override
     public String toString() {
-        return getSelector() + ":" + getClass() + " url :" + url + " proxy: " + proxy;
-    }
-
-    @Override
-    public boolean validate(ConnectionBan ban) {
-        return true;
+        return _JDT._.AuthExceptionGenericBan_toString(proxy.toString());
     }
 
     @Override
@@ -45,14 +41,15 @@ public class AuthExceptionGenericBan extends AbstractBan {
         return proxy.equals(orgReference);
     }
 
-    @Override
-    public boolean isSelectorBannedByUrl(URL url) {
-
-        return true;
-    }
+    // @Override
+    // public boolean isSelectorBannedByUrl(URL url) {
+    //
+    // return true;
+    // }
 
     @Override
     public boolean isExpired() {
         return false;
     }
+
 }

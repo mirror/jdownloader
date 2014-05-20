@@ -40,6 +40,13 @@ public class LarasLevelBaseOrg extends PluginForHost {
         this.enablePremium("http://laraslevelbase.org/box_mem_eintrag.asp");
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -53,10 +60,14 @@ public class LarasLevelBaseOrg extends PluginForHost {
             login(aa);
         }
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<p>Level wurde auf Wunsch des Autos von der Levelbase entfernt")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<p>Level wurde auf Wunsch des Autos von der Levelbase entfernt")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("onMouseOver=\"status=\\'© Lara´s Levelbase Community\\';return true;\">(.*?)</a></b></font>").getMatch(0);
         String filesize = br.getRegex("<dt><font face=\"Verdana\" size=\"1\">\\( (.*?) \\)</font>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         return AvailableStatus.TRUE;
@@ -102,7 +113,9 @@ public class LarasLevelBaseOrg extends PluginForHost {
         login(account);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<dt><font face=\"Verdana\" size=\"2\"><b><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://host\\.laraslevelbase\\.org/dl/download\\.php\\?file=.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://host\\.laraslevelbase\\.org/dl/download\\.php\\?file=.*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -119,7 +132,9 @@ public class LarasLevelBaseOrg extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.postPage("http://laraslevelbase.org/index.asp?id=&rl_pos=&rl_neu=&rl_neg=", "status=check&USERNAME=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&id=&na=na");
-        if (br.getCookie("http://laraslevelbase.org/", "SavedLogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://laraslevelbase.org/", "SavedLogin") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override

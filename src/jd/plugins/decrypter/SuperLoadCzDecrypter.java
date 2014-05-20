@@ -46,6 +46,13 @@ public class SuperLoadCzDecrypter extends PluginForDecrypt {
         br.setReadTimeout(3 * 60 * 1000);
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         prepBrowser();

@@ -49,26 +49,43 @@ public class WallBaseCc extends PluginForHost {
         return "http://wallbase.cc/terms";
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         final Account acc = AccountController.getInstance().getValidAccount(this);
-        if (acc != null) login(this.br, acc, false);
+        if (acc != null) {
+            login(this.br, acc, false);
+        }
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         // Offline1
-        if (br.getURL().equals("http://wallbase.cc/home") || br.getURL().equals("http://wallbase.cc/index.php") || br.containsHTML("Access denied\\!|This might be happening because|>We are experiencing some technical|>404 Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://wallbase.cc/home") || br.getURL().equals("http://wallbase.cc/index.php") || br.containsHTML("Access denied\\!|This might be happening because|>We are experiencing some technical|>404 Page Not Found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Offline2
-        if (br.containsHTML("(>Not found \\(404\\)|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>Not found \\(404\\)|>The page you requested was not found)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) \\- Wallpaper \\(").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>]*?) \\(#\\d+\\) / Wallbase\\.cc</title>").getMatch(0);
             if (filename != null) {
                 String id = br.getRegex("<title>([^<>]*?) \\(#(\\d+)\\) / Wallbase\\.cc</title>").getMatch(1);
-                if (id != null) filename = filename.trim() + "_" + id;
+                if (id != null) {
+                    filename = filename.trim() + "_" + id;
+                }
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".jpg");
         return AvailableStatus.TRUE;
     }
@@ -82,7 +99,9 @@ public class WallBaseCc extends PluginForHost {
     public void handleDownload(final DownloadLink downloadLink) throws Exception, PluginException {
         br.setFollowRedirects(false);
         final String dllink = getDllink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -93,16 +112,26 @@ public class WallBaseCc extends PluginForHost {
 
     private String getDllink() throws PluginException {
         String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://ns\\d+\\.ovh\\.net/.*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("\"(http://ns\\d+\\.ovh\\.net/.*?)\"").getMatch(0);
+        }
         // Example: http://wallbase.cc/wallpaper/84929
-        if (finallink == null) finallink = br.getRegex("class=\"content clr\">[\t\n\r ]+<img src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("class=\"content clr\">[\t\n\r ]+<img src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
         /* simple Base64 */
         if (finallink == null) {
             finallink = br.getRegex("\\d+x\\d+ Wallpaper\"[^\\(]+\\(\'([^\']+)\'\\)").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("<img src=\"[^\\(]+\\('([a-zA-Z0-9\\+/\\=]+)").getMatch(0);
-            if (finallink != null) finallink = Encoding.Base64Decode(finallink);
+            if (finallink == null) {
+                finallink = br.getRegex("<img src=\"[^\\(]+\\('([a-zA-Z0-9\\+/\\=]+)").getMatch(0);
+            }
+            if (finallink != null) {
+                finallink = Encoding.Base64Decode(finallink);
+            }
         }
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return Encoding.htmlDecode(finallink);
     }
 
@@ -117,7 +146,9 @@ public class WallBaseCc extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {

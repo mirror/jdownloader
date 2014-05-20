@@ -72,7 +72,9 @@ public class FaceBookComVideos extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         String thislink = link.getDownloadURL().replace("https://", "http://");
         String videoID = new Regex(thislink, "facebook\\.com/(ts#\\!/video/video\\.php\\?v=|photo\\.php\\?v=|video/embed\\?video_id=)(\\d+)").getMatch(1);
-        if (videoID != null) thislink = "http://facebook.com/video/video.php?v=" + videoID;
+        if (videoID != null) {
+            thislink = "http://facebook.com/video/video.php?v=" + videoID;
+        }
         link.setUrlDownload(thislink);
     }
 
@@ -84,6 +86,13 @@ public class FaceBookComVideos extends PluginForHost {
             res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
         }
         return res;
+    }
+
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -101,8 +110,12 @@ public class FaceBookComVideos extends PluginForHost {
         }
         br.getPage(link.getDownloadURL());
         String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
-        if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
-        if (br.containsHTML("<h2 class=\"accessible_elem\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (getThisPage != null) {
+            br.getPage(getThisPage.replace("\\", ""));
+        }
+        if (br.containsHTML("<h2 class=\"accessible_elem\">")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename;
         if (accountNeeded) {
             filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
@@ -113,7 +126,9 @@ public class FaceBookComVideos extends PluginForHost {
             filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)\\| Facebook</title>").getMatch(0);
 
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filename = Encoding.htmlDecode(filename.trim());
 
         if (link.getDownloadURL().matches(TYPE_PHOTO)) {
@@ -137,8 +152,12 @@ public class FaceBookComVideos extends PluginForHost {
             // DLLINK = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             // }
             // If no downloadlink is there, simply try to find the directlink to the picture
-            if (DLLINK == null) DLLINK = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = DLLINK.replace("\\", "");
             DLLINK = Encoding.htmlDecode(DLLINK);
 
@@ -154,10 +173,11 @@ public class FaceBookComVideos extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(DLLINK);
-                if (!con.getContentType().contains("html"))
+                if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                else
+                } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 if (this.getPluginConfig().getBooleanProperty(USE_ALBUM_NAME_IN_FILENAME, false)) {
                     link.setFinalFileName(filename + "_" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".jpg");
                 } else {
@@ -221,7 +241,9 @@ public class FaceBookComVideos extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
             } else {
@@ -266,10 +288,14 @@ public class FaceBookComVideos extends PluginForHost {
             br.getRequest().setHtmlCode(unescape(br.toString()));
             if (preferHD) {
                 DLLINK = getHigh();
-                if (DLLINK == null) DLLINK = getLow();
+                if (DLLINK == null) {
+                    DLLINK = getLow();
+                }
             } else {
                 DLLINK = getLow();
-                if (DLLINK == null) DLLINK = getHigh();
+                if (DLLINK == null) {
+                    DLLINK = getHigh();
+                }
             }
             if (DLLINK == null) {
                 logger.warning("Final downloadlink (dllink) is null");
@@ -309,7 +335,9 @@ public class FaceBookComVideos extends PluginForHost {
             br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("c_user") && cookies.containsKey("xs") && account.isValid()) {
@@ -366,7 +394,9 @@ public class FaceBookComVideos extends PluginForHost {
                 // Normal captcha handling
                 for (int i = 1; i <= 3; i++) {
                     String captchaLink = br.getRegex("\"(https?://(www\\.)?facebook\\.com/captcha/tfbimage\\.php\\?captcha_challenge_code=[^<>\"]*?)\"").getMatch(0);
-                    if (captchaLink == null) break;
+                    if (captchaLink == null) {
+                        break;
+                    }
                     captchaLink = Encoding.htmlDecode(captchaLink);
 
                     String code;
@@ -381,11 +411,15 @@ public class FaceBookComVideos extends PluginForHost {
                 // reCaptcha handling
                 for (int i = 1; i <= 3; i++) {
                     final String rcID = br.getRegex("\"recaptchaPublicKey\":\"([^<>\"]*?)\"").getMatch(0);
-                    if (rcID == null) break;
+                    if (rcID == null) {
+                        break;
+                    }
 
                     final String extraChallengeParams = br.getRegex("name=\"extra_challenge_params\" value=\"([^<>\"]*?)\"").getMatch(0);
                     final String captchaSession = br.getRegex("name=\"captcha_session\" value=\"([^<>\"]*?)\"").getMatch(0);
-                    if (extraChallengeParams == null || captchaSession == null) break;
+                    if (extraChallengeParams == null || captchaSession == null) {
+                        break;
+                    }
 
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -404,7 +438,9 @@ public class FaceBookComVideos extends PluginForHost {
                 for (int i = 1; i <= 3; i++) {
                     if (br.containsHTML(">To confirm your identity, please enter your birthday")) {
                         achal = br.getRegex("name=\"achal\" value=\"([a-z0-9]+)\"").getMatch(0);
-                        if (achal == null) break;
+                        if (achal == null) {
+                            break;
+                        }
                         String birthdayVerificationAnswer;
                         try {
                             birthdayVerificationAnswer = getUserInput("Enter your birthday (dd:MM:yyyy)", dummyLink);
@@ -412,7 +448,9 @@ public class FaceBookComVideos extends PluginForHost {
                             continue;
                         }
                         final String[] bdSplit = birthdayVerificationAnswer.split(":");
-                        if (bdSplit == null || bdSplit.length != 3) continue;
+                        if (bdSplit == null || bdSplit.length != 3) {
+                            continue;
+                        }
                         int bdDay = 0, bdMonth = 0, bdYear = 0;
                         try {
                             bdDay = Integer.parseInt(bdSplit[0]);
@@ -485,7 +523,9 @@ public class FaceBookComVideos extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);

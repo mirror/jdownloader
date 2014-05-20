@@ -76,7 +76,9 @@ public class U115Com extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("(id=\"pickcode_error\">很抱歉，文件不存在。</div>|很抱歉，文件不存在。|>很抱歉，该文件提取码不存在。<|<title>115网盘\\|网盘\\|115,我的网盘\\|免费网络硬盘 \\- 爱分享，云生活</title>|/resource\\?r=404|>视听类文件暂时不支持分享，给您带来的不便深表歉意。<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(id=\"pickcode_error\">很抱歉，文件不存在。</div>|很抱歉，文件不存在。|>很抱歉，该文件提取码不存在。<|<title>115网盘\\|网盘\\|115,我的网盘\\|免费网络硬盘 \\- 爱分享，云生活</title>|/resource\\?r=404|>视听类文件暂时不支持分享，给您带来的不便深表歉意。<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"/]*?) · 互联我</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("id=\"Download\"></a><a id=\"Download(.*?)\"></a>").getMatch(0);
@@ -89,17 +91,30 @@ public class U115Com extends PluginForHost {
             filesize = br.getRegex("u6587\\\\u4ef6\\\\u5927\\\\u5c0f\\\\uff1a(.*?)\\\\r\\\\n\\\\").getMatch(0);
             if (filesize == null) {
                 filesize = br.getRegex("file_size: \\'(.*?)\\'").getMatch(0);
-                if (filesize == null) filesize = br.getRegex("<li>文件大小：(.*?)</li>").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("<li>文件大小：(.*?)</li>").getMatch(0);
+                }
             }
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filesize = filesize.replace(",", "");
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(Encoding.htmlDecode(filename));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         parseSHA1(link, br);
-        if (AccountController.getInstance().getValidAccount(this) == null) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
+        if (AccountController.getInstance().getValidAccount(this) == null) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
+        }
         return AvailableStatus.TRUE;
+    }
+
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
     }
 
     @Override
@@ -114,7 +129,9 @@ public class U115Com extends PluginForHost {
 
     private void parseSHA1(DownloadLink link, Browser br) {
         String sh1 = br.getRegex("<li>SHA1：(.*?) <a href=\"").getMatch(0);
-        if (sh1 == null) sh1 = br.getRegex("sha1: \"(.*?)\",").getMatch(0);
+        if (sh1 == null) {
+            sh1 = br.getRegex("sha1: \"(.*?)\",").getMatch(0);
+        }
         if (sh1 != null && sh1.matches(("^[a-fA-F0-9]+$"))) {
             link.setSha1Hash(sh1.trim());
         } else {
@@ -124,7 +141,9 @@ public class U115Com extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         try {
-            if (br == null) { return; }
+            if (br == null) {
+                return;
+            }
             br.setReadTimeout(2 * 60 * 1000);
             br.setCookie("http://115.com/", "lang", "zh");
             br.getHeaders().put("User-Agent", ua);
@@ -142,7 +161,9 @@ public class U115Com extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -152,7 +173,9 @@ public class U115Com extends PluginForHost {
             br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {
@@ -167,7 +190,9 @@ public class U115Com extends PluginForHost {
             br.setFollowRedirects(true);
             br.getPage("http://passport.115.com/?ct=login");
             br.postPage("http://passport.115.com/?ac=login", "login%5Btime%5D=on&goto=&client=&callback=&login%5Baccount%5D=" + Encoding.urlEncode(account.getUser()) + "&login%5Bpasswd%5D=" + Encoding.urlEncode(account.getPass()));
-            if (br.getCookie(MAINPAGE, "OOFL") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(MAINPAGE, "OOFL") == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
@@ -203,11 +228,15 @@ public class U115Com extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getDownloadURL());
-        if (!br.containsHTML("onclick=\"MoveMyFile\\.Show\\(true\\);")) throw new PluginException(LinkStatus.ERROR_FATAL, "This file is not downloadable");
+        if (!br.containsHTML("onclick=\"MoveMyFile\\.Show\\(true\\);")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is not downloadable");
+        }
         String plainfilename = link.getStringProperty("plainfilename", null);
         final String userID = br.getRegex("user_id:   \\'(\\d+)\\'").getMatch(0);
         final String fileID = br.getRegex("file_id:   \\'(\\d+)\\'").getMatch(0);
-        if (userID == null || fileID == null || plainfilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (userID == null || fileID == null || plainfilename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // Check if we find the new id, maybe the file has already been
         // added to
@@ -216,14 +245,20 @@ public class U115Com extends PluginForHost {
         if (fileIDs[1] == null) {
             // Add file to account
             br.getPage("http://115.com/?ct=pickcode&ac=collect&user_id=" + userID + "&tid=" + fileID + "&is_temp=0&aid=1&cid=0");
-            if (!br.containsHTML("\"state\":true")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!br.containsHTML("\"state\":true")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             fileIDs = findIdsByFilename(plainfilename);
-            if (fileIDs[1] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (fileIDs[1] == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         // Finally...download it
         br.getPage("http://115.com/?ct=pickcode&ac=download&pickcode=" + fileIDs[1] + "&_t=" + System.currentTimeMillis());
         String dllink = findLink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.htmlDecode(dllink);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
@@ -233,7 +268,9 @@ public class U115Com extends PluginForHost {
             }
             dl.startDownload();
             try {
-                if (!dl.externalDownloadStop()) this.downloadCompleted = true;
+                if (!dl.externalDownloadStop()) {
+                    this.downloadCompleted = true;
+                }
             } catch (final Throwable e) {
             }
         } catch (Exception e) {
@@ -248,7 +285,9 @@ public class U115Com extends PluginForHost {
                 } catch (final Exception e) {
                     fileDeleted = false;
                 }
-                if (!br.containsHTML("\"data\":\\{\"f\":true\\}")) fileDeleted = false;
+                if (!br.containsHTML("\"data\":\\{\"f\":true\\}")) {
+                    fileDeleted = false;
+                }
                 if (fileDeleted) {
                     logger.info("File successfully deleted from account...");
                 } else {
@@ -264,16 +303,22 @@ public class U115Com extends PluginForHost {
         br.getPage("http://web.api.115.com/files?aid=1&cid=0&o=&asc=0&offset=0&show_dir=1&limit=66&source=&format=json&_t=" + System.currentTimeMillis());
         final String[] fileIDs = new String[2];
         final String dataText = br.getRegex("\"data\":\\[(.*?\\})\\]").getMatch(0);
-        if (dataText == null) return fileIDs;
+        if (dataText == null) {
+            return fileIDs;
+        }
         // Search new ID of the added file via filename
         final String[] files = dataText.split("\\}");
         for (final String file : files) {
             String currentFilename = new Regex(file, "\"n\":\"([^<>\"]*?)\"").getMatch(0);
-            if (currentFilename == null) continue;
+            if (currentFilename == null) {
+                continue;
+            }
             currentFilename = unescape(currentFilename);
             if (currentFilename.equals(plainfilename)) {
                 fileIDs[0] = new Regex(file, "\"fid\":\"([a-z0-9]+)\"").getMatch(0);
-                if (fileIDs[0] == null) fileIDs[0] = new Regex(file, "\"fid\":([0-9]+)").getMatch(0);
+                if (fileIDs[0] == null) {
+                    fileIDs[0] = new Regex(file, "\"fid\":([0-9]+)").getMatch(0);
+                }
                 fileIDs[1] = new Regex(file, "\"pc\":\"([a-z0-9]+)\"").getMatch(0);
                 break;
             }
@@ -290,7 +335,9 @@ public class U115Com extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);

@@ -138,7 +138,9 @@ public abstract class PluginForHost extends Plugin {
             } else {
                 errlogger.severe("URL:" + link.getDownloadURL());
             }
-            if (e != null) errlogger.log(e);
+            if (e != null) {
+                errlogger.log(e);
+            }
         } finally {
             errlogger.close();
         }
@@ -269,7 +271,9 @@ public abstract class PluginForHost extends Plugin {
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
                 file = new File(orgCaptchaImage);
             }
-            if (this.getDownloadLink() == null) this.setDownloadLink(link);
+            if (this.getDownloadLink() == null) {
+                this.setDownloadLink(link);
+            }
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
             BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
 
@@ -294,7 +298,9 @@ public abstract class PluginForHost extends Plugin {
                     case BLOCK_PACKAGE:
                         /* user wants to block captchas from current FilePackage */
                         DownloadLink lLink = Challenge.getDownloadLink(challenge);
-                        if (lLink == null || lLink.getDefaultPlugin() == null) return false;
+                        if (lLink == null || lLink.getDefaultPlugin() == null) {
+                            return false;
+                        }
                         return link.getFilePackage() == lLink.getFilePackage();
                     default:
                         return false;
@@ -323,25 +329,35 @@ public abstract class PluginForHost extends Plugin {
                 case BLOCK_ALL_CAPTCHAS:
                     CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
 
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
                     break;
                 case BLOCK_HOSTER:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(getDownloadLink().getHost()));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
                     break;
 
                 case BLOCK_PACKAGE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(getDownloadLink().getParentNode()));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
                     break;
                 case SINGLE:
                     CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
                     break;
                 case TIMEOUT:
                     if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
                         CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
-                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                            HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        }
                     }
                 case REFRESH:
                     // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
@@ -428,7 +444,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected void setBrowserExclusive() {
-        if (br == null) return;
+        if (br == null) {
+            return;
+        }
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
     }
@@ -606,9 +624,13 @@ public abstract class PluginForHost extends Plugin {
     public Object getInfoGenerator(Account account) {
         AccountInfo ai = account.getAccountInfo();
         Map<String, Object> props = null;
-        if (ai == null) return null;
+        if (ai == null) {
+            return null;
+        }
         props = ai.getProperties();
-        if (props == null || props.size() == 0) return null;
+        if (props == null || props.size() == 0) {
+            return null;
+        }
         KeyValueInfoGenerator ret = new KeyValueInfoGenerator(_JDT._.pluginforhost_infogenerator_title(account.getUser(), account.getHoster()));
         for (Entry<String, Object> es : ai.getProperties().entrySet()) {
             String key = es.getKey();
@@ -651,8 +673,12 @@ public abstract class PluginForHost extends Plugin {
     public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) {
         AccountInfo ai = null;
         if (account != null && (ai = account.getAccountInfo()) != null) {
-            if (ai.isUnlimitedTraffic()) return true;
-            if (ai.getTrafficLeft() >= 0 && ai.getTrafficLeft() < downloadLink.getView().getBytesTotalEstimated()) return false;
+            if (ai.isUnlimitedTraffic()) {
+                return true;
+            }
+            if (ai.getTrafficLeft() >= 0 && ai.getTrafficLeft() < downloadLink.getView().getBytesTotalEstimated()) {
+                return false;
+            }
         }
         return true;
     }
@@ -661,7 +687,9 @@ public abstract class PluginForHost extends Plugin {
         try {
             waitForNextStartAllowed(downloadLink);
             if (false) {
-                if (true) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+                if (true) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
+                }
                 if (false) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
                 } else if (getHost().contains("share")) {
@@ -789,10 +817,14 @@ public abstract class PluginForHost extends Plugin {
                 }
                 waitCur -= wTimeout;
             }
-            if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (downloadLink.getDownloadLinkController().isAborting()) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             queueItem.lastStartTimestamp.set(System.currentTimeMillis());
         } catch (final InterruptedException e) {
-            if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (downloadLink.getDownloadLinkController().isAborting()) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw e;
         } finally {
             downloadLink.compareAndSetPluginProgress(progress, old);
@@ -813,11 +845,17 @@ public abstract class PluginForHost extends Plugin {
                 queueItem.lastConnectionTimestamp.set(System.currentTimeMillis());
                 break;
             }
-            if (downloadLink.getDownloadLinkController().isAborting()) throw new InterruptedException("Controller aborted");
+            if (downloadLink.getDownloadLinkController().isAborting()) {
+                throw new InterruptedException("Controller aborted");
+            }
             Thread.sleep(waitCur);
-            if (queueItem.lastConnectionTimestamp.compareAndSet(lastConnectionTimestamp, System.currentTimeMillis())) break;
+            if (queueItem.lastConnectionTimestamp.compareAndSet(lastConnectionTimestamp, System.currentTimeMillis())) {
+                break;
+            }
         }
-        if (downloadLink.getDownloadLinkController().isAborting()) throw new InterruptedException("Controller aborted");
+        if (downloadLink.getDownloadLinkController().isAborting()) {
+            throw new InterruptedException("Controller aborted");
+        }
     }
 
     protected void sleep(final long i, final DownloadLink downloadLink) throws PluginException {
@@ -846,7 +884,9 @@ public abstract class PluginForHost extends Plugin {
         } finally {
             downloadLink.compareAndSetPluginProgress(progress, old);
         }
-        if (downloadLink.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
+        if (downloadLink.getDownloadLinkController().isAborting()) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
     }
 
     public Browser getBrowser() {
@@ -859,7 +899,9 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getBuyPremiumUrl() {
-        if (premiumurl != null) return premiumurl;
+        if (premiumurl != null) {
+            return premiumurl;
+        }
         return premiumurl;
     }
 
@@ -895,7 +937,9 @@ public abstract class PluginForHost extends Plugin {
 
     public DomainInfo getDomainInfo(DownloadLink link) {
         String host = getCustomFavIconURL(link);
-        if (host == null) host = getHost();
+        if (host == null) {
+            host = getHost();
+        }
         return DomainInfo.getInstance(host);
     }
 
@@ -1060,7 +1104,9 @@ public abstract class PluginForHost extends Plugin {
                 if (prototypeName.equalsIgnoreCase(originalFilename)) {
                     /* same name but different upper/lower cases */
                     newName = fixCase(cache, originalFilename, prototypeName);
-                    if (newName != null) return newName;
+                    if (newName != null) {
+                        return newName;
+                    }
                 }
                 /*
                  * this holds the filename that got extracted with same pattern as the originalFilename
@@ -1160,7 +1206,9 @@ public abstract class PluginForHost extends Plugin {
     protected String fixCase(HashMap<Object, Object> cache, String originalFilename, String prototypeName) {
         if (cache != null) {
             Object ret = cache.get(originalFilename + "_" + prototypeName);
-            if (ret != null) return (String) ret;
+            if (ret != null) {
+                return (String) ret;
+            }
         }
         boolean eic = originalFilename.equals(prototypeName);
         StringBuilder sb = new StringBuilder(prototypeName.length());
@@ -1181,7 +1229,9 @@ public abstract class PluginForHost extends Plugin {
                 return null;
             }
         }
-        if (cache != null) cache.put(originalFilename + "_" + prototypeName, sb.toString());
+        if (cache != null) {
+            cache.put(originalFilename + "_" + prototypeName, sb.toString());
+        }
         return sb.toString();
     }
 
@@ -1211,7 +1261,9 @@ public abstract class PluginForHost extends Plugin {
      */
     public AccountFactory getAccountFactory() {
         // this should be plugincode as soon as we can ignore 0.9 compatibility
-        if (getHost().equalsIgnoreCase("letitbit.net")) { return new LetitBitAccountFactory(); }
+        if (getHost().equalsIgnoreCase("letitbit.net")) {
+            return new LetitBitAccountFactory();
+        }
         return new DefaultAccountFactory();
     }
 
@@ -1320,4 +1372,10 @@ public abstract class PluginForHost extends Plugin {
         link.forceFileName(value);
 
     }
+
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        // if (AccountController.getInstance().hasAccounts(plg.getHost())) {
+        return true;
+    }
+
 }

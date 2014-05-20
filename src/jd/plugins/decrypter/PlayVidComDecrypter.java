@@ -74,7 +74,9 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         if (FILENAME == null) {
             FILENAME = br.getRegex("<title>([^<>\"]*?)\\- PlayVid</title>").getMatch(0);
         }
-        if (FILENAME == null) FILENAME = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (FILENAME == null) {
+            FILENAME = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         if (FILENAME == null) {
             logger.warning("Playvid.com decrypter failed..." + PARAMETER);
             return null;
@@ -107,9 +109,15 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
                 q480p = true;
                 q720 = true;
             }
-            if (q360p) selectedQualities.add("360p");
-            if (q480p) selectedQualities.add("480p");
-            if (q720) selectedQualities.add("720p");
+            if (q360p) {
+                selectedQualities.add("360p");
+            }
+            if (q480p) {
+                selectedQualities.add("480p");
+            }
+            if (q720) {
+                selectedQualities.add("720p");
+            }
         }
         for (final String selectedQualityValue : selectedQualities) {
             final DownloadLink dl = getVideoDownloadlink(selectedQualityValue);
@@ -136,11 +144,20 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             dl.setProperty("mainlink", PARAMETER);
             dl.setProperty("directname", fname);
             dl.setFinalFileName(fname);
-            if (SubConfiguration.getConfig("playvid.com").getBooleanProperty(FASTLINKCHECK, false)) dl.setAvailable(true);
+            if (SubConfiguration.getConfig("playvid.com").getBooleanProperty(FASTLINKCHECK, false)) {
+                dl.setAvailable(true);
+            }
             return dl;
         } else {
             return null;
         }
+    }
+
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {

@@ -102,13 +102,19 @@ public class ParelliSavvyClubCom extends PluginForHost {
         login(account, false);
         br.getPage(link.getDownloadURL());
         final String dllink = getDllink();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         final String[] urlValues = new Regex(dllink, "(.*?)\\&streamer=(.*?)\\&autostart.+").getRow(0);
-        if (urlValues == null || urlValues.length != 2) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (urlValues == null || urlValues.length != 2) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         if (urlValues[1].startsWith("rtmp")) {
-            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!"); }
+            if (isStableEnviroment()) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
+            }
 
             dl = new RTMPDownload(this, link, urlValues[1] + "/" + urlValues[0]);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
@@ -139,7 +145,9 @@ public class ParelliSavvyClubCom extends PluginForHost {
             prev = prev.replaceAll(",|\\.", "");
         }
         final int rev = Integer.parseInt(prev);
-        if (rev < 10000) { return true; }
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 
@@ -167,9 +175,13 @@ public class ParelliSavvyClubCom extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage("https://www.parellisavvyclub.com/login.faces");
             final String viewState = br.getRegex("id=\"javax\\.faces\\.ViewState\" value=\"(j_id\\d+)\"").getMatch(0);
-            if (viewState == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (viewState == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.postPage("https://www.parellisavvyclub.com/login.faces", "funid=funid&funid%3AusernameInput=" + Encoding.urlEncode(account.getUser()) + "&funid%3ApasswordInput=" + Encoding.urlEncode(account.getPass()) + "&funid%3AloginBut.x=0&funid%3AloginBut.y=0&javax.faces.ViewState=" + viewState);
-            if (br.getCookie(MAINPAGE, "userName") == null || br.getCookie(MAINPAGE, "email") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+            if (br.getCookie(MAINPAGE, "userName") == null || br.getCookie(MAINPAGE, "email") == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
             account.setValid(true);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -183,6 +195,13 @@ public class ParelliSavvyClubCom extends PluginForHost {
         }
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
@@ -194,7 +213,9 @@ public class ParelliSavvyClubCom extends PluginForHost {
         login(aa, false);
         br.getPage(link.getDownloadURL());
         final String dllink = getDllink();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = new Regex(dllink, ".*?parelli\\.com/.{1,10}/(.*?)\\?Policy=").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"plWatchVideo playing\" rel=\"nofollow\" href=\"[^\"\\']+\">(.*?)<br>").getMatch(0);
@@ -202,7 +223,9 @@ public class ParelliSavvyClubCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("class=\"playing\">(.*?)<").getMatch(0);
         }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         String ext = filename.substring(filename.lastIndexOf("."));
         if (ext == null) {

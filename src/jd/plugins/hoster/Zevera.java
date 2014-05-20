@@ -108,25 +108,34 @@ public class Zevera extends PluginForHost {
         } else {
             showMessage(downloadLink, "Phase 1/2: Get FileID");
             String FileID = Zevera.getID(link);
-            if (FileID == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID null"); }
+            if (FileID == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID null");
+            }
             while (true) {
                 showMessage(downloadLink, "Phase 2/3: Check download:");
                 br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=fileinfo&login=" + user + "&pass=" + pw + "&FileID=" + FileID);
                 String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
-                if (infos[0].contains("FileID:0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID doesnt exist"); }
+                if (infos[0].contains("FileID:0")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID doesnt exist");
+                }
                 if (infos[6].contains("Status:Downloaded")) {
                     String DownloadURL = br.getRegex("DownloadURL:(Http.*?),").getMatch(0);
-                    if (DownloadURL == null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); }
+                    if (DownloadURL == null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    }
                     showMessage(downloadLink, "Phase 3/3: OK Download starting");
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DownloadURL, true, 0);
                     break;
-                } else
+                } else {
                     this.sleep(15 * 1000l, downloadLink, "Waiting for download to finish on Zevera");
+                }
             }
         }
         if (dl.getConnection().isContentDisposition()) {
             long filesize = dl.getConnection().getLongContentLength();
-            if (filesize == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            if (filesize == 0) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            }
             dl.startDownload();
         } else {
             br.followConnection();
@@ -199,20 +208,31 @@ public class Zevera extends PluginForHost {
         }
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setDebug(true);
         // We need to log in to get the file status^M
         Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a registered account is entered!");
+        if (aa == null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Links are only checkable if a registered account is entered!");
+        }
         String link = downloadLink.getDownloadURL();
         String user = Encoding.urlEncode(aa.getUser());
         String pw = Encoding.urlEncode(aa.getPass());
 
         if (link.contains("getFiles.aspx")) {
             String ourl = new Regex(link, ".*ourl=(.+)").getMatch(0);
-            if (ourl == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            if (ourl == null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            }
             String res = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=checklink&login=" + user + "&pass=" + pw + "&olink=" + ourl);
             String filename = new Regex(link, ".*/(.+)").getMatch(0);
             downloadLink.setName(filename.trim());
@@ -226,14 +246,20 @@ public class Zevera extends PluginForHost {
         String FileID = Zevera.getID(link);
         String res = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=fileinfo&login=" + user + "&pass=" + pw + "&FileID=" + FileID);
 
-        if (res.contains("Conversion")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, bad FileID format"); }
+        if (res.contains("Conversion")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, bad FileID format");
+        }
         String infos[] = br.getRegex("(.*?)(,|$)").getColumn(0);
-        if (infos[0].contains("FileID:0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID doesnt exist"); }
+        if (infos[0].contains("FileID:0")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Error adding file, FileID doesnt exist");
+        }
 
         String filename = new Regex(infos[1], "FileName:(.+)").getMatch(0);
         String filesize = new Regex(infos[4], "FileSizeInBytes:(.+)").getMatch(0);
 
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
 

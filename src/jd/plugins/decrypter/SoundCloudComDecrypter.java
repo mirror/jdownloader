@@ -60,6 +60,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private SubConfiguration    CFG                = null;
     private String              ORIGINAL_LINK      = null;
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         CFG = SubConfiguration.getConfig("soundcloud.com");
         ORIGINAL_LINK = param.toString();
@@ -138,7 +145,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         boolean decryptList = parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?");
         if (!decryptList) {
             decryptList = !parameter.matches(".*?soundcloud\\.com/[A-Za-z\\-_0-9]+/([A-Za-z\\-_0-9]+/([A-Za-z\\-_0-9]+)?|[A-Za-z\\-_0-9]+/?)");
-            if (!decryptList) decryptList = (parameter.contains("/groups/") || parameter.contains("/sets"));
+            if (!decryptList) {
+                decryptList = (parameter.contains("/groups/") || parameter.contains("/sets"));
+            }
         }
         if (decryptList) {
             final String clientID = jd.plugins.hoster.SoundcloudCom.CLIENTID;
@@ -156,7 +165,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             // For sets ("/set/" links)
             if (parameter.contains("/sets")) {
                 playlistname = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-                if (playlistname == null) playlistname = new Regex(parameter, "/sets/(.+)$").getMatch(0);
+                if (playlistname == null) {
+                    playlistname = new Regex(parameter, "/sets/(.+)$").getMatch(0);
+                }
                 username = jd.plugins.hoster.SoundcloudCom.getXML("username", br.toString());
                 final String[] items = br.getRegex("<track>(.*?)</track>").getColumn(0);
                 final String usernameOfSet = new Regex(parameter, "soundcloud\\.com/(.*?)/sets/?").getMatch(0);
@@ -181,7 +192,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     String song_username = new Regex(item, "<kind>user</kind>[\t\n\r ]+<permalink>([^<>\"]*?)</permalink>").getMatch(0);
-                    if (song_username == null) song_username = usernameOfSet;
+                    if (song_username == null) {
+                        song_username = usernameOfSet;
+                    }
                     final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + song_username + "/" + permalink);
                     dl.setProperty("setsposition", counter + ".");
                     final AvailableStatus status = jd.plugins.hoster.SoundcloudCom.checkStatus(dl, item, false);
@@ -191,7 +204,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         try {
                             // Handle thumbnail stuff
                             final DownloadLink thumb = get500Thumbnail(dl, item);
-                            if (thumb != null) decryptedLinks.add(thumb);
+                            if (thumb != null) {
+                                decryptedLinks.add(thumb);
+                            }
                         } catch (final ParseException e) {
                             logger.info("Failed to get 500x500 thumbnail...");
                         }
@@ -200,7 +215,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         try {
                             // Handle thumbnail stuff
                             final DownloadLink thumb = getOriginalThumbnail(dl, item);
-                            if (thumb != null) decryptedLinks.add(thumb);
+                            if (thumb != null) {
+                                decryptedLinks.add(thumb);
+                            }
                         } catch (final ParseException e) {
                             logger.info("Failed to get original thumbnail...");
                         }
@@ -210,10 +227,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             } else {
                 // Decrypt all tracks of a user
                 username = jd.plugins.hoster.SoundcloudCom.getXML("username", br.toString());
-                if (username == null) username = getJson("username");
-                if (username == null) username = new Regex(parameter, "soundcloud\\.com/(.+)").getMatch(0);
+                if (username == null) {
+                    username = getJson("username");
+                }
+                if (username == null) {
+                    username = new Regex(parameter, "soundcloud\\.com/(.+)").getMatch(0);
+                }
                 String userID = br.getRegex("<uri>https://api\\.soundcloud\\.com/users/(\\d+)").getMatch(0);
-                if (userID == null) userID = br.getRegex("id type=\"integer\">(\\d+)").getMatch(0);
+                if (userID == null) {
+                    userID = br.getRegex("id type=\"integer\">(\\d+)").getMatch(0);
+                }
                 if (userID == null) {
                     final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/offlinedecrypted/" + System.currentTimeMillis() + new Random().nextInt(100000));
                     dl.setAvailable(false);
@@ -259,7 +282,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                             try {
                                 // Handle thumbnail stuff
                                 final DownloadLink thumb = get500Thumbnail(dl, item);
-                                if (thumb != null) decryptedLinks.add(thumb);
+                                if (thumb != null) {
+                                    decryptedLinks.add(thumb);
+                                }
                             } catch (final ParseException e) {
                                 logger.info("Failed to get 500x500 thumbnail...");
                             }
@@ -268,7 +293,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                             try {
                                 // Handle thumbnail stuff
                                 final DownloadLink thumb = getOriginalThumbnail(dl, item);
-                                if (thumb != null) decryptedLinks.add(thumb);
+                                if (thumb != null) {
+                                    decryptedLinks.add(thumb);
+                                }
                             } catch (final ParseException e) {
                                 logger.info("Failed to get original thumbnail...");
                             }
@@ -283,9 +310,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
             }
             final String date = br.getRegex("<created\\-at type=\"datetime\">([^<>\"]*?)</created\\-at>").getMatch(0);
-            if (username == null) username = "Unknown user";
+            if (username == null) {
+                username = "Unknown user";
+            }
             username = Encoding.htmlDecode(username.trim());
-            if (playlistname == null) playlistname = username;
+            if (playlistname == null) {
+                playlistname = username;
+            }
             playlistname = Encoding.htmlDecode(playlistname.trim());
             final String fpName = getFormattedPackagename(username, playlistname, date);
             FilePackage fp = FilePackage.getInstance();
@@ -315,7 +346,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         try {
                             // Handle thumbnail stuff
                             final DownloadLink thumb = get500Thumbnail(dl, this.br.toString());
-                            if (thumb != null) decryptedLinks.add(thumb);
+                            if (thumb != null) {
+                                decryptedLinks.add(thumb);
+                            }
                         } catch (final ParseException e) {
                             logger.info("Failed to get 500x500 thumbnail...");
                         }
@@ -324,7 +357,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         try {
                             // Handle thumbnail stuff
                             final DownloadLink thumb = getOriginalThumbnail(dl, this.br.toString());
-                            if (thumb != null) decryptedLinks.add(thumb);
+                            if (thumb != null) {
+                                decryptedLinks.add(thumb);
+                            }
                         } catch (final ParseException e) {
                             logger.info("Failed to get original thumbnail...");
                         }
@@ -380,7 +415,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^\"]+)").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^\"]+)").getMatch(0);
+        }
         return result;
     }
 
@@ -388,8 +425,12 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private String getFormattedPackagename(final String channelname, final String playlistname, String date) throws ParseException {
         String formattedpackagename = CFG.getStringProperty(CUSTOM_PACKAGENAME, defaultCustomPackagename);
-        if (formattedpackagename == null || formattedpackagename.equals("")) formattedpackagename = defaultCustomPackagename;
-        if (!formattedpackagename.contains("*channelname*") && !formattedpackagename.contains("*playlistname*")) formattedpackagename = defaultCustomPackagename;
+        if (formattedpackagename == null || formattedpackagename.equals("")) {
+            formattedpackagename = defaultCustomPackagename;
+        }
+        if (!formattedpackagename.contains("*channelname*") && !formattedpackagename.contains("*playlistname*")) {
+            formattedpackagename = defaultCustomPackagename;
+        }
 
         String formattedDate = null;
         if (date != null && formattedpackagename.contains("*date*")) {
@@ -411,10 +452,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                     formattedDate = "";
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedpackagename = formattedpackagename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedpackagename = formattedpackagename.replace("*date*", "");
+            }
         }
         if (formattedpackagename.contains("*channelname*")) {
             formattedpackagename = formattedpackagename.replace("*channelname*", channelname);

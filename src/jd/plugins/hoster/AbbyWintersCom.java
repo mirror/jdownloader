@@ -55,6 +55,12 @@ public class AbbyWintersCom extends PluginForHost {
     private static final String PICTURELINK = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/images/stills/[a-z0-9\\-_]+";
 
     // private static final String VIDEOLINK = "http://(www\\.)?abbywinters\\.com/shoot/[a-z0-9\\-_]+/videos/video/clip";
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -69,20 +75,30 @@ public class AbbyWintersCom extends PluginForHost {
         }
         login(aa, false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("404 Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("404 Page not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         if (link.getDownloadURL().matches(PICTURELINK)) {
             final Regex fInfo = br.getRegex("<title>([^<>\"]*?)\\| Image (\\d+) of \\d+</title>");
-            if (fInfo.getMatches().length != 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (fInfo.getMatches().length != 1) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final DecimalFormat df = new DecimalFormat("0000");
             filename = Encoding.htmlDecode(fInfo.getMatch(0).trim()) + "_" + df.format(Integer.parseInt(fInfo.getMatch(1))) + ".jpg";
         } else {
             String username = br.getRegex("title=\"View profile: ([^<>\"]*?)\"").getMatch(0);
-            if (username == null) username = br.getRegex("</span>([^<>\"]*?)<span class=\"icon_videoclip\">").getMatch(0);
+            if (username == null) {
+                username = br.getRegex("</span>([^<>\"]*?)<span class=\"icon_videoclip\">").getMatch(0);
+            }
             final String videoName = br.getRegex("<title>([^<>\"]*?)Video: .*?</title>").getMatch(0);
-            if (username != null && videoName != null) filename = Encoding.htmlDecode(username) + " - " + Encoding.htmlDecode(videoName) + ".mp4";
+            if (username != null && videoName != null) {
+                filename = Encoding.htmlDecode(username) + " - " + Encoding.htmlDecode(videoName) + ".mp4";
+            }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
@@ -93,7 +109,9 @@ public class AbbyWintersCom extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downlodable/checkable via account!");
     }
@@ -109,7 +127,9 @@ public class AbbyWintersCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -137,7 +157,9 @@ public class AbbyWintersCom extends PluginForHost {
                 } else {
                     br.postPage("http://www.abbywinters.com/rpc/login", "remember=on&form-action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 }
-                if (br.containsHTML("\"result\":\"failed\"") || !br.containsHTML("\"result\":\"ok\"") || br.getCookie(MAINPAGE, "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML("\"result\":\"failed\"") || !br.containsHTML("\"result\":\"ok\"") || br.getCookie(MAINPAGE, "user") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);

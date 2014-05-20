@@ -81,6 +81,13 @@ public class LuckyShareNet extends PluginForHost {
         }
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -128,11 +135,17 @@ public class LuckyShareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\\'file_name\\'>([^<>\"/]+)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>LuckyShare \\- ([^<>\"/]+)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>LuckyShare \\- ([^<>\"/]+)</title>").getMatch(0);
+        }
         /* It might be an empty filename - as long as we get the size its all fine */
-        if (filename == null) filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        }
         String filesize = br.getRegex("<span class=\\'file_size\\'>Filesize: ([^<>\"/]+)</span>").getMatch(0);
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -141,19 +154,29 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (oldStyle() && FAILED409.get()) throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR);
+        if (oldStyle() && FAILED409.get()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR);
+        }
         doFree(downloadLink);
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         String dllink = downloadLink.getDownloadURL();
         final String filesizelimit = br.getRegex(">Files with filesize over ([^<>\"\\'/]+) are available only for Premium Users").getMatch(0);
-        if (filesizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
-        if (br.containsHTML("This file is Premium only\\. Only Premium Users can download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium Users can download this file");
+        if (filesizelimit != null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+        }
+        if (br.containsHTML("This file is Premium only\\. Only Premium Users can download this file")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium Users can download this file");
+        }
         String reconnectWait = br.getRegex("id=\"waitingtime\">(\\d+)</span>").getMatch(0);
-        if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(reconnectWait) * 1001l);
+        if (reconnectWait != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(reconnectWait) * 1001l);
+        }
         final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"/]+)\"").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rcID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         Browser ajax = br.cloneBrowser();
         prepareHeader(ajax, dllink);
@@ -181,11 +204,15 @@ public class LuckyShareNet extends PluginForHost {
             try {
                 ajax.getPage("http://luckyshare.net/download/verify/challenge/" + rc.getChallenge() + "/response/" + c.replaceAll("\\s", "%20") + "/hash/" + hash);
             } catch (Throwable e) {
-                if (ajax.getHttpConnection().getResponseCode() == 500) continue;
+                if (ajax.getHttpConnection().getResponseCode() == 500) {
+                    continue;
+                }
             }
             if (ajax.containsHTML("<strong>Wait:</strong>")) {
                 reconnectWait = br.getRegex("id=\"waitingtime\">(\\d+)</span>").getMatch(0);
-                if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
+                if (reconnectWait != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
+                }
             }
             if (!ajax.getRegex("\"link\":\"http:[^<>\"\\']*?\"").matches()) {
                 hash = getHash(ajax, dllink);
@@ -204,10 +231,16 @@ public class LuckyShareNet extends PluginForHost {
             }
             break;
         }
-        if (ajax.containsHTML("(Verification failed|You can renew the verification image by clicking on a corresponding button near the validation input area)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (ajax.containsHTML("(Hash expired|Please supply a valid hash)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin outdated!");
+        if (ajax.containsHTML("(Verification failed|You can renew the verification image by clicking on a corresponding button near the validation input area)")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (ajax.containsHTML("(Hash expired|Please supply a valid hash)")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin outdated!");
+        }
         dllink = ajax.getRegex("\"link\":\"(http:[^<>\"\\']*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -220,7 +253,9 @@ public class LuckyShareNet extends PluginForHost {
     private int getWaitTime(final Browser b) {
         int wait = 30;
         String waittime = b.getRegex("\"time\":(\\d+)").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         return wait;
     }
 
@@ -273,7 +308,9 @@ public class LuckyShareNet extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -282,16 +319,22 @@ public class LuckyShareNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(MAINPAGE, key, value);
                         }
-                        if (fresh != null) fresh.set(false);
+                        if (fresh != null) {
+                            fresh.set(false);
+                        }
                         return cookies;
                     }
                 }
                 br.setFollowRedirects(true);
                 br.getPage("http://luckyshare.net/auth/login");
                 final String token = br.getRegex("type=\"hidden\" name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (token == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (token == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.postPage("http://luckyshare.net/auth/login", "token=" + Encoding.urlEncode(token) + "&remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!br.containsHTML(">Logout</a>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!br.containsHTML(">Logout</a>")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -301,7 +344,9 @@ public class LuckyShareNet extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
-                if (fresh != null) fresh.set(true);
+                if (fresh != null) {
+                    fresh.set(true);
+                }
                 return cookies;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
@@ -323,9 +368,13 @@ public class LuckyShareNet extends PluginForHost {
         }
         br.getPage("http://luckyshare.net/account/");
         final String filesNum = br.getRegex("<strong>Number of files:</strong><br /><span>(\\d+)</span>").getMatch(0);
-        if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
+        if (filesNum != null) {
+            ai.setFilesNum(Integer.parseInt(filesNum));
+        }
         String space = br.getRegex("<strong>Storage Used:</strong><br /><span>([^<>\"]*?)</span></td>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
+        if (space != null) {
+            ai.setUsedSpace(space.trim());
+        }
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("<strong>Pro Membership Valid Until:</strong><br /><span>[A-Za-z]+, (\\d{2} [A-Za-z]+ \\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
@@ -358,7 +407,9 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        if (oldStyle() && FAILED409.get()) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR); }
+        if (oldStyle() && FAILED409.get()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, ONLYBETAERROR);
+        }
         final AtomicBoolean fresh = new AtomicBoolean(false);
         HashMap<String, String> cookies = login(account, false, fresh);
         br.setFollowRedirects(false);
@@ -403,7 +454,9 @@ public class LuckyShareNet extends PluginForHost {
 
     private boolean oldStyle() {
         String style = System.getProperty("ftpStyle", null);
-        if ("new".equalsIgnoreCase(style)) return false;
+        if ("new".equalsIgnoreCase(style)) {
+            return false;
+        }
         String prev = JDUtilities.getRevision();
         if (prev == null || prev.length() < 3) {
             prev = "0";
@@ -411,7 +464,9 @@ public class LuckyShareNet extends PluginForHost {
             prev = prev.replaceAll(",|\\.", "");
         }
         int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 

@@ -61,6 +61,13 @@ public class RealityKingsCom extends PluginForHost {
     private boolean             LIMITREACHED = false;
     private static final String NOCHUNKS     = "NOCHUNKS";
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -72,13 +79,17 @@ public class RealityKingsCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br.openGetConnection(link.getDownloadURL());
-                if (con.getResponseCode() == 401) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (con.getResponseCode() == 401) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 if (con.getResponseCode() == 509) {
                     link.getLinkStatus().setStatusText("Cannot get filesize/name while limit is exeeded");
                     LIMITREACHED = true;
                     return AvailableStatus.TRUE;
                 }
-                if (con.getContentType().contains("html")) con = br.openGetConnection(link.getDownloadURL());
+                if (con.getContentType().contains("html")) {
+                    con = br.openGetConnection(link.getDownloadURL());
+                }
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
@@ -106,7 +117,9 @@ public class RealityKingsCom extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium account");
     }
@@ -122,7 +135,9 @@ public class RealityKingsCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -187,7 +202,9 @@ public class RealityKingsCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        if (LIMITREACHED) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Limit exeeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+        if (LIMITREACHED) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Limit exeeded", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         login(this.br, account, false);
 
         int chunks = 0;
@@ -203,7 +220,9 @@ public class RealityKingsCom extends PluginForHost {
         }
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             /* unknown error, we disable multiple chunks */

@@ -275,6 +275,13 @@ public class MdfrFldr extends PluginForDecrypt {
         }
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     private boolean getUserLogin() throws Exception {
         /*
          * we have to load the plugins first! we must not reference a plugin class without loading it before

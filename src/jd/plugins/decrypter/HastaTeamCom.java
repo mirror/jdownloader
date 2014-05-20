@@ -74,14 +74,25 @@ public class HastaTeamCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     private boolean getUserLogin() throws Exception {
         final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("hastateam.com");
         Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
         if (aa == null) {
             String username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
-            if (username == null) return false;
+            if (username == null) {
+                return false;
+            }
             String password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
-            if (password == null) return false;
+            if (password == null) {
+                return false;
+            }
             aa = new Account(username, password);
         }
         try {

@@ -40,6 +40,13 @@ public class IFileItFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     // TODO: Implement API: http://code.google.com/p/filecloud/wiki/FetchTagDetails
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

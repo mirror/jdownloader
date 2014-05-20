@@ -87,6 +87,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     private boolean                         acc_in_use     = false;
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         PARAMETER = param.toString().replace("www.", "").replace("embed/video/", "video/").replaceAll("\\.com/swf(/video)?/", ".com/video/").replace("https://", "http://");
         br.setFollowRedirects(true);
@@ -151,7 +158,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private void decryptUser() throws IOException {
         logger.info("Decrypting user: " + PARAMETER);
         String username = new Regex(PARAMETER, "dailymotion\\.com/user/([A-Za-z0-9]+)").getMatch(0);
-        if (username == null) username = new Regex(PARAMETER, "dailymotion\\.com/([A-Za-z0-9]+)").getMatch(0);
+        if (username == null) {
+            username = new Regex(PARAMETER, "dailymotion\\.com/([A-Za-z0-9]+)").getMatch(0);
+        }
         br.getPage("http://www.dailymotion.com/" + username);
         if (br.containsHTML("class=\"dmco_text nothing_to_see\"")) {
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
@@ -161,7 +170,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return;
         }
         String fpName = br.getRegex("class=\"mrg-end-sm user-screenname-inner\">([^<>\"]*?)</span>").getMatch(0);
-        if (fpName == null) fpName = username;
+        if (fpName == null) {
+            fpName = username;
+        }
         fpName = Encoding.htmlDecode(fpName.trim());
         final String videosNum = br.getRegex(Pattern.compile("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+(,\\d+)?)</span>[\t\n\r ]+Videos?[\t\n\r ]+</div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (videosNum == null) {
@@ -181,9 +192,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return;
         }
         String desiredPage = new Regex(PARAMETER, "/user/[A-Za-z0-9]+/(\\d+)$").getMatch(0);
-        if (desiredPage == null) desiredPage = "1";
+        if (desiredPage == null) {
+            desiredPage = "1";
+        }
         boolean parsePageOnly = false;
-        if (Integer.parseInt(desiredPage) != 1) parsePageOnly = true;
+        if (Integer.parseInt(desiredPage) != 1) {
+            parsePageOnly = true;
+        }
         int currentPage = Integer.parseInt(desiredPage);
         final BigDecimal bd = new BigDecimal((double) videoCount / 18);
         final int pagesNum = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
@@ -230,15 +245,25 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         logger.info("Decrypting playlist: " + PARAMETER);
         final Regex info = br.getRegex("class=\"name\">([^<>\"]*?)</a> \\| (\\d+(,\\d+)?) Videos?");
         String username = info.getMatch(0);
-        if (username == null) username = br.getRegex("<meta name=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (username == null) {
+            username = br.getRegex("<meta name=\"author\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         String fpName = br.getRegex("<div id=\"playlist_name\">([^<>\"]*?)</div>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<div class=\"page\\-title mrg\\-btm\\-sm\">([^<>\"]*?)</div>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("\"playlist_title\":\"([^<>\"]*?)\"").getMatch(0);
-        if (fpName == null) fpName = new Regex(PARAMETER, "dailymotion.com/playlist/([A-Za-z0-9]+_[A-Za-z0-9\\-_]+)").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<div class=\"page\\-title mrg\\-btm\\-sm\">([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (fpName == null) {
+            fpName = br.getRegex("\"playlist_title\":\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (fpName == null) {
+            fpName = new Regex(PARAMETER, "dailymotion.com/playlist/([A-Za-z0-9]+_[A-Za-z0-9\\-_]+)").getMatch(0);
+        }
         fpName = Encoding.htmlDecode(fpName.trim());
         String videosNum = info.getMatch(1);
         final String videosnum_text = br.getRegex("class=\"link\\-on\\-hvr\"(.*?)<span>").getMatch(0);
-        if (videosNum == null && videosnum_text != null) videosNum = new Regex(videosnum_text, "(\\d+(,\\d+)?) Videos?").getMatch(0);
+        if (videosNum == null && videosnum_text != null) {
+            videosNum = new Regex(videosnum_text, "(\\d+(,\\d+)?) Videos?").getMatch(0);
+        }
         if (videosNum == null) {
             /* Empty playlist site */
             if (!br.containsHTML("\"watchlaterAdd\"")) {
@@ -265,9 +290,13 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return;
         }
         String desiredPage = new Regex(PARAMETER, "playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+/(\\d+)").getMatch(0);
-        if (desiredPage == null) desiredPage = "1";
+        if (desiredPage == null) {
+            desiredPage = "1";
+        }
         boolean parsePageOnly = false;
-        if (Integer.parseInt(desiredPage) != 1) parsePageOnly = true;
+        if (Integer.parseInt(desiredPage) != 1) {
+            parsePageOnly = true;
+        }
         final BigDecimal bd = new BigDecimal((double) videoCount / 18);
         final int pagesNum = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
@@ -396,10 +425,11 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             for (final String subtitle : subtitles) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + subtitle);
                 final String language = new Regex(subtitle, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
-                if (language != null)
+                if (language != null) {
                     dl.setFinalFileName(correctFilename(FILENAME + "_subtitle_" + language + ".srt"));
-                else
+                } else {
                     dl.setFinalFileName(correctFilename(FILENAME + "_subtitle_" + Integer.toString(new Random().nextInt(1000)) + ".srt"));
+                }
                 fpSub.add(dl);
                 decryptedLinks.add(dl);
             }
@@ -437,13 +467,27 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 others = true;
                 hds = true;
             }
-            if (qld) selectedQualities.add("5");
-            if (qsd) selectedQualities.add("4");
-            if (qhq) selectedQualities.add("3");
-            if (q720) selectedQualities.add("2");
-            if (q1080) selectedQualities.add("1");
-            if (others) selectedQualities.add("6");
-            if (hds) selectedQualities.add("7");
+            if (qld) {
+                selectedQualities.add("5");
+            }
+            if (qsd) {
+                selectedQualities.add("4");
+            }
+            if (qhq) {
+                selectedQualities.add("3");
+            }
+            if (q720) {
+                selectedQualities.add("2");
+            }
+            if (q1080) {
+                selectedQualities.add("1");
+            }
+            if (others) {
+                selectedQualities.add("6");
+            }
+            if (hds) {
+                selectedQualities.add("7");
+            }
         }
         for (final String selectedQualityValue : selectedQualities) {
             final DownloadLink dl = getVideoDownloadlink(this.br, FOUNDQUALITIES, selectedQualityValue);
@@ -541,9 +585,15 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     /* Sync the following functions in hoster- and decrypterplugin */
     public static String getVideosource(final Browser br) {
         String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
-        if (videosource == null) videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
-        if (videosource == null) videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
-        if (videosource != null) videosource = Encoding.htmlDecode(videosource).replace("\\", "");
+        if (videosource == null) {
+            videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
+        }
+        if (videosource == null) {
+            videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
+        }
+        if (videosource != null) {
+            videosource = Encoding.htmlDecode(videosource).replace("\\", "");
+        }
         return videosource;
     }
 
@@ -553,7 +603,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             final String directlink = Encoding.htmlDecode(directlinkinfo[0]);
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
             String qualityName = directlinkinfo[1];
-            if (qualityName == null) qualityName = new Regex(directlink, "cdn/([^<>\"]*?)/video").getMatch(0);
+            if (qualityName == null) {
+                qualityName = new Regex(directlink, "cdn/([^<>\"]*?)/video").getMatch(0);
+            }
             final String originalQualityName = directlinkinfo[2];
             final String qualityNumber = directlinkinfo[3];
             dl.setProperty("directlink", directlink);

@@ -94,7 +94,9 @@ public class NkPlGallery extends PluginForDecrypt {
                 final String profileNumber = new Regex(parameter, "nk.pl/#profile/(\\d+)").getMatch(0);
                 br.getPage("http://nk.pl/profile/" + profileNumber + "/gallery?src=profile_button");
                 String profilName = br.getRegex("href=\"/profile/" + profileNumber + "\" title=\"([^<>\"]*?)\"").getMatch(0);
-                if (profilName == null) profilName = profileNumber;
+                if (profilName == null) {
+                    profilName = profileNumber;
+                }
                 profilName = Encoding.htmlDecode(profilName.trim());
                 prepBrAjax();
                 br.getPage("http://nk.pl/profile/" + profileNumber + "/gallery/album/" + galleryID + "/ajax/0/0?t=" + basicAuth);
@@ -155,6 +157,13 @@ public class NkPlGallery extends PluginForDecrypt {
 
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     private boolean getUserLogin() throws IOException, DecrypterException {
         br.setFollowRedirects(true);
         String username = null;
@@ -178,9 +187,13 @@ public class NkPlGallery extends PluginForDecrypt {
                     getPluginConfig().setProperty("user", Property.NULL);
                     getPluginConfig().setProperty("pass", Property.NULL);
                     username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
-                    if (username == null) { return false; }
+                    if (username == null) {
+                        return false;
+                    }
                     password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
-                    if (password == null) { return false; }
+                    if (password == null) {
+                        return false;
+                    }
                     br.postPage(POSTPAGE, "login=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password) + "&remember=1&form_name=login_form&target=&manual=1");
                 } else {
                     getPluginConfig().setProperty("user", username);

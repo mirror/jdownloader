@@ -76,6 +76,13 @@ public class IFileIt extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("ifile.it/", "filecloud.io/"));
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -131,17 +138,27 @@ public class IFileIt extends PluginForHost {
                 }
             }
             final String filesize = getAb1Downloadsize();
-            if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if ("0".equals(filesize)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if ("0".equals(filesize)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         } else {
             // Check with API
             final String status = getJson("status", br);
-            if (status == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (!"ok".equals(getJson("status", br))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (status == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!"ok".equals(getJson("status", br))) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String filename = getJson("name", br);
             final String filesize = getJson("size", br);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
             downloadLink.setDownloadSize(Long.parseLong(filesize));
         }
@@ -169,22 +186,32 @@ public class IFileIt extends PluginForHost {
         }
         if (dllink == null) {
             final String ab1 = br.getRegex("if\\( __ab1 == \\'([^<>\"]*?)\\'").getMatch(0);
-            if (ab1 == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (ab1 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.setFollowRedirects(true);
             // Br2 is our xml browser now!
             final Browser br2 = br.cloneBrowser();
             br2.setReadTimeout(40 * 1000);
             final String ukey = new Regex(downloadLink.getDownloadURL(), "filecloud\\.io/(.+)").getMatch(0);
             xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + Encoding.urlEncode(ab1));
-            if (br.containsHTML("message\":\"invalid request\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
-            if (br2.containsHTML("\"message\":\"gopremium\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+            if (br.containsHTML("message\":\"invalid request\"")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
+            if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l);
+            }
+            if (br2.containsHTML("\"message\":\"gopremium\"")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+            }
             if (br2.containsHTML("\"captcha\":1")) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
                 // Semi-automatic reCaptcha handling
                 final String k = br.getRegex("recaptcha_public.*?=.*?\\'([^<>\"]*?)\\';").getMatch(0);
-                if (k == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (k == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 rc.setId(k);
                 rc.load();
                 for (int i = 0; i <= 5; i++) {
@@ -198,11 +225,17 @@ public class IFileIt extends PluginForHost {
                     break;
                 }
             }
-            if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (br2.containsHTML("\"message\":\"signup\"")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
+            if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (br2.containsHTML("\"message\":\"signup\"")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l);
+            }
             br.getPage("http://filecloud.io/download.html");
             dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
+            }
             if (dllink == null) {
                 if (br.containsHTML("in order to download any publicly shared file, please enter its unique download URL")) {
                     int timesFailed = downloadLink.getIntegerProperty("timesfailedfilecloudit_dllinknull", 0);
@@ -229,13 +262,17 @@ public class IFileIt extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!this.dl.startDownload()) {
             try {
-                if (dl.externalDownloadStop()) return;
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
             } catch (final Throwable e) {
             }
             if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
@@ -256,7 +293,9 @@ public class IFileIt extends PluginForHost {
 
     private String getAb1Downloadsize() {
         String ab1 = br.getRegex("var __ab1 = (\\d+);").getMatch(0);
-        if (ab1 == null) ab1 = br.getRegex("\\$\\(\\'#fsize\\'\\)\\.empty\\(\\)\\.append\\( toMB\\( (\\d+) \\) \\);").getMatch(0);
+        if (ab1 == null) {
+            ab1 = br.getRegex("\\$\\(\\'#fsize\\'\\)\\.empty\\(\\)\\.append\\( toMB\\( (\\d+) \\) \\);").getMatch(0);
+        }
         return ab1;
     }
 
@@ -274,7 +313,9 @@ public class IFileIt extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
-        if (UNDERMAINTENANCE.get()) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
+        if (UNDERMAINTENANCE.get()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
+        }
         prepBrowser(br);
         br.setRequestIntervalLimit(getHost(), 250);
         simulateBrowser();
@@ -350,7 +391,9 @@ public class IFileIt extends PluginForHost {
                     accountValid = true;
                     break;
                 }
-                if (!accountValid) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!accountValid) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -409,20 +452,28 @@ public class IFileIt extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        if (UNDERMAINTENANCE.get()) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
+        if (UNDERMAINTENANCE.get()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
+        }
         login(account);
         if ("premium".equals(account.getStringProperty("typ", null))) {
             final String apikey = getUrlEncodedAPIkey(account, this, br);
             final String fid = getFid(link);
-            if (apikey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (apikey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             try {
                 br.postPage("http://api.filecloud.io/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
-            if (br.containsHTML("\"message\":\"no such file\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("\"message\":\"no such file\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String finallink = getJson("download_url", br);
-            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             finallink = finallink.replace("\\", "");
 
             int maxchunks = MAXPREMIUMCHUNKS;
@@ -432,13 +483,17 @@ public class IFileIt extends PluginForHost {
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l); }
+                if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l);
+                }
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -480,7 +535,9 @@ public class IFileIt extends PluginForHost {
     }
 
     private void prepBrowser(final Browser br) {
-        if (br == null) return;
+        if (br == null) {
+            return;
+        }
         br.getHeaders().put("User-Agent", useragent);
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.setCookie("http://filecloud.io/", "lang", "en");
@@ -505,7 +562,9 @@ public class IFileIt extends PluginForHost {
 
     public static String getJson(final String parameter, final Browser br) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 

@@ -20,10 +20,8 @@ import java.util.Locale;
 import java.util.logging.Level;
 
 import jd.config.SubConfiguration;
-import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
@@ -34,6 +32,8 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.plugins.hoster.Ftp;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -51,6 +51,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxy.TYPE;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
+import org.appwork.utils.net.httpconnection.ProxyAuthException;
+import org.appwork.utils.net.httpconnection.ProxyConnectException;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -267,7 +269,8 @@ public class ProxyController implements ProxySelectorInterface {
                 if (selector.isProxyBannedFor(orgReference, url, getPluginFromThread())) {
                     return false;
 
-                } else if (usedCopy != null && !usedCopy.equals(orgReference)) {
+                }
+                if (usedCopy != null && !usedCopy.equals(orgReference)) {
                     // proxy has been updated already
                     ret = orgReference;
                 } else {
@@ -314,70 +317,47 @@ public class ProxyController implements ProxySelectorInterface {
                 if (remember) {
                     ((PacProxySelectorImpl) selector).setUser(ret.getUser());
                     ((PacProxySelectorImpl) selector).setPassword(ret.getPass());
-                    ((PacProxySelectorImpl) selector).setTempAuth(orgReference, ret.getUser(), ret.getPass());
 
-                } else {
-                    ((PacProxySelectorImpl) selector).setTempAuth(orgReference, ret.getUser(), ret.getPass());
                 }
+                ((PacProxySelectorImpl) selector).setTempAuth(orgReference, ret.getUser(), ret.getPass());
+
                 return true;
             } else {
                 ((PacProxySelectorImpl) selector).setTempAuth(orgReference, null, null);
-                Thread thread = Thread.currentThread();
-                if (thread instanceof AccountCheckerThread) {
-
-                    AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
-                    if (job != null) {
-                        Account account = job.getAccount();
-
-                        selector.addSessionBan(new AuthExceptionDuringAccountCheckBan(account, selector, orgReference, url));
-                        return false;
-                    }
-                    // addSessionBan(new UserDidNotEnterAuthBan(candidate, proxySelector, proxy))
-                } else if (thread instanceof LinkCheckerThread) {
-                    PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
-                    if (plg != null) {
-
-                        selector.addSessionBan(new AuthExceptionDuringLinkCheckBan(plg, selector, orgReference, url));
-                        return false;
-                    }
-                } else if (thread instanceof SingleDownloadController) {
-                    selector.addSessionBan(new AuthExceptionDuringPluginBan(((SingleDownloadController) thread).getDownloadLinkCandidate(), selector, orgReference, url));
+                Plugin plg = getPluginFromThread();
+                if (plg != null) {
+                    selector.addSessionBan(new PluginRelatedConnectionBan(plg, selector, orgReference));
                     return false;
 
-                }
-                selector.addSessionBan(new AuthExceptionGenericBan(selector, orgReference, url));
-                return false;
+                } else {
 
-                // if (!selector.isBanned(url.getHost(), orgReference)) {
-                // this.addSessionBan(selector, orgReference, null, 60 * 60 * 1000l, _JDT._.ProxyController_updateProxy_baned_auth());
-                // }
+                    selector.addSessionBan(new AuthExceptionGenericBan(selector, orgReference, url));
+                }
 
             }
         } else if (selector instanceof SingleBasicProxySelectorImpl) {
-            ((SingleBasicProxySelectorImpl) selector).setTempAuth(null, null);
-            Thread thread = Thread.currentThread();
-            if (thread instanceof AccountCheckerThread) {
+            if (ret != null) {
+                if (remember) {
+                    ((SingleBasicProxySelectorImpl) selector).setUser(ret.getUser());
+                    ((SingleBasicProxySelectorImpl) selector).setPassword(ret.getPass());
 
-                AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
-                if (job != null) {
-                    Account account = job.getAccount();
-
-                    selector.addSessionBan(new AuthExceptionDuringAccountCheckBan(account, selector, orgReference, url));
-                    return false;
                 }
-                // addSessionBan(new UserDidNotEnterAuthBan(candidate, proxySelector, proxy))
-            } else if (thread instanceof LinkCheckerThread) {
-                PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
+                ((SingleBasicProxySelectorImpl) selector).setTempAuth(ret.getUser(), ret.getPass());
+
+                return true;
+            } else {
+                ((SingleBasicProxySelectorImpl) selector).setTempAuth(null, null);
+                Plugin plg = getPluginFromThread();
                 if (plg != null) {
-                    selector.addSessionBan(new AuthExceptionDuringLinkCheckBan(plg, selector, orgReference, url));
+                    selector.addSessionBan(new PluginRelatedConnectionBan(plg, selector, orgReference));
                     return false;
-                }
-            } else if (thread instanceof SingleDownloadController) {
-                selector.addSessionBan(new AuthExceptionDuringPluginBan(((SingleDownloadController) thread).getDownloadLinkCandidate(), selector, orgReference, url));
-                return false;
 
+                } else {
+
+                    selector.addSessionBan(new AuthExceptionGenericBan(selector, orgReference, url));
+                }
             }
-            selector.addSessionBan(new AuthExceptionGenericBan(selector, orgReference, url));
+
             return false;
         }
         return false;
@@ -488,7 +468,7 @@ public class ProxyController implements ProxySelectorInterface {
         final List<AbstractProxySelectorImpl> ret = new ArrayList<AbstractProxySelectorImpl>();
         String host = pluginForHost.getHost().toLowerCase(Locale.ENGLISH);
 
-        if (accountInUse) {
+        if (!pluginForHost.isProxyRotationEnabled(accountInUse)) {
 
             for (final AbstractProxySelectorImpl selector : list) {
                 try {
@@ -1015,7 +995,7 @@ public class ProxyController implements ProxySelectorInterface {
 
             AbstractProxySelectorImpl selector = null;
             if (orgRef instanceof ExtProxy) {
-                selector = ((ExtProxy) orgRef).getFactory();
+                selector = ((ExtProxy) orgRef).getSelector();
             }
             while (this.updateProxy(selector, proxyAuths, updaterProxy, orgRef, url, retries)) {
 
@@ -1099,38 +1079,36 @@ public class ProxyController implements ProxySelectorInterface {
      */
     @Override
     public List<HTTPProxy> getProxiesByUrl(String urlString) {
-        boolean premium = false;
+
+        Plugin plg = getPluginFromThread();
+
+        boolean proxyRotationEnabled = plg == null || plg.isProxyRotationEnabled(false);
 
         // check context
         Thread thread = Thread.currentThread();
         if (thread instanceof AccountCheckerThread) {
 
-            premium = true;
+            proxyRotationEnabled = plg.isProxyRotationEnabled(true);
         } else if (thread instanceof LinkCheckerThread) {
 
-            PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
             if (plg != null) {
-                if (AccountController.getInstance().hasAccounts(plg.getHost())) {
-                    // rly? are there many crawler that require an account?
-                    premium = true;
-                }
+
+                proxyRotationEnabled = ((PluginForHost) plg).isProxyRotationEnabledForLinkChecker();
+
             }
 
         } else if (thread instanceof SingleDownloadController) {
             if (((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getAccount() != null) {
-                premium = true;
+                proxyRotationEnabled = plg.isProxyRotationEnabled(true);
             }
         } else if (thread instanceof LinkCrawlerThread) {
-            Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
-            if (owner instanceof Plugin) {
-                Plugin plg = (Plugin) owner;
-                if (plg != null) {
-                    if (AccountController.getInstance().hasAccounts(plg.getHost())) {
-                        // rly? are there many crawler that require an account?
-                        premium = true;
-                    }
-                }
+
+            if (plg != null) {
+
+                proxyRotationEnabled = plg.isProxyRotationEnabledForLinkCrawler();
+
             }
+
         }
 
         ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
@@ -1140,26 +1118,23 @@ public class ProxyController implements ProxySelectorInterface {
             url = new URL(urlString);
 
             String host = url.getHost();
-
+            String plgHost = host;
+            if (plg != null && !(plg instanceof DirectHTTP) && !(plg instanceof Ftp)) {
+                plgHost = plg.getHost();
+            }
             for (final AbstractProxySelectorImpl selector : list) {
                 try {
                     if (selector.isEnabled()) {
-                        if (!selector.isAllowedByFilter(host)) {
+                        // filter black/whitelists on plgHost instead of the url tld
+                        if (!selector.isAllowedByFilter(plgHost)) {
                             continue;
                         }
-                        // if (selector.isSelectorBannedFor(url)) {
-                        // if (premium) {
-                        // return ret;
-                        // } else {
-                        // continue;
-                        // }
-                        // }
 
                         List<HTTPProxy> lst = selector.getProxiesByUrl(url.toString());
                         if (lst != null) {
                             for (HTTPProxy p : lst) {
-                                if (selector.isProxyBannedFor(p, url, getPluginFromThread())) {
-                                    if (premium) {
+                                if (selector.isProxyBannedFor(p, url, plg)) {
+                                    if (!proxyRotationEnabled) {
                                         return ret;
                                     } else {
                                         continue;
@@ -1188,7 +1163,7 @@ public class ProxyController implements ProxySelectorInterface {
         StaticProxy proxy = request.getProxy();
         HTTPProxy orgRef = proxy.getOrgReference();
         if (orgRef instanceof ExtProxy) {
-            return updateProxy(((ExtProxy) orgRef).getFactory(), request, retryCounter);
+            return updateProxy(((ExtProxy) orgRef).getSelector(), request, retryCounter);
         }
         return false;
 
@@ -1211,21 +1186,35 @@ public class ProxyController implements ProxySelectorInterface {
 
     @Override
     public boolean reportConnectException(Request request, int retryCounter, IOException e) {
-        return false;
-    }
+        try {
+            if (e instanceof ProxyAuthException) {
 
-    public List<AbstractProxySelectorImpl> runBanFilter(List<AbstractProxySelectorImpl> selectors, DownloadLinkCandidate candidate) {
-        ArrayList<AbstractProxySelectorImpl> ret = new ArrayList<AbstractProxySelectorImpl>();
-        // CopyOnWriteArrayList<ConnectionBan> lbans = bans;
-        // selectorsloop: for (AbstractProxySelectorImpl selector : selectors) {
-        // for (ConnectionBan cb : lbans) {
-        // if (cb.validateByPlugin(candidate.getCachedAccount().getPlugin())) {
-        // continue selectorsloop;
-        // }
-        // }
-        // ret.add(selector);
-        // }
-        return selectors;
+                // we handle this
+                return false;
+            } else if (e instanceof ProxyConnectException) {
+                StaticProxy proxy = request.getProxy();
+                if (proxy.getOrgReference() instanceof ExtProxy) {
+                    AbstractProxySelectorImpl selector = ((ExtProxy) proxy.getOrgReference()).getSelector();
+                    if (selector != null) {
+
+                        Plugin plg = getPluginFromThread();
+                        if (plg != null) {
+                            selector.addSessionBan(new ConnectExceptionInPluginBan(plg, selector, proxy.getOrgReference()));
+                            return false;
+
+                        } else {
+
+                            selector.addSessionBan(new GenericConnectExceptionBan(selector, proxy.getOrgReference(), new URL(request.getUrl())));
+                        }
+                    }
+                }
+                System.out.println(1);
+            }
+        } catch (Throwable e1) {
+            logger.log(e1);
+
+        }
+        return false;
     }
 
 }

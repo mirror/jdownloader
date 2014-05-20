@@ -72,7 +72,9 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-            if (filename != null) filename = Encoding.htmlDecode(filename.trim());
+            if (filename != null) {
+                filename = Encoding.htmlDecode(filename.trim());
+            }
             // Only decrypt pictures if the document itself isn't downloadable
             if (br.containsHTML(NOTDOWNLOADABLE)) {
                 if (filename == null) {
@@ -105,6 +107,13 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
         decryptedLinks.add(mainlink);
 
         return decryptedLinks;
+    }
+
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {

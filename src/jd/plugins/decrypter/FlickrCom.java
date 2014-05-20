@@ -199,6 +199,13 @@ public class FlickrCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     private boolean getUserLogin() throws Exception {
         final PluginForHost flickrPlugin = JDUtilities.getPluginForHost("flickr.com");
         final Account aa = AccountController.getInstance().getValidAccount(flickrPlugin);

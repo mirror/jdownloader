@@ -53,6 +53,7 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
 
     public void setEnabled(boolean useForFreeEnabled) {
         this.enabled = useForFreeEnabled;
+        banList.clear();
 
     }
 

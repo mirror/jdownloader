@@ -90,6 +90,13 @@ public class SoundcloudCom extends PluginForHost {
 
     private String DLLINK = null;
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
@@ -103,11 +110,17 @@ public class SoundcloudCom extends PluginForHost {
         }
         br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
         final String sid = br.getRegex("<id type=\"integer\">(\\d+)</id>").getMatch(0);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final AvailableStatus status = checkStatus(parameter, this.br.toString(), true);
-        if (status.equals(AvailableStatus.FALSE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (status.equals(AvailableStatus.FALSE)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String apilink = parameter.getStringProperty("apilink", null);
-        if (apilink != null) DLLINK = getDirectlink(apilink);
+        if (apilink != null) {
+            DLLINK = getDirectlink(apilink);
+        }
         if (DLLINK != null) {
             checkDirectLink(parameter);
             if (DLLINK != null) {
@@ -115,7 +128,9 @@ public class SoundcloudCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         }
-        if (sid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (sid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Other handling for private links
         if (br.containsHTML("<sharing>private</sharing>") && ENABLE_TYPE_PRIVATE) {
             final String secrettoken = br.getRegex("\\?secret_token=([A-Za-z0-9\\-_]+)</uri>").getMatch(0);
@@ -125,7 +140,9 @@ public class SoundcloudCom extends PluginForHost {
                 br.getPage("https://api.soundcloud.com/i1/tracks/" + sid + "/streams?client_id=" + CLIENTID + "&app_version=" + APP_VERSION);
             }
             DLLINK = br.getRegex("\"http_mp3_128_url\":\"(http[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = unescape(DLLINK);
             DLLINK = Encoding.htmlDecode(DLLINK);
         } else {
@@ -136,10 +153,16 @@ public class SoundcloudCom extends PluginForHost {
             }
             br.getPage(api_access);
             apilink = getJson("download_url");
-            if (apilink == null) apilink = getJson("stream_url");
-            if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (apilink == null) {
+                apilink = getJson("stream_url");
+            }
+            if (apilink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = getDirectlink(apilink);
-            if (DLLINK != null) parameter.setProperty("apilink", apilink);
+            if (DLLINK != null) {
+                parameter.setProperty("apilink", apilink);
+            }
         }
         checkDirectLink(parameter);
         return AvailableStatus.TRUE;
@@ -169,7 +192,9 @@ public class SoundcloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable");
             }
             String oldName = link.getFinalFileName();
-            if (oldName == null) oldName = link.getName();
+            if (oldName == null) {
+                oldName = link.getName();
+            }
             String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
             String newExtension = null;
             if (serverFilename == null) {
@@ -183,7 +208,9 @@ public class SoundcloudCom extends PluginForHost {
             }
             if (newExtension != null && !oldName.endsWith(newExtension)) {
                 String oldExtension = null;
-                if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+                if (oldName.contains(".")) {
+                    oldExtension = oldName.substring(oldName.lastIndexOf("."));
+                }
                 if (oldExtension != null && oldExtension.length() <= 5) {
                     link.setFinalFileName(oldName.replace(oldExtension, newExtension));
                 } else {
@@ -197,7 +224,9 @@ public class SoundcloudCom extends PluginForHost {
     public static AvailableStatus checkStatus(final DownloadLink parameter, final String source, final boolean fromHostplugin) throws ParseException, IOException {
         String filename = getXML("title", source);
         if (filename == null) {
-            if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
+            if (fromHostplugin) {
+                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
+            }
             return AvailableStatus.FALSE;
         }
         filename = Encoding.htmlDecode(filename.trim().replace("\"", "'"));
@@ -213,19 +242,29 @@ public class SoundcloudCom extends PluginForHost {
         String date = new Regex(source, "<created\\-at type=\"datetime\">([^<>\"]*?)</created-at>").getMatch(0);
         String username = getXML("username", source);
         String type = getXML("original-format", source);
-        if (type == null || type.equals("raw")) type = "mp3";
+        if (type == null || type.equals("raw")) {
+            type = "mp3";
+        }
         username = Encoding.htmlDecode(username.trim());
         final String url = getXML("download-url", source);
         if (url != null) {
             /* we have original file downloadable */
-            if (filesize != null) parameter.setDownloadSize(Long.parseLong(filesize));
-            if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
+            if (filesize != null) {
+                parameter.setDownloadSize(Long.parseLong(filesize));
+            }
+            if (fromHostplugin) {
+                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
+            }
         } else {
             type = "mp3";
-            if (fromHostplugin) parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
+            if (fromHostplugin) {
+                parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
+            }
         }
 
-        if (url != null) parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
+        if (url != null) {
+            parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
+        }
         parameter.setProperty("channel", username);
         parameter.setProperty("plainfilename", filename);
         parameter.setProperty("originaldate", date);
@@ -250,7 +289,9 @@ public class SoundcloudCom extends PluginForHost {
                 final String track_id = new Regex(input, "tracks/(\\d+)").getMatch(0);
                 final String token = new Regex(input, "secret_token=([A-Za-z0-9\\-_]+)").getMatch(0);
                 input = "https://api.soundcloud.com/tracks/" + track_id + "/" + type + "?format=json";
-                if (token != null) input += "&secret_token=" + token;
+                if (token != null) {
+                    input += "&secret_token=" + token;
+                }
                 input += "&client_id=";
                 br2.getPage(input + SoundcloudCom.CLIENTID);
                 directlink = br2.getRedirectLocation();
@@ -306,7 +347,9 @@ public class SoundcloudCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -316,7 +359,9 @@ public class SoundcloudCom extends PluginForHost {
                             br.setCookie(MAINPAGE, key, value);
                         }
                         oauthtoken = account.getStringProperty("oauthtoken", null);
-                        if (oauthtoken != null) br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
+                        if (oauthtoken != null) {
+                            br.getHeaders().put("Authorization", "OAuth " + oauthtoken);
+                        }
                     }
                 }
                 boolean fulllogin = true;
@@ -356,7 +401,9 @@ public class SoundcloudCom extends PluginForHost {
                         if (con.getResponseCode() == 422) {
                             br.followConnection();
                             final String rcID = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
-                            if (rcID == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login function broken, please contact our support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            if (rcID == null) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Login function broken, please contact our support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            }
                             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                             rc.setId(rcID);
@@ -382,7 +429,9 @@ public class SoundcloudCom extends PluginForHost {
                         logger.info("Could not find oauth token");
                     }
                     final String continueLogin = br.getRegex("\"(https://soundcloud\\.com/soundcloud\\-callback\\.html[^<>\"]*?)\"").getMatch(0);
-                    if (continueLogin == null || !"free".equals(br.getCookie("https://soundcloud.com/", "c"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (continueLogin == null || !"free".equals(br.getCookie("https://soundcloud.com/", "c"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                     br.getPage(continueLogin);
                     // Save cookies
                     final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -426,7 +475,9 @@ public class SoundcloudCom extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
@@ -436,13 +487,18 @@ public class SoundcloudCom extends PluginForHost {
         String songTitle = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("soundcloud.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME_2, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
-        if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        if (formattedFilename == null || formattedFilename.equals("")) {
+            formattedFilename = defaultCustomFilename;
+        }
+        if (!formattedFilename.contains("*songtitle*") || !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename;
+        }
         String ext = downloadLink.getStringProperty("type", null);
-        if (ext != null)
+        if (ext != null) {
             ext = "." + ext;
-        else
+        } else {
             ext = ".mp3";
+        }
 
         String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
@@ -468,10 +524,11 @@ public class SoundcloudCom extends PluginForHost {
                     formattedDate = "";
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*date*", "");
+            }
         }
         if (formattedFilename.contains("*linkid*") && linkid != null) {
             formattedFilename = formattedFilename.replace("*linkid*", linkid);
@@ -483,7 +540,9 @@ public class SoundcloudCom extends PluginForHost {
         // Insert filename at the end to prevent errors with tags
         formattedFilename = formattedFilename.replace("*songtitle*", songTitle);
         final String setsposition = downloadLink.getStringProperty("setsposition", null);
-        if (cfg.getBooleanProperty(SETS_ADD_POSITION_TO_FILENAME, false) && setsposition != null) formattedFilename = setsposition + formattedFilename;
+        if (cfg.getBooleanProperty(SETS_ADD_POSITION_TO_FILENAME, false) && setsposition != null) {
+            formattedFilename = setsposition + formattedFilename;
+        }
 
         return formattedFilename;
     }

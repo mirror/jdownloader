@@ -80,6 +80,13 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private long                   time_crawl_started                = 0;
     private boolean                grab_specified_page_only          = false;
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     // TODO: Find a better solution than "param3=string:984899" -> Maybe try to use API if it has a function to get the whole archive
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String parameter = param.toString();
@@ -112,7 +119,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 if (pages != null && pages.length != 0) {
                     for (final String page : pages) {
                         final int currentpage = Integer.parseInt(page);
-                        if (currentpage > maxPage) maxPage = currentpage;
+                        if (currentpage > maxPage) {
+                            maxPage = currentpage;
+                        }
                     }
                 }
             }
@@ -143,7 +152,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                         }
                     } catch (final DecrypterException e) {
                         // Not available in old 0.9.581 Stable
-                        if (decryptAborted) throw e;
+                        if (decryptAborted) {
+                            throw e;
+                        }
                     }
 
                     if (grab_specified_page_only) {
@@ -199,7 +210,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                                 }
                             } catch (final DecrypterException e) {
                                 // Not available in old 0.9.581 Stable
-                                if (decryptAborted) throw e;
+                                if (decryptAborted) {
+                                    throw e;
+                                }
                             }
                             logger.info("Making ajax request " + counter_ajax + " of maximum " + total_ajax_requests);
                             if (ajax_info.contains("data-load=\"2\"")) {
@@ -305,12 +318,18 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final String time = dateRegex.getMatch(1);
         String tv_station = new Regex(id_info, "global/TVLogoDE/[A-Za-z0-9\\-_]+\\.gif\" width=\"\\d+\" height=\"\\d+\" alt=\"([^<>\"]*?)\"").getMatch(0);
         String site_run_time = dateRegex.getMatch(2);
-        if (site_run_time == null) site_run_time = "0";
+        if (site_run_time == null) {
+            site_run_time = "0";
+        }
         final long calculated_filesize = jd.plugins.hoster.SaveTv.calculateFilesize(site_run_time, mobilePreferred());
         final Regex nameRegex = new Regex(id_info, "class=\"normal\">([^<>\"]*?)</a>([^<>\"]*?)</td>");
         String name = nameRegex.getMatch(0);
-        if (name == null) name = new Regex(id_info, "class=\"child\">([^<>\"]*?)</a>").getMatch(0);
-        if (name == null || tv_station == null) throw new DecrypterException("Decrypt failed");
+        if (name == null) {
+            name = new Regex(id_info, "class=\"child\">([^<>\"]*?)</a>").getMatch(0);
+        }
+        if (name == null || tv_station == null) {
+            throw new DecrypterException("Decrypt failed");
+        }
         String sur_name = nameRegex.getMatch(1);
         if (sur_name != null) {
             sur_name = correctData(sur_name);
@@ -326,12 +345,16 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             /* Nothing to hide - Always show original links in JD */
             dl.setBrowserUrl(telecast_url);
             dl.setDownloadSize(calculated_filesize);
-            if (FAST_LINKCHECK) dl.setAvailable(true);
+            if (FAST_LINKCHECK) {
+                dl.setAvailable(true);
+            }
 
             if (sur_name != null && !sur_name.equals("")) {
                 /* For series */
                 /* Correct bad names */
-                if (sur_name.startsWith("- ")) sur_name = sur_name.substring(2, sur_name.length());
+                if (sur_name.startsWith("- ")) {
+                    sur_name = sur_name.substring(2, sur_name.length());
+                }
                 dl.setProperty("category", 2);
                 dl.setProperty("seriestitle", name);
                 dl.setProperty("episodename", sur_name);
@@ -364,7 +387,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("save.tv");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
-        if (aa == null) { return false; }
+        if (aa == null) {
+            return false;
+        }
         try {
             ((jd.plugins.hoster.SaveTv) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {

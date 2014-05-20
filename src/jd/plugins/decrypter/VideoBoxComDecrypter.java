@@ -44,6 +44,13 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
@@ -145,7 +152,9 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\"([ ]+)?:([ ]+)?(\\d+)").getMatch(2);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\"([ ]+)?:([ ]+)?\"([^<>\"]*?)\"").getMatch(2);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\"([ ]+)?:([ ]+)?\"([^<>\"]*?)\"").getMatch(2);
+        }
         return result;
     }
 
@@ -154,9 +163,13 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
         Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
         if (aa == null) {
             String username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
-            if (username == null) return false;
+            if (username == null) {
+                return false;
+            }
             String password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
-            if (password == null) return false;
+            if (password == null) {
+                return false;
+            }
             aa = new Account(username, password);
         }
         try {

@@ -79,12 +79,18 @@ public abstract class Plugin implements ActionListener {
     private static final HashMap<String, Object> CACHE               = new HashMap<String, Object>();
 
     public void setLogger(Logger logger) {
-        if (logger == null) logger = LogController.TRASH;
+        if (logger == null) {
+            logger = LogController.TRASH;
+        }
         this.logger = logger;
     }
 
     public Logger getLogger() {
         return logger;
+    }
+
+    public boolean isProxyRotationEnabled(boolean premiumDownload) {
+        return !premiumDownload;
     }
 
     public static PluginCache getCache(final String id) {
@@ -117,7 +123,9 @@ public abstract class Plugin implements ActionListener {
                 synchronized (CACHE) {
                     Iterator<Entry<String, Object>> it = CACHE.entrySet().iterator();
                     while (it.hasNext()) {
-                        if (it.next().getKey().startsWith(ID)) it.remove();
+                        if (it.next().getKey().startsWith(ID)) {
+                            it.remove();
+                        }
                     }
                 }
             }
@@ -148,19 +156,23 @@ public abstract class Plugin implements ActionListener {
             String ID = getHost() + ".";
             Iterator<Entry<String, Object>> it = CACHE.entrySet().iterator();
             while (it.hasNext()) {
-                if (it.next().getKey().startsWith(ID)) it.remove();
+                if (it.next().getKey().startsWith(ID)) {
+                    it.remove();
+                }
             }
         }
     }
 
     /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet
-     * werden
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer
+     * DownloadLink.getName() verwendet werden
      * 
      * @return Datename des Downloads.
      */
     public static String extractFileNameFromURL(String filename) {
-        if (StringUtils.isEmpty(filename)) return null;
+        if (StringUtils.isEmpty(filename)) {
+            return null;
+        }
         int index = filename.indexOf("?");
         /*
          * cut off get url parameters
@@ -226,7 +238,9 @@ public abstract class Plugin implements ActionListener {
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getText();
 
-                if (StringUtils.isEmpty(password)) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (StringUtils.isEmpty(password)) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
                 return password;
             } else {
                 throw new DecrypterException(DecrypterException.PASSWORD);
@@ -268,7 +282,9 @@ public abstract class Plugin implements ActionListener {
             if (handle.getCloseReason() == CloseReason.OK) {
                 String password = handle.getText();
 
-                if (StringUtils.isEmpty(password)) { throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword()); }
+                if (StringUtils.isEmpty(password)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
+                }
                 return password;
             } else {
                 throw new PluginException(LinkStatus.ERROR_FATAL, _JDT._.plugins_errors_wrongpassword());
@@ -295,18 +311,23 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns vorhanden ist.
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
+     * Patterns vorhanden ist.
      * 
      * @param data
      *            der zu prüfende Text
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public boolean canHandle(final String data) {
-        if (data == null) { return false; }
+        if (data == null) {
+            return false;
+        }
         final Pattern pattern = this.getSupportedLinks();
         if (pattern != null) {
             final Matcher matcher = pattern.matcher(data);
-            if (matcher.find()) { return true; }
+            if (matcher.find()) {
+                return true;
+            }
         }
         return false;
     }
@@ -324,9 +345,13 @@ public abstract class Plugin implements ActionListener {
      * @return gibt die aktuelle Configuration Instanz zurück
      */
     public ConfigContainer getConfig() {
-        if (this.config != null) return config;
+        if (this.config != null) {
+            return config;
+        }
         synchronized (this) {
-            if (this.config != null) return config;
+            if (this.config != null) {
+                return config;
+            }
             this.config = new ConfigContainer(null) {
                 private static final long serialVersionUID = -30947319320765343L;
 
@@ -348,7 +373,9 @@ public abstract class Plugin implements ActionListener {
     }
 
     public boolean hasConfig() {
-        if (config != null && config.getEntries() != null && config.getEntries().size() > 0) { return true; }
+        if (config != null && config.getEntries() != null && config.getEntries().size() > 0) {
+            return true;
+        }
         return false;
     }
 
@@ -437,6 +464,12 @@ public abstract class Plugin implements ActionListener {
 
     public Class<? extends ConfigInterface> getConfigInterface() {
         return null;
+    }
+
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        // if (AccountController.getInstance().hasAccounts(plg.getHost())) {
+        // rly? are there many crawler that require an account?
+        return true;
     }
 
 }

@@ -538,4 +538,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Gateway or Proxy found." })
     String AccountController_updateAccountInfo_no_gateway();
 
+    @Default(lngs = { "en" }, values = { "Authentication missing for %s1" })
+    String AuthExceptionGenericBan_toString(String proxy);
+
+    @Default(lngs = { "en" }, values = { "Connection to %s1 failed" })
+    String ConnectExceptionInPluginBan(String proxy);
+
 }

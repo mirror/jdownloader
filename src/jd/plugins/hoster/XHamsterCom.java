@@ -73,10 +73,16 @@ public class XHamsterCom extends PluginForHost {
         if (dllink == null) {
             final Regex secondway = br.getRegex("\\&srv=(https?[A-Za-z0-9%]+\\.xhcdn\\.com)\\&file=([^<>\"]*?)\\&");
             String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
-            if (server == null) server = secondway.getMatch(0);
+            if (server == null) {
+                server = secondway.getMatch(0);
+            }
             String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
-            if (file == null) file = secondway.getMatch(1);
-            if (server == null || file == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (file == null) {
+                file = secondway.getMatch(1);
+            }
+            if (server == null || file == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (file.startsWith("http")) {
                 // Examplelink (ID): 968106
                 dllink = file;
@@ -93,13 +99,22 @@ public class XHamsterCom extends PluginForHost {
         return -1;
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBr();
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa != null) login(this.br, aa, false);
+        if (aa != null) {
+            login(this.br, aa, false);
+        }
         br.getPage(downloadLink.getDownloadURL());
         // embeded correction
         if (downloadLink.getDownloadURL().contains(".com/xembed.php")) {
@@ -109,7 +124,9 @@ public class XHamsterCom extends PluginForHost {
                 br.getPage(downloadLink.getDownloadURL());
             }
         }
-        if (br.containsHTML("(Video Not found|403 Forbidden|>This video was deleted<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Video Not found|403 Forbidden|>This video was deleted<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String onlyfor = br.getRegex(">([^<>\"]*?)</a>\\'s friends only</div>").getMatch(0);
         if (onlyfor != null) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for friends of " + onlyfor);
@@ -129,19 +146,24 @@ public class XHamsterCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String dllink = getDllink();
         String ext = dllink.substring(dllink.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         filename = Encoding.htmlDecode(filename.trim() + ext);
         downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -165,14 +187,18 @@ public class XHamsterCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for friends of " + onlyfor);
         }
         final String dllink = getDllink();
 
         boolean resume = true;
-        if (downloadLink.getBooleanProperty(NORESUME, false)) resume = false;
+        if (downloadLink.getBooleanProperty(NORESUME, false)) {
+            resume = false;
+        }
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -189,7 +215,9 @@ public class XHamsterCom extends PluginForHost {
             }
 
             br.followConnection();
-            if (br.containsHTML(">Video not found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (br.containsHTML(">Video not found<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             logger.info("xhamster.com: Unknown error -> Retrying!");
             int timesFailed = downloadLink.getIntegerProperty("timesfailedxhamstercom_unknown", 0);
             downloadLink.getLinkStatus().setRetryCount(0);
@@ -218,7 +246,9 @@ public class XHamsterCom extends PluginForHost {
                 prepBr();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -248,7 +278,9 @@ public class XHamsterCom extends PluginForHost {
                         final String c = getCaptchaCode(cf, dummyLink);
                         final String loginlink = "http://xhamster.com/ajax/login.php?act=login&ref=http%3A%2F%2Fxhamster.com%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&_=" + System.currentTimeMillis() + "&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c);
                         br.getPage(loginlink);
-                        if (br.containsHTML("\\'Recaptcha does not match")) continue;
+                        if (br.containsHTML("\\'Recaptcha does not match")) {
+                            continue;
+                        }
                         break;
                     }
                     if (br.containsHTML("\\'Recaptcha does not match")) {

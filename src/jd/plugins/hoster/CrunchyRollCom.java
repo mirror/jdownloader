@@ -464,6 +464,13 @@ public class CrunchyRollCom extends PluginForHost {
         return sb.toString();
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -484,7 +491,9 @@ public class CrunchyRollCom extends PluginForHost {
 
             // Find matching decrypter
             final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("crunchyroll.com");
-            if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link"); }
+            if (plugin == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link");
+            }
 
             // Set the RTMP details (exception on error)
             try {
@@ -495,7 +504,9 @@ public class CrunchyRollCom extends PluginForHost {
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_SUBTITLE)) {
             // Validate the URL and set filename
             final String subId = new Regex(downloadLink.getDownloadURL(), "subtitle_script_id=([0-9]+)").getMatch(0);
-            if (subId == null) { return AvailableStatus.FALSE; }
+            if (subId == null) {
+                return AvailableStatus.FALSE;
+            }
 
             if (downloadLink.getStringProperty("filename") == null) {
                 final String filename = "CrunchyRoll." + subId;
@@ -516,7 +527,9 @@ public class CrunchyRollCom extends PluginForHost {
                 if (respCode == 200 && contType.endsWith("xml")) {
                     // Check if the file is too small to be subtitles
                     // 20130719 length isn't given anymore so will equal -1
-                    if (length != -1 && length < 200) { return AvailableStatus.FALSE; }
+                    if (length != -1 && length < 200) {
+                        return AvailableStatus.FALSE;
+                    }
 
                     // File valid, set details
                     downloadLink.setDownloadSize(length);
@@ -531,12 +544,16 @@ public class CrunchyRollCom extends PluginForHost {
         } else if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_ANDROID)) {
             // Find matching decrypter
             final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("crunchyroll.com");
-            if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link"); }
+            if (plugin == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Cannot decrypt video link");
+            }
 
             // Set the Android video details (exception on error)
             ((jd.plugins.decrypter.CrhyRllCom) plugin).setAndroid(downloadLink, this.br);
         }
-        if ((Boolean) downloadLink.getProperty("valid", false)) { return AvailableStatus.TRUE; }
+        if ((Boolean) downloadLink.getProperty("valid", false)) {
+            return AvailableStatus.TRUE;
+        }
         return AvailableStatus.FALSE;
     }
 

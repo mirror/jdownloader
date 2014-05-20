@@ -688,10 +688,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         case ORIGINAL:
                         case MULTI:
                             Account acc = candidate.getCachedAccount().getAccount();
-                            proxies = ProxyController.getInstance().runBanFilter(ProxyController.getInstance().getProxiesForDownloadWatchDog(candidate.getCachedAccount().getPlugin(), true, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, acc)), candidate);
+                            proxies = ProxyController.getInstance().getProxiesForDownloadWatchDog(candidate.getCachedAccount().getPlugin(), true, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, acc));
                             break;
                         case NONE:
-                            proxies = ProxyController.getInstance().runBanFilter(ProxyController.getInstance().getProxiesForDownloadWatchDog(candidate.getCachedAccount().getPlugin(), false, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, null)), candidate);
+                            proxies = ProxyController.getInstance().getProxiesForDownloadWatchDog(candidate.getCachedAccount().getPlugin(), false, candidate.getCachedAccount().getPlugin().getMaxSimultanDownload(link, null));
                             break;
                         }
                     }
@@ -2244,7 +2244,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                 ProxySelectorInterface proxySelector = result.getController().getProxySelector();
                 if (proxySelector != null && proxySelector instanceof AbstractProxySelectorImpl) {
-                    // ProxyController.getInstance().addSessionBan(new AuthExceptionDuringPluginBan(candidate, (AbstractProxySelectorImpl)
+                    // ProxyController.getInstance().addSessionBan(new AuthExceptionDuringHostPluginBan(candidate,
+                    // (AbstractProxySelectorImpl)
                     // proxySelector, ((ProxyAuthException) throwable).getProxy(), null));
 
                     // // ProxyController.getInstance().setEnabled((AbstractProxySelectorImpl) proxySelector, false);

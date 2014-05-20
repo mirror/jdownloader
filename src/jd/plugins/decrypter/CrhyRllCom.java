@@ -81,6 +81,13 @@ public class CrhyRllCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, final ProgressController progress) throws Exception {
@@ -129,12 +136,18 @@ public class CrhyRllCom extends PluginForDecrypt {
 
             // Get the episode name
             String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());
-            if (title == null) title = new Regex(cryptedLink.getCryptedUrl(), "/([^<>\"/]+)$").getMatch(0);
-            if (title == null) { throw new DecrypterException("Invalid video URL"); }
+            if (title == null) {
+                title = new Regex(cryptedLink.getCryptedUrl(), "/([^<>\"/]+)$").getMatch(0);
+            }
+            if (title == null) {
+                throw new DecrypterException("Invalid video URL");
+            }
 
             // Get the link to the XML file
             final Regex configUrlSearch = this.br.getRegex("\"config_url\":\"(.+?)\"");
-            if (!configUrlSearch.matches()) { throw new DecrypterException("Failed to get config url"); }
+            if (!configUrlSearch.matches()) {
+                throw new DecrypterException("Failed to get config url");
+            }
 
             final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
             if (configUrlDecode.contains("Only+All-Access+Members+and+Anime+Members+can+pop+out+this+video")) {
@@ -142,21 +155,29 @@ public class CrhyRllCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
-            if (!configUrl.matches()) { throw new DecrypterException("Invalid config url"); }
+            if (!configUrl.matches()) {
+                throw new DecrypterException("Invalid config url");
+            }
 
             // Get the link to the SWF file
             final Regex swfUrlSearch = this.br.getRegex("swfobject.embedSWF\\(\"(.*?)\"");
-            if (!swfUrlSearch.matches()) { throw new DecrypterException("Failed to get SWF url"); }
+            if (!swfUrlSearch.matches()) {
+                throw new DecrypterException("Failed to get SWF url");
+            }
 
             final String swfUrlDecode = Encoding.htmlDecode(swfUrlSearch.getMatch(0).replaceAll("\\\\/", "/"));
             final Regex swfUrl = new Regex(swfUrlDecode, CrhyRllCom.SWF_URL);
-            if (!swfUrl.matches()) { throw new DecrypterException("Invalid SWF url"); }
+            if (!swfUrl.matches()) {
+                throw new DecrypterException("Invalid SWF url");
+            }
 
             // Find the available qualities by looking for the buttons
             String[] qualities = this.br.getRegex("\\?p([0-9]+)=1").getColumn(0);
             if (qualities == null || qualities.length == 0) {
                 qualities = br.getRegex("token=\"showmedia\\.(\\d+)p\"").getColumn(0);
-                if (qualities == null || qualities.length == 0) throw new DecrypterException("No qualities found");
+                if (qualities == null || qualities.length == 0) {
+                    throw new DecrypterException("No qualities found");
+                }
             }
 
             final FilePackage filePackage = FilePackage.getInstance();
@@ -207,7 +228,9 @@ public class CrhyRllCom extends PluginForDecrypt {
                 final String subUrl = Encoding.htmlDecode(subtitle[1]);
                 final String subTitle = subtitle[2];
                 String subName = new Regex(subTitle, "\\[[0-9\\s]+\\]\\s*(.+)").getMatch(0);
-                if (subName == null) subName = subTitle;
+                if (subName == null) {
+                    subName = subTitle;
+                }
 
                 subName = subName.replace(' ', SEPARATOR).toLowerCase();
                 subName = subName.replaceAll("[\\[\\]\\(\\)]+", "");
@@ -259,7 +282,9 @@ public class CrhyRllCom extends PluginForDecrypt {
         }
 
         // Make sure that the id is just numbers
-        if (!new Regex(videoId, "^[0-9]+$").matches()) { return null; }
+        if (!new Regex(videoId, "^[0-9]+$").matches()) {
+            return null;
+        }
 
         String name = null;
         try {
@@ -277,7 +302,9 @@ public class CrhyRllCom extends PluginForDecrypt {
     private String nameFromVideoUrl(final String videoUrl) {
         // Get the episode name 'show-episode-1-name'
         final Regex urlReg = new Regex(videoUrl, "crunchyroll\\.com/([\\w\\_\\-]+)/episode\\-([0-9]+)([\\w\\_\\-]*)\\-([0-9]+)");
-        if (!urlReg.matches()) { return null; }
+        if (!urlReg.matches()) {
+            return null;
+        }
 
         final String series = urlReg.getMatch(0);
         String episode = urlReg.getMatch(1);
@@ -307,7 +334,9 @@ public class CrhyRllCom extends PluginForDecrypt {
         // Extract the quality code from the url
         final Regex androidUrl = new Regex(downloadLink.getDownloadURL(), CrhyRllCom.ANDROID_URL);
         final String mediaId = androidUrl.getMatch(0);
-        if (mediaId == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find media id)"); }
+        if (mediaId == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find media id)");
+        }
 
         // If the download does not yet have a filename, set a temporary
         // filename
@@ -329,9 +358,15 @@ public class CrhyRllCom extends PluginForDecrypt {
         androidBr.getPage(downloadLink.getDownloadURL());
 
         // Check if we can actually get the video
-        if (androidBr.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permission denied!"); }
-        if (androidBr.containsHTML("Media not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist!"); }
-        if (!androidBr.containsHTML("\"exception_error_code\":null")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown XML error!"); }
+        if (androidBr.containsHTML("Video not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Permission denied!");
+        }
+        if (androidBr.containsHTML("Media not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist!");
+        }
+        if (!androidBr.containsHTML("\"exception_error_code\":null")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown XML error!");
+        }
 
         // Get the filetype from the JSON
         String filetype = androidBr.getRegex("video(\\.\\w+)").getMatch(0);
@@ -354,7 +389,9 @@ public class CrhyRllCom extends PluginForDecrypt {
         downloadLink.setFinalFileName(filename + filetype);
 
         String videoUrl = androidBr.getRegex("\"video_url\":\"(.+?)\"").getMatch(0);
-        if (videoUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to get video URL"); }
+        if (videoUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to get video URL");
+        }
         videoUrl = Encoding.htmlDecode(videoUrl.replaceAll("\\\\/", "/"));
 
         downloadLink.setProperty("videourl", videoUrl);
@@ -402,7 +439,9 @@ public class CrhyRllCom extends PluginForDecrypt {
         // Extract the quality code from the url
         final Regex configUrl = new Regex(downloadLink.getDownloadURL(), CrhyRllCom.CONFIG_URL);
         final String qualityStr = configUrl.getMatch(2);
-        if (qualityStr == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find quality)"); }
+        if (qualityStr == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find quality)");
+        }
 
         // Try and find that quality code in the known codes
         DestinationQuality qualityObj = null;
@@ -417,7 +456,9 @@ public class CrhyRllCom extends PluginForDecrypt {
                 break;
             }
         }
-        if (qualityObj == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown quality"); }
+        if (qualityObj == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown quality");
+        }
 
         final String mediaId = configUrl.getMatch(1);
 
@@ -444,10 +485,14 @@ public class CrhyRllCom extends PluginForDecrypt {
             br.postPage(url, "current_page=" + downloadLink.getDownloadURL());
 
             // Does the file actually exist?
-            if (br.containsHTML("<msg>Media not found</msg>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist"); }
+            if (br.containsHTML("<msg>Media not found</msg>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist");
+            }
 
             // Check if a premium account is needed (and we aren't using one)
-            if (br.containsHTML("<upsell>1</upsell>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Premium account required for this quality"); }
+            if (br.containsHTML("<upsell>1</upsell>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Premium account required for this quality");
+            }
 
             // Check if the quality found is actually the one we wanted
             final String qual = Encoding.htmlDecode(br.getRegex(CrhyRllCom.RTMP_QUAL).getMatch(0));

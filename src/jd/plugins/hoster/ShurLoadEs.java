@@ -52,9 +52,18 @@ public class ShurLoadEs extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("://shurload.", "://www.shurload.").replace("/view.php", "/download.php"));
     }
 
+    /**
+     * JD 2 Code. DO NOT USE OVERRIDE FOR COMPATIBILITY REASONS
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     public boolean checkLinks(DownloadLink[] urls) {
         br.setFollowRedirects(false);
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa == null) {
@@ -68,7 +77,9 @@ public class ShurLoadEs extends PluginForHost {
                     /* VALUE_ID_PREMIUM_ONLY not existing in old stable */
                 }
             }
-            if (aa == null || !aa.isValid()) { return false; }
+            if (aa == null || !aa.isValid()) {
+                return false;
+            }
             login(aa);
             for (DownloadLink dl : urls) {
                 URLConnectionAdapter con = null;
@@ -147,17 +158,23 @@ public class ShurLoadEs extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with an account", PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
-            /* not existing in old stable */
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+                /* not existing in old stable */
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (!weAreAlreadyLoggedIn || br.getCookie("http://www.shurload.es/", COOKIENAME) == null) login(account);
+        if (!weAreAlreadyLoggedIn || br.getCookie("http://www.shurload.es/", COOKIENAME) == null) {
+            login(account);
+        }
         String dllink = downloadLink.getDownloadURL();
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -171,7 +188,9 @@ public class ShurLoadEs extends PluginForHost {
         br.getHeaders().put("Referer", "");
         br.setFollowRedirects(false);
         br.postPage("http://www.shurload.es/jd.php", "username=" + account.getUser() + "&password=" + account.getPass() + "&key=" + Encoding.Base64Decode("cU5UYjlqYUVXaTg5"));
-        if (br.getCookie("http://www.shurload.es/", COOKIENAME) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://www.shurload.es/", COOKIENAME) == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         weAreAlreadyLoggedIn = true;
     }
 
@@ -190,7 +209,9 @@ public class ShurLoadEs extends PluginForHost {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
             Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;

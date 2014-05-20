@@ -55,7 +55,9 @@ public class RealityKingsCom extends PluginForDecrypt {
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("class=\"ppp\\-post\\-login\\-body\"")) br.getPage(parameter);
+        if (br.containsHTML("class=\"ppp\\-post\\-login\\-body\"")) {
+            br.getPage(parameter);
+        }
 
         final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
 
@@ -93,6 +95,13 @@ public class RealityKingsCom extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
     }
 
     private boolean getUserLogin(final boolean force) throws Exception {

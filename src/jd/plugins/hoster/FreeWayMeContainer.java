@@ -47,13 +47,22 @@ public class FreeWayMeContainer extends PluginForHost {
         return "https://www.free-way.me/impressum";
     }
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("free-way.me");
         Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
-        if (aa == null) AccountController.getInstance().getValidAccount(this);
+        if (aa == null) {
+            AccountController.getInstance().getValidAccount(this);
+        }
         if (aa == null) {
             downloadLink.getLinkStatus().setStatusText("Kann Links nur mit aktiviertem Premium Account prüfen und laden!");
             return AvailableStatus.TRUE;
@@ -83,7 +92,9 @@ public class FreeWayMeContainer extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links nur mit aktiviertem Premium Account prüfen und laden!");
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Kann Links nur mit aktiviertem Premium Account prüfen und laden!");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

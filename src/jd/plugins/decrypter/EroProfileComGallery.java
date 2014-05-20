@@ -74,11 +74,16 @@ public class EroProfileComGallery extends PluginForDecrypt {
         final String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
         final String[] pages = br.getRegex("\\?pnum=(\\d+)\"").getColumn(0);
         if (pages != null && pages.length != 0) {
-            for (final String page : pages)
-                if (!correctedpages.contains(page)) correctedpages.add(page);
+            for (final String page : pages) {
+                if (!correctedpages.contains(page)) {
+                    correctedpages.add(page);
+                }
+            }
         }
         for (final String page : correctedpages) {
-            if (!page.equals("1")) br.getPage(parameter + "?pnum=" + page);
+            if (!page.equals("1")) {
+                br.getPage(parameter + "?pnum=" + page);
+            }
             String[][] links = br.getRegex("<table cellspacing=\"0\"><tr><td><a href=\"(/m/photos/view/([A-Za-z0-9\\-_]+))\"").getMatches();
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -100,10 +105,19 @@ public class EroProfileComGallery extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    /**
+     * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
+     */
+    public boolean isProxyRotationEnabledForLinkCrawler() {
+        return false;
+    }
+
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("eroprofile.com");
         Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
-        if (aa == null) { return false; }
+        if (aa == null) {
+            return false;
+        }
         try {
             ((jd.plugins.hoster.EroProfileCom) hostPlugin).login(this.br, aa, force);
         } catch (final PluginException e) {

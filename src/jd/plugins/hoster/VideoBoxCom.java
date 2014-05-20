@@ -56,6 +56,13 @@ public class VideoBoxCom extends PluginForHost {
 
     private String DLLINK = null;
 
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -99,7 +106,9 @@ public class VideoBoxCom extends PluginForHost {
 
     private String getSpecifiedQuality(final String quality) throws PluginException {
         final String qualityInfo = br.getRegex("(\"res\" : \"" + quality + "\".*?)\\}").getMatch(0);
-        if (qualityInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (qualityInfo == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return qualityInfo;
     }
 
@@ -108,7 +117,9 @@ public class VideoBoxCom extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
@@ -124,7 +135,9 @@ public class VideoBoxCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -138,7 +151,9 @@ public class VideoBoxCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.postPage("https://www.videobox.com/j_spring_security_check", "_spring_security_remember_me=true&login-page=login-page&j_username=" + Encoding.urlEncode(account.getUser()) + "&j_password=" + Encoding.urlEncode(account.getPass()) + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
-                if (br.getCookie(MAINPAGE, "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null || br.getURL().contains("videobox.com/auth-fail")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "SPRING_SECURITY_REMEMBER_ME_COOKIE") == null || br.getURL().contains("videobox.com/auth-fail")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);

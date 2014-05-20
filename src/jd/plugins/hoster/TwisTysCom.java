@@ -77,7 +77,9 @@ public class TwisTysCom extends PluginForHost {
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
         throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
     }
@@ -120,17 +122,28 @@ public class TwisTysCom extends PluginForHost {
                             ret = false;
                         }
                     }
-                    if (ret) return;
+                    if (ret) {
+                        return;
+                    }
                 }
                 br.getPage("http://members.twistys.com/home/");
                 br.postPage("http://members.twistys.com/access/loginsubmit", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&Submit1.x=94&Submit1.y=25");
                 String sessionCookie = br.getCookie(MAINPAGE, "PHPSESSID");
-                if (sessionCookie == null || !br.containsHTML("Logout of Twistys")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (sessionCookie == null || !br.containsHTML("Logout of Twistys")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 MAP.put(account, sessionCookie);
             } catch (final PluginException e) {
                 MAP.remove(account);
             }
         }
+    }
+
+    /**
+     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
+     */
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return false;
     }
 
     @Override

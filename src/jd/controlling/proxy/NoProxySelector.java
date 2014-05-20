@@ -45,7 +45,7 @@ public class NoProxySelector extends SingleBasicProxySelectorImpl {
         if (obj == null || obj.getClass() != NoProxySelector.class) {
             return false;
         }
-        return getProxy().equals(((SingleDirectGatewaySelector) obj).getProxy());
+        return getProxy().equals(((NoProxySelector) obj).getProxy());
     }
 
     @Override
