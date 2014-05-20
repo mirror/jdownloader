@@ -156,6 +156,7 @@ plugins_errors_hosteroffline=Tárhely nem elérhető?
 plugins_errors_hosterproblem=Probléma a szolgáltatóval?
 plugins_errors_nointernetconn=Nincs kapcsolat az internettel?
 plugins_errors_proxy_auth=Proxy hitelesítés sikertelen
+plugins_errors_proxy_connection=Proxy kapcsolat sikertelen
 plugins_errors_wrongpassword=Hibás jelszó
 reconnectmanager_wizard=Újracsatlakozás varázsló
 settings_sidebar_tooltip_enable_extension=Engedélyezése/Tiltása ennek a kiterjesztésnek
