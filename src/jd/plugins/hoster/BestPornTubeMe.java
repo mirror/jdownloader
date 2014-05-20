@@ -1,5 +1,7 @@
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -63,15 +65,24 @@ public class BestPornTubeMe extends PluginForHost {
 
             }
             br.followConnection();
+        } catch (IOException e) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Gone Error");
+            }
+            throw e;
         } finally {
             br.disconnect();
         }
 
-        if (br.getURL().contains("videos/?m=e")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("videos/?m=e")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String file_name = br.getRegex("<title>([^<>]*?)- Free Porn Videos and Sex Movies at bestporntube\\.me Kinky Porn Tube</title>").getMatch(0);
         dlUrl = br.getRegex("'file': '(.*?)',").getMatch(0); // get_file/1/00094dfde0d2e240adaf674be13efbd8/0/59/59.flv/";
 
-        if (file_name == null || dlUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (file_name == null || dlUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setFinalFileName(file_name.replace("\"", "'") + ".flv");
 
         return AvailableStatus.TRUE;
@@ -80,7 +91,9 @@ public class BestPornTubeMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestVideo(link);
-        if (dlUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dlUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
