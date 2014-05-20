@@ -117,7 +117,7 @@ public class TbCmV2 extends PluginForDecrypt {
     private YoutubeConfig   cfg;
     private YoutubeHelper   cachedHelper;
 
-    public class VariantInfo implements Comparable<VariantInfo> {
+    public static class VariantInfo implements Comparable<VariantInfo> {
 
         protected final YoutubeVariantInterface variant;
         private final YoutubeStreamData         audioStream;
