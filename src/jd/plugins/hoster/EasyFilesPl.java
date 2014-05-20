@@ -45,6 +45,7 @@ import org.jdownloader.plugins.PluginTaskID;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easyfiles.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class EasyFilesPl extends PluginForHost {
 
+    // IMPORTANT: Sync ALL: EasyFilesPl, TurbixPl, Rapids24Pl
     // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
@@ -118,9 +119,11 @@ public class EasyFilesPl extends PluginForHost {
         ac.setTrafficLeft(SizeFormatter.getSize(Long.parseLong(information[0]) + "MB"));
         try {
             int maxSim = Integer.parseInt(information[0]);
-            if (maxSim > 20)
+            if (maxSim > 20) {
                 maxSim = 20;
-            else if (maxSim < 0) maxSim = 1;
+            } else if (maxSim < 0) {
+                maxSim = 1;
+            }
             maxPrem.set(maxSim);
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
@@ -216,9 +219,13 @@ public class EasyFilesPl extends PluginForHost {
                         return;
                     }
                     long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
-                    if (currentTimeDifference <= 0) return;
+                    if (currentTimeDifference <= 0) {
+                        return;
+                    }
                     long speed = (current * 10000) / currentTimeDifference;
-                    if (speed == 0) return;
+                    if (speed == 0) {
+                        return;
+                    }
                     long eta = ((total - current) * 10000) / speed;
                     this.setETA(eta);
                 }
@@ -245,7 +252,9 @@ public class EasyFilesPl extends PluginForHost {
                         wait(5000);
                     }
                 }
-                if (link.getDownloadLinkController().isAborting()) throw new PluginException(LinkStatus.ERROR_RETRY);
+                if (link.getDownloadLinkController().isAborting()) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             } catch (InterruptedException e) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } finally {
@@ -314,7 +323,9 @@ public class EasyFilesPl extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -359,7 +370,9 @@ public class EasyFilesPl extends PluginForHost {
 
     private void updatestatuscode() {
         String statusCode = null;
-        if (br.toString().matches("\\d{2}.+") && !br.containsHTML(":")) statusCode = br.getRegex("(\\d{2})").getMatch(0);
+        if (br.toString().matches("\\d{2}.+") && !br.containsHTML(":")) {
+            statusCode = br.getRegex("(\\d{2})").getMatch(0);
+        }
         if (statusCode != null) {
             STATUSCODE = Integer.parseInt(statusCode);
         } else {
@@ -483,6 +496,11 @@ public class EasyFilesPl extends PluginForHost {
                 statusMessage = "No command given";
                 logger.info("STATUSCODE: " + STATUSCODE + ": " + "No command given -> Everything is allright");
                 break;
+            case 25:
+                /* Account permanently banned -> disable account */
+                statusMessage = "Account permanently banned";
+                logger.info("STATUSCODE: " + STATUSCODE + ": " + "Account permanently banned -> Disabling account");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 600:
                 /* No accounts available for host -> disable host */
                 statusMessage = "No accounts available for current host";
@@ -513,7 +531,9 @@ public class EasyFilesPl extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -536,7 +556,9 @@ public class EasyFilesPl extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }

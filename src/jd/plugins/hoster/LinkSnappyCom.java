@@ -159,18 +159,22 @@ public class LinkSnappyCom extends PluginForHost {
             dailyLimitReached();
         }
         final String hostText = br.getRegex("\\{\"status\":\"OK\",\"error\":false,\"return\":\\{(.*?\\})\\}\\}").getMatch(0);
-        if (hostText == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (hostText == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String[] hosts = new Regex(hostText, "([a-z0-9\\-]+\\.){1,}([a-z]{2,4})[^\\}]+\\}").getColumn(-1);
         for (final String hostInfo : hosts) {
             final String host = new Regex(hostInfo, "[^\"]+").getMatch(-1);
             final String status = getJson(hostInfo, "Status");
             final String quota = getJson(hostInfo, "Quota");
             final String usage = getJson(hostInfo, "Usage");
-            if (!"1".equals(status))
+            if (!"1".equals(status)) {
                 continue;
-            else if (usage != null && (quota != null && !"unlimited".equals(quota)) && (Long.parseLong(quota) - Long.parseLong(usage)) >= 0)
+            } else if (usage != null && (quota != null && !"unlimited".equals(quota)) && (Long.parseLong(quota) - Long.parseLong(usage)) >= 0) {
                 continue;
-            else if (host != null) supportedHosts.add(host);
+            } else if (host != null) {
+                supportedHosts.add(host);
+            }
         }
         return ac;
     }
@@ -250,31 +254,47 @@ public class LinkSnappyCom extends PluginForHost {
         if (dllink != null) {
             /* Same as done in the other handling but without further errorhandling - we checked the direct link and it should work! */
             int maxChunks = MAX_CHUNKS;
-            if (currentLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+            if (currentLink.getBooleanProperty(NOCHUNKS, false)) {
+                maxChunks = 1;
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, currentLink, dllink, true, maxChunks);
         } else {
             if (use_api) {
                 for (int i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
                     getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
-                    if (!attemptDownload()) continue;
+                    if (!attemptDownload()) {
+                        continue;
+                    }
                     break;
                 }
             } else {
                 this.site_login(account, false);
                 for (int i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
+                    /*
+                     * IMPORTANT: Even though we're on the site here, https is not forced here - last time I checked it did not even work
+                     * via https (20.05.14)
+                     */
                     getPageSecure("http://gen.linksnappy.com/genAPI.php?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&genLinks=%7B%22link%22+%3A+%22" + Encoding.urlEncode(link.getDownloadURL()) + "%22%2C+%22type%22+%3A+%22%22%2C+%22linkpass%22+%3A+%22%22%2C+%22fmt%22+%3A+%2235%22%2C+%22ytcountry%22+%3A+%22usa%22%7D&_=" + System.currentTimeMillis());
                     if (br.containsHTML("\"status\": \"Error\"")) {
-                        if (br.containsHTML("\"error\": \"Unauthorized\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI problems 'Unauthorized'!\r\nPlease try again later!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        if (br.containsHTML("\"error\": \"Unauthorized\"")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI problems 'Unauthorized'!\r\nPlease try again later!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnknown problem!\r\nPlease try again later!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    if (!attemptDownload()) continue;
+                    if (!attemptDownload()) {
+                        continue;
+                    }
                     break;
                 }
             }
         }
 
-        if (dl.getConnection().getResponseCode() == 503) stupidServerError();
-        if (dl.getConnection().getResponseCode() == 999) dailyLimitReached();
+        if (dl.getConnection().getResponseCode() == 503) {
+            stupidServerError();
+        }
+        if (dl.getConnection().getResponseCode() == 999) {
+            dailyLimitReached();
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.info("linksnappy.com: Unknown download error");
@@ -294,7 +314,9 @@ public class LinkSnappyCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -311,8 +333,10 @@ public class LinkSnappyCom extends PluginForHost {
                 if (!use_api && this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history)) {
                     boolean history_deleted = false;
                     try {
-                        br.getPage("http://linksnappy.com/includes/deletelinks.php?id=all");
-                        if (br.toString().trim().equals("OK")) history_deleted = true;
+                        br.getPage("https://linksnappy.com/includes/deletelinks.php?id=all");
+                        if (br.toString().trim().equals("OK")) {
+                            history_deleted = true;
+                        }
                     } catch (final Throwable e) {
                         history_deleted = false;
                     }
@@ -371,7 +395,9 @@ public class LinkSnappyCom extends PluginForHost {
             }
         }
         int maxChunks = MAX_CHUNKS;
-        if (currentLink.getBooleanProperty(NOCHUNKS, false)) maxChunks = 1;
+        if (currentLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
 
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, currentLink, dllink, true, maxChunks);
@@ -399,7 +425,9 @@ public class LinkSnappyCom extends PluginForHost {
         /** Load cookies */
         br.setCookiesExclusive(true);
         getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
-        if (br.containsHTML("\"status\":\"ERROR\"")) return false;
+        if (br.containsHTML("\"status\":\"ERROR\"")) {
+            return false;
+        }
         return true;
     }
 
@@ -411,7 +439,9 @@ public class LinkSnappyCom extends PluginForHost {
             br.setCookie(COOKIE_HOST, "lang", "en");
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {
@@ -424,11 +454,15 @@ public class LinkSnappyCom extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            postPageSecure("http://www.linksnappy.com/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null) return false;
+            postPageSecure("https://linksnappy.com/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.getCookie(COOKIE_HOST, "lseSavePass") == null) {
+                return false;
+            }
             /* Valid account --> Check if the account type is supported */
-            br.getPage("http://linksnappy.com/myaccount");
-            if (br.containsHTML("<strong>Account Type:</strong>[\t\n\r ]+Free")) return false;
+            br.getPage("https://linksnappy.com/myaccount");
+            if (br.containsHTML("<strong>Account Type:</strong>[\t\n\r ]+Free")) {
+                return false;
+            }
             /* Unsupported account type? */
             if (!br.containsHTML("<strong>Account Type:</strong>[\t\n\r ]+Lifetime")) {
                 final String lang = System.getProperty("user.language");
@@ -458,7 +492,9 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -481,7 +517,9 @@ public class LinkSnappyCom extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -517,7 +555,9 @@ public class LinkSnappyCom extends PluginForHost {
             failed = false;
             break;
         }
-        if (failed) stupidServerError();
+        if (failed) {
+            stupidServerError();
+        }
     }
 
     private void postPageSecure(final String page, final String postData) throws IOException, PluginException {
@@ -540,13 +580,17 @@ public class LinkSnappyCom extends PluginForHost {
             failed = false;
             break;
         }
-        if (failed) stupidServerError();
+        if (failed) {
+            stupidServerError();
+        }
     }
 
     // Max 10 retries via link, 5 seconds waittime between = max 2 minutes trying -> Then deactivate host
     private void stupidServerError() throws PluginException {
         // it's only null on login
-        if (currentLink == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 1000l);
+        if (currentLink == null) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 1000l);
+        }
         int timesFailed = currentLink.getIntegerProperty("timesfailedlinksnappy", 0);
         if (timesFailed <= 9) {
             timesFailed++;
@@ -599,8 +643,12 @@ public class LinkSnappyCom extends PluginForHost {
 
     private String getJson(final String source, final String key) {
         String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + key + "\":\"([^<>\"]*?)\"").getMatch(0);
-        if (result != null) result = result.replaceAll("\\\\/", "/");
+        if (result == null) {
+            result = new Regex(source, "\"" + key + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
+        if (result != null) {
+            result = result.replaceAll("\\\\/", "/");
+        }
         return result;
     }
 
