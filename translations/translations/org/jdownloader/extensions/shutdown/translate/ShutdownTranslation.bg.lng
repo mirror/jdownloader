@@ -24,5 +24,5 @@ jd_plugins_optional_jdshutdown=Изключване на JD
 jd_plugins_optional_jdshutdown_description=Автоматично изключи, спри, заспи вашето PC или затвори JDownloader когато изтеглянията завършат.
 lit_shutdownn=Изключване
 show_admin=Изискват се администраторски права за настройката на JDownloader за заспиване или режим на готовност
-shutdown_toggle_action_disabled=Разреши изключването след изтеглянията
-shutdown_toggle_action_enabled=Забрани изключването след изтеглянията
+shutdown_toggle_action_disabled2=Изключи след Изтегляния
+shutdown_toggle_action_enabled2=Изключи след Изтегляния
