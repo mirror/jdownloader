@@ -34,7 +34,6 @@ import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -67,15 +66,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     /**
      * signals that abort request has been received
      */
-    private AtomicBoolean                          abortFlag        = new AtomicBoolean(false);
-    /**
-     * signals the activity of this SingleDownloadController
-     */
-    private AtomicBoolean                          activityFlag     = new AtomicBoolean(true);
+    private final AtomicBoolean                          abortFlag        = new AtomicBoolean(false);
+
     /**
      * signals the activity of the plugin in use
      */
-    private NullsafeAtomicReference<PluginForHost> processingPlugin = new NullsafeAtomicReference<PluginForHost>(null);
+    private final NullsafeAtomicReference<PluginForHost> processingPlugin = new NullsafeAtomicReference<PluginForHost>(null);
 
     public static class WaitingQueueItem {
         public final AtomicLong                          lastStartTimestamp      = new AtomicLong(System.currentTimeMillis());
@@ -87,23 +83,23 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         }
     }
 
-    private static final HashMap<String, WaitingQueueItem> LAST_DOWNLOAD_START_TIMESTAMPS = new HashMap<String, WaitingQueueItem>();
+    private static final HashMap<String, WaitingQueueItem>  LAST_DOWNLOAD_START_TIMESTAMPS = new HashMap<String, WaitingQueueItem>();
 
-    private final DownloadLink                             downloadLink;
-    private final Account                                  account;
+    private final DownloadLink                              downloadLink;
+    private final Account                                   account;
 
-    private long                                           startTimestamp                 = -1;
-    private final DownloadLinkCandidate                    candidate;
-    private final DownloadWatchDog                         watchDog;
-    private final LinkStatus                               linkStatus;
+    private long                                            startTimestamp                 = -1;
+    private final DownloadLinkCandidate                     candidate;
+    private final DownloadWatchDog                          watchDog;
+    private final LinkStatus                                linkStatus;
 
-    private HashResult                                     hashResult                     = null;
-    private CopyOnWriteArrayList<DownloadWatchDogJob>      jobsAfterDetach                = new CopyOnWriteArrayList<DownloadWatchDogJob>();
-    private WaitingQueueItem                               queueItem;
-    private final long                                     sizeBefore;
-    private ArrayList<PluginSubTask>                       tasks;
-    private HTTPProxy                                      usedProxy;
-    private boolean                                        resumed;
+    private HashResult                                      hashResult                     = null;
+    private final CopyOnWriteArrayList<DownloadWatchDogJob> jobsAfterDetach                = new CopyOnWriteArrayList<DownloadWatchDogJob>();
+    private final WaitingQueueItem                          queueItem;
+    private final long                                      sizeBefore;
+    private final ArrayList<PluginSubTask>                  tasks;
+    private volatile HTTPProxy                              usedProxy;
+    private boolean                                         resumed;
 
     public WaitingQueueItem getQueueItem() {
         return queueItem;
@@ -169,18 +165,17 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         this.sizeBefore = Math.max(0, downloadLink.getView().getBytesLoaded());
         this.account = candidate.getCachedAccount().getAccount();
         String host = candidate.getCachedAccount().getPlugin().getHost();
-        queueItem = LAST_DOWNLOAD_START_TIMESTAMPS.get(host);
+        WaitingQueueItem queueItem = LAST_DOWNLOAD_START_TIMESTAMPS.get(host);
         if (queueItem == null) {
             queueItem = new WaitingQueueItem();
             LAST_DOWNLOAD_START_TIMESTAMPS.put(host, queueItem);
         }
         queueItem.queueLinks.add(downloadLink);
+        this.queueItem = queueItem;
         linkStatus = new LinkStatus(downloadLink);
         setName("Download: " + downloadLink.getView().getDisplayName() + "_" + downloadLink.getHost());
-
     }
 
-    @Override
     public boolean isDebug() {
         return true;
     }
@@ -199,11 +194,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
     }
 
     public boolean isActive() {
-        return activityFlag.get();
+        return processingPlugin.isValueSet();
     }
 
     protected void abort() {
-        if (activityFlag.get() == false) {
+        if (!isActive()) {
             /* this singleDownloadController is no longer active */
             return;
         }
@@ -213,7 +208,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
                 @Override
                 public void run() {
-                    while (activityFlag.get()) {
+                    while (isActive() && SingleDownloadController.this.isAlive()) {
                         try {
                             DownloadInterface dli = getDownloadInstance();
                             if (dli != null) {
@@ -222,12 +217,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                         } catch (final Throwable e) {
                             LogSource.exception(logger, e);
                         }
-                        synchronized (activityFlag) {
-                            if (activityFlag.get() == false) {
+                        synchronized (processingPlugin) {
+                            if (!isActive() || SingleDownloadController.this.isAlive() == false) {
                                 return;
                             }
                             try {
-                                activityFlag.wait(1000);
+                                processingPlugin.wait(1000);
                             } catch (final InterruptedException e) {
                             }
                         }
@@ -245,11 +240,19 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         return candidate.getLink();
     }
 
+    private PluginForHost finalizeProcessingPlugin() {
+        final PluginForHost plugin;
+        synchronized (processingPlugin) {
+            plugin = processingPlugin.getAndClear();
+            processingPlugin.notifyAll();
+        }
+        return plugin;
+    }
+
     private SingleDownloadReturnState download(LogSource downloadLogger) {
         PluginForHost livePlugin = null;
         PluginForHost originalPlugin = null;
         boolean validateChallenge = true;
-
         try {
             logger.info("DownloadCandidate: " + candidate);
             final PluginClassLoaderChild cl;
@@ -257,31 +260,15 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             livePlugin = candidate.getCachedAccount().getPlugin().getLazyP().newInstance(cl);
 
             livePlugin.setBrowser(new Browser() {
-                @Override
-                public void setProxy(HTTPProxy proxy) {
-                    super.setProxy(proxy);
-
-                }
 
                 @Override
                 protected List<HTTPProxy> selectProxies(String url) throws IOException {
                     List<HTTPProxy> ret = super.selectProxies(url);
 
                     usedProxy = ret.get(0);
-
                     return ret;
                 }
 
-                @Override
-                public void setProxySelector(ProxySelectorInterface proxy) {
-                    super.setProxySelector(proxy);
-
-                }
-                // @Override
-                // public void setProxy(HTTPProxy proxy) {
-                // super.setProxy(proxy);
-                // proxyRef.set(proxy);
-                // }
             });
             livePlugin.setLogger(downloadLogger);
             livePlugin.setDownloadLink(downloadLink);
@@ -338,22 +325,24 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                 livePlugin.init();
 
                 livePlugin.handle(downloadLink, account);
-
-                SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, processingPlugin.getAndSet(null));
+                SingleDownloadReturnState ret = new SingleDownloadReturnState(this, null, finalizeProcessingPlugin());
                 return ret;
-            } catch (BrowserException browserException) {
+            } catch (final BrowserException browserException) {
                 downloadLogger.log(browserException);
                 try {
-                    browserException.getConnection().disconnect();
+                    if (browserException.getRequest() != null) {
+                        browserException.getRequest().disconnect();
+                    }
                 } catch (final Throwable ignore) {
                 }
-                if (browserException.getException() != null) {
-                    throw browserException.getException();
+                if (browserException.getCause() != null) {
+                    throw browserException.getCause();
                 } else {
                     throw browserException;
                 }
             }
         } catch (Throwable e) {
+            final PluginForHost plugin = finalizeProcessingPlugin();
             if (e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
                 validateChallenge = false;
             } else if (e instanceof SkipReasonException && ((SkipReasonException) e).getSkipReason() == SkipReason.CAPTCHA) {
@@ -375,18 +364,16 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             }
             downloadLogger.info("Exception: ");
             downloadLogger.log(e);
-            SingleDownloadReturnState ret = new SingleDownloadReturnState(this, e, processingPlugin.getAndSet(null));
+            SingleDownloadReturnState ret = new SingleDownloadReturnState(this, e, plugin);
             return ret;
         } finally {
             queueItem.queueLinks.remove(downloadLink);
-
             DownloadInterface di = livePlugin.getDownloadInterface();
             resumed = di != null && di.isResumedDownload();
             downloadLink.setLivePlugin(null);
             finalizePlugins(downloadLogger, originalPlugin, livePlugin, validateChallenge);
             if (downloadLink.getFilePackage() != null) {
                 // if we remove link without stopping them.. the filepackage may be the default package already here.
-
                 FilePackageView view = downloadLink.getFilePackage().getView();
                 if (view != null) {
                     view.requestUpdate();
@@ -472,10 +459,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         } finally {
             task.reopen();
             task.close();
-            synchronized (activityFlag) {
-                activityFlag.set(false);
-                activityFlag.notifyAll();
-            }
+            finalizeProcessingPlugin();
         }
     }
 
@@ -493,25 +477,21 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
     public void addTask(PluginSubTask subTask) {
         synchronized (tasks) {
-
             tasks.add(subTask);
         }
     }
 
     public void onDetach(DownloadLink downloadLink) {
         DownloadController.getInstance().getEventSender().removeListener(this);
-
         synchronized (tasks) {
             for (PluginSubTask t : tasks) {
                 t.close();
-
             }
         }
     }
 
     public void onAttach(DownloadLink downloadLink) {
         DownloadController.getInstance().getEventSender().addListener(this, true);
-
     }
 
     @Override
@@ -569,7 +549,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         } catch (Throwable e) {
             // TODO: handle exception
         }
-
     }
 
     @Override
