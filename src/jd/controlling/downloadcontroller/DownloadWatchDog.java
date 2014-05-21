@@ -709,7 +709,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 continue candidateLoop;
             }
             for (DownloadLinkCandidate candidate : allCandidates) {
-                if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && (CaptchaSettings.MODE.SKIP_ALL.equals(selector.getSession().getCaptchaMode()) || CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate.getLink())))) {
+                if (candidate.getCachedAccount().hasCaptcha(candidate.getLink()) && (CaptchaSettings.MODE.SKIP_ALL.equals(selector.getSession().getCaptchaMode()) || CaptchaBlackList.getInstance().matches(new PrePluginCheckDummyChallenge(candidate.getLink())) != null)) {
                     selector.addExcluded(candidate, new DownloadLinkCandidateResult(SkipReason.CAPTCHA, null, null));
                 } else {
                     final List<AbstractProxySelectorImpl> proxies = selector.getProxies(candidate);
