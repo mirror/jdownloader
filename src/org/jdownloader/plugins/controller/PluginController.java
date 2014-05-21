@@ -14,7 +14,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class PluginController<T extends Plugin> {
-
+    
     @SuppressWarnings("unchecked")
     public java.util.List<PluginInfo<T>> scan(String hosterpath, HashMap<String, ArrayList<LazyPlugin>> pluginCache) {
         boolean ownLogger = false;
@@ -35,7 +35,11 @@ public class PluginController<T extends Plugin> {
             Thread.currentThread().setContextClassLoader(cl);
             final File[] files = path.listFiles(new FilenameFilter() {
                 public boolean accept(final File dir, final String name) {
-                    return name.endsWith(".class") && !name.contains("$");
+                    if (!name.endsWith(".class") || name.contains("$")) return false;
+                    if (name.startsWith("YoutubeDashConfigPanel")) return false;
+                    if (name.startsWith("RTMPDownload")) return false;
+                    if (name.startsWith("YoutubeHelper")) return false;
+                    return true;
                 }
             });
             final String pkg = hosterpath.replace("/", ".");
@@ -55,8 +59,6 @@ public class PluginController<T extends Plugin> {
                                         retPlugin.setLazyPlugin(plugin);
                                         ret.add(retPlugin);
                                         validCachedPlugins = true;
-                                    } else {
-                                        int wtf = 1;
                                     }
                                 }
                             }
@@ -81,6 +83,6 @@ public class PluginController<T extends Plugin> {
             Thread.currentThread().setContextClassLoader(oldCL);
         }
         return ret;
-
+        
     }
 }

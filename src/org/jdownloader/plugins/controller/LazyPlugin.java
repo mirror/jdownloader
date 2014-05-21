@@ -14,42 +14,42 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.controlling.packagecontroller.ModifyLock;
 import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
 import org.appwork.utils.Application;
+import org.appwork.utils.ModifyLock;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
-
+    
     private class ConstructorInfo<T> {
         protected Constructor<T> constructor;
         protected Object[]       constructorParameters;
     }
-
+    
     private static final class SharedPluginObjects extends HashMap<String, Object> {
         protected final long version;
-
+        
         private SharedPluginObjects(final long version) {
             this.version = version;
         }
-
+        
         protected final ModifyLock modifyLock = new ModifyLock();
-
+        
         protected final ModifyLock getModifyLock() {
             return modifyLock;
         }
-
+        
         protected final long getVersion() {
             return version;
         }
     }
-
+    
     private static final HashMap<String, SharedPluginObjects> sharedPluginObjectsPool = new HashMap<String, SharedPluginObjects>();
     private static final HashSet<String>                      immutableClasses        = new HashSet<String>();
     static {
@@ -64,7 +64,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         immutableClasses.add("java.math.BigInteger");
         immutableClasses.add("java.math.BigDecimal");
     }
-
+    
     private static final Object[]                             EMPTY                   = new Object[] {};
     private long                                              version;
     private String                                            pattern;
@@ -76,49 +76,49 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
     private final Object[]                                    CONSTRUCTOR;
     private final PluginWrapper                               pluginWrapper;
     private static final LogSource                            LOGGER                  = LogController.getInstance().getCurrentClassLogger();
-
+    
     public String getMainClassFilename() {
         return mainClassFilename;
     }
-
+    
     public String getMainClassSHA256() {
         return mainClassSHA256;
     }
-
+    
     public long getMainClassLastModified() {
         return mainClassLastModified;
     }
-
+    
     protected String mainClassSHA256       = null;
     protected long   mainClassLastModified = -1;
     protected int    interfaceVersion      = -1;
-
+    
     public int getInterfaceVersion() {
         return interfaceVersion;
     }
-
+    
     public void setInterfaceVersion(int interfaceVersion) {
         this.interfaceVersion = interfaceVersion;
     }
-
+    
     protected volatile WeakReference<T>                    prototypeInstance;
     /* PluginClassLoaderChild used to load this Class */
     private volatile WeakReference<PluginClassLoaderChild> classLoader;
-
+    
     public PluginWrapper getPluginWrapper() {
         return pluginWrapper;
     }
-
+    
     private String configInterface = null;
-
+    
     public String getConfigInterface() {
         return configInterface;
     }
-
+    
     public void setConfigInterface(String configInterface) {
         this.configInterface = configInterface;
     }
-
+    
     public LazyPlugin(String patternString, String className, String configInterface, String displayName, long version, Class<T> class1, PluginClassLoaderChild classLoader) {
         pattern = patternString;
         this.configInterface = configInterface;
@@ -140,24 +140,24 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         };
         CONSTRUCTOR = new Object[] { pluginWrapper };
     }
-
+    
     public long getVersion() {
         return version;
     }
-
+    
     public String getDisplayName() {
         return displayName;
     }
-
+    
     public String getClassname() {
         return className;
     }
-
+    
     protected void setClassname(String classname) {
         this.mainClassLastModified = -1;
         this.className = classname;
     }
-
+    
     public synchronized void setPluginClass(Class<T> pluginClass) {
         if (pluginClass == null) {
             this.pluginClass = null;
@@ -165,7 +165,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             this.pluginClass = new WeakReference<Class<T>>(pluginClass);
         }
     }
-
+    
     public boolean canHandle(String url) {
         final Pattern pattern = this.getPattern();
         if (pattern != null) {
@@ -175,7 +175,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             return false;
         }
     }
-
+    
     public synchronized T getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         if (classLoader != null && classLoader != getClassLoader(false)) {
             /* create new Instance because we have different classLoader given than ProtoTypeClassLoader */
@@ -188,7 +188,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         if (ret != null) prototypeInstance = new WeakReference<T>(ret);
         return ret;
     }
-
+    
     public T newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         T ret = null;
         try {
@@ -317,7 +317,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         }
         return ret;
     }
-
+    
     private ConstructorInfo<T> getConstructor(Class<T> clazz) throws UpdateRequiredClassNotFoundException {
         ConstructorInfo<T> ret = new ConstructorInfo<T>();
         try {
@@ -336,7 +336,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         }
         return null;
     }
-
+    
     public void handleUpdateRequiredClassNotFoundException(Throwable e, boolean ThrowWTF) throws UpdateRequiredClassNotFoundException {
         if (e != null) {
             if (e instanceof NoClassDefFoundError) {
@@ -353,7 +353,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             if (ThrowWTF) throw new WTFException(e);
         }
     }
-
+    
     @SuppressWarnings("unchecked")
     protected synchronized Class<T> getPluginClass(PluginClassLoaderChild classLoader) {
         if (classLoader != null && classLoader != getClassLoader(false)) {
@@ -377,15 +377,15 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         if (ret != null) pluginClass = new WeakReference<Class<T>>(ret);
         return ret;
     }
-
+    
     public String getPatternSource() {
         return pattern;
     }
-
+    
     public void setPatternSource(String pattern) {
         this.pattern = pattern;
     }
-
+    
     public Pattern getPattern() {
         Pattern ret = null;
         MinTimeWeakReference<Pattern> lCompiledPattern = compiledPattern;
@@ -393,7 +393,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         compiledPattern = new MinTimeWeakReference<Pattern>(ret = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE), 60 * 1000l, displayName, this);
         return ret;
     }
-
+    
     @Override
     public synchronized void onMinTimeWeakReferenceCleanup(MinTimeWeakReference<?> minTimeWeakReference) {
         if (minTimeWeakReference == compiledPattern) {
@@ -402,7 +402,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             classLoader = null;
         }
     }
-
+    
     /**
      * @return the classLoader
      */
@@ -414,7 +414,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         setClassLoader(ret);
         return ret;
     }
-
+    
     public synchronized void setClassLoader(PluginClassLoaderChild cl) {
         if (cl == null) {
             classLoader = null;

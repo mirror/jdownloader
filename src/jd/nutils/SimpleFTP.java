@@ -73,22 +73,22 @@ public class SimpleFTP {
     private String           host;
     private Logger           logger             = LogController.CL();
     private String           latestResponseLine = null;
-
+    
     public Logger getLogger() {
         return logger;
     }
-
+    
     public void setLogger(Logger logger) {
         if (logger == null) logger = LogController.CL();
         this.logger = logger;
     }
-
+    
     /**
      * Create an instance of SimpleFTP.
      */
     public SimpleFTP() {
     }
-
+    
     /**
      * Enter ASCII mode for sending text files. This is usually the default mode. Make sure you use binary mode if you are sending images or other binary data,
      * as ASCII mode is likely to corrupt them.
@@ -105,7 +105,7 @@ public class SimpleFTP {
             throw e;
         }
     }
-
+    
     /**
      * Enter binary mode for sending binary files.
      */
@@ -121,7 +121,7 @@ public class SimpleFTP {
             throw e;
         }
     }
-
+    
     /**
      * returns current value of 'binarymode'.
      * 
@@ -133,21 +133,21 @@ public class SimpleFTP {
         else
             return false;
     }
-
+    
     /**
      * Connects to the default port of an FTP server and logs in as anonymous/anonymous.
      */
     public void connect(String host) throws IOException {
         connect(host, 21);
     }
-
+    
     /**
      * Connects to an FTP server and logs in as anonymous/anonymous.
      */
     public void connect(String host, int port) throws IOException {
         connect(host, port, "anonymous", "anonymous");
     }
-
+    
     /**
      * Connects to an FTP server and logs in with the supplied username and password.
      */
@@ -165,17 +165,17 @@ public class SimpleFTP {
         response = readLines(new int[] { 230 }, "SimpleFTP was unable to log in with the supplied password: ");
         sendLine("PWD");
         while ((response = readLine()).startsWith("230") || response.charAt(0) >= '9' || response.charAt(0) <= '0') {
-
+            
         }
         //
         if (!response.startsWith("257 ")) { throw new IOException("PWD COmmand not understood " + response); }
-
+        
         // Response: 257 "/" is the current directory
         dir = new Regex(response, "\"(.*)\"").getMatch(0);
         // dir = dir;
         // Now logged in.
     }
-
+    
     /**
      * Changes the working directory (like cd). Returns true if successful.RELATIVE!!!
      */
@@ -198,7 +198,7 @@ public class SimpleFTP {
             throw e;
         }
     }
-
+    
     /**
      * Disconnects from the FTP server.
      */
@@ -215,7 +215,7 @@ public class SimpleFTP {
             }
         }
     }
-
+    
     /**
      * Returns the working directory of the FTP server it is connected to.
      */
@@ -232,23 +232,23 @@ public class SimpleFTP {
         }
         return dir;
     }
-
+    
     public String readLine() throws IOException {
         String line = reader.readLine();
         logger.info(host + " < " + line);
         return line;
     }
-
+    
     public boolean wasLatestOperationNotPermitted() {
         String latest = getLastestResponseLine();
         if (latest != null) return latest.toLowerCase(Locale.ENGLISH).contains("operation not permitted");
         return false;
     }
-
+    
     public String getLastestResponseLine() {
         return latestResponseLine;
     }
-
+    
     /* read response and check if it matches expectcode */
     public String readLines(int expectcodes[], String errormsg) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -289,7 +289,7 @@ public class SimpleFTP {
             if (error && !multilineResponse) throw new IOException((errormsg != null ? errormsg : "revieved unexpected responsecode ") + sb.toString());
         }
     }
-
+    
     public boolean remove(String string) throws IOException {
         sendLine("DELE " + string);
         try {
@@ -301,7 +301,7 @@ public class SimpleFTP {
             throw e;
         }
     }
-
+    
     public boolean rename(String from, String to) throws IOException {
         sendLine("RNFR " + from);
         try {
@@ -319,7 +319,7 @@ public class SimpleFTP {
         }
         return true;
     }
-
+    
     public long getSize(String file) throws IOException {
         sendLine("SIZE " + file);
         String Size = null;
@@ -332,7 +332,7 @@ public class SimpleFTP {
         String[] split = Size.split(" ");
         return Long.parseLong(split[1].trim());
     }
-
+    
     /**
      * Sends a raw command to the FTP server.
      */
@@ -347,7 +347,7 @@ public class SimpleFTP {
             throw e;
         }
     }
-
+    
     /**
      * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to avoid NAT or firewall
      * problems at the client end.
@@ -357,7 +357,7 @@ public class SimpleFTP {
         String filename = file.getName();
         return stor(new FileInputStream(file), filename);
     }
-
+    
     /**
      * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to avoid NAT or firewall
      * problems at the client end.
@@ -404,9 +404,9 @@ public class SimpleFTP {
         } finally {
             input.close();
         }
-
+        
     }
-
+    
     public void cancelTransfer() {
         try {
             this.sendLine("ABOR");
@@ -415,7 +415,7 @@ public class SimpleFTP {
             LogSource.exception(logger, e);
         }
     }
-
+    
     public InetSocketAddress pasv() throws IOException {
         sendLine("PASV");
         String response = readLines(new int[] { 227 }, "SimpleFTP could not request passive mode:");
@@ -437,7 +437,7 @@ public class SimpleFTP {
         }
         throw new IOException("SimpleFTP received bad data link information: " + response);
     }
-
+    
     /**
      * creates directories
      * 
@@ -450,7 +450,7 @@ public class SimpleFTP {
         String cw = cw2;
         try {
             cw = cw.replace("\\", "/");
-
+            
             String[] cwdirs = cw.split("[\\\\|/]{1}");
             String[] dirdirs = dir.split("[\\\\|/]{1}");
             int i;
@@ -471,35 +471,35 @@ public class SimpleFTP {
                     cwd("/");
                     continue;
                 }
-
+                
                 sendLine("MKD " + d);
                 String response = readLine();
                 if (!response.startsWith("257 ") && !response.startsWith("550 ")) {
-
+                
                 return false;
-
+                
                 }
-
+                
                 cwd(d);
             }
             return true;
         } finally {
-
+            
             this.cwd(tmp);
         }
-
+        
     }
-
+    
     public boolean cwdAdd(String cw) throws IOException {
         if (cw.startsWith("/") || cw.startsWith("\\")) cw = cw.substring(1);
         return cwd(dir + cw);
-
+        
     }
-
+    
     public String getDir() {
         return dir;
     }
-
+    
     public void download(String filename, File file, boolean restart) throws IOException {
         long resumePosition = 0;
         if (!binarymode) logger.info("Warning: Download in ASCII mode may fail!");
@@ -590,15 +590,15 @@ public class SimpleFTP {
             shutDownSocket(dataSocket);
         }
     }
-
+    
     public Socket getSocket() {
         return socket;
     }
-
+    
     public void download(String filename, File file) throws IOException {
         download(filename, file, false);
     }
-
+    
     public void shutDownSocket(Socket dataSocket) {
         try {
             dataSocket.shutdownOutput();
@@ -613,7 +613,7 @@ public class SimpleFTP {
         } catch (Throwable e) {
         }
     }
-
+    
     /**
      * returns permissionmask, ?, user?, group?, size?, date, name
      * 
@@ -651,7 +651,7 @@ public class SimpleFTP {
         }
         return matches;
     }
-
+    
     /**
      * permissionmask, ?, user?, group?, size?, date, name
      * 
@@ -669,7 +669,7 @@ public class SimpleFTP {
         }
         return null;
     }
-
+    
     /**
      * COnnect to the url.does not change directory
      * 
@@ -704,8 +704,10 @@ public class SimpleFTP {
                     if (ret == null) throw e;
                     connect(host, port, ret[0], ret[1]);
                 }
+                return;
             }
+            throw e;
         }
     }
-
+    
 }

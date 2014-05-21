@@ -2333,6 +2333,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable/Disable Captcha Dialogs. (Check our SilentMode)" })
     String CaptchaDialogsToogleAction_createTooltip_();
 
+    @Default(lngs = { "en" }, values = { "Enable/Disable captcha handling" })
+    String CaptchaMode_createTooltip_();
+
     @Default(lngs = { "en" }, values = { "Auto Reconnect" })
     String AutoReconnectToggleAction_getNameWhenDisabled_();
 

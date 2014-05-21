@@ -12,10 +12,10 @@ import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.ModifyLock;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -28,16 +28,16 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledLinkFactory extends CrawledLinkArchiveFile implements ArchiveFactory {
-
+    
     public CrawledLinkFactory(CrawledLink l) {
         super(l);
-
+        
     }
-
+    
     private CrawledLink getFirstLink() {
         return getLinks().get(0);
     }
-
+    
     private CrawledLink getFirstLink(Archive archive) {
         if (archive.getFirstArchiveFile() instanceof CrawledLinkArchiveFile) { return ((CrawledLinkArchiveFile) archive.getFirstArchiveFile()).getLinks().get(0); }
         for (ArchiveFile af : archive.getArchiveFiles()) {
@@ -45,7 +45,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         throw new WTFException("Archive should always have at least one link");
     }
-
+    
     public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
@@ -77,14 +77,14 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return ret;
     }
-
+    
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {
         return new HashSet<String>();
     }
-
+    
     public void fireArchiveAddedToQueue(Archive archive) {
     }
-
+    
     public String createDefaultExtractToPath(Archive archive) {
         try {
             CrawledLink firstLink = getFirstLink(archive);
@@ -93,12 +93,12 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return null;
     }
-
+    
     public String createExtractSubPath(String path, Archive archive) {
         CrawledLink link = getFirstLink(archive);
         try {
-            CrawledPackage fp = link.getParentNode();
             if (path.contains(PACKAGENAME)) {
+                CrawledPackage fp = link.getParentNode();
                 String packageName = CrossSystem.alleviatePathParts(fp.getName());
                 if (!StringUtils.isEmpty(packageName)) {
                     path = path.replace(PACKAGENAME, packageName);
@@ -154,15 +154,15 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return null;
     }
-
+    
     public Archive createArchive() {
         return new Archive(this);
     }
-
+    
     public File toFile(String path) {
         return new File(path);
     }
-
+    
     @Override
     public File getFolder() {
         try {
@@ -171,9 +171,9 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             return new File(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         }
     }
-
+    
     private String id;
-
+    
     @Override
     public String getID() {
         if (id != null) return id;
@@ -183,7 +183,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return id;
     }
-
+    
     private String getIDFromFile(CrawledLinkArchiveFile file) {
         for (CrawledLink link : file.getLinks()) {
             String id = link.getDownloadLink().getArchiveID();
@@ -191,7 +191,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
         return null;
     }
-
+    
     @Override
     public void onArchiveFinished(Archive archive) {
         String id = getID();
@@ -228,12 +228,12 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             archive.getSettings().setPasswords(new ArrayList<String>(pws));
         }
     }
-
+    
     @Override
     public BooleanStatus getDefaultAutoExtract() {
         CrawledLink first = getLinks().get(0);
         if (first.hasArchiveInfo()) return first.getArchiveInfo().getAutoExtract();
         return BooleanStatus.UNSET;
     }
-
+    
 }

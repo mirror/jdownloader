@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.TaskQueue;
@@ -35,11 +34,6 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
             icon = new AbstractIcon(IconKey.ICON_HELP, 18);
         }
 
-        // @Override
-        // public Icon getIcon(Object requestor) {
-        // return super.getIcon(requestor);
-        // }
-
         @Override
         public String getMessage(Object requestor) {
             if (requestor instanceof ETAColumn) {
@@ -53,18 +47,6 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
             return PluginTaskID.DECRYPTING;
         }
 
-        // public void done() {
-
-        // switch (link.getAvailableStatus()) {
-        // case FALSE:
-        //
-        // case TRUE:
-        //
-        // case UNCHECKABLE:
-        //
-        // case UNCHECKED:
-        // }
-        // }
     }
 
     private static final long serialVersionUID = 6821943398259956694L;
@@ -81,11 +63,12 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
             return;
         }
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            private final Object LOCK = new Object();
 
             @Override
             protected Void run() throws RuntimeException {
                 List<?> children = getSelection().getChildren();
-                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
+                final List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
                 final HashMap<DownloadLink, PluginProgress> pluginProgresses = new HashMap<DownloadLink, PluginProgress>();
                 final HashMap<DownloadLink, LinkCheckProgress> newPLuginProgresses = new HashMap<DownloadLink, LinkCheckProgress>();
                 for (Object l : children) {
@@ -93,33 +76,31 @@ public class CheckStatusAction extends CustomizableTableContextAppAction {
                         checkableLinks.add(((CheckableLink) l));
                     }
                     if (l instanceof DownloadLink) {
-                        PluginProgress old = null;
-                        try {
-                            LinkCheckProgress newProgress;
-                            pluginProgresses.put(((DownloadLink) l), ((DownloadLink) l).getPluginProgress());
-                            old = ((DownloadLink) l).setPluginProgress(newProgress = new LinkCheckProgress(((DownloadLink) l)));
-                            newPLuginProgresses.put(((DownloadLink) l), newProgress);
-
-                        } finally {
-                            // downloadLink.compareAndSetPluginProgress(progress, old);
-                        }
+                        DownloadLink link = (DownloadLink) l;
+                        final LinkCheckProgress newProgress = new LinkCheckProgress(link);
+                        PluginProgress oldProgress = link.setPluginProgress(newProgress);
+                        pluginProgresses.put(link, oldProgress);
+                        newPLuginProgresses.put(link, newProgress);
                     }
                 }
-                final HashSet<CheckableLink> set = new HashSet<CheckableLink>(checkableLinks);
                 LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
                 linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CheckableLink>() {
 
                     @Override
-                    public void linkCheckDone(CheckableLink link) {
-                        set.remove(link);
-                        if (link instanceof DownloadLink) {
-                            // newPLuginProgresses.get(link).done();
-                            ((DownloadLink) link).compareAndSetPluginProgress(newPLuginProgresses.get(link), pluginProgresses.get(link));
+                    public void linkCheckDone(CheckableLink l) {
+                        if (l instanceof DownloadLink) {
+                            DownloadLink link = (DownloadLink) l;
+                            final PluginProgress oldProgress;
+                            final PluginProgress newProgress;
+                            synchronized (LOCK) {
+                                newProgress = newPLuginProgresses.remove(link);
+                                oldProgress = pluginProgresses.remove(link);
+                            }
+                            link.compareAndSetPluginProgress(newProgress, oldProgress);
                         }
                     }
                 });
                 linkChecker.check(checkableLinks);
-
                 return null;
             }
         });

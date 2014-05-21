@@ -18,6 +18,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.Application;
+import org.appwork.utils.ModifyLock;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -29,24 +30,24 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
-
+    
     private static final Object                                           INSTANCELOCK      = new Object();
     private static volatile MinTimeWeakReference<CrawlerPluginController> INSTANCE          = null;
     private static final AtomicBoolean                                    CACHE_INVALIDATED = new AtomicBoolean(false);
-
+    private final ModifyLock                                              lock              = new ModifyLock();
+    
     public static boolean isCacheInvalidated() {
         return CACHE_INVALIDATED.get();
     }
-
+    
     public static void invalidateCache() {
         CACHE_INVALIDATED.set(true);
     }
-
+    
     protected static void validateCache() {
         CACHE_INVALIDATED.set(false);
-        FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS), null);
     }
-
+    
     /**
      * get the only existing instance of HostPluginController. This is a singleton
      * 
@@ -64,13 +65,13 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
         return ret;
     }
-
+    
     private volatile List<LazyCrawlerPlugin> list;
-
+    
     private String getCache() {
         return "tmp/crawler.ejson";
     }
-
+    
     /**
      * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      * 
@@ -78,7 +79,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     private CrawlerPluginController() {
         list = null;
     }
-
+    
     public synchronized List<LazyCrawlerPlugin> init(boolean noCache) {
         synchronized (INSTANCELOCK) {
             List<LazyCrawlerPlugin> plugins = new ArrayList<LazyCrawlerPlugin>();
@@ -156,7 +157,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 Thread.currentThread().setContextClassLoader(oldClassLoader);
             }
             Comparator<LazyCrawlerPlugin> comp = new Comparator<LazyCrawlerPlugin>() {
-
+                
                 @Override
                 public int compare(LazyCrawlerPlugin o1, LazyCrawlerPlugin o2) {
                     if (o1.getInterfaceVersion() == o2.getInterfaceVersion()) return 0;
@@ -170,15 +171,21 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 plugin.setClassLoader(null);
             }
             list = plugins;
-
+            
             System.gc();
             return plugins;
         }
     }
-
+    
     private List<LazyCrawlerPlugin> loadFromCache() {
-        List<AbstractCrawlerPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
-        }, new ArrayList<AbstractCrawlerPlugin>());
+        final List<AbstractCrawlerPlugin> l;
+        boolean readL = lock.readLock();
+        try {
+            l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
+            }, new ArrayList<AbstractCrawlerPlugin>());
+        } finally {
+            lock.readUnlock(readL);
+        }
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(l.size());
         /* use this classLoader for all cached plugins to load */
         for (AbstractCrawlerPlugin ap : l) {
@@ -187,11 +194,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
         return ret;
     }
-
+    
     static public byte[] KEY = new byte[] { 0x01, 0x03, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
-
+    
     private List<LazyCrawlerPlugin> update(LogSource logger, HashMap<String, ArrayList<LazyPlugin>> pluginCache) throws MalformedURLException {
-        ArrayList<AbstractCrawlerPlugin> ret = new ArrayList<AbstractCrawlerPlugin>();
+        final ArrayList<AbstractCrawlerPlugin> ret = new ArrayList<AbstractCrawlerPlugin>();
         HashMap<String, ArrayList<LazyCrawlerPlugin>> ret2 = new HashMap<String, ArrayList<LazyCrawlerPlugin>>();
         for (PluginInfo<PluginForDecrypt> c : scan("jd/plugins/decrypter", pluginCache)) {
             if (c.getLazyPlugin() != null) {
@@ -305,23 +312,35 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                 logger.severe("@CrawlerPlugin missing:" + simpleName);
             }
         }
-        save(ret);
-        validateCache();
-        ArrayList<LazyCrawlerPlugin> retList = new ArrayList<LazyCrawlerPlugin>();
+        final ArrayList<LazyCrawlerPlugin> returnList = new ArrayList<LazyCrawlerPlugin>();
         for (ArrayList<LazyCrawlerPlugin> plugins : ret2.values()) {
-            retList.addAll(plugins);
+            returnList.addAll(plugins);
         }
-        return retList;
+        Thread saveThread = new Thread("@CrawlerPluginController") {
+            public void run() {
+                save(ret);
+                FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS), null);
+            };
+        };
+        saveThread.setDaemon(true);
+        saveThread.start();
+        validateCache();
+        return returnList;
     }
-
+    
     private void save(List<AbstractCrawlerPlugin> save) {
-        JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
+        lock.writeLock();
+        try {
+            JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
+        } finally {
+            lock.writeUnlock();
+        }
     }
-
+    
     public List<LazyCrawlerPlugin> list() {
         return ensureLoaded();
     }
-
+    
     /*
      * returns the list of available plugins
      * 
@@ -345,7 +364,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             }
         }
     }
-
+    
     public List<LazyCrawlerPlugin> ensureLoaded() {
         List<LazyCrawlerPlugin> localList = list;
         if (localList != null && isCacheInvalidated() == false) return localList;
@@ -355,7 +374,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             return init(isCacheInvalidated());
         }
     }
-
+    
     public LazyCrawlerPlugin get(String displayName) {
         List<LazyCrawlerPlugin> llist = ensureLoaded();
         for (LazyCrawlerPlugin plugin : llist) {
@@ -363,7 +382,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
         return null;
     }
-
+    
     public List<LazyCrawlerPlugin> getAll(String displayName) {
         ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
         List<LazyCrawlerPlugin> llist = ensureLoaded();
@@ -374,11 +393,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         }
         return ret;
     }
-
+    
     public static void invalidateCacheIfRequired() {
         if (Application.getTempResource(HostPluginController.TMP_INVALIDPLUGINS).exists()) {
             invalidateCache();
         }
     }
-
+    
 }

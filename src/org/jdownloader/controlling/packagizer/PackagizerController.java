@@ -45,32 +45,32 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     private ChangeEventSender                     eventSender;
     private java.util.List<PackagizerRuleWrapper> fileFilter;
     private java.util.List<PackagizerRuleWrapper> urlFilter;
-
+    
     public static final String                    ORGFILENAME    = "orgfilename";
     public static final String                    ORGFILETYPE    = "orgfiletype";
     public static final String                    HOSTER         = "hoster";
     public static final String                    SOURCE         = "source";
-
+    
     public static final String                    PACKAGENAME    = "packagename";
     public static final String                    SIMPLEDATE     = "simpledate";
-
+    
     private static final PackagizerController     INSTANCE       = new PackagizerController(false);
     public static final String                    ORGPACKAGENAME = "orgpackagename";
     private HashMap<String, PackagizerReplacer>   replacers      = new HashMap<String, PackagizerReplacer>();
     private boolean                               testInstance   = false;
-
+    
     public static PackagizerController getInstance() {
         return INSTANCE;
     }
-
+    
     public static PackagizerController createEmptyTestInstance() {
         return new PackagizerController(true);
     }
-
+    
     public boolean isTestInstance() {
         return testInstance;
     }
-
+    
     public PackagizerController(boolean testInstance) {
         this.testInstance = testInstance;
         eventSender = new ChangeEventSender();
@@ -89,7 +89,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             boolean subfolderFound = false;
             boolean revFileRule = false;
             for (PackagizerRule rule : list) {
-
+                
                 if (SubFolderByPackageRule.ID.equals(rule.getId())) {
                     SubFolderByPackageRule r;
                     if (!dupefinder.add(rule.getId())) continue;
@@ -97,7 +97,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     r.setEnabled(rule.isEnabled());
                     subfolderFound = true;
                     continue;
-
+                    
                 }
                 if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
                     DisableRevFilesPackageRule r;
@@ -106,7 +106,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     r.setEnabled(rule.isEnabled());
                     revFileRule = true;
                     continue;
-
+                    
                 }
                 if (!dupefinder.add(JSonStorage.serializeToJson(rule))) {
                     //
@@ -123,45 +123,45 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             list = newList;
         }
         update();
-
+        
         if (!isTestInstance()) {
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
+                
                 @Override
                 public void onShutdown(final ShutdownRequest shutdownRequest) {
                     synchronized (PackagizerController.this) {
                         if (config != null) config.setRuleList(list);
                     }
                 }
-
+                
                 @Override
                 public String toString() {
                     return "save packagizer...";
                 }
             });
-
+            
             FileCreationManager.getInstance().getEventSender().addListener(this);
         }
         addReplacer(new PackagizerReplacer() {
-
+            
             public String getID() {
                 return SIMPLEDATE;
             }
-
+            
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers == null) return input;
                 String format = modifiers;
                 String dateString = new SimpleDateFormat(format).format(new Date());
                 return Pattern.compile("<jd:simpledate:" + format + "/?>").matcher(input).replaceAll(dateString);
             }
-
+            
         });
         addReplacer(new PackagizerReplacer() {
-
+            
             public String getID() {
                 return SOURCE;
             }
-
+            
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers == null) return input;
                 int id = Integer.parseInt(modifiers);
@@ -178,27 +178,27 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
                 return txt;
             }
-
+            
         });
-
+        
         addReplacer(new PackagizerReplacer() {
-
+            
             private Pattern pat = Pattern.compile("<jd:orgfilename/?>");
-
+            
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers != null) { return Pattern.compile("<jd:orgfilename:" + modifiers + "/?>").matcher(input).replaceAll(new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]); }
                 return pat.matcher(input).replaceAll(link.getName());
             }
-
+            
             public String getID() {
                 return ORGFILENAME;
             }
-
+            
         });
         addReplacer(new PackagizerReplacer() {
-
+            
             private Pattern pat = Pattern.compile("<jd:" + ORGPACKAGENAME + "/?>");
-
+            
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 String packagename = null;
                 if (link != null && link.getParentNode() != null) {
@@ -216,31 +216,31 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
                 return pat.matcher(input).replaceAll(packagename);
             }
-
+            
             public String getID() {
                 return ORGPACKAGENAME;
             }
-
+            
         });
         addReplacer(new PackagizerReplacer() {
-
+            
             private Pattern pat = Pattern.compile("<jd:orgfiletype/?>");
-
+            
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 String fileType = new Regex(link.getName(), "\\.([0-9a-zA-Z]+)$").getMatch(0);
-
+                
                 if (modifiers != null) { return Pattern.compile("<jd:orgfiletype:" + modifiers + "/?>").matcher(input).replaceAll(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]); }
                 return pat.matcher(input).replaceAll(fileType);
             }
-
+            
             public String getID() {
                 return ORGFILETYPE;
             }
-
+            
         });
-
+        
         addReplacer(new PackagizerReplacer() {
-
+            
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers == null) return input;
                 int id = Integer.parseInt(modifiers);
@@ -251,14 +251,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
                 return input;
             }
-
+            
             public String getID() {
                 return HOSTER;
             }
-
+            
         });
+        
         addReplacer(new PackagizerReplacer() {
-
+            
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers == null) return input;
                 Object property = link.getDownloadLink().getProperty(modifiers);
@@ -267,46 +268,45 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 } else {
                     return Pattern.compile("<jd:prop:" + modifiers + "/?>").matcher(input).replaceAll(property.toString());
                 }
-
             }
-
+            
             public String getID() {
                 return "prop";
             }
-
+            
         });
     }
-
+    
     private void addReplacer(PackagizerReplacer replacer) {
         this.replacers.put(replacer.getID().toLowerCase(Locale.ENGLISH), replacer);
     }
-
+    
     public ChangeEventSender getEventSender() {
         return eventSender;
     }
-
+    
     public java.util.List<PackagizerRule> list() {
         synchronized (this) {
             return new ArrayList<PackagizerRule>(list);
         }
     }
-
+    
     public void add(PackagizerRule linkFilter) {
         if (linkFilter == null) return;
         synchronized (this) {
             HashSet<String> dupecheck = createDupeSet();
-
+            
             if (!linkFilter.isStaticRule()) {
                 if (dupecheck.add(JSonStorage.serializeToJson(linkFilter))) {
                     list.add(linkFilter);
                 }
             }
-
+            
             if (config != null) config.setRuleList(list);
         }
         update();
     }
-
+    
     public void setList(java.util.List<PackagizerRule> tableData) {
         synchronized (this) {
             list.clear();
@@ -315,13 +315,13 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         update();
     }
-
+    
     public void update() {
         if (isTestInstance()) {
             updateInternal();
         } else {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
+                
                 @Override
                 protected Void run() throws RuntimeException {
                     updateInternal();
@@ -330,7 +330,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             });
         }
     }
-
+    
     private void updateInternal() {
         // url filter only require the urls, and thus can be done
         // brefore
@@ -356,11 +356,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         this.urlFilter = urlFilter;
         getEventSender().fireEvent(new ChangeEvent(this));
     }
-
+    
     public void addAll(java.util.List<PackagizerRule> all) {
         if (all == null) return;
         synchronized (this) {
-
+            
             HashSet<String> dupecheck = createDupeSet();
             for (PackagizerRule rule : all) {
                 if (!rule.isStaticRule()) {
@@ -373,20 +373,20 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         update();
     }
-
+    
     private HashSet<String> createDupeSet() {
         HashSet<String> ret = new HashSet<String>();
         synchronized (this) {
             for (PackagizerRule rule : list) {
-
+                
                 ret.add(JSonStorage.serializeToJson(rule));
-
+                
             }
-
+            
         }
         return ret;
     }
-
+    
     public void remove(PackagizerRule lf) {
         if (lf == null) return;
         synchronized (this) {
@@ -395,7 +395,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         update();
     }
-
+    
     public void runByFile(CrawledLink link) {
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
@@ -411,23 +411,23 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
-
+                
                 if (!lgr.checkOrigin(link)) continue;
                 if (!lgr.checkSource(link)) continue;
                 if (!lgr.checkPackageName(link)) continue;
                 if (lgr.isRequiresLinkcheck()) {
                     if (!lgr.checkOnlineStatus(link)) continue;
                     if (!lgr.checkFileName(link)) continue;
-
+                    
                     if (!lgr.checkFileSize(link)) continue;
                     if (!lgr.checkFileType(link)) continue;
                 }
             }
             set(link, lgr);
         }
-
+        
     }
-
+    
     public void runByUrl(CrawledLink link) {
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         java.util.List<PackagizerRuleWrapper> lurlFilter = urlFilter;
@@ -437,7 +437,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             } catch (NoDownloadLinkException e) {
                 continue;
             }
-
+            
             try {
                 if (!lgr.checkPluginStatus(link)) continue;
             } catch (NoDownloadLinkException e) {
@@ -447,12 +447,12 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             if (!lgr.checkSource(link)) continue;
             set(link, lgr);
         }
-
+        
     }
-
+    
     public static String PACKAGETAG = "<jd:" + PackagizerController.PACKAGENAME + ">";
     public static String DATETAG    = "<jd:" + PackagizerController.SIMPLEDATE + ":";
-
+    
     public static String replaceDynamicTags(String input, String packageName) {
         String ret = input;
         if (StringUtils.isEmpty(ret)) return ret;
@@ -480,7 +480,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         return ret;
     }
-
+    
     protected void set(CrawledLink link, PackagizerRuleWrapper lgr) {
         PackageInfo dpi = link.getDesiredPackageInfo();
         if (dpi == null) dpi = new PackageInfo();
@@ -516,25 +516,25 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if ((b = lgr.getRule().isAutoExtractionEnabled()) != null) {
             /* customize auto extract */
             link.getArchiveInfo().setAutoExtract(b ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-
+            
         }
         if ((b = lgr.getRule().isAutoAddEnabled()) != null) {
             /* customize auto add */
-
+            
             link.setAutoConfirmEnabled(b);
-
+            
         }
         if ((b = lgr.getRule().isAutoStartEnabled()) != null) {
             /* customize auto start */
-
+            
             link.setAutoStartEnabled(b);
-
+            
         }
         if ((b = lgr.getRule().isAutoForcedStartEnabled()) != null) {
             /* customize auto start */
-
+            
             link.setForcedAutoStartEnabled(b);
-
+            
         }
         if (dpiSet && link.getDesiredPackageInfo() == null) {
             /* set desiredpackageinfo if not set yet */
@@ -542,7 +542,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             dpi.setPackagizerRuleMatched(true);
         }
     }
-
+    
     public String replaceVariables(String txt, CrawledLink link, PackagizerRuleWrapper lgr) {
         String[][] matches = new Regex(txt, "<jd:(.*?)(:(.+?))?>").getMatches();
         if (matches != null) {
@@ -557,13 +557,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         return txt;
     }
-
+    
     public void onNewFile(Object caller, File[] fileList) {
         if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
-        if (caller == this || caller instanceof PackagizerController) {
-            // do nothing - avoid rename loops here
-            return;
-        } else if (caller instanceof ExtractionController) {
+        if (caller instanceof ExtractionController && caller != this) {
             if (((ExtractionController) caller).getArchiv() instanceof DownloadLinkArchive) {
                 for (ArchiveFile af : ((ExtractionController) caller).getArchiv().getArchiveFiles()) {
                     if (af instanceof DownloadLinkArchiveFile) {
@@ -581,7 +578,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
         }
     }
-
+    
     private void runAfterExtraction(File f, CrawledLink link) {
         java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
         String originalFolder = f.getParent();
@@ -607,7 +604,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     if (lgr.isRequiresLinkcheck()) {
                         if (!lgr.checkOnlineStatus(link)) continue;
                         if (!lgr.checkFileName(link)) continue;
-
+                        
                         if (!lgr.checkFileSize(link)) continue;
                         if (!lgr.checkFileType(link)) continue;
                     }
@@ -647,5 +644,5 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
         }
     }
-
+    
 }

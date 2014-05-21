@@ -16,7 +16,6 @@
 
 package jd.controlling.downloadcontroller;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -85,31 +84,31 @@ import org.jdownloader.settings.GeneralSettings.CreateFolderTrigger;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class DownloadController extends PackageController<FilePackage, DownloadLink> {
-
+    
     private transient DownloadControllerEventSender eventSender         = new DownloadControllerEventSender();
-
+    
     private final DelayedRunnable                   downloadSaver;
     private final DelayedRunnable                   changesSaver;
     private final CopyOnWriteArrayList<File>        downloadLists       = new CopyOnWriteArrayList<File>();
-
+    
     public final ScheduledExecutorService           TIMINGQUEUE         = DelayedRunnable.getNewScheduledExecutorService();
-
+    
     public static SingleReachableState              DOWNLOADLIST_LOADED = new SingleReachableState("DOWNLOADLIST_COMPLETE");
-
+    
     private static DownloadController               INSTANCE            = new DownloadController();
-
+    
     private static Object                           SAVELOADLOCK        = new Object();
-
+    
     /**
      * darf erst nachdem der JDController init wurde, aufgerufen werden
      */
     public static DownloadController getInstance() {
         return INSTANCE;
     }
-
+    
     private DownloadController() {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
+            
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
                 boolean idle = DownloadWatchDog.getInstance().isIdle();
@@ -133,26 +132,26 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     saveDownloadLinks();
                 }
             }
-
+            
             @Override
             public String toString() {
                 return "ShutdownEvent: Save Downloadlist";
             }
         });
         changesSaver = new DelayedRunnable(TIMINGQUEUE, 5000l, 60000l) {
-
+            
             @Override
             public void run() {
                 if (allowSaving()) {
                     super.run();
                 }
             }
-
+            
             @Override
             public String getID() {
                 return "DownloadController:Save_Changes";
             }
-
+            
             @Override
             public void delayedrun() {
                 saveDownloadLinks();
@@ -165,123 +164,123 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     super.run();
                 }
             }
-
+            
             @Override
             public String getID() {
                 return "DownloadController:Save_Download";
             }
-
+            
             @Override
             public void delayedrun() {
                 saveDownloadLinks();
             }
-
+            
         };
         this.eventSender.addListener(new DownloadControllerListener() {
-
+            
             @Override
             public void onDownloadControllerAddedPackage(FilePackage pkg) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerStructureRefresh(FilePackage pkg) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerStructureRefresh() {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerStructureRefresh(AbstractNode node, Object param) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerRemovedPackage(FilePackage pkg) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerRemovedLinklist(List<DownloadLink> list) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerUpdatedData(DownloadLink downloadlink, DownloadLinkProperty property) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerUpdatedData(DownloadLink downloadlink, LinkStatusProperty property) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerUpdatedData(DownloadLink downloadlink) {
                 changesSaver.run();
             }
-
+            
             @Override
             public void onDownloadControllerUpdatedData(FilePackage pkg) {
                 changesSaver.run();
             }
         });
-
+        
         new AccountLoader().init();
     }
-
+    
     public void requestSaving() {
         downloadSaver.run();
     }
-
+    
     @Override
     protected void _controllerPackageNodeAdded(FilePackage pkg, QueuePriority priority) {
         eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
         eventSender.fireEvent(new DownloadControllerEventAddedPackage(pkg));
     }
-
+    
     public Eventsender<DownloadControllerListener, DownloadControllerEvent> getEventSender() {
         return eventSender;
     }
-
+    
     @Override
     protected void _controllerPackageNodeRemoved(FilePackage pkg, QueuePriority priority) {
         eventSender.fireEvent(new DownloadControllerEventRemovedPackage(pkg));
     }
-
+    
     @Override
     protected void _controllerParentlessLinks(final List<DownloadLink> links, QueuePriority priority) {
         eventSender.fireEvent(new DownloadControllerEventRemovedLinkList(new ArrayList<DownloadLink>(links)));
     }
-
+    
     @Override
     public void removePackage(FilePackage pkg) {
         super.removePackage(pkg);
     }
-
+    
     @Override
     public void removeChildren(List<DownloadLink> removechildren) {
         super.removeChildren(removechildren);
     }
-
+    
     @Override
     public void removeChildren(FilePackage pkg, List<DownloadLink> children, boolean doNotifyParentlessLinks) {
         super.removeChildren(pkg, children, doNotifyParentlessLinks);
     }
-
+    
     @Override
     protected void _controllerStructureChanged(QueuePriority priority) {
         eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
     }
-
+    
     /**
      * add all given FilePackages to this DownloadController at the beginning
      * 
@@ -290,7 +289,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public void addAll(final java.util.List<FilePackage> fps) {
         addAllAt(fps, 0);
     }
-
+    
     /**
      * add/move all given FilePackages at given Position
      * 
@@ -302,7 +301,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
     public void addAllAt(final java.util.List<FilePackage> fps, final int index) {
         if (fps != null && fps.size() > 0) {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
-
+                
                 @Override
                 protected Void run() throws RuntimeException {
                     int counter = index;
@@ -338,19 +337,19 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             });
         }
     }
-
+    
     public void addListener(final DownloadControllerListener l) {
         eventSender.addListener(l);
     }
-
+    
     public void addListener(final DownloadControllerListener l, boolean weak) {
         eventSender.addListener(l, weak);
     }
-
+    
     public ArrayList<FilePackage> getPackages() {
         return packages;
     }
-
+    
     /**
      * checks if this DownloadController contains a DownloadLink with given url
      * 
@@ -373,7 +372,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         }
         return false;
     }
-
+    
     private ArrayList<File> findAvailableDownloadLists() {
         logger.info("Collect Lists");
         File[] filesInCfg = Application.getResource("cfg/").listFiles();
@@ -398,13 +397,13 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         downloadLists.addAll(ret);
         return ret;
     }
-
+    
     /**
      * load all FilePackages/DownloadLinks from Database
      */
     public void initDownloadLinks() {
         QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-
+            
             @Override
             protected Void run() throws RuntimeException {
                 logger.info("Init DownloadList");
@@ -453,10 +452,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 }
                 return null;
             }
-
+            
         });
     }
-
+    
     private LinkedList<FilePackage> load(File file) {
         logger.info("Load List: " + file);
         synchronized (SAVELOADLOCK) {
@@ -571,7 +570,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             return ret;
         }
     }
-
+    
     /**
      * load FilePackages and DownloadLinks from database
      * 
@@ -588,7 +587,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         if (obj != null && obj instanceof ArrayList && (((java.util.List<?>) obj).size() == 0 || ((java.util.List<?>) obj).size() > 0 && ((java.util.List<?>) obj).get(0) instanceof FilePackage)) { return new LinkedList<FilePackage>((java.util.List<FilePackage>) obj); }
         throw new Exception("Linklist incompatible");
     }
-
+    
     public void processFinalLinkState(DownloadLink localLink) {
         FinalLinkState currentFinalLinkState = localLink.getFinalLinkState();
         if (currentFinalLinkState != null) {
@@ -598,7 +597,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             return;
         }
     }
-
+    
     public void preProcessFilePackages(LinkedList<FilePackage> fps, boolean allowCleanup) {
         if (fps == null || fps.size() == 0) return;
         final Iterator<FilePackage> iterator = fps.iterator();
@@ -643,11 +642,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
         }
     }
-
+    
     public void removeListener(final DownloadControllerListener l) {
         eventSender.removeListener(l);
     }
-
+    
     /**
      * saves List of FilePackages to given File as ZippedJSon
      * 
@@ -684,7 +683,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 FileOutputStream fos = null;
                 try {
                     fos = new FileOutputStream(file);
-                    zip = new ZipIOWriter(new BufferedOutputStream(fos, 128 * 1024));
+                    zip = new ZipIOWriter(fos);
                     int index = 0;
                     for (FilePackage pkg : packages) {
                         /* convert FilePackage to JSon */
@@ -728,7 +727,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     logger.log(e);
                 } finally {
                     try {
-                        fos.close();
+                        try {
+                            if (fos != null) fos.getChannel().force(true);
+                        } finally {
+                            if (fos != null) fos.close();
+                        }
                     } catch (final Throwable e) {
                     }
                     if (deleteFile && file.exists()) {
@@ -739,11 +742,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             return false;
         }
     }
-
+    
     private boolean allowSaving() {
         return DOWNLOADLIST_LOADED.isReached();
     }
-
+    
     /**
      * save the current FilePackages/DownloadLinks controlled by this DownloadController
      */
@@ -757,49 +760,49 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
         }
     }
-
+    
     @Override
     public void nodeUpdated(AbstractNode source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify, Object param) {
         super.nodeUpdated(source, notify, param);
         switch (notify) {
-        case PROPERTY_CHANCE:
-            if (param instanceof DownloadLinkProperty) {
-                DownloadLinkProperty eventPropery = (DownloadLinkProperty) param;
-                switch (eventPropery.getProperty()) {
-                case NAME:
-                case RESET:
-                case ENABLED:
-                case AVAILABILITY:
-                case PRIORITY:
-                case EXTRACTION_STATUS:
-                case PLUGIN_PROGRESS:
-                    eventPropery.getDownloadLink().getParentNode().getView().requestUpdate();
-                    break;
+            case PROPERTY_CHANCE:
+                if (param instanceof DownloadLinkProperty) {
+                    DownloadLinkProperty eventPropery = (DownloadLinkProperty) param;
+                    switch (eventPropery.getProperty()) {
+                        case NAME:
+                        case RESET:
+                        case ENABLED:
+                        case AVAILABILITY:
+                        case PRIORITY:
+                        case EXTRACTION_STATUS:
+                        case PLUGIN_PROGRESS:
+                            eventPropery.getDownloadLink().getParentNode().getView().requestUpdate();
+                            break;
+                    }
                 }
-            }
-            //
-            eventSender.fireEvent(new DownloadControllerEventDataUpdate(source, param));
-            break;
-        case STRUCTURE_CHANCE:
-            eventSender.fireEvent(new DownloadControllerEventStructureRefresh(source, param));
-            break;
+                //
+                eventSender.fireEvent(new DownloadControllerEventDataUpdate(source, param));
+                break;
+            case STRUCTURE_CHANCE:
+                eventSender.fireEvent(new DownloadControllerEventStructureRefresh(source, param));
+                break;
         }
-
+        
     }
-
+    
     @Override
     protected void _controllerPackageNodeStructureChanged(FilePackage pkg, QueuePriority priority) {
         eventSender.fireEvent(new DownloadControllerEventStructureRefresh(pkg));
     }
-
+    
     public void set(final DownloadLinkWalker filter) {
         DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
+            
             @Override
             public int returnMaxResults() {
                 return 0;
             }
-
+            
             @Override
             public boolean acceptNode(DownloadLink node) {
                 if (filter.accept(node.getFilePackage()) && filter.accept(node)) filter.handle(node);
@@ -807,13 +810,13 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
         });
     }
-
+    
     /**
      * @param fp
      */
     public static void removePackageIfFinished(final LogSource logger, final FilePackage fp) {
         getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
-
+            
             @Override
             protected Void run() throws RuntimeException {
                 if (new DownloadLinkAggregator(fp).isFinished()) {
@@ -830,10 +833,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
         });
     }
-
+    
     @Override
     public boolean hasNotificationListener() {
         return true;
     }
-
+    
 }

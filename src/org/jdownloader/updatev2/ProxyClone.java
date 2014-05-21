@@ -4,14 +4,14 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public class ProxyClone extends HTTPProxy {
 
-    private HTTPProxy orgReference;
+    private final HTTPProxy orgReference;
 
     public HTTPProxy getOrgReference() {
         return orgReference;
     }
 
     public ProxyClone(HTTPProxy p) {
-        this.cloneProxy(p);
+        super(p);
         this.orgReference = p;
     }
 

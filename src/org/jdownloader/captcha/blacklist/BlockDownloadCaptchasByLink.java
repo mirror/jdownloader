@@ -1,27 +1,35 @@
 package org.jdownloader.captcha.blacklist;
 
+import java.lang.ref.WeakReference;
+
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.captcha.v2.Challenge;
 
 public class BlockDownloadCaptchasByLink implements SessionBlackListEntry<Object> {
-
-    private DownloadLink downloadLink;
-
+    
+    private WeakReference<DownloadLink> downloadLink;
+    
     public BlockDownloadCaptchasByLink(DownloadLink downloadLink) {
-        this.downloadLink = downloadLink;
-
+        this.downloadLink = new WeakReference<DownloadLink>(downloadLink);
+        
     }
-
+    
     @Override
     public boolean canCleanUp() {
-        return CaptchaBlackList.getInstance().isWhitelisted(downloadLink);
+        DownloadLink link = getDownloadLink();
+        return link == null || CaptchaBlackList.getInstance().isWhitelisted(link);
     }
-
+    
+    private DownloadLink getDownloadLink() {
+        return downloadLink.get();
+    }
+    
     @Override
     public boolean matches(Challenge<Object> c) {
-        DownloadLink link = Challenge.getDownloadLink(c);
-        return downloadLink == link;
+        DownloadLink link = getDownloadLink();
+        if (link != null) return link == Challenge.getDownloadLink(c);
+        return false;
     }
-
+    
 }

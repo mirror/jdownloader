@@ -39,6 +39,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -275,6 +276,7 @@ public class UserIO {
         if (currentThread instanceof LinkCrawlerThread) {
             /* Crawler */
             final PluginForDecrypt plugin = (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
+            LogSource logger = plugin.getLogger();
             String title = titleTemplate;
             if (title == null) {
                 title = explain;
@@ -313,8 +315,10 @@ public class UserIO {
             try {
                 ChallengeResponseController.getInstance().handle(c);
             } catch (InterruptedException ie) {
+                LogSource.exception(logger, ie);
                 return null;
             } catch (SkipException e) {
+                LogSource.exception(logger, e);
                 switch (e.getSkipRequest()) {
                     case BLOCK_ALL_CAPTCHAS:
                         CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(plugin.getCrawler()));
