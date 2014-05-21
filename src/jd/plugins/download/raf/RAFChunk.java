@@ -15,6 +15,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -25,7 +26,6 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
-import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -322,7 +322,7 @@ public class RAFChunk extends Thread {
                     LogSource.exception(logger, e);
                     if (!isExternalyAborted()) {
                         logger.severe("Timeout detected");
-                        dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, null, LinkStatus.VALUE_TIMEOUT_REACHED));
+                        dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, null, LinkStatus.VALUE_NETWORK_IO_ERROR));
                     }
                     towrite = -1;
                     break;
@@ -387,7 +387,7 @@ public class RAFChunk extends Thread {
             } else if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                 LogSource.exception(logger, e);
                 logger.severe("Read timeout: network problems! (too many connections?, firewall/antivirus?)");
-                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_TIMEOUT_REACHED));
+                dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
             } else if (e instanceof SocketException) {
                 logger.info("Socket Exception: network problems!");
                 dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset(), 1000l * 60 * 5));

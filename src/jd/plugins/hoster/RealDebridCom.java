@@ -46,12 +46,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.HashInfo;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.downloadcore.v15.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
@@ -102,8 +102,9 @@ public class RealDebridCom extends PluginForHost {
             con = br.openGetConnection(dl.getDownloadURL());
             if (con.isContentDisposition()) {
                 dl.setProperty("directRD", true);
-                if (dl.getFinalFileName() == null)
+                if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
+                }
                 dl.setVerifiedFileSize(con.getLongContentLength());
                 dl.setAvailable(true);
                 return AvailableStatus.TRUE;
@@ -138,8 +139,9 @@ public class RealDebridCom extends PluginForHost {
                         return false;
                     } else if (lastUnavailable != null) {
                         unavailableMap.remove(downloadLink.getHost());
-                        if (unavailableMap.size() == 0)
+                        if (unavailableMap.size() == 0) {
                             hostUnavailableMap.remove(account);
+                        }
                     }
                 }
             }
@@ -179,8 +181,9 @@ public class RealDebridCom extends PluginForHost {
             DownloadLinkDownloadable downloadLinkDownloadable = new DownloadLinkDownloadable(link) {
                 @Override
                 public HashInfo getHashInfo() {
-                    if (swapped)
+                    if (swapped) {
                         return null;
+                    }
                     return super.getHashInfo();
                 }
             };
@@ -206,8 +209,9 @@ public class RealDebridCom extends PluginForHost {
                     br2.followConnection();
                     // $.msgbox("You can not download this file because you have exceeded your traffic on this hoster !", {type: "error"});
                     String msg = br2.getRegex("msgbox\\(\"([^\"]+)").getMatch(0);
-                    if (msg == null)
+                    if (msg == null) {
                         msg = br2.getRegex("<div class=\"alert alert-danger\">(.*?)</div>").getMatch(0);
+                    }
                     if (msg != null) {
                         link.getLinkStatus().setErrorMessage(msg);
                         logger.info(msg);
@@ -310,10 +314,12 @@ public class RealDebridCom extends PluginForHost {
                     }
                 }
             } catch (final Throwable e) {
-                if (e instanceof PluginException)
+                if (e instanceof PluginException) {
                     throw (PluginException) e;
-                if (e instanceof InterruptedException)
+                }
+                if (e instanceof InterruptedException) {
                     throw (InterruptedException) e;
+                }
                 logger.info("Download failed " + i + " of " + repeat);
                 sleep(3000, link);
                 LogSource.exception(logger, e);
@@ -331,8 +337,9 @@ public class RealDebridCom extends PluginForHost {
     }
 
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null)
+        if (downloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -363,8 +370,9 @@ public class RealDebridCom extends PluginForHost {
         String dllink = link.getDownloadURL();
         for (int retry = 0; retry < 3; retry++) {
             try {
-                if (retry != 0)
+                if (retry != 0) {
                     sleep(3000l, link);
+                }
                 br.getPage(mProt + mName + "/ajax/unrestrict.php?link=" + Encoding.urlEncode(dllink) + ((link.getStringProperty("pass", null) != null ? "&password=" + Encoding.urlEncode(link.getStringProperty("pass", null)) : "")));
                 if (br.containsHTML("\"error\":4,")) {
                     if (retry != 2) {
@@ -387,27 +395,30 @@ public class RealDebridCom extends PluginForHost {
                 }
                 break;
             } catch (SocketException e) {
-                if (retry == 2)
+                if (retry == 2) {
                     throw e;
+                }
             }
         }
         // we only ever generate one link at a time, we don't need String[]
         String genLnk = getJson("main_link");
         final String chunks = getJson("max_chunks");
         if (chunks != null) {
-            if ("-1".equals(chunks))
+            if ("-1".equals(chunks)) {
                 maxChunks = 0;
-            else if ("1".equals(chunks))
+            } else if ("1".equals(chunks)) {
                 resumes = false;
-            else
+            } else {
                 maxChunks = -Integer.parseInt(chunks);
+            }
         }
         // switcheroonie
         final String switcheroonie = getJson("swap");
         if (switcheroonie != null) {
             final boolean swap = Boolean.parseBoolean(switcheroonie);
-            if (swap)
+            if (swap) {
                 swapped = swap;
+            }
         }
         if (genLnk == null) {
             if (br.containsHTML("\"error\":1,")) {
@@ -505,8 +516,9 @@ public class RealDebridCom extends PluginForHost {
                 }
             }
         }
-        if (!genLnk.startsWith("http"))
+        if (!genLnk.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
+        }
         // no longer have issues, with above error handling. Next time download starts, error count starts from 0.
         link.setProperty("retry_913", Property.NULL);
         showMessage(link, "Task 2: Download begins!");
@@ -568,8 +580,9 @@ public class RealDebridCom extends PluginForHost {
                 }
                 break;
             } catch (SocketException e) {
-                if (retry == 2)
+                if (retry == 2) {
                     throw e;
+                }
                 Thread.sleep(1000);
             }
         }
@@ -595,8 +608,9 @@ public class RealDebridCom extends PluginForHost {
                     hostsSup = br.cloneBrowser().getPage(mProt + mName + "/api/hosters.php");
                     break;
                 } catch (SocketException e) {
-                    if (retry == 2)
+                    if (retry == 2) {
                         throw e;
+                    }
                     Thread.sleep(1000);
                 }
             }
@@ -648,8 +662,9 @@ public class RealDebridCom extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch)
+                if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -670,8 +685,9 @@ public class RealDebridCom extends PluginForHost {
                             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                             final String challenge = getJson("captcha_challenge");
                             final String image = getJson("captcha_url");
-                            if (challenge == null || image == null)
+                            if (challenge == null || image == null) {
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
                             rc.setChallenge(challenge);
                             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                             final String c = getCaptchaCode(cf, dummyLink);
@@ -699,10 +715,11 @@ public class RealDebridCom extends PluginForHost {
                                                 message += " - Melde Dich neu an. \r\n";
                                                 message += " - Vervollstaendige die Zwei-Faktor-Authentifizierung.\r\n";
                                                 message += "Nach dem erfolgreichen Login im Browser kannst du deinen Account wieder im JD hinzufuegen.\r\n\r\n";
-                                                if (xSystem)
+                                                if (xSystem) {
                                                     message += "Klicke -OK- (Oeffnet " + mName + " in deinem Webbrowser)\r\n";
-                                                else
+                                                } else {
                                                     message += new URL(mProt + mName);
+                                                }
                                             } else {
                                                 title = mName + " Two Factor Authentication Required";
                                                 message = "Please goto your Browser:\r\n";
@@ -710,14 +727,16 @@ public class RealDebridCom extends PluginForHost {
                                                 message += " - Re-Login. \r\n";
                                                 message += " - Complete Two Factor Authentication.\r\n";
                                                 message += "Once completed, you will be able to relogin within JDownloader.\r\n\r\n";
-                                                if (xSystem)
+                                                if (xSystem) {
                                                     message += "Click -OK- (Opens " + mName + " in your Browser)\r\n";
-                                                else
+                                                } else {
                                                     message += new URL(mProt + mName);
+                                                }
                                             }
                                             int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                                            if (xSystem && JOptionPane.OK_OPTION == result)
+                                            if (xSystem && JOptionPane.OK_OPTION == result) {
                                                 CrossSystem.openURL(new URL(mProt + mName));
+                                            }
                                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                                         } catch (Throwable e) {
                                         }
@@ -729,14 +748,16 @@ public class RealDebridCom extends PluginForHost {
                         }
                         break;
                     } catch (SocketException e) {
-                        if (retry == 2)
+                        if (retry == 2) {
                             throw e;
+                        }
                         Thread.sleep(1000);
                     }
                 }
 
-                if (br.getCookie(mProt + mName, "auth") == null)
+                if (br.getCookie(mProt + mName, "auth") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(mProt + mName);
@@ -788,10 +809,12 @@ public class RealDebridCom extends PluginForHost {
      * */
     private String getJson(final String source, final String key) {
         String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (result == null)
+        if (result == null) {
             result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        if (result != null)
+        }
+        if (result != null) {
             result = result.replaceAll("\\\\/", "/");
+        }
         return result;
     }
 

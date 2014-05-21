@@ -10,8 +10,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
-
-import org.jdownloader.downloadcore.v15.Downloadable;
+import jd.plugins.download.Downloadable;
 
 public class StreamingDownloadInterface extends DownloadInterface {
 
@@ -69,9 +68,13 @@ public class StreamingDownloadInterface extends DownloadInterface {
             request.getHeaders().remove("Range");
         }
         browser.connect(request);
-        if (this.plugin.getBrowser().isDebug()) plugin.getLogger().finest("\r\n" + request.printHeaders());
+        if (this.plugin.getBrowser().isDebug()) {
+            plugin.getLogger().finest("\r\n" + request.printHeaders());
+        }
         connection = request.getHttpConnection();
-        if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, BrowserAdapter.ERROR_REDIRECTED);
+        if (request.getLocation() != null) {
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, BrowserAdapter.ERROR_REDIRECTED);
+        }
         if (connection.getRange() != null) {
             /* we have a range response, let's use it */
             if (connection.getRange()[2] > 0) {

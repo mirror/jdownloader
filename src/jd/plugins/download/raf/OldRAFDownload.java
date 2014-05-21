@@ -45,14 +45,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashResult;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.downloadcore.v15.Downloadable;
-import org.jdownloader.downloadcore.v15.HashInfo;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -173,14 +174,14 @@ public class OldRAFDownload extends DownloadInterface {
         return ret;
     }
 
-    public void setFilesizeCheck(boolean b) {
-        this.downloadable.setFilesizeCheck(b);
-    }
-
     public URLConnectionAdapter connect() throws Exception {
-        if (connected.getAndSet(true) == true) throw new IllegalStateException("Already connected");
+        if (connected.getAndSet(true) == true) {
+            throw new IllegalStateException("Already connected");
+        }
         logger.finer("Connect...");
-        if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
+        if (request == null) {
+            throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
+        }
         boolean resumed = false;
         if (this.isRangeRequestSupported() && this.checkResumabled()) {
             /* we can continue to resume the download */
@@ -206,14 +207,20 @@ public class OldRAFDownload extends DownloadInterface {
                 request.getHeaders().remove("Range");
                 /* Workaround for rayfile.com */
                 if (this.downloadable.isServerComaptibleForByteRangeRequest()) {
-                    if ("rayfile.com".contains(this.downloadable.getHost())) request.getHeaders().put("Range", "bytes=" + (0) + "-");
+                    if ("rayfile.com".contains(this.downloadable.getHost())) {
+                        request.getHeaders().put("Range", "bytes=" + (0) + "-");
+                    }
                 }
                 browser.connect(request);
             }
         }
-        if (downloadable.isDebug()) logger.finest("\r\n" + request.printHeaders());
+        if (downloadable.isDebug()) {
+            logger.finest("\r\n" + request.printHeaders());
+        }
         connection = request.getHttpConnection();
-        if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, BrowserAdapter.ERROR_REDIRECTED);
+        if (request.getLocation() != null) {
+            throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, BrowserAdapter.ERROR_REDIRECTED);
+        }
         if (downloadable.getVerifiedFileSize() < 0) {
             /* only set DownloadSize if we do not have a verified FileSize yet */
             String contentType = connection.getContentType();
@@ -222,11 +229,9 @@ public class OldRAFDownload extends DownloadInterface {
             if (connection.getRange() != null && trustFileSize) {
                 /* we have a range response, let's use it */
                 if (connection.getRange()[2] > 0) {
-                    this.setFilesizeCheck(true);
                     this.downloadable.setDownloadTotalBytes(connection.getRange()[2]);
                 }
             } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK() && trustFileSize) {
-                this.setFilesizeCheck(true);
                 this.downloadable.setDownloadTotalBytes(connection.getLongContentLength());
             }
         }
@@ -266,7 +271,9 @@ public class OldRAFDownload extends DownloadInterface {
      */
     protected boolean checkResumabled() {
         long[] chunksP = downloadable.getChunksProgress();
-        if (chunksP == null || chunksP.length == 0) return false;
+        if (chunksP == null || chunksP.length == 0) {
+            return false;
+        }
         long fileSize = getFileSize();
         int chunks = chunksP.length;
         long part = fileSize / chunks;
@@ -275,8 +282,12 @@ public class OldRAFDownload extends DownloadInterface {
 
         for (int i = 0; i < chunks; i++) {
             dif = chunksP[i] - i * part;
-            if (dif < 0) return false;
-            if (chunksP[i] <= last) return false;
+            if (dif < 0) {
+                return false;
+            }
+            if (chunksP[i] <= last) {
+                return false;
+            }
             if (chunksP[i] >= (i + 1) * part) {
                 logger.info("Correct Chunk " + i + " : " + chunksP[i] + " to " + (((i + 1) * part) - 1));
                 chunksP[i] = ((i + 1) * part) - 1;
@@ -326,7 +337,9 @@ public class OldRAFDownload extends DownloadInterface {
         browser.connect(request);
         if (request.getHttpConnection().getResponseCode() == 416) {
             logger.warning("HTTP/1.1 416 Requested Range Not Satisfiable");
-            if (downloadable.isDebug()) logger.finest("\r\n" + request.printHeaders());
+            if (downloadable.isDebug()) {
+                logger.finest("\r\n" + request.printHeaders());
+            }
             throw new IllegalStateException("HTTP/1.1 416 Requested Range Not Satisfiable");
         } else if (request.getHttpConnection().getRange() == null) {
             if (openRangeRequested && rangeRequested == false) {
@@ -365,8 +378,10 @@ public class OldRAFDownload extends DownloadInterface {
      * Setzt im Downloadlink und PLugin die entsprechende Fehlerids
      */
     public boolean handleErrors() throws PluginException {
-        if (externalDownloadStop()) return false;
-        if (doFilesizeCheck() && getFileSize() > 0 && totalLinkBytesLoaded != getFileSize()) {
+        if (externalDownloadStop()) {
+            return false;
+        }
+        if (getFileSize() > 0 && totalLinkBytesLoaded != getFileSize()) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
                  * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
@@ -381,7 +396,9 @@ public class OldRAFDownload extends DownloadInterface {
             }
             logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
-            if (caughtPluginException != null) throw caughtPluginException;
+            if (caughtPluginException != null) {
+                throw caughtPluginException;
+            }
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
         }
         if (caughtPluginException == null) {
@@ -398,7 +415,9 @@ public class OldRAFDownload extends DownloadInterface {
     protected void error(PluginException pluginException) {
         synchronized (this) {
             /* if we recieved external stop, then we dont have to handle errors */
-            if (externalDownloadStop()) return;
+            if (externalDownloadStop()) {
+                return;
+            }
             LogSource.exception(logger, pluginException);
             if (caughtPluginException == null) {
                 caughtPluginException = pluginException;
@@ -442,7 +461,9 @@ public class OldRAFDownload extends DownloadInterface {
                 downloadable.setLinkStatus(LinkStatus.FINISHED);
                 return true;
             }
-            if (connected.get() == false) connect();
+            if (connected.get() == false) {
+                connect();
+            }
             if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
                 /* GZIP Encoding kann weder chunk noch resume */
                 /* hier dann auch den final filesize check prüfen */
@@ -460,14 +481,18 @@ public class OldRAFDownload extends DownloadInterface {
                 }
             }
             if (connection == null || !connection.isOK()) {
-                if (connection != null) logger.finest(connection.toString());
+                if (connection != null) {
+                    logger.finest(connection.toString());
+                }
                 try {
                     connection.disconnect();
                 } catch (final Throwable e) {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
-            if (connection.getHeaderField("Location") != null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (connection.getHeaderField("Location") != null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             if (downloadable.getVerifiedFileSize() < 0) {
                 /* we don't have a verified filesize yet, let's check if we have it now! */
@@ -498,7 +523,9 @@ public class OldRAFDownload extends DownloadInterface {
                                 throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                             }
                         }
-                    }, null)) { throw new SkipReasonException(SkipReason.INVALID_DESTINATION); }
+                    }, null)) {
+                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                    }
                     startTimeStamp = System.currentTimeMillis();
                     downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
                     downloadable.setPluginProgress(downloadPluginProgress);
@@ -520,11 +547,11 @@ public class OldRAFDownload extends DownloadInterface {
                 }
                 HashResult result = onChunksReady();
                 if (result != null) {
-                    logger.info(result.getType() + "-Check: " + (result.hashMatch() ? "ok" : "failed"));
+                    logger.info(result.getHashInfo().getType() + "-Check: " + (result.hashMatch() ? "ok" : "failed"));
                     if (result.hashMatch()) {
-                        downloadable.setLinkStatusText(_JDT._.system_download_doCRC2_success(result.getType()));
+                        downloadable.setLinkStatusText(_JDT._.system_download_doCRC2_success(result.getHashInfo().getType()));
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(result.getType()));
+                        throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(result.getHashInfo().getType()));
                     }
                 }
                 return handleErrors();
@@ -559,18 +586,24 @@ public class OldRAFDownload extends DownloadInterface {
      */
     protected long getFileSize() {
         long verifiedFileSize = downloadable.getVerifiedFileSize();
-        if (verifiedFileSize >= 0) return verifiedFileSize;
+        if (verifiedFileSize >= 0) {
+            return verifiedFileSize;
+        }
         if (connection != null) {
             if (connection.getRange() != null) {
                 /* we have a range response, let's use it */
-                if (connection.getRange()[2] > 0) return connection.getRange()[2];
+                if (connection.getRange()[2] > 0) {
+                    return connection.getRange()[2];
+                }
             }
             if (connection.getRequestProperty("Range") == null && connection.getLongContentLength() > 0 && connection.isOK()) {
                 /* we have no range request and connection is okay, so we can use the content-length */
                 return connection.getLongContentLength();
             }
         }
-        if (downloadable.getDownloadTotalBytes() > 0) return downloadable.getDownloadTotalBytes();
+        if (downloadable.getDownloadTotalBytes() > 0) {
+            return downloadable.getDownloadTotalBytes();
+        }
         return -1;
     }
 
@@ -586,10 +619,6 @@ public class OldRAFDownload extends DownloadInterface {
     @Override
     public boolean externalDownloadStop() {
         return abort.get();
-    }
-
-    protected boolean doFilesizeCheck() {
-        return this.downloadable.isDoFilesizeCheckEnabled();
     }
 
     /** signal that we stopped download external */
@@ -630,7 +659,9 @@ public class OldRAFDownload extends DownloadInterface {
      */
     protected void terminate(boolean forcedWaiting) {
         if (terminated.getAndSet(true) == false || forcedWaiting) {
-            if (!externalDownloadStop()) logger.severe("A critical Downloaderror occured. Terminate...");
+            if (!externalDownloadStop()) {
+                logger.severe("A critical Downloaderror occured. Terminate...");
+            }
             while (true) {
                 synchronized (chunks) {
                     boolean wait = false;
@@ -716,7 +747,9 @@ public class OldRAFDownload extends DownloadInterface {
         } finally {
             cleanupDownladInterface();
         }
-        if (!handleErrors()) return result;
+        if (!handleErrors()) {
+            return result;
+        }
         /* lets check the hash/crc/sfv */
         if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled() && downloadable.isHashCheckEnabled()) {
             synchronized (HASHCHECKLOCK) {
@@ -724,7 +757,7 @@ public class OldRAFDownload extends DownloadInterface {
                  * we only want one hashcheck running at the same time. many finished downloads can cause heavy diskusage here
                  */
                 HashInfo hashInfo = downloadable.getHashInfo();
-                result = downloadable.getHashResult(hashInfo);
+                result = downloadable.getHashResult(hashInfo, outputPartFile);
                 downloadable.setHashResult(result);
             }
         }
@@ -911,7 +944,9 @@ public class OldRAFDownload extends DownloadInterface {
 
     protected synchronized void addToTotalLinkBytesLoaded(long block, boolean updateLiveData) {
         totalLinkBytesLoaded += block;
-        if (updateLiveData) totalLinkBytesLoadedLive.addAndGet(block);
+        if (updateLiveData) {
+            totalLinkBytesLoadedLive.addAndGet(block);
+        }
     }
 
     protected boolean writeChunkBytes(RAFChunk chunk) {

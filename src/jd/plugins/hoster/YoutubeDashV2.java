@@ -61,7 +61,8 @@ import jd.plugins.components.YoutubeVariantInterface.VariantGroup;
 import jd.plugins.decrypter.YoutubeHelper;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.raf.HashResult;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
 import jd.utils.locale.JDL;
 
 import org.appwork.exceptions.WTFException;
@@ -95,7 +96,6 @@ import org.jdownloader.controlling.ffmpeg.FFmpeg;
 import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
@@ -1021,11 +1021,6 @@ public class YoutubeDashV2 extends PluginForHost {
                     return data.getDashAudioBytesLoaded();
                 }
 
-            }
-
-            @Override
-            public boolean isDoFilesizeCheckEnabled() {
-                return true;
             }
 
             @Override

@@ -21,10 +21,10 @@ import jd.http.Request;
 import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
 import jd.plugins.download.raf.OldRAFDownload;
 
 import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.settings.GeneralSettings;
 
 public class BrowserAdapter {
@@ -68,7 +68,9 @@ public class BrowserAdapter {
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
                     request = br.createRedirectFollowingRequest(request);
-                    if (originalUrl != null) request.getHeaders().put("Referer", originalUrl);
+                    if (originalUrl != null) {
+                        request.getHeaders().put("Referer", originalUrl);
+                    }
                     dl = getDownloadInterface(downloadable, request, resume, chunks);
                     downloadable.setDownloadInterface(dl);
                     try {
@@ -86,7 +88,9 @@ public class BrowserAdapter {
                         }
                     }
                 }
-                if (maxRedirects <= 0) { throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop"); }
+                if (maxRedirects <= 0) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop");
+                }
             } else {
                 throw handle;
             }

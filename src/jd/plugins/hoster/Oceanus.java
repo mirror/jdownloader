@@ -71,6 +71,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.Downloadable;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
@@ -82,7 +83,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
-import org.jdownloader.downloadcore.v15.Downloadable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -137,9 +137,13 @@ public class Oceanus extends PluginForHost {
     }
 
     private String getSERVERIP() throws Exception {
-        if (!StringUtils.isEmpty(SERVERIP.string)) return SERVERIP.string;
+        if (!StringUtils.isEmpty(SERVERIP.string)) {
+            return SERVERIP.string;
+        }
         synchronized (SERVERIP) {
-            if (!StringUtils.isEmpty(SERVERIP.string)) return SERVERIP.string;
+            if (!StringUtils.isEmpty(SERVERIP.string)) {
+                return SERVERIP.string;
+            }
             for (ManagementSystemEntry ms : new OceanusResolver(DEFAULT_RELAY_NODES).getManagementSystems()) {
                 try {
                     if (sendConnectReq(ms.getIpAddress())) {
@@ -155,9 +159,13 @@ public class Oceanus extends PluginForHost {
     }
 
     private void getMaxConcurrentDownloads() throws Exception {
-        if (CON_DL_UPDATED.get() == true) return;
+        if (CON_DL_UPDATED.get() == true) {
+            return;
+        }
         synchronized (CON_DL_UPDATED) {
-            if (CON_DL_UPDATED.get() == true) return;
+            if (CON_DL_UPDATED.get() == true) {
+                return;
+            }
             try {
                 Map<String, Object> concurrentDownResp = null;
                 concurrentDownResp = sendPostRequest(CON_DL_REQ, null, null);
@@ -317,14 +325,18 @@ public class Oceanus extends PluginForHost {
      */
     private Downloader prepareDownload(DownloadLink downloadLink) throws Exception {
         String downloadXML = sendDownloadRequest(getUploadID(downloadLink));
-        if (DOWNLOAD_INVALID.equals(downloadXML)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (DOWNLOAD_INVALID.equals(downloadXML)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!StringUtils.isEmpty(downloadXML)) {
             Downloader downloader = parseXML(downloadXML);
             dl = downloader;
             long fileID = getFileID(downloadLink);
             for (OCFile file : downloader.getFileList()) {
                 if (file.getFileId() == fileID) {
-                    if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(file.getName());
+                    if (downloadLink.getFinalFileName() == null) {
+                        downloadLink.setFinalFileName(file.getName());
+                    }
                     downloadLink.setDownloadSize(file.getSize());
                     downloadLink.setAvailable(true);
                     downloader.setDownloadLink(downloadLink);
@@ -360,7 +372,9 @@ public class Oceanus extends PluginForHost {
      */
     public String sendDownloadRequest(Long uploadID) throws Exception {
         Map<String, Object> response = sendPrepareDownloadReq(uploadID);
-        if (!StringUtils.isEmpty((String) response.get(PREP_DOWN_ERR))) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, (String) response.get(PREP_DOWN_ERR)); }
+        if (!StringUtils.isEmpty((String) response.get(PREP_DOWN_ERR))) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, (String) response.get(PREP_DOWN_ERR));
+        }
         return ((ArrayList<?>) response.get(PREP_DOWN)).get(0).toString();
     }
 
@@ -496,7 +510,9 @@ public class Oceanus extends PluginForHost {
             this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
             this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
             this.server = this.rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
-            if (this.challenge == null || this.server == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (this.challenge == null || this.server == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             this.captchaAddress = this.server + "image?c=" + this.challenge;
         }
 
@@ -510,7 +526,9 @@ public class Oceanus extends PluginForHost {
             this.rcBr.getPage("http://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
             this.challenge = this.rcBr.getRegex("Recaptcha\\.finish\\_reload\\(\\'(.*?)\\'\\, \\'image\\'\\)\\;").getMatch(0);
 
-            if (this.challenge == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (this.challenge == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             this.captchaAddress = this.server + "image?c=" + this.challenge;
         }
 
@@ -524,7 +542,9 @@ public class Oceanus extends PluginForHost {
         private Map<String, Object> verifyCaptcha(final String code, final long uploadID, final long userID) throws PluginException {
             Map<String, Object> respObj, jsObj;
             try {
-                if (this.challenge == null || code == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (this.challenge == null || code == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 jsObj = new HashMap<String, Object>();
                 jsObj.put("userID", userID);
                 jsObj.put("uploadID", uploadID);
@@ -550,13 +570,17 @@ public class Oceanus extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         String downloadXML = sendDownloadRequest(getUploadID(downloadLink));
-        if (DOWNLOAD_INVALID.equals(downloadXML)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (DOWNLOAD_INVALID.equals(downloadXML)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (!StringUtils.isEmpty(downloadXML)) {
             Downloader downloader = parseXML(downloadXML);
             long fileID = getFileID(downloadLink);
             for (OCFile file : downloader.getFileList()) {
                 if (file.getFileId() == fileID) {
-                    if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(file.getName());
+                    if (downloadLink.getFinalFileName() == null) {
+                        downloadLink.setFinalFileName(file.getName());
+                    }
                     downloadLink.setDownloadSize(file.getSize());
                     downloadLink.setAvailable(true);
                     return AvailableStatus.TRUE;
@@ -663,7 +687,9 @@ public class Oceanus extends PluginForHost {
                         outputCompleteFile = new File(downloadLink.getFileOutput());
                         partCompleteFile = new File(outputCompleteFile.getAbsolutePath() + ".part");
                         if (!outputCompleteFile.getParentFile().exists()) {
-                            if (outputCompleteFile.getParentFile().mkdirs() == false) { throw new IOException("Could not create " + outputCompleteFile); }
+                            if (outputCompleteFile.getParentFile().mkdirs() == false) {
+                                throw new IOException("Could not create " + outputCompleteFile);
+                            }
                         }
                         raf = new RandomAccessFile(partCompleteFile, "rw");
                         ArrayList<OceanusChunk> chunks = new ArrayList<OceanusChunk>(file.getChunks());
@@ -672,13 +698,19 @@ public class Oceanus extends PluginForHost {
 
                             @Override
                             public int compare(OceanusChunk o1, OceanusChunk o2) {
-                                if (o1.getOffset() < o2.getOffset()) return -1;
-                                if (o1.getOffset() > o2.getOffset()) return 1;
+                                if (o1.getOffset() < o2.getOffset()) {
+                                    return -1;
+                                }
+                                if (o1.getOffset() > o2.getOffset()) {
+                                    return 1;
+                                }
                                 return 0;
                             }
                         });
                         for (OceanusChunk chunk : chunks) {
-                            if (externalDownloadStop()) return false;
+                            if (externalDownloadStop()) {
+                                return false;
+                            }
                             for (int index = 0; index < chunk.getCdnNodes().size(); index++) {
                                 CDNNode cdnNode = chunk.getCdnNodes().get(index);
                                 boolean lastCDNNode = (index == chunk.getCdnNodes().size() - 1);
@@ -707,10 +739,14 @@ public class Oceanus extends PluginForHost {
                                         }
                                     }
                                     if (e instanceof InterruptedException) {
-                                        if (externalDownloadStop()) return false;
+                                        if (externalDownloadStop()) {
+                                            return false;
+                                        }
                                         throw (InterruptedException) e;
                                     }
-                                    if (lastCDNNode) throw e;
+                                    if (lastCDNNode) {
+                                        throw e;
+                                    }
                                     raf.seek(position);
                                 }
                             }
@@ -719,13 +755,17 @@ public class Oceanus extends PluginForHost {
                             return false;
                         } else {
                             for (OceanusChunk chunk : file.getChunks()) {
-                                if (chunk.isChunkFinished() == false) return false;
+                                if (chunk.isChunkFinished() == false) {
+                                    return false;
+                                }
                             }
                             try {
                                 raf.close();
                             } catch (final Throwable e) {
                             }
-                            if (partCompleteFile.renameTo(outputCompleteFile) == false) { throw new IOException("Could not rename " + partCompleteFile + " to " + outputCompleteFile); }
+                            if (partCompleteFile.renameTo(outputCompleteFile) == false) {
+                                throw new IOException("Could not rename " + partCompleteFile + " to " + outputCompleteFile);
+                            }
                             downloadLink.getLinkStatus().setStatusText(null);
                             downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                             try {
@@ -775,7 +815,9 @@ public class Oceanus extends PluginForHost {
             if ("OK".equals(chunk.getStatus())) {
                 return download(file, chunk, raf);
             } else {
-                if (lastCDNNode) calculateNextTryTime(chunk, chunk.getStatus());
+                if (lastCDNNode) {
+                    calculateNextTryTime(chunk, chunk.getStatus());
+                }
                 return false;
             }
         }
@@ -863,7 +905,9 @@ public class Oceanus extends PluginForHost {
             InputStream cipherInputStream = getDecryptionInputStream(inputStream, decryptionKeyStr);
             DigestInputStream is = new DigestInputStream(cipherInputStream, MessageDigest.getInstance("md5"));
             while ((bytesRead = is.read(buf)) != -1) {
-                if (externalDownloadStop()) throw new InterruptedException("ExternalStop");
+                if (externalDownloadStop()) {
+                    throw new InterruptedException("ExternalStop");
+                }
                 if (bytesRead > 0) {
                     raf.write(buf, 0, bytesRead);
                     liveBytesLoaded.addAndGet(bytesRead);
@@ -957,7 +1001,9 @@ public class Oceanus extends PluginForHost {
          */
         private byte[] decodeArbitrary(String toDecode, int numBits) throws Exception {
             int encodingSize = (int) Math.ceil(numBits / (Math.log(ENCODING_DICTIONARY.length()) / Math.log(2)));
-            if (toDecode.length() > encodingSize) throw new Exception("Passed string '" + toDecode + "' has " + "an invalid length.");
+            if (toDecode.length() > encodingSize) {
+                throw new Exception("Passed string '" + toDecode + "' has " + "an invalid length.");
+            }
 
             int skip = encodingSize - toDecode.length();
             BigInteger bi = BigInteger.valueOf(0);
@@ -965,9 +1011,13 @@ public class Oceanus extends PluginForHost {
             for (int i = 0; i < encodingSize; i++) {
                 bi = bi.multiply(encodingDictionaryLength);
 
-                if (i < skip) continue;
+                if (i < skip) {
+                    continue;
+                }
                 int idx = ENCODING_DICTIONARY.indexOf(toDecode.charAt(i - skip));
-                if (idx == -1) throw new Exception("Passed string '" + toDecode + "' contains illegal " + "characters");
+                if (idx == -1) {
+                    throw new Exception("Passed string '" + toDecode + "' contains illegal " + "characters");
+                }
                 bi = bi.add(BigInteger.valueOf(idx));
             }
 
@@ -978,7 +1028,9 @@ public class Oceanus extends PluginForHost {
                 // with a single 0-valued byte
                 System.arraycopy(decoded, 1, out, 0, out.length);
             } else {
-                if (decoded.length > out.length) throw new Exception("Passed value equals more than " + numBits + " bits");
+                if (decoded.length > out.length) {
+                    throw new Exception("Passed value equals more than " + numBits + " bits");
+                }
                 System.arraycopy(decoded, 0, out, out.length - decoded.length, decoded.length);
             }
             return out;
@@ -1287,7 +1339,9 @@ public class Oceanus extends PluginForHost {
                     continue;
                 }
             }
-            if (list.size() == 0) { throw new WTFException("No valid relay document found in any of the nodes"); }
+            if (list.size() == 0) {
+                throw new WTFException("No valid relay document found in any of the nodes");
+            }
             winner = list.get(0);
         }
 
@@ -1320,7 +1374,9 @@ public class Oceanus extends PluginForHost {
         private void getData() {
             try {
                 NodeList nl = (NodeList) XPathFactory.newInstance().newXPath().evaluate(xpathTimeStamp, doc, XPathConstants.NODESET);
-                if (nl.getLength() != 1) throw new WTFException("Couldn't find Timestamp element at " + url);
+                if (nl.getLength() != 1) {
+                    throw new WTFException("Couldn't find Timestamp element at " + url);
+                }
                 Element e = (Element) nl.item(0);
                 try {
                     timestamp = Integer.parseInt(e.getTextContent());
@@ -1341,7 +1397,9 @@ public class Oceanus extends PluginForHost {
                     Element msElement = (Element) nl.item(i);
                     NodeList nlIp = msElement.getElementsByTagName("ip");
                     NodeList nlSsl = msElement.getElementsByTagName("sslport");
-                    if (nlIp.getLength() != 1 || nlSsl.getLength() != 1) { throw new WTFException("Invalid ManagementSystem entry at " + url); }
+                    if (nlIp.getLength() != 1 || nlSsl.getLength() != 1) {
+                        throw new WTFException("Invalid ManagementSystem entry at " + url);
+                    }
                     ms.setIpAddress(nlIp.item(0).getTextContent());
                     try {
                         ms.setSslPort(Integer.parseInt(nlSsl.item(0).getTextContent()));
@@ -1390,9 +1448,13 @@ public class Oceanus extends PluginForHost {
 
         @Override
         public int compareTo(SingleRelayProcessor o) {
-            SingleRelayProcessor other = (SingleRelayProcessor) o;
-            if (other.getTimestamp() < getTimestamp()) return -1;
-            if (other.getTimestamp() > getTimestamp()) return 1;
+            SingleRelayProcessor other = o;
+            if (other.getTimestamp() < getTimestamp()) {
+                return -1;
+            }
+            if (other.getTimestamp() > getTimestamp()) {
+                return 1;
+            }
             return 0;
         }
     }

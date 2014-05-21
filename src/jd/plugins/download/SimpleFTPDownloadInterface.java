@@ -24,7 +24,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.download.raf.HashResult;
 import jd.plugins.download.raf.OldRAFDownload;
 
 import org.appwork.exceptions.WTFException;
@@ -32,8 +31,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
-import org.jdownloader.downloadcore.v15.Downloadable;
-import org.jdownloader.downloadcore.v15.HashInfo;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
@@ -114,7 +111,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
 
     protected void download(String filename, RandomAccessFile raf, boolean resume) throws IOException, PluginException {
         long resumePosition = 0;
-        if (!simpleFTP.isBinary()) logger.info("Warning: Download in ASCII mode may fail!");
+        if (!simpleFTP.isBinary()) {
+            logger.info("Warning: Download in ASCII mode may fail!");
+        }
         InetSocketAddress pasv = simpleFTP.pasv();
         resumed = false;
         if (resume) {
@@ -154,7 +153,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             int bytesRead = 0;
             totalLinkBytesLoaded = resumePosition;
             while ((bytesRead = input.read(buffer)) != -1) {
-                if (abort.get()) break;
+                if (abort.get()) {
+                    break;
+                }
                 if (bytesRead > 0) {
                     totalLinkBytesLoaded += bytesRead;
                     raf.write(buffer, 0, bytesRead);
@@ -172,7 +173,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             }
         } catch (SocketTimeoutException e) {
             LogSource.exception(logger, e);
-            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_TIMEOUT_REACHED));
+            error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
             simpleFTP.sendLine("ABOR");
             simpleFTP.readLine();
             return;
@@ -201,7 +202,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 raf.close();
             } catch (Throwable e) {
             }
-            if (totalLinkBytesLoaded >= 0) downloadable.setDownloadBytesLoaded(totalLinkBytesLoaded);
+            if (totalLinkBytesLoaded >= 0) {
+                downloadable.setDownloadBytesLoaded(totalLinkBytesLoaded);
+            }
             simpleFTP.shutDownSocket(dataSocket);
         }
     }
@@ -226,7 +229,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                             throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
                         }
                     }
-                }, null)) { throw new SkipReasonException(SkipReason.INVALID_DESTINATION); }
+                }, null)) {
+                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                }
                 startTimeStamp = System.currentTimeMillis();
                 downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
                 downloadable.setPluginProgress(downloadPluginProgress);
@@ -246,11 +251,11 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             }
             HashResult result = onDownloadReady();
             if (result != null) {
-                logger.info(result.getType() + "-Check: " + (result.hashMatch() ? "ok" : "failed"));
+                logger.info(result.getHashInfo().getType() + "-Check: " + (result.hashMatch() ? "ok" : "failed"));
                 if (result.hashMatch()) {
-                    downloadable.setLinkStatusText(_JDT._.system_download_doCRC2_success(result.getType()));
+                    downloadable.setLinkStatusText(_JDT._.system_download_doCRC2_success(result.getHashInfo().getType()));
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(result.getType()));
+                    throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(result.getHashInfo().getType()));
                 }
             }
             return handleErrors();
@@ -263,7 +268,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     protected HashResult onDownloadReady() throws Exception {
         HashResult result = null;
         cleanupDownladInterface();
-        if (!handleErrors()) return result;
+        if (!handleErrors()) {
+            return result;
+        }
         /* lets check the hash/crc/sfv */
         if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled() && downloadable.isHashCheckEnabled()) {
             synchronized (OldRAFDownload.HASHCHECKLOCK) {
@@ -271,7 +278,7 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                  * we only want one hashcheck running at the same time. many finished downloads can cause heavy diskusage here
                  */
                 HashInfo hashInfo = downloadable.getHashInfo();
-                result = downloadable.getHashResult(hashInfo);
+                result = downloadable.getHashResult(hashInfo, outputPartFile);
                 downloadable.setHashResult(result);
             }
         }
@@ -290,7 +297,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
     protected void error(PluginException pluginException) {
         synchronized (this) {
             /* if we recieved external stop, then we dont have to handle errors */
-            if (externalDownloadStop()) return;
+            if (externalDownloadStop()) {
+                return;
+            }
             LogSource.exception(logger, pluginException);
             if (caughtPluginException == null) {
                 caughtPluginException = pluginException;
@@ -325,17 +334,15 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         }
     }
 
-    protected boolean doFilesizeCheck() {
-        return this.downloadable.isDoFilesizeCheckEnabled();
-    }
-
     protected long getFileSize() {
         return downloadable.getVerifiedFileSize();
     }
 
     public boolean handleErrors() throws PluginException {
-        if (externalDownloadStop()) return false;
-        if (doFilesizeCheck() && getFileSize() > 0 && totalLinkBytesLoaded != getFileSize()) {
+        if (externalDownloadStop()) {
+            return false;
+        }
+        if (getFileSize() > 0 && totalLinkBytesLoaded != getFileSize()) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
                  * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
@@ -350,7 +357,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
             }
             logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
-            if (caughtPluginException != null) throw caughtPluginException;
+            if (caughtPluginException != null) {
+                throw caughtPluginException;
+            }
             throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
         }
         if (caughtPluginException == null) {
@@ -377,7 +386,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
 
     protected void terminate() {
         if (terminated.getAndSet(true) == false) {
-            if (!externalDownloadStop()) logger.severe("A critical Downloaderror occured. Terminate...");
+            if (!externalDownloadStop()) {
+                logger.severe("A critical Downloaderror occured. Terminate...");
+            }
         }
     }
 
