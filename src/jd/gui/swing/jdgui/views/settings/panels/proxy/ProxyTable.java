@@ -33,12 +33,10 @@ public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
         super(new ProxyTableModel());
         setSearchEnabled(true);
         this.setDragEnabled(true);
-
         setTransferHandler(new ExtTransferHandler<AbstractProxySelectorImpl>());
         if (Application.getJavaVersion() >= Application.JAVA16) {
             setDropMode(DropMode.INSERT_ROWS);
         }
-
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
     }
 
@@ -71,10 +69,12 @@ public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
         StringBuilder sb = new StringBuilder();
         for (AbstractProxySelectorImpl pi : selectedObjects) {
             String str = pi.toExportString();
-            if (str == null)
+            if (str == null) {
                 continue;
-            if (sb.length() > 0)
+            }
+            if (sb.length() > 0) {
                 sb.append("\r\n");
+            }
             sb.append(str);
 
         }
@@ -84,8 +84,6 @@ public class ProxyTable extends BasicJDTable<AbstractProxySelectorImpl> {
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {
-            e.printStackTrace();
         }
-
     }
 }

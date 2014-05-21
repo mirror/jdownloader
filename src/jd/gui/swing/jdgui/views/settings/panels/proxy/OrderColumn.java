@@ -57,9 +57,7 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
             public void actionPerformed(ActionEvent e) {
                 java.util.List<AbstractProxySelectorImpl> pkgl = new ArrayList<AbstractProxySelectorImpl>();
                 pkgl.add(editing);
-
                 getModel().move(pkgl, editingRow - 1);
-                getModel().fireTableDataChanged();
                 getModel().getTable().editCellAt(getModel().getRowforObject(editing), getIndex());
 
             }
@@ -78,10 +76,7 @@ public class OrderColumn extends ExtComponentColumn<AbstractProxySelectorImpl> {
             public void actionPerformed(ActionEvent e) {
                 java.util.List<AbstractProxySelectorImpl> pkgl = new ArrayList<AbstractProxySelectorImpl>();
                 pkgl.add(editing);
-
                 getModel().move(pkgl, editingRow + 2);
-                getModel().fireTableDataChanged();
-
                 getModel().getTable().editCellAt(getModel().getRowforObject(editing), getIndex());
             }
         });

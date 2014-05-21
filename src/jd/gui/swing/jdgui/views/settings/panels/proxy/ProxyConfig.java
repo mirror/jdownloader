@@ -1,27 +1,21 @@
 package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
-import java.util.List;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 
-import jd.controlling.TaskQueue;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.AbstractProxySelectorImpl.Type;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.ProxyEvent;
 import jd.gui.swing.jdgui.views.settings.ConfigPanel;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.utils.MinimumSelectionObserver;
 import org.appwork.utils.event.DefaultEventListener;
-import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.translate._JDT;
@@ -32,26 +26,24 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         return _JDT._.gui_settings_proxy_title();
     }
 
-    private static final long  serialVersionUID = -521958649780869375L;
+    private static final long serialVersionUID = -521958649780869375L;
 
-    private ProxyTable         table;
+    private ProxyTable        table;
 
-    private ExtButton          btnAdd;
+    private ExtButton         btnAdd;
 
-    private ExtButton          btnRemove;
-    private ExtButton          btnAuto;
+    private ExtButton         btnRemove;
+    private ExtButton         btnAuto;
 
-    private ScheduledFuture<?> timer            = null;
+    private ExtButton         btImport;
 
-    private ExtButton          btImport;
+    private ExtButton         btExport;
 
-    private ExtButton          btExport;
+    private ExtButton         expPopup;
 
-    private ExtButton          im;
+    private ExtButton         impPopup;
 
-    private ExtButton          expPopup;
-
-    private ExtButton          impPopup;
+    private DelayedRunnable   delayer;
 
     public ProxyConfig() {
         super();
@@ -102,8 +94,9 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
                 java.util.List<AbstractProxySelectorImpl> selected = ProxyConfig.this.table.getModel().getSelectedObjects();
                 if (selected != null) {
                     for (AbstractProxySelectorImpl pi : selected) {
-                        if (pi.getType() == Type.NONE)
+                        if (pi.getType() == Type.NONE) {
                             continue;
+                        }
                         canremove = true;
                         break;
 
@@ -125,7 +118,13 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         toolbar.add(expPopup, "height 26!,width 12!,aligny top");
 
         add(toolbar, "gapleft 37,growx,spanx");
+        delayer = new DelayedRunnable(50, 150) {
 
+            @Override
+            public void delayedrun() {
+                table.getModel()._fireTableStructureChanged(ProxyController.getInstance().getList(), false);
+            }
+        };
     }
 
     @Override
@@ -139,23 +138,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
     @Override
     public void updateContents() {
-        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
-            @Override
-            protected Void run() throws RuntimeException {
-                final List<AbstractProxySelectorImpl> list = ProxyController.getInstance().getList();
-                new EDTRunner() {
-                    @Override
-                    protected void runInEDT() {
-
-                        table.getModel()._fireTableStructureChanged(list, false);
-
-                        table.repaint();
-                    }
-                };
-                return null;
-            }
-        });
+        delayer.resetAndStart();
 
     }
 
@@ -167,18 +150,6 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
     @Override
     protected void onShow() {
         super.onShow();
-        ScheduledFuture<?> ltimer = timer;
-        if (ltimer != null) {
-            ltimer.cancel(false);
-        }
-        ltimer = TaskQueue.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
-
-            public void run() {
-                table.repaint();
-            }
-
-        }, 250, 1000, TimeUnit.MILLISECONDS);
-        timer = ltimer;
         ProxyController.getInstance().getEventSender().addListener(this);
     }
 
@@ -190,38 +161,11 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
     @Override
     protected void onHide() {
         super.onHide();
-        ScheduledFuture<?> ltimer = timer;
-        timer = null;
-        if (ltimer != null) {
-            ltimer.cancel(false);
-        }
         ProxyController.getInstance().getEventSender().removeListener(this);
     }
 
     public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
-        final List<AbstractProxySelectorImpl> list = ProxyController.getInstance().getList();
-        switch (event.getType()) {
-        case REFRESH:
-            new EDTRunner() {
-                @Override
-                protected void runInEDT() {
-                    table.getModel()._fireTableStructureChanged(list, false);
-
-                    table.repaint();
-                };
-            };
-            break;
-        default:
-            new EDTRunner() {
-                @Override
-                protected void runInEDT() {
-                    table.getModel()._fireTableStructureChanged(list, false);
-
-                    table.repaint();
-                };
-            };
-            break;
-        }
+        delayer.resetAndStart();
     }
 
 }
