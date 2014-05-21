@@ -12,6 +12,8 @@ import java.util.Map.Entry;
 import jd.controlling.downloadcontroller.AccountCache.ACCOUNTTYPE;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.ProxyController;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 
@@ -38,9 +40,12 @@ public class DownloadLinkCandidateSelector {
         }
     }
 
-    public static enum AccountPermission {
+    public static enum DownloadLinkCandidatePermission {
         OK,
-        FORBIDDEN,
+        OK_FORCED,
+        CONCURRENCY_LIMIT,
+        CONCURRENCY_FORBIDDEN,
+        IMPOSSIBLE,
         TEMP_DISABLED,
         DISABLED
     }
@@ -50,7 +55,9 @@ public class DownloadLinkCandidateSelector {
 
                                                                                                                              private int indexOf(RESULT o1) {
                                                                                                                                  for (int index = 0; index < FINAL_RESULT_SORT_ORDER.length; index++) {
-                                                                                                                                     if (FINAL_RESULT_SORT_ORDER[index] == o1) return index;
+                                                                                                                                     if (FINAL_RESULT_SORT_ORDER[index] == o1) {
+                                                                                                                                         return index;
+                                                                                                                                     }
                                                                                                                                  }
                                                                                                                                  return -1;
                                                                                                                              }
@@ -93,28 +100,65 @@ public class DownloadLinkCandidateSelector {
         return -1;
     }
 
-    public boolean isDownloadLinkCandidateAllowed(DownloadLinkCandidate candidate) {
-        if (candidate.isForced()) return true;
-        String host = candidate.getLink().getHost();
-        return session.getActiveDownloadsFromHost(host) < session.getMaxConcurrentDownloadsPerHost();
+    public List<AbstractProxySelectorImpl> getProxies(DownloadLinkCandidate candidate) {
+        return ProxyController.getInstance().getPossibleProxies(candidate);
     }
 
-    public AccountPermission getCachedAccountPermission(CachedAccount cachedAccount) {
-        if (session.isUseAccountsEnabled() == false && (cachedAccount.getType() == ACCOUNTTYPE.MULTI || cachedAccount.getType() == ACCOUNTTYPE.ORIGINAL)) return AccountPermission.DISABLED;
-        Account acc = cachedAccount.getAccount();
-        if (acc != null && acc.isTempDisabled()) return AccountPermission.TEMP_DISABLED;
-        for (SingleDownloadController con : session.getControllers()) {
-            Account accountInUse = con.getAccount();
-            if (accountInUse == null) {
-                /* no account in use, check next one */
-                continue;
-            } else if (accountInUse == acc) {
-                /* same account */
-                if (!accountInUse.isConcurrentUsePossible()) return AccountPermission.FORBIDDEN;
-                break;
+    public DownloadLinkCandidatePermission getDownloadLinkCandidatePermission(DownloadLinkCandidate candidate) {
+        CachedAccount cachedAccount = candidate.getCachedAccount();
+        if (cachedAccount == null) {
+            return DownloadLinkCandidatePermission.IMPOSSIBLE;
+        }
+        if (session.isUseAccountsEnabled() == false && (cachedAccount.getType() == ACCOUNTTYPE.MULTI || cachedAccount.getType() == ACCOUNTTYPE.ORIGINAL)) {
+            return DownloadLinkCandidatePermission.DISABLED;
+        }
+        final Account canidateAccount = cachedAccount.getAccount();
+        if (canidateAccount != null) {
+            if (canidateAccount.isTempDisabled()) {
+                return DownloadLinkCandidatePermission.TEMP_DISABLED;
+            }
+            if (!canidateAccount.isEnabled()) {
+                return DownloadLinkCandidatePermission.DISABLED;
             }
         }
-        return AccountPermission.OK;
+        final DownloadLink candidateLink = candidate.getLink();
+        final String linkHost = candidateLink.getHost();
+        final String pluginHost = cachedAccount.getPlugin().getHost();
+        int maxConcurrentAccount = cachedAccount.getPlugin().getMaxSimultanDownload(null, canidateAccount);
+        int maxConcurrentHost = cachedAccount.getPlugin().getMaxSimultanDownload(candidateLink, canidateAccount);
+        int concurrentHost = session.getMaxConcurrentDownloadsPerHost();
+        for (SingleDownloadController con : session.getControllers()) {
+            if (con.isActive()) {
+                Account conAccount = con.getAccount();
+                if (conAccount != null && conAccount == canidateAccount && conAccount.isConcurrentUsePossible() == false) {
+                    return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
+                }
+                if (maxConcurrentAccount <= 0 || concurrentHost <= 0) {
+                    break;
+                }
+                if (con.getDownloadLink().getHost().equals(linkHost)) {
+                    concurrentHost--;
+                }
+                if (canidateAccount != null && canidateAccount == conAccount) {
+                    maxConcurrentAccount--;
+                    if (con.getDownloadLink().getHost().equals(linkHost)) {
+                        maxConcurrentHost--;
+                    }
+                } else if (conAccount == null && pluginHost.equals(con.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
+                    maxConcurrentAccount--;
+                    if (con.getDownloadLink().getHost().equals(linkHost)) {
+                        maxConcurrentHost--;
+                    }
+                }
+            }
+        }
+        if (concurrentHost > 0 && maxConcurrentAccount > 0 && maxConcurrentHost > 0) {
+            return DownloadLinkCandidatePermission.OK;
+        }
+        if (candidate.isForced()) {
+            return DownloadLinkCandidatePermission.OK_FORCED;
+        }
+        return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
     }
 
     public boolean isMirrorManagement() {
@@ -134,7 +178,9 @@ public class DownloadLinkCandidateSelector {
     }
 
     public void addExcluded(DownloadLink link) {
-        if (roundResults.containsKey(link)) return;
+        if (roundResults.containsKey(link)) {
+            return;
+        }
         roundResults.put(link, null);
     }
 
@@ -184,7 +230,9 @@ public class DownloadLinkCandidateSelector {
     }
 
     public void addExcluded(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
-        if (result == null) throw new IllegalArgumentException("result == null");
+        if (result == null) {
+            throw new IllegalArgumentException("result == null");
+        }
         LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult> map = roundResults.get(candidate.getLink());
         if (map == null) {
             map = new LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>();
@@ -199,7 +247,9 @@ public class DownloadLinkCandidateSelector {
         linkLoop: while (it.hasNext()) {
             Entry<DownloadLink, LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>> next = it.next();
             Map<DownloadLinkCandidate, DownloadLinkCandidateResult> map = next.getValue();
-            if (map == null || map.size() == 0) continue;
+            if (map == null || map.size() == 0) {
+                continue;
+            }
             List<CandidateResultHolder> results = new ArrayList<DownloadLinkCandidateSelector.CandidateResultHolder>();
             Iterator<Entry<DownloadLinkCandidate, DownloadLinkCandidateResult>> it2 = map.entrySet().iterator();
             while (it2.hasNext()) {
