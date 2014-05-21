@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.pl" }, urls = { "http://[\\w\\.]*?sendspace.pl/file/[\\w]+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.pl" }, urls = { "http://[\\w\\.]*?sendspace\\.pl/file/[\\w]+/?" }, flags = { 0 })
 public class SendSpacePl extends PluginForHost {
 
     public SendSpacePl(PluginWrapper wrapper) {
@@ -50,13 +50,21 @@ public class SendSpacePl extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        /* Offline links should also get nice filenames */
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "sendspace\\.pl/file/(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        try {
+            /* Code for file offline but now they're just always using it */
+            br.setAllowedResponseCodes(410);
+        } catch (final Throwable e) {
+        }
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (con.getResponseCode() == 410)
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // if (con.getResponseCode() == 410) {
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
             br.followConnection();
         } catch (final IOException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -66,15 +74,17 @@ public class SendSpacePl extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        // Usually they (also) send 410 error for offline links
-        if (br.containsHTML(">Podany plik nie istnieje lub został usunięty") || br.getHttpConnection().getResponseCode() == 410)
+        if (br.containsHTML(">Podany plik nie istnieje lub został usunięty")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null)
+        if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) \\- download\\. Darmowy hosting plików\\.</title>").getMatch(0);
+        }
         final String filesize = br.getRegex("\">Rozmiar pliku:</span></div>.*?<div class=\"info\"><span class=\"blue4\">(.*?)</span></div>").getMatch(0);
-        if (filename == null || filesize == null)
+        if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -85,13 +95,22 @@ public class SendSpacePl extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         String dlLink = br.getRegex("\"(http://www\\.sendspace\\.pl/download/.*?)\"").getMatch(0);
-        if (dlLink == null)
+        if (dlLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.getURL().contains("/busy/")) {
+                logger.info("Only downloadable via premium");
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.SendSpacePl.only4premium", "This file is only downloadable for premium users!"));
             }
             if (br.containsHTML("id\\=\"countdown\"")) {
