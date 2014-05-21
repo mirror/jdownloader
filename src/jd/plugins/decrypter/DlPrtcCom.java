@@ -86,7 +86,9 @@ public class DlPrtcCom extends PluginForDecrypt {
         prepBr.getHeaders().put("User-Agent", agent.get());
 
         // Prefer English language
-        if (!coLoaded) prepBr.setCookie(this.getHost(), "l", "en");
+        if (!coLoaded) {
+            prepBr.setCookie(this.getHost(), "l", "en");
+        }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.getHeaders().put("Pragma", null);
         prepBr.getHeaders().put("Accept-Charset", null);
@@ -123,6 +125,14 @@ public class DlPrtcCom extends PluginForDecrypt {
             if (cbr.containsHTML(">Unfortunately, the link you are looking for is not found")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
+            }
+            // new 20140522
+            if (true) {
+                for (Form f : cbr.getForms()) {
+                    if (f.containsHTML("Please click on continue to see the links") && (!cbr.containsHTML(PASSWORDTEXT) || !cbr.containsHTML(CAPTCHATEXT))) {
+                        sendForm(f);
+                    }
+                }
             }
             if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(CAPTCHATEXT)) {
                 int repeat = 2;
@@ -205,7 +215,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                 throw new DecrypterException("D-TECTED!");
             }
             br.cloneBrowser().getPage("/pub_footer.html");
-            String linktext = cbr.getRegex("class=\"divlink link\"\\s+id=\"slinks\"><a(.*?)</table>").getMatch(0);
+            String linktext = cbr.getRegex("(class=\"divlink link\"\\s*id=\"slinks\"|id=\"slinks\"\\s*class=\"divlink link\")><a(.*?)</table>").getMatch(1);
             if (linktext == null) {
                 if (br.containsHTML(">Your link :</div>")) {
                     logger.info("Link offline: " + parameter);
@@ -219,8 +229,9 @@ public class DlPrtcCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken 5 for link: " + parameter);
                 return null;
             }
-            for (String dl : links)
+            for (String dl : links) {
                 decryptedLinks.add(createDownloadlink(dl));
+            }
 
             // saving session info can result in you not having to enter a captcha for each new link viewed!
             final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -229,7 +240,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                 cookies.put(c.getKey(), c.getValue());
             }
             synchronized (cookieMonster) {
-                cookieMonster.set((Object) cookies);
+                cookieMonster.set(cookies);
             }
 
             // rmCookie(parameter);
@@ -257,13 +268,17 @@ public class DlPrtcCom extends PluginForDecrypt {
 
     private Form getForm() {
         Form theForm = cbr.getFormbyProperty("name", "ccerure");
-        if (theForm == null) theForm = cbr.getForm(0);
+        if (theForm == null) {
+            theForm = cbr.getForm(0);
+        }
         return theForm;
     }
 
     private Form getContinueForm() {
         Form theForm = cbr.getFormbyProperty("name", "submitform");
-        if (theForm == null) theForm = cbr.getForm(0);
+        if (theForm == null) {
+            theForm = cbr.getForm(0);
+        }
         return theForm;
     }
 
