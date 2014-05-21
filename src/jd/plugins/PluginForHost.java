@@ -58,6 +58,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllDownloadCaptchasEntry;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
@@ -163,7 +164,7 @@ public abstract class PluginForHost extends Plugin {
         return dl;
     }
 
-    protected String getCaptchaCode(final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
+    protected String getCaptchaCode(final String captchaAddress, final DownloadLink downloadLink) throws Exception {
         return getCaptchaCode(getHost(), captchaAddress, downloadLink);
     }
 
@@ -177,20 +178,15 @@ public abstract class PluginForHost extends Plugin {
         return lazyP.getPattern();
     }
 
-    protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws IOException, PluginException {
+    protected String getCaptchaCode(final String method, final String captchaAddress, final DownloadLink downloadLink) throws Exception {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         File captchaFile = null;
         try {
             captchaFile = getLocalCaptchaFile();
-            try {
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-            } catch (Exception e) {
-                logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
             final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
             return captchaCode;
         } finally {
@@ -198,12 +194,11 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    protected String getCaptchaCode(final File captchaFile, final DownloadLink downloadLink) throws PluginException {
+    protected String getCaptchaCode(final File captchaFile, final DownloadLink downloadLink) throws Exception {
         return getCaptchaCode(getHost(), captchaFile, downloadLink);
     }
 
-    protected String getCaptchaCode(final String methodname, final File captchaFile, final DownloadLink downloadLink) throws PluginException {
-
+    protected String getCaptchaCode(final String methodname, final File captchaFile, final DownloadLink downloadLink) throws Exception {
         return getCaptchaCode(methodname, captchaFile, 0, downloadLink, null, null);
     }
 
@@ -251,19 +246,12 @@ public abstract class PluginForHost extends Plugin {
         return lastChallengeResponse != null;
     }
 
-    protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
-
-        CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
+    protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws Exception {
+        final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         this.hasCaptchas = true;
         PluginProgress old = null;
         try {
-            // try {
-            // final BufferedImage img = ImageProvider.read(file);
-            // progress.setIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
-            // } catch (Throwable e) {
-            // e.printStackTrace();
-            // }
             old = link.setPluginProgress(progress);
             String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
@@ -307,9 +295,10 @@ public abstract class PluginForHost extends Plugin {
             };
             c.setTimeout(getCaptchaTimeout());
             invalidateLastChallengeResponse();
-            if (CaptchaBlackList.getInstance().matches(c)) {
+            final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
+            if (blackListEntry != null) {
                 logger.warning("Cancel. Blacklist Matching");
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                throw new CaptchaException(blackListEntry);
             }
             ChallengeResponseController.getInstance().handle(c);
             if (!c.isSolved()) {
@@ -320,7 +309,7 @@ public abstract class PluginForHost extends Plugin {
             return c.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw e;
         } catch (SkipException e) {
             LogSource.exception(logger, e);
             if (getDownloadLink() != null) {
@@ -363,7 +352,7 @@ public abstract class PluginForHost extends Plugin {
                     break;
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new CaptchaException(e.getSkipRequest());
         } finally {
             link.compareAndSetPluginProgress(progress, old);
         }

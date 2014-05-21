@@ -5,7 +5,6 @@ import org.jdownloader.captcha.v2.Challenge;
 public class BlockAllDownloadCaptchasEntry implements SessionBlackListEntry {
 
     public BlockAllDownloadCaptchasEntry() {
-
     }
 
     @Override

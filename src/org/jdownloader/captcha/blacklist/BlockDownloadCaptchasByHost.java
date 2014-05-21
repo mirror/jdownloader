@@ -5,7 +5,11 @@ import org.jdownloader.captcha.v2.Challenge;
 
 public class BlockDownloadCaptchasByHost implements SessionBlackListEntry<Object> {
 
-    private String blockedHost;
+    private final String blockedHost;
+
+    public String getBlockedHost() {
+        return blockedHost;
+    }
 
     public BlockDownloadCaptchasByHost(String host) {
         this.blockedHost = host;
@@ -18,7 +22,7 @@ public class BlockDownloadCaptchasByHost implements SessionBlackListEntry<Object
 
     @Override
     public boolean matches(Challenge<Object> c) {
-        return StringUtils.equals(Challenge.getHost(c), blockedHost);
+        return StringUtils.equals(Challenge.getHost(c), getBlockedHost());
     }
 
 }

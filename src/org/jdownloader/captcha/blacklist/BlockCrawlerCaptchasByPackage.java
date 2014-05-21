@@ -10,25 +10,25 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.captcha.v2.Challenge;
 
 public class BlockCrawlerCaptchasByPackage implements BlacklistEntry {
-    
+
     private final WeakReference<LinkCrawler> crawler;
-    private CrawledLink                      origin;
-    
+    private final CrawledLink                origin;
+
     public BlockCrawlerCaptchasByPackage(LinkCrawler crawler, CrawledLink link) {
         this.crawler = new WeakReference<LinkCrawler>(crawler);
         origin = link.getOriginLink();
     }
-    
+
     @Override
     public boolean canCleanUp() {
         LinkCrawler lcrawler = getCrawler();
         return lcrawler == null || !lcrawler.isRunning();
     }
-    
-    private LinkCrawler getCrawler() {
+
+    public LinkCrawler getCrawler() {
         return crawler.get();
     }
-    
+
     @Override
     public boolean matches(Challenge c) {
         LinkCrawler lcrawler = getCrawler();

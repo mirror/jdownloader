@@ -16,6 +16,7 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -104,11 +105,9 @@ public class OBoomCom extends PluginForHost {
             ai.setValidUntil(premiumUntil);
             if (!ai.isExpired()) {
                 ai.setStatus("Premium account");
-                account.setProperty("PREMIUM", true);
                 return ai;
             }
         }
-        account.setProperty("PREMIUM", false);
         ai.setValidUntil(-1);
         ai.setStatus("Free Account");
         return ai;
@@ -150,9 +149,11 @@ public class OBoomCom extends PluginForHost {
                         infos.remove("premium");
                     }
                     if (infos.get("premium") != null) {
+                        account.setProperty("PREMIUM", true);
                         account.setConcurrentUsePossible(true);
                         account.setMaxSimultanDownloads(0);
                     } else {
+                        account.setProperty("PREMIUM", Property.NULL);
                         account.setConcurrentUsePossible(false);
                         account.setMaxSimultanDownloads(1);
                     }
@@ -160,6 +161,7 @@ public class OBoomCom extends PluginForHost {
                 }
                 return infos;
             } catch (final Exception e) {
+                account.setProperty("PREMIUM", Property.NULL);
                 ACCOUNTINFOS.remove(account);
                 throw e;
             } finally {

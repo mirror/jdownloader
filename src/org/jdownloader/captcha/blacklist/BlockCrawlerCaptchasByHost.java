@@ -9,25 +9,29 @@ import jd.plugins.PluginForDecrypt;
 import org.jdownloader.captcha.v2.Challenge;
 
 public class BlockCrawlerCaptchasByHost implements BlacklistEntry {
-    
+
     private final WeakReference<LinkCrawler> crawler;
     private final String                     host;
-    
+
+    public String getHost() {
+        return host;
+    }
+
     public BlockCrawlerCaptchasByHost(LinkCrawler crawler, String host) {
         this.crawler = new WeakReference<LinkCrawler>(crawler);
         this.host = host;
     }
-    
+
     @Override
     public boolean canCleanUp() {
         LinkCrawler lcrawler = getCrawler();
         return lcrawler == null || !lcrawler.isRunning();
     }
-    
-    private LinkCrawler getCrawler() {
+
+    public LinkCrawler getCrawler() {
         return crawler.get();
     }
-    
+
     @Override
     public boolean matches(Challenge c) {
         LinkCrawler lcrawler = getCrawler();
@@ -35,7 +39,7 @@ public class BlockCrawlerCaptchasByHost implements BlacklistEntry {
             Plugin plugin = Challenge.getPlugin(c);
             if (plugin instanceof PluginForDecrypt) {
                 PluginForDecrypt decrypt = (PluginForDecrypt) plugin;
-                return decrypt.getCrawler() == lcrawler && decrypt.getHost().equalsIgnoreCase(host);
+                return decrypt.getCrawler() == lcrawler && decrypt.getHost().equalsIgnoreCase(getHost());
             }
         }
         return false;

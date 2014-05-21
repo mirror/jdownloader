@@ -48,7 +48,7 @@ public class XunleiCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         Browser br2 = br.cloneBrowser();
@@ -62,16 +62,22 @@ public class XunleiCom extends PluginForHost {
                     con.disconnect();
                 } catch (Throwable e) {
                 }
-                if (download == false) return AvailableStatus.UNCHECKABLE;
+                if (download == false) {
+                    return AvailableStatus.UNCHECKABLE;
+                }
                 /* we are trying to download the file, fetch new link and retry */
                 String url = updateDownloadLink(downloadLink);
-                if (url == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (url == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 downloadLink.setUrlDownload(url);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (!con.getContentType().contains("html")) {
                 String name = getFileNameFromURL(new URL(downloadLink.getDownloadURL()));
-                if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(name));
+                if (downloadLink.getFinalFileName() == null) {
+                    downloadLink.setFinalFileName(Encoding.htmlDecode(name));
+                }
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -105,11 +111,13 @@ public class XunleiCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String updateDownloadLink(final DownloadLink downloadLink) throws IOException, PluginException {
+    private String updateDownloadLink(final DownloadLink downloadLink) throws IOException, Exception {
         final Browser br = new Browser();
         try {
             final String origin = downloadLink.getStringProperty("origin", null);
-            if (origin == null) return null;
+            if (origin == null) {
+                return null;
+            }
             br.setCustomCharset("utf-8");
             br.getPage(origin);
             if (br.containsHTML("http://verify")) {
@@ -123,16 +131,24 @@ public class XunleiCom extends PluginForHost {
                     }
                     final String code = getCaptchaCode(captchaLink, downloadLink);
                     br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + fid + "&ref=&action=check_verify");
-                    if (!br.containsHTML("http://verify")) break;
+                    if (!br.containsHTML("http://verify")) {
+                        break;
+                    }
                 }
-                if (br.containsHTML("http://verify")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (br.containsHTML("http://verify")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 logger.info("Captcha passed!");
             }
             final String originLink = new Regex(downloadLink.getDownloadURL(), "https?://.*?/(.*?)\\?").getMatch(0);
             final String[] links = br.getRegex("\"(http://dl\\d+\\.[a-z]\\d+\\.sendfile\\.vip\\.xunlei\\.com:\\d+/[^/<>\"]+\\?key=[a-z0-9]+\\&file_url=[^/<>\"]+\\&file_type=\\d+\\&authkey=[A-Z0-9]+\\&exp_time=\\d+&from_uid=\\d+\\&task_id=\\d+\\&get_uid=\\d+)").getColumn(0);
-            if (links == null || links.length == 0) { return null; }
+            if (links == null || links.length == 0) {
+                return null;
+            }
             for (String aLink : links) {
-                if (aLink.contains(originLink)) return aLink;
+                if (aLink.contains(originLink)) {
+                    return aLink;
+                }
             }
         } catch (final IOException e) {
             logger.severe(br.toString());

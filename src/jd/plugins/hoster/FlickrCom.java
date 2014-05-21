@@ -338,7 +338,7 @@ public class FlickrCom extends PluginForHost {
         return true;
     }
 
-    private String getLoginCaptchaData(final Account acc) throws PluginException, IOException {
+    private String getLoginCaptchaData(final Account acc) throws Exception, IOException {
         String post_data = "";
         br.getPage("https://login.yahoo.com/captcha/CaptchaWSProxyService.php?action=createlazy&initial_view=&.intl=" + intl + "&.lang=" + lang_post + "&login=" + Encoding.urlEncode(acc.getUser()) + "&rnd=" + System.currentTimeMillis());
         final String captchaLink = br.getRegex("Enter the characters displayed\\&quot; src=\\&quot;(https?://[A-Za-z0-9\\-_\\.]+yahoo\\.com:\\d+/img/[^<>\"]*?)\\&quot;").getMatch(0);

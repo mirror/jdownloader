@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -30,7 +29,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
@@ -64,9 +62,13 @@ public class AdltDlCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex(" title=\"Comment on ([^<>\"\\']+)\"").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| AdultDDL</title>").getMatch(0);
+        if (fpName == null) {
+            fpName = br.getRegex("<title>([^<>\"\\']+) \\| AdultDDL</title>").getMatch(0);
+        }
         final String streamLink = br.getRegex("\\'(http://(www\\.)?(putlocker|firedrive)\\.com/embed/[A-Z0-9]+)\\'").getMatch(0);
-        if (streamLink != null) decryptedLinks.add(createDownloadlink(streamLink));
+        if (streamLink != null) {
+            decryptedLinks.add(createDownloadlink(streamLink));
+        }
         final String linksText = br.getRegex("<div class=\\'links\\'>(.*?)<div id=\"comment\\-section\"").getMatch(0);
         if (linksText == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -82,7 +84,9 @@ public class AdltDlCom extends PluginForDecrypt {
                     return null;
                 }
                 final String cryptID = new Regex(decryptPage, "(\\d+)$").getMatch(0);
-                if (!handleCaptcha(param, cryptID)) throw new DecrypterException(DecrypterException.CAPTCHA);
+                if (!handleCaptcha(param, cryptID)) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
                 final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
                 if ((links == null || links.length == 0) && streamLink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -103,7 +107,9 @@ public class AdltDlCom extends PluginForDecrypt {
             }
             for (final String cryptedLink : cryptedLinks) {
                 final String cryptID = new Regex(cryptedLink, "(\\d+)$").getMatch(0);
-                if (!handleCaptcha(param, cryptID)) throw new DecrypterException(DecrypterException.CAPTCHA);
+                if (!handleCaptcha(param, cryptID)) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
                 final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
                 if ((links == null || links.length == 0) && streamLink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -130,7 +136,7 @@ public class AdltDlCom extends PluginForDecrypt {
                 return null;
             }
             if (links != null && links.length != 0) {
-                for (String singleLink : links)
+                for (String singleLink : links) {
                     if (!singleLink.contains("adultddl.com/")) {
                         final DownloadLink dl = createDownloadlink(singleLink);
                         try {
@@ -140,6 +146,7 @@ public class AdltDlCom extends PluginForDecrypt {
                         }
                         decryptedLinks.add(dl);
                     }
+                }
             }
         }
         if (fpName != null) {
@@ -150,7 +157,7 @@ public class AdltDlCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean handleCaptcha(final CryptedLink param, final String id) throws IOException, DecrypterException, PluginException {
+    private boolean handleCaptcha(final CryptedLink param, final String id) throws Exception {
         boolean done = false;
         for (int i = 1; i <= 3; i++) {
             br.postPage("http://secure.adultddl.ws/captcha.php", "submit=Click+Here&decrypt=" + id);
@@ -166,7 +173,9 @@ public class AdltDlCom extends PluginForDecrypt {
                 postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
             } else {
                 final String cLnk = br.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);
-                if (cLnk == null) { return false; }
+                if (cLnk == null) {
+                    return false;
+                }
                 c = getCaptchaCode("http://secure.adultddl.ws" + cLnk, param);
                 postData = "captcha_code=" + c;
             }
