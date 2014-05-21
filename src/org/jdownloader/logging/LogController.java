@@ -20,27 +20,27 @@ import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionQueue;
 
 public class LogController extends LogSourceProvider {
-    private static final LogController            INSTANCE = new LogController();
+    private static final LogController                     INSTANCE = new LogController();
 
     /**
      * GL = Generic Logger, returns a shared Logger for name JDownloader
      */
-    public static LogSource                       GL       = getInstance().getLogger("JDownloader");
-    public static LogSource                       TRASH    = new LogSource("Trash") {
+    public static LogSource                                GL       = getInstance().getLogger("JDownloader");
+    public static LogSource                                TRASH    = new LogSource("Trash") {
 
-                                                               @Override
-                                                               public synchronized void log(LogRecord record) {
-                                                                   /* trash */
-                                                               }
+                                                                        @Override
+                                                                        public synchronized void log(LogRecord record) {
+                                                                            /* trash */
+                                                                        }
 
-                                                               @Override
-                                                               public String toString() {
-                                                                   return "Log > /dev/null!";
-                                                               }
+                                                                        @Override
+                                                                        public String toString() {
+                                                                            return "Log > /dev/null!";
+                                                                        }
 
-                                                           };
+                                                                    };
 
-    private static WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
+    private static volatile WeakHashMap<Thread, LogSource> map      = new WeakHashMap<Thread, LogSource>();
 
     /**
      * get the only existing instance of LogController. This is a singleton
@@ -58,7 +58,9 @@ public class LogController extends LogSourceProvider {
 
     public static LogSource CL(Class<?> clazz) {
         LogSource ret = getRebirthLogger();
-        if (ret != null) return ret;
+        if (ret != null) {
+            return ret;
+        }
         return getInstance().getClassLogger(clazz);
     }
 
@@ -73,7 +75,9 @@ public class LogController extends LogSourceProvider {
 
     public static LogSource CL(boolean allowRebirthLogger) {
         LogSource ret = null;
-        if (allowRebirthLogger && (ret = getRebirthLogger()) != null) return ret;
+        if (allowRebirthLogger && (ret = getRebirthLogger()) != null) {
+            return ret;
+        }
         return getInstance().getCurrentClassLogger();
     }
 
@@ -87,9 +91,15 @@ public class LogController extends LogSourceProvider {
                 /* we are inside a LinkCrawlerThread, lets reuse the logger from decrypterPlugin */
                 Object owner = ((LinkCrawlerThread) currentThread).getCurrentOwner();
                 if (owner != null) {
-                    if (owner instanceof PluginForDecrypt) logger = ((PluginForDecrypt) owner).getLogger();
-                    if (owner instanceof PluginForHost) logger = ((PluginForHost) owner).getLogger();
-                    if (owner instanceof PluginsC) logger = ((PluginsC) owner).getLogger();
+                    if (owner instanceof PluginForDecrypt) {
+                        logger = ((PluginForDecrypt) owner).getLogger();
+                    }
+                    if (owner instanceof PluginForHost) {
+                        logger = ((PluginForHost) owner).getLogger();
+                    }
+                    if (owner instanceof PluginsC) {
+                        logger = ((PluginsC) owner).getLogger();
+                    }
                 }
             } else if (currentThread instanceof SingleDownloadController) {
                 /* we are inside a SingleDownloadController, lets reuse the logger from hosterPlugin */
@@ -97,7 +107,9 @@ public class LogController extends LogSourceProvider {
             } else if (currentThread instanceof QueueThread && ((QueueThread) currentThread).getQueue() instanceof ExtractionQueue) {
                 /* we are inside an ExtractionController */
                 ExtractionController currentExtraction = ((ExtractionQueue) ((QueueThread) currentThread).getQueue()).getCurrentQueueEntry();
-                if (currentExtraction != null) logger = currentExtraction.getLogger();
+                if (currentExtraction != null) {
+                    logger = currentExtraction.getLogger();
+                }
             } else if (currentThread instanceof LinkCheckerThread) {
                 /* we are inside a LinkCheckerThread */
                 LinkCheckerThread lc = (LinkCheckerThread) currentThread;
@@ -115,11 +127,24 @@ public class LogController extends LogSourceProvider {
         return null;
     }
 
+    public static LogSource getRebirthLogger(final LogSource fallbackLogger) {
+        if (fallbackLogger == null) {
+            throw new IllegalArgumentException("fallbackLogger is null");
+        }
+        LogSource ret = getRebirthLogger();
+        if (ret == null) {
+            ret = fallbackLogger;
+        }
+        return ret;
+    }
+
     public static synchronized void setRebirthLogger(LogSource logger) {
         Thread currentThread = Thread.currentThread();
         WeakHashMap<Thread, LogSource> newMap = new WeakHashMap<Thread, LogSource>(map);
         if (logger == null) {
-            newMap.remove(currentThread);
+            if (newMap.remove(currentThread) == null) {
+                return;
+            }
         } else {
             newMap.put(currentThread, logger);
         }
@@ -134,14 +159,18 @@ public class LogController extends LogSourceProvider {
     }
 
     public static LogSource getFastPluginLogger(String id) {
-        if (LogController.getInstance().isInstantFlushDefault()) return LogController.getInstance().getLogger(id);
+        if (LogController.getInstance().isInstantFlushDefault()) {
+            return LogController.getInstance().getLogger(id);
+        }
         LogSource ret = new LogSource(id) {
-            LogSource         log      = null;
-            LogConsoleHandler cHandler = LogController.getInstance().getConsoleHandler();
+            LogSource               log      = null;
+            final LogConsoleHandler cHandler = LogController.getInstance().getConsoleHandler();
 
             @Override
             public synchronized Logger getParent() {
-                if (log != null) return log.getParent();
+                if (log != null) {
+                    return log.getParent();
+                }
                 log = LogController.getInstance().getLogger(getName());
                 return log.getParent();
             }
@@ -149,7 +178,9 @@ public class LogController extends LogSourceProvider {
             @Override
             public synchronized void log(LogRecord record) {
                 try {
-                    if (cHandler != null) cHandler.publish(record);
+                    if (cHandler != null) {
+                        cHandler.publish(record);
+                    }
                 } finally {
                     super.log(record);
                 }
@@ -160,7 +191,9 @@ public class LogController extends LogSourceProvider {
                 try {
                     super.close();
                 } finally {
-                    if (log != null) log.close();
+                    if (log != null) {
+                        log.close();
+                    }
                 }
             }
 
@@ -169,7 +202,9 @@ public class LogController extends LogSourceProvider {
                 try {
                     super.flush();
                 } finally {
-                    if (log != null) log.flush();
+                    if (log != null) {
+                        log.flush();
+                    }
                 }
             }
 
