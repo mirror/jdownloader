@@ -266,7 +266,7 @@ public class ProxyController implements ProxySelectorInterface {
         } else {
             synchronized (this) {
 
-                if (selector.isProxyBannedFor(orgReference, url, getPluginFromThread())) {
+                if (selector.isProxyBannedFor(orgReference, url, getPluginFromThread(), false)) {
                     return false;
 
                 }
@@ -465,6 +465,21 @@ public class ProxyController implements ProxySelectorInterface {
     }
 
     public List<AbstractProxySelectorImpl> getProxiesForDownloadWatchDog(PluginForHost pluginForHost, final boolean accountInUse, final int maxActive) {
+        List<AbstractProxySelectorImpl> ret = getProxiesForDownloadWatchDog(pluginForHost, accountInUse, maxActive, false, false);
+        // if there are no gateways, let's at least return all proxies in connection ban state.
+        // The DOwnload COntrolling and DownloadWatchdog will use their own "What shall we do with connection problems" handling then.
+        if (ret.size() == 0) {
+            ret = getProxiesForDownloadWatchDog(pluginForHost, accountInUse, maxActive, true, false);
+        }
+
+        if (ret.size() == 0) {
+            ret = getProxiesForDownloadWatchDog(pluginForHost, accountInUse, maxActive, true, true);
+        }
+
+        return ret;
+    }
+
+    public List<AbstractProxySelectorImpl> getProxiesForDownloadWatchDog(PluginForHost pluginForHost, final boolean accountInUse, final int maxActive, boolean ignoreConnectBans, boolean ignoreAllBans) {
         final List<AbstractProxySelectorImpl> ret = new ArrayList<AbstractProxySelectorImpl>();
         String host = pluginForHost.getHost().toLowerCase(Locale.ENGLISH);
 
@@ -476,7 +491,7 @@ public class ProxyController implements ProxySelectorInterface {
                         if (!selector.isAllowedByFilter(host)) {
                             continue;
                         }
-                        if (selector.isSelectorBannedFor(pluginForHost)) {
+                        if (!ignoreAllBans && selector.isSelectorBannedFor(pluginForHost, ignoreConnectBans)) {
                             return ret;
                         }
 
@@ -503,7 +518,7 @@ public class ProxyController implements ProxySelectorInterface {
                         if (!selector.isAllowedByFilter(host)) {
                             continue;
                         }
-                        if (selector.isSelectorBannedFor(pluginForHost)) {
+                        if (!ignoreAllBans && selector.isSelectorBannedFor(pluginForHost, ignoreConnectBans)) {
                             continue;
                         }
 
@@ -1027,7 +1042,19 @@ public class ProxyController implements ProxySelectorInterface {
      * @return
      */
     public List<HTTPProxy> getProxiesForUpdater(URL url) {
+        List<HTTPProxy> ret = getProxiesForUpdater(url, false, false);
 
+        if (ret.size() == 0) {
+            ret = getProxiesForUpdater(url, true, false);
+        }
+        if (ret.size() == 0) {
+            ret = getProxiesForUpdater(url, true, true);
+        }
+        return ret;
+
+    }
+
+    public List<HTTPProxy> getProxiesForUpdater(URL url, boolean ignoreConnectBans, boolean ignoreAllBans) {
         ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
         HashSet<HTTPProxy> dupe = new HashSet<HTTPProxy>();
         String host = url.getHost();
@@ -1045,7 +1072,7 @@ public class ProxyController implements ProxySelectorInterface {
                     List<HTTPProxy> lst = selector.getProxiesByUrl(url.toString());
                     if (lst != null) {
                         for (HTTPProxy p : lst) {
-                            if (selector.isProxyBannedFor(p, url, getPluginFromThread())) {
+                            if (!ignoreAllBans && selector.isProxyBannedFor(p, url, getPluginFromThread(), ignoreConnectBans)) {
                                 continue;
                             }
                             if (dupe.add(p)) {
@@ -1079,7 +1106,19 @@ public class ProxyController implements ProxySelectorInterface {
      */
     @Override
     public List<HTTPProxy> getProxiesByUrl(String urlString) {
+        List<HTTPProxy> ret = getProxiesByUrl(urlString, false, false);
 
+        if (ret.size() == 0) {
+            ret = getProxiesByUrl(urlString, true, false);
+        }
+        if (ret.size() == 0) {
+            ret = getProxiesByUrl(urlString, true, true);
+        }
+        return ret;
+
+    }
+
+    public List<HTTPProxy> getProxiesByUrl(String urlString, boolean ignoreConnectionBans, boolean ignoreAllBans) {
         Plugin plg = getPluginFromThread();
 
         boolean proxyRotationEnabled = plg == null || plg.isProxyRotationEnabled(false);
@@ -1112,6 +1151,7 @@ public class ProxyController implements ProxySelectorInterface {
         }
 
         ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+
         HashSet<HTTPProxy> dupe = new HashSet<HTTPProxy>();
         URL url;
         try {
@@ -1133,7 +1173,7 @@ public class ProxyController implements ProxySelectorInterface {
                         List<HTTPProxy> lst = selector.getProxiesByUrl(url.toString());
                         if (lst != null) {
                             for (HTTPProxy p : lst) {
-                                if (selector.isProxyBannedFor(p, url, plg)) {
+                                if (!ignoreAllBans && selector.isProxyBannedFor(p, url, plg, ignoreConnectionBans)) {
                                     if (!proxyRotationEnabled) {
                                         return ret;
                                     } else {
@@ -1152,6 +1192,7 @@ public class ProxyController implements ProxySelectorInterface {
                     logger.log(e);
                 }
             }
+
         } catch (MalformedURLException e) {
             logger.log(e);
         }

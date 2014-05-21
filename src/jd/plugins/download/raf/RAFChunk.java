@@ -165,7 +165,9 @@ public class RAFChunk extends Thread {
             if (request != null) {
                 String value;
                 for (Entry<String, String> next : request.entrySet()) {
-                    if (next.getValue() == null) continue;
+                    if (next.getValue() == null) {
+                        continue;
+                    }
                     value = next.getValue().toString();
                     br.getHeaders().put(next.getKey(), value);
                 }
@@ -230,10 +232,16 @@ public class RAFChunk extends Thread {
             return;
         }
         /* +1 because of startByte also gets loaded (startbyte till endbyte) */
-        if (endByte > 0) bytes2Do = (endByte - startByte) + 1;
+        if (endByte > 0) {
+            bytes2Do = (endByte - startByte) + 1;
+        }
         try {
-            if (connection == null) throw new WTFException("connection null");
-            if (dl == null) throw new WTFException("connection null");
+            if (connection == null) {
+                throw new WTFException("connection null");
+            }
+            if (dl == null) {
+                throw new WTFException("connection null");
+            }
             connection.setReadTimeout(dl.getReadTimeout());
             connection.setConnectTimeout(dl.getRequestTimeout());
             inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10)) {
@@ -305,7 +313,9 @@ public class RAFChunk extends Thread {
                     throw e;
                 } catch (SocketException e2) {
                     LogSource.exception(logger, e2);
-                    if (!isExternalyAborted() && !connectionclosed.get()) throw e2;
+                    if (!isExternalyAborted() && !connectionclosed.get()) {
+                        throw e2;
+                    }
                     towrite = -1;
                     break;
                 } catch (ClosedByInterruptException e) {
@@ -318,12 +328,16 @@ public class RAFChunk extends Thread {
                     break;
                 } catch (AsynchronousCloseException e3) {
                     LogSource.exception(logger, e3);
-                    if (!isExternalyAborted() && !connectionclosed.get()) throw e3;
+                    if (!isExternalyAborted() && !connectionclosed.get()) {
+                        throw e3;
+                    }
                     towrite = -1;
                     break;
                 } catch (IOException e4) {
                     LogSource.exception(logger, e4);
-                    if (!isExternalyAborted() && !connectionclosed.get()) throw e4;
+                    if (!isExternalyAborted() && !connectionclosed.get()) {
+                        throw e4;
+                    }
                     towrite = -1;
                     break;
                 }
@@ -337,14 +351,18 @@ public class RAFChunk extends Thread {
                     dl.writeBytes(this);
                 }
                 /* enough bytes loaded */
-                if (bytes2Do == 0 && endByte > 0) break;
+                if (bytes2Do == 0 && endByte > 0) {
+                    break;
+                }
                 if (getCurrentBytesPosition() > endByte && endByte > 0) {
                     break;
                 }
             }
             logger.info("ExternalAbort: " + isExternalyAborted());
             long endPosition = endByte;
-            if (endPosition < 0) endPosition = downloadable.getVerifiedFileSize();
+            if (endPosition < 0) {
+                endPosition = downloadable.getVerifiedFileSize();
+            }
             if (endPosition >= 0 && getCurrentBytesPosition() < endPosition) {
                 logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endPosition);
                 dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete()));
@@ -362,6 +380,7 @@ public class RAFChunk extends Thread {
             dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_unavailable(), 10 * 60000l));
         } catch (IOException e) {
             LogSource.exception(logger, e);
+
             if (e.getMessage() != null && e.getMessage().contains("reset")) {
                 logger.info("Connection reset: network problems!");
                 dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset(), 1000l * 60 * 5));
@@ -369,6 +388,9 @@ public class RAFChunk extends Thread {
                 LogSource.exception(logger, e);
                 logger.severe("Read timeout: network problems! (too many connections?, firewall/antivirus?)");
                 dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_networkreset(), LinkStatus.VALUE_TIMEOUT_REACHED));
+            } else if (e instanceof SocketException) {
+                logger.info("Socket Exception: network problems!");
+                dl.error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset(), 1000l * 60 * 5));
             } else {
                 LogSource.exception(logger, e);
                 if (e.getMessage() != null && e.getMessage().contains("503")) {
@@ -471,8 +493,12 @@ public class RAFChunk extends Thread {
         try {
             logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
             long endCheck = endByte;
-            if (endCheck < 0) endCheck = downloadable.getVerifiedFileSize();
-            if (startByte >= endCheck && endCheck >= 0) return;
+            if (endCheck < 0) {
+                endCheck = downloadable.getVerifiedFileSize();
+            }
+            if (startByte >= endCheck && endCheck >= 0) {
+                return;
+            }
             if (dl.getChunkNum() > 1) {
                 /* we requested multiple chunks */
                 connection = copyConnection(getOriginalConnection());

@@ -544,4 +544,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Connection to %s1 failed" })
     String ConnectExceptionInPluginBan(String proxy);
 
+    @Default(lngs = { "en" }, values = { "%s2: Authentication missing for %s1" })
+    String AuthExceptionGenericBan_toString_plugin(String proxy, String plugin);
+
+    @Default(lngs = { "en" }, values = { "%s2: Connection to %s1 failed" })
+    String ConnectExceptionInPluginBan_plugin(String proxy, String plugin);
+
 }

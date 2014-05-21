@@ -8,10 +8,12 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public interface ConnectionBan {
 
-    boolean isSelectorBannedByPlugin(Plugin plugin);
+    boolean isSelectorBannedByPlugin(Plugin plugin, boolean ignoreConnectBans);
 
-    boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread);
+    boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans);
 
     boolean isExpired();
+
+    boolean canSwallow(ConnectionBan ban);
 
 }

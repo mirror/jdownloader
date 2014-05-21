@@ -23,7 +23,7 @@ public class PluginRelatedConnectionBan extends AbstractBan {
 
     @Override
     public String toString() {
-        return _JDT._.AuthExceptionGenericBan_toString(proxy.toString());
+        return _JDT._.AuthExceptionGenericBan_toString_plugin(proxy.toString(), plugin.getHost());
     }
 
     // _JDT._.plugins_errors_proxy_connection()
@@ -70,13 +70,14 @@ public class PluginRelatedConnectionBan extends AbstractBan {
     // }
 
     @Override
-    public boolean isSelectorBannedByPlugin(Plugin candidate) {
+    public boolean isSelectorBannedByPlugin(Plugin candidate, boolean ignoreConnectBans) {
+
         // auth is always a ban reason
         return true;
     }
 
     @Override
-    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread) {
+    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         // auth is always a ban reason
         return true;
     }
@@ -111,28 +112,23 @@ public class PluginRelatedConnectionBan extends AbstractBan {
     // return false;
     // }
 
-    private boolean proxyEquals(HTTPProxy a, HTTPProxy b) {
-        if (a == b) {
-            return true;
-        }
-        if (a != null && b != null) {
-            return a.getType() == b.getType() && stringEquals(a.getHost(), b.getHost()) && a.getPort() == b.getPort();
-        }
-        return false;
-    }
-
     @Override
     public boolean isExpired() {
         return false;
     }
 
-    private boolean stringEquals(String a, String b) {
-        if (a == null) {
-            a = "";
+    @Override
+    public boolean canSwallow(ConnectionBan ban) {
+        if (!(ban instanceof PluginRelatedConnectionBan)) {
+            return false;
         }
-        if (b == null) {
-            b = "";
+        if (!proxyEquals(((PluginRelatedConnectionBan) ban).proxy, proxy)) {
+            return false;
         }
-        return StringUtils.equals(a, b);
+        // actually not really required. of one plugin is banned, all are banned
+        if (!pluginsEquals(((PluginRelatedConnectionBan) ban).plugin, plugin)) {
+            return false;
+        }
+        return true;
     }
 }

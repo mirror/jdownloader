@@ -32,12 +32,12 @@ public class AuthExceptionGenericBan extends AbstractBan {
     }
 
     @Override
-    public boolean isSelectorBannedByPlugin(Plugin candidate) {
+    public boolean isSelectorBannedByPlugin(Plugin candidate, boolean ignoreConnectionBans) {
         return true;
     }
 
     @Override
-    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread) {
+    public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         return proxy.equals(orgReference);
     }
 
@@ -50,6 +50,18 @@ public class AuthExceptionGenericBan extends AbstractBan {
     @Override
     public boolean isExpired() {
         return false;
+    }
+
+    @Override
+    public boolean canSwallow(ConnectionBan ban) {
+        if (!(ban instanceof AuthExceptionGenericBan)) {
+            return false;
+        }
+        if (!proxyEquals(((AuthExceptionGenericBan) ban).proxy, proxy)) {
+            return false;
+        }
+
+        return true;
     }
 
 }

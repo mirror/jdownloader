@@ -4913,4 +4913,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "edit (W%s1)" })
     String proxytable_edit_btn_whitelist(int string);
+
+    @Default(lngs = { "en" }, values = { "Checking Onlinestatus..." })
+    String CheckStatusAction_getMessage_checking();
 }

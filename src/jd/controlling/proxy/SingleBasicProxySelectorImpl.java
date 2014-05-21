@@ -129,6 +129,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         tempUser = null;
         tempPass = null;
         proxy.setUser(user);
+        clearBanList();
 
     }
 
@@ -140,6 +141,7 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         this.password = password;
         tempUser = null;
         tempPass = null;
+        clearBanList();
 
     }
 
@@ -174,10 +176,12 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     public void setPort(int port) {
         proxy.setPort(port);
+        clearBanList();
     }
 
     public void setHost(String value) {
         proxy.setHost(value);
+        clearBanList();
     }
 
     public String getHost() {
@@ -244,12 +248,12 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread) {
+    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         // can orgRef be null? I doubt that. TODO:ensure
         if (!proxy.equals(orgReference)) {
             return false;
         }
-        return super.isProxyBannedFor(orgReference, url, pluginFromThread);
+        return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
     }
 
     public void setTempAuth(String user, String pass) {

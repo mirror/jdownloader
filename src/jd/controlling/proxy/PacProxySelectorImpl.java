@@ -290,9 +290,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
             return;
         }
         this.user = user;
-        // reset banlist
-
-        // cacheMap.clear();
+        clearBanList();
     }
 
     public void setPassword(String password) {
@@ -300,9 +298,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
             return;
         }
         this.password = password;
-        // reset banlist
-
-        // cacheMap.clear();
+        clearBanList();
 
     }
 
@@ -338,7 +334,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     public void setPACUrl(String value) {
         this.pacUrl = value;
         selector = null;
-        // cacheMap.clear();
+        clearBanList();
     }
 
     @Override
@@ -385,20 +381,20 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     @Override
-    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread) {
+    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         // can orgRef be null? I doubt that. TODO:ensure
         if (!cacheMap.contains(orgReference)) {
             return false;
         }
-        return super.isProxyBannedFor(orgReference, url, pluginFromThread);
+        return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
     }
 
     @Override
-    public boolean isSelectorBannedFor(Plugin pluginForHost) {
+    public boolean isSelectorBannedFor(Plugin pluginForHost, boolean ignoreConnectionBans) {
         // actually, we cannot ban a pac selector at all, because there might always be a new proxy available.
         // in most cases however, once the selector is banned for a plugin - it is banned. This should work on most cases.
         // only pac scripts that have some kind of random proxy selection active would fail here
-        return super.isSelectorBannedFor(pluginForHost);
+        return super.isSelectorBannedFor(pluginForHost, ignoreConnectionBans);
     }
 
     public boolean isSelectorBannedFor(URL url) {

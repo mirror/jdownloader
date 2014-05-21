@@ -53,8 +53,12 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
 
     public void setEnabled(boolean useForFreeEnabled) {
         this.enabled = useForFreeEnabled;
-        banList.clear();
+        clearBanList();
 
+    }
+
+    protected void clearBanList() {
+        banList.clear();
     }
 
     private boolean    enabled = true;
@@ -197,10 +201,6 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public void addSessionBan(ConnectionBan ban) {
-        banList.add(ban);
-    }
-
-    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread) {
 
         for (ConnectionBan b : banList) {
 
@@ -208,7 +208,27 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
                 banList.remove(b);
                 continue;
             }
-            if (b.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread)) {
+            if (b.canSwallow(ban)) {
+                return;
+            }
+            if (ban.canSwallow(b)) {
+                banList.remove(b);
+                continue;
+            }
+
+        }
+        banList.add(ban);
+    }
+
+    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
+
+        for (ConnectionBan b : banList) {
+
+            if (b.isExpired()) {
+                banList.remove(b);
+                continue;
+            }
+            if (b.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans)) {
                 return true;
             }
         }
@@ -216,13 +236,13 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
 
     }
 
-    public boolean isSelectorBannedFor(Plugin pluginForHost) {
+    public boolean isSelectorBannedFor(Plugin pluginForHost, boolean ignoreConnectBans) {
         for (ConnectionBan b : banList) {
             if (b.isExpired()) {
                 banList.remove(b);
                 continue;
             }
-            if (b.isSelectorBannedByPlugin(pluginForHost)) {
+            if (b.isSelectorBannedByPlugin(pluginForHost, ignoreConnectBans)) {
                 return true;
             }
         }
