@@ -104,6 +104,9 @@ public class StartDownloadsBubbleSupport extends AbstractBubbleSupport implement
                                                                 @Override
                                                                 public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
                                                                     if (controller.isActive()) {
+                                                                        synchronized (StartDownloadsBubbleSupport.this) {
+                                                                            started.add(controller);
+                                                                        }
                                                                         return new DownloadStartedNotify(StartDownloadsBubbleSupport.this, controller);
                                                                     } else {
                                                                         return null;
