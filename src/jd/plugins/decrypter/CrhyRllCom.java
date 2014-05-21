@@ -133,10 +133,6 @@ public class CrhyRllCom extends PluginForDecrypt {
                 logger.info("Video is not released yet -> Cannot decrypt link: " + cryptedLink.getCryptedUrl());
                 return decryptedLinks;
             }
-            if (br.containsHTML("disabled=true")) {
-                logger.info("You cannot watch this video (yet): " + cryptedLink.getCryptedUrl());
-                return decryptedLinks;
-            }
 
             // Get the episode name
             String title = this.nameFromVideoUrl(cryptedLink.getCryptedUrl());
@@ -154,8 +150,9 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
-            if (configUrlDecode.contains("Only+All-Access+Members+and+Anime+Members+can+pop+out+this+video")) {
-                logger.info("Link can only be decrypted if you own and add a crunchyroll.com account: " + cryptedLink.getCryptedUrl());
+            final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
+            if (configErrorHandling != null) {
+                logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " + Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
                 return decryptedLinks;
             }
             final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
