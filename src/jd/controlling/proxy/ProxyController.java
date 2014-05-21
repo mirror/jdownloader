@@ -280,9 +280,9 @@ public class ProxyController implements ProxySelectorInterface {
             }
             int maxResults;
             if (pluginForHost.isProxyRotationEnabled(cachedAccount.getAccount() != null)) {
-                maxResults = 1;
-            } else {
                 maxResults = Integer.MAX_VALUE;
+            } else {
+                maxResults = 1;
             }
             for (final AbstractProxySelectorImpl selector : _getList()) {
                 try {
