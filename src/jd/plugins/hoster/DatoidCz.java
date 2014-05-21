@@ -54,7 +54,10 @@ public class DatoidCz extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage("http://api.datoid.cz/v1/get-file-details?url=" + Encoding.urlEncode(link.getDownloadURL()));
-        if (br.containsHTML("\"error\":\"(File not found|File was blocked)\"")) {
+        if (br.containsHTML("\"error\":\"(File not found|File was blocked|File was deleted)\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("\"error\":\"File is password protected\"")) {
+            logger.info("Password protected links are not yet supported (via API)!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = getJson("filename");

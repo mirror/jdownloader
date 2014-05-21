@@ -61,6 +61,9 @@ public class SuperLoadCzDecrypter extends PluginForDecrypt {
         final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
         if (aa == null) {
             logger.info("Can't decrypt superload.cz links without account...");
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            decryptedLinks.add(offline);
             return decryptedLinks;
         }
         final String token = aa.getStringProperty("token", null);

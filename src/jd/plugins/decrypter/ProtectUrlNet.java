@@ -70,7 +70,9 @@ public class ProtectUrlNet extends PluginForDecrypt {
             }
             if (postData != null) {
                 br.setCookie(this.getHost(), "PURL_PopPub", "1");
-                br.setCookie(this.getHost(), "PURL_FreakWorld-dgfedfgg", "oui");
+                // br.setCookie(this.getHost(), "PURL_FreakWorld-dgfedfgg", "oui");
+                br.setCookie(this.getHost(), "PURL_Flood", "1400685598");
+                br.setCookie(this.getHost(), "PURL_NavDossier", "Ooops");
                 br.postPage("http://protect-url.net/linkid.php", postData);
                 if (br.containsHTML(PASSWRONG)) {
                     br.getPage(parameter);

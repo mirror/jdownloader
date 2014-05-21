@@ -81,8 +81,8 @@ public class ErtkiOg extends PluginForDecrypt {
                     final_link = Encoding.Base64Decode(Encoding.htmlDecode(link));
                 } else {
                     final_link = link;
+                    final_link = "directhttp://" + final_link;
                 }
-                final_link = "directhttp://" + final_link;
                 decryptedLinks.add(createDownloadlink(final_link));
             }
 

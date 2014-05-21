@@ -54,6 +54,11 @@ public class IFileItFldr extends PluginForDecrypt {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("filecloud.io");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         String fpName = null;
+        try {
+            /* Grab extremely big folderlinks */
+            br.setLoadLimit(br.getLoadLimit() * 8);
+        } catch (final Throwable e) {
+        }
         // Id we have an account we can use the API, if not we have to do it over the site
         if (aa != null) {
             final String akey = ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, hostPlugin, br);

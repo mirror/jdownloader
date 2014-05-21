@@ -96,6 +96,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
         final boolean accountNeeded = accountNeeded(link);

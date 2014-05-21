@@ -50,24 +50,28 @@ public class MangaEdenCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String thisLinkpart = new Regex(parameter, "mangaeden\\.com(/.*?)1/$").getMatch(0);
-        String fpName = br.getRegex("<title>([^<>\"]*?) \\- [\t\n\r ]+Manga Eden").getMatch(0);
+        String fpName = br.getRegex("<title>([^<>\"]*?)\\- Read Manga Online Free").getMatch(0);
         final String[] pages = br.getRegex("class=\"ui\\-state\\-default\" href=\"(" + thisLinkpart + "\\d+/)\"").getColumn(0);
         if (pages == null || pages.length == 0 || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        fpName = Encoding.htmlDecode(fpName.trim());
+        fpName = Encoding.htmlDecode(fpName.trim()).replace("\n", "");
 
         cryptedLinks.add(parameter);
         for (final String currentPage : pages) {
-            if (!cryptedLinks.contains(currentPage)) cryptedLinks.add(currentPage);
+            if (!cryptedLinks.contains(currentPage)) {
+                cryptedLinks.add(currentPage);
+            }
         }
 
         // decrypt all pages
         final DecimalFormat df = new DecimalFormat("0000");
         int counter = 1;
         for (final String currentPage : cryptedLinks) {
-            if (!currentPage.equals(parameter)) br.getPage("http://www.mangaeden.com/" + currentPage);
+            if (!currentPage.equals(parameter)) {
+                br.getPage("http://www.mangaeden.com/" + currentPage);
+            }
             final String decryptedlink = getSingleLink();
             final DownloadLink dd = createDownloadlink("directhttp://" + decryptedlink);
             dd.setAvailable(true);
@@ -82,9 +86,16 @@ public class MangaEdenCom extends PluginForDecrypt {
     }
 
     private String getSingleLink() {
-        String finallink = br.getRegex("id=\"mainImg\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\"(http://(www\\.)?cdn\\.mangaeden\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null) return null;
+        String finallink = br.getRegex("id=\"mainImg\" src=\"((http)?://[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("\"((http)?//(www\\.)?cdn\\.mangaeden\\.com/mangasimg/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (finallink == null) {
+            return null;
+        }
+        if (finallink.startsWith("//")) {
+            finallink = "http:" + finallink;
+        }
         return finallink;
     }
 
