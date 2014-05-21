@@ -14,25 +14,24 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class DownloadStartedNotify extends AbstractNotifyWindow<DownloadStartedContentPanel> {
-
+    
     public DownloadStartedNotify(StartDownloadsBubbleSupport startDownloadsBubbleSupport, SingleDownloadController downloadController) {
         super(startDownloadsBubbleSupport, _GUI._.DownloadStartNotify_DownloadStartNotify(), new DownloadStartedContentPanel(downloadController));
-
+        
     }
-
+    
     @Override
     protected void onMouseClicked(MouseEvent m) {
         super.onMouseClicked(m);
         getContentComponent().onClicked();
-
+        
     }
-
+    
     protected void onSettings() {
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
-
     }
-
+    
 }

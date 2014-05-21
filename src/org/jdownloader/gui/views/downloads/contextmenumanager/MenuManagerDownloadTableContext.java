@@ -27,6 +27,7 @@ import org.jdownloader.gui.views.downloads.action.CollapseExpandContextAction;
 import org.jdownloader.gui.views.downloads.action.CopyGenericContextAction;
 import org.jdownloader.gui.views.downloads.action.CreateDLCAction;
 import org.jdownloader.gui.views.downloads.action.ForceDownloadAction;
+import org.jdownloader.gui.views.downloads.action.GenericChunksAction;
 import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistAction;
 import org.jdownloader.gui.views.downloads.action.GenericDeleteFromDownloadlistContextAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
@@ -41,6 +42,7 @@ import org.jdownloader.gui.views.downloads.action.ResumeAction;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.gui.views.downloads.action.SkipAction;
 import org.jdownloader.gui.views.downloads.action.StopsignAction;
+import org.jdownloader.gui.views.downloads.context.submenu.ChunksMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.MoreMenuContainer;
 import org.jdownloader.gui.views.downloads.context.submenu.PriorityMenuContainer;
@@ -53,9 +55,9 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.AddLinksContextMenuActi
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SortAction;
 
 public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePackage, DownloadLink> {
-
+    
     private static final MenuManagerDownloadTableContext INSTANCE = new MenuManagerDownloadTableContext();
-
+    
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
      * 
@@ -64,30 +66,29 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
     public static MenuManagerDownloadTableContext getInstance() {
         return MenuManagerDownloadTableContext.INSTANCE;
     }
-
+    
     /**
-     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of DownloadListContextMenuManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
-
+    
     private MenuManagerDownloadTableContext() {
         super();
-
+        
     }
-
+    
     public boolean isAcceleratorsEnabled() {
         return true;
     }
-
+    
     public MenuContainerRoot createDefaultStructure() {
         MenuContainerRoot mr = new MenuContainerRoot();
         mr.add(AddLinksContextMenuAction.class);
         mr.add(AddContainerContextMenuAction.class);
-
+        
         mr.add(new SeperatorData());
         // mr.add()
         mr.add(createSettingsMenu());
-
+        
         mr.add(new SeperatorData());
         mr.add(new DownloadsTablePluginLink());
         mr.add(new SeperatorData());
@@ -97,21 +98,21 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         mr.add(new MenuItemData(new ActionData(EnabledAction.class)));
         mr.add(new MenuItemData(new ActionData(SkipAction.class)));
         mr.add(new SeperatorData());
-
+        
         mr.add(new MenuItemData(new ActionData(ForceDownloadAction.class)));
         mr.add(new MenuItemData(new ActionData(StopsignAction.class)));
         mr.add(new SeperatorData());
-
+        
         mr.add(createMoreMenu());
-
+        
         mr.add(new SeperatorData());
         mr.add(setAccelerator(new MenuItemData(setName(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_ALL, true), IconKey.ICON_DELETE), _GUI._.DeleteQuickAction_DeleteQuickAction_object_())), CrossSystem.getDeleteShortcut()));
-
+        
         mr.add(createDeleteMenu());
         mr.add(new SeperatorData());
         mr.add(PropertiesAction.class);
         mr.add(new SeperatorData());
-
+        
         mr.add(new MenuItemData(new ActionData(MenuManagerAction.class)));
         OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
@@ -119,19 +120,19 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         opt.add(CopyGenericContextAction.class);
         return mr;
     }
-
+    
     private MenuItemData createDeleteMenu() {
         DeleteMenuContainer delete = new DeleteMenuContainer();
-
+        
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_DISABLED, true), IconKey.ICON_REMOVE_DISABLED));
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_FAILED, true), IconKey.ICON_REMOVE_FAILED));
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_FINISHED, true), IconKey.ICON_REMOVE_OK));
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistAction.DELETE_OFFLINE, true), IconKey.ICON_REMOVE_OFFLINE));
         delete.add(setIconKey(new ActionData(GenericDeleteFromDownloadlistContextAction.class).putSetup(GenericDeleteFromDownloadlistContextAction.DELETE_ALL, true).putSetup(IncludedSelectionSetup.INCLUDE_UNSELECTED_LINKS, true).putSetup(IncludedSelectionSetup.INCLUDE_SELECTED_LINKS, false), IconKey.ICON_OK));
-
+        
         return delete;
     }
-
+    
     private MenuItemData createMoreMenu() {
         MoreMenuContainer more = new MoreMenuContainer();
         more.add(new MenuItemData(new ActionData(ResumeAction.class)));
@@ -141,13 +142,13 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         more.add(new MenuItemData(new ActionData(CreateDLCAction.class)));
         return more;
     }
-
+    
     private MenuItemData createSettingsMenu() {
         SettingsMenuContainer settings;
         settings = new SettingsMenuContainer();
-
+        
         settings.add(new MenuItemData(new ActionData(CheckStatusAction.class)));
-
+        
         settings.add(RenameAction.class);
         settings.add(new MenuItemData(new ActionData(OpenInBrowserAction.class)));
         settings.add(new MenuItemData(new ActionData(URLEditorAction.class)));
@@ -155,12 +156,12 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         settings.add(new MenuItemData(new ActionData(PackageNameAction.class)));
         settings.add(new MenuItemData(new ActionData(SetDownloadFolderInDownloadTableAction.class)));
         settings.add(new MenuItemData(new ActionData(SetDownloadPassword.class)));
-
         settings.add(createPriorityMenu());
+        settings.add(createChunksMenu());
         return settings;
-
+        
     }
-
+    
     private MenuItemData createPriorityMenu() {
         PriorityMenuContainer priority;
         priority = new PriorityMenuContainer();
@@ -171,32 +172,40 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         priority.add(new MenuItemData(new ActionData(PriorityHighestAction.class)));
         return priority;
     }
-
+    
+    private MenuItemData createChunksMenu() {
+        ChunksMenuContainer chunksMenu = new ChunksMenuContainer();
+        for (int chunks = 20; chunks >= 0; chunks--) {
+            chunksMenu.add(new MenuItemData(new ActionData(GenericChunksAction.class).putSetup(GenericChunksAction.CHUNKS, chunks)));
+        }
+        return chunksMenu;
+    }
+    
     @Override
     public String getFileExtension() {
         return ".jdDLMenu";
     }
-
+    
     @Override
     public String getName() {
         return _GUI._.DownloadListContextMenuManager_getName();
     }
-
+    
     @Override
     protected void updateGui() {
         new EDTRunner() {
-
+            
             @Override
             protected void runInEDT() {
                 ((DownloadsTable) DownloadsTableModel.getInstance().getTable()).updateContextShortcuts();
             }
         };
-
+        
     }
-
+    
     @Override
     protected String getStorageKey() {
         return "DownloadTableContext";
     }
-
+    
 }

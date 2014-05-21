@@ -54,35 +54,35 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veohdecrypted\\.com/(browse/videos/category/.*?/)?watch/[A-Za-z0-9]+" }, flags = { 0 })
 public class VeohCom extends PluginForHost {
-
+    
     private static final String  APIKEY          = "NEQzRTQyRUMtRjEwQy00MTcyLUExNzYtRDMwQjQ2OEE2OTcy";
-
+    
     private URLConnectionAdapter DL;
-
+    
     private byte[]               IV;
-
+    
     private InputStream          INPUTSTREAM;
-
+    
     private byte[]               BUFFER;
-
+    
     private long                 BYTESLOADED;
-
+    
     private long                 BYTES2DO        = -1;
-
+    
     private BufferedOutputStream FILEOUT;
-
+    
     private boolean              CONNECTIONCLOSE = false;
-
+    
     private int                  FAILCOUNTER     = 0;
-
+    
     public VeohCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
-
+    
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("veohdecrypted.com/", "veoh.com/"));
     }
-
+    
     private byte[] AESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
         final Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
         final IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -90,7 +90,7 @@ public class VeohCom extends PluginForHost {
         cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
         return cipher.doFinal(plain);
     }
-
+    
     private class BouncyCastleAESdecrypt {
         private byte[] decrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
             // Prepare the cipher (AES, CBC, no padding)
@@ -104,7 +104,7 @@ public class VeohCom extends PluginForHost {
             return decrypted;
         }
     }
-
+    
     public void closeConnections() {
         CONNECTIONCLOSE = true;
         try {
@@ -119,7 +119,7 @@ public class VeohCom extends PluginForHost {
         }
         logger.info("Closed connection before closing file");
     }
-
+    
     private String decryptUrl(final String[] T, String baseUrl, final String fHash, final String hexTime, final String hexvidID, final String hexSize) throws Exception {
         final byte[] cipher = Base64.decode(T[0]);
         baseUrl = baseUrl.replaceAll("\\$1", T[1]);
@@ -141,17 +141,17 @@ public class VeohCom extends PluginForHost {
         IV = JDHexUtils.getByteArray(JDHexUtils.getHexString(cipher).substring(32));
         return Encoding.htmlDecode(baseUrl);
     }
-
+    
     @Override
     public String getAGBLink() {
         return "http://www.veoh.com/corporate/termsofuse";
     }
-
+    
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-
+    
     private void getPolicyFiles() throws Exception {
         int ret = -100;
         UserIO.setCountdownTime(120);
@@ -164,7 +164,7 @@ public class VeohCom extends PluginForHost {
             }
         }
     }
-
+    
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -176,22 +176,22 @@ public class VeohCom extends PluginForHost {
         final String ext = br.getRegex("extension=\"(\\.[a-z0-9]+)\"").getMatch(0);
         String sTime = br.getRegex("timestamp=\"(\\d+)\"").getMatch(0);
         if (fHash == null || fHash == null || sTime == null || videoId == null || fileSize == null || ext == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
+        
         boolean oldDlHandling = fHash.length() < 32;
         String hexTime = String.format("%08x", Long.parseLong(sTime));
-
+        
         if (!oldDlHandling) {
             downloadLink.setName(downloadLink.getName() + ext);
             br.setFollowRedirects(true);
-
+            
             // prepareBrowser("veohplugin-1.3.6 service (NT 6.1; IE 7.0; en-US Windows)");
             /* generate crypted token (ct=) */
             final String path = "/veoh/" + permaLinkID + "/" + fHash + ".eveoh";
             final String cryptedToken = JDHash.getSHA1(sTime + "VT Copyright 2008 Veoh" + path);
             final int p = Integer.parseInt(cryptedToken.substring(0, 1), 16);
-
+            
             downloadLink.getLinkStatus().setStatusText("download to initialize ...");
-
+            
             br.getPage("http://content.veoh.com" + path + "?version=3&ct=" + cryptedToken + xor(cryptedToken.substring(p, p + 8), hexTime));
             if (br.getHttpConnection().getResponseCode() == 404 && br.containsHTML("<title>404 Not Found</title>")) {
                 oldDlHandling = true;
@@ -202,7 +202,7 @@ public class VeohCom extends PluginForHost {
             /* parse piece eids and decrypt it */
             sTime = br.getRegex("time=\'(\\d+)\'").getMatch(0);
             if (sTime == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
+            
             final String hexvidID = String.format("%08x", Long.parseLong(videoId));
             final String hexSize = String.format("%08x", Long.parseLong(fileSize));
             final String templateUrl = br.getRegex("url base=\'(.*?)\'").getMatch(0);
@@ -212,7 +212,7 @@ public class VeohCom extends PluginForHost {
             IV = fHash.substring(0, 16).getBytes();
             final String[][] content = br.getRegex("<piece eid=\'(.*?)\' a1=\'(.*?)\' a2=\'(.*?)\' a3=\'(.*?)\' />").getMatches();
             prepareBrowser("veoh-1.3.6 service (NT 6.1; IE 9.0.8112.16421; en-US Windows)");
-
+            
             final File tmpFile = new File(downloadLink.getFileOutput() + ".part");
             /* reset */
             if (!tmpFile.exists()) {
@@ -313,10 +313,6 @@ public class VeohCom extends PluginForHost {
                             BYTESLOADED += miniblock;
                             partEndByte += miniblock;
                             downloadLink.setDownloadCurrent(BYTESLOADED);
-                            try {
-                                raf.setTotalLinkBytesLoaded(BYTESLOADED);
-                            } catch (final Throwable e) {
-                            }
                             if (partEndByte > 0) {
                                 BYTES2DO = partEndByte + 1;
                             }
@@ -388,14 +384,14 @@ public class VeohCom extends PluginForHost {
                     downloadLink.getLinkStatus().setStatusText("File(s) not found: " + FAILCOUNTER);
                 }
             }
-
+            
         } else {
             requestFileInformation(downloadLink);
             /* decrase Browserrequests */
             final Browser br2 = br.cloneBrowser();
             /* webplayer request */
             br2.getPage("http://www.veoh.com/static/swf/webplayer/VWPBeacon.swf?port=50246&version=1.2.2.1112");
-
+            
             final String videoID = new Regex(downloadLink.getDownloadURL(), "/watch/(.+)").getMatch(0);
             br.getPage("http://www.veoh.com/rest/v2/execute.xml?apiKey=" + Encoding.Base64Decode("NTY5Nzc4MUUtMUM2MC02NjNCLUZGRDgtOUI0OUQyQjU2RDM2") + "&method=veoh.video.findByPermalink&permalink=" + videoID + "&");
             if (br.containsHTML("(<rsp stat=\"fail\"|\"The video does not exist\"|name=\"YouTube\\.com\" type=\"\")")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -412,10 +408,10 @@ public class VeohCom extends PluginForHost {
             } catch (final Throwable e) {
             }
             if (fHashPath == null || fHashToken == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
+            
             br.getHeaders().put("Referer", "http://www.veoh.com/static/swf/veoh/VeohMediaPlayer.swf?v=2012-03-26.2");
             br.getHeaders().put("x-flash-version", "10,3,183,7");
-
+            
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, fHashPath + fHashToken, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -427,7 +423,7 @@ public class VeohCom extends PluginForHost {
             dl.startDownload();
         }
     }
-
+    
     private boolean isExternalyAborted() {
         boolean ret = Thread.currentThread().isInterrupted();
         if (ret) return true;
@@ -437,7 +433,7 @@ public class VeohCom extends PluginForHost {
         }
         return ret;
     }
-
+    
     private void prepareBrowser(final String userAgent) {
         br.clearCookies("http://www.veoh.com");
         br.getHeaders().put("Pragma", null);
@@ -450,7 +446,7 @@ public class VeohCom extends PluginForHost {
         br.getHeaders().put("Connection", null);
         br.getHeaders().put("Referer", null);
     }
-
+    
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
@@ -462,7 +458,7 @@ public class VeohCom extends PluginForHost {
         // |AnyClip| at line 461 (above) is removed to avoid PluginException
         final String filename = br.getRegex("\"title\":\"(.*?)(\\s+RAW)?\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
+        
         String ext = null;
         if (filename.contains(".")) ext = filename.substring(filename.lastIndexOf("."));
         if (ext == null || ext.length() > 5) {
@@ -470,25 +466,25 @@ public class VeohCom extends PluginForHost {
         } else {
             if (new Regex(ext, "\\.(\\d+)").matches()) ext = ".mp4";
         }
-
+        
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim() + ext));
         return AvailableStatus.TRUE;
     }
-
+    
     @Override
     public void reset() {
     }
-
+    
     @Override
     public void resetDownloadlink(final DownloadLink link) {
         link.setProperty("bytes_loaded", 0l);
         link.setProperty("parts_finished", 0l);
     }
-
+    
     @Override
     public void resetPluginGlobals() {
     }
-
+    
     private String xor(final String a, final String b) {
         final byte[] T1 = JDHexUtils.getByteArray(a);
         final byte[] T2 = JDHexUtils.getByteArray(b);
@@ -498,5 +494,5 @@ public class VeohCom extends PluginForHost {
         }
         return JDHexUtils.getHexString(T3);
     }
-
+    
 }

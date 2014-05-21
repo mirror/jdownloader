@@ -46,7 +46,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<FolderChooser>                              customPath;
     private Pair<Checkbox>                                   toggleUseSubpath;
     private Pair<Spinner>                                    subPathMinFiles;
-
+    
     private Pair<? extends TextInput>                        subPath;
     private Pair<ComboBox<FileCreationManager.DeleteOption>> toggleDeleteArchives;
     private Pair<ComboBox<IfFileExistsAction>>               toggleOverwriteExisting;
@@ -58,7 +58,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
     private Pair<Checkbox>                                   toggleDefaultEnabled;
     private Pair<Spinner>                                    subPathMinFolders;
     private Pair<Spinner>                                    subPathMinFilesOrFolders;
-
+    
     public ExtractionConfigPanel(ExtractionExtension plg) {
         super(plg);
         toggleDefaultEnabled = this.addPair(T._.settings_auto_extract_default(), null, new Checkbox());
@@ -71,23 +71,23 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         spinner.setFormat("# " + T._.files2());
         // ((DefaultEditor) spinner.getEditor()).getTextField().setHorizontalAlignment(JTextField.LEFT);
         String lblConstraints = "gapleft 37,aligny center,alignx right";
-
+        
         subPathMinFiles = this.addPair(T._.settings_subpath_minnum3(), lblConstraints, null, spinner);
         subPathMinFiles.setConditionPair(toggleUseSubpath);
         Spinner spinner2 = new Spinner(0, Integer.MAX_VALUE);
         spinner2.setFormat("# " + T._.folders());
-
+        
         subPathMinFolders = this.addPair(T._.and(), lblConstraints, null, spinner2);
         subPathMinFolders.setConditionPair(toggleUseSubpath);
-
+        
         Spinner spinner3 = new Spinner(0, Integer.MAX_VALUE);
         spinner3.setFormat("# " + T._.files_and_folders());
-
+        
         subPathMinFilesOrFolders = this.addPair(T._.and(), lblConstraints, null, spinner3);
         subPathMinFilesOrFolders.setConditionPair(toggleUseSubpath);
-
+        
         subPath = this.addPair(T._.settings_subpath(), null, new TextInput() {
-
+            
             @Override
             public JPopupMenu getPopupMenu(AbstractAction cutAction, AbstractAction copyAction, AbstractAction pasteAction, AbstractAction deleteAction, AbstractAction selectAction) {
                 JPopupMenu menu = new JPopupMenu();
@@ -96,14 +96,14 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                     {
                         setName(T._.packagename());
                     }
-
+                    
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (StringUtils.isEmpty(getText())) {
                             setText(ArchiveFactory.PACKAGENAME);
                         } else {
                             int car = getCaretPosition();
-
+                            
                             try {
                                 getDocument().insertString(car, ArchiveFactory.PACKAGENAME, null);
                             } catch (BadLocationException e1) {
@@ -116,14 +116,14 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                     {
                         setName(T._.archivename());
                     }
-
+                    
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (StringUtils.isEmpty(getText())) {
                             setText(ArchiveFactory.ARCHIVENAME);
                         } else {
                             int car = getCaretPosition();
-
+                            
                             try {
                                 getDocument().insertString(car, ArchiveFactory.ARCHIVENAME, null);
                             } catch (BadLocationException e1) {
@@ -136,14 +136,14 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                     {
                         setName(T._.subfolder());
                     }
-
+                    
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (StringUtils.isEmpty(getText())) {
                             setText(ArchiveFactory.SUBFOLDER);
                         } else {
                             int car = getCaretPosition();
-
+                            
                             try {
                                 getDocument().insertString(car, ArchiveFactory.SUBFOLDER, null);
                             } catch (BadLocationException e1) {
@@ -152,19 +152,19 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         }
                     }
                 });
-
+                
                 sub.add(new AppAction() {
                     {
                         setName(T._.hoster());
                     }
-
+                    
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (StringUtils.isEmpty(getText())) {
                             setText(ArchiveFactory.HOSTER);
                         } else {
                             int car = getCaretPosition();
-
+                            
                             try {
                                 getDocument().insertString(car, ArchiveFactory.HOSTER, null);
                             } catch (BadLocationException e1) {
@@ -173,19 +173,19 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         }
                     }
                 });
-
+                
                 sub.add(new AppAction() {
                     {
                         setName(T._.date());
                     }
-
+                    
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (StringUtils.isEmpty(getText())) {
                             setText("$DATE:dd.MM.yyyy$");
                         } else {
                             int car = getCaretPosition();
-
+                            
                             try {
                                 getDocument().insertString(car, "$DATE:dd.MM.yyyy$", null);
                             } catch (BadLocationException e1) {
@@ -194,7 +194,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         }
                     }
                 });
-
+                
                 menu.add(sub);
                 menu.add(new JSeparator());
                 menu.add(cutAction);
@@ -204,21 +204,21 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 menu.add(selectAction);
                 return menu;
             }
-
+            
         });
         subPath.setConditionPair(toggleUseSubpath);
-
+        
         this.addHeader(T._.settings_various(), NewTheme.I().getIcon("settings", 32));
         if (JDFileUtils.isTrashSupported()) {
             toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), null, (ComboBox<FileCreationManager.DeleteOption>) new ComboBox<FileCreationManager.DeleteOption>(FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.RECYCLE, FileCreationManager.DeleteOption.NULL) {
                 protected String valueToString(FileCreationManager.DeleteOption value) {
                     switch (value) {
-                    case RECYCLE:
-                        return T._.delete_to_trash();
-                    case NO_DELETE:
-                        return T._.dont_delete();
-                    case NULL:
-                        return T._.final_delete();
+                        case RECYCLE:
+                            return T._.delete_to_trash();
+                        case NO_DELETE:
+                            return T._.dont_delete();
+                        case NULL:
+                            return T._.final_delete();
                     }
                     return null;
                 }
@@ -227,34 +227,34 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             toggleDeleteArchives = this.addPair(T._.settings_remove_after_extract(), null, (ComboBox<FileCreationManager.DeleteOption>) new ComboBox<FileCreationManager.DeleteOption>(FileCreationManager.DeleteOption.NO_DELETE, FileCreationManager.DeleteOption.NULL) {
                 protected String valueToString(FileCreationManager.DeleteOption value) {
                     switch (value) {
-                    case RECYCLE:
-                        return T._.delete_to_trash();
-                    case NO_DELETE:
-                        return T._.dont_delete();
-                    case NULL:
-                        return T._.final_delete();
+                        case RECYCLE:
+                            return T._.delete_to_trash();
+                        case NO_DELETE:
+                            return T._.dont_delete();
+                        case NULL:
+                            return T._.final_delete();
                     }
                     return null;
                 }
             });
         }
-
+        
         toggleDeleteArchiveDownloadLinks = this.addPair(T._.settings_remove_after_extract_downloadlink(), null, new Checkbox());
         toggleOverwriteExisting = this.addPair(T._.settings_if_file_exists(), null, (ComboBox<IfFileExistsAction>) new ComboBox<IfFileExistsAction>(IfFileExistsAction.values()));
         cpupriority = this.addPair(T._.settings_cpupriority(), null, new ComboBox<String>(T._.settings_cpupriority_high(), T._.settings_cpupriority_middle(), T._.settings_cpupriority_low()));
-
+        
         this.addHeader(T._.settings_multi(), NewTheme.I().getIcon("settings", 32));
         toggleUseOriginalFileDate = this.addPair(T._.settings_multi_use_original_file_date(), null, new Checkbox());
         blacklist = this.addPair(T._.settings_blacklist(), null, new TextArea());
-
+        
         this.addHeader(T._.settings_passwords(), NewTheme.I().getIcon("password", 32));
         passwordlist = addPair(T._.settings_passwordlist(), null, new TextArea());
     }
-
+    
     @Override
     public void updateContents() {
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
-
+            
             @Override
             protected Void run() throws RuntimeException {
                 final ExtractionConfig s = extension.getSettings();
@@ -277,7 +277,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
                         subPath.getComponent().setText(s.getSubPath());
                         subPathMinFiles.getComponent().setValue(s.getSubPathMinFilesTreshhold());
-
+                        
                         subPathMinFolders.getComponent().setValue(s.getSubPathMinFoldersTreshhold());
                         subPathMinFilesOrFolders.getComponent().setValue(s.getSubPathMinFilesOrFoldersTreshhold());
                         StringBuilder sb = new StringBuilder();
@@ -310,11 +310,11 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             }
         });
     }
-
+    
     private void updateHeaders(boolean b) {
-
+        
     }
-
+    
     @Override
     public void save() {
         final ExtractionConfig s = extension.getSettings();
@@ -360,15 +360,16 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             }
             s.setBlacklistPatterns(ignoreList.toArray(new String[ignoreList.size()]));
         }
-        if (cpupriority.getComponent().getValue().equals(T._.settings_cpupriority_high())) {
+        String cpuValue = cpupriority.getComponent().getValue();
+        if (T._.settings_cpupriority_high().equals(cpuValue)) {
             s.setCPUPriority(CPUPriority.HIGH);
-        } else if (cpupriority.getComponent().getValue().equals(T._.settings_cpupriority_middle())) {
+        } else if (T._.settings_cpupriority_middle().equals(cpuValue)) {
             s.setCPUPriority(CPUPriority.MIDDLE);
         } else {
             s.setCPUPriority(CPUPriority.LOW);
         }
-
+        
         s.setUseOriginalFileDate(toggleUseOriginalFileDate.getComponent().isSelected());
     }
-
+    
 }

@@ -16,7 +16,6 @@ import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
-import org.jdownloader.gui.notify.BasicNotify;
 import org.jdownloader.gui.notify.BubbleNotify;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.notify.gui.BubbleNotifyConfigPanel;
@@ -24,32 +23,32 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class ReconnectBubble extends AbstractNotifyWindow<ReconnectBubbleContent> implements ReconnecterListener {
-
+    
     @Override
     protected void onMouseClicked(MouseEvent m) {
         super.onMouseClicked(m);
         // JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
         // JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
-
+        
     }
-
+    
     protected void onSettings() {
         JDGui.getInstance().setFrameState(FrameState.TO_FRONT_FOCUSED);
         JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
         JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         ConfigurationView.getInstance().setSelectedSubPanel(BubbleNotifyConfigPanel.class);
-
+        
     }
-
+    
     protected long createdTime;
     private Timer  updateTimer;
-
+    
     public ReconnectBubble() {
         super(_GUI._.balloon_reconnect(), new ReconnectBubbleContent());
         // , _GUI._.balloon_reconnect_start_msg(), NewTheme.I().getIcon("reconnect", 32)
         Reconnecter.getInstance().getEventSender().addListener(this, true);
         updateTimer = new Timer(1000, new ActionListener() {
-
+            
             @Override
             public void actionPerformed(ActionEvent e) {
                 getContentComponent().update();
@@ -58,12 +57,12 @@ public class ReconnectBubble extends AbstractNotifyWindow<ReconnectBubbleContent
         updateTimer.setRepeats(true);
         updateTimer.start();
     }
-
+    
     @Override
     protected int getTimeout() {
         return 0;
     }
-
+    
     // private void update() {
     // ReconnectBubbleContent panel = getContentComponent();
     // if (crawler instanceof JobLinkCrawler) {
@@ -111,17 +110,16 @@ public class ReconnectBubble extends AbstractNotifyWindow<ReconnectBubbleContent
         super.dispose();
         updateTimer.stop();
     }
-
+    
     @Override
     public void onAfterReconnect(final ReconnecterEvent event) {
         new EDTRunner() {
-
+            
             @Override
             protected void runInEDT() {
-                BasicNotify no = null;
                 ReconnectResult result = event.getResult();
                 if (result == null) result = ReconnectResult.FAILED;
-
+                
                 getContentComponent().onResult(result);
                 pack();
                 BubbleNotify.getInstance().relayout();
@@ -131,11 +129,11 @@ public class ReconnectBubble extends AbstractNotifyWindow<ReconnectBubbleContent
                 updateTimer.stop();
             }
         };
-
+        
     }
-
+    
     @Override
     public void onBeforeReconnect(ReconnecterEvent event) {
     }
-
+    
 }

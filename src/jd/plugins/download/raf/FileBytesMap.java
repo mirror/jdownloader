@@ -12,7 +12,8 @@ public class FileBytesMap {
     
     private final static class FileBytesMapEntry {
         private final long    begin;
-        private volatile long length;
+        private volatile long length = 0;
+        private volatile long end    = 0;
         
         private FileBytesMapEntry(final long begin) {
             this(begin, 0);
@@ -21,7 +22,11 @@ public class FileBytesMap {
         private FileBytesMapEntry(final long begin, final long length) {
             if (length < 0) throw new IllegalArgumentException("length is negative");
             this.begin = begin;
-            this.length = length;
+            modifyLength(length);
+        }
+        
+        private final void updateEnd() {
+            end = getBegin() + getLength() - 1;
         }
         
         /**
@@ -39,7 +44,7 @@ public class FileBytesMap {
          * @return
          */
         private final long getEnd() {
-            return begin + length - 1;
+            return end;
         }
         
         /**
@@ -54,6 +59,7 @@ public class FileBytesMap {
         private final void modifyLength(long length) {
             if (length < 0) throw new IllegalArgumentException("length is negative");
             this.length += length;
+            updateEnd();
         }
         
         @Override
@@ -189,12 +195,57 @@ public class FileBytesMap {
         }
     }
     
+    public synchronized void set(FileBytesMap fileBytesMap) {
+        synchronized (fileBytesMap) {
+            reset();
+            setFinalSize(fileBytesMap.getFinalSize());
+            for (int index = 0; index < fileBytesMap.fileBytesMapEntries.size(); index++) {
+                FileBytesMapEntry fileBytesMapEntry = fileBytesMap.fileBytesMapEntries.get(index);
+                fileBytesMapEntries.add(new FileBytesMapEntry(fileBytesMapEntry.getBegin(), fileBytesMapEntry.getLength()));
+            }
+        }
+    }
+    
     public void setFinalSize(long finalSize) {
         this.finalSize = Math.max(-1, finalSize);
     }
     
     public synchronized void resetMarkedBytesLive() {
         markedBytes = 0;
+    }
+    
+    public static void main(String[] args) {
+        FileBytesMap test = new FileBytesMap();
+        test.setFinalSize(100);
+        test.mark(0, 10);
+        System.out.println(test);
+        long begin = 4;
+        int length = 10;
+        long skip = test.skippable(begin, length);
+        if (skip < length) {
+            begin = begin + (int) skip;
+            length = length - (int) skip;
+            System.out.println("Skip:" + skip + "|Mark:" + test.mark(begin, length));
+            System.out.println(test);
+        } else {
+            System.out.println("Skip:" + skip);
+        }
+    }
+    
+    public synchronized long skippable(long markedAreaBegin, long markedAreaLength) {
+        final long markedAreaEnd = markedAreaBegin + markedAreaLength - 1;
+        for (int index = 0; index < fileBytesMapEntries.size(); index++) {
+            final FileBytesMapEntry currentFileBytesMapEntry = fileBytesMapEntries.get(index);
+            if ((markedAreaBegin >= currentFileBytesMapEntry.getBegin()) && (markedAreaBegin <= currentFileBytesMapEntry.getEnd())) {
+                if (markedAreaEnd <= currentFileBytesMapEntry.getEnd()) {
+                    return markedAreaLength;
+                } else {
+                    long skippable = currentFileBytesMapEntry.getEnd() - markedAreaBegin + 1;
+                    return skippable;
+                }
+            }
+        }
+        return 0l;
     }
     
     /**
@@ -209,6 +260,8 @@ public class FileBytesMap {
     public synchronized long mark(long markedAreaBegin, long markedAreaLength) {
         if (markedAreaLength <= 0) throw new IllegalArgumentException("invalid length");
         final long markedAreaEnd = markedAreaBegin + markedAreaLength - 1;
+        final long finalSize = getFinalSize();
+        if (finalSize >= 0 && markedAreaEnd + 1 > finalSize) throw new IllegalArgumentException("invalid mark:finalSize:" + finalSize + "|markEnd:" + (markedAreaEnd + 1));
         int checkOverlapIndex = -1;
         for (int index = 0; index < fileBytesMapEntries.size(); index++) {
             final FileBytesMapEntry currentFileBytesMapEntry = fileBytesMapEntries.get(index);
@@ -364,7 +417,7 @@ public class FileBytesMap {
                 }
                 unMarkedAreas.add(new FileBytesMapEntry(unMarkedArea[0], unMarkedArea[1] - unMarkedArea[0] + 1));
             }
-            sb.append(unMarkedAreas);
+            sb.append(unMarkedAreas.toString());
         }
         return sb.toString();
     }

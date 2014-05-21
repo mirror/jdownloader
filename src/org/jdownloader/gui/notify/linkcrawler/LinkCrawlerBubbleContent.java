@@ -22,13 +22,13 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
-
+    
     private Pair duration;
     private Pair links;
-
+    
     private Pair offline;
     private Pair status;
-
+    
     private int  joblessCount;
     private int  offlineCount;
     private int  linksCount;
@@ -36,7 +36,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
     private int  onlineCount;
     private Pair packages;
     private Pair online;
-
+    
     public LinkCrawlerBubbleContent() {
         super("linkgrabber");
         layoutComponents();
@@ -45,58 +45,58 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
             progressCircle.setIndeterminate(true);
             progressCircle.setValue(0);
         }
-
+        
     }
-
+    
     protected void addProgress() {
-
+        
     }
-
+    
     protected void layoutComponents() {
-
+        
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_ANIMATED_ICON_VISIBLE.isEnabled()) {
             setLayout(new MigLayout("ins 3 3 0 3,wrap 3", "[][fill][grow,fill]", "[]"));
             add(progressCircle, "width 32!,height 32!,pushx,growx,pushy,growy,spany,aligny top");
         } else {
             setLayout(new MigLayout("ins 3 3 0 3,wrap 2", "[fill][grow,fill]", "[]"));
         }
-
+        
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_DURATION_VISIBLE.isEnabled()) {
             duration = addPair(duration, _GUI._.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT);
         }
-
+        
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_LINK_COUNT_VISIBLE.isEnabled()) {
             links = addPair(links, _GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundlink(), IconKey.ICON_FILE);
         }
-
+        
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_PACKAGE_COUNT_VISIBLE.isEnabled()) {
             packages = addPair(packages, _GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundpackages(), IconKey.ICON_PACKAGE_NEW);
         }
-
+        
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_OFFLINE_COUNT_VISIBLE.isEnabled()) {
             offline = addPair(offline, _GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundoffline(), IconKey.ICON_ERROR);
         }
-
+        
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_ONLINE_COUNT_VISIBLE.isEnabled()) {
             online = addPair(online, _GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundonline(), IconKey.ICON_OK);
         }
-
+        
         if (CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_STATUS_VISIBLE.isEnabled()) {
             status = addPair(status, _GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_status(), IconKey.ICON_RUN);
         }
     }
-
+    
     public void update() {
         if (duration != null) duration.setText(TimeFormatter.formatMilliSeconds(System.currentTimeMillis() - startTime, 0));
     }
-
+    
     public void update(JobLinkCrawler jlc) {
         update();
-
+        
         if (jlc.getCrawledLinksFoundCounter() < 500000) {
-
+            
             List<CrawledLink> linklist = jlc.getCrawledLinks();
-
+            
             HashSet<CrawledPackage> dupe = new HashSet<CrawledPackage>();
             int offlineCnt = 0;
             int onlineCnt = 0;
@@ -107,64 +107,64 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
                     if (cl.getSourceJob() != jlc.getJob()) {
                         jobless++;
                     }
-
+                    
                     DownloadLink dl = cl.getDownloadLink();
                     if (dl != null) {
                         AvailableStatus status = dl.getAvailableStatus();
                         switch (status) {
-                        case FALSE:
-                            offlineCnt++;
-                            break;
-                        case TRUE:
-                            onlineCnt++;
-                            break;
+                            case FALSE:
+                                offlineCnt++;
+                                break;
+                            case TRUE:
+                                onlineCnt++;
+                                break;
                         }
                     }
                 }
             }
-
+            
             boolean changes = false;
             changes |= onlineCount != onlineCnt;
             changes |= offlineCount != offlineCnt;
             changes |= joblessCount != jobless;
             changes |= linksCount != jlc.getCrawledLinksFoundCounter();
-
+            
             if (changes) {
                 lastChange = System.currentTimeMillis();
             }
-
+            
             if (offline != null) offline.setText(offlineCnt + "");
             if (online != null) online.setText(onlineCnt + "");
             this.linksCount = jlc.getCrawledLinksFoundCounter();
             getWindow().setHighlightColor(null);
             if (offlineCnt > 0) {
                 if (offline != null) offline.setVisible(true);
-
+                
                 if (offlineCnt >= linksCount) {
-
+                    
                     getWindow().setHighlightColor(LAFOptions.getInstance().getColorForErrorForeground());
-
+                    
                 } else {
-
+                    
                     getWindow().setHighlightColor(LAFOptions.getInstance().getColorForTableSortedColumnView());
-
+                    
                 }
             }
-
+            
             this.offlineCount = offlineCnt;
             this.onlineCount = offlineCnt;
             this.joblessCount = jobless;
-
+            
             if (links != null) links.setText(jlc.getCrawledLinksFoundCounter() + "");
             if (packages != null) packages.setText(dupe.size() + "");
         } else {
-
+            
             if (links != null) links.setText(jlc.getCrawledLinksFoundCounter() + "");
         }
-
+        
         if (jlc.isRunning()) {
             if (status != null) status.setText(_GUI._.LinkCrawlerBubbleContent_update_runnning());
-
+            
         } else {
             if (LinkCollector.getInstance().getLinkChecker().isRunning()) {
                 if (status != null) status.setText(_GUI._.LinkCrawlerBubbleContent_update_online());
@@ -173,18 +173,16 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
             }
         }
     }
-
+    
     public boolean askForClose(LinkCollectorCrawler caller) {
         if (caller instanceof JobLinkCrawler) {
-            // if (true) return false;
             if (caller.isRunning()) return false;
             if (!caller.isRunning() && !LinkCollector.getInstance().getLinkChecker().isRunning()) return true;
             return System.currentTimeMillis() - lastChange > 10000;
-
         }
         return true;
     }
-
+    
     @Override
     public void updateLayout() {
         removeAll();
@@ -192,7 +190,7 @@ public class LinkCrawlerBubbleContent extends AbstractBubbleContentPanel {
         revalidate();
         repaint();
     }
-
+    
     public static void fill(ArrayList<Element> elements) {
         elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_DURATION_VISIBLE, _GUI._.ReconnectDialog_layoutDialogContent_duration(), IconKey.ICON_WAIT));
         elements.add(new Element(CFG_BUBBLE.CRAWLER_BUBBLE_CONTENT_LINK_COUNT_VISIBLE, _GUI._.LinkCrawlerBubbleContent_LinkCrawlerBubbleContent_foundlink(), IconKey.ICON_FILE));
