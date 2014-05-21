@@ -9,7 +9,6 @@ public class ProxyExportImport implements Storable {
     private ArrayList<ProxyData> customProxyList;
 
     public ProxyExportImport(/* storable */) {
-
     }
 
     public void setCustomProxyList(ArrayList<ProxyData> ret) {

@@ -12,50 +12,41 @@ public class ConnectExceptionInPluginBan extends PluginRelatedConnectionBan {
     public ConnectExceptionInPluginBan(Plugin plg, AbstractProxySelectorImpl proxySelector, HTTPProxy proxy) {
         super(plg, proxySelector, proxy);
         created = System.currentTimeMillis();
-
     }
 
     @Override
     public String toString() {
-        return _JDT._.ConnectExceptionInPluginBan_plugin(proxy.toString(), plugin.getHost());
+        HTTPProxy proxy = getProxy();
+        return _JDT._.ConnectExceptionInPluginBan_plugin(proxy == null ? "" : proxy.toString(), getHost());
     }
 
     @Override
     public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
-        if (ignoreConnectBans) {
-            return false;
-        }
-        return super.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans);
+        return !ignoreConnectBans && super.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans);
     }
 
     @Override
     public boolean isSelectorBannedByPlugin(Plugin candidate, boolean ignoreConnectBans) {
-        if (ignoreConnectBans) {
-            return false;
-        }
-        // auth is always a ban reason
-        return true;
+        return !ignoreConnectBans;
     }
+
+    private volatile long created;
 
     @Override
     public boolean canSwallow(ConnectionBan ban) {
         if (!super.canSwallow(ban)) {
             return false;
         }
-
         if (ban instanceof ConnectExceptionInPluginBan) {
             created = Math.max(((ConnectExceptionInPluginBan) ban).created, created);
             return true;
-
         }
         return false;
     }
 
-    private long created;
-
     @Override
     public boolean isExpired() {
-        return System.currentTimeMillis() - created > 15 * 60 * 1000l;
+        return System.currentTimeMillis() - created > 15 * 60 * 1000l || super.isExpired();
     }
 
     public long getCreated() {

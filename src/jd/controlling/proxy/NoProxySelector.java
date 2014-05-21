@@ -9,14 +9,16 @@ public class NoProxySelector extends SingleBasicProxySelectorImpl {
 
     public NoProxySelector() {
         super(HTTPProxy.NONE);
+    }
 
+    public NoProxySelector(HTTPProxy httpData) {
+        super(httpData);
     }
 
     public NoProxySelector(ProxyData proxyData) {
         super(HTTPProxy.NONE);
         setEnabled(proxyData.isEnabled());
         setFilter(proxyData.getFilter());
-
     }
 
     public void setType(Type value) {
@@ -25,14 +27,16 @@ public class NoProxySelector extends SingleBasicProxySelectorImpl {
 
     @Override
     public Type getType() {
-        switch (getProxy().getType()) {
-
-        case NONE:
+        if (HTTPProxy.TYPE.NONE.equals(getProxy().getType())) {
             return Type.NONE;
-
-        default:
+        } else {
             throw new IllegalStateException();
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return SingleBasicProxySelectorImpl.class.hashCode();
     }
 
     @Override
@@ -42,14 +46,16 @@ public class NoProxySelector extends SingleBasicProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != NoProxySelector.class) {
-            return false;
-        }
-        return getProxy().equals(((NoProxySelector) obj).getProxy());
+        return obj == this || obj != null && obj.getClass().equals(NoProxySelector.class) && getProxy().equals(((NoProxySelector) obj).getProxy());
     }
 
     @Override
     protected boolean isLocal() {
+        return true;
+    }
+
+    @Override
+    public boolean isReconnectSupported() {
         return true;
     }
 

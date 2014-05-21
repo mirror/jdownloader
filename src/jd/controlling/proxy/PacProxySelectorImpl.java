@@ -4,14 +4,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
@@ -30,83 +27,40 @@ import org.jdownloader.updatev2.ProxyData;
 import com.btr.proxy.selector.pac.PacProxySelector;
 import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.UrlPacScriptSource;
-import com.btr.proxy.util.Logger;
-import com.btr.proxy.util.Logger.LogBackEnd;
-import com.btr.proxy.util.Logger.LogLevel;
 
 public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
-    private String                              pacUrl;
+    private static final LogSource                  logger           = LogController.getInstance().getLogger(PacProxySelectorImpl.class.getName());
 
-    private LogSource                           logger;
-
-    private PacProxySelector                    selector;
-
-    private ConcurrentHashMap<String, ExtProxy> cacheMap;
+    private volatile String                         pacUrl;
+    private final HashMap<String, PacProxySelector> selectors        = new HashMap<String, PacProxySelector>();
+    private final AtomicLong                        latestValidation = new AtomicLong(-1);
+    private final HashMap<String, HTTPProxy>        cacheMap         = new HashMap<String, HTTPProxy>();
+    private final HashMap<String, String[]>         tempAuthMap      = new HashMap<String, String[]>();
+    private boolean                                 nativeProxy      = false;
 
     public PacProxySelectorImpl(String url, String user, String pass) {
-        logger = LogController.getInstance().getLogger(PacProxySelectorImpl.class.getName());
         this.pacUrl = url;
         this.user = user;
         this.password = pass;
-        Logger.setBackend(new LogBackEnd() {
-
-            @Override
-            public void log(final Class<?> arg0, final LogLevel arg1, final String arg2, final Object... arg3) {
-
-                logger.log(Level.ALL, arg2, arg3);
-            }
-
-            @Override
-            public boolean isLogginEnabled(final LogLevel arg0) {
-
-                return true;
-            }
-        });
-
-        cacheMap = new ConcurrentHashMap<String, ExtProxy>();
-
     }
 
     public PacProxySelectorImpl(ProxyData proxyData) {
-
-        logger = LogController.getInstance().getLogger(PacProxySelectorImpl.class.getName());
         this.pacUrl = proxyData.getProxy().getAddress();
         this.user = proxyData.getProxy().getUsername();
         this.password = proxyData.getProxy().getPassword();
         setEnabled(proxyData.isEnabled());
-
         setPreferNativeImplementation(proxyData.getProxy().isPreferNativeImplementation());
         setFilter(proxyData.getFilter());
-        // Setup ProxyVole Logger
-        Logger.setBackend(new LogBackEnd() {
-
-            @Override
-            public void log(final Class<?> arg0, final LogLevel arg1, final String arg2, final Object... arg3) {
-
-                logger.log(Level.ALL, arg2, arg3);
-            }
-
-            @Override
-            public boolean isLogginEnabled(final LogLevel arg0) {
-
-                return true;
-            }
-        });
-
-        cacheMap = new ConcurrentHashMap<String, ExtProxy>();
-
     }
 
     @Override
     public List<HTTPProxy> getProxiesByUrl(String urlOrDomain) {
-        updatePacScript();
-        PacProxySelector lSelector = selector;
+        PacProxySelector lSelector = getPacProxySelector();
         if (lSelector == null) {
             return null;
         }
-        ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-
+        final ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
         URL url = null;
         try {
             url = new URL(urlOrDomain);
@@ -117,47 +71,53 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                 return null;
             }
         }
-        try {
-
-            List<Proxy> result = lSelector.select(url.toURI());
-            if (result != null) {
-                synchronized (this) {
-
+        if (url != null) {
+            try {
+                List<Proxy> result = lSelector.select(url.toURI());
+                if (result != null) {
                     for (Proxy p : result) {
+                        String ID = p.toString();
                         try {
-                            ExtProxy cached = cacheMap.get(p.toString());
-                            if (cached == null) {
-                                HTTPProxy httpProxy = null;
-                                switch (p.type()) {
-                                case DIRECT:
-                                    if (p.address() == null) {
-                                        httpProxy = HTTPProxy.NONE;
-                                    } else {
-
-                                        httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
+                            HTTPProxy cached = null;
+                            synchronized (this) {
+                                cached = cacheMap.get(ID);
+                                if (cached == null) {
+                                    final HTTPProxy httpProxy;
+                                    switch (p.type()) {
+                                    case DIRECT:
+                                        if (p.address() == null) {
+                                            httpProxy = new HTTPProxy(TYPE.NONE);
+                                        } else {
+                                            httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
+                                        }
+                                        break;
+                                    case HTTP:
+                                        httpProxy = new HTTPProxy(TYPE.HTTP, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
+                                        break;
+                                    case SOCKS:
+                                        httpProxy = new HTTPProxy(TYPE.SOCKS5, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
+                                        break;
+                                    default:
+                                        continue;
                                     }
-                                    break;
-                                case HTTP:
-                                    httpProxy = new HTTPProxy(TYPE.HTTP, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                    break;
-                                case SOCKS:
-
-                                    httpProxy = new HTTPProxy(TYPE.SOCKS5, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
+                                    cached = new SelectedProxy(this, httpProxy);
+                                    cacheMap.put(ID, cached);
                                 }
-
-                                cached = new ExtProxy(this, httpProxy);
-                                cacheMap.put(p.toString(), cached);
-
                             }
-
                             cached.setPreferNativeImplementation(isPreferNativeImplementation());
-                            if (!cached.isNone()) {
+                            if (cached.isRemote()) {
                                 String pw = getPassword();
                                 String us = getUser();
-                                String[] tmp = tempAuthMap.get(toID(cached));
-                                if (tmp != null) {
-                                    us = tmp[0];
-                                    pw = tmp[1];
+                                synchronized (this) {
+                                    String[] tmp = tempAuthMap.get(toID(cached));
+                                    if (tmp != null) {
+                                        if (tmp[0] != null) {
+                                            us = tmp[0];
+                                        }
+                                        if (tmp[1] != null) {
+                                            pw = tmp[1];
+                                        }
+                                    }
                                 }
                                 cached.setPass(pw);
                                 cached.setUser(us);
@@ -168,38 +128,23 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
                         }
                     }
                 }
+            } catch (Throwable e) {
+                logger.log(e);
             }
-
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
         }
-        // final ProxySearch proxySearch = ProxySearch.getDefaultProxySearch();
-        //
-        // final ProxySelector myProxySelector = proxySearch.getProxySelector();
-        // List<Proxy> proxy = myProxySelector.select(new URL("http://www.youtube.com/").toURI());
-        // System.out.println(proxy);
-        // proxy = myProxySelector.select(new URL("http://google.com/").toURI());
-
         return ret;
     }
 
-    private AtomicLong latestValidation = new AtomicLong(-1);
-
-    private void updatePacScript() {
-        if (pacUrl.startsWith("pac://")) {
-            // JsonConfig.create(InternetConnectionSettings.PATH,
-            // InternetConnectionSettings.class)._getStorageHandler().getKeyHandler("LocalPacScript").getEventSender().addListener(this,
-            // true);
+    private synchronized PacProxySelector getPacProxySelector() {
+        final String lPacURL = pacUrl;
+        if (lPacURL.startsWith("pac://")) {
             PacScriptSource pacSource = new PacScriptSource() {
-
                 @Override
                 public String getScriptContent() throws IOException {
-
-                    if (StringUtils.equalsIgnoreCase(pacUrl, "pac://")) {
-
+                    if (StringUtils.equalsIgnoreCase(lPacURL, "pac://")) {
                         return JsonConfig.create(InternetConnectionSettings.PATH, InternetConnectionSettings.class).getLocalPacScript();
                     } else {
-                        return Encoding.urlDecode(pacUrl.substring(6), false);
+                        return Encoding.urlDecode(lPacURL.substring(6), false);
                     }
                 }
 
@@ -224,31 +169,30 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
             };
             if (pacSource.isScriptValid()) {
-                latestValidation.set(System.currentTimeMillis());
-                selector = new PacProxySelector(pacSource);
-            } else {
-                this.selector = null;
+                return new PacProxySelector(pacSource);
             }
-            return;
-        }
-
-        if (selector == null || System.currentTimeMillis() - latestValidation.get() > 15 * 60 * 1000l) {
-            synchronized (this) {
-
-                if (selector != null && System.currentTimeMillis() - latestValidation.get() <= 15 * 60 * 1000l) {
-                    return;
-                }
-                PacScriptSource pacSource = new UrlPacScriptSource(pacUrl);
+        } else {
+            PacProxySelector selector = selectors.get(pacUrl);
+            if (selector == null || System.currentTimeMillis() - latestValidation.get() > 15 * 60 * 1000l) {
+                tempAuthMap.clear();
+                cacheMap.clear();
+                selectors.clear();
+                latestValidation.set(-1);
+                PacScriptSource pacSource = new UrlPacScriptSource(lPacURL);
                 if (pacSource.isScriptValid()) {
-                    latestValidation.set(System.currentTimeMillis());
                     selector = new PacProxySelector(pacSource);
+                    latestValidation.set(System.currentTimeMillis());
+                    selectors.put(lPacURL, selector);
                 } else {
-                    this.selector = null;
+                    selector = null;
                 }
             }
+            return selector;
         }
+        return null;
     }
 
+    @Override
     public void setType(Type value) {
         throw new IllegalStateException("This operation is not allowed on this Factory Type");
     }
@@ -256,9 +200,7 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     @Override
     public String toString() {
         String ret = "AutoProxy Script: " + getPACUrl();
-
         if (StringUtils.isNotEmpty(getUser())) {
-
             return getUser() + "@" + ret.toString();
         }
         return ret;
@@ -266,7 +208,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
     public ProxyData toProxyData() {
         ProxyData ret = super.toProxyData();
-
         HTTPProxyStorable proxy = new HTTPProxyStorable();
         proxy.setUsername(getUser());
         proxy.setPassword(getPassword());
@@ -274,7 +215,6 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         proxy.setPreferNativeImplementation(isPreferNativeImplementation());
         ret.setProxy(proxy);
         ret.setPac(true);
-
         return ret;
     }
 
@@ -286,20 +226,17 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public void setUser(String user) {
-        if (StringUtils.equals(user, this.user)) {
-            return;
+        if (!StringUtils.equals(user, this.user)) {
+            this.user = user;
+            clearBanList();
         }
-        this.user = user;
-        clearBanList();
     }
 
     public void setPassword(String password) {
-        if (StringUtils.equals(password, this.password)) {
-            return;
+        if (!StringUtils.equals(password, this.password)) {
+            this.password = password;
+            clearBanList();
         }
-        this.password = password;
-        clearBanList();
-
     }
 
     public String getPassword() {
@@ -317,24 +254,19 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != PacProxySelectorImpl.class) {
-            return false;
-        }
-        return StringUtils.equalsIgnoreCase(pacUrl, ((PacProxySelectorImpl) obj).getPACUrl());
+        return obj == this || obj != null && obj.getClass().equals(PacProxySelectorImpl.class) && StringUtils.equalsIgnoreCase(getPACUrl(), ((PacProxySelectorImpl) obj).getPACUrl());
     }
 
     @Override
     public int hashCode() {
-        if (pacUrl == null) {
-            return "".hashCode();
-        }
-        return pacUrl.hashCode();
+        return PacProxySelectorImpl.class.hashCode();
     }
 
     public void setPACUrl(String value) {
-        this.pacUrl = value;
-        selector = null;
-        clearBanList();
+        if (!StringUtils.equals(pacUrl, value)) {
+            this.pacUrl = value;
+            clearBanList();
+        }
     }
 
     @Override
@@ -344,12 +276,15 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public boolean isPreferNativeImplementation() {
-        return false;
+        return nativeProxy;
     }
 
     @Override
     public void setPreferNativeImplementation(boolean preferNativeImplementation) {
-
+        if (isPreferNativeImplementation() != preferNativeImplementation) {
+            nativeProxy = preferNativeImplementation;
+            clearBanList();
+        }
     }
 
     @Override
@@ -362,18 +297,16 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
         return ProxyController.getInstance().updateProxy(this, request, retryCounter);
     }
 
-    private ConcurrentHashMap<String, String[]> tempAuthMap = new ConcurrentHashMap<String, String[]>();
-
     public void setTempAuth(HTTPProxy usedProxy, String user2, String pass) {
-        tempAuthMap.put(toID(usedProxy), new String[] { user2, pass });
+        synchronized (this) {
+            if (user2 == null && pass == null) {
+                tempAuthMap.remove(toID(usedProxy));
+            } else {
+                tempAuthMap.put(toID(usedProxy), new String[] { user2, pass });
+            }
+        }
         usedProxy.setUser(user2 == null ? getUser() : user2);
         usedProxy.setPass(pass == null ? getPassword() : pass);
-        for (Entry<String, ExtProxy> es : cacheMap.entrySet()) {
-            // es.getValue().setUser(user2 == null ? getUser() : user2)
-
-        }
-        // cacheMap.clear();
-
     }
 
     private String toID(HTTPProxy usedProxy) {
@@ -383,8 +316,10 @@ public class PacProxySelectorImpl extends AbstractProxySelectorImpl {
     @Override
     public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         // can orgRef be null? I doubt that. TODO:ensure
-        if (!cacheMap.contains(orgReference)) {
-            return false;
+        synchronized (this) {
+            if (!cacheMap.containsValue(orgReference)) {
+                return false;
+            }
         }
         return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
     }

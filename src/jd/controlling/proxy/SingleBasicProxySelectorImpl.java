@@ -2,6 +2,7 @@ package jd.controlling.proxy;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import jd.http.Request;
@@ -15,15 +16,13 @@ import org.jdownloader.updatev2.ProxyData;
 
 public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
-    private ExtProxy        proxy;
-    private List<HTTPProxy> list;
+    private final SelectedProxy   proxy;
+    private final List<HTTPProxy> list;
 
     @Override
     public String toString() {
         String ret = proxy.toString();
-
         if (StringUtils.isNotEmpty(getUser())) {
-
             return getUser() + "@" + ret.toString();
         }
         return ret;
@@ -36,66 +35,53 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     public ProxyData toProxyData() {
         ProxyData ret = super.toProxyData();
-
-        HTTPProxyStorable storable = HTTPProxy.getStorable(proxy);
+        HTTPProxyStorable storable = HTTPProxy.getStorable(getProxy());
         storable.setUsername(username);
         storable.setPassword(password);
+        storable.setPreferNativeImplementation(isPreferNativeImplementation());
         ret.setProxy(storable);
-
         return ret;
     }
 
     @Override
     public boolean updateProxy(Request request, int retryCounter) {
-
         return ProxyController.getInstance().updateProxy(this, request, retryCounter);
     }
 
     public SingleBasicProxySelectorImpl(ProxyData proxyData) {
-
-        // ID = proxyData.getID();
-        proxy = new ExtProxy(this, HTTPProxy.getHTTPProxy(proxyData.getProxy()));
+        proxy = new SelectedProxy(this, HTTPProxy.getHTTPProxy(proxyData.getProxy()));
         setFilter(proxyData.getFilter());
         proxy.setConnectMethodPrefered(proxyData.getProxy().isConnectMethodPrefered());
         setResumeAllowed(proxyData.isRangeRequestsSupported());
         setEnabled(proxyData.isEnabled());
-
         username = proxy.getUser();
         password = proxy.getPass();
-        // if (ID == null) {
-        //
-        // ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
-        //
-        // }
-        list = new ArrayList<HTTPProxy>();
+        ArrayList<HTTPProxy> list = new ArrayList<HTTPProxy>();
         list.add(proxy);
-
+        this.list = Collections.unmodifiableList(list);
     }
 
     public SingleBasicProxySelectorImpl(HTTPProxy rawProxy) {
-        proxy = new ExtProxy(this, rawProxy);
+        proxy = new SelectedProxy(this, rawProxy);
         username = proxy.getUser();
         password = proxy.getPass();
-        // this.ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
-        list = new ArrayList<HTTPProxy>();
+        ArrayList<HTTPProxy> list = new ArrayList<HTTPProxy>();
         list.add(proxy);
-
+        this.list = Collections.unmodifiableList(list);
     }
 
     @Override
     public List<HTTPProxy> getProxiesByUrl(String url) {
         return list;
-
     }
 
-    public ExtProxy getProxy() {
+    public SelectedProxy getProxy() {
         return proxy;
     }
 
     @Override
     public Type getType() {
-        switch (proxy.getType()) {
-
+        switch (getProxy().getType()) {
         case HTTP:
             return Type.HTTP;
         case SOCKS4:
@@ -109,7 +95,6 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     public void setType(Type value) {
         switch (value) {
-
         case HTTP:
             proxy.setType(TYPE.HTTP);
         case SOCKS4:
@@ -122,76 +107,101 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     }
 
     public void setUser(String user) {
-        if (StringUtils.equals(user, proxy.getUser())) {
-            return;
+        final SelectedProxy proxy = getProxy();
+        if (!StringUtils.equals(user, proxy.getUser())) {
+            proxy.setUser(user);
+            username = user;
+            tempUser = null;
+            tempPass = null;
+            clearBanList();
         }
-        username = user;
-        tempUser = null;
-        tempPass = null;
-        proxy.setUser(user);
-        clearBanList();
-
     }
 
-    public void setPassword(String password) {
-        if (StringUtils.equals(password, proxy.getPass())) {
-            return;
+    public void setPassword(String pass) {
+        final SelectedProxy proxy = getProxy();
+        if (!StringUtils.equals(pass, proxy.getPass())) {
+            proxy.setPass(pass);
+            password = pass;
+            tempUser = null;
+            tempPass = null;
+            clearBanList();
         }
-        proxy.setPass(password);
-        this.password = password;
-        tempUser = null;
-        tempPass = null;
-        clearBanList();
-
     }
 
     public String getPassword() {
-        if (tempPass != null) {
-            return "(Temp)" + tempPass;
+        String ret = tempPass;
+        if (ret != null) {
+            return "(Temp)" + ret;
         }
         return password;
     }
 
+    private String _getPassword() {
+        String ret = tempPass;
+        if (ret != null) {
+            return ret;
+        }
+        return password;
+    }
+
+    private String _getUsername() {
+        String ret = tempUser;
+        if (ret != null) {
+            return ret;
+        }
+        return username;
+    }
+
     public String getUser() {
-        if (tempUser != null) {
-            return "(Temp)" + tempUser;
+        String ret = tempUser;
+        if (ret != null) {
+            return "(Temp)" + ret;
         }
         return username;
     }
 
     @Override
     public boolean isPreferNativeImplementation() {
-        return proxy.isPreferNativeImplementation();
+        return getProxy().isPreferNativeImplementation();
     }
 
     @Override
     public void setPreferNativeImplementation(boolean preferNativeImplementation) {
-
-        proxy.setPreferNativeImplementation(preferNativeImplementation);
+        if (isPreferNativeImplementation() != preferNativeImplementation) {
+            getProxy().setPreferNativeImplementation(preferNativeImplementation);
+            clearBanList();
+        }
     }
 
     public int getPort() {
-        return proxy.getPort();
+        return getProxy().getPort();
     }
 
     public void setPort(int port) {
-        proxy.setPort(port);
-        clearBanList();
+        final SelectedProxy proxy = getProxy();
+        if (proxy.getPort() != port) {
+            proxy.setPort(port);
+            clearBanList();
+        }
     }
 
     public void setHost(String value) {
-        proxy.setHost(value);
-        clearBanList();
+        final SelectedProxy proxy = getProxy();
+        if (!StringUtils.equals(value, proxy.getHost())) {
+            proxy.setHost(value);
+            clearBanList();
+        }
     }
 
     public String getHost() {
-        return proxy.getHost();
+        return getProxy().getHost();
     }
 
     @Override
     public String toExportString() {
         StringBuilder sb = new StringBuilder();
         boolean hasUSerInfo = false;
+        SelectedProxy proxy = getProxy();
         switch (proxy.getType()) {
         case HTTP:
             sb.append("http://");
@@ -202,25 +212,34 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
         case SOCKS5:
             sb.append("socks5://");
             break;
+        case DIRECT:
+            if (proxy.getLocalIP() != null) {
+                sb.append("direct://");
+                final String ip = proxy.getLocalIP().getHostAddress();
+                sb.append(ip);
+                return sb.toString();
+            }
+            return null;
         default:
             return null;
         }
-        if (!StringUtils.isEmpty(getUser())) {
-            sb.append(getUser());
+        final String username = _getUsername();
+        if (!StringUtils.isEmpty(username)) {
+            sb.append(username);
             hasUSerInfo = true;
         }
-        if (!StringUtils.isEmpty(getPassword())) {
+        final String password = _getPassword();
+        if (!StringUtils.isEmpty(password)) {
             if (hasUSerInfo) {
                 sb.append(":");
             }
             hasUSerInfo = true;
-            sb.append(getPassword());
+            sb.append(password);
         }
         if (hasUSerInfo) {
             sb.append("@");
         }
         sb.append(getHost());
-
         if (getPort() > 0) {
             sb.append(":");
             sb.append(getPort());
@@ -231,15 +250,12 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != SingleBasicProxySelectorImpl.class) {
-            return false;
-        }
-        return proxy.equals(((SingleBasicProxySelectorImpl) obj).getProxy());
+        return obj == this || obj != null && obj.getClass().equals(SingleBasicProxySelectorImpl.class) && getProxy().equals(((SingleBasicProxySelectorImpl) obj).getProxy());
     }
 
     @Override
     public int hashCode() {
-        return proxy.hashCode();
+        return SingleBasicProxySelectorImpl.class.hashCode();
     }
 
     @Override
@@ -250,18 +266,21 @@ public class SingleBasicProxySelectorImpl extends AbstractProxySelectorImpl {
     @Override
     public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
         // can orgRef be null? I doubt that. TODO:ensure
-        if (!proxy.equals(orgReference)) {
+        if (!getProxy().equals(orgReference)) {
             return false;
         }
         return super.isProxyBannedFor(orgReference, url, pluginFromThread, ignoreConnectBans);
     }
 
     public void setTempAuth(String user, String pass) {
-
+        final SelectedProxy proxy = getProxy();
         proxy.setUser(user == null ? username : user);
         proxy.setPass(pass == null ? password : pass);
-        tempUser = user;
+        this.tempUser = user;
         this.tempPass = pass;
+        if (user != null || pass != null) {
+            clearBanList();
+        }
     }
 
 }

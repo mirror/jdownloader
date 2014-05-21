@@ -1,5 +1,6 @@
 package jd.controlling.proxy;
 
+import java.lang.ref.WeakReference;
 import java.net.URL;
 
 import jd.plugins.Plugin;
@@ -9,26 +10,23 @@ import org.jdownloader.translate._JDT;
 
 public class AuthExceptionGenericBan extends AbstractBan {
 
-    protected HTTPProxy proxy;
-    protected URL       url;
+    private final WeakReference<HTTPProxy> proxy;
+    protected final URL                    url;
 
     public AuthExceptionGenericBan(AbstractProxySelectorImpl proxySelector, HTTPProxy proxy, URL url) {
-
         super(proxySelector);
-        this.proxy = proxy;
+        this.proxy = new WeakReference<HTTPProxy>(proxy);
         this.url = url;
     }
 
-    // _JDT._.plugins_errors_proxy_connection()
-    //
-    // @Override
-    // public boolean validate(AbstractProxySelectorImpl selector, HTTPProxy orgReference, URL url) {
-    // return false;
-    // }
+    protected HTTPProxy getProxy() {
+        return proxy.get();
+    }
 
     @Override
     public String toString() {
-        return _JDT._.AuthExceptionGenericBan_toString(proxy.toString());
+        HTTPProxy proxy = getProxy();
+        return _JDT._.AuthExceptionGenericBan_toString(proxy == null ? "" : proxy.toString());
     }
 
     @Override
@@ -38,18 +36,13 @@ public class AuthExceptionGenericBan extends AbstractBan {
 
     @Override
     public boolean isProxyBannedByUrlOrPlugin(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
-        return proxy.equals(orgReference);
+        HTTPProxy proxy = getProxy();
+        return proxy != null && proxy.equals(orgReference);
     }
-
-    // @Override
-    // public boolean isSelectorBannedByUrl(URL url) {
-    //
-    // return true;
-    // }
 
     @Override
     public boolean isExpired() {
-        return false;
+        return getProxy() == null;
     }
 
     @Override
@@ -57,10 +50,9 @@ public class AuthExceptionGenericBan extends AbstractBan {
         if (!(ban instanceof AuthExceptionGenericBan)) {
             return false;
         }
-        if (!proxyEquals(((AuthExceptionGenericBan) ban).proxy, proxy)) {
+        if (!proxyEquals(((AuthExceptionGenericBan) ban).getProxy(), getProxy())) {
             return false;
         }
-
         return true;
     }
 

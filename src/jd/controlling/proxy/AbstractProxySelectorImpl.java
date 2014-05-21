@@ -3,12 +3,14 @@ package jd.controlling.proxy;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.controlling.downloadcontroller.AccountCache;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.ProxySelectorInterface;
 import jd.http.Request;
@@ -19,7 +21,7 @@ import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.ProxyData;
 
 public abstract class AbstractProxySelectorImpl implements ProxySelectorInterface {
-    public enum Type {
+    public static enum Type {
         NONE,
         DIRECT,
         SOCKS4,
@@ -28,41 +30,29 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         PAC
     }
 
-    // private boolean useForPremiumEnabled = true;
-    //
-    // public boolean isUseForPremiumEnabled() {
-    // return useForPremiumEnabled;
-    // }
-
-    // public void setUseForPremiumEnabled(boolean useForPremiumEnabled) {
-    // this.useForPremiumEnabled = useForPremiumEnabled;
-    // if (useForPremiumEnabled) {
-    // // reset banlist on enable/disable
-    // banList = new ArrayList<ProxyBan>();
-    // onBanListUpdate();
-    // }
-    // }
     @Override
     public boolean reportConnectException(Request request, int retryCounter, IOException e) {
         return ProxyController.getInstance().reportConnectException(request, retryCounter, e);
     }
 
     public boolean isEnabled() {
-        return enabled;
+        return enabled.get();
     }
 
-    public void setEnabled(boolean useForFreeEnabled) {
-        this.enabled = useForFreeEnabled;
-        clearBanList();
-
+    public boolean setEnabled(boolean enabled) {
+        final boolean ret = this.enabled.getAndSet(enabled);
+        if (enabled) {
+            clearBanList();
+        }
+        return ret;
     }
+
+    private final AtomicBoolean enabled = new AtomicBoolean(true);
+    private volatile FilterList filter;
 
     protected void clearBanList() {
         banList.clear();
     }
-
-    private boolean    enabled = true;
-    private FilterList filter;
 
     public FilterList getFilter() {
         return filter;
@@ -72,7 +62,6 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         if (filter == null) {
             return true;
         }
-
         return filter.validate(host);
     }
 
@@ -80,19 +69,11 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
         this.filter = filter;
     }
 
-    // final protected static AtomicLong IDs = new AtomicLong(0);
-    //
-    // protected String ID = null;
-
     public ProxyData toProxyData() {
-
         ProxyData ret = new ProxyData();
         ret.setEnabled(isEnabled());
-
         ret.setFilter(getFilter());
-        // ret.setID(this.ID);
         ret.setRangeRequestsSupported(isResumeAllowed());
-
         return ret;
     }
 
@@ -108,77 +89,53 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
 
     abstract public String toExportString();
 
-    private final HashMap<String, HashSet<SingleDownloadController>> activeSingleDownloadControllers = new HashMap<String, HashSet<SingleDownloadController>>();
-
     /*
      * by default a proxy supports resume
      */
-    private boolean                                                  resumeIsAllowed                 = true;
+    private boolean                                               resumeIsAllowed                 = true;
+
+    protected final CopyOnWriteArraySet<SingleDownloadController> activeSingleDownloadControllers = new CopyOnWriteArraySet<SingleDownloadController>();
 
     public boolean isReconnectSupported() {
-        switch (getType()) {
-        case NONE:
-            return true;
-        default:
-            return false;
-        }
+        return Type.NONE.equals(getType());
     }
 
     public AbstractProxySelectorImpl() {
-
     }
 
-    public int activeDownloadsbyHosts(String host) {
-        if (host == null) {
-            return 0;
-        }
-        host = host.toLowerCase(Locale.ENGLISH);
-        synchronized (activeSingleDownloadControllers) {
-            HashSet<SingleDownloadController> ret = this.activeSingleDownloadControllers.get(host);
-            if (ret != null) {
-                return ret.size();
+    public int countActive(DownloadLinkCandidate downloadLinkCandidate) {
+        int count = 0;
+        CachedAccount cachedAccount = downloadLinkCandidate.getCachedAccount();
+        if (AccountCache.ACCOUNTTYPE.MULTI.equals(cachedAccount.getType())) {
+            for (SingleDownloadController singleDownloadController : activeSingleDownloadControllers) {
+                if (singleDownloadController.isActive() && AccountCache.ACCOUNTTYPE.MULTI.equals(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getType())) {
+                    if (cachedAccount.getPlugin().getHost().equals(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
+                        count++;
+                    }
+                }
             }
-        }
-        return 0;
-    }
-
-    public boolean hasActiveDownloads() {
-        synchronized (activeSingleDownloadControllers) {
-            return activeSingleDownloadControllers.size() > 0;
-        }
-    }
-
-    public boolean add(final SingleDownloadController singleDownloadController) {
-        if (singleDownloadController == null) {
-            return false;
-        }
-        String host = singleDownloadController.getDownloadLink().getHost().toLowerCase(Locale.ENGLISH);
-        synchronized (activeSingleDownloadControllers) {
-            HashSet<SingleDownloadController> ret = this.activeSingleDownloadControllers.get(host);
-            if (ret == null) {
-                ret = new HashSet<SingleDownloadController>();
-                activeSingleDownloadControllers.put(host, ret);
-            }
-            return ret.add(singleDownloadController);
-        }
-    }
-
-    public boolean remove(final SingleDownloadController singleDownloadController) {
-        if (singleDownloadController == null) {
-            return false;
-        }
-        String host = singleDownloadController.getDownloadLink().getHost().toLowerCase(Locale.ENGLISH);
-        boolean remove = false;
-        synchronized (activeSingleDownloadControllers) {
-            HashSet<SingleDownloadController> ret = this.activeSingleDownloadControllers.get(host);
-            if (ret != null) {
-                remove = ret.remove(singleDownloadController);
-                if (ret.size() == 0) {
-                    activeSingleDownloadControllers.remove(host);
+        } else {
+            for (SingleDownloadController singleDownloadController : activeSingleDownloadControllers) {
+                if (singleDownloadController.isActive()) {
+                    if (singleDownloadController.getDownloadLink().getHost().equals(cachedAccount.getHost())) {
+                        count++;
+                    }
                 }
             }
         }
-        return remove;
+        return count;
+    }
+
+    public boolean hasActiveDownloads() {
+        return activeSingleDownloadControllers.size() > 0;
+    }
+
+    public boolean add(final SingleDownloadController singleDownloadController) {
+        return singleDownloadController != null && activeSingleDownloadControllers.add(singleDownloadController);
+    }
+
+    public boolean remove(final SingleDownloadController singleDownloadController) {
+        return singleDownloadController != null && activeSingleDownloadControllers.remove(singleDownloadController);
     }
 
     public void setResumeAllowed(boolean b) {
@@ -186,24 +143,19 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     }
 
     public boolean isResumeAllowed() {
-        if (this.isLocal()) {
-            return true;
-        }
-        return resumeIsAllowed;
+        return this.isLocal() || resumeIsAllowed;
     }
 
     abstract protected boolean isLocal();
 
-    private CopyOnWriteArrayList<ConnectionBan> banList = new CopyOnWriteArrayList<ConnectionBan>();
+    protected final CopyOnWriteArrayList<ConnectionBan> banList = new CopyOnWriteArrayList<ConnectionBan>();
 
     public List<ConnectionBan> getBanList() {
         return Collections.unmodifiableList(banList);
     }
 
     public void addSessionBan(ConnectionBan ban) {
-
         for (ConnectionBan b : banList) {
-
             if (b.isExpired()) {
                 banList.remove(b);
                 continue;
@@ -215,51 +167,31 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
                 banList.remove(b);
                 continue;
             }
-
         }
         banList.add(ban);
     }
 
-    public boolean isProxyBannedFor(HTTPProxy orgReference, URL url, Plugin pluginFromThread, boolean ignoreConnectBans) {
-
-        for (ConnectionBan b : banList) {
-
-            if (b.isExpired()) {
-                banList.remove(b);
-                continue;
-            }
-            if (b.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans)) {
-                return true;
-            }
-        }
-        return false;
-
-    }
-
-    public boolean isSelectorBannedFor(Plugin pluginForHost, boolean ignoreConnectBans) {
+    public boolean isProxyBannedFor(final HTTPProxy orgReference, final URL url, final Plugin pluginFromThread, final boolean ignoreConnectBans) {
+        boolean banned = false;
         for (ConnectionBan b : banList) {
             if (b.isExpired()) {
                 banList.remove(b);
-                continue;
-            }
-            if (b.isSelectorBannedByPlugin(pluginForHost, ignoreConnectBans)) {
-                return true;
+            } else if (banned == false && b.isProxyBannedByUrlOrPlugin(orgReference, url, pluginFromThread, ignoreConnectBans)) {
+                banned = true;
             }
         }
-        return false;
+        return banned;
     }
 
-    // public boolean isSelectorBannedFor(URL url) {
-    // for (ConnectionBan b : banList) {
-    // if (b.isExpired()) {
-    // banList.remove(b);
-    // continue;
-    // }
-    // if (b.isSelectorBannedByUrl(url)) {
-    // return true;
-    // }
-    // }
-    // return false;
-    // }
-
+    public boolean isSelectorBannedFor(final Plugin pluginForHost, final boolean ignoreConnectBans) {
+        boolean banned = false;
+        for (ConnectionBan b : banList) {
+            if (b.isExpired()) {
+                banList.remove(b);
+            } else if (banned == false && b.isSelectorBannedByPlugin(pluginForHost, ignoreConnectBans)) {
+                banned = true;
+            }
+        }
+        return banned;
+    }
 }

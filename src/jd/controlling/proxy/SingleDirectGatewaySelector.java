@@ -17,9 +17,17 @@ public class SingleDirectGatewaySelector extends SingleBasicProxySelectorImpl {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != SingleDirectGatewaySelector.class)
-            return false;
-        return getProxy().equals(((SingleDirectGatewaySelector) obj).getProxy());
+        return obj == this || obj != null && obj.getClass().equals(SingleDirectGatewaySelector.class) && getProxy().equals(((SingleDirectGatewaySelector) obj).getProxy());
+    }
+
+    @Override
+    public void setUser(String user) {
+        throw new IllegalStateException("This operation is not allowed on this Factory Type");
+    }
+
+    @Override
+    public void setPassword(String password) {
+        throw new IllegalStateException("This operation is not allowed on this Factory Type");
     }
 
     @Override
@@ -29,9 +37,20 @@ public class SingleDirectGatewaySelector extends SingleBasicProxySelectorImpl {
 
     @Override
     public int hashCode() {
-        return getProxy().hashCode();
+        return SingleBasicProxySelectorImpl.class.hashCode();
     }
 
+    @Override
+    public void setPort(int port) {
+        throw new IllegalStateException("This operation is not allowed on this Factory Type");
+    }
+
+    @Override
+    public void setHost(String value) {
+        throw new IllegalStateException("This operation is not allowed on this Factory Type");
+    }
+
+    @Override
     public void setType(Type value) {
         throw new IllegalStateException("This operation is not allowed on this Factory Type");
     }
@@ -42,13 +61,15 @@ public class SingleDirectGatewaySelector extends SingleBasicProxySelectorImpl {
     }
 
     @Override
+    public boolean isReconnectSupported() {
+        return false;
+    }
+
+    @Override
     public Type getType() {
-        switch (getProxy().getType()) {
-
-        case DIRECT:
+        if (HTTPProxy.TYPE.DIRECT.equals(getProxy().getType())) {
             return Type.DIRECT;
-
-        default:
+        } else {
             throw new IllegalStateException();
         }
     }

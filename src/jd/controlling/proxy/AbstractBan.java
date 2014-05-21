@@ -5,7 +5,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public abstract class AbstractBan implements ConnectionBan {
 
-    private AbstractProxySelectorImpl selector;
+    protected final AbstractProxySelectorImpl selector;
 
     public AbstractBan(AbstractProxySelectorImpl proxySelector) {
         this.selector = proxySelector;
