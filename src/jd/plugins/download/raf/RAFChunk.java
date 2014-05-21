@@ -226,7 +226,7 @@ public class RAFChunk extends Thread {
             /*
              * now we calculate the max fill level when to force buffer flushing
              */
-            flushLevel = Math.max((maxbuffersize / 100 * JsonConfig.create(GeneralSettings.class).getFlushBufferLevel()), 1);
+            flushLevel = Math.max((maxbuffersize / 100 * 80), 1);
         } catch (Throwable e) {
             dl.error(new PluginException(LinkStatus.ERROR_FATAL, _JDT._.download_error_message_outofmemory()));
             return;
