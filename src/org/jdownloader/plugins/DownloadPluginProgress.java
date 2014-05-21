@@ -6,9 +6,9 @@ import jd.nutils.Formatter;
 import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.Downloadable;
 
 import org.jdownloader.api.jdanywhere.api.Helper;
-import org.jdownloader.downloadcore.v15.Downloadable;
 import org.jdownloader.gui.views.downloads.columns.TaskColumn;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.tasks.PluginProgressTask;

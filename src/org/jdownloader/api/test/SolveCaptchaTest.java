@@ -20,9 +20,9 @@ import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution;
 
 public class SolveCaptchaTest extends Test {
-
+    
     public static DeviceData device = null;
-
+    
     @Override
     public void run(Storage config, AbstractMyJDClientForDesktopJVM api) throws Exception {
         if (device == null) device = new DeviceData("", "jd", "testClient");
@@ -37,7 +37,6 @@ public class SolveCaptchaTest extends Test {
         MyCaptchaChallenge dataURL = new MyCaptchaChallenge();
         final ByteArrayOutputStream bos = new ByteArrayOutputStream(16384);
         final Base64OutputStream b64os = new Base64OutputStream(bos);
-
         b64os.write(IO.readFile(load));
         b64os.close();
         String type = Files.getExtension(load.getName());

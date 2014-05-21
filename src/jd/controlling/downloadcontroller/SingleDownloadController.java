@@ -47,7 +47,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.raf.HashResult;
+import jd.plugins.download.HashResult;
 
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.logging2.LogSource;

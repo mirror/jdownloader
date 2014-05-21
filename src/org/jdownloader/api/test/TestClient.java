@@ -214,6 +214,7 @@ public class TestClient {
         register(new StorageRemoveKeyTest());
         register(new SolveCaptchaTest());
         register(new ListCaptchasTest());
+        register(new RemoveCaptchaTest());
         JacksonMapper jm;
         JSonStorage.setMapper(jm = new JacksonMapper());
         

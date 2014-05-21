@@ -19,7 +19,7 @@ public class OptionsRequestHandler implements HttpRequestHandler {
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) {
         if (request instanceof OptionsRequest) {
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_MAX_AGE, "30"));
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_MAX_AGE, "300"));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_ACCESS_CONTROL_ALLOW_METHODS, "OPTIONS, GET, POST"));
             final String headers = request.getRequestHeaders().getValue("Access-Control-Request-Headers");

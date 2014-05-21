@@ -3,7 +3,11 @@ package org.jdownloader.gui.notify;
 import java.util.List;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.gui.notify.gui.BubbleNotifyConfig.BubbleNotifyEnabledState;
+import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 
 public abstract class AbstractBubbleSupport {
     
@@ -26,11 +30,29 @@ public abstract class AbstractBubbleSupport {
         this.keyHandler = keyhandler;
     }
     
-    protected void show(AbstractNotifyWindow no) {
-        if (keyHandler.isEnabled()) {
-            BubbleNotify.getInstance().show(no);
-        } else {
-            no.dispose();
+    protected void show(final AbstractNotifyWindow no) {
+        if (no != null) {
+            if (isEnabled()) {
+                BubbleNotify.getInstance().show(no);
+            } else {
+                new EDTRunner() {
+                    
+                    @Override
+                    protected void runInEDT() {
+                        no.dispose();
+                    }
+                };
+            }
+        }
+    }
+    
+    public boolean isEnabled() {
+        return keyHandler.isEnabled() && !BubbleNotifyEnabledState.NEVER.equals(CFG_BUBBLE.CFG.getBubbleNotifyEnabledState());
+    }
+    
+    protected void show(final AbstractNotifyWindowFactory factory) {
+        if (isEnabled() && factory != null) {
+            BubbleNotify.getInstance().show(factory);
         }
     }
     

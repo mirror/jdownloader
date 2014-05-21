@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
@@ -27,8 +29,6 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
-import org.appwork.controlling.StateEvent;
-import org.appwork.controlling.StateEventListener;
 import org.appwork.exceptions.WTFException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.storage.JSonStorage;
@@ -143,39 +143,39 @@ import org.jdownloader.updatev2.UpdateController;
 //-nothing in case we do not have special LinkCheck features available for given URL (default for now)
 //-js code we want to inject, we do LinkCheck ourselves
 
-public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEventListener {
-
+public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI {
+    
     private class ChunkedDom {
         protected HashMap<Integer, String> domChunks   = new HashMap<Integer, String>();
         protected String                   URL         = null;
         protected String                   completeDOM = null;
     }
-
+    
     private class CheckedDom extends ChunkedDom {
-
+        
         protected final String ID;
-
+        
         protected CheckedDom(ChunkedDom dom) {
             this.completeDOM = dom.completeDOM;
             this.URL = dom.URL;
             this.ID = "check" + System.nanoTime();
         }
-
+        
         protected LinkChecker<CrawledLink> linkChecker;
         protected LinkCrawler              linkCrawler;
         boolean                            finished = false;
     }
-
+    
     private HashMap<String, MinTimeWeakReference<ChunkedDom>> domSessions   = new HashMap<String, MinTimeWeakReference<ChunkedDom>>();
     private HashMap<String, CheckedDom>                       checkSessions = new HashMap<String, CheckedDom>();
-
+    
     public JDownloaderToolBarAPIImpl() {
-        DownloadWatchDog.getInstance().getStateMachine().addListener(this);
     }
-
+    
     public synchronized Object getStatus() {
         org.jdownloader.myjdownloader.client.json.JsonMap ret = new org.jdownloader.myjdownloader.client.json.JsonMap();
         int running = DownloadWatchDog.getInstance().getActiveDownloads();
+        ret.put("state", DownloadWatchDog.getInstance().getStateMachine().getState().getLabel());
         ret.put("running", running > 0);
         ret.put("limit", org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
         if (org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled()) {
@@ -193,20 +193,20 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
             ret.put("speed", DownloadWatchDog.getInstance().getDownloadSpeedManager().getSpeedMeter().getSpeedMeter());
         }
         ret.put("pause", DownloadWatchDog.getInstance().isPaused());
-
+        
         List<DownloadLink> calc_progress = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-
+            
             public int returnMaxResults() {
                 return 0;
             }
-
+            
             public boolean acceptNode(DownloadLink node) {
                 if (!node.isEnabled()) return false;
                 if (FinalLinkState.CheckFailed(node.getFinalLinkState())) return false;
                 return true;
             }
         });
-
+        
         long todo = 0;
         long done = 0;
         for (DownloadLink link : calc_progress) {
@@ -217,52 +217,48 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         ret.put("download_complete", todo);
         return ret;
     }
-
+    
     public boolean isAvailable() {
         return true;
     }
-
+    
     public boolean startDownloads() {
         DownloadWatchDog.getInstance().startDownloads();
         return true;
     }
-
+    
     public boolean stopDownloads() {
         DownloadWatchDog.getInstance().stopDownloads();
         return true;
     }
-
+    
     public boolean toggleDownloadSpeedLimit() {
         org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.toggle();
         return org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled();
     }
-
+    
     public boolean toggleClipboardMonitoring() {
         boolean b = org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.isEnabled();
         org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED.setValue(!b);
         return !b;
     }
-
+    
     public boolean toggleAutomaticReconnect() {
         CFG_RECONNECT.AUTO_RECONNECT_ENABLED.toggle();
         return CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled();
     }
-
+    
     public boolean toggleStopAfterCurrentDownload() {
-        // final ToolBarAction stopMark =
-        // ActionController.getToolBarAction("toolbar.control.stopmark");
-        // if (stopMark != null) {
-        // stopMark.actionPerformed(null);
-        // }
-        // return DownloadWatchDog.getInstance().isStopMarkSet();
-        return false;
+        DownloadSession session = DownloadWatchDog.getInstance().getSession();
+        session.toggleStopMark(STOPMARK.RANDOM);
+        return session.isStopMarkSet();
     }
-
+    
     public boolean togglePremium() {
         org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.toggle();
         return org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
     }
-
+    
     public Object addLinksFromDOM(RemoteAPIRequest request) {
         org.jdownloader.myjdownloader.client.json.JsonMap ret = new org.jdownloader.myjdownloader.client.json.JsonMap();
         try {
@@ -270,24 +266,24 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
             if (chunkedDom != null) {
                 final String url = chunkedDom.URL;
                 final String dom = chunkedDom.completeDOM;
-
+                
                 /*
                  * we first check if the url itself can be handled by a plugin
                  */
                 CrawledLink link = new CrawledLink(chunkedDom.URL);
                 link.setUnknownHandler(new UnknownCrawledLinkHandler() {
-
+                    
                     public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
                         /*
                          * if the url cannot be handled by a plugin, we check the dom
                          */
                         addCompleteDom(url, dom, link);
                     }
-
+                    
                 });
-
+                
                 link.setBrokenCrawlerHandler(new BrokenCrawlerHandler() {
-
+                    
                     public void brokenCrawler(CrawledLink link, LinkCrawler lc) {
                         /*
                          * if the url cannot be handled because a plugin is broken, we check the dom
@@ -308,7 +304,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         }
         return ret;
     }
-
+    
     private ChunkedDom getCompleteDOM(RemoteAPIRequest request) throws IOException {
         String index = request.getParameterbyKey("index");
         String data = request.getParameterbyKey("data");
@@ -363,16 +359,16 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         }
         return null;
     }
-
+    
     public void addCompleteDom(final String url, final String dom, CrawledLink link) {
-
+        
         final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.TOOLBAR, null), dom);
         job.setCustomSourceUrl(url);
         AddLinksProgress d = new AddLinksProgress(job) {
             protected String getSearchInText() {
                 return url;
             }
-
+            
             protected Point getForcedLocation() {
                 Point loc = MouseInfo.getPointerInfo().getLocation();
                 loc.x -= getPreferredSize().width / 2;
@@ -380,7 +376,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 return loc;
             }
         };
-
+        
         if (d.isHiddenByDontShowAgain()) {
             Thread thread = new Thread("AddLinksDialog") {
                 public void run() {
@@ -402,13 +398,13 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
             }
         }
     }
-
+    
     public boolean togglePauseDownloads() {
         boolean b = DownloadWatchDog.getInstance().isPaused();
         DownloadWatchDog.getInstance().pauseDownloadWatchDog(!b);
         return !b;
     }
-
+    
     public Object checkLinksFromDOM(RemoteAPIRequest request) {
         org.jdownloader.myjdownloader.client.json.JsonMap ret = new org.jdownloader.myjdownloader.client.json.JsonMap();
         ret.put("checkid", null);
@@ -433,7 +429,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                             if (("ftp".equalsIgnoreCase(plugin.getHost()) || "http links".equalsIgnoreCase(plugin.getHost()))) return true;
                             return false;
                         }
-
+                        
                         public boolean dropByFileProperties(CrawledLink link) {
                             return false;
                         }
@@ -441,25 +437,25 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 }
                 checkSession.linkChecker = new LinkChecker<CrawledLink>();
                 checkSession.linkChecker.setLinkCheckHandler(new LinkCheckerHandler<CrawledLink>() {
-
+                    
                     public void linkCheckDone(CrawledLink link) {
                         defaultHandler.handleFinalLink(link);
                     }
                 });
                 checkSession.linkCrawler.setHandler(new LinkCrawlerHandler() {
-
+                    
                     public void handleFinalLink(CrawledLink link) {
                         checkSession.linkChecker.check(link);
                     }
-
+                    
                     public void handleFilteredLink(CrawledLink link) {
                         defaultHandler.handleFilteredLink(link);
                     }
-
+                    
                     @Override
                     public void handleBrokenLink(CrawledLink link) {
                     }
-
+                    
                     @Override
                     public void handleUnHandledLink(CrawledLink link) {
                     }
@@ -488,7 +484,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         }
         return ret;
     }
-
+    
     public LinkCheckResult pollCheckedLinksFromDOM(String checkID) {
         CheckedDom session = null;
         synchronized (checkSessions) {
@@ -530,13 +526,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         }
         return result;
     }
-
-    public void onStateChange(StateEvent event) {
-    }
-
-    public void onStateUpdate(StateEvent event) {
-    }
-
+    
     public String specialURLHandling(String url) {
         if (url.contains("youtube.com")) {
             return "var jDownloaderObj = {statusCheck: function(){" + YouTubeSpecialUrlHandling.handle(url) + "}};jDownloaderObj.statusCheck();";
@@ -544,7 +534,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
             return "";
         }
     }
-
+    
     @Override
     public boolean triggerUpdate() {
         /* WebUpdate is running in its own Thread */
@@ -555,7 +545,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 UpdateController.getInstance().runUpdateChecker(true);
             }
         }.start();
-
+        
         return true;
     }
 }

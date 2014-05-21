@@ -1,8 +1,8 @@
 package org.jdownloader.gui.notify;
 
 import java.awt.Point;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.JFrame;
 
@@ -29,6 +29,10 @@ import org.jdownloader.gui.notify.reconnect.ReconnectBubbleSupport;
 
 public class BubbleNotify {
     private static final BubbleNotify INSTANCE = new BubbleNotify();
+    
+    public static interface AbstractNotifyWindowFactory {
+        public AbstractNotifyWindow<?> buildAbstractNotifyWindow();
+    }
     
     /**
      * get the only existing instance of BubbleNotify. This is a singleton
@@ -112,21 +116,15 @@ public class BubbleNotify {
         CFG_BUBBLE.CFG._getStorageHandler().getEventSender().addListener(update);
         update.onConfigValueModified(null, null);
         
-        // if (ballooner != null) ballooner.add(new Notify(caption, text, NewTheme.I().getIcon("info", 32)));
+        types.add(new LinkCrawlerBubbleSupport());
+        types.add(new UpdatesBubbleSupport());
+        types.add(new ReconnectBubbleSupport());
         
-        synchronized (types) {
-            
-            types.add(new LinkCrawlerBubbleSupport());
-            types.add(new UpdatesBubbleSupport());
-            types.add(new ReconnectBubbleSupport());
-            
-            types.add(new CaptchaBubbleSupport());
-            types.add(new StartDownloadsBubbleSupport());
-            types.add(new StartStopPauseBubbleSupport());
-            
-            types.add(CESBubbleSupport.getInstance());
-            
-        }
+        types.add(new CaptchaBubbleSupport());
+        types.add(new StartDownloadsBubbleSupport());
+        types.add(new StartStopPauseBubbleSupport());
+        
+        types.add(CESBubbleSupport.getInstance());
     }
     
     public void show(final AbstractNotifyWindow no) {
@@ -136,29 +134,26 @@ public class BubbleNotify {
             protected void runInEDT() {
                 boolean added = false;
                 try {
-                    if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) return;
                     switch (CFG_BUBBLE.CFG.getBubbleNotifyEnabledState()) {
                         case JD_NOT_ACTIVE:
                             if (WindowManager.getInstance().hasFocus()) { return; }
                             break;
-                        
                         case NEVER:
                             return;
                         case TASKBAR:
                             if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) != WindowExtendedState.ICONIFIED) { return; }
                             break;
-                        
                         case TRAY:
                             if (!JDGui.getInstance().getMainFrame().isVisible()) break;
                             return;
                         case TRAY_OR_TASKBAR:
-                            
                             if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) == WindowExtendedState.ICONIFIED) {
                                 break;
                             }
                             if (!JDGui.getInstance().getMainFrame().isVisible()) break;
                             return;
                     }
+                    if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) return;
                     System.out.println(" Show  bubble 3" + no);
                     ballooner.add(no);
                     added = true;
@@ -170,7 +165,47 @@ public class BubbleNotify {
                 }
             }
         };
-        
+    }
+    
+    public void show(final AbstractNotifyWindowFactory factory) {
+        new EDTRunner() {
+            
+            @Override
+            protected void runInEDT() {
+                boolean added = false;
+                AbstractNotifyWindow<?> notifyWindow = null;
+                try {
+                    if (JDGui.getInstance().isSilentModeActive() && !CFG_BUBBLE.BUBBLE_NOTIFY_ENABLED_DURING_SILENT_MODE.isEnabled()) return;
+                    switch (CFG_BUBBLE.CFG.getBubbleNotifyEnabledState()) {
+                        case JD_NOT_ACTIVE:
+                            if (WindowManager.getInstance().hasFocus()) return;
+                            break;
+                        case NEVER:
+                            return;
+                        case TASKBAR:
+                            if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) != WindowExtendedState.ICONIFIED) return;
+                            break;
+                        case TRAY:
+                            if (!JDGui.getInstance().getMainFrame().isVisible()) break;
+                            return;
+                        case TRAY_OR_TASKBAR:
+                            if (WindowManager.getInstance().getExtendedState(JDGui.getInstance().getMainFrame()) == WindowExtendedState.ICONIFIED) break;
+                            if (!JDGui.getInstance().getMainFrame().isVisible()) break;
+                            return;
+                    }
+                    notifyWindow = factory.buildAbstractNotifyWindow();
+                    if (notifyWindow != null) {
+                        ballooner.add(notifyWindow);
+                        added = true;
+                    }
+                } finally {
+                    if (added == false && notifyWindow != null) {
+                        /* creating a window and not disposing it = mem leak! in case we do not enqueue the window, we dispose it now! */
+                        notifyWindow.dispose();
+                    }
+                }
+            }
+        };
     }
     
     public void hide(final AbstractNotifyWindow notify) {
@@ -189,24 +224,21 @@ public class BubbleNotify {
     }
     
     public void unregisterTypes(AbstractBubbleSupport type) {
-        synchronized (types) {
-            types.remove(type);
-        }
-        new EDTRunner() {
-            
-            @Override
-            protected void runInEDT() {
-                if (configPanel != null) {
-                    configPanel.updateTypes(getTypes());
+        if (types.remove(type)) {
+            new EDTRunner() {
+                
+                @Override
+                protected void runInEDT() {
+                    if (configPanel != null) {
+                        configPanel.updateTypes(getTypes());
+                    }
                 }
-            }
-        };
+            };
+        }
     }
     
     public void registerType(AbstractBubbleSupport type) {
-        synchronized (types) {
-            types.add(type);
-        }
+        types.add(type);
         new EDTRunner() {
             
             @Override
@@ -218,13 +250,11 @@ public class BubbleNotify {
         };
     }
     
-    private List<AbstractBubbleSupport> types = new ArrayList<AbstractBubbleSupport>();
-    private BubbleNotifyConfigPanel     configPanel;
+    private CopyOnWriteArrayList<AbstractBubbleSupport> types = new CopyOnWriteArrayList<AbstractBubbleSupport>();
+    private BubbleNotifyConfigPanel                     configPanel;
     
     public List<AbstractBubbleSupport> getTypes() {
-        synchronized (types) {
-            return new ArrayList<AbstractBubbleSupport>(types);
-        }
+        return types;
     }
     
     public BubbleNotifyConfigPanel getConfigPanel() {

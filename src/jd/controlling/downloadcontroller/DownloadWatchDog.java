@@ -81,8 +81,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashResult;
 import jd.plugins.download.raf.FileBytesCache;
-import jd.plugins.download.raf.HashResult;
 
 import org.appwork.controlling.State;
 import org.appwork.controlling.StateEvent;

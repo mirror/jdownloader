@@ -16,7 +16,7 @@ public class CFG_GENERAL {
     public static void main(String[] args) {
         ConfigUtils.printStaticMappings(GeneralSettings.class);
     }
-
+    
     // Static Mappings for interface org.jdownloader.settings.GeneralSettings
     public static final GeneralSettings                 CFG                                                              = JsonConfig.create(GeneralSettings.class);
     public static final StorageHandler<GeneralSettings> SH                                                               = (StorageHandler<GeneralSettings>) CFG._getStorageHandler();
@@ -110,11 +110,7 @@ public class CFG_GENERAL {
      * http://jdownloader.org/knowledge/wiki/glossary/chunkload
      **/
     public static final IntegerKeyHandler               MAX_CHUNKS_PER_FILE                                              = SH.getKeyHandler("MaxChunksPerFile", IntegerKeyHandler.class);
-    // 80
-    /**
-     * flush download buffers when filled up to x percent (1-100)
-     **/
-    public static final IntegerKeyHandler               FLUSH_BUFFER_LEVEL                                               = SH.getKeyHandler("FlushBufferLevel", IntegerKeyHandler.class);
+    
     // null
     public static final ObjectKeyHandler                DOWNLOAD_FOLDER_HISTORY                                          = SH.getKeyHandler("DownloadFolderHistory", ObjectKeyHandler.class);
     // ASK_FOR_EACH_FILE
@@ -192,8 +188,7 @@ public class CFG_GENERAL {
     public static final LongKeyHandler                  DOWNLOAD_HASH_CHECK_FAILED_RETRY_WAITTIME                        = SH.getKeyHandler("DownloadHashCheckFailedRetryWaittime", LongKeyHandler.class);
     // 10
     /**
-     * AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog. @see
-     * showCountdownonAutoStartDownloads
+     * AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog. @see showCountdownonAutoStartDownloads
      **/
     public static final IntegerKeyHandler               AUTO_START_COUNTDOWN_SECONDS                                     = SH.getKeyHandler("AutoStartCountdownSeconds", IntegerKeyHandler.class);
     // true
