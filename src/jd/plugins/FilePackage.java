@@ -30,10 +30,10 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.ModifyLock;
 import jd.controlling.packagecontroller.PackageController;
 import jd.controlling.packagecontroller.PackageControllerComparator;
 
+import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -49,192 +49,192 @@ import org.jdownloader.translate._JDT;
  * @author JD-Team
  */
 public class FilePackage extends Property implements Serializable, AbstractPackageNode<DownloadLink, FilePackage> {
-
+    
     private static final long            serialVersionUID = -8859842964299890820L;
-
+    
     private String                       downloadDirectory;
-
+    
     private ArrayList<DownloadLink>      downloadLinkList;
     private transient static FilePackage FP               = null;
-
+    
     static {
         FP = new FilePackage() {
-
+            
             final private FilePackageView view             = new FilePackageView(this) {
                                                                List<DownloadLink> empty = Collections.unmodifiableList(new ArrayList<DownloadLink>(0));
-
+                                                               
                                                                @Override
                                                                public boolean isEnabled() {
                                                                    return false;
                                                                }
-
+                                                               
                                                                @Override
                                                                public PluginStateCollection getPluginStates() {
                                                                    return super.getPluginStates();
                                                                }
-
+                                                               
                                                                @Override
                                                                public DomainInfo[] getDomainInfos() {
                                                                    return new DomainInfo[0];
                                                                }
-
+                                                               
                                                                @Override
                                                                public long getSize() {
                                                                    return -1l;
                                                                }
-
+                                                               
                                                                @Override
                                                                public long getDone() {
                                                                    return -1;
                                                                }
-
+                                                               
                                                                @Override
                                                                public long getETA() {
                                                                    return -1;
                                                                }
-
+                                                               
                                                                @Override
                                                                public boolean isFinished() {
                                                                    return false;
                                                                }
-
+                                                               
                                                                @Override
                                                                public int getDisabledCount() {
                                                                    return 0;
                                                                }
-
+                                                               
                                                                @Override
                                                                public long getFinishedDate() {
                                                                    return -1l;
                                                                }
-
+                                                               
                                                                @Override
                                                                public void aggregate() {
                                                                }
-
+                                                               
                                                                @Override
                                                                public Priority getLowestPriority() {
                                                                    return Priority.DEFAULT;
                                                                }
-
+                                                               
                                                                @Override
                                                                public Priority getHighestPriority() {
                                                                    return Priority.DEFAULT;
                                                                }
-
+                                                               
                                                                @Override
                                                                public void setItems(List<DownloadLink> updatedItems) {
                                                                }
-
+                                                               
                                                                @Override
                                                                public String getCommonSourceUrl() {
                                                                    return null;
                                                                }
-
+                                                               
                                                                @Override
                                                                public void clear() {
                                                                }
-
+                                                               
                                                                @Override
                                                                public List<DownloadLink> getItems() {
                                                                    return empty;
                                                                }
-
+                                                               
                                                                @Override
                                                                public int getOfflineCount() {
                                                                    return 0;
                                                                }
-
+                                                               
                                                                @Override
                                                                public int getOnlineCount() {
                                                                    return 0;
                                                                }
-
+                                                               
                                                                @Override
                                                                public void requestUpdate() {
                                                                }
-
+                                                               
                                                                @Override
                                                                public boolean updateRequired() {
                                                                    return false;
                                                                }
-
+                                                               
                                                                @Override
                                                                public ChildrenAvailablility getAvailability() {
                                                                    return ChildrenAvailablility.UNKNOWN;
                                                                }
-
+                                                               
                                                                @Override
                                                                public String getMessage(Object requestor) {
                                                                    return null;
                                                                }
-
+                                                               
                                                            };
-
+            
             private static final long     serialVersionUID = 1L;
-
+            
             @Override
             public void _add(DownloadLink... links) {
             }
-
+            
             @Override
             public FilePackageView getView() {
                 return view;
             }
-
+            
             @Override
             public void remove(DownloadLink... links) {
             }
-
+            
             @Override
             public void setControlledBy(PackageController<FilePackage, DownloadLink> controller) {
             }
-
+            
         };
         FP.setName(_JDT._.controller_packages_defaultname());
         FP.downloadLinkList = new ArrayList<DownloadLink>() {
-
+            
             /**
              * 
              */
             private static final long serialVersionUID = 1L;
-
+            
             @Override
             public boolean isEmpty() {
                 return true;
             }
-
+            
             @Override
             public DownloadLink set(int index, DownloadLink element) {
                 return null;
             }
-
+            
             @Override
             public boolean add(DownloadLink e) {
                 return true;
             }
-
+            
             @Override
             public void add(int index, DownloadLink element) {
             }
-
+            
             @Override
             public boolean addAll(Collection<? extends DownloadLink> c) {
                 return false;
             }
-
+            
             @Override
             public boolean addAll(int index, Collection<? extends DownloadLink> c) {
                 return false;
             }
-
+            
             public ArrayList<DownloadLink> getDownloadLinkList() {
                 return new ArrayList<DownloadLink>();
             }
-
+            
         };
     }
-
+    
     /**
      * returns defaultFilePackage, used only to avoid NullPointerExceptions, you cannot add/remove links in it
      * 
@@ -243,23 +243,23 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public static FilePackage getDefaultFilePackage() {
         return FP;
     }
-
+    
     public static boolean isDefaultFilePackage(FilePackage fp) {
         return FP == fp;
     }
-
+    
     private String                                                 name              = null;
-
+    
     private long                                                   created           = -1l;
-
+    
     private transient Boolean                                      isExpanded        = null;
-
+    
     private transient PackageController<FilePackage, DownloadLink> controlledby      = null;
     private transient volatile UniqueAlltimeID                     uniqueID          = null;
     private transient volatile ModifyLock                          lock              = null;
     public static final String                                     PROPERTY_EXPANDED = "EXPANDED";
     private static final String                                    PROPERTY_COMMENT  = "COMMENT";
-
+    
     /**
      * @return the uniqueID
      */
@@ -271,11 +271,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
         return uniqueID;
     }
-
+    
     private volatile transient FilePackageView        fpInfo = null;
-
+    
     private PackageControllerComparator<DownloadLink> sorter;
-
+    
     /*
      * (non-Javadoc)
      * 
@@ -285,7 +285,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public int hashCode() {
         return getUniqueID().hashCode();
     }
-
+    
     /*
      * (non-Javadoc)
      * 
@@ -298,7 +298,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         if (!(obj instanceof FilePackage)) return false;
         return ((FilePackage) obj).uniqueID == this.uniqueID;
     }
-
+    
     /**
      * return a new FilePackage instance
      * 
@@ -307,7 +307,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public static FilePackage getInstance() {
         return new FilePackage();
     }
-
+    
     /**
      * private constructor for FilePackage, sets created timestamp and downloadDirectory
      */
@@ -318,7 +318,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         this.downloadLinkList = new ArrayList<DownloadLink>();
         setName(null);
     }
-
+    
     /**
      * restore this FilePackage from an ObjectInputStream and do some conversations, restoring some transient variables
      * 
@@ -337,7 +337,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         uniqueID = null;
         lock = null;
     }
-
+    
     /**
      * return this FilePackage created timestamp
      * 
@@ -346,7 +346,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public long getCreated() {
         return created;
     }
-
+    
     /**
      * set this FilePackage created timestamp
      * 
@@ -355,7 +355,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public void setCreated(long created) {
         this.created = created;
     }
-
+    
     /**
      * add given DownloadLink to this FilePackage. delegates the call to DownloadControllerInterface if it is set
      * 
@@ -364,7 +364,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public void add(DownloadLink link) {
         _add(link);
     }
-
+    
     /**
      * add the given DownloadLinks to this FilePackage. delegates the call to the DownloadControllerInterface if it is set
      * 
@@ -374,7 +374,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         if (links == null || links.size() == 0) return;
         _add(links.toArray(new DownloadLink[links.size()]));
     }
-
+    
     /**
      * add the given DownloadLinks to this FilePackage. delegates the call to the DownloadControllerInterface if it is set
      * 
@@ -398,12 +398,12 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             this.controlledby.moveOrAddAt(this, Arrays.asList(links), -1);
         }
     }
-
+    
     @Override
     public void setCurrentSorter(PackageControllerComparator<DownloadLink> comparator) {
         sorter = comparator;
     }
-
+    
     /**
      * return the download folder of this FilePackage
      * 
@@ -412,7 +412,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public String getDownloadDirectory() {
         return downloadDirectory;
     }
-
+    
     /**
      * return the name of this FilePackage
      * 
@@ -421,7 +421,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public String getName() {
         return name;
     }
-
+    
     /**
      * remove the given DownloadLinks from this FilePackage. delegates remove call to DownloadControllerInterface if it is set
      * 
@@ -447,7 +447,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             this.controlledby.removeChildren(this, Arrays.asList(links), true);
         }
     }
-
+    
     public void setComment(String comment) {
         if (comment == null || comment.length() == 0) {
             this.setProperty(PROPERTY_COMMENT, Property.NULL);
@@ -455,11 +455,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             this.setProperty(PROPERTY_COMMENT, comment);
         }
     }
-
+    
     public String getComment() {
         return this.getStringProperty(PROPERTY_COMMENT, null);
     }
-
+    
     /**
      * set the download folder for this FilePackage
      * 
@@ -477,7 +477,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         downloadDirectory = folder;
         if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.FOLDER, getDownloadDirectory()));
     }
-
+    
     /**
      * set the name of this FilePackage
      * 
@@ -492,7 +492,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         this.name = name.trim();
         if (hasNotificationListener()) nodeUpdated(this, AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new FilePackageProperty(this, FilePackageProperty.Property.NAME, getName()));
     }
-
+    
     /**
      * return number of DownloadLinks in this FilePackage
      * 
@@ -501,12 +501,12 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public int size() {
         return downloadLinkList.size();
     }
-
+    
     @Override
     public String toString() {
         return this.getName();
     }
-
+    
     /**
      * return if this FilePackage is in expanded state
      * 
@@ -517,7 +517,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
         return isExpanded;
     }
-
+    
     /**
      * set the expanded state of this FilePackage
      * 
@@ -532,23 +532,23 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             setProperty(PROPERTY_EXPANDED, b);
         }
     }
-
+    
     public boolean isEnabled() {
         return this.getView().isEnabled();
     }
-
+    
     public List<DownloadLink> getChildren() {
         return downloadLinkList;
     }
-
+    
     public PackageController<FilePackage, DownloadLink> getControlledBy() {
         return controlledby;
     }
-
+    
     public void setControlledBy(PackageController<FilePackage, DownloadLink> controller) {
         controlledby = controller;
     }
-
+    
     public void setEnabled(boolean b) {
         ArrayList<DownloadLink> links = null;
         boolean readL = getModifyLock().readLock();
@@ -561,7 +561,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             link.setEnabled(b);
         }
     }
-
+    
     public int indexOf(DownloadLink child) {
         boolean readL = getModifyLock().readLock();
         try {
@@ -570,7 +570,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             if (readL) getModifyLock().readUnlock(readL);
         }
     }
-
+    
     @Override
     public FilePackageView getView() {
         if (fpInfo != null) return fpInfo;
@@ -582,17 +582,17 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
         return fpInfo;
     }
-
+    
     @Override
     public long getFinishedDate() {
         return this.getView().getFinishedDate();
     }
-
+    
     @Override
     public PackageControllerComparator<DownloadLink> getCurrentSorter() {
         return sorter;
     }
-
+    
     @Override
     public void nodeUpdated(AbstractNode source, NOTIFY notify, Object param) {
         PackageController<FilePackage, DownloadLink> n = getControlledBy();
@@ -605,14 +605,14 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
         n.nodeUpdated(lsource, notify, param);
     }
-
+    
     @Override
     public boolean hasNotificationListener() {
         PackageController<FilePackage, DownloadLink> n = getControlledBy();
         if (n != null && n.hasNotificationListener()) return true;
         return false;
     }
-
+    
     @Override
     public ModifyLock getModifyLock() {
         if (lock != null) return lock;
@@ -622,5 +622,5 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
         return lock;
     }
-
+    
 }

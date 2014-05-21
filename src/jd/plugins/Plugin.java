@@ -22,8 +22,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
@@ -42,6 +40,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
@@ -64,19 +63,19 @@ import org.jdownloader.translate._JDT;
  */
 public abstract class Plugin implements ActionListener {
 
-    public static final String                   HTTP_LINKS_HOST     = "http links";
-    public static final String                   DIRECT_HTTP_HOST    = "DirectHTTP";
-    public static final String                   FTP_HOST            = "ftp";
+    public static final String                                    HTTP_LINKS_HOST     = "http links";
+    public static final String                                    DIRECT_HTTP_HOST    = "DirectHTTP";
+    public static final String                                    FTP_HOST            = "ftp";
 
     /* to keep 0.95xx comp */
     /* switch this on every stable update */
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
-    /* afer 0.95xx */
-    protected Logger                             logger              = LogController.TRASH;
+    /* after 0.95xx */
+    protected Logger                                              logger              = LogController.TRASH;
 
-    protected CopyOnWriteArrayList<File>         cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
-    private static final HashMap<String, Object> CACHE               = new HashMap<String, Object>();
+    protected CopyOnWriteArrayList<File>                          cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
+    private static final HashMap<String, HashMap<String, Object>> CACHE               = new HashMap<String, HashMap<String, Object>>();
 
     public void setLogger(Logger logger) {
         if (logger == null) {
@@ -89,78 +88,68 @@ public abstract class Plugin implements ActionListener {
         return logger;
     }
 
+    public PluginCache getCache() {
+        return getCache(getHost());
+    }
+
     public boolean isProxyRotationEnabled(boolean premiumDownload) {
         return !premiumDownload;
     }
 
     public static PluginCache getCache(final String id) {
+        final String ID = id + ".";
+        final HashMap<String, Object> cache;
+        synchronized (CACHE) {
+            if (CACHE.containsKey(ID)) {
+                cache = CACHE.get(ID);
+            } else {
+                cache = new HashMap<String, Object>();
+                CACHE.put(ID, cache);
+            }
+        }
         return new PluginCache() {
-            final String ID = id + ".";
-
             @Override
-            public void setCache(String key, Object value) {
-                synchronized (CACHE) {
-                    CACHE.put(ID + key, value);
+            public Object set(String key, Object value) {
+                synchronized (cache) {
+                    return cache.put(key, value);
                 }
             }
 
             @Override
-            public void removeCache(String key) {
-                synchronized (CACHE) {
-                    CACHE.remove(ID + key);
+            public Object remove(String key) {
+                synchronized (cache) {
+                    return cache.remove(key);
                 }
             }
 
             @Override
-            public <T> T getCache(String key, T defaultValue) {
-                synchronized (CACHE) {
-                    return (T) CACHE.get(ID + key);
+            public <T> T get(String key, T defaultValue) {
+                synchronized (cache) {
+                    return (T) cache.get(key);
                 }
             }
 
             @Override
-            public void clearCache() {
-                synchronized (CACHE) {
-                    Iterator<Entry<String, Object>> it = CACHE.entrySet().iterator();
-                    while (it.hasNext()) {
-                        if (it.next().getKey().startsWith(ID)) {
-                            it.remove();
-                        }
-                    }
+            public void clear() {
+                synchronized (cache) {
+                    cache.clear();
+                }
+            }
+
+            @Override
+            public String getID() {
+                return ID;
+
+            }
+
+            @Override
+            public boolean containsKey(String key) {
+                synchronized (cache) {
+                    return cache.containsKey(key);
                 }
             }
 
         };
-    }
-
-    public void setCache(String key, Object value) {
-        synchronized (CACHE) {
-            CACHE.put(getHost() + "." + key, value);
-        }
-    }
-
-    public void removeCache(String key) {
-        synchronized (CACHE) {
-            CACHE.remove(getHost() + "." + key);
-        }
-    }
-
-    public <T> T getCache(String key, T defaultValue) {
-        synchronized (CACHE) {
-            return (T) CACHE.get(getHost() + "." + key);
-        }
-    }
-
-    public void clearCache() {
-        synchronized (CACHE) {
-            String ID = getHost() + ".";
-            Iterator<Entry<String, Object>> it = CACHE.entrySet().iterator();
-            while (it.hasNext()) {
-                if (it.next().getKey().startsWith(ID)) {
-                    it.remove();
-                }
-            }
-        }
     }
 
     /**
@@ -204,10 +193,11 @@ public abstract class Plugin implements ActionListener {
      * @return Filename aus dem header (content disposition) extrahiert
      */
     public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
-        if (urlConnection.getHeaderField("Content-Disposition") == null || urlConnection.getHeaderField("Content-Disposition").indexOf("filename") < 0) {
+        String contentDisposition = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION);
+        if (contentDisposition == null || contentDisposition.indexOf("filename") < 0) {
             return Plugin.getFileNameFromURL(urlConnection.getURL());
         } else {
-            return Plugin.getFileNameFromDispositionHeader(urlConnection.getHeaderField("Content-Disposition"));
+            return Plugin.getFileNameFromDispositionHeader(contentDisposition);
         }
     }
 

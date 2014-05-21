@@ -756,7 +756,6 @@ public class DirectHTTP extends PluginForHost {
         } catch (IOException e) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Network problem: " + e.getMessage(), 5 * 60 * 1000l);
         } catch (final Exception e) {
-
             this.logger.log(Level.SEVERE, e.getMessage(), e);
         } finally {
             try {

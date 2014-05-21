@@ -36,7 +36,6 @@ import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
@@ -60,37 +59,37 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
-
+    
     private LinkCrawlerDistributer    distributer           = null;
-
+    
     private LazyCrawlerPlugin         lazyC                 = null;
     private CrawledLink               currentLink           = null;
     private LinkCrawlerAbort          linkCrawlerAbort;
-
+    
     private LinkCrawler               crawler;
     private transient ResponseList<?> lastChallengeResponse = null;
-
+    
     /**
      * @return the distributer
      */
     public LinkCrawlerDistributer getDistributer() {
         return distributer;
     }
-
+    
     @Override
     public SubConfiguration getPluginConfig() {
         return SubConfiguration.getConfig(lazyC.getDisplayName());
     }
-
+    
     public Browser getBrowser() {
         return br;
     }
-
+    
     @Override
     public LogSource getLogger() {
         return (LogSource) super.getLogger();
     }
-
+    
     /**
      * @param distributer
      *            the distributer to set
@@ -98,33 +97,33 @@ public abstract class PluginForDecrypt extends Plugin {
     public void setDistributer(LinkCrawlerDistributer distributer) {
         this.distributer = distributer;
     }
-
+    
     public PluginForDecrypt() {
     }
-
+    
     public Pattern getSupportedLinks() {
         return lazyC.getPattern();
     }
-
+    
     public String getHost() {
         return lazyC.getDisplayName();
     }
-
+    
     @Deprecated
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
         this.lazyC = (LazyCrawlerPlugin) wrapper.getLazy();
     }
-
+    
     public void setBrowser(Browser br) {
         this.br = br;
     }
-
+    
     @Override
     public long getVersion() {
         return lazyC.getVersion();
     }
-
+    
     public void sleep(long i, CryptedLink link) throws InterruptedException {
         while (i > 0) {
             i -= 1000;
@@ -133,7 +132,7 @@ public abstract class PluginForDecrypt extends Plugin {
             }
         }
     }
-
+    
     /**
      * return how many Instances of this PluginForDecrypt may crawl concurrently
      * 
@@ -142,7 +141,7 @@ public abstract class PluginForDecrypt extends Plugin {
     public int getMaxConcurrentProcessingInstances() {
         return Integer.MAX_VALUE;
     }
-
+    
     /**
      * Diese Methode entschlüsselt Links.
      * 
@@ -151,16 +150,16 @@ public abstract class PluginForDecrypt extends Plugin {
      *            {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()} herausgefiltert
      * @return Ein Vector mit Klartext-links
      */
-
+    
     protected DownloadLink createDownloadlink(String link) {
         return new DownloadLink(null, null, getHost(), Encoding.urlDecode(link, true), true);
     }
-
+    
     /**
      * Die Methode entschlüsselt einen einzelnen Link.
      */
     public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
-
+    
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen Vector<String> mit den decoded
      * Links setzen
@@ -251,7 +250,7 @@ public abstract class PluginForDecrypt extends Plugin {
             errLog(exception, br, source);
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
             logger.severe("URL was: " + source.getURL());
-
+            
             /* lets forward the log */
             if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
@@ -264,7 +263,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         return tmpLinks;
     }
-
+    
     public void errLog(Throwable e, Browser br, CrawledLink link) {
         LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
         try {
@@ -275,11 +274,11 @@ public abstract class PluginForDecrypt extends Plugin {
             errlogger.close();
         }
     }
-
+    
     public CrawledLink getCurrentLink() {
         return currentLink;
     }
-
+    
     /**
      * use this to process decrypted links while the decrypter itself is still running
      * 
@@ -292,23 +291,23 @@ public abstract class PluginForDecrypt extends Plugin {
         if (dist == null || links == null || links.length == 0) return;
         dist.distribute(links);
     }
-
+    
     public int getDistributeDelayerMinimum() {
         return 1000;
     }
-
+    
     public int getDistributeDelayerMaximum() {
         return 5000;
     }
-
+    
     protected String getCaptchaCode(String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
         return getCaptchaCode(getHost(), captchaAddress, param);
     }
-
+    
     protected String getCaptchaCode(LoadImage li, CryptedLink param) throws IOException, DecrypterException {
         return getCaptchaCode(getHost(), li.file, param);
     }
-
+    
     protected String getCaptchaCode(String method, String captchaAddress, CryptedLink param) throws IOException, DecrypterException {
         if (captchaAddress == null) {
             logger.severe("Captcha Adresse nicht definiert");
@@ -319,9 +318,9 @@ public abstract class PluginForDecrypt extends Plugin {
             Browser brc = br.cloneBrowser();
             try {
                 brc.getDownload(captchaFile, captchaAddress);
-
+                
             } catch (Exception e) {
-
+                
                 logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
@@ -332,15 +331,15 @@ public abstract class PluginForDecrypt extends Plugin {
             if (captchaFile != null) FileCreationManager.getInstance().delete(captchaFile, null);
         }
     }
-
+    
     protected String getCaptchaCode(File captchaFile, CryptedLink param) throws DecrypterException {
         return getCaptchaCode(getHost(), captchaFile, param);
     }
-
+    
     protected String getCaptchaCode(String methodname, File captchaFile, CryptedLink param) throws DecrypterException {
         return getCaptchaCode(methodname, captchaFile, 0, param, null, null);
     }
-
+    
     public void invalidateLastChallengeResponse() {
         try {
             ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
@@ -360,11 +359,11 @@ public abstract class PluginForDecrypt extends Plugin {
             lastChallengeResponse = null;
         }
     }
-
+    
     public void setLastChallengeResponse(ResponseList<?> lastChallengeResponse) {
         this.lastChallengeResponse = lastChallengeResponse;
     }
-
+    
     public void validateLastChallengeResponse() {
         try {
             ResponseList<?> lLastChallengeResponse = lastChallengeResponse;
@@ -384,11 +383,11 @@ public abstract class PluginForDecrypt extends Plugin {
             lastChallengeResponse = null;
         }
     }
-
+    
     public boolean hasChallengeResponse() {
         return lastChallengeResponse != null;
     }
-
+    
     /**
      * 
      * @param method
@@ -427,20 +426,20 @@ public abstract class PluginForDecrypt extends Plugin {
                     return false;
                 }
                 switch (skipRequest) {
-                case STOP_CURRENT_ACTION:
-                    /* user wants to stop current action (eg crawling) */
-                    return true;
-                case BLOCK_ALL_CAPTCHAS:
-                    /* user wants to block all captchas (current session) */
-                    return true;
-                case BLOCK_HOSTER:
-                    /* user wants to block captchas from specific hoster */
-                    return StringUtils.equals(PluginForDecrypt.this.getHost(), Challenge.getHost(challenge));
-                case BLOCK_PACKAGE:
-                    CrawledLink crawledLink = decrypt.getCurrentLink();
-                    return crawledLink != null && crawledLink.getOriginLink() == currentOrigin;
-                default:
-                    return false;
+                    case STOP_CURRENT_ACTION:
+                        /* user wants to stop current action (eg crawling) */
+                        return true;
+                    case BLOCK_ALL_CAPTCHAS:
+                        /* user wants to block all captchas (current session) */
+                        return true;
+                    case BLOCK_HOSTER:
+                        /* user wants to block captchas from specific hoster */
+                        return StringUtils.equals(PluginForDecrypt.this.getHost(), Challenge.getHost(challenge));
+                    case BLOCK_PACKAGE:
+                        CrawledLink crawledLink = decrypt.getCurrentLink();
+                        return crawledLink != null && crawledLink.getOriginLink() == currentOrigin;
+                    default:
+                        return false;
                 }
             }
         };
@@ -454,44 +453,45 @@ public abstract class PluginForDecrypt extends Plugin {
         try {
             ChallengeResponseController.getInstance().handle(c);
         } catch (InterruptedException e) {
-            logger.warning(Exceptions.getStackTrace(e));
+            LogSource.exception(logger, e);
             throw new DecrypterException(DecrypterException.CAPTCHA);
         } catch (SkipException e) {
+            LogSource.exception(logger, e);
             switch (e.getSkipRequest()) {
-            case BLOCK_ALL_CAPTCHAS:
-                CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
-                break;
-            case BLOCK_HOSTER:
-                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByHost(getCrawler(), getHost()));
-                break;
-            case BLOCK_PACKAGE:
-                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(getCrawler(), getCurrentLink()));
-                break;
-            case REFRESH:
-                // refresh is not supported from the pluginsystem right now.
-                return "GiveMeANewCaptcha!";
-            case STOP_CURRENT_ACTION:
-                LinkCollector.getInstance().abort();
-                // Just to be sure
-                CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
-                break;
-            default:
-                break;
+                case BLOCK_ALL_CAPTCHAS:
+                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
+                    break;
+                case BLOCK_HOSTER:
+                    CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByHost(getCrawler(), getHost()));
+                    break;
+                case BLOCK_PACKAGE:
+                    CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(getCrawler(), getCurrentLink()));
+                    break;
+                case REFRESH:
+                    // refresh is not supported from the pluginsystem right now.
+                    return "GiveMeANewCaptcha!";
+                case STOP_CURRENT_ACTION:
+                    LinkCollector.getInstance().abort();
+                    // Just to be sure
+                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
+                    break;
+                default:
+                    break;
             }
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         if (!c.isSolved()) throw new DecrypterException(DecrypterException.CAPTCHA);
         setLastChallengeResponse(c.getResult());
         return c.getResult().getValue();
-
+        
     }
-
+    
     protected void setBrowserExclusive() {
         if (br == null) return;
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
     }
-
+    
     /**
      * @param lazyC
      *            the lazyC to set
@@ -499,14 +499,14 @@ public abstract class PluginForDecrypt extends Plugin {
     public void setLazyC(LazyCrawlerPlugin lazyC) {
         this.lazyC = lazyC;
     }
-
+    
     /**
      * @return the lazyC
      */
     public LazyCrawlerPlugin getLazyC() {
         return lazyC;
     }
-
+    
     /**
      * Can be overridden to show the current status for example in captcha dialog
      * 
@@ -515,11 +515,11 @@ public abstract class PluginForDecrypt extends Plugin {
     public String getCrawlerStatusString() {
         return null;
     }
-
+    
     public void setLinkCrawlerAbort(LinkCrawlerAbort linkCrawlerAbort) {
         this.linkCrawlerAbort = linkCrawlerAbort;
     }
-
+    
     /**
      * DO not use in Plugins for old 09581 Stable or try/catch
      * 
@@ -530,11 +530,11 @@ public abstract class PluginForDecrypt extends Plugin {
         if (llinkCrawlerAbort != null) return llinkCrawlerAbort.isAbort();
         return Thread.currentThread().isInterrupted();
     }
-
+    
     public void setCrawler(LinkCrawler linkCrawler) {
         crawler = linkCrawler;
     }
-
+    
     public LinkCrawler getCrawler() {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             /* not sure why we have this here? */
@@ -543,5 +543,5 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         return crawler;
     }
-
+    
 }
