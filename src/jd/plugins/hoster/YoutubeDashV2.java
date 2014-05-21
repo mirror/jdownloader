@@ -93,7 +93,6 @@ import org.jdownloader.controlling.DownloadLinkView;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
 import org.jdownloader.controlling.ffmpeg.FFMpegProgress;
 import org.jdownloader.controlling.ffmpeg.FFmpeg;
-import org.jdownloader.controlling.ffmpeg.FFmpegProvider;
 import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.IconKey;
@@ -1450,13 +1449,7 @@ public class YoutubeDashV2 extends PluginForHost {
                 }
                 FFMpegInstallProgress progress = new FFMpegInstallProgress();
                 progress.setProgressSource(this);
-                PluginProgress old = null;
-                try {
-                    old = downloadLink.setPluginProgress(progress);
-                    FFmpegProvider.getInstance().install(progress, reason);
-                } finally {
-                    downloadLink.compareAndSetPluginProgress(progress, old);
-                }
+
                 ffmpeg.setPath(JsonConfig.create(FFmpegSetup.class).getBinaryPath());
                 if (!ffmpeg.isAvailable()) {
                     //
@@ -1474,6 +1467,11 @@ public class YoutubeDashV2 extends PluginForHost {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isProxyRotationEnabledForLinkChecker() {
+        return super.isProxyRotationEnabledForLinkChecker();
     }
 
     @Override

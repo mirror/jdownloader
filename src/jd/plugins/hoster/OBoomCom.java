@@ -104,9 +104,11 @@ public class OBoomCom extends PluginForHost {
             ai.setValidUntil(premiumUntil);
             if (!ai.isExpired()) {
                 ai.setStatus("Premium account");
+                account.setProperty("PREMIUM", true);
                 return ai;
             }
         }
+        account.setProperty("PREMIUM", false);
         ai.setValidUntil(-1);
         ai.setStatus("Free Account");
         return ai;

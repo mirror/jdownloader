@@ -4919,4 +4919,10 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Checking Onlinestatus..." })
     String CheckStatusAction_getMessage_checking();
+
+    @Default(lngs = { "en" }, values = { "Hide OBOOM.COM offers?" })
+    String OboomController_run_hide_title();
+
+    @Default(lngs = { "en" }, values = { "Are you sure that you want to hide this OBOOM.COM offer?" })
+    String OboomController_run_hide_msg();
 }
