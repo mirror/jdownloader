@@ -5,22 +5,22 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class LinkCrawlerRunnable implements Runnable {
-
-    private final LinkCrawler                              crawler;
-    private final int                                      generation;
+    
+    private final LinkCrawler                                   crawler;
+    private final int                                           generation;
     static HashMap<Object, java.util.List<LinkCrawlerRunnable>> SEQ_RUNNABLES = new HashMap<Object, java.util.List<LinkCrawlerRunnable>>();
-    static HashMap<Object, AtomicInteger>                  SEQ_COUNTER   = new HashMap<Object, AtomicInteger>();
-
+    static HashMap<Object, AtomicInteger>                       SEQ_COUNTER   = new HashMap<Object, AtomicInteger>();
+    
     protected LinkCrawlerRunnable(LinkCrawler crawler, int generation) {
         if (crawler == null) throw new IllegalArgumentException("crawler==null?");
         this.crawler = crawler;
         this.generation = generation;
     }
-
+    
     public LinkCrawler getLinkCrawler() {
         return crawler;
     }
-
+    
     public void run() {
         if (sequentialLockingObject() == null || maxConcurrency() == Integer.MAX_VALUE) {
             run_now();
@@ -28,7 +28,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
             run_delayed();
         }
     }
-
+    
     protected void run_delayed() {
         Object lock = sequentialLockingObject();
         LinkCrawlerRunnable startRunnable = null;
@@ -75,30 +75,30 @@ public abstract class LinkCrawlerRunnable implements Runnable {
             }
         }
     }
-
+    
     /**
      * run this Runnable now
      */
     protected void run_now() {
         try {
-            if (crawler.getCrawlerGeneration(false) == this.generation) {
+            if (crawler.getCrawlerGeneration(false) == this.generation || !crawler.isCrawlingAllowed()) {
                 crawling();
             }
         } finally {
             crawler.checkFinishNotify();
         }
     }
-
+    
     abstract void crawling();
-
+    
     public long getAverageRuntime() {
         return 0;
     }
-
+    
     protected Object sequentialLockingObject() {
         return null;
     }
-
+    
     protected int maxConcurrency() {
         return Integer.MAX_VALUE;
     }

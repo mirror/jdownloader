@@ -8,11 +8,11 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.ModifyLock;
 import jd.controlling.packagecontroller.PackageController;
 import jd.controlling.packagecontroller.PackageControllerComparator;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -92,10 +92,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return type;
     }
 
-    private static final GeneralSettings                   generalSettings        = JsonConfig.create(GeneralSettings.class);
-    private static final LinkgrabberSettings               linkGrabberSettings    = JsonConfig.create(LinkgrabberSettings.class);
+    private static final GeneralSettings                   GENERALSETTINGS        = JsonConfig.create(GeneralSettings.class);
 
-    private java.util.List<CrawledLink>                    children;
+    private static final LinkgrabberSettings               LINKGRABBERSETTINGS    = JsonConfig.create(LinkgrabberSettings.class);
+
+    private List<CrawledLink>                              children;
     private String                                         comment                = null;
     private PackageController<CrawledPackage, CrawledLink> controller             = null;
 
@@ -103,7 +104,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     private String                                         name                   = null;
 
-    private String                                         downloadFolder         = linkGrabberSettings.isUseLastDownloadDestinationAsDefault() ? linkGrabberSettings.getLatestDownloadDestinationFolder() : generalSettings.getDefaultDownloadFolder();
+    private String                                         downloadFolder         = null;
 
     private boolean                                        downloadFolderSet      = false;
 
@@ -130,9 +131,10 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
 
     public CrawledPackage() {
         children = new ArrayList<CrawledLink>();
-        if (generalSettings.isAutoSortChildrenEnabled()) {
+        if (GENERALSETTINGS.isAutoSortChildrenEnabled()) {
             sorter = SORTER_ASC;
         }
+        setDownloadFolder(LINKGRABBERSETTINGS.isUseLastDownloadDestinationAsDefault() ? LINKGRABBERSETTINGS.getLatestDownloadDestinationFolder() : null);
     }
 
     public void copyPropertiesTo(CrawledPackage dest) {
@@ -144,7 +146,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         if (this.isDownloadFolderSet()) {
             dest.setDownloadFolder(getRawDownloadFolder());
         }
-
     }
 
     public List<CrawledLink> getChildren() {
@@ -174,7 +175,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         }
         ret = downloadFolder;
         String packageName = getName();
-        if (JsonConfig.create(GeneralSettings.class).getSubfolderThreshold() > getChildren().size()) {
+        if (GENERALSETTINGS.getSubfolderThreshold() > getChildren().size()) {
             packageName = null;
         }
         ret = PackagizerController.replaceDynamicTags(ret, packageName);
@@ -254,7 +255,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
             downloadFolderSet = true;
             this.downloadFolder = downloadFolder;
         } else {
-            this.downloadFolder = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+            this.downloadFolder = GENERALSETTINGS.getDefaultDownloadFolder();
             this.downloadFolderSet = false;
         }
         compiledDownloadFolder = null;
