@@ -69,6 +69,8 @@ public class ProtectUrlNet extends PluginForDecrypt {
                 postData += "password=" + passCode;
             }
             if (postData != null) {
+                br.setCookie(this.getHost(), "PURL_PopPub", "1");
+                br.setCookie(this.getHost(), "PURL_FreakWorld-dgfedfgg", "oui");
                 br.postPage("http://protect-url.net/linkid.php", postData);
                 if (br.containsHTML(PASSWRONG)) {
                     br.getPage(parameter);
@@ -84,14 +86,26 @@ public class ProtectUrlNet extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<img id=\\'gglload\\' src=\\'images/icon\\-magnify\\.png\\' style=\"vertical\\-align: middle;\"></span>([^<>\"]*?) </td>").getMatch(0);
         }
-        String[] links = HTMLParser.getHttpLinks(br.toString(), null);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLink : links) {
-            if (!this.canHandle(singleLink)) {
-                decryptedLinks.add(createDownloadlink(singleLink));
+        final String[] l = br.getRegex("monhtsec\\('(.*?)'\\)").getColumn(0);
+        if (l != null && l.length != 0) {
+            for (String singleLink : l) {
+                if (!singleLink.startsWith("http")) {
+                    singleLink = "http://" + singleLink;
+                }
+                if (!this.canHandle(singleLink)) {
+                    decryptedLinks.add(createDownloadlink(singleLink));
+                }
+            }
+        } else {
+            String[] links = HTMLParser.getHttpLinks(br.toString(), null);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links) {
+                if (!this.canHandle(singleLink)) {
+                    decryptedLinks.add(createDownloadlink(singleLink));
+                }
             }
         }
         if (fpName != null) {
