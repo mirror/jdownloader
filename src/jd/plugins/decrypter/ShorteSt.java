@@ -27,6 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[a-z0-9]+" }, flags = { 0 })
 public class ShorteSt extends PluginForDecrypt {
@@ -51,8 +52,9 @@ public class ShorteSt extends PluginForDecrypt {
             return null;
         }
         int t = 5;
-        if (timer != null)
+        if (timer != null) {
             t = Integer.parseInt(timer);
+        }
         sleep(t * 1001, param);
         Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("Accept", "application/json, text/javascript");
@@ -64,9 +66,11 @@ public class ShorteSt extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        // json escaping
         finallink = finallink.replaceAll("\\\\/", "/");
+        // unicode
+        finallink = unescape(finallink);
         decryptedLinks.add(createDownloadlink(finallink));
-
         return decryptedLinks;
     }
 
@@ -74,12 +78,20 @@ public class ShorteSt extends PluginForDecrypt {
         // js
         String test = ibr.getRegex(s + ":\\s*(\"|')(.*?)\\1").getMatch(1);
         // json(finallink)
-        if (test == null)
+        if (test == null) {
             test = ibr.getRegex("\"" + s + "\":\"(.*?)\"").getMatch(0);
+        }
         // int/long/boolean
-        if (test == null)
+        if (test == null) {
             test = ibr.getRegex(s + ":\\s*(\\d+|true|false)").getMatch(0);
+        }
         return test;
+    }
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        JDUtilities.getPluginForHost("youtube.com");
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
 }
