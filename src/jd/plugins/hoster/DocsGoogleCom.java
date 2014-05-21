@@ -57,7 +57,8 @@ public class DocsGoogleCom extends PluginForHost {
         }
     }
 
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private static final String NOCHUNKS     = "NOCHUNKS";
+    private boolean             pluginloaded = false;
 
     private String getID(DownloadLink downloadLink) {
         // known url formats
@@ -67,9 +68,13 @@ public class DocsGoogleCom extends PluginForHost {
         // https://docs.google.com/leaf?id=0B_QJaGmmPrqeZjJkZDFmYzEtMTYzMS00N2Y2LWI2NDUtMjQ1ZjhlZDhmYmY3
         // https://docs.google.com/open?id=0B9Z2XD2XD2iQNmxzWjd1UTdDdnc
 
-        if (downloadLink == null) return null;
+        if (downloadLink == null) {
+            return null;
+        }
         String id = new Regex(downloadLink.getDownloadURL(), "/file/d/([a-zA-Z0-9\\-_]+)").getMatch(0);
-        if (id == null) id = new Regex(downloadLink.getDownloadURL(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+        if (id == null) {
+            id = new Regex(downloadLink.getDownloadURL(), "(?!rev)id=([a-zA-Z0-9\\-_]+)").getMatch(0);
+        }
         return id;
     }
 
@@ -80,7 +85,9 @@ public class DocsGoogleCom extends PluginForHost {
         // language determined by the accept-language
         // user-agent required to use new ones otherwise blocks with javascript notice.
 
-        if (pbr == null) pbr = new Browser();
+        if (pbr == null) {
+            pbr = new Browser();
+        }
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -102,14 +109,22 @@ public class DocsGoogleCom extends PluginForHost {
         } catch (final BrowserException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("'title': '([^<>\"]*?)'").getMatch(0);
-        if (filename == null) filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\"filename\":\"([^\"]+)\",").getMatch(0);
+        }
         String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         link.setName(filename.trim());
-        if (size != null) link.setDownloadSize(SizeFormatter.getSize(size));
+        if (size != null) {
+            link.setDownloadSize(SizeFormatter.getSize(size));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -117,21 +132,34 @@ public class DocsGoogleCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
-        if (br.containsHTML("<p class=\"error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.")) {
-            // so its not possible to download at this time.
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time.", 60 * 60 * 1000);
-        }
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            dllink = br.getRegex("href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink;
+        /* Download not possible ? Download stream! */
+        final String stream_map = br.getRegex("\"fmt_stream_map\":\"(.*?)\"").getMatch(0);
+        if (stream_map != null) {
+            final String[] links = stream_map.split("\\|");
+            dllink = links[links.length - 1];
+            dllink = unescape(dllink);
+        } else {
+            br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
+            if (br.containsHTML("<p class=\"error\\-subcaption\">Too many users have viewed or downloaded this file recently\\. Please try accessing the file again later\\.")) {
+                // so its not possible to download at this time.
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time.", 60 * 60 * 1000);
             }
-            br.getPage(HTMLEntities.unhtmlentities(dllink));
             dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                dllink = br.getRegex("href=\"([^\"]+)\">Download anyway</a>").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("href=\"(/uc\\?export=download[^\"]+)\">").getMatch(0);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                br.getPage(HTMLEntities.unhtmlentities(dllink));
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
 
         int maxChunks = 0;
@@ -147,7 +175,9 @@ public class DocsGoogleCom extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -165,6 +195,18 @@ public class DocsGoogleCom extends PluginForHost {
             }
             throw e;
         }
+    }
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override

@@ -87,7 +87,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_PHOTO_SINGLE                 = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                  = ".*?(tag|album(\\-)?\\d+_|photos)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                 = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
-    private static final String     PATTERN_WALL_LINK                    = "https?://(www\\.)?vk\\.com/wall\\-\\d+(\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
+    private static final String     PATTERN_WALL_LINK                    = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+(\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
     private static final String     PATTERN_WALL_LOOPBACK_LINK           = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
     private static final String     PATTERN_WALL_POST_LINK               = "https?://(www\\.)?vk\\.com/wall\\-\\d+_\\d+";
     private static final String     PATTERN_PUBLIC_LINK                  = "https?://(www\\.)?vk\\.com/public\\d+";
@@ -163,13 +163,13 @@ public class VKontakteRu extends PluginForDecrypt {
                 String newLink = CRYPTEDLINK_FUNCTIONAL;
                 if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK)) {
                     // group and club links --> wall links
-                    newLink = MAINPAGE + "/wall-" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+                    newLink = MAINPAGE + "/wall" + new Regex(CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_ID_LINK)) {
                     // Change id links -> albums links
                     newLink = MAINPAGE + "/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
                     // Remove loopback-part as it only contains information which we need later but not in the link
-                    newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(http://(www\\.)?vk\\.com/wall\\-\\d+)").getMatch(0);
+                    newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(http://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
                 } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_SINGLE_PUBLIC_EXTENDED)) {
                     /* Don't change anything */
                 } else {
@@ -179,19 +179,25 @@ public class VKontakteRu extends PluginForDecrypt {
                         getPageSafe(CRYPTEDLINK_FUNCTIONAL);
                     }
                     if (br.containsHTML("id=\"profile_main_actions\"")) {
-                        // Change profile links -> albums links
-                        String profileAlbums = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
-                        if (profileAlbums == null) {
-                            profileAlbums = br.getRegex("id=\"profile_photos_module\">[\t\n\r ]+<a href=\"(/albums\\d+)").getMatch(0);
+                        // Change profile links -> albums links --> If no albums link available, we probably only have 1-2 pictures --> Use
+                        // wall/user-id and build albums url
+                        String profileAlbums;
+                        if (br.containsHTML("id=\"profile_photos_module\"")) {
+                            profileAlbums = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
+                            if (profileAlbums == null) {
+                                profileAlbums = br.getRegex("id=\"profile_photos_module\">[\t\n\r ]+<a href=\"(/albums\\d+)").getMatch(0);
+                            }
+                        } else {
+                            profileAlbums = get_wall_id();
                         }
                         if (profileAlbums == null) {
                             logger.warning("Failed to find profileAlbums for profile-link: " + CRYPTEDLINK_FUNCTIONAL);
                             return null;
                         }
-                        newLink = MAINPAGE + profileAlbums;
+                        newLink = MAINPAGE + "/albums" + profileAlbums;
                     } else if (br.containsHTML("id=\"public_like_module\"")) {
                         // Change public page links -> wall links
-                        final String wallID = br.getRegex("\"wall_oid\":(\\-\\d+)").getMatch(0);
+                        final String wallID = get_wall_id();
                         if (wallID == null) {
                             logger.warning("Failed to find wallID for public-page-link: " + CRYPTEDLINK_FUNCTIONAL);
                             return null;
@@ -925,7 +931,7 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private void decryptWallLink() throws Exception {
-        String userID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall(\\-\\d+)").getMatch(0);
+        String userID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+)").getMatch(0);
         if (userID == null) {
             br.getPage("https://api.vk.com/method/resolveScreenName?screen_name=" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(.+)").getMatch(0));
             userID = br.getRegex("\"object_id\":(\\d+)").getMatch(0);
@@ -1077,6 +1083,10 @@ public class VKontakteRu extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(userID);
         fp.addLinks(decryptedLinks2);
+    }
+
+    private String get_wall_id() {
+        return br.getRegex("\"wall_oid\":((\\-)?\\d+)").getMatch(0);
     }
 
     private void decryptWallPost() throws Exception {

@@ -87,45 +87,62 @@ public class RDMdthk extends PluginForDecrypt {
         // ardmediathek.de
         String ID = new Regex(parameter, "\\?documentId=(\\d+)").getMatch(0);
         // mediathek.daserste.de
-        if (ID == null) ID = new Regex(parameter, realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);
-        if (ID == null) ID = new Regex(parameter, realBaseUrl + "/suche/(\\d+)").getMatch(0);
+        if (ID == null) {
+            ID = new Regex(parameter, realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);
+        }
+        if (ID == null) {
+            ID = new Regex(parameter, realBaseUrl + "/suche/(\\d+)").getMatch(0);
+        }
         if (ID == null) {
             logger.info("ARDMediathek: MediaID is null! Regex broken?");
             return null;
         }
 
         String next = br.getRegex("href=\"(/ard/servlet/ajax\\-cache/\\d+/view=switch/documentId=" + ID + "/index.html)").getMatch(0);
-        if (next != null) br.getPage(next);
+        if (next != null) {
+            br.getPage(next);
+        }
         // Dossiers
         String pages[] = br.getRegex("value=\"(/ard/servlet/ajax\\-cache/\\d+/view=list/documentId=" + ID + "/goto=\\d+/index.html)").getColumn(0);
-        if (pages.length < 1) pages = new String[1];
+        if (pages.length < 1) {
+            pages = new String[1];
+        }
         Collections.reverse(Arrays.asList(pages));
 
         for (int i = 0; i < pages.length; ++i) {
             final String[][] streams = br.getRegex("mt\\-icon_(audio|video).*?<a href=\"([^\"]+)\" class=\"mt\\-fo_source\" rel=\"[^\"]+\"[ onclick=\"[^\"]+\"]*?>([^<]+)<").getMatches();
             boolean b = false;
             for (final String[] s : streams) {
-                if (!s[1].contains(ID)) continue;
+                if (!s[1].contains(ID)) {
+                    continue;
+                }
                 b = true;
             }
-            progress.setRange(streams.length);
             for (final String[] s : streams) {
-                progress.increase(1);
-                if ("audio".equalsIgnoreCase(s[0]) && !includeAudio) continue;
-                if (b && !s[1].contains(ID)) continue;
+                if ("audio".equalsIgnoreCase(s[0]) && !includeAudio) {
+                    continue;
+                }
+                if (b && !s[1].contains(ID)) {
+                    continue;
+                }
                 decryptedLinks.addAll(getDownloadLinks(cfg, realBaseUrl + s[1], ID, title));
                 try {
-                    if (this.isAbort()) return decryptedLinks;
+                    if (this.isAbort()) {
+                        return decryptedLinks;
+                    }
                 } catch (Throwable e) {
                     /* does not exist in 09581 */
                 }
             }
-            progress.setRange(0);
-            if (pages.length == 1) break;
+            if (pages.length == 1) {
+                break;
+            }
             br.getPage(pages[i]);
         }
         // Single link
-        if (decryptedLinks == null || decryptedLinks.size() == 0) decryptedLinks.addAll(getDownloadLinks(cfg, parameter, ID, title));
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            decryptedLinks.addAll(getDownloadLinks(cfg, parameter, ID, title));
+        }
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             if (notForStable > 0) {
@@ -150,7 +167,9 @@ public class RDMdthk extends PluginForDecrypt {
             prev = prev.replaceAll(",|\\.", "");
         }
         final int rev = Integer.parseInt(prev);
-        if (rev < 10000) { return true; }
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 
@@ -160,19 +179,25 @@ public class RDMdthk extends PluginForDecrypt {
 
         try {
             String title = s[2];
-            if (title == null) title = getTitle(br);
+            if (title == null) {
+                title = getTitle(br);
+            }
             if (s[1] != null) {
                 Browser br = new Browser();
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.getPage(s[0]);
-                if (br.containsHTML("(<h1>Leider konnte die gew\\&uuml;nschte Seite<br />nicht gefunden werden\\.</h1>|Die angeforderte Datei existiert leider nicht)")) return ret;
+                if (br.containsHTML("(<h1>Leider konnte die gew\\&uuml;nschte Seite<br />nicht gefunden werden\\.</h1>|Die angeforderte Datei existiert leider nicht)")) {
+                    return ret;
+                }
                 final String subtitleLink = br.getRegex("mediaCollection\\.setSubtitleUrl\\(\"(/static/avportal/untertitel_mediathek/\\d+\\.xml)\"").getMatch(0);
                 String url = null, fmt = null;
                 int t = 0;
 
                 String extension = ".mp4";
-                if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) extension = ".mp3";
+                if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
+                    extension = ".mp3";
+                }
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 final HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
@@ -181,20 +206,28 @@ public class RDMdthk extends PluginForDecrypt {
                     // rtmp --> hds or rtmp
                     url = quality[3];
                     if ("akamai".equals(quality[4]) || "limelight".equals(quality[4])) {
-                        if (url.endsWith("manifest.f4m")) continue;
+                        if (url.endsWith("manifest.f4m")) {
+                            continue;
+                        }
                     }
                     if ("default".equals(quality[4])) {
-                        if (url.endsWith("m3u")) continue;
+                        if (url.endsWith("m3u")) {
+                            continue;
+                        }
                     }
                     if (!url.startsWith("http://")) {
-                        if (isEmpty(quality[2])) continue;
+                        if (isEmpty(quality[2])) {
+                            continue;
+                        }
                     }
                     // get streamtype id
                     t = Integer.valueOf(quality[0]);
                     // http or hds t=0 or t=1
                     url += "@";
                     // rtmp t=?
-                    if (quality[2].startsWith("rtmp")) url = quality[2] + "@" + quality[3].split("\\?")[0];
+                    if (quality[2].startsWith("rtmp")) {
+                        url = quality[2] + "@" + quality[3].split("\\?")[0];
+                    }
                     fmt = "hd";
 
                     // only http streams for old stable
@@ -241,10 +274,14 @@ public class RDMdthk extends PluginForDecrypt {
                     final String network = quality[4];
 
                     /* Skip rtmp streams if user wants http only */
-                    if (network.equals("akamai") && HTTP_ONLY) continue;
+                    if (network.equals("akamai") && HTTP_ONLY) {
+                        continue;
+                    }
 
                     final DownloadLink link = createDownloadlink(s[0].replace("http://", "decrypted://") + "&quality=" + fmt + "&network=" + network);
-                    if (t == 1 ? false : true) link.setAvailable(true);
+                    if (t == 1 ? false : true) {
+                        link.setAvailable(true);
+                    }
                     link.setFinalFileName(full_name);
                     link.setBrowserUrl(s[0]);
                     link.setProperty("directURL", url);
@@ -341,13 +378,27 @@ public class RDMdthk extends PluginForDecrypt {
     private String getTitle(Browser br) {
         String title = br.getRegex("<(div|span) class=\"(MainBoxHeadline|BoxHeadline)\">([^<]+)</").getMatch(2);
         String titleUT = br.getRegex("<span class=\"(BoxHeadlineUT|boxSubHeadline)\">([^<]+)</").getMatch(1);
-        if (titleUT == null) titleUT = br.getRegex("<h3 class=\"mt\\-title\"><a>([^<>\"]*?)</a></h3>").getMatch(0);
-        if (title == null) title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
-        if (title == null) title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        if (title == null) title = br.getRegex("class=\"mt\\-icon mt\\-icon_video\"></span><img src=\"[^\"]+\" alt=\"([^\"]+)\"").getMatch(0);
-        if (title == null) title = br.getRegex("class=\"mt\\-icon mt\\-icon\\-toggle_arrows\"></span>([^<>\"]*?)</a>").getMatch(0);
-        if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
-        if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
+        if (titleUT == null) {
+            titleUT = br.getRegex("<h3 class=\"mt\\-title\"><a>([^<>\"]*?)</a></h3>").getMatch(0);
+        }
+        if (title == null) {
+            title = br.getRegex("<title>ard\\.online \\- Mediathek: ([^<]+)</title>").getMatch(0);
+        }
+        if (title == null) {
+            title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+        }
+        if (title == null) {
+            title = br.getRegex("class=\"mt\\-icon mt\\-icon_video\"></span><img src=\"[^\"]+\" alt=\"([^\"]+)\"").getMatch(0);
+        }
+        if (title == null) {
+            title = br.getRegex("class=\"mt\\-icon mt\\-icon\\-toggle_arrows\"></span>([^<>\"]*?)</a>").getMatch(0);
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
+        }
+        if (title == null) {
+            title = "UnknownTitle_" + System.currentTimeMillis();
+        }
         title = title.replaceAll("\\n|\\t|,", "").trim();
         return title;
     }
