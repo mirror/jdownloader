@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
@@ -48,7 +47,6 @@ import jd.plugins.download.DownloadInterfaceFactory;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -321,9 +319,10 @@ public abstract class PluginForHost extends Plugin {
             }
             return c.getResult().getValue();
         } catch (InterruptedException e) {
-            logger.warning(Exceptions.getStackTrace(e));
+            LogSource.exception(logger, e);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } catch (SkipException e) {
+            LogSource.exception(logger, e);
             if (getDownloadLink() != null) {
                 switch (e.getSkipRequest()) {
                 case BLOCK_ALL_CAPTCHAS:
@@ -438,7 +437,7 @@ public abstract class PluginForHost extends Plugin {
             try {
                 oldDl.close();
             } catch (final Throwable e) {
-                LogSource.exception(getLogger(), e);
+                getLogger().log(e);
             }
         }
     }
@@ -555,15 +554,12 @@ public abstract class PluginForHost extends Plugin {
         return -1;
     }
 
-    /*
-     * Integer.Min_Value will result in no download at all (eg no free supported)
+    /**
+     * this method returns absolut numbers of max allowed downloads for given plugin/link/account combination
      * 
-     * -1 -> unlimited
-     * 
-     * <-1 || 0 = no download
-     * 
-     * 
-     * return max possible simultan downloads for given link and account,overwrite this if you want special handling, eg for multihost
+     * @param link
+     * @param account
+     * @return
      */
     public int getMaxSimultanDownload(DownloadLink link, final Account account) {
         int max;
@@ -686,22 +682,6 @@ public abstract class PluginForHost extends Plugin {
     public void handle(final DownloadLink downloadLink, final Account account) throws Exception {
         try {
             waitForNextStartAllowed(downloadLink);
-            if (false) {
-                if (true) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
-                }
-                if (false) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
-                } else if (getHost().contains("share")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 5 * 1000l);
-                } else if (getHost().contains("upload")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 90 * 5 * 1000l);
-                } else if (getHost().contains("cloud")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, new Random().nextInt(5) * 60 * 1000l);
-                }
-            }
             if (account != null) {
                 /* with account */
                 if (account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
@@ -1328,49 +1308,60 @@ public abstract class PluginForHost extends Plugin {
      * @param link
      * @param value
      */
-    public void rename(DownloadLink link, String value) {
-        File old = new File(link.getFileOutput(false, false));
-        if (old.exists()) {
-            File newFile = new File(old.getParentFile(), value);
-            // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
-
-            old.renameTo(newFile);
-            if (link.getFinalFileOutput() != null && new File(link.getFinalFileOutput()).equals(old)) {
-                link.setFinalFileOutput(newFile.getAbsolutePath());
+    public void move(DownloadLink link, String newName, File newParentFile) {
+        if (StringUtils.isNotEmpty(newName)) {
+            try {
+                String oldName = link.getName();
+                if (StringUtils.equals(newName, oldName)) {
+                    return;
+                }
+                newName = CrossSystem.alleviatePathParts(newName);
+                if (StringUtils.isNotEmpty(newName)) {
+                    // File old = new File(link.getFileOutput(false, false));
+                    // if (old.exists()) {
+                    // File newFile = new File(old.getParentFile(), value);
+                    // // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
+                    //
+                    // old.renameTo(newFile);
+                    // if (link.getFinalFileOutput() != null && new File(link.getFinalFileOutput()).equals(old)) {
+                    // link.setFinalFileOutput(newFile.getAbsolutePath());
+                    // }
+                    //
+                    // }
+                    //
+                    // old = new File(link.getFileOutput(false, true));
+                    // if (old.exists()) {
+                    // File newFile = new File(old.getParentFile(), value);
+                    // // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
+                    //
+                    // old.renameTo(newFile);
+                    // if (link.getFinalFileOutput() != null && new File(link.getFinalFileOutput()).equals(old)) {
+                    // link.setFinalFileOutput(newFile.getAbsolutePath());
+                    // }
+                    //
+                    // }
+                    //
+                    // old = new File(link.getFileOutput(false, false) + ".part");
+                    // if (old.exists()) {
+                    // File newFile = new File(old.getParentFile(), value + ".part");
+                    // // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
+                    //
+                    // old.renameTo(newFile);
+                    // }
+                    //
+                    // old = new File(link.getFileOutput(false, true) + ".part");
+                    // if (old.exists()) {
+                    // File newFile = new File(old.getParentFile(), value + ".part");
+                    // // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
+                    //
+                    // old.renameTo(newFile);
+                    // }
+                    // link.forceFileName(newName);
+                }
+            } finally {
+                link.setCustomFinalName(null);
             }
-
         }
-
-        old = new File(link.getFileOutput(false, true));
-        if (old.exists()) {
-            File newFile = new File(old.getParentFile(), value);
-            // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
-
-            old.renameTo(newFile);
-            if (link.getFinalFileOutput() != null && new File(link.getFinalFileOutput()).equals(old)) {
-                link.setFinalFileOutput(newFile.getAbsolutePath());
-            }
-
-        }
-
-        old = new File(link.getFileOutput(false, false) + ".part");
-        if (old.exists()) {
-            File newFile = new File(old.getParentFile(), value + ".part");
-            // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
-
-            old.renameTo(newFile);
-        }
-
-        old = new File(link.getFileOutput(false, true) + ".part");
-        if (old.exists()) {
-            File newFile = new File(old.getParentFile(), value + ".part");
-            // FileAccessManager am = DownloadWatchDog.getInstance().getSession().getFileAccessManager();
-
-            old.renameTo(newFile);
-        }
-        link.setCustomFinalName(null);
-        link.forceFileName(value);
-
     }
 
     public boolean isProxyRotationEnabledForLinkChecker() {
