@@ -153,7 +153,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     @Override
     public boolean isVisible() {
-        return enabled.get() && (isOfferActive() || getProMode.get());
+        return enabled.get() && (is2DaysOfferVisible() || getProMode.get());
     }
 
     @Override
@@ -278,12 +278,6 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         Thread thread = new Thread("Ask StatServ") {
             public void run() {
 
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
                 while (true) {
                     Browser br = new Browser();
                     try {
@@ -292,7 +286,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                         if (br.containsHTML("true") || !Application.isJared(null)) {
                             newValue = true;
                         }
-
+                        enabled.set(newValue);
                         new EDTRunner() {
 
                             @Override
@@ -301,7 +295,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                                 pane.repaint();
                             }
                         };
-                        if (CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup()) {
+                        if (newValue && CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup() && is2DaysOfferVisible()) {
                             Thread.sleep(10000);
 
                             OboomDialog d = new OboomDialog("autopopup");
@@ -327,7 +321,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         return this;
     }
 
-    public static boolean isOfferActive() {
+    public static boolean is2DaysOfferVisible() {
         return OFFER_IS_ACTIVE;
     }
 
@@ -357,7 +351,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             final String value = matcher.group(1);
             return Integer.parseInt(value, 16);
         } catch (Throwable e) {
-            e.printStackTrace();
+            // e.printStackTrace();
             return -1;
         }
     }
@@ -437,7 +431,10 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             this.hasDealAccountToRenewAlreadyExpired = hasDealAccountToRenewAlreadyExpired;
             this.hasOtherAccountToRenew = hasOtherAccountToRenew;
             this.hasDealAccountToRenew = hasDealAccountToRenew;
-            final boolean showPro = isOfferActive() && (hasOtherAccountToRenew || hasDealAccountToRenew) && !hasOboomPremium;
+            boolean showPro = !is2DaysOfferVisible() && (hasOtherAccountToRenew || hasDealAccountToRenew) && !hasOboomPremium;
+            if (!is2DaysOfferVisible() && !hasOboomPremium && !hasOtherAccountToRenew && !hasDealAccountToRenew) {
+                showPro = true;
+            }
             if (getProMode.compareAndSet(!showPro, showPro)) {
                 new EDTRunner() {
 

@@ -245,7 +245,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                     @Override
                     public void run() {
-                        MainTabbedPane.getInstance().setTopRightPainter(OboomController.getInstance().start());
+
                         new Thread("TrayBug") {
                             public void run() {
 
@@ -1278,17 +1278,22 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
         });
 
-        // new Thread("StatsDialog") {
-        // public void run() {
-        // try {
-        // Thread.sleep(10000);
-        // } catch (InterruptedException e) {
-        // e.printStackTrace();
-        // }
-        // showStatsDialog();
-        //
-        // }
-        // }.start();
+        SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        MainTabbedPane.getInstance().setTopRightPainter(OboomController.getInstance().start());
+                    }
+
+                };
+            }
+        });
+
         FileCreationManager.getInstance().mkdir(Application.getResource("/tmp/update/self/JDU"));
         new Thread() {
             public void run() {
