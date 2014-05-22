@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.controlling.reconnect.ipcheck.OfflineException;
@@ -174,6 +175,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
         this.queueItem = queueItem;
         linkStatus = new LinkStatus(downloadLink);
         setName("Download: " + downloadLink.getView().getDisplayName() + "_" + downloadLink.getHost());
+    }
+
+    @Override
+    public AbstractProxySelectorImpl getProxySelector() {
+        return candidate.getProxySelector();
     }
 
     public boolean isDebug() {

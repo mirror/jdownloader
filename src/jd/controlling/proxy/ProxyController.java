@@ -59,6 +59,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProxyDialog;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.ProxyClone;
 import org.jdownloader.updatev2.ProxyData;
@@ -255,23 +256,11 @@ public class ProxyController implements ProxySelectorInterface {
         });
     }
 
-    public List<AbstractProxySelectorImpl> getPossibleProxies(DownloadLinkCandidate downloadLinkCandidate) {
-        List<AbstractProxySelectorImpl> ret = getPossibleProxies(downloadLinkCandidate, false, false);
-        if (ret == null || ret.size() == 0) {
-            ret = getPossibleProxies(downloadLinkCandidate, true, false);
-        }
-        if (ret == null || ret.size() == 0) {
-            ret = getPossibleProxies(downloadLinkCandidate, true, true);
-        }
-        return ret;
-    }
-
-    public List<AbstractProxySelectorImpl> getPossibleProxies(final DownloadLinkCandidate downloadLinkCandidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
+    public List<AbstractProxySelectorImpl> getProxySelectors(final DownloadLinkCandidate downloadLinkCandidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
         final LinkedHashSet<AbstractProxySelectorImpl> ret = new LinkedHashSet<AbstractProxySelectorImpl>();
         try {
             final CachedAccount cachedAccount = downloadLinkCandidate.getCachedAccount();
             final PluginForHost pluginForHost = cachedAccount.getPlugin();
-            final int maxActive = pluginForHost.getMaxSimultanDownload(downloadLinkCandidate.getLink(), cachedAccount.getAccount());
             final String pluginHost;
             if ((pluginForHost instanceof DirectHTTP) || (pluginForHost instanceof Ftp)) {
                 pluginHost = downloadLinkCandidate.getLink().getDomainInfo().getTld();
@@ -288,10 +277,7 @@ public class ProxyController implements ProxySelectorInterface {
                 try {
                     if (selector.isEnabled() && selector.isAllowedByFilter(pluginHost) && maxResults-- > 0) {
                         if (ignoreAllBans || !selector.isSelectorBannedFor(pluginForHost, ignoreConnectBans)) {
-                            final int active = selector.countActive(downloadLinkCandidate);
-                            if (active < maxActive) {
-                                ret.add(selector);
-                            }
+                            ret.add(selector);
                         }
                     }
                 } catch (Throwable e) {
@@ -326,6 +312,21 @@ public class ProxyController implements ProxySelectorInterface {
             }
         }
         return null;
+    }
+
+    public void setFilter(final AbstractProxySelectorImpl proxySelector, final FilterList filterList) {
+
+        QUEUE.add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                proxySelector.setFilter(filterList);
+                if (_getList().contains(proxySelector)) {
+                    eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(ProxyController.this, ProxyEvent.Types.REFRESH, proxySelector));
+                }
+                return null;
+            }
+        });
     }
 
     public void exportTo(final File saveTo) throws UnsupportedEncodingException, IOException {

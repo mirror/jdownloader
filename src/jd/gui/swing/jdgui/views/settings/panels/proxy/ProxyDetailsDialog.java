@@ -24,9 +24,9 @@ import org.jdownloader.updatev2.FilterList.Type;
 
 public class ProxyDetailsDialog extends AbstractDialog<Object> {
 
-    private AbstractProxySelectorImpl factory;
-    private JComboBox<Type>           combo;
-    private ExtTextArea               input;
+    private final AbstractProxySelectorImpl factory;
+    private JComboBox<Type>                 combo;
+    private ExtTextArea                     input;
 
     public ProxyDetailsDialog(AbstractProxySelectorImpl factory) {
         super(0, _GUI._.proxyDetailsDialog_filter_title(factory.toString()), null, _GUI._.lit_save(), _GUI._.lit_close());
@@ -52,8 +52,7 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
     protected void setReturnmask(boolean b) {
         super.setReturnmask(b);
         if (b) {
-
-            factory.setFilter(new FilterList((FilterList.Type) combo.getSelectedItem(), Regex.getLines(input.getText())));
+            jd.controlling.proxy.ProxyController.getInstance().setFilter(factory, new FilterList((FilterList.Type) combo.getSelectedItem(), Regex.getLines(input.getText())));
         }
     }
 
@@ -70,8 +69,9 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
 
             @Override
             public Component getListCellRendererComponent(JList<? extends Type> list, Type value, int index, boolean isSelected, boolean cellHasFocus) {
-                if (value == null)
+                if (value == null) {
                     return org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                }
                 switch (value) {
                 case BLACKLIST:
                     return org.getListCellRendererComponent(list, _GUI._.proxyDetailsDialog_combo_blacklist(), index, isSelected, cellHasFocus);
@@ -93,8 +93,9 @@ public class ProxyDetailsDialog extends AbstractDialog<Object> {
         StringBuilder sb = new StringBuilder();
         if (factory.getFilter() != null) {
             for (String line : factory.getFilter().getEntries()) {
-                if (sb.length() > 0)
+                if (sb.length() > 0) {
                     sb.append("\r\n");
+                }
                 sb.append(line);
             }
         }

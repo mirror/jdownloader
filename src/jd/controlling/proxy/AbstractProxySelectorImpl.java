@@ -4,13 +4,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.controlling.downloadcontroller.AccountCache;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.ProxySelectorInterface;
 import jd.http.Request;
@@ -103,39 +101,16 @@ public abstract class AbstractProxySelectorImpl implements ProxySelectorInterfac
     public AbstractProxySelectorImpl() {
     }
 
-    public int countActive(DownloadLinkCandidate downloadLinkCandidate) {
-        int count = 0;
-        CachedAccount cachedAccount = downloadLinkCandidate.getCachedAccount();
-        if (AccountCache.ACCOUNTTYPE.MULTI.equals(cachedAccount.getType())) {
-            for (SingleDownloadController singleDownloadController : activeSingleDownloadControllers) {
-                if (singleDownloadController.isActive() && AccountCache.ACCOUNTTYPE.MULTI.equals(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getType())) {
-                    if (cachedAccount.getPlugin().getHost().equals(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
-                        count++;
-                    }
-                }
-            }
-        } else {
-            for (SingleDownloadController singleDownloadController : activeSingleDownloadControllers) {
-                if (singleDownloadController.isActive()) {
-                    if (singleDownloadController.getDownloadLink().getHost().equals(cachedAccount.getHost())) {
-                        count++;
-                    }
-                }
-            }
-        }
-        return count;
-    }
-
-    public boolean hasActiveDownloads() {
-        return activeSingleDownloadControllers.size() > 0;
-    }
-
     public boolean add(final SingleDownloadController singleDownloadController) {
         return singleDownloadController != null && activeSingleDownloadControllers.add(singleDownloadController);
     }
 
     public boolean remove(final SingleDownloadController singleDownloadController) {
         return singleDownloadController != null && activeSingleDownloadControllers.remove(singleDownloadController);
+    }
+
+    public Set<SingleDownloadController> getSingleDownloadControllers() {
+        return activeSingleDownloadControllers;
     }
 
     public void setResumeAllowed(boolean b) {

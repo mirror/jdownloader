@@ -77,7 +77,7 @@ public class DownloadLinkCandidateHistory {
                 case OFFLINE_TRUSTED:
                     /* these results(above) should have ended in removal of DownloadLinkHistory */
                 case PROXY_UNAVAILABLE:
-                case CONNECTION_UNAVAILABLE:
+                case CONNECTION_TEMP_UNAVAILABLE:
                     /* if we end up here(results above) -> find the bug :) */
                     throw new WTFException("This should not happen! " + next.getResult() + " should already be handled in onDetach!");
                 case FILE_UNAVAILABLE:

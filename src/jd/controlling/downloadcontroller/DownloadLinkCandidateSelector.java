@@ -44,10 +44,14 @@ public class DownloadLinkCandidateSelector {
         OK,
         OK_FORCED,
         CONCURRENCY_LIMIT,
-        CONCURRENCY_FORBIDDEN,
-        IMPOSSIBLE,
+        CONCURRENCY_FORBIDDEN
+    }
+
+    public static enum CachedAccountPermission {
+        OK,
+        DISABLED,
         TEMP_DISABLED,
-        DISABLED
+        IMPOSSIBLE
     }
 
     private final Comparator<CandidateResultHolder>                                                        RESULT_SORTER = new Comparator<CandidateResultHolder>() {
@@ -100,65 +104,78 @@ public class DownloadLinkCandidateSelector {
         return -1;
     }
 
-    public List<AbstractProxySelectorImpl> getProxies(DownloadLinkCandidate candidate) {
-        return ProxyController.getInstance().getPossibleProxies(candidate);
+    public List<AbstractProxySelectorImpl> getProxies(final DownloadLinkCandidate candidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
+        return ProxyController.getInstance().getProxySelectors(candidate, ignoreConnectBans, ignoreAllBans);
+    }
+
+    public CachedAccountPermission getCachedAccountPermission(final CachedAccount cachedAccount) {
+        if (cachedAccount != null) {
+            if (session.isUseAccountsEnabled() == false && (cachedAccount.getType() == ACCOUNTTYPE.MULTI || cachedAccount.getType() == ACCOUNTTYPE.ORIGINAL)) {
+                return CachedAccountPermission.DISABLED;
+            }
+            final Account canidateAccount = cachedAccount.getAccount();
+            if (canidateAccount != null) {
+                if (canidateAccount.isTempDisabled()) {
+                    return CachedAccountPermission.TEMP_DISABLED;
+                }
+                if (!canidateAccount.isEnabled()) {
+                    return CachedAccountPermission.DISABLED;
+                }
+            }
+            return CachedAccountPermission.OK;
+        }
+        return CachedAccountPermission.IMPOSSIBLE;
     }
 
     public DownloadLinkCandidatePermission getDownloadLinkCandidatePermission(DownloadLinkCandidate candidate) {
-        CachedAccount cachedAccount = candidate.getCachedAccount();
-        if (cachedAccount == null) {
-            return DownloadLinkCandidatePermission.IMPOSSIBLE;
-        }
-        if (session.isUseAccountsEnabled() == false && (cachedAccount.getType() == ACCOUNTTYPE.MULTI || cachedAccount.getType() == ACCOUNTTYPE.ORIGINAL)) {
-            return DownloadLinkCandidatePermission.DISABLED;
-        }
-        final Account canidateAccount = cachedAccount.getAccount();
-        if (canidateAccount != null) {
-            if (canidateAccount.isTempDisabled()) {
-                return DownloadLinkCandidatePermission.TEMP_DISABLED;
-            }
-            if (!canidateAccount.isEnabled()) {
-                return DownloadLinkCandidatePermission.DISABLED;
-            }
-        }
         final DownloadLink candidateLink = candidate.getLink();
-        final String linkHost = candidateLink.getHost();
-        final String pluginHost = cachedAccount.getPlugin().getHost();
-        int maxConcurrentAccount = cachedAccount.getPlugin().getMaxSimultanDownload(null, canidateAccount);
-        int maxConcurrentHost = cachedAccount.getPlugin().getMaxSimultanDownload(candidateLink, canidateAccount);
-        int concurrentHost = session.getMaxConcurrentDownloadsPerHost();
-        for (SingleDownloadController con : session.getControllers()) {
-            if (con.isActive()) {
-                Account conAccount = con.getAccount();
-                if (conAccount != null && conAccount == canidateAccount && conAccount.isConcurrentUsePossible() == false) {
+        final String candidateLinkHost = candidateLink.getDomainInfo().getTld();
+        final CachedAccount cachedAccount = candidate.getCachedAccount();
+        final String candidatePluginHost = cachedAccount.getPlugin().getHost();
+        final Account candidateAccount = cachedAccount.getAccount();
+        int maxPluginConcurrentAccount = cachedAccount.getPlugin().getMaxSimultanDownload(null, candidateAccount);
+        int maxPluginConcurrentHost = cachedAccount.getPlugin().getMaxSimultanDownload(candidateLink, candidateAccount);
+        int maxConcurrentHost = session.getMaxConcurrentDownloadsPerHost();
+
+        for (final SingleDownloadController singleDownloadController : session.getControllers()) {
+            if (singleDownloadController.isActive()) {
+                if (singleDownloadController.getDownloadLink().getDomainInfo().getTld().equals(candidateLinkHost)) {
+                    /**
+                     * use DomainInfo here because we want to count concurrent downloads from same domain and not same plugin
+                     */
+                    maxConcurrentHost--;
+                }
+                final Account account = singleDownloadController.getAccount();
+                if (account != null && account == candidateAccount && account.isConcurrentUsePossible() == false) {
+                    /**
+                     * account in use and concurrency is forbidden
+                     */
                     return DownloadLinkCandidatePermission.CONCURRENCY_FORBIDDEN;
                 }
-                if (maxConcurrentAccount <= 0 || concurrentHost <= 0) {
-                    break;
-                }
-                if (con.getDownloadLink().getHost().equals(linkHost)) {
-                    concurrentHost--;
-                }
-                if (canidateAccount != null && canidateAccount == conAccount) {
-                    maxConcurrentAccount--;
-                    if (con.getDownloadLink().getHost().equals(linkHost)) {
-                        maxConcurrentHost--;
-                    }
-                } else if (conAccount == null && pluginHost.equals(con.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
-                    maxConcurrentAccount--;
-                    if (con.getDownloadLink().getHost().equals(linkHost)) {
-                        maxConcurrentHost--;
+                if (candidatePluginHost.equals(singleDownloadController.getDownloadLinkCandidate().getCachedAccount().getPlugin().getHost())) {
+                    /**
+                     * same plugin is in use
+                     */
+                    if (singleDownloadController.getProxySelector() == candidate.getProxySelector()) {
+                        if (account == candidateAccount) {
+                            maxPluginConcurrentAccount--;
+                            if (candidateLink.getHost().equals(singleDownloadController.getDownloadLink().getHost())) {
+                                maxPluginConcurrentHost--;
+                            }
+                        }
                     }
                 }
             }
-        }
-        if (concurrentHost > 0 && maxConcurrentAccount > 0 && maxConcurrentHost > 0) {
-            return DownloadLinkCandidatePermission.OK;
         }
         if (candidate.isForced()) {
             return DownloadLinkCandidatePermission.OK_FORCED;
+        } else {
+            if (maxPluginConcurrentAccount <= 0 || maxPluginConcurrentHost <= 0 || maxConcurrentHost <= 0) {
+                return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
+            } else {
+                return DownloadLinkCandidatePermission.OK;
+            }
         }
-        return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
     }
 
     public boolean isMirrorManagement() {
@@ -256,7 +273,7 @@ public class DownloadLinkCandidateSelector {
                 Entry<DownloadLinkCandidate, DownloadLinkCandidateResult> next2 = it2.next();
                 DownloadLinkCandidateResult candidateResult = next2.getValue();
                 switch (candidateResult.getResult()) {
-                case CONNECTION_UNAVAILABLE:
+                case CONNECTION_TEMP_UNAVAILABLE:
                     continue linkLoop;
                 case PLUGIN_DEFECT:
                 case OFFLINE_UNTRUSTED:

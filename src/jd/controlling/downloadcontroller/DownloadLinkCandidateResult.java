@@ -14,7 +14,7 @@ public class DownloadLinkCandidateResult {
 
     public static enum RESULT {
         /* DO NOT CHANGE ORDER HERE, we use compareTo which uses ordinal */
-        CONNECTION_UNAVAILABLE,
+        CONNECTION_TEMP_UNAVAILABLE,
         CONNECTION_ISSUES,
         FATAL_ERROR,
         RETRY,
@@ -118,7 +118,9 @@ public class DownloadLinkCandidateResult {
         if (result == RESULT.PLUGIN_DEFECT) {
             try {
                 LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
-                if (logger == null) logger = LogController.getInstance().getLogger(DownloadLinkCandidateResult.class.getName());
+                if (logger == null) {
+                    logger = LogController.getInstance().getLogger(DownloadLinkCandidateResult.class.getName());
+                }
                 logger.log(new Exception("Created Plugin_defect linkresult"));
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -158,10 +160,14 @@ public class DownloadLinkCandidateResult {
                 for (int i = 0; i < st.length; i++) {
                     String line = st[i].toString();
 
-                    if (sb.length() > 0) sb.append("\r\n");
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
                     sb.append(line);
                     if (!found2) {
-                        if (sb2.length() > 0) sb2.append("\r\n");
+                        if (sb2.length() > 0) {
+                            sb2.append("\r\n");
+                        }
                         sb2.append(line);
                     }
                     if (st[i].getLineNumber() >= 0) {
