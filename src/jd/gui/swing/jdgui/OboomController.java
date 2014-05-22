@@ -7,7 +7,6 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,7 +44,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
@@ -460,53 +459,44 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                 };
             }
         }
-        if (CFG_GUI.CFG.isPremiumExpireWarningEnabled()) {
-            synchronized (this) {
-
-                if (event != null) {
-                    switch (event.getType()) {
-                    case ACCOUNT_CHECKED:
-
-                        Account account = event.getAccount();
-                        if (account != null) {
-                            Long lastNotify = expireNotifies.get(account.getHoster());
-
-                            AccountInfo info = account.getAccountInfo();
-                            if (info != null) {
-                                // ask at max once a month
-                                if (lastNotify != null && System.currentTimeMillis() - lastNotify < 30 * 24 * 60 * 60 * 1000l) {
-                                    return;
-                                }
-
-                                long premiumUntil = account.getValidPremiumUntil();
-                                System.out.println(new Date(premiumUntil));
-                                if (premiumUntil > 0) {
-                                    long rest = premiumUntil - System.currentTimeMillis();
-                                    String trackID = "PremiumExpireWarning/" + (rest / (1000 * 60 * 60 * 24));
-                                    if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
-                                        notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
-
-                                    } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
-                                        notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
-                                    }
-                                }
-                            }
-                        }
+        long premiumUntil = -1;
+        if (event != null && event.getAccount() != null && event.getAccount().getPlugin() != null && (premiumUntil = event.getAccount().getValidPremiumUntil()) > 0 && AccountControllerEvent.Types.ACCOUNT_CHECKED.equals(event.getType()) && CFG_GUI.CFG.isPremiumExpireWarningEnabled()) {
+            try {
+                final Account account = event.getAccount();
+                synchronized (this) {
+                    final Long lastNotify = expireNotifies.get(account.getHoster());
+                    // ask at max once a month
+                    if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * 24 * 60 * 60 * 1000l) {
+                        expireNotifies.put(account.getHoster(), System.currentTimeMillis());
+                        CFG_GUI.CFG.setPremiumExpireWarningMap(expireNotifies);
                     }
                 }
+                final long rest = premiumUntil - System.currentTimeMillis();
+                String trackID = "PremiumExpireWarning/" + (rest / (1000 * 60 * 60 * 24));
+                if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
+                    notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
+                } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
+                    notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
+                }
+            } catch (final Throwable e) {
+                LogController.CL().log(e);
             }
         }
     }
 
-    private void notify(Account account, String trackID, String title, String msg) {
-        LazyHostPlugin plg = HostPluginController.getInstance().get(account.getHoster());
-
-        Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
-        ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
-        ConfirmDialog d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), null) {
+    private void notify(final Account account, String trackID, String title, String msg) {
+        final LazyHostPlugin plg = account.getPlugin().getLazyP();
+        final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
+        final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
+        final ConfirmDialog d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), null) {
             @Override
             public ModalityType getModalityType() {
                 return ModalityType.MODELESS;
+            }
+
+            @Override
+            public String getDontShowAgainKey() {
+                return "expireRenewNotification_" + account.getHoster();
             }
 
             @Override
@@ -514,7 +504,6 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                 return 5 * 60 * 1000l;
             }
         };
-
         StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID);
         try {
             Dialog.getInstance().showDialog(d);
@@ -530,8 +519,5 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         if (d.isDontShowAgainSelected()) {
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/DONT_SHOW_AGAIN");
         }
-
-        expireNotifies.put(account.getHoster(), System.currentTimeMillis());
-        CFG_GUI.CFG.setPremiumExpireWarningMap(expireNotifies);
     }
 }

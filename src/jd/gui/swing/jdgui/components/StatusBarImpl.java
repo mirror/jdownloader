@@ -225,16 +225,14 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
     }
 
     private void redoLayout() {
-
         StringBuilder sb = new StringBuilder();
         sb.append("[left]0[grow,fill]");
-        ArrayList<JComponent> lprocessIndicators = new ArrayList<JComponent>(processIndicators);
+        final ArrayList<JComponent> lprocessIndicators = new ArrayList<JComponent>(processIndicators);
         for (int i = -2; i < lprocessIndicators.size(); i++) {
             sb.append("1[fill,22!]");
         }
         sb.append("3");
         setLayout(new MigLayout("ins 0", sb.toString(), "[fill,22!]"));
-
         super.removeAll();
         JScrollPane p = new JScrollPane(ServicePanel.getInstance());
         p.setBorder(null);
@@ -242,16 +240,13 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
         p.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         super.add(p);
         super.add(statusLabel, "height 22!,gapright 10!");
-
         super.add(reconnectIndicator, "");
-
         super.add(linkGrabberIndicator, "");
         for (JComponent c : lprocessIndicators) {
             super.add(c, "");
         }
         repaint();
         revalidate();
-
     }
 
     public void removeProcessIndicator(JComponent icon) {
@@ -302,11 +297,15 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
     }
 
     private JComponent lazyGetDownloadWatchdogIndicator() {
-        if (downloadWatchdogIndicator != null) return downloadWatchdogIndicator;
+        if (downloadWatchdogIndicator != null) {
+            return downloadWatchdogIndicator;
+        }
         downloadWatchdogIndicator = new EDTHelper<IconedProcessIndicator>() {
             @Override
             public IconedProcessIndicator edtRun() {
-                if (downloadWatchdogIndicator != null) return downloadWatchdogIndicator;
+                if (downloadWatchdogIndicator != null) {
+                    return downloadWatchdogIndicator;
+                }
                 IconedProcessIndicator ldownloadWatchdogIndicator = new IconedProcessIndicator(NewTheme.I().getIcon("skipped", 16));
 
                 ldownloadWatchdogIndicator.setTitle(_GUI._.StatusBarImpl_skippedLinksMarker_title());
@@ -348,7 +347,9 @@ public class StatusBarImpl extends JPanel implements DownloadWatchdogListener {
             new EDTRunner() {
                 @Override
                 protected void runInEDT() {
-                    if (downloadWatchdogIndicator != null) downloadWatchdogIndicator.setDescription(_GUI._.StatusBarImpl_skippedLinksMarker_desc(DownloadWatchDog.getInstance().getSession().getSkipCounter()));
+                    if (downloadWatchdogIndicator != null) {
+                        downloadWatchdogIndicator.setDescription(_GUI._.StatusBarImpl_skippedLinksMarker_desc(DownloadWatchDog.getInstance().getSession().getSkipCounter()));
+                    }
                 }
             };
         } else if (DownloadWatchDog.getInstance().getSession().getSkipCounter() <= 0) {
