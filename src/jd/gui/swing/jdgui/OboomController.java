@@ -51,22 +51,23 @@ import org.jdownloader.statistics.StatsManager;
 
 public class OboomController implements TopRightPainter, AccountControllerListener {
 
-    private final AtomicBoolean          enabled         = new AtomicBoolean(false);
+    private final AtomicBoolean          enabledByAPI                 = new AtomicBoolean(false);
+    private final AtomicBoolean          enabledInAdvancedConfig = new AtomicBoolean(false);
     private boolean                      mouseover;
     private AbstractIcon                 icon;
     private AbstractIcon                 close;
     private Rectangle                    closeBounds;
-    private final AtomicBoolean          getProMode      = new AtomicBoolean(false);
+    private final AtomicBoolean          getProMode              = new AtomicBoolean(false);
     private AbstractIcon                 getproIcon;
     private boolean                      hasOtherAccountToRenew;
     private boolean                      hasDealAccountToRenew;
     private boolean                      hasOtherAccountToRenewAlreadyExpired;
     private boolean                      hasDealAccountToRenewAlreadyExpired;
     private volatile Account             accountToRenew;
-    private boolean                      hasDealAccount  = false;
+    private boolean                      hasDealAccount          = false;
     private HashMap<String, Long>        expireNotifies;
-    public static boolean                OFFER_IS_ACTIVE = OboomController.readOfferActive();
-    private static final OboomController INSTANCE        = new OboomController();
+    public static boolean                OFFER_IS_ACTIVE         = OboomController.readOfferActive();
+    private static final OboomController INSTANCE                = new OboomController();
 
     /**
      * get the only existing instance of OboomController. This is a singleton
@@ -103,7 +104,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                enabled.set(Boolean.TRUE.equals(newValue));
+                enabledInAdvancedConfig.set(Boolean.TRUE.equals(newValue));
                 new EDTRunner() {
 
                     @Override
@@ -117,7 +118,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-        enabled.set(CFG_GUI.SPECIAL_DEALS_ENABLED.isEnabled());
+        enabledInAdvancedConfig.set(CFG_GUI.SPECIAL_DEALS_ENABLED.isEnabled());
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
 
             @Override
@@ -165,7 +166,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     @Override
     public boolean isVisible() {
-        return ((!hasDealAccount && is2DaysOfferVisible() && enabled.get()) || getProMode.get());
+        return enabledInAdvancedConfig.get() && ((!hasDealAccount && is2DaysOfferVisible() && enabledByAPI.get()) || getProMode.get());
     }
 
     @Override
@@ -297,7 +298,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                         if (br.containsHTML("true") || !Application.isJared(null)) {
                             newValue = true;
                         }
-                        enabled.set(newValue);
+                        enabledByAPI.set(newValue);
                         new EDTRunner() {
 
                             @Override
