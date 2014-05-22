@@ -281,7 +281,6 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     @Override
     protected boolean validateLogins() {
         return enabled && isMyJDownloaderAccountValid() && config.isCESEnabled();
-
     }
 
     private boolean isMyJDownloaderAccountValid() {

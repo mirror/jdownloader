@@ -689,7 +689,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (checking != null && checking.exists() && checking.isDirectory()) {
                     checking = null;
                 }
-            } catch (IOException e) {
+            } catch (Throwable e) {
                 logger.log(e);
             }
             if (checking != null) {
@@ -1221,30 +1221,40 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                      * handle all candidates without a proxySelector
                      */
                     for (final DownloadLinkCandidate notPossibleCandidate : checkNextCandidatesStage1) {
-                        if (selector.validateDownloadLinkCandidate(notPossibleCandidate)) {
-                            selector.addExcluded(notPossibleCandidate, new DownloadLinkCandidateResult(SkipReason.CONNECTION_UNAVAILABLE, null, null));
+                        try {
+                            if (selector.validateDownloadLinkCandidate(notPossibleCandidate)) {
+                                selector.addExcluded(notPossibleCandidate, new DownloadLinkCandidateResult(SkipReason.CONNECTION_UNAVAILABLE, null, null));
+                            }
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                            selector.addExcluded(notPossibleCandidate, new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, null, null));
                         }
                     }
                     final List<DownloadLinkCandidate> nextCandidates = new ArrayList<DownloadLinkCandidate>();
                     final Iterator<DownloadLinkCandidate> it = checkNextCandidatesStage2.iterator();
                     while (it.hasNext()) {
                         final DownloadLinkCandidate candidate = it.next();
-                        DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
-                        switch (permission) {
-                        case OK:
-                            if (selector.validateDownloadLinkCandidate(candidate)) {
+                        try {
+                            DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
+                            switch (permission) {
+                            case OK:
+                                if (selector.validateDownloadLinkCandidate(candidate)) {
+                                    nextCandidates.add(candidate);
+                                }
+                                break;
+                            case OK_FORCED:
                                 nextCandidates.add(candidate);
+                                break;
+                            case CONCURRENCY_FORBIDDEN:
+                            case CONCURRENCY_LIMIT:
+                                if (selector.validateDownloadLinkCandidate(candidate)) {
+                                    selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.CONNECTION_TEMP_UNAVAILABLE, null, null));
+                                }
+                                break;
                             }
-                            break;
-                        case OK_FORCED:
-                            nextCandidates.add(candidate);
-                            break;
-                        case CONCURRENCY_FORBIDDEN:
-                        case CONCURRENCY_LIMIT:
-                            if (selector.validateDownloadLinkCandidate(candidate)) {
-                                selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.CONNECTION_TEMP_UNAVAILABLE, null, null));
-                            }
-                            break;
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                            selector.addExcluded(candidate, new DownloadLinkCandidateResult(RESULT.PLUGIN_DEFECT, null, null));
                         }
                     }
                     if (nextCandidates.size() > 0) {
