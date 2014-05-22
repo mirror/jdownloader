@@ -54,6 +54,7 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
     public static AtomicBoolean   SPECIAL_DEALS_ENABLED          = new AtomicBoolean(false);
     public static AtomicBoolean   SPECIAL_DEALS_REMINDER_ENABLED = new AtomicBoolean(false);
 
+    //
     // private AbstractIcon specialDealIcon;
     //
     // private Font specialDealFont;
