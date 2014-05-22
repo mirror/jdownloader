@@ -26,6 +26,8 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class Account extends Property {
 
+    private static final String VALID_UNTIL                    = "VALID_UNTIL";
+
     private static final String ACCOUNT_TYPE                   = "ACCOUNT_TYPE";
 
     private static final String LATEST_VALID_TIMESTAMP         = "LATEST_VALID_TIMESTAMP";
@@ -189,6 +191,39 @@ public class Account extends Property {
 
     public void setAccountInfo(final AccountInfo info) {
         accinfo = info;
+        if (info != null && getType() == AccountType.PREMIUM && !info.isExpired()) {
+            setValidPremiumUntil(info.getValidUntil());
+        }
+        if (info.getValidPremiumUntil() > 0) {
+            setValidPremiumUntil(info.getValidPremiumUntil());
+        }
+    }
+
+    private void setValidPremiumUntil(long validUntil) {
+        setProperty(VALID_UNTIL, validUntil);
+    }
+
+    /**
+     * this method returns for how long this account will be (or has been) a premium account
+     * 
+     * @return
+     */
+    public long getValidPremiumUntil() {
+        AccountInfo info = getAccountInfo();
+        long ret = -1;
+        if (info != null) {
+            if (getType() == AccountType.PREMIUM && !info.isExpired()) {
+                ret = info.getValidUntil();
+            }
+            if (info.getValidPremiumUntil() > 0) {
+                ret = info.getValidPremiumUntil();
+            }
+        }
+
+        if (ret <= 0) {
+            ret = getLongProperty(VALID_UNTIL, 0);
+        }
+        return ret;
     }
 
     public String getUser() {

@@ -19,7 +19,6 @@ import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
 import jd.gui.swing.jdgui.oboom.OboomDialog;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
@@ -43,6 +42,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.statistics.StatsManager;
 
 public class OboomController implements TopRightPainter, AccountControllerListener {
 
@@ -372,15 +372,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
     }
 
     public static void track(final String string) {
-        new Thread() {
-            public void run() {
-                try {
-                    new Browser().getPage("http://stats.appwork.org/piwik/piwik.php?idsite=3&rec=1&action_name=specialdeals/oboom1/" + Encoding.urlEncode(string));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
+        StatsManager.I().track("specialdeals/oboom/" + string);
     }
 
     public static void writeRegistry(long value) {

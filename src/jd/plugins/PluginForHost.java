@@ -32,6 +32,7 @@ import javax.swing.JComponent;
 import jd.PluginWrapper;
 import jd.captcha.JACMethod;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
@@ -248,7 +249,8 @@ public abstract class PluginForHost extends Plugin {
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws Exception {
 
-        // AccountController.getInstance().
+        AccountController.getInstance().getMultiHostAccounts(getHost());
+        AccountController.getInstance().list(getHost());
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         this.hasCaptchas = true;

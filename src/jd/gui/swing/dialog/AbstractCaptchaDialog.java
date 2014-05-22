@@ -83,6 +83,7 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 import sun.swing.SwingUtilities2;
@@ -113,11 +114,15 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
     public static FrameState getWindowState() {
         for (Window w : Window.getWindows()) {
-            if (WindowManager.getInstance().hasFocus(w)) return FrameState.TO_FRONT_FOCUSED;
+            if (WindowManager.getInstance().hasFocus(w)) {
+                return FrameState.TO_FRONT_FOCUSED;
+            }
         }
 
         FrameState ret = (FrameState) CFG_GUI.NEW_DIALOG_FRAME_STATE.getValue();
-        if (ret == null) ret = FrameState.TO_FRONT;
+        if (ret == null) {
+            ret = FrameState.TO_FRONT;
+        }
         switch (ret) {
         case OS_DEFAULT:
         case TO_BACK:
@@ -445,7 +450,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     }
 
     public void dispose() {
-        if (!isInitialized()) return;
+        if (!isInitialized()) {
+            return;
+        }
         if (dialog != null) {
             config.setX(getDialog().getWidth());
             config.setValid(true);
@@ -538,6 +545,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
             public void actionPerformed(ActionEvent e) {
                 cancel();
+                StatsManager.I().track("click/captchadialog/hate/" + hosterInfo.getTld());
                 PremiumInfoDialog d = new PremiumInfoDialog(hosterInfo, _GUI._.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "CaptchaDialog");
                 try {
                     Dialog.getInstance().showDialog(d);
@@ -565,10 +573,14 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     }
 
     public String getFilename() {
-        if (!JsonConfig.create(GeneralSettings.class).isShowFileNameInCaptchaDialogEnabled()) return null;
+        if (!JsonConfig.create(GeneralSettings.class).isShowFileNameInCaptchaDialogEnabled()) {
+            return null;
+        }
         switch (type) {
         case HOSTER:
-            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;
+            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) {
+                return null;
+            }
             return ((PluginForHost) plugin).getDownloadLink().getView().getDisplayName();
         }
         return null;
@@ -577,7 +589,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     public long getFilesize() {
         switch (type) {
         case HOSTER:
-            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return -1;
+            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) {
+                return -1;
+            }
             return ((PluginForHost) plugin).getDownloadLink().getView().getBytesTotal();
         }
         return -1;
@@ -608,7 +622,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     protected String getPackageName() {
         switch (type) {
         case HOSTER:
-            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;
+            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) {
+                return null;
+            }
             return ((PluginForHost) plugin).getDownloadLink().getFilePackage().getName();
 
         case CRAWLER:
@@ -618,13 +634,17 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     }
 
     protected int getPreferredHeight() {
-        if (!config.isValid()) return super.getPreferredHeight();
+        if (!config.isValid()) {
+            return super.getPreferredHeight();
+        }
         return config.getY();
     }
 
     @Override
     protected int getPreferredWidth() {
-        if (!config.isValid()) return super.getPreferredWidth();
+        if (!config.isValid()) {
+            return super.getPreferredWidth();
+        }
         return config.getX();
     }
 
@@ -710,12 +730,16 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
                 public void repaint() {
 
-                    if (setting) return;
+                    if (setting) {
+                        return;
+                    }
                     super.repaint();
                 }
 
                 public void revalidate() {
-                    if (setting) return;
+                    if (setting) {
+                        return;
+                    }
                     super.revalidate();
                 }
             };
@@ -776,12 +800,16 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
                 public void repaint() {
 
-                    if (setting) return;
+                    if (setting) {
+                        return;
+                    }
                     super.repaint();
                 }
 
                 public void revalidate() {
-                    if (setting) return;
+                    if (setting) {
+                        return;
+                    }
                     super.revalidate();
                 }
             };
@@ -862,7 +890,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             // images[0].getHeight(null) + headerPanel.getPreferredSize().height));
         }
         JComponent b = createInputComponent();
-        if (b != null) panel.add(b);
+        if (b != null) {
+            panel.add(b);
+        }
 
         // if (config.isValid()) {
         //

@@ -97,14 +97,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private long                           startTime;
     private LogSource                      logger;
-    private ArrayList<AbstractLogEntry>    list;
+    private ArrayList<StatsLogInterface>   list;
     private Thread                         thread;
 
     private HashMap<String, AtomicInteger> counterMap;
 
     private long                           sessionStart;
 
-    private void log(AbstractLogEntry dl) {
+    private void log(StatsLogInterface dl) {
         if (isEnabled()) {
             synchronized (list) {
                 if (list.size() > 20) {
@@ -121,7 +121,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
      * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #link()}.
      */
     private StatsManager() {
-        list = new ArrayList<AbstractLogEntry>();
+        list = new ArrayList<StatsLogInterface>();
         counterMap = new HashMap<String, AtomicInteger>();
         config = JsonConfig.create(StatsManagerConfigV2.class);
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
@@ -313,18 +313,23 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 case FAILED:
                     dl.setResult(DownloadResult.FAILED);
                     break;
+
                 case FAILED_INCOMPLETE:
                     dl.setResult(DownloadResult.FAILED_INCOMPLETE);
                     th = result.getThrowable();
                     if (th != null) {
+
                         if (th instanceof PluginException) {
+
                             // String error = ((PluginException) th).getErrorMessage();
                             if (((PluginException) th).getValue() == LinkStatus.VALUE_NETWORK_IO_ERROR) {
                                 dl.setResult(DownloadResult.CONNECTION_ISSUES);
                             } else if (((PluginException) th).getValue() == LinkStatus.VALUE_LOCAL_IO_ERROR) {
                                 return;
                             }
+
                         }
+
                     }
                     break;
                 case FATAL_ERROR:
@@ -629,6 +634,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         while (true) {
             ArrayList<LogEntryWrapper> sendTo = new ArrayList<LogEntryWrapper>();
             ArrayList<AbstractLogEntry> sendRequest = new ArrayList<AbstractLogEntry>();
+            ArrayList<AbstractTrackEntry> trackRequest = new ArrayList<AbstractTrackEntry>();
             Browser br = createBrowser();
             try {
                 while (list.size() == 0) {
@@ -642,11 +648,26 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 retry: while (true) {
                     try {
                         synchronized (list) {
-                            sendRequest.addAll(list);
-                            for (AbstractLogEntry e : list) {
-                                sendTo.add(new LogEntryWrapper(e, LogEntryWrapper.VERSION));
+                            for (StatsLogInterface l : list) {
+                                if (l instanceof AbstractLogEntry) {
+                                    sendRequest.add((AbstractLogEntry) l);
+                                    sendTo.add(new LogEntryWrapper((AbstractLogEntry) l, LogEntryWrapper.VERSION));
+                                } else if (l instanceof AbstractTrackEntry) {
+                                    trackRequest.add((AbstractTrackEntry) l);
+                                }
                             }
+
                             list.clear();
+                        }
+                        if (trackRequest.size() > 0) {
+                            for (AbstractTrackEntry l : trackRequest) {
+                                try {
+                                    l.send(br);
+                                } catch (Throwable e) {
+                                    logger.log(e);
+                                }
+
+                            }
                         }
                         if (sendTo.size() > 0) {
                             Thread.sleep(1 * 60 * 1000l);
@@ -1040,6 +1061,22 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
         Browser br = createBrowser();
         br.postPageRaw(getBase() + "stats/sendMessage", Encoding.urlEncode(JSonStorage.serializeToJson(new MessageData(text, action.getData()))));
+
+    }
+
+    public void track(final String path) {
+        log(new AbstractTrackEntry() {
+
+            @Override
+            public void send(Browser br) {
+                try {
+                    new Browser().getPage("http://stats.appwork.org/piwik/piwik.php?idsite=3&rec=1&action_name=" + Encoding.urlEncode(path));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
 
     }
 }
