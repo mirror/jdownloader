@@ -142,6 +142,7 @@ public class OBoomCom extends PluginForHost {
                     String premium_unix = infos.get("premium_unix");
                     if (premium_unix != null) {
                         long timeStamp = Long.parseLong(premium_unix) * 1000l;
+                        account.setProperty("PREMIUM_UNIX", timeStamp);
                         if (timeStamp <= System.currentTimeMillis()) {
                             infos.remove("premium");
                         }

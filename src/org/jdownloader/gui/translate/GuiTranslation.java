@@ -4925,4 +4925,22 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Are you sure that you want to hide this OBOOM.COM offer?" })
     String OboomController_run_hide_msg();
+
+    @Default(lngs = { "en" }, values = { "Renew your OBOOM.com account" })
+    String OboomController_run_renew_title();
+
+    @Default(lngs = { "en" }, values = { "Renew your OBOOM.com account" })
+    String OboomController_run_renew_title_expired();
+
+    @Default(lngs = { "en" }, values = { "Your OBOOM.com PRO account (username: %s1) has expired.\r\nPlease renew your account now to continue downloading without any limitations." })
+    String OboomController_run_renew_msg_expired(String user);
+
+    @Default(lngs = { "en" }, values = { "Your OBOOM.com PRO account (username: %s1) will expired soon!\r\nPlease renew your account now to continue downloading without any limitations." })
+    String OboomController_run_renew_msg(String user);
+
+    @Default(lngs = { "en" }, values = { "Get an OBOOM.com account" })
+    String OboomController_run_renew_title_noaccount();
+
+    @Default(lngs = { "en" }, values = { "The Hoster OBOOM.com currently has a great offer:\r\n70% off the normal price for an 1-Year PRO account!\r\n" })
+    String OboomController_run_renew_noaccount();
 }

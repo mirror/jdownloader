@@ -247,6 +247,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     protected String getCaptchaCode(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws Exception {
+
+        // AccountController.getInstance().
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         this.hasCaptchas = true;

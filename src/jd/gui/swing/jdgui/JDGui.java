@@ -245,6 +245,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
                     @Override
                     public void run() {
+                        MainTabbedPane.getInstance().setTopRightPainter(OboomController.getInstance().start());
                         new Thread("TrayBug") {
                             public void run() {
 

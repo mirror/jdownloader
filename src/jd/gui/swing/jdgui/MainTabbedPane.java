@@ -169,7 +169,6 @@ public class MainTabbedPane extends JTabbedPane implements MouseMotionListener, 
 
         });
 
-        this.setTopRightPainter(new OboomController(this).start());
     }
 
     public void notifyCurrentTab() {
