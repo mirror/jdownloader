@@ -4,12 +4,14 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface Captcha9kwSettings extends ConfigInterface {
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Your (User) ApiKey from 9kw.eu")
     String getApiKey();
 
@@ -51,12 +53,14 @@ public interface Captcha9kwSettings extends ConfigInterface {
     void setslider(boolean b);
 
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Hosteroptions for 9kw.eu")
     String gethosteroptions();
 
     void sethosteroptions(String jser);
 
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Useragent for 9kw.eu")
     String getuseragent();
 
@@ -85,12 +89,14 @@ public interface Captcha9kwSettings extends ConfigInterface {
     void setprio(int seconds);
 
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Captcha whitelist for hoster with prio")
     String getwhitelistprio();
 
     void setwhitelistprio(String jser);
 
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Captcha blacklist for hoster with prio")
     String getblacklistprio();
 
@@ -126,12 +132,14 @@ public interface Captcha9kwSettings extends ConfigInterface {
     void sethttps(boolean b);
 
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Captcha whitelist for hoster")
     String getwhitelist();
 
     void setwhitelist(String jser);
 
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Captcha blacklist for hoster")
     String getblacklist();
 
@@ -183,12 +191,14 @@ public interface Captcha9kwSettings extends ConfigInterface {
     void setCaptchaOther9kwTimeout(int ms);
 
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Captcha whitelist for hoster with timeout")
     String getwhitelisttimeout();
 
     void setwhitelisttimeout(String jser);
 
     @AboutConfig
+    @DefaultStringValue("")
     @DescriptionForConfigEntry("Captcha blacklist for hoster with timeout")
     String getblacklisttimeout();
 
