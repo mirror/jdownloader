@@ -154,7 +154,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     @Override
     public boolean isVisible() {
-        return enabled.get() && ((hasDealAccount && is2DaysOfferVisible()) || getProMode.get());
+        return enabled.get() && ((!hasDealAccount && is2DaysOfferVisible()) || getProMode.get());
     }
 
     @Override
@@ -296,7 +296,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                                 pane.repaint();
                             }
                         };
-                        if (newValue && CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup() && is2DaysOfferVisible() && hasDealAccount) {
+                        if (newValue && CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup() && is2DaysOfferVisible() && !hasDealAccount) {
                             Thread.sleep(10000);
 
                             OboomDialog d = new OboomDialog("autopopup");
