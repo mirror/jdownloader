@@ -174,28 +174,16 @@ public class OboomDialog extends AbstractDialog<Integer> {
     }
 
     protected static boolean validateEmail(final String email) {
-        if (new Regex(email, "..*?@.*?\\..+").matches()) {
-            try {
-                final String host = new Regex(email, ".*?@(.+)").getMatch(0);
-                if (StringUtils.isEmpty(host)) {
-                    return false;
-                } else {
-                    return doLookup(host) > 0;
-                }
-            } catch (final Throwable e) {
-                e.printStackTrace();
-                return false;
-            }
-        }
-        return false;
+        return new Regex(email, ".+?@.+\\..{2,5}").matches();
     }
 
     protected void requestAccount(String email) {
         try {
+            if (email != null) {
+                email = email.trim();
+            }
             Browser br = new Browser();
-
             br.getPage("http://stats.appwork.org/data/db/getDealStatus");
-
             if (!br.containsHTML("true") && Application.isJared(null)) {
                 Dialog.getInstance().showMessageDialog(0, _GUI._.lit_error_occured(), _GUI._.specialdeals_oboom_dialog_request_disabled());
                 new EDTRunner() {
@@ -215,16 +203,13 @@ public class OboomDialog extends AbstractDialog<Integer> {
                 return;
             }
             OboomController.track("RequestAccount/" + source);
-
             long time = System.currentTimeMillis();
             final Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-
             final SecretKeySpec secret_key = new SecretKeySpec(VALUE.get(), "HmacSHA256");
             sha256_HMAC.init(secret_key);
             String sig = HexFormatter.byteArrayToHex(sha256_HMAC.doFinal((KEY.get() + ":" + email + ":" + time).getBytes("UTF-8")));
             String url = "https://www.oboom.com/event/jdownloader/secure?email=" + Encoding.urlEncode(email) + "&rev=" + Encoding.urlEncode(KEY.get()) + "&sig=" + sig + "&ts=" + time + "&http_errors=0";
             br.getPage(url);
-
             if (br.containsHTML("403,\"E_PREMIUM\"")) {
                 OboomController.track("Error_E_PREMIUM");
                 Dialog.getInstance().showMessageDialog(0, _GUI._.lit_error_occured(), _GUI._.specialdeals_oboom_dialog_request_error_e_premium());
