@@ -463,20 +463,25 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         if (event != null && event.getAccount() != null && event.getAccount().getPlugin() != null && (premiumUntil = event.getAccount().getValidPremiumUntil()) > 0 && AccountControllerEvent.Types.ACCOUNT_CHECKED.equals(event.getType()) && CFG_GUI.CFG.isPremiumExpireWarningEnabled()) {
             try {
                 final Account account = event.getAccount();
+                boolean notify = false;
                 synchronized (this) {
                     final Long lastNotify = expireNotifies.get(account.getHoster());
                     // ask at max once a month
                     if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * 24 * 60 * 60 * 1000l) {
+                        notify = true;
                         expireNotifies.put(account.getHoster(), System.currentTimeMillis());
                         CFG_GUI.CFG.setPremiumExpireWarningMap(expireNotifies);
+
                     }
                 }
-                final long rest = premiumUntil - System.currentTimeMillis();
-                String trackID = "PremiumExpireWarning/" + (rest / (1000 * 60 * 60 * 24));
-                if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
-                    notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
-                } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
-                    notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
+                if (notify) {
+                    final long rest = premiumUntil - System.currentTimeMillis();
+                    String trackID = "PremiumExpireWarning/" + (rest / (1000 * 60 * 60 * 24));
+                    if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
+                        notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
+                    } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
+                        notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
+                    }
                 }
             } catch (final Throwable e) {
                 LogController.CL().log(e);
