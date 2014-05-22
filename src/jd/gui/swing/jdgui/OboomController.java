@@ -52,12 +52,11 @@ public class OboomController implements TopRightPainter, AccountControllerListen
     private Rectangle                    closeBounds;
     private final AtomicBoolean          getProMode      = new AtomicBoolean(false);
     private AbstractIcon                 getproIcon;
-    private boolean                      hasPremium;
     private boolean                      hasOtherAccountToRenew;
     private boolean                      hasDealAccountToRenew;
     private boolean                      hasOtherAccountToRenewAlreadyExpired;
     private boolean                      hasDealAccountToRenewAlreadyExpired;
-    private Account                      accountToRenew;
+    private volatile Account             accountToRenew;
     public static boolean                OFFER_IS_ACTIVE = OboomController.readOfferActive();
     private static final OboomController INSTANCE        = new OboomController();
 
@@ -197,15 +196,16 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                     public void run() {
                         OboomController.track("GETPRO");
                         ConfirmDialog d = null;
-                        if ((hasDealAccountToRenewAlreadyExpired || hasOtherAccountToRenewAlreadyExpired) && accountToRenew != null) {
-                            d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title_expired(), _GUI._.OboomController_run_renew_msg_expired(accountToRenew.getUser()), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
+                        final Account laccountToRenew = accountToRenew;
+                        if ((hasDealAccountToRenewAlreadyExpired || hasOtherAccountToRenewAlreadyExpired) && laccountToRenew != null) {
+                            d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title_expired(), _GUI._.OboomController_run_renew_msg_expired(laccountToRenew.getUser()), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
                                 @Override
                                 public ModalityType getModalityType() {
                                     return ModalityType.MODELESS;
                                 }
                             };
-                        } else if ((hasOtherAccountToRenew || hasDealAccountToRenew) && accountToRenew != null) {
-                            d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title(), _GUI._.OboomController_run_renew_msg(accountToRenew.getUser()), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
+                        } else if ((hasOtherAccountToRenew || hasDealAccountToRenew) && laccountToRenew != null) {
+                            d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title(), _GUI._.OboomController_run_renew_msg(laccountToRenew.getUser()), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
                                 @Override
                                 public ModalityType getModalityType() {
                                     return ModalityType.MODELESS;
@@ -433,7 +433,6 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                 renew = renewDeal;
             }
             this.accountToRenew = renew;
-            this.hasPremium = hasOboomPremium;
             this.hasOtherAccountToRenewAlreadyExpired = hasOtherAccountToRenewAlreadyExpired;
             this.hasDealAccountToRenewAlreadyExpired = hasDealAccountToRenewAlreadyExpired;
             this.hasOtherAccountToRenew = hasOtherAccountToRenew;
