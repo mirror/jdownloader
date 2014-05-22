@@ -101,7 +101,9 @@ public class PremiumizeMe extends PluginForHost {
                     return false;
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
                 }
             }
         }
@@ -113,15 +115,21 @@ public class PremiumizeMe extends PluginForHost {
         AccountInfo ai = null;
         if (account != null && (ai = account.getAccountInfo()) != null && (connection_settings = (Map<String, Object>) ai.getProperty("connection_settings")) != null) {
             Map<String, Object> settings = (Map<String, Object>) connection_settings.get(host);
-            if (settings != null) { return settings.get(key); }
+            if (settings != null) {
+                return settings.get(key);
+            }
         }
         return null;
     }
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_hoster");
-        if (ret != null && ret instanceof Integer) return (Integer) ret;
+        if (link != null) {
+            Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_hoster");
+            if (ret != null && ret instanceof Integer) {
+                return (Integer) ret;
+            }
+        }
         return super.getMaxSimultanDownload(link, account);
     }
 
@@ -150,7 +158,9 @@ public class PremiumizeMe extends PluginForHost {
         if (ret != null && ret instanceof Integer) {
             maxConnections = (Integer) ret;
             logger.info("Host:" + link.getHost() + " is limited to " + maxConnections + " chunks");
-            if (maxConnections > 1) maxConnections = -maxConnections;
+            if (maxConnections > 1) {
+                maxConnections = -maxConnections;
+            }
         }
         ret = getConnectionSettingsValue(link.getHost(), account, "resume");
         if (ret != null && ret instanceof Boolean) {
@@ -187,7 +197,9 @@ public class PremiumizeMe extends PluginForHost {
             /* contentdisposition, lets download it */
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -204,7 +216,9 @@ public class PremiumizeMe extends PluginForHost {
              */
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -305,7 +319,9 @@ public class PremiumizeMe extends PluginForHost {
         String extuid = br.getRegex("extuid\":\"(.*?)\"").getMatch(0);
         account.setProperty("extuid", extuid);
 
-        if (status == null) status = "Unknown Account Type";
+        if (status == null) {
+            status = "Unknown Account Type";
+        }
         ai.setStatus(status);
         String expire = br.getRegex("\"expires\":(\\d+)").getMatch(0);
         if (expire != null) {
@@ -324,7 +340,9 @@ public class PremiumizeMe extends PluginForHost {
         String trafficleft_bytes = br.getRegex("trafficleft_bytes\":(-?[\\d\\.]+)").getMatch(0);
         if (trafficleft_bytes != null) {
             ai.setTrafficMax(SizeFormatter.getSize("220 GByte", true, true));
-            if (Long.parseLong(trafficleft_bytes) <= 0) trafficleft_bytes = "0";
+            if (Long.parseLong(trafficleft_bytes) <= 0) {
+                trafficleft_bytes = "0";
+            }
             ai.setTrafficLeft(trafficleft_bytes);
         } else {
             ai.setUnlimitedTraffic();
@@ -332,7 +350,9 @@ public class PremiumizeMe extends PluginForHost {
         String hostsSup = br.getPage("https://api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
         HashMap<String, Object> response = JSonStorage.restoreFromString(br.toString(), new HashMap<String, Object>().getClass());
-        if (response == null || (response = (HashMap<String, Object>) response.get("result")) == null) response = new HashMap<String, Object>();
+        if (response == null || (response = (HashMap<String, Object>) response.get("result")) == null) {
+            response = new HashMap<String, Object>();
+        }
         String HostsJSON = new Regex(hostsSup, "\"tldlist\":\\[([^\\]]+)\\]").getMatch(0);
         String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
@@ -357,7 +377,9 @@ public class PremiumizeMe extends PluginForHost {
     }
 
     private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        if (downloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
@@ -372,7 +394,9 @@ public class PremiumizeMe extends PluginForHost {
 
     private void handleAPIErrors(Browser br, Account account, DownloadLink downloadLink) throws PluginException {
         String statusCode = br.getRegex("\"status\":(\\d+)").getMatch(0);
-        if (statusCode == null) return;
+        if (statusCode == null) {
+            return;
+        }
         String statusMessage = br.getRegex("\"statusmessage\":\"([^\"]+)").getMatch(0);
         try {
             int status = Integer.parseInt(statusCode);
@@ -382,36 +406,47 @@ public class PremiumizeMe extends PluginForHost {
                 return;
             case 400:
                 /* not a valid link, do not try again with this multihoster */
-                if (statusMessage == null) statusMessage = "Invalid DownloadLink";
+                if (statusMessage == null) {
+                    statusMessage = "Invalid DownloadLink";
+                }
                 tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000);
             case 401:
                 /* not logged in, disable account. */
-                if (statusMessage == null) statusMessage = "Login error";
+                if (statusMessage == null) {
+                    statusMessage = "Login error";
+                }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 402:
                 /* account with outstanding payment,disable account */
-                if (statusMessage == null) statusMessage = "Account payment required in order to download";
+                if (statusMessage == null) {
+                    statusMessage = "Account payment required in order to download";
+                }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 403:
                 /* forbidden, banned ip , temp disable account */
                 // additional info provided to the user for this error message.
                 String statusMessage1 = "Login prevented by MultiHoster! Please contact them for resolution";
-                if (statusMessage == null)
+                if (statusMessage == null) {
                     statusMessage = statusMessage1;
-                else
+                } else {
                     statusMessage += statusMessage + " :: " + statusMessage1;
+                }
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 404:
                 /* file offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 428:
                 /* hoster currently not possible,block host for 30 mins */
-                if (statusMessage == null) statusMessage = "Hoster currently not possible";
+                if (statusMessage == null) {
+                    statusMessage = "Hoster currently not possible";
+                }
                 tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000);
                 break;
             case 502:
                 /* unknown technical error, block host for 3 mins */
-                if (statusMessage == null) statusMessage = "Unknown technical error";
+                if (statusMessage == null) {
+                    statusMessage = "Unknown technical error";
+                }
                 // tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
                 /* only disable plugin for this link */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 3 * 60 * 1000l);
@@ -419,18 +454,24 @@ public class PremiumizeMe extends PluginForHost {
                 /*
                  * temp multihoster issue, maintenance period, block host for 3 mins
                  */
-                if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
+                if (statusMessage == null) {
+                    statusMessage = "Hoster temporarily not possible";
+                }
                 statusMessage = "premiumize.me: " + downloadLink.getHost() + ": " + statusMessage;
                 /* only disable plugin for this link */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 3 * 60 * 1000l);
             case 509:
                 /* fair use limit reached ,block host for 10 mins */
-                if (statusMessage == null) statusMessage = "Fair use limit reached!";
+                if (statusMessage == null) {
+                    statusMessage = "Fair use limit reached!";
+                }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
                 break;
             default:
                 /* unknown error, do not try again with this multihoster */
-                if (statusMessage == null) statusMessage = "Unknown error code, please inform JDownloader Development Team";
+                if (statusMessage == null) {
+                    statusMessage = "Unknown error code, please inform JDownloader Development Team";
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e) {
@@ -441,7 +482,9 @@ public class PremiumizeMe extends PluginForHost {
 
     private void sendErrorLog(DownloadLink link, Account acc) {
         try {
-            if (getPluginConfig().getBooleanProperty(SENDDEBUGLOG, true) == false) return;
+            if (getPluginConfig().getBooleanProperty(SENDDEBUGLOG, true) == false) {
+                return;
+            }
             String postString = "uid=" + Encoding.urlEncode(acc.getUser()) + "&link=" + Encoding.urlEncode(link.getDownloadURL());
             ByteArrayOutputStream bos;
             GZIPOutputStream logBytes = new GZIPOutputStream(new Base64OutputStream(bos = new ByteArrayOutputStream()));
