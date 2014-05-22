@@ -74,14 +74,18 @@ public class OneFichierCom extends PluginForHost {
             link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1));
         } else {
             String addedLink = link.getDownloadURL().replace("https://", "http://");
-            if (addedLink.endsWith("/")) addedLink = addedLink.substring(0, addedLink.length() - 1);
+            if (addedLink.endsWith("/")) {
+                addedLink = addedLink.substring(0, addedLink.length() - 1);
+            }
             link.setUrlDownload(addedLink);
         }
     }
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
+        if (urls == null || urls.length == 0) {
+            return false;
+        }
         try {
             final Browser br = new Browser();
             br.getHeaders().put("User-Agent", "");
@@ -142,7 +146,9 @@ public class OneFichierCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
         br.postPage("http://1fichier.com/check_links.pl", "links[]=" + Encoding.urlEncode(link.getDownloadURL()));
-        if (br.containsHTML(";;;NOT FOUND|;;;BAD LINK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(";;;NOT FOUND|;;;BAD LINK")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(">Software error:<")) {
             link.getLinkStatus().setStatusText("Cannot check availibility because of a server error!");
             return AvailableStatus.UNCHECKABLE;
@@ -151,7 +157,9 @@ public class OneFichierCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
             final String siteFilename = br.getRegex(">Nom du fichier :</th><td>([^<>\"]*?)</td>").getMatch(0);
             String siteFilesize = br.getRegex("<th>Taille :</th><td>([^<>\"]*?)</td>").getMatch(0);
-            if (siteFilename == null || siteFilesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (siteFilename == null || siteFilesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setName(Encoding.htmlDecode(siteFilename));
             siteFilesize = siteFilesize.replace("ko", "kb");
             siteFilesize = siteFilesize.replace("Mo", "MB");
@@ -170,14 +178,22 @@ public class OneFichierCom extends PluginForHost {
             return null;
         }
         String filename = linkInfo[0][0];
-        if (filename == null) filename = br.getRegex(">File name :</th><td>([^<>\"]*?)</td>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex(">File name :</th><td>([^<>\"]*?)</td>").getMatch(0);
+        }
         String filesize = linkInfo[0][1];
-        if (filesize == null) filesize = br.getRegex(">File size :</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
-        if (filename != null) link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (filesize == null) {
+            filesize = br.getRegex(">File size :</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
+        }
+        if (filename != null) {
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        }
         if (filesize != null) {
             long size = 0;
             link.setDownloadSize(size = SizeFormatter.getSize(filesize));
-            if (size > 0) link.setProperty("VERIFIEDFILESIZE", size);
+            if (size > 0) {
+                link.setProperty("VERIFIEDFILESIZE", size);
+            }
         }
         // Not available in new API
         // if ("1".equalsIgnoreCase(linkInfo[0][2])) {
@@ -186,13 +202,17 @@ public class OneFichierCom extends PluginForHost {
         // link.setProperty("HOTLINK", Property.NULL);
         // }
 
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if (account == null && link.getProperty("HOTLINK", null) != null) { return Integer.MAX_VALUE; }
+        if (account == null && (link != null && link.getProperty("HOTLINK", null) != null)) {
+            return Integer.MAX_VALUE;
+        }
         return super.getMaxSimultanDownload(link, account);
     }
 
@@ -221,7 +241,9 @@ public class OneFichierCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         /* Maybe direct link */
         final String redirect = br.getRedirectLocation();
-        if (redirect != null) dllink = redirect;
+        if (redirect != null) {
+            dllink = redirect;
+        }
         if (dllink != null) {
             /* try to resume existing file */
             br.setFollowRedirects(true);
@@ -264,13 +286,17 @@ public class OneFichierCom extends PluginForHost {
                     downloadLink.setProperty("pass", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
                 } else {
-                    if (passCode != null) downloadLink.setProperty("pass", passCode);
+                    if (passCode != null) {
+                        downloadLink.setProperty("pass", passCode);
+                    }
                 }
             } else {
                 // base > submit:Free Download > submit:Show the download link + t:35140198 == link
                 final Browser br2 = br.cloneBrowser();
                 final Form a1 = br2.getForm(0);
-                if (a1 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (a1 == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 a1.remove(null);
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 sleep(2000, downloadLink);
@@ -281,13 +307,19 @@ public class OneFichierCom extends PluginForHost {
                     sleep(2000, downloadLink);
                     Browser br3 = br.cloneBrowser();
                     Form a2 = br2.getForm(0);
-                    if (a2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (a2 == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     br3.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                     sleep(2000, downloadLink);
                     br3.submitForm(a2);
                     errorHandling(downloadLink, br3);
-                    if (dllink == null) dllink = br3.getRedirectLocation();
-                    if (dllink == null) dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
+                    if (dllink == null) {
+                        dllink = br3.getRedirectLocation();
+                    }
+                    if (dllink == null) {
+                        dllink = br3.getRegex("window\\.location\\s*=\\s*('|\")(https?://[a-zA-Z0-9_\\-]+\\.(1fichier|desfichiers)\\.com/[a-zA-Z0-9]+/.*?)\\1").getMatch(1);
+                    }
                     if (dllink == null) {
                         String wait = br3.getRegex(" var count = (\\d+);").getMatch(0);
                         if (wait != null && retried == false) {
@@ -299,7 +331,9 @@ public class OneFichierCom extends PluginForHost {
                     }
                 }
             }
-            if (dllink != null) break;
+            if (dllink != null) {
+                break;
+            }
         }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -315,13 +349,17 @@ public class OneFichierCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         downloadLink.setProperty(FREELINK, dllink);
         dl.startDownload();
     }
 
     private void errorHandling(final DownloadLink downloadLink, final Browser ibr) throws Exception {
-        if (ibr.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        if (ibr.containsHTML(">Software error:<")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        }
         errorIpBlockedHandling(ibr);
     }
 
@@ -400,10 +438,11 @@ public class OneFichierCom extends PluginForHost {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("https://www.1fichier.com/en/console/details.pl");
             String freeCredits2 = br.getRegex(">Your account have ([^<>\"]*?) of direct download credits").getMatch(0);
-            if (freeCredits2 != null)
+            if (freeCredits2 != null) {
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits2));
-            else
+            } else {
                 ai.setUnlimitedTraffic();
+            }
             maxPrem.set(1);
             try {
                 account.setMaxSimultanDownloads(1);
@@ -457,7 +496,9 @@ public class OneFichierCom extends PluginForHost {
                 prepareBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -532,10 +573,14 @@ public class OneFichierCom extends PluginForHost {
         String passCode = null;
         String dllink = link.getStringProperty(PREMLINK, null);
         boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, true);
-        if (oldStyle() == true) useSSL = false;
+        if (oldStyle() == true) {
+            useSSL = false;
+        }
         if (dllink != null) {
             /* try to resume existing file */
-            if (useSSL) dllink = dllink.replaceFirst("http://", "https://");
+            if (useSSL) {
+                dllink = dllink.replaceFirst("http://", "https://");
+            }
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -559,7 +604,9 @@ public class OneFichierCom extends PluginForHost {
             br.setFollowRedirects(false);
             sleep(2 * 1000l, link);
             String url = link.getDownloadURL().replace("en/index.html", "");
-            if (!url.endsWith("/")) url = url + "/";
+            if (!url.endsWith("/")) {
+                url = url + "/";
+            }
             url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
 
             URLConnectionAdapter con = br.openGetConnection(url);
@@ -571,7 +618,9 @@ public class OneFichierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             br.followConnection();
-            if (pwProtected || br.containsHTML("password")) passCode = handlePassword(link, passCode);
+            if (pwProtected || br.containsHTML("password")) {
+                passCode = handlePassword(link, passCode);
+            }
             dllink = br.getRedirectLocation();
             if (dllink != null) {
 
@@ -589,7 +638,9 @@ public class OneFichierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String useDllink = dllink;
-            if (useSSL) useDllink = useDllink.replaceFirst("http://", "https://");
+            if (useSSL) {
+                useDllink = useDllink.replaceFirst("http://", "https://");
+            }
             for (int i = 0; i != 2; i++) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, useDllink, true, 0);
                 if (dl.getConnection().getContentType().contains("html")) {
@@ -613,7 +664,9 @@ public class OneFichierCom extends PluginForHost {
 
     private boolean oldStyle() {
         String style = System.getProperty("ftpStyle", null);
-        if ("new".equalsIgnoreCase(style)) return false;
+        if ("new".equalsIgnoreCase(style)) {
+            return false;
+        }
         String prev = JDUtilities.getRevision();
         if (prev == null || prev.length() < 3) {
             prev = "0";
@@ -621,7 +674,9 @@ public class OneFichierCom extends PluginForHost {
             prev = prev.replaceAll(",|\\.", "");
         }
         int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 
@@ -632,7 +687,9 @@ public class OneFichierCom extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         try {
-            if (br == null) { return; }
+            if (br == null) {
+                return;
+            }
             br.setConnectTimeout(3 * 60 * 1000);
             br.setReadTimeout(3 * 60 * 1000);
             br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.117 Safari/537.36");

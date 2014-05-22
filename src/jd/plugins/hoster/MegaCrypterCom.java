@@ -75,6 +75,7 @@ public class MegaCrypterCom extends PluginForHost {
     // Encrpt stuff
     private final String USE_TMP   = "USE_TMP";
     private final String encrypted = ".encrypted";
+    private boolean      dl_start  = false;
 
     private static enum MegaCrypterComApiErrorCodes {
         FILE_NOT_FOUND(3),
@@ -174,7 +175,14 @@ public class MegaCrypterCom extends PluginForHost {
         br.setFollowRedirects(true);
         LINKPART = new Regex(link.getDownloadURL(), "megacrypter\\.com/(.+)").getMatch(0);
         br.postPageRaw("http://megacrypter.com/api", "{\"m\": \"info\", \"link\":\"" + LINKPART + "\"}");
-        checkError(br);
+        try {
+            checkError(br);
+        } catch (final PluginException e) {
+            if (!dl_start && e.getLinkStatus() == LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) {
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw e;
+        }
 
         final String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("\"size\":(\\d+)").getMatch(0);
@@ -188,6 +196,7 @@ public class MegaCrypterCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        dl_start = true;
         requestFileInformation(downloadLink);
         final String key = br.getRegex("\"key\":\"([^<>\"]*?)\"").getMatch(0);
         if (key == null) {
