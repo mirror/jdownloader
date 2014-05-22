@@ -350,7 +350,7 @@ public class NinekwService implements CESService {
                     @Override
                     public void actionPerformed(ActionEvent e) {
 
-                        if (CFG_9KWCAPTCHA.API_KEY != null) {
+                        if (apiKey.getText().length() < 5) {
                             jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "No api key.");
                         } else if (!apiKey.getText().matches("^[a-zA-Z0-9]*$")) {
                             jd.gui.UserIO.getInstance().requestMessageDialog("9kw API Key is not correct!\nOnly a-z, A-Z and 0-9\n");
