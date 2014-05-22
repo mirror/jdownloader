@@ -33,8 +33,6 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.plugins.hoster.Ftp;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
@@ -58,6 +56,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProxyDialog;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.FilterList;
 import org.jdownloader.updatev2.InternetConnectionSettings;
@@ -262,7 +261,7 @@ public class ProxyController implements ProxySelectorInterface {
             final CachedAccount cachedAccount = downloadLinkCandidate.getCachedAccount();
             final PluginForHost pluginForHost = cachedAccount.getPlugin();
             final String pluginHost;
-            if ((pluginForHost instanceof DirectHTTP) || (pluginForHost instanceof Ftp)) {
+            if (isSpecialPlugin(pluginForHost)) {
                 pluginHost = downloadLinkCandidate.getLink().getDomainInfo().getTld();
             } else {
                 pluginHost = pluginForHost.getHost();
@@ -940,6 +939,22 @@ public class ProxyController implements ProxySelectorInterface {
         return ret;
     }
 
+    public boolean isSpecialPlugin(Plugin plugin) {
+        if (plugin instanceof PluginForHost) {
+            LazyHostPlugin lazy = ((PluginForHost) plugin).getLazyP();
+            if ("ftp".equalsIgnoreCase(lazy.getHost())) {
+                return true;
+            }
+            if ("DirectHTTP".equalsIgnoreCase(lazy.getHost())) {
+                return true;
+            }
+            if ("http links".equalsIgnoreCase(lazy.getHost())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public List<HTTPProxy> getProxiesByUrl(final String urlString, final boolean ignoreConnectionBans, final boolean ignoreAllBans) {
         final Plugin plugin = getPluginFromThread();
         final boolean proxyRotationEnabled;
@@ -964,7 +979,7 @@ public class ProxyController implements ProxySelectorInterface {
             final URL url = new URL(urlString);
             final String host = url.getHost();
             final String plgHost;
-            if (plugin == null || (plugin instanceof DirectHTTP) || (plugin instanceof Ftp)) {
+            if (plugin == null || isSpecialPlugin(plugin)) {
                 plgHost = host;
             } else {
                 plgHost = plugin.getHost();
