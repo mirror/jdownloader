@@ -1232,6 +1232,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
                         switch (permission) {
                         case OK:
+                            if (selector.validateDownloadLinkCandidate(candidate)) {
+                                nextCandidates.add(candidate);
+                            }
+                            break;
                         case OK_FORCED:
                             nextCandidates.add(candidate);
                             break;
