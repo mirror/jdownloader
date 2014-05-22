@@ -99,6 +99,7 @@ public class OBoomCom extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
+
         String premium = infos.get("premium_unix");
         if (premium != null) {
             long premiumUntil = Long.parseLong(premium) * 1000l;
@@ -144,6 +145,7 @@ public class OBoomCom extends PluginForHost {
                             infos.put(key, value);
                         }
                     }
+                    // infos.put("premium_unix", ("" + (System.currentTimeMillis() + 6 * 60 * 60 * 1000l) / 1000));
                     String premium_unix = infos.get("premium_unix");
                     if (premium_unix != null) {
                         long timeStamp = Long.parseLong(premium_unix) * 1000l;

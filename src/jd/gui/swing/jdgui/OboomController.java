@@ -7,6 +7,8 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
@@ -26,6 +28,7 @@ import jd.plugins.AccountInfo;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -37,9 +40,13 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.controller.host.HostPluginController;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 
@@ -58,6 +65,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
     private boolean                      hasDealAccountToRenewAlreadyExpired;
     private volatile Account             accountToRenew;
     private boolean                      hasDealAccount  = false;
+    private HashMap<String, Long>        expireNotifies;
     public static boolean                OFFER_IS_ACTIVE = OboomController.readOfferActive();
     private static final OboomController INSTANCE        = new OboomController();
 
@@ -77,6 +85,10 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     private OboomController() {
         close = new AbstractIcon("close", -1);
+        expireNotifies = CFG_GUI.CFG.getPremiumExpireWarningMap();
+        if (expireNotifies == null) {
+            expireNotifies = new HashMap<String, Long>();
+        }
         String key = "oboom/jdbanner_free_" + TranslationFactory.getDesiredLocale().getLanguage().toLowerCase(Locale.ENGLISH);
         if (!NewTheme.I().hasIcon(key)) {
             key = "oboom/jdbanner_free_en";
@@ -177,19 +189,18 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             if (closeBounds != null && closeBounds.contains(e.getPoint())) {
                 new Thread("DEAL_1") {
                     public void run() {
-                        CrossSystem.openURL("https://www.oboom.com/ref/501C81");
-                        new Thread("DEAL_HIDE") {
-                            public void run() {
-                                try {
-                                    Dialog.getInstance().showConfirmDialog(0, _GUI._.OboomController_run_hide_title(), _GUI._.OboomController_run_hide_msg(), null, _GUI._.lit_yes(), null);
-                                    OboomController.track("GETPRO_HIDE_YES");
-                                    CFG_GUI.SPECIAL_DEALS_ENABLED.setValue(false);
-                                } catch (DialogNoAnswerException e) {
-                                    OboomController.track("GETPRO_HIDE_NO");
-                                }
-                            }
-                        }.start();
                         OboomController.track("GETPRO_HIDE");
+                        try {
+
+                            Dialog.getInstance().showConfirmDialog(0, _GUI._.OboomController_run_hide_title(), _GUI._.OboomController_run_hide_msg(), null, _GUI._.lit_yes(), null);
+                            OboomController.track("GETPRO_HIDE/YES");
+                            CFG_GUI.SPECIAL_DEALS_ENABLED.setValue(false);
+
+                        } catch (DialogNoAnswerException e) {
+                            OboomController.track("GETPRO_HIDE/NO");
+                            CrossSystem.openURL("https://www.oboom.com/ref/501C81");
+                        }
+
                     }
                 }.start();
             } else {
@@ -222,11 +233,11 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                         }
                         try {
                             Dialog.getInstance().showDialog(d);
-                            OboomController.track("GETPRO_DIALOG_OK");
+                            OboomController.track("GETPRO_DIALOG/OK");
                         } catch (DialogClosedException e) {
-                            OboomController.track("GETPRO_DIALOG_CLOSED");
+                            OboomController.track("GETPRO_DIALOG/CLOSED");
                         } catch (DialogCanceledException e) {
-                            OboomController.track("GETPRO_DIALOG_CANCELED");
+                            OboomController.track("GETPRO_DIALOG/CANCELED");
                         }
                         CrossSystem.openURL("https://www.oboom.com/ref/501C81");
 
@@ -244,10 +255,10 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                                     public void run() {
                                         try {
                                             Dialog.getInstance().showConfirmDialog(0, _GUI._.OboomController_run_hide_title(), _GUI._.OboomController_run_hide_msg(), null, _GUI._.lit_yes(), null);
-                                            OboomController.track("TabbedHideClick_YES");
+                                            OboomController.track("TabbedHideClick/YES");
                                             CFG_GUI.SPECIAL_DEALS_ENABLED.setValue(false);
                                         } catch (DialogNoAnswerException e) {
-                                            OboomController.track("TabbedHideClick_NO");
+                                            OboomController.track("TabbedHideClick/NO");
                                         }
                                     }
                                 }.start();
@@ -449,5 +460,78 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                 };
             }
         }
+        if (CFG_GUI.CFG.isPremiumExpireWarningEnabled()) {
+            synchronized (this) {
+
+                if (event != null) {
+                    switch (event.getType()) {
+                    case ACCOUNT_CHECKED:
+
+                        Account account = event.getAccount();
+                        if (account != null) {
+                            Long lastNotify = expireNotifies.get(account.getHoster());
+
+                            AccountInfo info = account.getAccountInfo();
+                            if (info != null) {
+                                // ask at max once a month
+                                if (lastNotify != null && System.currentTimeMillis() - lastNotify < 30 * 24 * 60 * 60 * 1000l) {
+                                    return;
+                                }
+
+                                long premiumUntil = account.getValidPremiumUntil();
+                                System.out.println(new Date(premiumUntil));
+                                if (premiumUntil > 0) {
+                                    long rest = premiumUntil - System.currentTimeMillis();
+                                    String trackID = "PremiumExpireWarning/" + (rest / (1000 * 60 * 60 * 24));
+                                    if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
+                                        notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
+
+                                    } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
+                                        notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void notify(Account account, String trackID, String title, String msg) {
+        LazyHostPlugin plg = HostPluginController.getInstance().get(account.getHoster());
+
+        Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
+        ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
+        ConfirmDialog d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), null) {
+            @Override
+            public ModalityType getModalityType() {
+                return ModalityType.MODELESS;
+            }
+
+            @Override
+            public long getCountdown() {
+                return 5 * 60 * 1000l;
+            }
+        };
+
+        StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID);
+        try {
+            Dialog.getInstance().showDialog(d);
+            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/OK");
+            CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(plg.getPremiumUrl(), trackID));
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/CLOSED");
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/CANCELED");
+        }
+        if (d.isDontShowAgainSelected()) {
+            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/DONT_SHOW_AGAIN");
+        }
+
+        expireNotifies.put(account.getHoster(), System.currentTimeMillis());
+        CFG_GUI.CFG.setPremiumExpireWarningMap(expireNotifies);
     }
 }

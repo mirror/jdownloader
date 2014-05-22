@@ -1,6 +1,7 @@
 package org.jdownloader.settings;
 
 import java.awt.event.KeyEvent;
+import java.util.HashMap;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.ValidationException;
@@ -39,7 +40,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         public void validate(String themeID) throws ValidationException {
             if (!Application.getResource("themes/" + themeID).exists()) {
                 throw new ValidationException(Application.getResource("themes/" + themeID) + " must exist");
-            } else if (!Application.getResource("themes/" + themeID).isDirectory()) { throw new ValidationException(Application.getResource("themes/" + themeID) + " must be a directory"); }
+            } else if (!Application.getResource("themes/" + themeID).isDirectory()) {
+                throw new ValidationException(Application.getResource("themes/" + themeID) + " must be a directory");
+            }
         }
 
     }
@@ -1052,4 +1055,16 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isSpecialDealOboomDialogVisibleOnStartup();
 
     void setSpecialDealOboomDialogVisibleOnStartup(boolean b);
+
+    @RequiresRestart("Restart is Required")
+    @AboutConfig
+    HashMap<String, Long> getPremiumExpireWarningMap();
+
+    void setPremiumExpireWarningMap(HashMap<String, Long> value);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    boolean isPremiumExpireWarningEnabled();
+
+    void setPremiumExpireWarningEnabled(boolean b);
 }
