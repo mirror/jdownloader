@@ -57,6 +57,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
     private boolean                      hasOtherAccountToRenewAlreadyExpired;
     private boolean                      hasDealAccountToRenewAlreadyExpired;
     private volatile Account             accountToRenew;
+    private boolean                      hasDealAccount  = false;
     public static boolean                OFFER_IS_ACTIVE = OboomController.readOfferActive();
     private static final OboomController INSTANCE        = new OboomController();
 
@@ -153,7 +154,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     @Override
     public boolean isVisible() {
-        return enabled.get() && (is2DaysOfferVisible() || getProMode.get());
+        return enabled.get() && ((hasDealAccount && is2DaysOfferVisible()) || getProMode.get());
     }
 
     @Override
@@ -295,7 +296,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                                 pane.repaint();
                             }
                         };
-                        if (newValue && CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup() && is2DaysOfferVisible()) {
+                        if (newValue && CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup() && is2DaysOfferVisible() && hasDealAccount) {
                             Thread.sleep(10000);
 
                             OboomDialog d = new OboomDialog("autopopup");
@@ -373,12 +374,14 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             boolean hasDealAccountToRenew = false;
             boolean hasOtherAccountToRenew = false;
             boolean hasOboomPremium = false;
+            boolean hasDealAccount = false;
             Account renew = null;
             Account renewDeal = null;
             for (Account acc : AccountController.getInstance().list("oboom.com")) {
                 if (acc.isEnabled()) {
                     long dealTime = acc.getLongProperty("DEAL", -1l);
                     if (dealTime > 0) {
+                        hasDealAccount = true;
                         AccountInfo accountInfo = acc.getAccountInfo();
                         if (accountInfo != null) {
                             long validUntil = accountInfo.getValidUntil();
@@ -426,6 +429,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             if (renewDeal != null) {
                 renew = renewDeal;
             }
+            this.hasDealAccount = hasDealAccount;
             this.accountToRenew = renew;
             this.hasOtherAccountToRenewAlreadyExpired = hasOtherAccountToRenewAlreadyExpired;
             this.hasDealAccountToRenewAlreadyExpired = hasDealAccountToRenewAlreadyExpired;
