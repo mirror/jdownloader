@@ -210,6 +210,11 @@ public class AccountInfo extends Property {
         return validPremiumUntil;
     }
 
+    /**
+     * JD2 ONLY
+     * 
+     * @param validPremiumUntil
+     */
     public void setValidPremiumUntil(long validPremiumUntil) {
         this.validPremiumUntil = validPremiumUntil;
     }

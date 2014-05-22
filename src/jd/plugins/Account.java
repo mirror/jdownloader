@@ -191,11 +191,12 @@ public class Account extends Property {
 
     public void setAccountInfo(final AccountInfo info) {
         accinfo = info;
-        if (info != null && getType() == AccountType.PREMIUM && !info.isExpired()) {
-            setValidPremiumUntil(info.getValidUntil());
-        }
-        if (info.getValidPremiumUntil() > 0) {
-            setValidPremiumUntil(info.getValidPremiumUntil());
+        if (info != null) {
+            if (AccountType.PREMIUM.equals(getType()) && !info.isExpired() && info.getValidUntil() > 0) {
+                setValidPremiumUntil(info.getValidUntil());
+            } else if (info.getValidPremiumUntil() > 0) {
+                setValidPremiumUntil(info.getValidPremiumUntil());
+            }
         }
     }
 
@@ -212,10 +213,10 @@ public class Account extends Property {
         AccountInfo info = getAccountInfo();
         long ret = -1;
         if (info != null) {
-            if (getType() == AccountType.PREMIUM && !info.isExpired()) {
+            if (AccountType.PREMIUM.equals(getType()) && !info.isExpired()) {
                 ret = info.getValidUntil();
             }
-            if (info.getValidPremiumUntil() > 0) {
+            if (ret <= 0 && info.getValidPremiumUntil() > 0) {
                 ret = info.getValidPremiumUntil();
             }
         }
@@ -227,8 +228,6 @@ public class Account extends Property {
     }
 
     public String getUser() {
-        // if (user != null) return user.trim();
-        // return null;
         return user;
     }
 
@@ -273,7 +272,6 @@ public class Account extends Property {
         EXPIRED,
         INVALID,
         PLUGIN_ERROR;
-
     }
 
     public void setError(final AccountError error, String errorString) {

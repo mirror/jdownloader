@@ -1070,8 +1070,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             @Override
             public void send(Browser br) {
                 try {
-                    new Browser().getPage("http://stats.appwork.org/piwik/piwik.php?idsite=3&rec=1&action_name=" + Encoding.urlEncode(path));
-                } catch (IOException e) {
+                    new Browser().openGetConnection("http://stats.appwork.org/piwik/piwik.php?idsite=3&rec=1&action_name=" + Encoding.urlEncode(path)).disconnect();
+                } catch (Throwable e) {
                     e.printStackTrace();
                 }
 

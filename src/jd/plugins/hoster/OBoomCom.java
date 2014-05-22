@@ -103,14 +103,10 @@ public class OBoomCom extends PluginForHost {
         if (premium != null) {
             long premiumUntil = Long.parseLong(premium) * 1000l;
             ai.setValidUntil(premiumUntil);
-            if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
-                // JD 2 only!
-                try {
-                    // JD 2 CALL!
-                    ai.setValidPremiumUntil(premiumUntil);
-                } catch (Throwable e) {
-
-                }
+            try {
+                // JD 2 CALL!
+                ai.setValidPremiumUntil(premiumUntil);
+            } catch (Throwable e) {
             }
             if (!ai.isExpired()) {
                 ai.setStatus("Premium account");

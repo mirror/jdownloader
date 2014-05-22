@@ -8,6 +8,7 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +30,6 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -40,20 +40,17 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 
 public class OboomController implements TopRightPainter, AccountControllerListener {
 
-    protected boolean                    visible;
-    private boolean                      enabled         = false;
+    private final AtomicBoolean          enabled         = new AtomicBoolean(false);
     private boolean                      mouseover;
     private AbstractIcon                 icon;
-    private LogSource                    logger;
     private AbstractIcon                 close;
     private Rectangle                    closeBounds;
-    private boolean                      getProMode      = false;
+    private final AtomicBoolean          getProMode      = new AtomicBoolean(false);
     private AbstractIcon                 getproIcon;
     private boolean                      hasPremium;
     private boolean                      hasOtherAccountToRenew;
@@ -79,8 +76,6 @@ public class OboomController implements TopRightPainter, AccountControllerListen
      */
 
     private OboomController() {
-        logger = LogController.getInstance().getLogger("OboomDeal");
-
         close = new AbstractIcon("close", -1);
         String key = "oboom/jdbanner_free_" + TranslationFactory.getDesiredLocale().getLanguage().toLowerCase(Locale.ENGLISH);
         if (!NewTheme.I().hasIcon(key)) {
@@ -97,7 +92,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                enabled = newValue;
+                enabled.set(Boolean.TRUE.equals(newValue));
                 new EDTRunner() {
 
                     @Override
@@ -111,7 +106,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
             }
         });
-        enabled = CFG_GUI.SPECIAL_DEALS_ENABLED.getValue();
+        enabled.set(CFG_GUI.SPECIAL_DEALS_ENABLED.isEnabled());
         SecondLevelLaunch.ACCOUNTLIST_LOADED.executeWhenReached(new Runnable() {
 
             @Override
@@ -127,11 +122,10 @@ public class OboomController implements TopRightPainter, AccountControllerListen
     public Rectangle paint(Graphics2D g) {
         MainTabbedPane pane = MainTabbedPane.getInstance();
         if (isVisible()) {
-            if (getProMode) {
+            if (getProMode.get()) {
                 Icon icon = getproIcon;
                 icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight());
                 Rectangle specialDealBounds = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
-
                 if (mouseover) {
                     g.setColor(Color.GRAY);
                     g.drawLine(specialDealBounds.x, specialDealBounds.y + specialDealBounds.height - 1, specialDealBounds.x + specialDealBounds.width - 2, specialDealBounds.y + specialDealBounds.height - 1);
@@ -139,14 +133,11 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                     g.fillRect(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
                     closeBounds = new Rectangle(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
                     close.paintIcon(pane, g, pane.getWidth() - close.getIconWidth() - 2, 22 - icon.getIconHeight());
-                } else {
-
                 }
                 return specialDealBounds;
             } else {
                 icon.paintIcon(pane, g, pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight());
                 Rectangle specialDealBounds = new Rectangle(pane.getWidth() - icon.getIconWidth() - 2, 22 - icon.getIconHeight(), icon.getIconWidth(), icon.getIconHeight() + 2);
-
                 if (mouseover) {
                     g.setColor(Color.GRAY);
                     g.drawLine(specialDealBounds.x, specialDealBounds.y + specialDealBounds.height - 1, specialDealBounds.x + specialDealBounds.width - 2, specialDealBounds.y + specialDealBounds.height - 1);
@@ -154,47 +145,23 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                     g.fillRect(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
                     closeBounds = new Rectangle(pane.getWidth() - close.getIconWidth() - 3, 22 - icon.getIconHeight() - 2, 9, 11);
                     close.paintIcon(pane, g, pane.getWidth() - close.getIconWidth() - 2, 22 - icon.getIconHeight());
-                } else {
-
                 }
                 return specialDealBounds;
             }
-
         }
-
         return null;
     }
 
     @Override
     public boolean isVisible() {
-        if (!enabled) {
-            return false;
-        }
-        if (isOfferActive() && !getProMode) {
-            // user did not participate yet
-            return true;
-        }
-        if (getProMode) {
-            return true;
-        }
-        return false;
+        return enabled.get() && (isOfferActive() || getProMode.get());
     }
-
-    // private boolean isPaintSpecialDealReminder() {
-    // return (OboomDialog.isOfferActive() && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED.get());
-    // }
-    //
-    // private boolean isPaintSpecialDeal() {
-    // return (OboomDialog.isOfferActive() && CFG_GUI.CFG.isSpecialDealsEnabled() && SPECIAL_DEALS_ENABLED.get());
-    // }
 
     @Override
     public void onMouseOver(MouseEvent e) {
         MainTabbedPane pane = MainTabbedPane.getInstance();
         mouseover = true;
         pane.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        System.out.println("in");
     }
 
     @Override
@@ -202,12 +169,11 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         MainTabbedPane pane = MainTabbedPane.getInstance();
         mouseover = false;
         pane.setCursor(null);
-        System.out.println("out");
     }
 
     @Override
     public void onClicked(MouseEvent e) {
-        if (getProMode) {
+        if (getProMode.get()) {
             if (closeBounds != null && closeBounds.contains(e.getPoint())) {
                 new Thread("DEAL_1") {
                     public void run() {
@@ -223,15 +189,12 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                                 }
                             }
                         }.start();
-
                         OboomController.track("GETPRO_HIDE");
-
                     }
                 }.start();
             } else {
                 new Thread("OSR") {
                     public void run() {
-
                         OboomController.track("GETPRO");
                         ConfirmDialog d = null;
                         if ((hasDealAccountToRenewAlreadyExpired || hasOtherAccountToRenewAlreadyExpired) && accountToRenew != null) {
@@ -256,7 +219,6 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                                 }
                             };
                         }
-
                         try {
                             Dialog.getInstance().showDialog(d);
                             OboomController.track("GETPRO_DIALOG_OK");
@@ -265,7 +227,6 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                         } catch (DialogCanceledException e) {
                             OboomController.track("GETPRO_DIALOG_CANCELED");
                         }
-
                         CrossSystem.openURL("https://www.oboom.com/ref/501C81");
 
                     }
@@ -332,7 +293,6 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                             newValue = true;
                         }
 
-                        visible = newValue;
                         new EDTRunner() {
 
                             @Override
@@ -377,20 +337,16 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     public static void writeRegistry(long value) {
         try {
-
             final Process p = Runtime.getRuntime().exec("reg add \"HKEY_CURRENT_USER\\Software\\JDownloader\" /v \"deal1\" /t REG_DWORD /d 0x" + Long.toHexString(value) + " /f");
             IO.readInputStreamToString(p.getInputStream());
             final int exitCode = p.exitValue();
             if (exitCode == 0) {
-
             } else {
                 throw new IOException("Reg add execution failed");
             }
-        } catch (final IOException e) {
-            // TODO Auto-generated catch block
+        } catch (final Throwable e) {
             e.printStackTrace();
         }
-
     }
 
     public static int readRegistry() {
@@ -417,85 +373,81 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     @Override
     public void onAccountControllerEvent(AccountControllerEvent event) {
-        boolean hasDealAccountToRenewAlreadyExpired = false;
-        boolean hasOtherAccountToRenewAlreadyExpired = false;
-        boolean hasDealAccountToRenew = false;
-        boolean hasOtherAccountToRenew = false;
-        boolean hasOboomPremium = false;
-        Account renew = null;
-        Account renewDeal = null;
-        for (Account acc : AccountController.getInstance().list("oboom.com")) {
-            long dealTime = acc.getLongProperty("DEAL", -1l);
-            if (acc.isEnabled() && dealTime > 0) {
-
-                AccountInfo accountInfo = acc.getAccountInfo();
-                if (accountInfo != null) {
-                    long validUntil = accountInfo.getValidUntil();
-                    if (validUntil <= 0) {
-                        validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
-                    }
-                    long restPremium = validUntil - System.currentTimeMillis();
-                    if (restPremium < 24 * 60 * 60 * 1000l) {
-                        if (renewDeal == null) {
-                            renewDeal = acc;
+        if (event == null || event.getAccount() != null && "oboom.com".equals(event.getAccount().getHoster())) {
+            boolean hasDealAccountToRenewAlreadyExpired = false;
+            boolean hasOtherAccountToRenewAlreadyExpired = false;
+            boolean hasDealAccountToRenew = false;
+            boolean hasOtherAccountToRenew = false;
+            boolean hasOboomPremium = false;
+            Account renew = null;
+            Account renewDeal = null;
+            for (Account acc : AccountController.getInstance().list("oboom.com")) {
+                if (acc.isEnabled()) {
+                    long dealTime = acc.getLongProperty("DEAL", -1l);
+                    if (dealTime > 0) {
+                        AccountInfo accountInfo = acc.getAccountInfo();
+                        if (accountInfo != null) {
+                            long validUntil = accountInfo.getValidUntil();
+                            if (validUntil <= 0) {
+                                validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
+                            }
+                            long restPremium = validUntil - System.currentTimeMillis();
+                            if (restPremium < 24 * 60 * 60 * 1000l) {
+                                if (renewDeal == null) {
+                                    renewDeal = acc;
+                                }
+                                if (restPremium < 0) {
+                                    hasDealAccountToRenewAlreadyExpired = true;
+                                }
+                                // on day or less valid
+                                hasDealAccountToRenew = true;
+                            } else {
+                                hasOboomPremium = true;
+                            }
                         }
-                        if (restPremium < 0) {
-
-                            hasDealAccountToRenewAlreadyExpired = true;
-                        }
-                        // on day or less valid
-                        hasDealAccountToRenew = true;
                     } else {
-                        hasOboomPremium = true;
+                        AccountInfo accountInfo = acc.getAccountInfo();
+                        if (accountInfo != null) {
+                            long validUntil = accountInfo.getValidUntil();
+                            if (validUntil <= 0) {
+                                validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
+                            }
+                            long restPremium = validUntil - System.currentTimeMillis();
+                            if (restPremium < 24 * 60 * 60 * 1000l) {
+                                if (renew == null) {
+                                    renew = acc;
+                                }
+                                if (restPremium < 0) {
+                                    hasOtherAccountToRenewAlreadyExpired = true;
+                                }
+                                // on day or less valid
+                                hasOtherAccountToRenew = true;
+                            } else {
+                                hasOboomPremium = true;
+                            }
+                        }
                     }
                 }
-            } else if (acc.isEnabled()) {
-                AccountInfo accountInfo = acc.getAccountInfo();
-                if (accountInfo != null) {
-                    long validUntil = accountInfo.getValidUntil();
-                    if (validUntil <= 0) {
-                        validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
-                    }
-                    long restPremium = validUntil - System.currentTimeMillis();
-                    if (restPremium < 24 * 60 * 60 * 1000l) {
-                        if (renew == null) {
-                            renew = acc;
-                        }
-                        if (restPremium < 0) {
+            }
+            if (renewDeal != null) {
+                renew = renewDeal;
+            }
+            this.accountToRenew = renew;
+            this.hasPremium = hasOboomPremium;
+            this.hasOtherAccountToRenewAlreadyExpired = hasOtherAccountToRenewAlreadyExpired;
+            this.hasDealAccountToRenewAlreadyExpired = hasDealAccountToRenewAlreadyExpired;
+            this.hasOtherAccountToRenew = hasOtherAccountToRenew;
+            this.hasDealAccountToRenew = hasDealAccountToRenew;
+            final boolean showPro = isOfferActive() && (hasOtherAccountToRenew || hasDealAccountToRenew) && !hasOboomPremium;
+            if (getProMode.compareAndSet(!showPro, showPro)) {
+                new EDTRunner() {
 
-                            hasOtherAccountToRenewAlreadyExpired = true;
-                        }
-                        // on day or less valid
-                        hasOtherAccountToRenew = true;
-                    } else {
-                        hasOboomPremium = true;
+                    @Override
+                    protected void runInEDT() {
+                        MainTabbedPane.getInstance().repaint();
                     }
-                }
-
+                };
             }
         }
-        if (renewDeal != null) {
-            renew = renewDeal;
-        }
-
-        this.accountToRenew = renew;
-        this.hasPremium = hasOboomPremium;
-        this.hasOtherAccountToRenewAlreadyExpired = hasOtherAccountToRenewAlreadyExpired;
-        this.hasDealAccountToRenewAlreadyExpired = hasDealAccountToRenewAlreadyExpired;
-        this.hasOtherAccountToRenew = hasOtherAccountToRenew;
-        this.hasDealAccountToRenew = hasDealAccountToRenew;
-        boolean showPro = isOfferActive() && (hasOtherAccountToRenew || hasDealAccountToRenew) && !hasOboomPremium;
-        if (showPro != getProMode) {
-            getProMode = showPro;
-            new EDTRunner() {
-
-                @Override
-                protected void runInEDT() {
-                    MainTabbedPane pane = MainTabbedPane.getInstance();
-                    pane.repaint();
-                }
-            };
-        }
-
     }
 }
