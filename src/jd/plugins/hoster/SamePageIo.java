@@ -50,14 +50,17 @@ public class SamePageIo extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         prepBR();
-        br.getPage(link.getStringProperty("mainlink", null));
-        if (br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // if (br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = link.getStringProperty("plain_name", null);
         final String filesize = link.getStringProperty("plain_size", null);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(filename);
         link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
@@ -68,12 +71,40 @@ public class SamePageIo extends PluginForHost {
         requestFileInformation(downloadLink);
 
         id_1 = downloadLink.getStringProperty("plain_id_1");
-        final String forward_link = br.getRedirectLocation();
-        if (forward_link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        id_2 = new Regex(forward_link, "samepage\\.io/app/#\\!/[a-z0-9]+/page\\-(\\d+)[A-Za-z0-9\\-_]+").getMatch(0);
-        if (id_2 == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        final String forward_link = downloadLink.getStringProperty("mainlink", null);
+        if (forward_link == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        id_2 = new Regex(forward_link, "samepage\\.io/app/#\\!/[a-z0-9]+/page\\-(\\d+)").getMatch(0);
+        if (id_2 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         br.getPage("https://samepage.io/app/");
+        final String main = br.getRegex("ClientSamepage\\.main\\(\\'(/client/[a-z0-9]+)\\'").getMatch(0);
+        if (main == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        br.postPageRaw("https://samepage.io/api/app/jsonrpc", "{\"id\":0,\"jsonrpc\":\"2.0\",\"method\":\"Bootstrap.bootstrap\",\"params\":{\"tenantId\":\"" + id_1 + "\",\"itemId\":\"" + id_2 + "\"}}");
+        final String apiVersion = getJson("apiVersion", br.toString());
+        final String token = br.getCookie("http://samepage.io", "TOKEN_WORKSPACE");
+        if (token == null || apiVersion == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        br.cloneBrowser().getPage("https://samepage.io" + main + "/lib/internal/translations/de.js");
+        br.getHeaders().put("Referer", "https://samepage.io/app/");
+        br.getHeaders().put("X-Token", token);
+        br.getHeaders().put("Content-Type", "application/json; charset=UTF-8");
+        br.postPageRaw("https://samepage.io/" + id_1 + "/server/data?method=Items.get", "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"Items.get\",\"params\":{\"includeChildren\":-1,\"includeIamFollowing\":true,\"includeHasSubtree\":true,\"includeChain\":true,\"id\":\"" + id_2 + "\"},\"apiVersion\":\"" + apiVersion + "\"}");
+        /* Item not found */
+        if (br.containsHTML("\"code\":6002")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         final String dllink = getdllink(downloadLink);
         boolean resume = true;
@@ -82,6 +113,11 @@ public class SamePageIo extends PluginForHost {
             resume = false;
             maxchunks = 1;
         }
+
+        br.setCookie("http://samepage.io/", "TENANT_WORKSPACE", "1");
+        br.setCookie("http://samepage.io/", "TOKEN_WORKSPACE", token);
+        br.getHeaders().put("Referer", "https://samepage.io/app/");
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -96,7 +132,9 @@ public class SamePageIo extends PluginForHost {
         if (isCompleteFolder(dl)) {
             dllink = "https://samepage.io/" + id_1 + "/archive/" + fid + ".zip";
         } else {
-            dllink = "https://samepage.io/" + id_1 + "/file/" + fid + "/" + Encoding.urlEncode(dl.getName());
+            String name = Encoding.urlEncode(dl.getName());
+            name = name.replace("+", "%20");
+            dllink = "https://samepage.io/" + id_1 + "/file/" + fid + "/" + name;
         }
         return dllink;
     }
@@ -114,7 +152,9 @@ public class SamePageIo extends PluginForHost {
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
         return result;
     }
 

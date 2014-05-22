@@ -61,12 +61,18 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 decryptedLinks.add(main);
                 return decryptedLinks;
             }
-            final String newUrl = Encoding.htmlDecode(br.getURL()).replace("&locale=ru", "");
-            if (!newUrl.matches(primaryURLs)) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            String newUrl = Encoding.htmlDecode(br.getURL()).replace("&locale=ru", "");
+            if (newUrl.matches(primaryURLs)) {
+                parameter = new Regex(newUrl, primaryURLs).getMatch(-1);
+            } else {
+                /* URL has not changed - try to manually change it to our basic url format */
+                final String hash = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
+                if (hash == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                parameter = "https://disk.yandex.com/public/?hash=" + hash;
             }
-            parameter = new Regex(newUrl, primaryURLs).getMatch(-1);
         }
         if (parameter.matches(primaryURLs)) {
             String protocol = new Regex(parameter, "(https?)://").getMatch(0);
@@ -102,7 +108,9 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             linktext = Encoding.htmlDecode(linktext);
         }
         String[] data = null;
-        if (linktext != null) data = linktext.split("<div");
+        if (linktext != null) {
+            data = linktext.split("<div");
+        }
         if (data != null && data.length != 0) {
             for (final String singleData : data) {
                 String hash = getJson("hash", singleData);
@@ -176,13 +184,17 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
 
     private String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) JDUtilities.getPluginForHost("youtube.com");
+        if (!yt_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForHost("youtube.com");
+        }
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 

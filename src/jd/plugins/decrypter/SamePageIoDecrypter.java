@@ -44,9 +44,7 @@ public class SamePageIoDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final DownloadLink main = createDownloadlink("http://samepagedecrypted.io/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        main.setProperty("mainlink", parameter);
+        String parameter = param.toString();
         prepBR();
         String id_1;
         String id_2;
@@ -62,6 +60,10 @@ public class SamePageIoDecrypter extends PluginForDecrypt {
                 return null;
             }
         }
+        parameter = "https://samepage.io/app/#!/" + id_1 + "/page-" + id_2;
+
+        final DownloadLink main = createDownloadlink("http://samepagedecrypted.io/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        main.setProperty("mainlink", parameter);
 
         br.getPage("https://samepage.io/app/");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
