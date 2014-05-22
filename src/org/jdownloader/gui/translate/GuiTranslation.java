@@ -3086,6 +3086,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Specifies whether certain Hoster are allowed or forbidden." })
     String NinekwService_createPanel_blackwhitelist_des();
 
+    @Default(lngs = { "en" }, values = { "Options" })
+    String NinekwService_createPanel_options_header();
+
     @Default(lngs = { "en" }, values = { "Enter your Captcha Brotherhood Logins below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String captchabrotherhoodService_createPanel_logins_();
 

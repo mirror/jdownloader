@@ -521,7 +521,7 @@ public class NinekwService implements CESService {
                 toolbar9a.add(label(_GUI._.NinekwService_createPanel_ms()));
                 add(toolbar9a, "gapleft 33,spanx,pushx,growx");
 
-                this.addHeader("Options", NewTheme.I().getIcon(IconKey.ICON_FOLDER_ADD, 32));
+                this.addHeader(_GUI._.NinekwService_createPanel_options_header(), NewTheme.I().getIcon(IconKey.ICON_FOLDER_ADD, 32));
                 // MigPanel toolbar9b = new MigPanel("ins 0", "[][][][]", "[]");
                 // toolbar9b.add(label(_GUI._.NinekwService_createPanel_useragent()), "width 130!");
                 // toolbar9b.add(useragent, "pushx,growx");
