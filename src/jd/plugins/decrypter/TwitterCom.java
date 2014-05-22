@@ -89,7 +89,11 @@ public class TwitterCom extends PluginForDecrypt {
             for (final String regex : directlink_regexes) {
                 final String[] piclinks = br.getRegex(regex).getColumn(0);
                 if (piclinks != null && piclinks.length != 0) {
-                    for (final String singleLink : piclinks) {
+                    for (String singleLink : piclinks) {
+                        final String remove = new Regex(singleLink, "(:[a-z0-9]+)").getMatch(0);
+                        if (remove != null) {
+                            singleLink = singleLink.replace(remove, "");
+                        }
                         final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(singleLink.trim()));
                         dl._setFilePackage(fp);
                         dl.setAvailable(true);
