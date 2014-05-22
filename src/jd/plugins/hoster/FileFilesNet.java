@@ -93,9 +93,13 @@ public class FileFilesNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">[\r\n\t ]+File not found\\![\r\n\t ]+<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">[\r\n\t ]+File not found\\![\r\n\t ]+<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String[][] fileInfo = br.getRegex(Pattern.compile("<div id=\"file_det\" style=\"top:\\d+%;\">[\r\n\t ]+(.+) \\- ([\\d\\.]+ (KB|MB|GB|TB))", Pattern.CASE_INSENSITIVE)).getMatches();
-        if (fileInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileInfo == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(fileInfo[0][0].trim()));
         link.setDownloadSize(SizeFormatter.getSize(fileInfo[0][1]));
         return AvailableStatus.TRUE;
@@ -109,9 +113,13 @@ public class FileFilesNet extends PluginForHost {
             br.postPage(HOST + "/", "getDownLink=" + new Regex(downloadLink.getDownloadURL(), "net/(.*)").getMatch(0));
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.
-            if (br.containsHTML("#downlink\\|#")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
+            if (br.containsHTML("#downlink\\|#")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
+            }
             dllink = getDllink();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -166,7 +174,7 @@ public class FileFilesNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        String expire = new Regex(br, "(?i)<u>Premium</u>: <span>(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
+        String expire = new Regex(br, "<u>Premium</u>: <span id=\"premiumDate\">(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
@@ -189,7 +197,9 @@ public class FileFilesNet extends PluginForHost {
                 prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -213,7 +223,7 @@ public class FileFilesNet extends PluginForHost {
                 }
                 br.getPage("/");
                 // only support premium at this stage
-                if (!new Regex(br, "(?i)(<u>Premium</u>: <span>\\d+{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}</span>)").matches()) {
+                if (!new Regex(br, "(<u>Premium</u>: <span id=\"premiumDate\">)").matches()) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -246,8 +256,12 @@ public class FileFilesNet extends PluginForHost {
             dllink = getDllink();
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.
-            if (br.containsHTML("#downlink\\|#")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("#downlink\\|#")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster connection limit reached.", 10 * 60 * 1000l);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
 
         int maxChunks = 0;
@@ -264,7 +278,9 @@ public class FileFilesNet extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
