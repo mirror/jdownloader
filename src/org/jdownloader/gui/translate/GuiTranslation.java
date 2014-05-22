@@ -4955,4 +4955,7 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Your %s2 premium account (username: %s1) has expired.\r\nPlease renew your account now to continue downloading without any limitations." })
     String OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(String user, String hoster);
+
+    @Default(lngs = { "en" }, values = { "Add a Premium Account..." })
+    String StatusBarImpl_add_premium();
 }
