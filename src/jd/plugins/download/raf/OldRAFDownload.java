@@ -169,8 +169,6 @@ public class OldRAFDownload extends DownloadInterface {
         request.setReadTimeout(getReadTimeout());
         br.setRequest(request);
         URLConnectionAdapter ret = connect();
-        /* we have to update cookie for used browser instance here */
-        br.updateCookies(request);
         return ret;
     }
 
@@ -211,7 +209,7 @@ public class OldRAFDownload extends DownloadInterface {
                         request.getHeaders().put("Range", "bytes=" + (0) + "-");
                     }
                 }
-                browser.connect(request);
+                browser.openRequestConnection(request, false);
             }
         }
         if (downloadable.isDebug()) {
@@ -334,7 +332,7 @@ public class OldRAFDownload extends DownloadInterface {
             rangeRequested = true;
             request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
         }
-        browser.connect(request);
+        browser.openRequestConnection(request, false);
         if (request.getHttpConnection().getResponseCode() == 416) {
             logger.warning("HTTP/1.1 416 Requested Range Not Satisfiable");
             if (downloadable.isDebug()) {
@@ -718,7 +716,7 @@ public class OldRAFDownload extends DownloadInterface {
             }
             request.getHeaders().put("Range", "bytes=" + start + "-" + end);
         }
-        browser.connect(request);
+        browser.openRequestConnection(request, false);
         return rangeRequested;
     }
 

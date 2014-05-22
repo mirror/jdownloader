@@ -67,7 +67,7 @@ public class StreamingDownloadInterface extends DownloadInterface {
         } else {
             request.getHeaders().remove("Range");
         }
-        browser.connect(request);
+        browser.openRequestConnection(request, false);
         if (this.plugin.getBrowser().isDebug()) {
             plugin.getLogger().finest("\r\n" + request.printHeaders());
         }
