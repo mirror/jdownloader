@@ -445,10 +445,14 @@ public class ProxyController implements ProxySelectorInterface {
             noPSFirst = true;
             logger.info("Init Proxy Controller fresh");
             final ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
-            strategies.add(new DesktopProxySearchStrategy());
-            strategies.add(new FirefoxProxySearchStrategy());
-            strategies.add(new EnvProxySearchStrategy());
-            strategies.add(new JavaProxySearchStrategy());
+            try {
+                strategies.add(new DesktopProxySearchStrategy());
+                strategies.add(new FirefoxProxySearchStrategy());
+                strategies.add(new EnvProxySearchStrategy());
+                strategies.add(new JavaProxySearchStrategy());
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
             for (ProxySearchStrategy s : strategies) {
                 logger.info("Selector: " + s);
                 try {

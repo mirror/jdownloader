@@ -56,10 +56,14 @@ public class ProxyAutoAction extends AppAction {
             @Override
             protected Void run() throws RuntimeException {
                 final ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
-                strategies.add(new DesktopProxySearchStrategy());
-                strategies.add(new FirefoxProxySearchStrategy());
-                strategies.add(new EnvProxySearchStrategy());
-                strategies.add(new JavaProxySearchStrategy());
+                try {
+                    strategies.add(new DesktopProxySearchStrategy());
+                    strategies.add(new FirefoxProxySearchStrategy());
+                    strategies.add(new EnvProxySearchStrategy());
+                    strategies.add(new JavaProxySearchStrategy());
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
                 final int pre = ProxyController.getInstance().getList().size();
                 for (ProxySearchStrategy s : strategies) {
                     ProxySelector selector;
