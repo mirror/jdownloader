@@ -174,7 +174,7 @@ public class OboomDialog extends AbstractDialog<Integer> {
     }
 
     protected static boolean validateEmail(final String email) {
-        return new Regex(email, ".+?@.+\\..{2,5}").matches();
+        return new Regex(email, "^.+?@.+\\.[a-zA-Z]{2,5}$").matches();
     }
 
     protected void requestAccount(String email) {
