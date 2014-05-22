@@ -165,7 +165,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     @Override
     public boolean isVisible() {
-        return enabled.get() && ((!hasDealAccount && is2DaysOfferVisible()) || getProMode.get());
+        return ((!hasDealAccount && is2DaysOfferVisible() && enabled.get()) || getProMode.get());
     }
 
     @Override
