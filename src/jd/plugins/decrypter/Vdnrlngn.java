@@ -66,7 +66,7 @@ public class Vdnrlngn extends PluginForDecrypt {
 
         br.getPage(u);
         if (packagename == null) {
-            packagename = br.getRegex(" <td colspan=\"3\" class=\"clipdetailtitel\">(.*?)</td>").getMatch(0).trim();
+            packagename = br.getRegex("class=\"clipdetailtitel\">[\t\n\r ]+<br/>(.*?)</td>").getMatch(0).trim();
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(packagename);

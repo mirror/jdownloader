@@ -56,6 +56,7 @@ public class DeviantArtCom extends PluginForHost {
     private static final String FORCEHTMLDOWNLOAD          = "FORCEHTMLDOWNLOAD";
 
     private static final String GENERALFILENAMEREGEX       = "<title>([^<>\"]*?) on deviantART</title>";
+    private static final String DLLINK_REFRESH_NEEDED      = "http://(www\\.)?deviantart\\.com/download/.+";
     private static final String TYPEDOWNLOADALLOWED_HTML   = "class=\"text\">HTML download</span>";
     private static final String TYPEDOWNLOADFORBIDDEN_HTML = "<div class=\"grf\\-indent\"";
     private boolean             HTMLALLOWED                = false;

@@ -92,13 +92,14 @@ public class XHamsterGallery extends PluginForDecrypt {
                 logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
                 return null;
             }
-            final String[] thumbNails = new Regex(allLinks, "(\"|\\')(http://p\\d+\\.xhamster\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)(\"|\\')").getColumn(1);
+            // 'http://ept.xhcdn.com/000/027/563/101_160.jpg'
+            final String[] thumbNails = new Regex(allLinks, "(\"|\\')(http://ept\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)(\"|\\')").getColumn(1);
             if (thumbNails == null || thumbNails.length == 0) {
                 logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
                 return null;
             }
             for (String thumbNail : thumbNails) {
-                DownloadLink dl = createDownloadlink("directhttp://http://up.xhamster.com/" + new Regex(thumbNail, "http://p\\d+\\.xhamster\\.com/(\\d+/\\d+/\\d+/\\d+_)160\\.jpg").getMatch(0) + "1000.jpg");
+                DownloadLink dl = createDownloadlink("directhttp://http://ep.xhamster.com/" + new Regex(thumbNail, ".+\\.xhcdn\\.com/(\\d+/\\d+/\\d+/\\d+_)160\\.jpg").getMatch(0) + "1000.jpg");
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }

@@ -834,6 +834,9 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
         } catch (final SocketTimeoutException e) {
             logger.info("Link offline (timeout): " + parameter);
             return decryptedLinks;
+        } catch (final BrowserException e) {
+            logger.info("BrowserException occured - timeout or server error: " + parameter);
+            return decryptedLinks;
         }
         if ("http://adfoc.us/".equals(br.getRedirectLocation())) {
             offline = true;
