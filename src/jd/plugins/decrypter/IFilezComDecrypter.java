@@ -24,10 +24,13 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 //This decrypter is there to seperate folder- and hosterlinks as hosterlinks look the same as folderlinks
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "i-filez.com", "depfile.com" }, urls = { "rfh5ujnthUNUSED_REGEX_HAHHAHAHAHAdcj43z8hgto9vhr", "https?://(www\\.)?(i\\-filez|depfile)\\.com/(downloads/i/\\d+/f/[^\"\\']+|(?!downloads)[a-zA-Z0-9]+)" }, flags = { 0, 0 })
@@ -53,16 +56,40 @@ public class IFilezComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         handleErrors();
-        final String[] links = br.getRegex("(https?://depfile\\.com/[A-Za-z0-9]+|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32})").getColumn(0);
+        // mass adding links from folders can cause exceptions and high server loads. when possible best practice to set all info, a full
+        // linkcheck happens prior to download which can correct any false positives by doing the following..
+        final String[] links = br.getRegex("<tr><td[^>]+><input[^>]+>.*?</td></tr>").getColumn(-1);
         if (links != null && links.length != 0) {
-            for (String dl : links)
-                if (!dl.contains(folder_id) && !dl.equals("http://depfile.com/downloads")) decryptedLinks.add(createDownloadlink(dl.replace("depfile.com/", DEPFILEDECRYPTED)));
-        } else if (br.containsHTML(">Description of the downloaded folder")) {
+            // folder link
+            for (String link : links) {
+                final String l = new Regex(link, "https?://depfile\\.com/[A-Za-z0-9]+|https?://(www\\.)?depfile\\.com/[a-zA-Z0-9]{8}\\?cid=[a-z0-9]{32}").getMatch(-1);
+                final String f = new Regex(link, "title=(\"|')(.*?)\\1").getMatch(1);
+                final String s = new Regex(link, ">(\\d+(\\.\\d+)? [a-z]{2})<").getMatch(0);
+                if (!l.contains(folder_id) && !l.equals("http://depfile.com/downloads")) {
+                    DownloadLink d = createDownloadlink(l.replace("depfile.com/", DEPFILEDECRYPTED));
+                    d.setName(f);
+                    d.setDownloadSize(SizeFormatter.getSize(s));
+                    d.setAvailable(true);
+                    decryptedLinks.add(d);
+                }
+            }
+            final String fpName = br.getRegex("<th>Folder name:</th>\\s*<td>(.*?)</td>").getMatch(0);
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
+            return decryptedLinks;
+        }
+        // when 'folder link' above has failed...
+        if (br.containsHTML(">Description of the downloaded folder")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        // single dl...
-        if (decryptedLinks.isEmpty()) decryptedLinks.add(createDownloadlink(parameter.replace("depfile.com/", DEPFILEDECRYPTED)));
+        // single link
+        if (decryptedLinks.isEmpty()) {
+            decryptedLinks.add(createDownloadlink(parameter.replace("depfile.com/", DEPFILEDECRYPTED)));
+        }
         return decryptedLinks;
     }
 
@@ -71,7 +98,9 @@ public class IFilezComDecrypter extends PluginForDecrypt {
         try {
             ((jd.plugins.hoster.IFilezCom) DeviantArtPlugin).handleErrors();
         } catch (final Exception e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
+            }
         }
     }
 
