@@ -84,14 +84,19 @@ public class RDMdthk extends PluginForDecrypt {
         final String fsk = br.getRegex("(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)").getMatch(0);
         final String realBaseUrl = new Regex(br.getBaseURL(), "(^.*\\.de)").getMatch(0);
 
-        // ardmediathek.de
-        String ID = new Regex(parameter, "\\?documentId=(\\d+)").getMatch(0);
-        // mediathek.daserste.de
-        if (ID == null) {
-            ID = new Regex(parameter, realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);
-        }
-        if (ID == null) {
-            ID = new Regex(parameter, realBaseUrl + "/suche/(\\d+)").getMatch(0);
+        String ID;
+        if (parameter.matches("http://(www\\.)?mediathek\\.daserste\\.de/topvideos/[a-z0-9\\-_]+")) {
+            ID = new Regex(parameter, "/topvideos/(\\d+)").getMatch(0);
+        } else {
+            // ardmediathek.de
+            ID = new Regex(parameter, "\\?documentId=(\\d+)").getMatch(0);
+            // mediathek.daserste.de
+            if (ID == null) {
+                ID = new Regex(parameter, realBaseUrl + "/[^/]+/[^/]+/(\\d+)").getMatch(0);
+            }
+            if (ID == null) {
+                ID = new Regex(parameter, realBaseUrl + "/suche/(\\d+)").getMatch(0);
+            }
         }
         if (ID == null) {
             logger.info("ARDMediathek: MediaID is null! Regex broken?");
