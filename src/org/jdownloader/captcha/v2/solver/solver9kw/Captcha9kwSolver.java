@@ -253,8 +253,9 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
         }
 
         String moreoptions = "";
-        if (config.gethosteroptions().length() > 5) {
-            String[] list = config.gethosteroptions().split(";");
+        String hosterOptions = config.gethosteroptions();
+        if (hosterOptions != null && hosterOptions.length() > 5) {
+            String[] list = hosterOptions.split(";");
             for (String hosterline : list) {
                 if (hosterline.contains(challenge.getTypeID())) {
                     String[] listdetail = hosterline.split(":");
