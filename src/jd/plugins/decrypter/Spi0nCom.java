@@ -32,10 +32,17 @@ public class Spi0nCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
+    private static final String INVALIDLINKS = "http://www\\.spi0n\\.com/favicon";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (parameter.matches(INVALIDLINKS)) {
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         br.getPage(parameter);
         if (!br.containsHTML("itemprop=\"video\"")) {
             logger.info("Link offline (no video on this page?!): " + parameter);
@@ -46,10 +53,17 @@ public class Spi0nCom extends PluginForDecrypt {
         }
         String finallink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/video/[A-Za-z0-9\\-_]+)\"").getMatch(0);
         if (finallink == null) {
-            finallink = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[A-Za-z0-9\\-_]+)\"").getMatch(0);
+            finallink = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"").getMatch(0);
+            if (finallink != null) {
+                finallink = "http:" + finallink;
+            }
         }
-        if (finallink != null) {
-            finallink = "http:" + finallink;
+        /* Sometimes they host videos on their own servers */
+        if (finallink == null) {
+            finallink = br.getRegex("\"file\":\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads[^<>\"]*?)\"").getMatch(0);
+            if (finallink != null) {
+                finallink = "directhttp://" + finallink.replace("http://www.", "http://");
+            }
         }
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -60,9 +74,6 @@ public class Spi0nCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

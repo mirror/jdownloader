@@ -47,8 +47,13 @@ public class UploadCd extends PluginForHost {
         return "http://upload.cd/tos";
     }
 
+    private static final String INVALIDLINKS = "http://(www\\.)?upload\\.cd/premium";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (link.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
