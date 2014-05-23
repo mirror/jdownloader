@@ -757,6 +757,9 @@ public class DirectHTTP extends PluginForHost {
             if (e instanceof java.net.ConnectException || e.getCause() instanceof java.net.ConnectException) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if (e instanceof java.net.UnknownHostException || e.getCause() instanceof java.net.UnknownHostException) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Network problem: " + e.getMessage(), 5 * 60 * 1000l);
         } catch (final Exception e) {
             this.logger.log(Level.SEVERE, e.getMessage(), e);
