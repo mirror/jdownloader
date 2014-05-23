@@ -81,12 +81,20 @@ public class IFilezCom extends PluginForHost {
             filename = br.getRegex("<th>File name:</th>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         }
         String filesize = br.getRegex("<th>Size:</th>[\r\t\n ]+<td>(.*?)</td>").getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim().replace(".html", "")));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         String md5 = br.getRegex("<th>MD5:</th>[\r\t\n ]+<td>([a-f0-9]{32})</td>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
-        if (br.containsHTML(ONLY4PREMIUM)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
+        if (br.containsHTML(ONLY4PREMIUM)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -111,18 +119,27 @@ public class IFilezCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.ifilezcom.only4premium", ONLY4PREMIUMUSERTEXT));
         }
         String verifycode = br.getRegex("name=\"vvcid\" value=\"(\\d+)\"").getMatch(0);
-        if (verifycode == null) verifycode = br.getRegex("\\?vvcid=(\\d+)\"").getMatch(0);
+        if (verifycode == null) {
+            verifycode = br.getRegex("\\?vvcid=(\\d+)\"").getMatch(0);
+        }
         if (!br.containsHTML(CAPTCHATEXT) || verifycode == null) {
             logger.warning("Captchatext not found or verifycode null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String code = getCaptchaCode("http://depfile.com/includes/vvc.php?vvcid=" + verifycode, downloadLink);
         br.postPage(br.getURL(), "vvcid=" + verifycode + "&verifycode=" + code + "&FREE=Download+for+free");
+        if (br.getURL().endsWith("/premium")) {
+            // no reason why
+            // jdlog://2883963166931/ = maybe hit some known session limit?? I could not reproduce this myself -raztoki
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "unknown limit reached", 30 * 60 * 1000l);
+        }
         String additionalWaittime = br.getRegex("was recently downloaded from your IP address. No less than (\\d+) min").getMatch(0);
         if (additionalWaittime != null) {
             /* wait 1 minute more to be sure */
@@ -133,8 +150,12 @@ public class IFilezCom extends PluginForHost {
             /* wait 15 secs more to be sure */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(additionalWaittime) + 15) * 1001l);
         }
-        if (br.containsHTML(">Free users can download up to \\d+G per day.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 4 * 60 * 60 * 1000l);
-        if (br.containsHTML(CAPTCHATEXT) || br.containsHTML(">The image code you entered is incorrect\\!<")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (br.containsHTML(">Free users can download up to \\d+G per day.")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily download limit reached", 4 * 60 * 60 * 1000l);
+        }
+        if (br.containsHTML(CAPTCHATEXT) || br.containsHTML(">The image code you entered is incorrect\\!<")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         br.setFollowRedirects(false);
         String dllink = br.getRegex("document\\.getElementById\\(\"wait_input\"\\)\\.value= unescape\\(\\'(.*?)\\'\\);").getMatch(0);
         if (dllink == null) {
@@ -144,7 +165,9 @@ public class IFilezCom extends PluginForHost {
         dllink = Encoding.deepHtmlDecode(dllink).trim();
         int wait = 60;
         String regexedWaittime = br.getRegex("var sec=(\\d+);").getMatch(0);
-        if (regexedWaittime != null) wait = Integer.parseInt(regexedWaittime);
+        if (regexedWaittime != null) {
+            wait = Integer.parseInt(regexedWaittime);
+        }
         sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -169,7 +192,9 @@ public class IFilezCom extends PluginForHost {
                 br.setCookie(MAINPAGE, "sdlanguageid", "2");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -189,7 +214,9 @@ public class IFilezCom extends PluginForHost {
                     br.getPage("https://depfile.com/");
                 }
 
-                if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (!br.containsHTML("class=\\'user_info\\'>Premium:")) {
                     account.setProperty("freeacc", true);
                 } else {
@@ -270,7 +297,9 @@ public class IFilezCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             String dllink = br.getRegex("<th>A link for 24 hours:</th>[\t\n\r ]+<td><input type=\"text\" readonly=\"readonly\" class=\"text_field width100\" onclick=\"this\\.select\\(\\);\" value=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
+            if (dllink == null) {
+                dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.depfile\\.com/premdw/\\d+/[a-z0-9]+/.*?)(\"|\\')").getMatch(1);
+            }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -291,7 +320,9 @@ public class IFilezCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid links
-        if (br.containsHTML(">403 Forbidden</")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">403 Forbidden</")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
