@@ -134,7 +134,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         if (GENERALSETTINGS.isAutoSortChildrenEnabled()) {
             sorter = SORTER_ASC;
         }
-        setDownloadFolder(LINKGRABBERSETTINGS.isUseLastDownloadDestinationAsDefault() ? LINKGRABBERSETTINGS.getLatestDownloadDestinationFolder() : null);
+        setDownloadFolder(null);
     }
 
     public void copyPropertiesTo(CrawledPackage dest) {
