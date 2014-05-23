@@ -77,9 +77,9 @@ public class LinkCrawler {
     private final LinkCrawler                       parentCrawler;
     private final long                              created;
 
-    private final static String                     PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
-    private final static String                     PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
-    private final static String                     PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
+    public final static String                      PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
+    public final static String                      PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
+    public final static String                      PACKAGE_IGNORE_VARIOUS      = "PACKAGE_IGNORE_VARIOUS";
     public static final UniqueAlltimeID             PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
     private boolean                                 doDuplicateFinderFinalCheck = true;
     private final List<LazyHostPlugin>              pHosts;
@@ -995,7 +995,9 @@ public class LinkCrawler {
         ArrayList<String> sources = new ArrayList<String>();
         CrawledLink source = link;
         while (source != null) {
-            sources.add(source.getURL());
+            if (sources.size() == 0 || !StringUtils.equals(source.getURL(), sources.get(sources.size() - 1))) {
+                sources.add(source.getURL());
+            }
             source = source.getSourceLink();
         }
         link.setSourceUrls(null);
