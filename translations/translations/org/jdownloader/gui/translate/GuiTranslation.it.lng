@@ -710,6 +710,7 @@ NinekwService_createPanel_mousecaptchas_tooltiptext=Attiva captcha mouse
 NinekwService_createPanel_mouseconfirm=Conferma mouse (costo +6)
 NinekwService_createPanel_mouseconfirm_tooltiptext=Attiva una conferma della soluzione dei captcha mouse
 NinekwService_createPanel_ms=ms
+NinekwService_createPanel_options_header=Opzioni
 NinekwService_createPanel_prio=Priorità 1-10 (costo +1-10
 NinekwService_createPanel_prio_tooltiptext=Attiva una priorità maggiore nel sistema 9kw.eu per ottenere una soluzione più veloce.
 NinekwService_createPanel_puzzlecaptchas=Captcha Puzzle
