@@ -710,6 +710,7 @@ NinekwService_createPanel_mousecaptchas_tooltiptext=マウスキャプチャを�
 NinekwService_createPanel_mouseconfirm=マウス認証 (コスト +6)
 NinekwService_createPanel_mouseconfirm_tooltiptext=マウスキャプチャ認証の解決を有効化します
 NinekwService_createPanel_ms=㍉秒
+NinekwService_createPanel_options_header=オプション
 NinekwService_createPanel_prio=Prio 1-10 (コスト +1-10)
 NinekwService_createPanel_prio_tooltiptext=9kw.euでより速く解決される為の優先順位システムを有効化します
 NinekwService_createPanel_puzzlecaptchas=パズルキャプチャ
