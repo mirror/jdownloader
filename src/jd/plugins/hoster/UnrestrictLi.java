@@ -416,7 +416,7 @@ public class UnrestrictLi extends PluginForHost {
 
         br.getPage("http://unrestrict.li/api/jdownloader/user.php");
         String expires = br.getRegex("<expires>(\\d+)</expires>").getMatch(0);
-        String traffic = br.getRegex("<traffic>(\\d+)</traffic>").getMatch(0);
+        String traffic = br.getRegex("<traffic>(-?\\d+)</traffic>").getMatch(0);
         if (expires != null) {
             account.setValid(true);
             ai.setValidUntil(Long.parseLong(expires) * 1000);
