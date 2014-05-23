@@ -7,6 +7,7 @@ import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -243,6 +244,7 @@ public class OBoomCom extends PluginForHost {
             for (DownloadLink link : links) {
                 String id = getFileID(link);
                 idLinks.put(id, link);
+                idLinks.put("lower_" + id.toLowerCase(Locale.ENGLISH), link);
                 if (sb.length() > 0) {
                     sb.append(",");
                 }
@@ -258,6 +260,9 @@ public class OBoomCom extends PluginForHost {
                     String name = getValue(fileInfo, "name");
                     String state = getValue(fileInfo, "state");
                     DownloadLink link = idLinks.get(id);
+                    if (link == null) {
+                        link = idLinks.get("lower_" + id.toLowerCase(Locale.ENGLISH));
+                    }
                     if (link == null) {
                         continue;
                     }
