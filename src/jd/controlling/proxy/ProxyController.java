@@ -401,6 +401,27 @@ public class ProxyController implements ProxySelectorInterface {
         return this.config.getLatestProfile();
     }
 
+    public AbstractProxySelectorImpl convert(HTTPProxy proxy) {
+        if (proxy != null) {
+            switch (proxy.getType()) {
+            case NONE:
+                return new NoProxySelector(proxy);
+            case DIRECT:
+                if (proxy.getLocalIP() == null) {
+                    return new NoProxySelector(proxy);
+                } else {
+                    return new SingleDirectGatewaySelector(proxy);
+                }
+            case HTTP:
+                return new SingleBasicProxySelectorImpl(proxy);
+            case SOCKS4:
+            case SOCKS5:
+                return new SingleBasicProxySelectorImpl(proxy);
+            }
+        }
+        return null;
+    }
+
     private List<AbstractProxySelectorImpl> loadProxySettings(final boolean allowInit) {
         final LinkedHashSet<AbstractProxySelectorImpl> proxies = new LinkedHashSet<AbstractProxySelectorImpl>();
         PacProxySelectorImpl advancedCondigPac = null;

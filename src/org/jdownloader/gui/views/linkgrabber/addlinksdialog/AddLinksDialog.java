@@ -220,7 +220,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         LinkCollectingJob ret = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.ADD_LINKS_DIALOG, null), input.getText());
         final boolean overwritePackagizerRules = isOverwritePackagizerEnabled();
         final String finalPackageName = packagename.getText().trim();
-        if (StringUtils.isNotEmpty(finalPackageName)) PackageHistoryManager.getInstance().add(finalPackageName);
+        if (StringUtils.isNotEmpty(finalPackageName)) {
+            PackageHistoryManager.getInstance().add(finalPackageName);
+        }
         final String finalComment = getComment().trim();
         final String finalDownloadPassword = downloadPassword.getText();
         final String finalDestination = destination.getFile() != null ? destination.getFile().getAbsolutePath() : null;
@@ -247,7 +249,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
             private PackageInfo getPackageInfo(CrawledLink link, boolean createIfNotExisting) {
                 PackageInfo packageInfo = link.getDesiredPackageInfo();
-                if (packageInfo != null || createIfNotExisting == false) return packageInfo;
+                if (packageInfo != null || createIfNotExisting == false) {
+                    return packageInfo;
+                }
                 packageInfo = new PackageInfo();
                 link.setDesiredPackageInfo(packageInfo);
                 return packageInfo;
@@ -269,7 +273,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     if (link.hasArchiveInfo()) {
                         existing = link.getArchiveInfo().getAutoExtract();
                     }
-                    if (overwritePackagizerRules || existing == null || BooleanStatus.UNSET.equals(existing)) link.getArchiveInfo().setAutoExtract(finalExtractStatus);
+                    if (overwritePackagizerRules || existing == null || BooleanStatus.UNSET.equals(existing)) {
+                        link.getArchiveInfo().setAutoExtract(finalExtractStatus);
+                    }
                 }
                 if (finalPriority != null && overwritePackagizerRules) {
                     link.setPriority(finalPriority);
@@ -277,10 +283,14 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                 DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
                     if (StringUtils.isNotEmpty(finalComment)) {
-                        if (overwritePackagizerRules || StringUtils.isEmpty(dlLink.getComment())) dlLink.setComment(finalComment);
+                        if (overwritePackagizerRules || StringUtils.isEmpty(dlLink.getComment())) {
+                            dlLink.setComment(finalComment);
+                        }
                     }
                     if (StringUtils.isNotEmpty(finalDownloadPassword)) {
-                        if (overwritePackagizerRules || StringUtils.isEmpty(dlLink.getDownloadPassword())) dlLink.setDownloadPassword(finalDownloadPassword);
+                        if (overwritePackagizerRules || StringUtils.isEmpty(dlLink.getDownloadPassword())) {
+                            dlLink.setDownloadPassword(finalDownloadPassword);
+                        }
                     }
                 }
                 if (StringUtils.isNotEmpty(finalDestination)) {
@@ -377,7 +387,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         String latest = config.getLatestDownloadDestinationFolder();
         if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
             destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
-
         } else {
             destination.setFile(new File(latest));
 
@@ -524,7 +533,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         }
                     }
                 }.start();
-                if (listener != null) getDialog().removeWindowListener(listener);
+                if (listener != null) {
+                    getDialog().removeWindowListener(listener);
+                }
             }
 
             public void windowIconified(WindowEvent e) {
@@ -560,11 +571,15 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     public static String list(String[] links) {
-        if (links == null || links.length == 0) { return ""; }
+        if (links == null || links.length == 0) {
+            return "";
+        }
         final StringBuilder ret = new StringBuilder();
 
         for (final String element : links) {
-            if (ret.length() > 0) ret.append("\r\n");
+            if (ret.length() > 0) {
+                ret.append("\r\n");
+            }
             ret.append(element.trim());
         }
         return ret.toString();
@@ -593,7 +608,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     protected void validateForm() {
-        if (input == null) return;
+        if (input == null) {
+            return;
+        }
         final String[] links = jd.parser.html.HTMLParser.getHttpLinks(input.getText());
         new EDTRunner() {
 
@@ -611,7 +628,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     input.setToolTipText(null);
                 }
                 if (!validateFolder(destination.getFile().getAbsolutePath())) {
-                    if (okButton.getToolTipText().length() == 0) okButton.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
+                    if (okButton.getToolTipText().length() == 0) {
+                        okButton.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
+                    }
                     okButton.setEnabled(false);
                     destination.setToolTipText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
                     confirmOptions.setEnabled(false);
@@ -621,16 +640,22 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     destination.setForeground(null);
                 }
                 if (okButton.isEnabled()) {
-                    if (cancelButton.hasFocus()) okButton.requestFocus();
+                    if (cancelButton.hasFocus()) {
+                        okButton.requestFocus();
+                    }
                 }
             }
         };
     }
 
     private boolean validateFolder(String text) {
-        if (text == null) return false;
+        if (text == null) {
+            return false;
+        }
         File file = new File(text);
-        if (file.isDirectory() && file.exists()) return true;
+        if (file.isDirectory() && file.exists()) {
+            return true;
+        }
         return file.getParentFile() != null && file.getParentFile().exists();
     }
 
@@ -646,7 +671,9 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     @Override
                     protected void runInEDT() {
                         if (input.isShowing()) {
-                            if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32));
+                            if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                                HelpDialog.show(Boolean.FALSE, Boolean.TRUE, new Point(input.getLocationOnScreen().x + input.getWidth() / 2, input.getLocationOnScreen().y + 10), null, Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.AddLinksDialog_AddLinksDialog_(), _GUI._.AddLinksDialog_layoutDialogContent_description(), NewTheme.I().getIcon("linkgrabber", 32));
+                            }
                         }
                     }
                 };
