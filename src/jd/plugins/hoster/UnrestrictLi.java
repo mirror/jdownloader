@@ -427,7 +427,7 @@ public class UnrestrictLi extends PluginForHost {
         } else {
             // Not a VIP member
             account.setValid(false);
-            // MessageDialog("Error", "Please upgrade to VIP to use this plugin", false);
+            // MessageDialog("Error", " Please upgrade to VIP to use this plugin", false);
             ai.setStatus("only VIP members can use this plugin");
             ai.setProperty("multiHostSupport", Property.NULL);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nThis service only accepts VIP accounts!\r\nDieser Anbieter akzeptiert nur VIP accounts!", PluginException.VALUE_ID_PREMIUM_DISABLE);
