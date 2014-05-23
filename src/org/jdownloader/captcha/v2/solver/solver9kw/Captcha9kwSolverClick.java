@@ -187,8 +187,9 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         }
 
         String moreoptions = "";
-        if (config.gethosteroptions().length() > 5) {
-            String[] list = config.gethosteroptions().split(";");
+        String hosterOptions = config.gethosteroptions();
+        if (hosterOptions != null && hosterOptions.length() > 5) {
+            String[] list = hosterOptions.split(";");
             for (String hosterline : list) {
                 if (hosterline.contains(captchaChallenge.getTypeID())) {
                     String[] listdetail = hosterline.split(":");
