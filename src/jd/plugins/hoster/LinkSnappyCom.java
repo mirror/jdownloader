@@ -52,13 +52,13 @@ public class LinkSnappyCom extends PluginForHost {
 
     public LinkSnappyCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.linksnappy.com/members/index.php?act=register");
+        this.enablePremium(HTTP_S + "linksnappy.com/members/index.php?act=register");
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.linksnappy.com/index.php?act=tos";
+        return HTTP_S + "linksnappy.com/index.php?act=tos";
     }
 
     private static Object       LOCK                   = new Object();
@@ -66,6 +66,7 @@ public class LinkSnappyCom extends PluginForHost {
     private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
 
     private static final String COOKIE_HOST            = "http://linksnappy.com";
+    private static final String HTTP_S                 = "https://";
     private static final int    MAX_DOWNLOAD_ATTEMPTS  = 10;
     private static final int    MAX_CHUNKS             = 0;
 
@@ -154,7 +155,7 @@ public class LinkSnappyCom extends PluginForHost {
         }
 
         /* now it's time to get all supported hosts */
-        getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=FILEHOSTS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
+        getPageSecure(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=FILEHOSTS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
         if (br.containsHTML("\"error\":\"Account has exceeded")) {
             dailyLimitReached();
         }
@@ -261,7 +262,7 @@ public class LinkSnappyCom extends PluginForHost {
         } else {
             if (use_api) {
                 for (int i = 1; i <= MAX_DOWNLOAD_ATTEMPTS; i++) {
-                    getPageSecure("http://gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
+                    getPageSecure(HTTP_S + "gen.linksnappy.com/genAPI.php?genLinks=" + encode("{\"link\"+:+\"" + link.getDownloadURL() + "\",+\"username\"+:+\"" + account.getUser() + "\",+\"password\"+:+\"" + account.getPass() + "\"}"));
                     if (!attemptDownload()) {
                         continue;
                     }
@@ -274,7 +275,7 @@ public class LinkSnappyCom extends PluginForHost {
                      * IMPORTANT: Even though we're on the site here, https is not forced here - last time I checked it did not even work
                      * via https (20.05.14)
                      */
-                    getPageSecure("http://gen.linksnappy.com/genAPI.php?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&genLinks=%7B%22link%22+%3A+%22" + Encoding.urlEncode(link.getDownloadURL()) + "%22%2C+%22type%22+%3A+%22%22%2C+%22linkpass%22+%3A+%22%22%2C+%22fmt%22+%3A+%2235%22%2C+%22ytcountry%22+%3A+%22usa%22%7D&_=" + System.currentTimeMillis());
+                    getPageSecure(HTTP_S + "gen.linksnappy.com/genAPI.php?callback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&genLinks=%7B%22link%22+%3A+%22" + Encoding.urlEncode(link.getDownloadURL()) + "%22%2C+%22type%22+%3A+%22%22%2C+%22linkpass%22+%3A+%22%22%2C+%22fmt%22+%3A+%2235%22%2C+%22ytcountry%22+%3A+%22usa%22%7D&_=" + System.currentTimeMillis());
                     if (br.containsHTML("\"status\": \"Error\"")) {
                         if (br.containsHTML("\"error\": \"Unauthorized\"")) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI problems 'Unauthorized'!\r\nPlease try again later!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -333,7 +334,7 @@ public class LinkSnappyCom extends PluginForHost {
                 if (!use_api && this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY, default_clear_download_history)) {
                     boolean history_deleted = false;
                     try {
-                        br.getPage("https://linksnappy.com/includes/deletelinks.php?id=all");
+                        br.getPage(HTTP_S + "linksnappy.com/includes/deletelinks.php?id=all");
                         if (br.toString().trim().equals("OK")) {
                             history_deleted = true;
                         }
@@ -424,7 +425,7 @@ public class LinkSnappyCom extends PluginForHost {
     private boolean api_login(final Account account) throws Exception {
         /** Load cookies */
         br.setCookiesExclusive(true);
-        getPageSecure("http://gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
+        getPageSecure(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + account.getUser() + "&password=" + JDHash.getMD5(account.getPass()));
         if (br.containsHTML("\"status\":\"ERROR\"")) {
             return false;
         }
@@ -454,12 +455,12 @@ public class LinkSnappyCom extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            postPageSecure("https://linksnappy.com/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            postPageSecure(HTTP_S + "linksnappy.com/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             if (br.getCookie(COOKIE_HOST, "lseSavePass") == null) {
                 return false;
             }
             /* Valid account --> Check if the account type is supported */
-            br.getPage("https://linksnappy.com/myaccount");
+            br.getPage(HTTP_S + "linksnappy.com/myaccount");
             if (br.containsHTML("<strong>Account Type:</strong>[\t\n\r ]+Free")) {
                 return false;
             }

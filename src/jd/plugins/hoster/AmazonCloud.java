@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "http://(www\\.)?amazon\\.(de|es)/gp/drive/share\\?ie=UTF8\\&s=[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "http://(www\\.)?amazon\\.(de|es|com\\.au)/gp/drive/share\\?ie=[A-Za-z0-9]+\\&s=[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class AmazonCloud extends PluginForHost {
 
     public AmazonCloud(PluginWrapper wrapper) {
@@ -45,10 +45,14 @@ public class AmazonCloud extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("id=\"error_page\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("id=\"error_page\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("fileName = \"([^<>\"]*?)\"").getMatch(0);
         final String filesize = br.getRegex("fSize = \"(\\d+)\"").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
@@ -58,14 +62,18 @@ public class AmazonCloud extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String deviceserial = br.getRegex("sNum = \"([^<>\"]*?)\"").getMatch(0);
-        if (deviceserial == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (deviceserial == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String domain = new Regex(br.getURL(), "(amazon\\.[a-z]+)/").getMatch(0);
         final String shareid = new Regex(downloadLink.getDownloadURL(), "\\&s=(.+)").getMatch(0);
         final String getlink = "http://www." + domain + "/gp/drive/share/downloadFile.html?_=" + System.currentTimeMillis() + "&sharedId=" + Encoding.urlEncode(shareid) + "&download=TRUE&deviceType=ubid&deviceSerialNumber=" + deviceserial;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage(getlink);
         final String dllink = br.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

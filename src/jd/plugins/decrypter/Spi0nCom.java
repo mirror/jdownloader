@@ -44,7 +44,7 @@ public class Spi0nCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (!br.containsHTML("itemprop=\"video\"")) {
+        if (!br.containsHTML("id=\"container\"")) {
             logger.info("Link offline (no video on this page?!): " + parameter);
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
@@ -53,8 +53,8 @@ public class Spi0nCom extends PluginForDecrypt {
         }
         String finallink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/video/[A-Za-z0-9\\-_]+)\"").getMatch(0);
         if (finallink == null) {
-            finallink = br.getRegex("\"(//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"").getMatch(0);
-            if (finallink != null) {
+            finallink = br.getRegex("\"((http:)?//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"").getMatch(0);
+            if (finallink != null && !finallink.startsWith("http:")) {
                 finallink = "http:" + finallink;
             }
         }

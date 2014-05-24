@@ -16,9 +16,17 @@
 
 package jd.plugins.hoster;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Scanner;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,12 +38,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([a-z0-9\\-_/]+/sendungen/[a-z0-9\\-_/]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://wdrdecrypted\\.de/\\?format=(mp3|mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" }, flags = { 0 })
 public class WdrDeMediathek extends PluginForHost {
 
     public WdrDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     private String DLLINK = null;
@@ -48,68 +58,55 @@ public class WdrDeMediathek extends PluginForHost {
     private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
     private static final String TYPE_INVALID    = "http://([a-z0-9]+\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
 
+    private static final String Q_LOW           = "Q_LOW";
+    private static final String Q_MEDIUM        = "Q_MEDIUM";
+    private static final String Q_BEST          = "Q_BEST";
+    private static final String Q_SUBTITLES     = "Q_SUBTITLES";
+
     public void correctDownloadLink(final DownloadLink link) {
         final String player_part = new Regex(link.getDownloadURL(), "(\\-videoplayer(_size\\-[A-Z])?\\.html)").getMatch(0);
-        if (player_part != null) link.setUrlDownload(link.getDownloadURL().replace(player_part, ".html"));
+        if (player_part != null) {
+            link.setUrlDownload(link.getDownloadURL().replace(player_part, ".html"));
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getDownloadURL().matches(TYPE_INVALID) || downloadLink.getDownloadURL().contains("filterseite-") || downloadLink.getDownloadURL().contains("uebersicht")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().matches(TYPE_INVALID) || downloadLink.getDownloadURL().contains("filterseite-") || downloadLink.getDownloadURL().contains("uebersicht") || downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String startLink = downloadLink.getDownloadURL();
+        final String startLink = downloadLink.getStringProperty("mainlink");
         br.getPage(startLink);
 
-        if (br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        if (startLink.matches(TYPE_ROCKPALAST)) return requestRockpalastFileInformation(downloadLink);
-
-        if (br.getURL().contains("/fehler.xml")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String sendung = br.getRegex("<strong>([^<>\"]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
-        if (sendung == null) sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>\"]*?)<span class=\"hover\">").getMatch(0);
-        if (sendung == null) sendung = br.getRegex("<li class=\"active\" >[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatch(0);
-        if (sendung == null) sendung = br.getRegex("<div id=\"initialPagePart\">[\t\n\r ]+<h1>[\t\n\r ]+<span>([^<>\"]*?)<span class=\"hidden\">:</span>").getMatch(0);
-        String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>\"]*?)<span class=\"hover\"").getMatch(0);
-        if (episode_name == null) episode_name = br.getRegex("class=\"hover\">:([^<>\"]*?)</span>").getMatch(0);
-        if (sendung == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String preferedExt = ".mp4";
-        if (br.containsHTML("<div class=\"audioContainer\">")) {
-            DLLINK = br.getRegex("dslSrc: \\'dslSrc=(http://[^<>\"]*?)\\&amp;mediaDuration=\\d+\\'").getMatch(0);
-            preferedExt = ".mp3";
-        } else {
-            String player_link = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
-            if (player_link == null) player_link = br.getRegex("\"(/[^<>\"]*?)\" rel=\"nofollow\" class=\"videoButton play\"").getMatch(0);
-            if (player_link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage("http://www1.wdr.de" + player_link);
-            /* Avoid HDS */
-            final String[] qualities = br.getRegex("(CMS2010/mdb/ondemand/weltweit/fsk\\d+/[^<>\"]*?)\"").getColumn(0);
-            if (qualities == null || qualities.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = "http://http-ras.wdr.de/" + qualities[0];
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        if (startLink.matches(TYPE_ROCKPALAST)) {
+            return requestRockpalastFileInformation(downloadLink);
+        }
+
+        if (br.getURL().contains("/fehler.xml")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filename = downloadLink.getStringProperty("plain_filename", null);
+        DLLINK = downloadLink.getStringProperty("direct_link", null);
 
         DLLINK = Encoding.htmlDecode(DLLINK.trim());
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = preferedExt;
-        sendung = encodeUnicode(Encoding.htmlDecode(sendung).trim());
-        if (episode_name != null) {
-            episode_name = Encoding.htmlDecode(episode_name).trim();
-            episode_name = encodeUnicode(episode_name);
-            downloadLink.setFinalFileName(sendung + " - " + episode_name + ext);
-        } else {
-            downloadLink.setFinalFileName(sendung + ext);
-        }
+        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -122,7 +119,9 @@ public class WdrDeMediathek extends PluginForHost {
     private AvailableStatus requestRockpalastFileInformation(final DownloadLink downloadlink) throws IOException, PluginException {
         String fileName = br.getRegex("<h1 class=\"wsSingleH1\">([^<]+)</h1>[\r\n]+<h2>([^<]+)<").getMatch(0);
         DLLINK = br.getRegex("dslSrc=(.*?)\\&amp").getMatch(0);
-        if (fileName == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileName == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadlink.setFinalFileName(encodeUnicode(Encoding.htmlDecode(fileName).trim()) + ".mp4");
         return AvailableStatus.TRUE;
     }
@@ -155,7 +154,9 @@ public class WdrDeMediathek extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
+            if (this.dl.startDownload()) {
+                this.postprocess(downloadLink);
+            }
         }
     }
 
@@ -165,9 +166,110 @@ public class WdrDeMediathek extends PluginForHost {
         rtmp.setResume(true);
     }
 
+    private void postprocess(final DownloadLink downloadLink) {
+        if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
+            if (!convertSubtitle(downloadLink)) {
+                logger.severe("Subtitle conversion failed!");
+            } else {
+                downloadLink.setFinalFileName(downloadLink.getStringProperty("plain_filename", null).replace(".xml", ".srt"));
+            }
+        }
+    }
+
+    /**
+     * Converts the ZDF Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * 
+     * @return The success of the conversion.
+     */
+    public boolean convertSubtitle(final DownloadLink downloadlink) {
+        final File source = new File(downloadlink.getFileOutput());
+
+        BufferedWriter dest;
+        try {
+            dest = new BufferedWriter(new FileWriter(new File(source.getAbsolutePath().replace(".xml", ".srt"))));
+        } catch (IOException e1) {
+            return false;
+        }
+
+        final StringBuilder xml = new StringBuilder();
+        int counter = 1;
+        final String lineseparator = System.getProperty("line.separator");
+
+        Scanner in = null;
+        try {
+            in = new Scanner(new FileReader(source));
+            while (in.hasNext()) {
+                xml.append(in.nextLine() + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            in.close();
+        }
+        final String xmlContent = xml.toString();
+        /* Find hex color text --> code assignments */
+        final HashMap<String, String> color_codes = new HashMap<String, String>();
+        final String[][] found_color_codes = new Regex(xmlContent, "xml:id=\"([A-Za-z]+)\" tts:color=\"(#[A-Z0-9]+)\"").getMatches();
+        if (found_color_codes != null && found_color_codes.length != 0) {
+            for (final String[] color_info : found_color_codes) {
+                color_codes.put(color_info[0], color_info[1]);
+            }
+        }
+
+        final String[] matches = new Regex(xmlContent, "(<tt:p xml:id=\"sub\\d+\".*?</tt:p>)").getColumn(0);
+        try {
+            for (final String info : matches) {
+                dest.write(counter++ + lineseparator);
+                final Regex startInfo = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                final Regex endInfo = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                final String start = startInfo.getMatch(0) + "," + startInfo.getMatch(1);
+                final String end = endInfo.getMatch(0) + "," + endInfo.getMatch(1);
+                dest.write(start + " --> " + end + lineseparator);
+
+                final String[][] texts = new Regex(info, "<tt:span style=\"([A-Za-z0-9]+)\">([^<>\"]*?)</tt:span>").getMatches();
+                String text = "";
+                int line_counter = 1;
+                for (final String[] textinfo : texts) {
+                    final String color = textinfo[0];
+                    final String colorcode = color_codes.get(color);
+                    String line = textinfo[1];
+                    text += "<font color=" + colorcode + ">" + line + "</font>";
+                    /* Add linebreak as long as we're not at the last line of this statement */
+                    if (line_counter != texts.length) {
+                        text += lineseparator;
+                    }
+                    line_counter++;
+                }
+                dest.write(text + lineseparator + lineseparator);
+            }
+        } catch (Exception e) {
+            return false;
+        } finally {
+            try {
+                dest.close();
+            } catch (IOException e) {
+            }
+        }
+
+        source.delete();
+
+        return true;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.wdrdemediathek.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: "));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.wdrdemediathek.best", "Load best version ONLY")).setDefaultValue(false);
+        getConfig().addEntry(bestonly);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.wdrdemediathek.loadlow", "Load 512x288 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.wdrdemediathek.loadmedium", "Load 960x544 version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
     }
 
     @Override
