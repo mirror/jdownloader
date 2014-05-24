@@ -346,13 +346,13 @@ public class ARDMediathek extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    private boolean isEmpty(String ip) {
+        return ip == null || ip.trim().length() == 0;
+    }
+
     @Override
     public String getDescription() {
         return "JDownloader's ARD Plugin helps downloading videoclips from ardmediathek.de and daserste.de. You can choose between different video qualities.";
-    }
-
-    private boolean isEmpty(String ip) {
-        return ip == null || ip.trim().length() == 0;
     }
 
     private void setConfigElements() {

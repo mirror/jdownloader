@@ -177,7 +177,7 @@ public class WdrDeMediathek extends PluginForHost {
     }
 
     /**
-     * Converts the ZDF Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the WDR Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      * 
      * @return The success of the conversion.
      */
@@ -259,6 +259,11 @@ public class WdrDeMediathek extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's WDR Plugin helps downloading videoclips from wdr.de. You can choose between different video qualities.";
     }
 
     private void setConfigElements() {

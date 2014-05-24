@@ -122,7 +122,7 @@ public class VKontakteRu extends PluginForDecrypt {
         cfg = SubConfiguration.getConfig("vkontakte.ru");
         prepBrowser(br);
         boolean loginrequired = true;
-        /** Check/fix links before browser access START */
+        /* Check/fix links before browser access START */
         if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE)) {
             /**
              * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
@@ -183,9 +183,9 @@ public class VKontakteRu extends PluginForDecrypt {
                         // wall/user-id and build albums url
                         String profileAlbums;
                         if (br.containsHTML("id=\"profile_photos_module\"")) {
-                            profileAlbums = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"(/albums\\d+)\"").getMatch(0);
+                            profileAlbums = br.getRegex("id=\"profile_albums\">[\t\n\r ]+<a href=\"/albums(\\d+)\"").getMatch(0);
                             if (profileAlbums == null) {
-                                profileAlbums = br.getRegex("id=\"profile_photos_module\">[\t\n\r ]+<a href=\"(/albums\\d+)").getMatch(0);
+                                profileAlbums = br.getRegex("id=\"profile_photos_module\">[\t\n\r ]+<a href=\"/albums(\\d+)").getMatch(0);
                             }
                         } else {
                             profileAlbums = get_wall_id();
@@ -294,6 +294,9 @@ public class VKontakteRu extends PluginForDecrypt {
                         return null;
                     } else {
                         if (br.containsHTML("You are not allowed to view this community\\&#39;s wall|Вы не можете просматривать стену этого сообщества|Nie mo\\&#380;esz ogl\\&#261;da\\&#263; \\&#347;ciany tej spo\\&#322;eczno\\&#347;ci")) {
+                            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                        } else if (br.containsHTML("id=\"wall_empty\"")) {
+                            logger.info("Wall is empty: " + CRYPTEDLINK_FUNCTIONAL);
                             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                         }
                         decryptWallLink();
