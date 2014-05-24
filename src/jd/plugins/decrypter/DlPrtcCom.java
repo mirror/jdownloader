@@ -51,11 +51,11 @@ public class DlPrtcCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String                   CAPTCHATEXT    = ">Security Code";
-    private final String                   CAPTCHAFAILED  = ">The security code is incorrect";
-    private final String                   PASSWORDTEXT   = ">Password :";
-    private final String                   PASSWORDFAILED = ">The password is incorrect";
-    private final String                   JDDETECTED     = "JDownloader is prohibited.";
+    private final String                   CAPTCHATEXT    = ">\\s*Security\\s*Code";
+    private final String                   CAPTCHAFAILED  = ">\\s*The\\s*security\\s*code\\s*is\\s*incorrect";
+    private final String                   PASSWORDTEXT   = ">\\s*Password\\s*:";
+    private final String                   PASSWORDFAILED = ">\\s*The\\s*password\\s*is\\s*incorrect";
+    private final String                   JDDETECTED     = "JDownloader\\s*is\\s*prohibited.";
     private static AtomicReference<String> agent          = new AtomicReference<String>(null);
     private static AtomicReference<Object> cookieMonster  = new AtomicReference<Object>();
     private static AtomicInteger           maxConProIns   = new AtomicInteger(1);
@@ -129,7 +129,7 @@ public class DlPrtcCom extends PluginForDecrypt {
             // new 20140522
             if (true) {
                 for (Form f : cbr.getForms()) {
-                    if (f.containsHTML("Please click on continue to see the links") && (!cbr.containsHTML(PASSWORDTEXT) || !cbr.containsHTML(CAPTCHATEXT))) {
+                    if (f.containsHTML("Please\\s*click\\s*on\\s*continue\\s*to\\s*see\\s*the\\s*links") && (!cbr.containsHTML(PASSWORDTEXT) || !cbr.containsHTML(CAPTCHATEXT))) {
                         sendForm(f);
                     }
                 }
