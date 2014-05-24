@@ -55,6 +55,7 @@ public class DlPrtcCom extends PluginForDecrypt {
     private final String                   CAPTCHAFAILED  = ">\\s*The\\s*security\\s*code\\s*is\\s*incorrect";
     private final String                   PASSWORDTEXT   = ">\\s*Password\\s*:";
     private final String                   PASSWORDFAILED = ">\\s*The\\s*password\\s*is\\s*incorrect";
+    private final String                   SECONDARY      = "Please\\s*click\\s*on\\s*continue\\s*to\\s*see\\s*the\\s*links";
     private final String                   JDDETECTED     = "JDownloader\\s*is\\s*prohibited.";
     private static AtomicReference<String> agent          = new AtomicReference<String>(null);
     private static AtomicReference<Object> cookieMonster  = new AtomicReference<Object>();
@@ -126,14 +127,6 @@ public class DlPrtcCom extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            // new 20140522
-            if (true) {
-                for (Form f : cbr.getForms()) {
-                    if (f.containsHTML("Please\\s*click\\s*on\\s*continue\\s*to\\s*see\\s*the\\s*links") && (!cbr.containsHTML(PASSWORDTEXT) || !cbr.containsHTML(CAPTCHATEXT))) {
-                        sendForm(f);
-                    }
-                }
-            }
             if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(CAPTCHATEXT)) {
                 int repeat = 2;
                 for (int i = 0; i != repeat; i++) {
@@ -197,7 +190,7 @@ public class DlPrtcCom extends PluginForDecrypt {
             // getPage(parameter);
             // }
 
-            if (cbr.containsHTML(">Please click on continue to see")) {
+            if (cbr.containsHTML(SECONDARY)) {
                 br.cloneBrowser().getPage("/pub_footer.html");
                 Form continueForm = getContinueForm();
                 if (continueForm == null) {
@@ -267,17 +260,33 @@ public class DlPrtcCom extends PluginForDecrypt {
     }
 
     private Form getForm() {
-        Form theForm = cbr.getFormbyProperty("name", "ccerure");
+        Form theForm = null;
+        for (Form f : cbr.getForms()) {
+            if (f.containsHTML(CAPTCHATEXT)) {
+                theForm = f;
+            }
+        }
         if (theForm == null) {
-            theForm = cbr.getForm(0);
+            theForm = cbr.getFormbyProperty("name", "ccerure");
+            if (theForm == null) {
+                theForm = cbr.getForm(0);
+            }
         }
         return theForm;
     }
 
     private Form getContinueForm() {
-        Form theForm = cbr.getFormbyProperty("name", "submitform");
+        Form theForm = null;
+        for (Form f : cbr.getForms()) {
+            if (f.containsHTML(SECONDARY)) {
+                theForm = f;
+            }
+        }
         if (theForm == null) {
-            theForm = cbr.getForm(0);
+            theForm = cbr.getFormbyProperty("name", "ccerure");
+            if (theForm == null) {
+                theForm = cbr.getForm(0);
+            }
         }
         return theForm;
     }
