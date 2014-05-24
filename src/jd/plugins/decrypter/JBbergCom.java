@@ -82,13 +82,15 @@ public class JBbergCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String fpName = br.getRegex("file-name\">([^<>\"]+)</h1>").getMatch(0);
+        final String fpName = br.getRegex("file-?name\">([^<>\"]+)</h1>").getMatch(0);
         final String linkID = new Regex(parameter, "/(captcha|download|mirrors)/(.*)").getMatch(1);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(linkID);
-        if (fpName != null) fp.setName(Encoding.htmlDecode(fpName.trim()));
+        if (fpName != null) {
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+        }
 
-        br.getPage(parameter.replaceFirst("/(captcha|download)/", "/mirrors/"));
+        br.getPage(parameter.replaceFirst("/(captcha|download)/", "/mirrors/") + (!parameter.endsWith("/") ? "/" : ""));
         String[] results = br.getRegex("\"(/redirect/[^<>\"]*?)\"").getColumn(0);
         if (results == null || results.length == 0) {
             if (br.containsHTML("Débrider maintenant \\!<|>Hébergeur indisponible</")) {
@@ -100,7 +102,9 @@ public class JBbergCom extends PluginForDecrypt {
         }
         for (final String result : results) {
             final String hoster = result;
-            if (filter.add(hoster) == false) continue;
+            if (filter.add(hoster) == false) {
+                continue;
+            }
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(false);
             br2.getPage(hoster);
@@ -145,7 +149,9 @@ public class JBbergCom extends PluginForDecrypt {
                 for (int i = 0; i < 3; i++) {
                     if (username == null || password == null) {
                         username = UserIO.getInstance().requestInputDialog(JDL.L("plugins.decrypter.jbergcom.login", "Enter login for jheberg.com or enter nothing if you don't wish to use an account."));
-                        if (username == null) return false;
+                        if (username == null) {
+                            return false;
+                        }
                         /**
                          * User doesn't want login, skip it completely next time
                          */
@@ -154,7 +160,9 @@ public class JBbergCom extends PluginForDecrypt {
                             return false;
                         }
                         password = UserIO.getInstance().requestInputDialog(JDL.L("plugins.decrypter.jbergcom.password", "Enter password for jheberg.com:"));
-                        if (password == null) return false;
+                        if (password == null) {
+                            return false;
+                        }
                     }
                     if (!loginSite(username, password)) {
                         break;
@@ -203,7 +211,9 @@ public class JBbergCom extends PluginForDecrypt {
     private boolean loginSite(String username, String password) throws Exception {
         br.postPage("http://www.jheberg.net/login.html", "pseudo=" + Encoding.urlEncode(username) + "&password=" + Encoding.urlEncode(password));
         br.getPage("http://www.jheberg.net/account.html");
-        if (!br.containsHTML("<h1>Bonjour " + username)) return false;
+        if (!br.containsHTML("<h1>Bonjour " + username)) {
+            return false;
+        }
         return true;
     }
 
