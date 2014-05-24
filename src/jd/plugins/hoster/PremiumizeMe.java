@@ -124,7 +124,7 @@ public class PremiumizeMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if (link != null) {
+        if (link != null && account != null) {
             Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_hoster");
             if (ret != null && ret instanceof Integer) {
                 return (Integer) ret;
