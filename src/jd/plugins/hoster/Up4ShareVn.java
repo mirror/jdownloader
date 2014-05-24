@@ -331,7 +331,7 @@ public class Up4ShareVn extends PluginForHost {
             try {
                 br.postPage(string, string2);
             } catch (final BrowserException e) {
-                if (e.getCause().toString().contains("ConnectException")) {
+                if (e.getCause() != null && e.getCause().toString().contains("ConnectException")) {
                     continue;
                 } else {
                     throw e;
