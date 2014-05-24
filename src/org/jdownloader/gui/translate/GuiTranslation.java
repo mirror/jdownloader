@@ -3080,7 +3080,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Format: pluginname:prio=1:timeout=999;pluginname2:prio=0:timeout=999:min=2:max=50;" })
     String NinekwService_createPanel_hosteroptions_description1();
 
-    @Default(lngs = { "en" }, values = { "Allowed values: : prio, max, min, case-sensitive, numeric, cph, phrase, math, selfsolfe, confirm, ocr, nomd5, timeout" })
+    @Default(lngs = { "en" }, values = { "Allowed values: : prio, max, min, case-sensitive, numeric, cph, phrase, math, selfsolve, confirm, ocr, nomd5, timeout" })
     String NinekwService_createPanel_hosteroptions_description2();
 
     @Default(lngs = { "en" }, values = { "Specifies whether certain Hoster are allowed or forbidden." })

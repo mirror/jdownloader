@@ -723,7 +723,7 @@ NinekwService_createPanel_ms=ms
 NinekwService_createPanel_useragent_description=Ein Useragent kann eine Auswirkung bei Captchas von Recaptcha und Solvemedia haben um eventuell leichtere Bilder zu erhalten.
 NinekwService_createPanel_debug_description=Zeichnet bei Aktivierung alle Vorgänge mit Captchas und 9kw.eu in eine temporäre Log auf.
 NinekwService_createPanel_hosteroptions_description1=Format: pluginname:prio=1:timeout=999;pluginname2:prio=0:timeout=999:min=2:max=50;
-NinekwService_createPanel_hosteroptions_description2=Erlaubte Werte: prio, max, min, case-sensitive, numeric, cph, phrase, math, selfsolfe, confirm, ocr, nomd5, timeout
+NinekwService_createPanel_hosteroptions_description2=Erlaubte Werte: prio, max, min, case-sensitive, numeric, cph, phrase, math, selfsolve, confirm, ocr, nomd5, timeout
 NinekwService_createPanel_9kwtimeoutother_tooltiptext=Aktiviert eine neue Zeitüberschreitung als maximalem Wert für die eingestellten Hoster.
 captchabrotherhoodService_createPanel_blackwhitelist_des=Bestimmt ob auf Wunsch bestimmte Hoster erlaubt oder verboten sind.
 NinekwService_getDescription_tt_=Durch den 9kw.eu - Captcha-Service gelöste Captchas
