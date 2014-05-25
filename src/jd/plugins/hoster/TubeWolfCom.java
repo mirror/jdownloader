@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubewolf.com" }, urls = { "http://(www\\.)?tubewolf\\.com/movies/[\\w\\-]+" }, flags = { 0 })
 public class TubeWolfCom extends PluginForHost {
 
-    /* All similar: TubeWolfCom, AlphaPornoCom, BravoTubeNet */
+    /* All similar: TubeWolfCom, AlphaPornoCom, BravoTubeNet, BravoTeensCom */
     private String               DLLINK               = null;
     private String               AHV                  = "MTEyYjA4ZTBiOGU0MWIxNmU2ZjFiZjMxYzZjZTEyNWQ=";
     private static final boolean ENABLE_HIGH_SECURITY = false;
@@ -73,13 +73,17 @@ public class TubeWolfCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Sorry, this video has been deleted")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(">Sorry, this video has been deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf(".")).replaceAll("\\W", "");

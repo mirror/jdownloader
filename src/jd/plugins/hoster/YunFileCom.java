@@ -82,7 +82,9 @@ public class YunFileCom extends PluginForHost {
     private void checkErrors() throws NumberFormatException, PluginException {
         if (br.containsHTML(">You reached your hourly traffic limit")) {
             final String waitMins = br.getRegex("style=\" color: green; font-size: 28px; \">(\\d+)</span> minutes</span>").getMatch(0);
-            if (waitMins != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitMins) * 60 * 1001l);
+            if (waitMins != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitMins) * 60 * 1001l);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         }
     }
@@ -115,19 +117,33 @@ public class YunFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followConnection();
-        if (br.containsHTML("<title> \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<title> \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Access denied
-        if (br.containsHTML("Access denied<|资源已被禁止访问</span>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Access denied<|资源已被禁止访问</span>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Not found
-        if (br.containsHTML("<span>资源未找到</span>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<span>资源未找到</span>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null, filesize = null;
         // if (br.getURL().matches("http://page\\d+\\.yunfile.com/fs/[a-z0-9]+/")) ;
         filename = br.getRegex("class=\"title\">Downloading:\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- Yunfile\\.com \\- Free File Hosting and Sharing, Permanently Save </title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;([^<>\"]*?)</h2>").getMatch(0);
+        }
         filesize = br.getRegex("文件大小: <b>([^<>\"]*?)</b>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("File Size: <b>([^<>\"]*?)</b>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("File Size: <b>([^<>\"]*?)</b>").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -136,24 +152,38 @@ public class YunFileCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("您需要下载等待 <")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
+        if (br.containsHTML("您需要下载等待 <")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
+        }
         doFree(downloadLink);
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("您需要下载等待 <")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
+        if (br.containsHTML("您需要下载等待 <")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1001l);
+        }
         checkErrors();
         final Regex siteInfo = br.getRegex("<span style=\"font\\-weight:bold;\">\\&nbsp;\\&nbsp;<a href=\"(http://[a-z0-9]+\\.yunfile.com)/ls/([A-Za-z0-9\\-_]+)/\"");
         String userid = siteInfo.getMatch(1);
-        if (userid == null) userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
+        if (userid == null) {
+            userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
+        }
         String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/([a-z0-9]+)").getMatch(0);
-        if (fileid == null) fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/([A-Za-z0-9]+)/$").getMatch(0);
-        if (fileid == null) fileid = br.getRegex("\\&fileId=([A-Za-z0-9]+)\\&").getMatch(0);
-        if (userid == null || fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileid == null) {
+            fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/([A-Za-z0-9]+)/$").getMatch(0);
+        }
+        if (fileid == null) {
+            fileid = br.getRegex("\\&fileId=([A-Za-z0-9]+)\\&").getMatch(0);
+        }
+        if (userid == null || fileid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String freelink = getFreelink();
         String domain = siteInfo.getMatch(0);
-        if (domain == null) domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
+        if (domain == null) {
+            domain = new Regex(br.getURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
+        }
         if (freelink != null) {
             freelink = domain + freelink;
         } else {
@@ -173,9 +203,12 @@ public class YunFileCom extends PluginForHost {
             final String code = getCaptchaCode(domain + "/verifyimg/getPcv.html", downloadLink);
             freelink = freelink.replace(".html", "/" + Encoding.urlEncode(code) + ".html");
         }
+        br.cloneBrowser().getPage("http://www.yunfile.com//counter.jsp?userId=" + userid + "&fileId=" + fileid + "&dr=");
         int wait = 30;
         String shortWaittime = br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
-        if (shortWaittime != null) wait = Integer.parseInt(shortWaittime);
+        if (shortWaittime != null) {
+            wait = Integer.parseInt(shortWaittime);
+        }
         sleep(wait * 1001l, downloadLink);
         br.getPage(freelink);
 
@@ -186,7 +219,9 @@ public class YunFileCom extends PluginForHost {
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
 
         if (vid == null || action == null || md5 == null || vid1 == null) {
-            if (br.containsHTML("verifyimg/getPcv\\.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("verifyimg/getPcv\\.html")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
@@ -202,7 +237,9 @@ public class YunFileCom extends PluginForHost {
 
     private String getFreelink() {
         String freelink = br.getRegex("\"(/file/down/[^<>\"]*?)\"[\t\n\r ]+id=\"downpage_link\"").getMatch(0);
-        if (freelink == null) freelink = br.getRegex("\"(/file/down/(?!guest)[^<>\"]*?)\"").getMatch(0);
+        if (freelink == null) {
+            freelink = br.getRegex("\"(/file/down/(?!guest)[^<>\"]*?)\"").getMatch(0);
+        }
         return freelink;
     }
 
@@ -216,7 +253,9 @@ public class YunFileCom extends PluginForHost {
         } else {
             final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
             String dllink = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            }
             String[] counter = br.getRegex("document.getElementById\\(\\'.*?\\'\\)\\.src = \"([^\"]+)").getColumn(0);
             if (counter != null || counter.length < 0) {
                 String referer = br.getURL();
@@ -304,7 +343,9 @@ public class YunFileCom extends PluginForHost {
             br.setFollowRedirects(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
-            if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+            if (acmatch) {
+                acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("jforumUserHash") && account.isValid()) {

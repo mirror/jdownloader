@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bravotube.net" }, urls = { "http://(www\\.)?bravotube\\.net/videos/[\\w\\-]+" }, flags = { 0 })
 public class BravoTubeNet extends PluginForHost {
 
-    /* All similar: TubeWolfCom, AlphaPornoCom, BravoTubeNet */
+    /* All similar: TubeWolfCom, AlphaPornoCom, BravoTubeNet, BravoTeensCom */
     private String               DLLINK               = null;
     private String               AHV                  = "OTkwOGI4ZGMyYTgwMGY5NmY4NTQ1ZjczZGZmNWExYzM=";
     private static final boolean ENABLE_HIGH_SECURITY = false;
@@ -73,14 +73,20 @@ public class BravoTubeNet extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(<title>Page Not Found|>Channels</h1>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"heading\"><h2>(.*?)</h2></div>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         DLLINK = br.getRegex("video_url:.*?'(http://.*?)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("(\\'|\")(http://(www\\.)?bravotube\\.net/get_file/[^<>\"]*?)(\\'|\")").getMatch(1);
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(\\'|\")(http://(www\\.)?bravotube\\.net/get_file/[^<>\"]*?)(\\'|\")").getMatch(1);
+        }
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf(".")).replaceAll("\\W", "");
