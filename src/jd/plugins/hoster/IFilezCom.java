@@ -217,7 +217,7 @@ public class IFilezCom extends PluginForHost {
                 if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (!br.containsHTML("class=\\'user_info\\'>Premium:")) {
+                if (!br.containsHTML("premium\">Premium<")) {
                     account.setProperty("freeacc", true);
                 } else {
                     account.setProperty("freeacc", false);
@@ -262,7 +262,7 @@ public class IFilezCom extends PluginForHost {
             }
             ai.setStatus("Registered (free) user");
         } else {
-            String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})</a></div").getMatch(0);
+            String expire = br.getRegex("href=\\'/myspace/space/premium\\'>(\\d{2}\\.\\d{2}\\.\\d{2} \\d{2}:\\d{2})<").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
