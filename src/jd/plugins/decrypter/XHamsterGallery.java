@@ -52,7 +52,7 @@ public class XHamsterGallery extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("Sorry, no photos found|>Gallery not found<")) {
+        if (br.containsHTML("Sorry, no photos found|error\">Gallery not found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -93,7 +93,7 @@ public class XHamsterGallery extends PluginForDecrypt {
                 return null;
             }
             // 'http://ept.xhcdn.com/000/027/563/101_160.jpg'
-            final String[] thumbNails = new Regex(allLinks, "(\"|\\')(http://ept\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)(\"|\\')").getColumn(1);
+            final String[] thumbNails = new Regex(allLinks, "(\"|\\')(http://(e|u)pt\\.xhcdn\\.com/\\d+/\\d+/\\d+/\\d+_160\\.jpg)(\"|\\')").getColumn(1);
             if (thumbNails == null || thumbNails.length == 0) {
                 logger.warning("Decrypter failed on page " + currentPage + " for link: " + thePage);
                 return null;
