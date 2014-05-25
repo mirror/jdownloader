@@ -217,7 +217,7 @@ public class IFilezCom extends PluginForHost {
                 if (br.getCookie(MAINPAGE, "sduserid") == null || br.getCookie(MAINPAGE, "sdpassword") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (!br.containsHTML("premium\">Premium<")) {
+                if (!br.containsHTML("/myspace/space/premium")) {
                     account.setProperty("freeacc", true);
                 } else {
                     account.setProperty("freeacc", false);
@@ -251,7 +251,7 @@ public class IFilezCom extends PluginForHost {
         }
         account.setValid(true);
         ai.setUnlimitedTraffic();
-        if (account.getBooleanProperty("freeacc", false)) {
+        if (account.getBooleanProperty("freeacc", true)) {
             try {
                 maxPrem.set(1);
                 // free accounts can still have captcha.
