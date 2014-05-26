@@ -125,7 +125,7 @@ public class YunFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Not found
-        if (br.containsHTML("<span>资源未找到</span>")) {
+        if (br.containsHTML("<span>(资源未找到|Not found)</span>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null, filesize = null;
@@ -217,7 +217,7 @@ public class YunFileCom extends PluginForHost {
         final String vid = br.getRegex("var vericode = \"([a-z0-9]+)\";").getMatch(0);
         final String action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/view\\?fid=[a-z0-9]+)\"").getMatch(0);
         final String md5 = br.getRegex("name=\"md5\" value=\"([a-z0-9]{32})\"").getMatch(0);
-
+        logger.info("vid = " + vid + " vid1 = " + vid1 + " action = " + action + " md5 = " + md5);
         if (vid == null || action == null || md5 == null || vid1 == null) {
             if (br.containsHTML("verifyimg/getPcv\\.html")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
