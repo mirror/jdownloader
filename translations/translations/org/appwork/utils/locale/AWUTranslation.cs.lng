@@ -118,6 +118,7 @@ proxy_http=%s1:%s2 (Http Proxy)
 proxy_none=Přímé
 proxy_socks4=%s1:%s2 (Socks4 Proxy)
 proxy_socks5=%s1:%s2 (Socks5 Proxy)
+proxydialog_remember=Zapamatovat
 proxydialog_title=Žádné připojení k internetu
 tableheader_tooltip_locked=%s1 (Změna velikosti uzamčena)
 tableheader_tooltip_normal=%s1
