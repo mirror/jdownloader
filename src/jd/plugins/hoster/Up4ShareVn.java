@@ -63,7 +63,7 @@ public class Up4ShareVn extends PluginForHost {
         prepBR();
         this.setBrowserExclusive();
         getPage(link.getDownloadURL());
-        if (br.containsHTML(">FID Không hợp lệ\\!|file not found")) {
+        if (br.containsHTML(">FID Không hợp lệ\\!|file not found|File đã bị xóa\\?")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fInfo = br.getRegex(">Filename:  <strong>([^<>\"]*?)</strong>   \\(<strong>([^<>\"]*?)</strong> \\)<");

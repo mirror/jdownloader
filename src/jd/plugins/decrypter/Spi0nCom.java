@@ -50,6 +50,12 @@ public class Spi0nCom extends PluginForDecrypt {
             offline.setAvailable(false);
             decryptedLinks.add(offline);
             return decryptedLinks;
+        } else if (br.containsHTML("Archives des catégorie:")) {
+            logger.info("Link offline (invalid link!): " + parameter);
+            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            offline.setAvailable(false);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         String finallink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/video/[A-Za-z0-9\\-_]+)\"").getMatch(0);
         if (finallink == null) {

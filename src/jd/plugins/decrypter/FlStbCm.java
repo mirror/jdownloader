@@ -48,7 +48,9 @@ public class FlStbCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         String parameter = param.toString();
-        if (!parameter.matches(VIDEOLINK)) parameter = parameter.replaceFirst("(www\\.|beta\\.)?filestube.com/", "www.filestube.to/");
+        if (!parameter.matches(VIDEOLINK)) {
+            parameter = parameter.replaceFirst("(www\\.|beta\\.)?filestube.com/", "www.filestube.to/");
+        }
         if (parameter.matches(INVALIDLINKS)) {
             final DownloadLink offline = createDownloadlink("directhttp://http://filestubeoffline.to/" + new Regex(parameter, "filestube\\.to/(.+)").getMatch(0));
             offline.setAvailable(false);
@@ -101,7 +103,9 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
+            }
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -130,7 +134,9 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
-            if (externID == null) externID = br.getRegex("\"http://(www\\.)?xvideos\\.com/sitevideos/flv_player_site.*?value=\"id_video=(\\d+)\"").getMatch(1);
+            if (externID == null) {
+                externID = br.getRegex("\"http://(www\\.)?xvideos\\.com/sitevideos/flv_player_site.*?value=\"id_video=(\\d+)\"").getMatch(1);
+            }
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
                 return decryptedLinks;
@@ -151,13 +157,17 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("veoh\\.com/static/swf/webplayer/WebPlayer\\.swf\\?version=v[0-9\\.]+\\&amp;permalinkId=v([^<>\"/]*?)\\&").getMatch(0);
-            if (externID == null) externID = br.getRegex("<embed src=\"http://(www\\.)?veoh\\.com/videodetails2\\.swf\\?permalinkId=v([^<>\"/]*?)\\&").getMatch(1);
+            if (externID == null) {
+                externID = br.getRegex("<embed src=\"http://(www\\.)?veoh\\.com/videodetails2\\.swf\\?permalinkId=v([^<>\"/]*?)\\&").getMatch(1);
+            }
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.veoh.com/watch/v" + externID));
                 return decryptedLinks;
             }
             externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-            if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            }
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
                 decryptedLinks.add(dl);
@@ -334,7 +344,10 @@ public class FlStbCm extends PluginForDecrypt {
                     fpName = br.getRegex("&quot;\\](.*?)\\[/url\\]\"").getMatch(0);
                 }
             }
-            final String pornLink = br.getRegex("class=\"gobut\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            String pornLink = br.getRegex("class=\"gobut\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            if (pornLink == null) {
+                pornLink = br.getRegex("\"(http[^<>\"]*?)\" rel=\"nofollow\" target=\"_blank\" onclick=\"_gaq\\.push\\(\\[\\'_trackEvent\\', \\'details_download_button\\'").getMatch(0);
+            }
             String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\"(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
             // Find IDs for alternative links
             String[][] alternativeLinks = br.getRegex("alternate_files\\.push\\(\\{key: \\'([a-z0-9]+)\\',token: \\'([a-z0-9]+)\\'\\}\\)").getMatches();
@@ -352,8 +365,9 @@ public class FlStbCm extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (String data : temp)
+                for (String data : temp) {
                     decryptedLinks.add(createDownloadlink(data));
+                }
                 // Disabled because server returns 503 error for alternative
                 // links,
                 // maybe this is completely broken/not available anymore
@@ -369,8 +383,12 @@ public class FlStbCm extends PluginForDecrypt {
                                 for (String link : alts) {
                                     br3.getPage("http://www." + NICE_HOST + "/" + link + "/go.html");
                                     String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
-                                    if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
-                                    if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                                    if (finallink == null) {
+                                        finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
+                                    }
+                                    if (finallink != null) {
+                                        decryptedLinks.add(createDownloadlink(finallink));
+                                    }
                                 }
                             }
                         }

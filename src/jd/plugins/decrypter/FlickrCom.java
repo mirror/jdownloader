@@ -47,7 +47,7 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String PHOTOLINK    = "https?://(www\\.)?flickr\\.com/photos/.*?";
     private static final String SETLINK      = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
-    private static final String INVALIDLINKS = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags)|groups/[a-z0-9\\-_]+/(map|rules))";
+    private static final String INVALIDLINKS = "https?://(www\\.)?flickr\\.com/(photos/(me|upload|tags)|groups/[a-z0-9\\-_]+/(rules))";
 
     /* TODO: Maybe implement API: https://api.flickr.com/services/rest?photo_id=&extras=can_ ... */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -57,7 +57,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bus%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
-        String parameter = param.toString().replace("http://", "https://");
+        String parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
         int lastPage = 1;
         // Check if link is for hosterplugin
         if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
@@ -65,7 +65,7 @@ public class FlickrCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (parameter.matches(INVALIDLINKS)) {
+        if (parameter.matches(INVALIDLINKS) || parameter.contains("/map")) {
             final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
             offline.setName(new Regex(parameter, "flickr\\.com/(.+)").getMatch(0));
             offline.setAvailable(false);
@@ -159,6 +159,14 @@ public class FlickrCom extends PluginForDecrypt {
                 getPage = parameter + "/page%s/?fragment=1";
             }
             for (int i = 1; i <= lastPage; i++) {
+                try {
+                    if (this.isAbort()) {
+                        logger.info("Decryption aborted by user: " + parameter);
+                        return decryptedLinks;
+                    }
+                } catch (final Throwable e) {
+                    // Not available in old 0.9.581 Stable
+                }
                 int addedLinksCounter = 0;
                 if (i != 1) {
                     br.getPage(String.format(getPage, i));

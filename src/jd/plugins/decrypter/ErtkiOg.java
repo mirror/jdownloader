@@ -48,7 +48,7 @@ public class ErtkiOg extends PluginForDecrypt {
             br.getPage(parameter);
             if (br.containsHTML(">К сожалению, данная страница для Вас не доступна, возможно был изменен ее адрес или она была удалена\\.")) {
                 logger.warning("erotelki Decrypter: Invalid URL " + parameter);
-                return null;
+                return decryptedLinks;
             }
             // set packagename
             String fpName = br.getRegex("<title>(.*?) \\&raquo\\;").getMatch(0);

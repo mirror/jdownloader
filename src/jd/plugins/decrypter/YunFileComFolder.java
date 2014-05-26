@@ -50,7 +50,7 @@ public class YunFileComFolder extends PluginForDecrypt {
             logger.info("Decrypt failed (timeout): " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("\\[ The uploader has no shared file lists\\.\\! \\]")) {
+        if (br.containsHTML("\\[ The uploader has no shared file lists\\.\\! \\]|The request has been refused")) {
             logger.info("This link contains no downloadable content: " + parameter);
             return decryptedLinks;
         }
@@ -61,12 +61,14 @@ public class YunFileComFolder extends PluginForDecrypt {
             return null;
         }
         if (links != null && links.length != 0) {
-            for (String singleLink : links)
+            for (String singleLink : links) {
                 decryptedLinks.add(createDownloadlink(singleLink));
+            }
         }
         if (folders != null && folders.length != 0) {
-            for (String singleFolder : folders)
+            for (String singleFolder : folders) {
                 decryptedLinks.add(createDownloadlink(singleFolder));
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "http://(www\\.)?yunfile\\.com/ls/([a-z0-9]+)/([a-z0-9]+)?").getMatch(0));
