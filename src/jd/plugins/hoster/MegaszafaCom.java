@@ -93,15 +93,17 @@ public class MegaszafaCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        // try {
+        // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        // } catch (final Throwable e) {
+        // if (e instanceof PluginException) throw (PluginException) e;
+        // }
+        // throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        requestFileInformation(downloadLink);
+        doDownload(downloadLink, false);
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public void doDownload(final DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -110,18 +112,33 @@ public class MegaszafaCom extends PluginForHost {
 
         br.postPage(MAINPAGE + "pobierzPlik,info.html", "id=" + fileId);
         String fileStatus = getJson("status", br);
-        if (!fileStatus.equals("1")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "File Status is <> 1!"); }
+        if (!fileStatus.equals("1")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "File Status is not 1!"); }
         String fileErros = getJson("errors", br);
         String fileDetails = getJson("extra", br);
 
         br.getPage(MAINPAGE + "pobierzPlik," + fileId + ",wybierz.html");
-
         br.postPage(MAINPAGE + "pobierzPlik,info.html", "id=" + fileId);
 
         br.setFollowRedirects(false);
+        String dllink;
 
-        String dllink = MAINPAGE + "pobierzPlik," + fileId + ".html";
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (premium) {
+
+            dllink = MAINPAGE + "pobierzPlik," + fileId + ".html";
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        } else {
+            // sleep(60 * 1000l, downloadLink);
+            // At the hoster info page they wrote that only 1 download per 2 hours is possible,
+            // right now (it is bug probably) - it allows unlimited downloads for free users.
+            // I've limited it to 2 parallel downloads, probably when they correct this
+            // error - we should check here for wait time.
+            // Contacted hoster about API - it would be much better than analyzing the pages
+            // and check POST/GET responses
+            br.getPage(MAINPAGE + "pobierzPlik," + fileId + ".html?rules=1");
+            dllink = br.getRedirectLocation();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        }
+
         if (dl.getConnection().getContentType().contains("html")) {
             logger.info("Megaszafa error: " + dl.getConnection().getContentType());
             br.followConnection();
@@ -199,14 +216,12 @@ public class MegaszafaCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        // update 02.05.2014 - no limit for users... again
-        /*
-         * String dailyLimitLeft =
-         * br.getRegex("<div class=\"profileTransfer\">[\t\n\r ]+Transfer:[\t ]+([ 0-9\\.A-Za-z]+)[\t\n\r ]+</div>").getMatch(0); if
-         * (dailyLimitLeft != null) { ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
-         * ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft)); } else
-         */
-        ai.setUnlimitedTraffic();
+        String trafficLimitLeft = br.getRegex("<a href=\"transfer.html\">Transfer:[\t ]+([ 0-9\\.A-Za-z]+)[\t\n\r ]+</div>").getMatch(0);
+        if (trafficLimitLeft != null) {
+            // ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficLimitLeft));
+        } else
+            ai.setUnlimitedTraffic();
 
         account.setValid(true);
         ai.setStatus("Registered user");
@@ -217,7 +232,7 @@ public class MegaszafaCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, true);
-        doFree(link);
+        doDownload(link, true);
     }
 
     @Override
@@ -231,7 +246,9 @@ public class MegaszafaCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        // probably bug on the hoster side - it allows unlimited -
+        // waiting for proper API
+        return 2;
     }
 
     @Override
