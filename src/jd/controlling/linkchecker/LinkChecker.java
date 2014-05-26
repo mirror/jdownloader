@@ -429,6 +429,10 @@ public class LinkChecker<E extends CheckableLink> {
         } catch (PluginException e) {
             logger.log(e);
             switch (e.getLinkStatus()) {
+            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+            case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
+                availableStatus = AvailableStatus.UNCHECKABLE;
+                break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 availableStatus = AvailableStatus.FALSE;
                 break;
