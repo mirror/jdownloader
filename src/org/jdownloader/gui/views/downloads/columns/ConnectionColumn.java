@@ -13,6 +13,9 @@ import javax.swing.JPopupMenu;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SelectedProxy;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.download.DownloadInterface;
@@ -73,7 +76,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             // Color.RED));
             labels[i].setOpaque(false);
             labels[i].setBackground(null);
-            if (sb.length() > 0) sb.append("1");
+            if (sb.length() > 0) {
+                sb.append("1");
+            }
             sb.append("[18!]");
             panel.add(labels[i]);
 
@@ -93,7 +98,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             public int compare(final AbstractNode o1, final AbstractNode o2) {
                 final long l1 = getDownloads(o1);
                 final long l2 = getDownloads(o2);
-                if (l1 == l2) { return 0; }
+                if (l1 == l2) {
+                    return 0;
+                }
                 if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                     return l1 > l2 ? -1 : 1;
                 } else {
@@ -134,9 +141,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             SingleDownloadController dlc = ((DownloadLink) value).getDownloadLinkController();
             if (dlc != null) {
                 DownloadInterface dli = dlc.getDownloadInstance();
-                if (dli != null) return 1;
+                if (dli != null) {
+                    return 1;
+                }
             }
-        } else if (value instanceof FilePackage) { return DownloadWatchDog.getInstance().getDownloadsbyFilePackage((FilePackage) value); }
+        } else if (value instanceof FilePackage) {
+            return DownloadWatchDog.getInstance().getDownloadsbyFilePackage((FilePackage) value);
+        }
         return 0;
     }
 
@@ -157,7 +168,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public boolean isEnabled(AbstractNode obj) {
-        if (obj instanceof DownloadLink) { return ((DownloadLink) obj).isEnabled(); }
+        if (obj instanceof DownloadLink) {
+            return ((DownloadLink) obj).isEnabled();
+        }
         return false;
     }
 
@@ -181,7 +194,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             DownloadLink dlLink = (DownloadLink) value;
             DownloadInterface dli = null;
             SingleDownloadController sdc = dlLink.getDownloadLinkController();
-            if (sdc != null) dli = sdc.getDownloadInstance();
+            if (sdc != null) {
+                dli = sdc.getDownloadInstance();
+            }
             int index = 0;
             if (dlLink.isSkipped()) {
                 labels[index].setIcon(skipped);
@@ -240,7 +255,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
     public ExtTooltip createToolTip(Point position, AbstractNode obj) {
         if (obj instanceof DownloadLink) {
             ConnectionTooltip ret = new ConnectionTooltip((DownloadLink) obj);
-            if (ret.getComponentCount() > 0) return ret;
+            if (ret.getComponentCount() > 0) {
+                return ret;
+            }
         }
         return null;
     }
@@ -257,7 +274,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             this.panel = new TooltipPanel("ins 3,wrap 1", "[grow,fill]", "[grow,fill]");
             DownloadInterface dli = null;
             SingleDownloadController sdc = link.getDownloadLinkController();
-            if (sdc != null) dli = sdc.getDownloadInstance();
+            if (sdc != null) {
+                dli = sdc.getDownloadInstance();
+            }
             {
                 if (dlWatchdog.isLinkForced(link)) {
                     panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsForced(), forced, JLabel.LEADING));
@@ -282,8 +301,21 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 {
                     /* connection? */
                     HTTPProxy proxy = sdc.getUsedProxy();
-                    if (proxy == null) proxy = HTTPProxy.NONE;
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxy), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
+                    if (proxy == null) {
+                        proxy = HTTPProxy.NONE;
+                    }
+                    final SelectedProxy selectedProxy = ProxyController.getSelectedProxy(proxy);
+                    final String proxyString;
+                    if (selectedProxy != null && selectedProxy.getSelector() != null) {
+                        if (selectedProxy.getSelector() instanceof PacProxySelectorImpl) {
+                            proxyString = selectedProxy.getSelector().toString() + "@" + proxy.toString();
+                        } else {
+                            proxyString = selectedProxy.getSelector().toString();
+                        }
+                    } else {
+                        proxyString = proxy.toString();
+                    }
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxyString), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
@@ -301,7 +333,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
             }
             this.panel.setOpaque(false);
-            if (panel.getComponentCount() > 0) add(panel);
+            if (panel.getComponentCount() > 0) {
+                add(panel);
+            }
         }
 
         @Override

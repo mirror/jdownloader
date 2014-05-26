@@ -964,7 +964,7 @@ public class ProxyController implements ProxySelectorInterface {
         return ret;
     }
 
-    public boolean isSpecialPlugin(Plugin plugin) {
+    public static boolean isSpecialPlugin(Plugin plugin) {
         if (plugin instanceof PluginForHost) {
             LazyHostPlugin lazy = ((PluginForHost) plugin).getLazyP();
             if ("ftp".equalsIgnoreCase(lazy.getHost())) {

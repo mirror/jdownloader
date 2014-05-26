@@ -4,7 +4,6 @@ import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
 import org.appwork.txtresource.DescriptionForTranslationEntry;
 import org.appwork.txtresource.TranslateInterface;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 @Defaults(lngs = { "en" })
 public interface GuiTranslation extends TranslateInterface {
@@ -548,7 +547,7 @@ public interface GuiTranslation extends TranslateInterface {
     String ConnectionColumn_ConnectionColumn();
 
     @Default(lngs = { "en" }, values = { "Connection: %s1" })
-    String ConnectionColumn_getStringValue_connection(HTTPProxy currentProxy);
+    String ConnectionColumn_getStringValue_connection(String currentProxy);
 
     @Default(lngs = { "en" }, values = { "Downloading with %s1 chunk(s)" })
     String ConnectionColumn_getStringValue_chunks(int currentChunks);

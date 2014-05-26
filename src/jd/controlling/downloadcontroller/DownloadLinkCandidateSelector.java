@@ -18,6 +18,8 @@ import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkCandidateSelector {
 
@@ -92,12 +94,15 @@ public class DownloadLinkCandidateSelector {
 
     private LinkedHashMap<DownloadLink, LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>> roundResults  = new LinkedHashMap<DownloadLink, LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult>>();
 
+    private final boolean                                                                                  loadBalanceFreeDownloads;
+
     public DownloadSession getSession() {
         return session;
     }
 
     public DownloadLinkCandidateSelector(DownloadSession session) {
         this.session = session;
+        this.loadBalanceFreeDownloads = JsonConfig.create(GeneralSettings.class).isFreeDownloadLoadBalancingEnabled();
     }
 
     public int getMaxNumberOfDownloadLinkCandidatesResults(DownloadLinkCandidate candidate) {
@@ -105,7 +110,11 @@ public class DownloadLinkCandidateSelector {
     }
 
     public List<AbstractProxySelectorImpl> getProxies(final DownloadLinkCandidate candidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
-        return ProxyController.getInstance().getProxySelectors(candidate, ignoreConnectBans, ignoreAllBans);
+        List<AbstractProxySelectorImpl> ret = ProxyController.getInstance().getProxySelectors(candidate, ignoreConnectBans, ignoreAllBans);
+        if (loadBalanceFreeDownloads && ret != null && candidate.getCachedAccount().getAccount() == null) {
+            Collections.sort(ret, new DownloadLinkCandidateLoadBalancer(candidate));
+        }
+        return ret;
     }
 
     public CachedAccountPermission getCachedAccountPermission(final CachedAccount cachedAccount) {

@@ -22,7 +22,7 @@ public interface InternetConnectionSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Timeout for connecting to a httpserver")
     @SpinnerValidator(min = 0, max = 600000)
-    @DefaultIntValue(10000)
+    @DefaultIntValue(20000)
     @RequiresRestart("A JDownloader Restart is Required")
     int getHttpConnectTimeout();
 

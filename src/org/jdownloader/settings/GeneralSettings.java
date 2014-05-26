@@ -501,4 +501,11 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isWindowsJNAIdleDetectorEnabled();
 
     void setWindowsJNAIdleDetectorEnabled(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Load balance free downloads over all possible connections")
+    @DefaultBooleanValue(false)
+    boolean isFreeDownloadLoadBalancingEnabled();
+
+    void setFreeDownloadLoadBalancingEnabled(boolean b);
 }
