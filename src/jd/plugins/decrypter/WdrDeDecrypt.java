@@ -75,10 +75,11 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             offline = true;
         }
         // Add offline link so user can see it
-        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || parameter.contains("uebersicht") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404) {
+        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || parameter.contains("uebersicht") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38) {
             final DownloadLink dl = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
+            dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

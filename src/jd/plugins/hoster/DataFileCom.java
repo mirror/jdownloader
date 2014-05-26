@@ -98,17 +98,29 @@ public class DataFileCom extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         // Invalid link
-        if (br.containsHTML("<div class=\"error\\-msg\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<div class=\"error\\-msg\">")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Deleted file
-        if (br.containsHTML(">Sorry but this file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("ErrorCode 7: Download file count limit")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML(">Sorry but this file has been deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("ErrorCode 7: Download file count limit")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         final String filename = br.getRegex("class=\"file\\-name\">([^<>\"]*?)</div>").getMatch(0);
         filesize = br.getRegex(">Filesize:<span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex(">Filesize: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex(">Filesize: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PREMIUMONLY)) link.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
+        if (br.containsHTML(PREMIUMONLY)) {
+            link.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -119,14 +131,20 @@ public class DataFileCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
-        if (br.containsHTML("ErrorCode 7: Download file count limit")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l);
+        if (br.containsHTML(DAILYLIMIT) || br.getURL().contains("error.html?code=7")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        }
+        if (br.containsHTML("ErrorCode 7: Download file count limit")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download file count limit", 10 * 60 * 1000l);
+        }
         if (br.containsHTML(PREMIUMONLY)) {
             // not possible to download under handleFree!
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
@@ -137,17 +155,29 @@ public class DataFileCom extends PluginForHost {
             final Regex waitTime = br.getRegex("class=\"time\">(\\d+):(\\d+):(\\d+)</span>");
             int tmphrs = 0, tmpmin = 0, tmpsecs = 0;
             String tempHours = waitTime.getMatch(0);
-            if (tempHours != null) tmphrs = Integer.parseInt(tempHours);
+            if (tempHours != null) {
+                tmphrs = Integer.parseInt(tempHours);
+            }
             String tempMinutes = waitTime.getMatch(1);
-            if (tempMinutes != null) tmpmin = Integer.parseInt(tempMinutes);
+            if (tempMinutes != null) {
+                tmpmin = Integer.parseInt(tempMinutes);
+            }
             String tempSeconds = waitTime.getMatch(2);
-            if (tempSeconds != null) tmpsecs = Integer.parseInt(tempSeconds);
+            if (tempSeconds != null) {
+                tmpsecs = Integer.parseInt(tempSeconds);
+            }
             final long wait = (tmphrs * 60 * 60 * 1000) + (tmpmin * 60 * 1000) + (tmpsecs * 1001);
-            if (wait == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!SKIPRECONNECTWAITTIME && wait > 3601800) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+            if (wait == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!SKIPRECONNECTWAITTIME && wait > 3601800) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+            }
             long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (rcID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -166,21 +196,31 @@ public class DataFileCom extends PluginForHost {
                 }
                 break;
             }
-            if (br.containsHTML("\"The two words is not valid")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (br.containsHTML("\"errorType\":null")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error...");
+            if (br.containsHTML("\"The two words is not valid")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (br.containsHTML("\"errorType\":null")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error...");
+            }
             dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+                if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+                }
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String finalname = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
             String finalFixedName = new Regex(finalname, "([^<>\"]*?)\"; creation\\-date=").getMatch(0);
-            if (finalFixedName != null) finalname = finalFixedName;
+            if (finalFixedName != null) {
+                finalname = finalFixedName;
+            }
             downloadLink.setFinalFileName(finalFixedName);
             downloadLink.setProperty("directlink", dllink);
             dl.startDownload();
@@ -198,7 +238,9 @@ public class DataFileCom extends PluginForHost {
         /** Ticket Time */
         wait -= passedTime;
         logger.info("Waittime detected, waiting " + wait + " - " + passedTime + " milliseconds from now on...");
-        if (wait > 0) sleep(wait, downloadLink);
+        if (wait > 0) {
+            sleep(wait, downloadLink);
+        }
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -232,7 +274,9 @@ public class DataFileCom extends PluginForHost {
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -248,12 +292,16 @@ public class DataFileCom extends PluginForHost {
                 // https is forced here anyways
                 String protocol = "https://";
                 if (isJava7nJDStable()) {
-                    if (!stableSucks.get()) showSSLWarning(this.getHost());
+                    if (!stableSucks.get()) {
+                        showSSLWarning(this.getHost());
+                    }
                     // https is forced here anyways
                     protocol = "https://";
                 }
                 br.postPage(protocol + "www.datafile.com/login.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=0&remember_me=1&btn=");
-                if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -281,9 +329,13 @@ public class DataFileCom extends PluginForHost {
         }
         br.getPage("/profile.html");
         final String filesNum = br.getRegex(">Files: <span class=\"lime\">(\\d+)</span>").getMatch(0);
-        if (filesNum != null) ai.setFilesNum(Long.parseLong(filesNum));
+        if (filesNum != null) {
+            ai.setFilesNum(Long.parseLong(filesNum));
+        }
         final String space = br.getRegex(">Storage: <span class=\"lime\">([^<>\"]*?)</span>").getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim());
+        if (space != null) {
+            ai.setUsedSpace(space.trim());
+        }
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("([a-zA-Z]{3} \\d{1,2}, \\d{4} \\d{1,2}:\\d{1,2})").getMatch(0);
         if (expire == null) {
@@ -319,7 +371,9 @@ public class DataFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+            }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             handleGeneralErrors(account);
@@ -332,7 +386,9 @@ public class DataFileCom extends PluginForHost {
         final String redirect = br.getRedirectLocation();
         String errorCode = br.getRegex("ErrorCode (\\d+):").getMatch(0);
         if ((redirect != null && redirect.contains("error.html?code=")) || errorCode != null) {
-            if (errorCode == null) errorCode = new Regex(redirect, "error\\.html\\?code=(\\d+)").getMatch(0);
+            if (errorCode == null) {
+                errorCode = new Regex(redirect, "error\\.html\\?code=(\\d+)").getMatch(0);
+            }
             if ("6".endsWith(errorCode)) {
                 logger.info("Trafficlimit reached");
                 final AccountInfo ac = new AccountInfo();
@@ -354,7 +410,9 @@ public class DataFileCom extends PluginForHost {
 
     private void postPage(String url, final String postData) throws IOException {
         if (isJava7nJDStable() && url.toLowerCase().startsWith("https://")) {
-            if (!stableSucks.get()) showSSLWarning(this.getHost());
+            if (!stableSucks.get()) {
+                showSSLWarning(this.getHost());
+            }
             url = url.replaceFirst("https://", "http://");
         }
         br.postPage(url, postData);
@@ -362,6 +420,7 @@ public class DataFileCom extends PluginForHost {
     }
 
     private void prepBrowser(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:29.0) Gecko/20100101 Firefox/29.0");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(MAINPAGE, "lang", "en");
     }
@@ -398,10 +457,11 @@ public class DataFileCom extends PluginForHost {
     }
 
     private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+"))
+        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
 
     private static AtomicBoolean stableSucks = new AtomicBoolean(false);
@@ -423,33 +483,38 @@ public class DataFileCom extends PluginForHost {
                             message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
                             message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
                             message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            else
+                            } else {
                                 message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         } else if ("es".equalsIgnoreCase(lng)) {
                             title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
                             message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
                             message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
                             message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
                             message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            else
+                            } else {
                                 message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         } else {
                             title = domain + " :: Java 7+ && HTTPS Post Requests.";
                             message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
                             message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
                             message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
                             message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem)
+                            if (xSystem) {
                                 message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            else
+                            } else {
                                 message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                            }
                         }
                         int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        if (xSystem && JOptionPane.OK_OPTION == result) {
+                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                        }
                         stableSucks.set(true);
                     } catch (Throwable e) {
                     }
