@@ -51,7 +51,7 @@ import org.jdownloader.statistics.StatsManager;
 
 public class OboomController implements TopRightPainter, AccountControllerListener {
 
-    private final AtomicBoolean          enabledByAPI                 = new AtomicBoolean(false);
+    private final AtomicBoolean          enabledByAPI            = new AtomicBoolean(false);
     private final AtomicBoolean          enabledInAdvancedConfig = new AtomicBoolean(false);
     private boolean                      mouseover;
     private AbstractIcon                 icon;
@@ -477,11 +477,11 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                 }
                 if (notify) {
                     final long rest = premiumUntil - System.currentTimeMillis();
-                    String trackID = "PremiumExpireWarning/" + (rest / (1000 * 60 * 60 * 24));
+
                     if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
-                        notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
+                        notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
                     } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
-                        notify(account, trackID, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
+                        notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_expired_premium_msg(account.getUser(), account.getHoster()));
                     }
                 }
             } catch (final Throwable e) {
@@ -490,7 +490,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         }
     }
 
-    private void notify(final Account account, String trackID, String title, String msg) {
+    private void notify(final Account account, String title, String msg) {
         final LazyHostPlugin plg = account.getPlugin().getLazyP();
         final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
         final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
@@ -510,20 +510,20 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                 return 5 * 60 * 1000l;
             }
         };
-        StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID);
+        StatsManager.I().track("PremiumExpireWarning/" + account.getHoster());
         try {
             Dialog.getInstance().showDialog(d);
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/OK");
-            CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(plg.getPremiumUrl(), trackID));
+            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
+            CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(plg.getPremiumUrl(), "PremiumExpireWarning"));
         } catch (DialogClosedException e) {
             e.printStackTrace();
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/CLOSED");
+            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CLOSED");
         } catch (DialogCanceledException e) {
             e.printStackTrace();
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/CANCELED");
+            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
         }
         if (d.isDontShowAgainSelected()) {
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/" + trackID + "/DONT_SHOW_AGAIN");
+            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/DONT_SHOW_AGAIN");
         }
     }
 }
