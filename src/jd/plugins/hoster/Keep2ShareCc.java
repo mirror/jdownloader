@@ -93,7 +93,7 @@ public class Keep2ShareCc extends PluginForHost {
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Cache-Control", null);
         prepBr.getHeaders().put("Pragma", null);
-        prepBr.setConnectTimeout(60 * 1000);
+        prepBr.setConnectTimeout(90 * 1000);
         return prepBr;
     }
 
