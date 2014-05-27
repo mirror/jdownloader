@@ -79,6 +79,7 @@ public class Keep2ShareCc extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "k2s.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replace("keep2share.cc/", "k2s.cc/"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -132,7 +133,7 @@ public class Keep2ShareCc extends PluginForHost {
                 public void run() {
                     try {
                         String lng = System.getProperty("user.language");
-                        String domain = "k2s.cc";
+                        String domain = "keep2share.cc";
                         String message = null;
                         String title = null;
                         String tab = "                        ";
@@ -418,12 +419,12 @@ public class Keep2ShareCc extends PluginForHost {
                 // Handle stupid login captcha
                 final String captchaLink = br.getRegex("\"(/auth/captcha\\.html\\?v=[a-z0-9]+)\"").getMatch(0);
                 if (captchaLink != null) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "k2s.cc", "http://k2s.cc", true);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
                     final String code = getCaptchaCode("http://k2s.cc" + captchaLink, dummyLink);
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                 } else {
                     if (br.containsHTML("recaptcha/api/challenge") || br.containsHTML("Recaptcha.create")) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "k2s.cc", "http://k2s.cc", true);
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                         String challenge = br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
@@ -565,7 +566,7 @@ public class Keep2ShareCc extends PluginForHost {
             }
             String possibleDomain = getDomain(dllink);
             if (dllink != null && possibleDomain != null && !possibleDomain.contains(currentDomain)) {
-                newDomain = getDomain(dllink); // dllink = /prx-169.k2s.cc/
+                newDomain = getDomain(dllink);
             } else if (!br.getURL().contains(currentDomain)) {
                 newDomain = getDomain(br.getURL());
             }
