@@ -108,9 +108,11 @@ public class ImgSrcRu extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         prepBrowser(br, false);
         final String r = downloadLink.getStringProperty("Referer", null);
-        if (r != null) br.getHeaders().put("Referer", r);
+        if (r != null) {
+            br.getHeaders().put("Referer", r);
+        }
         getPage(downloadLink.getDownloadURL(), downloadLink);
-        js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var r='[a-zA-Z0-9]+';[\r\n\t ]+var o=[^<]+)</script>").getMatch(0);
+        js = br.getRegex("<script type=\"text/javascript\">([\r\n\t ]+var [a-z]='[a-zA-Z0-9]+';[\r\n\t ]+var [a-z]=[^<]+)</script>").getMatch(0);
         if (js != null) {
             getDllink();
             if (ddlink != null) {
@@ -132,16 +134,34 @@ public class ImgSrcRu extends PluginForHost {
 
     private String processJS() {
         // process the javascript within rhino vs doing this!!
-
-        String r = new Regex(js, "r='(.*?)';").getMatch(0);
-        String o = new Regex(js, "o='(.*?)';").getMatch(0);
-        String n = "";
-        String notn = new Regex(js, "n=([^;]+)").getMatch(0);
+        // was
+        // <script type="text/javascript">
+        // var r='nca';
+        // var o='mink_blue';
+        // var n=r.charAt(2)+r.charAt(0)+r.charAt(1);
+        // document.getElementById('big_pic').src='http://b3.us.icdn.ru/'+o.charAt(0)+'/'+o+'/3/'+'37369043'+n+'.jpg';
+        // </script>
+        // String r = new Regex(js, "r='(.*?)';").getMatch(0);
+        // String o = new Regex(js, "o='(.*?)';").getMatch(0);
+        // String n = "";
+        // String notn = new Regex(js, "n=([^;]+)").getMatch(0);
+        // String[][] jn = new Regex(notn, "([a-z])\\.charAt\\((\\d+)\\)").getMatches();
+        // now
+        // <script type="text/javascript">
+        // var n='tdh';
+        // var e=n.charAt(2)+n.charAt(0)+n.charAt(1);
+        // var u='geragera';
+        // document.getElementById('big_pic').src='http://b2.eu.icdn.ru/'+u.charAt(0)+'/'+u+'/9/'+'37547279'+e+'.jpg';
+        // </script>
+        String n = new Regex(js, "n='(.*?)';").getMatch(0);
+        String u = new Regex(js, "u='(.*?)';").getMatch(0);
+        String e = "";
+        String notn = new Regex(js, "e=([^;]+)").getMatch(0);
         String[][] jn = new Regex(notn, "([a-z])\\.charAt\\((\\d+)\\)").getMatches();
 
         for (String[] a : jn) {
-            if ("r".equals(a[0])) {
-                n = n + r.charAt(Integer.parseInt(a[1]));
+            if ("n".equals(a[0])) {
+                e = e + n.charAt(Integer.parseInt(a[1]));
             }
         }
         String best = null;
@@ -155,28 +175,32 @@ public class ImgSrcRu extends PluginForHost {
             logger.warning("Error in finding JS pic!");
             return null;
         }
+        // was
         // document.getElementById('oripic').href='http://o8.su.imgsrc.ru/'+o.charAt(0)+'/'+o+'/9/31970729'+n+'.jpg';
         // document.getElementById('bigpic').src='http://b0.su.imgsrc.ru/'+o.charAt(0)+'/'+o+'/8/'+'463518'+n+'.jpg';
-        best = best.replace("'+o+'", o);
-        best = best.replace("'+n+'", n);
-        best = best.replace("'+o.charAt(0)+'", o.substring(0, 1));
+        // now
+        // document.getElementById('big_pic').src='http://b2.eu.icdn.ru/'+u.charAt(0)+'/'+u+'/9/'+'37547279'+e+'.jpg';
+        best = best.replace("'+u+'", u);
+        best = best.replace("'+e+'", e);
+        best = best.replace("'+u.charAt(0)+'", u.substring(0, 1));
         best = best.replaceAll("[ \\+']", "");
         ddlink = best;
-
         return best;
     }
 
     private void getDllink() {
         processJS();
         if (ddlink == null) {
-            ddlink = br.getRegex("name=bb onclick=\\'select\\(\\);\\' type=text style=\\'\\{width:\\d+;\\}\\' value=\\'\\[URL=[^<>\"]+\\]\\[IMG\\](http://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
+            ddlink = br.getRegex("name=bb onclick='select\\(\\);' type=text style='\\{width:\\d+;\\}' value='\\[URL=[^<>\"]+\\]\\[IMG\\](http://[^<>\"]*?)\\[/IMG\\]").getMatch(0);
         }
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (ddlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (ddlink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
