@@ -114,7 +114,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 return null;
             }
 
-            String fpName = br.getRegex(", ([^>\r\n]+) @ " + username + "\\.iMGSRC\\.RU</title>").getMatch(0);
+            String fpName = br.getRegex("(?:, )?([^>\r\n]+) @ " + username + "\\.iMGSRC\\.RU</title>").getMatch(0);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -183,12 +183,14 @@ public class ImgSrcRu extends PluginForDecrypt {
         // br.getURL() is the correct upid.
         if (br.getURL().contains("/a" + uaid)) {
             String currentID = br.getRegex("<img class=(cur|big) src=('|\")?https?://.+imgsrc\\.ru/[a-z]/" + username + "/\\d+/(\\d+)").getMatch(2);
-            if (currentID == null)
+            if (currentID == null) {
                 currentID = br.getRegex("/abuse\\.php\\?id=(\\d+)").getMatch(0);
+            }
             if (currentID != null) {
                 currentID = "/" + username + "/" + currentID + ".html";
-                if (pwd != null)
+                if (pwd != null) {
                     currentID += "?pwd=" + pwd;
+                }
                 imgs.add(currentID);
             } else {
                 logger.warning("ERROR parsePage");
@@ -213,8 +215,9 @@ public class ImgSrcRu extends PluginForDecrypt {
                 img.setProperty("Referer", currentLink);
                 img.setFinalFileName(upid);
                 img.setAvailable(true);
-                if (password != null)
+                if (password != null) {
                     img.setProperty("password", password);
+                }
                 decryptedLinks.add(img);
             }
         }
@@ -234,10 +237,12 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private boolean getPage(String url, CryptedLink param) throws Exception {
-        if (url == null || parameter == null)
+        if (url == null || parameter == null) {
             return false;
-        if (pwd != null && !url.matches(".+?pwd=[a-z0-9]{32}"))
+        }
+        if (pwd != null && !url.matches(".+?pwd=[a-z0-9]{32}")) {
             url += "?pwd=" + pwd;
+        }
         boolean failed = false;
         int repeat = 4;
         for (int i = 0; i <= repeat; i++) {
