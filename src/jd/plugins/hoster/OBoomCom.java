@@ -115,6 +115,7 @@ public class OBoomCom extends PluginForHost {
                 return ai;
             }
         }
+        ai.setExpired(false);
         ai.setValidUntil(-1);
         ai.setStatus("Free Account");
         return ai;

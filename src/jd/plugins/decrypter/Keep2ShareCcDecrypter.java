@@ -44,8 +44,9 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
         prepBrowser(this.br);
+        parameter = parameter.replace("keep2share.cc/", "k2s.cc/");
         br.getPage(parameter);
         // Check if we have a single link or a folder
         if (br.containsHTML("class=\"summary\"")) {
@@ -85,12 +86,22 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     filesize = br.getRegex("<b>File size:</b>(.*?)<br>").getMatch(0);
                 }
             }
-            if (filename != null) singlink.setName(Encoding.htmlDecode(filename.trim()));
-            if (filesize != null) singlink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-            if (br.containsHTML("Downloading blocked due to")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloading blocked: No JD bug, please contact the keep2share support", 10 * 60 * 1000l);
+            if (filename != null) {
+                singlink.setName(Encoding.htmlDecode(filename.trim()));
+            }
+            if (filesize != null) {
+                singlink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+            }
+            if (br.containsHTML("Downloading blocked due to")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloading blocked: No JD bug, please contact the keep2share support", 10 * 60 * 1000l);
+            }
             // you can set filename for offline links! handling should come here!
-            if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted|>Sorry, this file is blocked or deleted\\.</h5>|class=\"empty\"|>Displaying 1")) singlink.setAvailable(false);
-            if (filename == null) singlink.setAvailable(false);
+            if (br.containsHTML("Sorry, an error occurred while processing your request|File not found or deleted|>Sorry, this file is blocked or deleted\\.</h5>|class=\"empty\"|>Displaying 1")) {
+                singlink.setAvailable(false);
+            }
+            if (filename == null) {
+                singlink.setAvailable(false);
+            }
             decryptedLinks.add(singlink);
         }
 
