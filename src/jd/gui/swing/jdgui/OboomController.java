@@ -398,6 +398,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                         }
                     }
                 } else {
+
                     AccountInfo accountInfo = acc.getAccountInfo();
                     if (accountInfo != null) {
                         long validUntil = accountInfo.getValidUntil();
