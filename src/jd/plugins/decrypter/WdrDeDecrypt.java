@@ -72,8 +72,10 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         } catch (final BrowserException e) {
             offline = true;
         }
-        // Add offline link so user can see it
-        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || parameter.contains("uebersicht") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !br.containsHTML("class=\"videoButton play\"")) {
+        /* fernsehen/.* links |mediathek/.* links */
+        final boolean page_contains_video = br.containsHTML("class=\"videoButton play\"|class=\"moContainer\"");
+        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || parameter.contains("uebersicht") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
+            /* Add offline link so user can see it */
             final DownloadLink dl = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
@@ -189,30 +191,20 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 counter++;
             }
 
+            ArrayList<String> selected_qualities = new ArrayList<String>();
             if (newRet.size() > 1 && cfg.getBooleanProperty(Q_BEST, false)) {
                 /* only keep best quality */
-                DownloadLink keep = best_map.get("Q_MEDIUM");
-                if (keep == null) {
-                    keep = best_map.get("Q_LOW");
+                DownloadLink keep = best_map.get(Q_MEDIUM);
+                if (keep != null) {
+                    selected_qualities.add(Q_MEDIUM);
                 }
-                newRet.clear();
-                newRet.add(keep);
-
-                /* Add subtitle link for every quality so players will automatically find it */
-                if (grab_subtitle && subtitle_url != null) {
-                    final String subtitle_filename = plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
-                    final String resolution = keep.getStringProperty("plain_resolution", null);
-                    final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
-                    dl_subtitle.setProperty("mainlink", parameter);
-                    dl_subtitle.setProperty("direct_link", subtitle_url);
-                    dl_subtitle.setProperty("plain_filename", subtitle_filename);
-                    dl_subtitle.setProperty("streamingType", "subtitle");
-                    dl_subtitle.setAvailable(true);
-                    dl_subtitle.setFinalFileName(subtitle_filename);
-                    newRet.add(dl_subtitle);
+                if (keep == null) {
+                    keep = best_map.get(Q_LOW);
+                }
+                if (keep != null) {
+                    selected_qualities.add(Q_LOW);
                 }
             } else {
-                ArrayList<String> selected_qualities = new ArrayList<String>();
                 boolean grab_low = cfg.getBooleanProperty(Q_LOW, false);
                 boolean grab_medium = cfg.getBooleanProperty(Q_MEDIUM, false);
                 /* User deselected all --> Add all */
@@ -227,25 +219,24 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 if (cfg.getBooleanProperty(Q_MEDIUM, false)) {
                     selected_qualities.add(Q_MEDIUM);
                 }
-                for (final String selected_quality : selected_qualities) {
-                    final DownloadLink keep = best_map.get(selected_quality);
-                    /* Add subtitle link for every quality so players will automatically find it */
-                    if (grab_subtitle && subtitle_url != null) {
-                        final String subtitle_filename = plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
-                        final String resolution = keep.getStringProperty("plain_resolution", null);
-                        final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
-                        dl_subtitle.setProperty("mainlink", parameter);
-                        dl_subtitle.setProperty("direct_link", subtitle_url);
-                        dl_subtitle.setProperty("plain_filename", subtitle_filename);
-                        dl_subtitle.setProperty("streamingType", "subtitle");
-                        dl_subtitle.setAvailable(true);
-                        dl_subtitle.setFinalFileName(subtitle_filename);
-                        newRet.add(dl_subtitle);
-                    }
-                    newRet.add(keep);
-                }
             }
-            decryptedLinks = newRet;
+            for (final String selected_quality : selected_qualities) {
+                final DownloadLink keep = best_map.get(selected_quality);
+                /* Add subtitle link for every quality so players will automatically find it */
+                if (grab_subtitle && subtitle_url != null) {
+                    final String subtitle_filename = plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
+                    final String resolution = keep.getStringProperty("plain_resolution", null);
+                    final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
+                    dl_subtitle.setProperty("mainlink", parameter);
+                    dl_subtitle.setProperty("direct_link", subtitle_url);
+                    dl_subtitle.setProperty("plain_filename", subtitle_filename);
+                    dl_subtitle.setProperty("streamingType", "subtitle");
+                    dl_subtitle.setAvailable(true);
+                    dl_subtitle.setFinalFileName(subtitle_filename);
+                    decryptedLinks.add(dl_subtitle);
+                }
+                decryptedLinks.add(keep);
+            }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(plain_name);
             fp.addLinks(decryptedLinks);

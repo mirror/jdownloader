@@ -39,33 +39,35 @@ import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/(ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+|subtitles/\\d+)" }, flags = { 0 })
 public class ZdfDeMediathek extends PluginForHost {
-    
+
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
     private static final String Q_BEST      = "Q_BEST";
     private static final String Q_LOW       = "Q_LOW";
     private static final String Q_HIGH      = "Q_HIGH";
     private static final String Q_VERYHIGH  = "Q_VERYHIGH";
     private static final String Q_HD        = "Q_HD";
-    
+
     public ZdfDeMediathek(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
-    
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
     }
-    
+
     @Override
     public String getAGBLink() {
         return "http://zdf.de";
     }
-    
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (link.getStringProperty("directURL", null) == null) {
-            if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (link.getBooleanProperty("offline", false)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             /* fetch fresh directURL */
             this.setBrowserExclusive();
             br.setFollowRedirects(true);
@@ -73,33 +75,41 @@ public class ZdfDeMediathek extends PluginForHost {
             // die Videos als HTTP Streams
             br.getHeaders().put("User-Agent", "iPad");
             br.getPage("http://www.zdf.de/ZDFmediathek/" + new Regex(link.getDownloadURL(), "(beitrag/video/\\d+(/.+)?)").getMatch(0) + "?flash=off&ipad=true");
-            if (br.containsHTML("Der Beitrag konnte nicht gefunden werden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("Der Beitrag konnte nicht gefunden werden")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String filename = br.getRegex("<h1 class=\"beitragHeadline\">([^<>\"]*?)</h1>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setFinalFileName(Encoding.htmlDecode(filename.trim()).replace("\"", "'").replace(":", " - ").replace("?", "") + ".mp4");
         } else {
             link.setFinalFileName(link.getStringProperty("directName", null));
         }
         return AvailableStatus.TRUE;
     }
-    
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
     }
-    
+
     private void setupRTMPConnection(String stream, DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setUrl(stream);
         rtmp.setResume(true);
         rtmp.setRealTime();
     }
-    
+
     private void download(final DownloadLink downloadLink) throws Exception {
         final String dllink = downloadLink.getStringProperty("directURL", null);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (dllink.contains("hinweis_fsk")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dllink.contains("hinweis_fsk")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+        }
         if (dllink.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, dllink);
             setupRTMPConnection(dllink, dl);
@@ -124,7 +134,7 @@ public class ZdfDeMediathek extends PluginForHost {
             }
         }
     }
-    
+
     private void postprocess(final DownloadLink downloadLink) {
         if ("subtitle".equals(downloadLink.getStringProperty("streamingType", null))) {
             if (!convertSubtitle(downloadLink)) {
@@ -134,29 +144,31 @@ public class ZdfDeMediathek extends PluginForHost {
             }
         }
     }
-    
+
     /**
-     * Converts the ZDF Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the ZDF/WDR(some of them) Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      * 
      * @return The success of the conversion.
      */
     public static boolean convertSubtitle(final DownloadLink downloadlink) {
         final File source = new File(downloadlink.getFileOutput());
-        
+
         BufferedWriter dest = null;
         try {
             File output = new File(source.getAbsolutePath().replace(".xml", ".srt"));
             try {
-                if (output.exists() && output.delete() == false) return false;
+                if (output.exists() && output.delete() == false) {
+                    return false;
+                }
                 dest = new BufferedWriter(new FileWriter(output));
             } catch (IOException e1) {
                 return false;
             }
-            
+
             final StringBuilder xml = new StringBuilder();
             int counter = 1;
             final String lineseparator = System.getProperty("line.separator");
-            
+
             Scanner in = null;
             try {
                 in = new Scanner(new FileReader(source));
@@ -168,17 +180,17 @@ public class ZdfDeMediathek extends PluginForHost {
             } finally {
                 in.close();
             }
-            
+            /* Subtitle type used in ZdfDeMediathek and WdrDeMediathek */
             final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
             try {
                 final int starttime = Integer.parseInt(downloadlink.getStringProperty("starttime", null));
                 for (String[] match : matches) {
                     dest.write(counter++ + lineseparator);
-                    
+
                     final Double start = Double.valueOf(match[0]) + starttime;
                     final Double end = Double.valueOf(match[1]) + starttime;
                     dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
-                    
+
                     String text = match[2].trim();
                     text = text.replaceAll(lineseparator, " ");
                     text = text.replaceAll("&amp;", "&");
@@ -188,7 +200,7 @@ public class ZdfDeMediathek extends PluginForHost {
                     text = text.replaceAll("<br />", lineseparator);
                     text = text.replace("</p>", "");
                     text = text.replace("<span ", "").replace("</span>", "");
-                    
+
                     final String[][] textReplaces = new Regex(text, "color=\"#([A-Z0-9]+)\">(.*?)($|tts:)").getMatches();
                     if (textReplaces != null && textReplaces.length != 0) {
                         for (final String[] singleText : textReplaces) {
@@ -200,7 +212,7 @@ public class ZdfDeMediathek extends PluginForHost {
                     } else {
                         dest.write(text + lineseparator + lineseparator);
                     }
-                    
+
                 }
             } catch (Exception e) {
                 return false;
@@ -212,10 +224,10 @@ public class ZdfDeMediathek extends PluginForHost {
             }
         }
         source.delete();
-        
+
         return true;
     }
-    
+
     /**
      * Converts the the time of the ZDF format to the SRT format.
      * 
@@ -228,9 +240,9 @@ public class ZdfDeMediathek extends PluginForHost {
         String minute = "00";
         String second = "00";
         String millisecond = "0";
-        
+
         Integer itime = Integer.valueOf(time.intValue());
-        
+
         // Hour
         Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
         if (timeHour < 10) {
@@ -238,7 +250,7 @@ public class ZdfDeMediathek extends PluginForHost {
         } else {
             hour = timeHour.toString();
         }
-        
+
         // Minute
         Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
         if (timeMinute < 10) {
@@ -246,7 +258,7 @@ public class ZdfDeMediathek extends PluginForHost {
         } else {
             minute = timeMinute.toString();
         }
-        
+
         // Second
         Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
         if (timeSecond < 10) {
@@ -254,42 +266,48 @@ public class ZdfDeMediathek extends PluginForHost {
         } else {
             second = timeSecond.toString();
         }
-        
+
         // Millisecond
         millisecond = String.valueOf(time - itime).split("\\.")[1];
-        if (millisecond.length() == 1) millisecond = millisecond + "00";
-        if (millisecond.length() == 2) millisecond = millisecond + "0";
-        if (millisecond.length() > 2) millisecond = millisecond.substring(0, 3);
-        
+        if (millisecond.length() == 1) {
+            millisecond = millisecond + "00";
+        }
+        if (millisecond.length() == 2) {
+            millisecond = millisecond + "0";
+        }
+        if (millisecond.length() > 2) {
+            millisecond = millisecond.substring(0, 3);
+        }
+
         // Result
         String result = hour + ":" + minute + ":" + second + "," + millisecond;
-        
+
         return result;
     }
-    
+
     @Override
     public void reset() {
     }
-    
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
-    
+
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
-    
+
     @Override
     public String getDescription() {
         return "JDownloader's ZDF Plugin helps downloading videoclips from zdf.de. ZDF provides different video qualities.";
     }
-    
+
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.zdf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -300,7 +318,7 @@ public class ZdfDeMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.zdf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.zdf.loadveryhigh", "Load veryhigh version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.zdf.loadhd", "Load HD version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        
+
     }
-    
+
 }

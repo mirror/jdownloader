@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copy.com" }, urls = { "https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+(/[^<>\"]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "copy.com" }, urls = { "https?://(www\\.)?copy\\.com/[^<>\"]+" }, flags = { 0 })
 public class CopyComDecrypter extends PluginForDecrypt {
 
     public CopyComDecrypter(PluginWrapper wrapper) {
@@ -40,10 +40,12 @@ public class CopyComDecrypter extends PluginForDecrypt {
     private static final boolean ENABLE_API     = true;
     private static final String  TYPE_SUBFOLDER = "https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+/[^<>\"/]+/[^<>\"]+";
 
+    private static final String  VALID_URL      = "https?://(www\\.)?copy\\.com/s/[A-Za-z0-9]+(/[^<>\"]+)?";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = Encoding.htmlDecode(param.toString());
-        final String additionalPath = new Regex(parameter, "copy\\.com(/s/.+)").getMatch(0);
+        br.setFollowRedirects(false);
+        String parameter = Encoding.htmlDecode(param.toString());
         final DownloadLink offline = createDownloadlink("http://copydecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         offline.setAvailable(false);
         offline.setProperty("offline", true);
@@ -53,6 +55,17 @@ public class CopyComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        if (!parameter.matches(VALID_URL)) {
+            br.getPage(parameter);
+            final String newparameter = br.getRedirectLocation();
+            if (newparameter == null || !newparameter.matches(VALID_URL)) {
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+            parameter = newparameter;
+        }
+
+        final String additionalPath = new Regex(parameter, "copy\\.com(/s/.+)").getMatch(0);
         String linktext = null;
         if (ENABLE_API) {
             br.getHeaders().put("X-Client-Version", "1.0.00");
@@ -66,7 +79,9 @@ public class CopyComDecrypter extends PluginForDecrypt {
             }
             linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"").getMatch(0);
             /* Check if we have a single file */
-            if (linktext == null && br.containsHTML("\"children_count\":0")) linktext = br.toString();
+            if (linktext == null && br.containsHTML("\"children_count\":0")) {
+                linktext = br.toString();
+            }
         } else {
             /* Old code, avoid using it! */
             br.getPage(parameter);
@@ -83,7 +98,9 @@ public class CopyComDecrypter extends PluginForDecrypt {
                 linktext = br.getRegex("\"share\":null,\"children\":\\[(.*?)\\],\"children_count\":").getMatch(0);
             }
             /* For single links */
-            if (linktext == null || linktext.equals("")) linktext = br.getRegex("previous_parent = Browser\\.Models\\.Obj\\.findOrCreate\\((\\{\"id\":\"/s/.*?\\})\\],\"stub\":false,\"children_count\":1").getMatch(0);
+            if (linktext == null || linktext.equals("")) {
+                linktext = br.getRegex("previous_parent = Browser\\.Models\\.Obj\\.findOrCreate\\((\\{\"id\":\"/s/.*?\\})\\],\"stub\":false,\"children_count\":1").getMatch(0);
+            }
 
             if (linktext == null) {
                 /* Maybe invalid subfolder that leads to the root --> re-add root */
@@ -140,7 +157,9 @@ public class CopyComDecrypter extends PluginForDecrypt {
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 

@@ -56,7 +56,9 @@ public class CloudMailRu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (link.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         prepBR();
         if (link.getDownloadURL().matches(TYPE_HOTLINK)) {
@@ -78,11 +80,15 @@ public class CloudMailRu extends PluginForHost {
             }
         } else {
             /* Check if main-folder still exists */
-            br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + getID(link) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=1&htmlencoded=false&build=" + BUILD);
-            if (br.containsHTML("\"status\":400")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.getPage("https://cloud.mail.ru/api/v1/folder/recursive?storage=public&id=" + Encoding.urlEncode(getID(link)) + "&sort=%7B%22type%22%3A%22name%22%2C%22order%22%3A%22asc%22%7D&api=1&htmlencoded=false&build=" + BUILD);
+            if (br.containsHTML("\"status\":400")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String filename = link.getStringProperty("plain_name", null);
             final String filesize = link.getStringProperty("plain_size", null);
-            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             link.setFinalFileName(filename);
             link.setDownloadSize(Long.parseLong(filesize));
         }
@@ -99,7 +105,9 @@ public class CloudMailRu extends PluginForHost {
             resume = false;
             maxchunks = 1;
         }
-        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) maxchunks = 1;
+        if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
+            maxchunks = 1;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -109,7 +117,9 @@ public class CloudMailRu extends PluginForHost {
         try {
             if (!this.dl.startDownload()) {
                 try {
-                    if (dl.externalDownloadStop()) return;
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
@@ -146,7 +156,9 @@ public class CloudMailRu extends PluginForHost {
                 dllink = dl.getDownloadURL();
             } else if (isCompleteFolder(dl)) {
                 final String request_id = dl.getStringProperty("plain_request_id", null);
-                if (request_id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (request_id == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.postPage("https://cloud.mail.ru/api/v1/zip", "name=%D0%9D%D0%BE%D0%B2%D0%B0%D1%8F+%D0%BF%D0%B0%D0%BF%D0%BA%D0%B0&ids=%5B%22" + request_id + "%22%5D&storage=public&cp866=false&api=1&htmlencoded=false&build=" + BUILD);
                 dllink = getJson("body", br.toString());
             } else {
@@ -155,13 +167,17 @@ public class CloudMailRu extends PluginForHost {
                 // dllink = checkDirectLink(dl, "plain_directlink");
             }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return dllink;
     }
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
         return result;
     }
 

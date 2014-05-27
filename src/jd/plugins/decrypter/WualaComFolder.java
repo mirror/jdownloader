@@ -64,18 +64,24 @@ public class WualaComFolder extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<name>([^<>\"]*?)</name>").getMatch(0);
-        final String[] items = br.getRegex("(<item contentType.*?</item>)").getColumn(0);
+        final String[] items = br.getRegex("(<item (contentType|fullkey).*?</item>)").getColumn(0);
         if (items == null || items.length == 0) {
             String filename = br.getRegex("<name>([^<>\"]*?)</name>").getMatch(0);
-            if (filename == null) filename = getJson("basename");
+            if (filename == null) {
+                filename = getJson("basename");
+            }
             filename = Encoding.deepHtmlDecode(filename);
             final String ext = getJson("ext");
             String filesize = br.getRegex("<size>(\\d+)</size>").getMatch(0);
-            if (filesize == null) filesize = getJson("bytes");
+            if (filesize == null) {
+                filesize = getJson("bytes");
+            }
             final DownloadLink main = createDownloadlink(parameter.replace("http://", "https://").replace("wuala.com/", "wualadecrypted.com/"));
             if (filename != null && filesize != null) {
                 filename = encodeUnicode(Encoding.htmlDecode(filename.trim()));
-                if (ext != null) filename += "." + ext;
+                if (ext != null) {
+                    filename += "." + ext;
+                }
                 main.setName(filename);
                 main.setDownloadSize(Long.parseLong(filesize));
                 main.setAvailable(true);
@@ -84,7 +90,9 @@ public class WualaComFolder extends PluginForDecrypt {
                 main.setAvailable(false);
             }
             final String md5 = br.getRegex("<hash>([A-F0-9]+)</hash>").getMatch(0);
-            if (md5 != null) main.setMD5Hash(md5);
+            if (md5 != null) {
+                main.setMD5Hash(md5);
+            }
             decryptedLinks.add(main);
         } else {
             for (final String item : items) {
@@ -95,13 +103,24 @@ public class WualaComFolder extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                url = url.replace("http://", "https://").replace("wuala.com/", "wualadecrypted.com/");
-                if (key != null) url += "?key=" + key;
-                final DownloadLink dl = createDownloadlink(url);
-                dl.setName(encodeUnicode(Encoding.htmlDecode(name.trim())));
-                dl.setDownloadSize(Long.parseLong(filesize));
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                /* Differ between folder and single file */
+                if (item.contains("<item fullkey")) {
+                    if (key != null) {
+                        url += "?key=" + key;
+                    }
+                    url = Encoding.htmlDecode(url);
+                    decryptedLinks.add(createDownloadlink(url));
+                } else {
+                    url = url.replace("http://", "https://").replace("wuala.com/", "wualadecrypted.com/");
+                    if (key != null) {
+                        url += "?key=" + key;
+                    }
+                    final DownloadLink dl = createDownloadlink(url);
+                    dl.setName(encodeUnicode(Encoding.htmlDecode(name.trim())));
+                    dl.setDownloadSize(Long.parseLong(filesize));
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                }
             }
             if (fpName != null) {
                 final FilePackage fp = FilePackage.getInstance();
@@ -114,7 +133,9 @@ public class WualaComFolder extends PluginForDecrypt {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 

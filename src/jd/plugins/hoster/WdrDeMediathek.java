@@ -23,6 +23,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -38,6 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://wdrdecrypted\\.de/\\?format=(mp3|mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" }, flags = { 0 })
@@ -207,40 +209,75 @@ public class WdrDeMediathek extends PluginForHost {
             in.close();
         }
         final String xmlContent = xml.toString();
-        /* Find hex color text --> code assignments */
-        final HashMap<String, String> color_codes = new HashMap<String, String>();
-        final String[][] found_color_codes = new Regex(xmlContent, "xml:id=\"([A-Za-z]+)\" tts:color=\"(#[A-Z0-9]+)\"").getMatches();
-        if (found_color_codes != null && found_color_codes.length != 0) {
-            for (final String[] color_info : found_color_codes) {
-                color_codes.put(color_info[0], color_info[1]);
-            }
-        }
-
-        final String[] matches = new Regex(xmlContent, "(<tt:p xml:id=\"sub\\d+\".*?</tt:p>)").getColumn(0);
         try {
-            for (final String info : matches) {
-                dest.write(counter++ + lineseparator);
-                final Regex startInfo = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2})\\.(\\d{3})\"");
-                final Regex endInfo = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2})\\.(\\d{3})\"");
-                final String start = startInfo.getMatch(0) + "," + startInfo.getMatch(1);
-                final String end = endInfo.getMatch(0) + "," + endInfo.getMatch(1);
-                dest.write(start + " --> " + end + lineseparator);
+            /* They use 2 different types of subtitles */
+            if (xmlContent.contains("XML Subtitle File for Flash Player")) {
+                /* Subtitle type used in ZdfDeMediathek and WdrDeMediathek */
+                final String[][] matches = new Regex(xml.toString(), "<p begin=\"([^<>\"]*)\" end=\"([^<>\"]*)\" tts:textAlign=\"center\">?(.*?)</p>").getMatches();
+                for (String[] match : matches) {
+                    dest.write(counter++ + lineseparator);
 
-                final String[][] texts = new Regex(info, "<tt:span style=\"([A-Za-z0-9]+)\">([^<>\"]*?)</tt:span>").getMatches();
-                String text = "";
-                int line_counter = 1;
-                for (final String[] textinfo : texts) {
-                    final String color = textinfo[0];
-                    final String colorcode = color_codes.get(color);
-                    String line = textinfo[1];
-                    text += "<font color=" + colorcode + ">" + line + "</font>";
-                    /* Add linebreak as long as we're not at the last line of this statement */
-                    if (line_counter != texts.length) {
-                        text += lineseparator;
+                    final Double start = Double.valueOf(match[0]);
+                    final Double end = Double.valueOf(match[1]);
+                    dest.write(convertSubtitleTime(start) + " --> " + convertSubtitleTime(end) + lineseparator);
+
+                    String text = match[2].trim();
+                    text = text.replaceAll(lineseparator, " ");
+                    text = text.replaceAll("&amp;", "&");
+                    text = text.replaceAll("&quot;", "\"");
+                    text = text.replaceAll("&#39;", "'");
+                    text = text.replaceAll("&apos;", "'");
+                    text = text.replaceAll("<br />", lineseparator);
+                    text = text.replace("</p>", "");
+                    text = text.replace("<span ", "").replace("</span>", "");
+
+                    final String[][] textReplaces = new Regex(text, "color=\"#([A-Z0-9]+)\">(.*?)($|tts:)").getMatches();
+                    if (textReplaces != null && textReplaces.length != 0) {
+                        for (final String[] singleText : textReplaces) {
+                            final String colorCode = singleText[0].trim();
+                            final String plainText = singleText[1].trim();
+                            final String completeNewText = "<font color=#" + colorCode + ">" + plainText + "</font>";
+                            dest.write(completeNewText + lineseparator + lineseparator);
+                        }
+                    } else {
+                        dest.write(text + lineseparator + lineseparator);
                     }
-                    line_counter++;
+
                 }
-                dest.write(text + lineseparator + lineseparator);
+            } else {
+                /* Find hex color text --> code assignments */
+                final HashMap<String, String> color_codes = new HashMap<String, String>();
+                final String[][] found_color_codes = new Regex(xmlContent, "xml:id=\"([A-Za-z]+)\" tts:color=\"(#[A-Z0-9]+)\"").getMatches();
+                if (found_color_codes != null && found_color_codes.length != 0) {
+                    for (final String[] color_info : found_color_codes) {
+                        color_codes.put(color_info[0], color_info[1]);
+                    }
+                }
+                final String[] matches = new Regex(xmlContent, "(<tt:p xml:id=\"sub\\d+\".*?</tt:p>)").getColumn(0);
+                for (final String info : matches) {
+                    dest.write(counter++ + lineseparator);
+                    final Regex startInfo = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                    final Regex endInfo = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                    final String start = startInfo.getMatch(0) + "," + startInfo.getMatch(1);
+                    final String end = endInfo.getMatch(0) + "," + endInfo.getMatch(1);
+                    dest.write(start + " --> " + end + lineseparator);
+
+                    final String[][] texts = new Regex(info, "<tt:span style=\"([A-Za-z0-9]+)\">([^<>\"]*?)</tt:span>").getMatches();
+                    String text = "";
+                    int line_counter = 1;
+                    for (final String[] textinfo : texts) {
+                        final String color = textinfo[0];
+                        final String colorcode = color_codes.get(color);
+                        String line = textinfo[1];
+                        text += "<font color=" + colorcode + ">" + line + "</font>";
+                        /* Add linebreak as long as we're not at the last line of this statement */
+                        if (line_counter != texts.length) {
+                            text += lineseparator;
+                        }
+                        line_counter++;
+                    }
+                    dest.write(text + lineseparator + lineseparator);
+                }
             }
         } catch (Exception e) {
             return false;
@@ -254,6 +291,73 @@ public class WdrDeMediathek extends PluginForHost {
         source.delete();
 
         return true;
+    }
+
+    /**
+     * Converts the the time of the WDR format to the SRT format.
+     * 
+     * @param time
+     *            . The time from the WDR XML.
+     * @return The converted time as String.
+     */
+    private static String convertSubtitleTime(Double time) {
+        String hour = "00";
+        String minute = "00";
+        String second = "00";
+        String millisecond = "0";
+
+        Integer itime = Integer.valueOf(time.intValue());
+
+        // Hour
+        Integer timeHour = Integer.valueOf(itime.intValue() / 3600);
+        if (timeHour < 10) {
+            hour = "0" + timeHour.toString();
+        } else {
+            hour = timeHour.toString();
+        }
+
+        // Minute
+        Integer timeMinute = Integer.valueOf((itime.intValue() % 3600) / 60);
+        if (timeMinute < 10) {
+            minute = "0" + timeMinute.toString();
+        } else {
+            minute = timeMinute.toString();
+        }
+
+        // Second
+        Integer timeSecond = Integer.valueOf(itime.intValue() % 60);
+        if (timeSecond < 10) {
+            second = "0" + timeSecond.toString();
+        } else {
+            second = timeSecond.toString();
+        }
+
+        // Millisecond
+        millisecond = String.valueOf(time - itime).split("\\.")[1];
+        if (millisecond.length() == 1) {
+            millisecond = millisecond + "00";
+        }
+        if (millisecond.length() == 2) {
+            millisecond = millisecond + "0";
+        }
+        if (millisecond.length() > 2) {
+            millisecond = millisecond.substring(0, 3);
+        }
+
+        // Result
+        String result = hour + ":" + minute + ":" + second + "," + millisecond;
+
+        return result;
+    }
+
+    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (!yt_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForHost("youtube.com");
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override

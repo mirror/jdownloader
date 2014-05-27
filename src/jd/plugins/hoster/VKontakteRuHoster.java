@@ -133,9 +133,9 @@ public class VKontakteRuHoster extends PluginForHost {
         return ai;
     }
 
-    /** Same function in hoster and decrypterplugin, sync it!! */
+    /* Same function in hoster and decrypterplugin, sync it!! */
     private LinkedHashMap<String, String> findAvailableVideoQualities() {
-        /** Find needed information */
+        /* Find needed information */
         this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
         final String[][] qualities = { { "url720", "720p" }, { "url480", "480p" }, { "url360", "360p" }, { "url240", "240p" } };
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
@@ -178,7 +178,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return -1;
     }
 
-    // Handle all kinds of stuff that disturbs the downloadflow
+    /* Handle all kinds of stuff that disturbs the downloadflow */
     private void getPageSafe(final Account acc, final DownloadLink dl, final String page) throws Exception {
         this.br.getPage(page);
         if (acc != null && this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
@@ -197,7 +197,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        // Doc-links and other links with permission can be downloaded without login
+        /* Doc-links and other links with permission can be downloaded without login */
         if (downloadLink.getDownloadURL().matches(VKontakteRuHoster.DOCLINK)) {
             this.requestFileInformation(downloadLink);
             this.doFree(downloadLink);
@@ -374,7 +374,13 @@ public class VKontakteRuHoster extends PluginForHost {
             if (filename == null || this.FINALLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = Encoding.htmlDecode(filename.trim());
+            /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
+            final String betterFilename = new Regex(this.FINALLINK, "docs/[a-z0-9]+/([^<>\"]*?)\\?extra=.+").getMatch(0);
+            if (betterFilename != null) {
+                filename = Encoding.htmlDecode(betterFilename).trim();
+            } else {
+                filename = Encoding.htmlDecode(filename.trim());
+            }
             if (!this.linkOk(link, filename)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
