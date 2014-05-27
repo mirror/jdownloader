@@ -57,7 +57,7 @@ public class PanBaiduCom extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().contains("pan.baidu.com/share/error?") || br.containsHTML("id=\"share_nofound_des\"")) {
+        if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {
             logger.info("Link offline: " + parameter);
             final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("offline", true);

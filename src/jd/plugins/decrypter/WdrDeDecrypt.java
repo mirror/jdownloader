@@ -30,8 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([a-z0-9\\-_/]+/sendungen/[a-z0-9\\-_/]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 32 })
@@ -75,7 +73,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             offline = true;
         }
         // Add offline link so user can see it
-        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || parameter.contains("uebersicht") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38) {
+        if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || parameter.contains("uebersicht") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !br.containsHTML("class=\"videoButton play\"")) {
             final DownloadLink dl = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
@@ -93,6 +91,9 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         }
         if (sendung == null) {
             sendung = br.getRegex("<div id=\"initialPagePart\">[\t\n\r ]+<h1>[\t\n\r ]+<span>([^<>\"]*?)<span class=\"hidden\">:</span>").getMatch(0);
+        }
+        if (sendung == null) {
+            sendung = br.getRegex("<title>([^<>\"]*?)\\- WDR Fernsehen</title>").getMatch(0);
         }
         String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>\"]*?)<span class=\"hover\"").getMatch(0);
         if (episode_name == null) {
@@ -136,20 +137,37 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 player_link = br.getRegex("\"(/[^<>\"]*?)\" rel=\"nofollow\" class=\"videoButton play\"").getMatch(0);
             }
             if (player_link == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
             br.getPage("http://www1.wdr.de" + player_link);
-            String subtitle_url = br.getRegex("vtCaptionsURL=(http%3A%2F%2[^<>\"]*?\\.xml)\\&vtCaptions").getMatch(0);
+            String flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
+            if (flashvars == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            flashvars = Encoding.htmlDecode(flashvars);
+            String subtitle_url = new Regex(flashvars, "vtCaptionsURL=(http://[^<>\"]*?\\.xml)\\&vtCaptions").getMatch(0);
             if (subtitle_url != null) {
                 subtitle_url = Encoding.htmlDecode(subtitle_url);
             }
+            /* We know how their http links look - this way we can avoid HDS */
+            final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/medstdp/ww/(fsk\\d+/\\d+/\\d+)/,(\\d+_\\d+,\\d+_\\d+),\\.mp4\\.csmil/");
+            final String fsk_url = hds_convert.getMatch(0);
+            final String quality_string = hds_convert.getMatch(1);
+            if (fsk_url == null || quality_string == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             /* Avoid HDS */
-            final String[] qualities = br.getRegex("(CMS2010/mdb/ondemand/weltweit/fsk\\d+/[^<>\"]*?)\"").getColumn(0);
+            final String[] qualities = quality_string.split(",");
             if (qualities == null || qualities.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
             int counter = 0;
-            for (final String final_url : qualities) {
+            for (final String single_quality_string : qualities) {
+                final String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/weltweit/" + fsk_url + "/" + single_quality_string + ".mp4";
                 String resolution;
                 String quality_name;
                 if (counter == 0) {
@@ -162,7 +180,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 final String final_video_name = plain_name + "_" + resolution + ".mp4";
                 final DownloadLink dl_video = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                 dl_video.setProperty("mainlink", parameter);
-                dl_video.setProperty("direct_link", "http://http-ras.wdr.de/" + final_url);
+                dl_video.setProperty("direct_link", final_url);
                 dl_video.setProperty("plain_filename", final_video_name);
                 dl_video.setProperty("plain_resolution", resolution);
                 dl_video.setFinalFileName(final_video_name);

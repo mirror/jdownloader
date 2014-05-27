@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "http://(www\\.)?amazon\\.(de|es|com\\.au)/gp/drive/share\\?ie=[A-Za-z0-9]+\\&s=[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amazon.com" }, urls = { "http://(www\\.)?amazon\\.(de|es|com\\.au|co\\.uk|fr)/gp/drive/share\\?ie=[A-Za-z0-9]+\\&s=[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class AmazonCloud extends PluginForHost {
 
     public AmazonCloud(PluginWrapper wrapper) {

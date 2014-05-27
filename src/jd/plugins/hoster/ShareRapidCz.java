@@ -47,7 +47,7 @@ public class ShareRapidCz extends PluginForHost {
 
     private static AtomicInteger maxPrem                         = new AtomicInteger(1);
 
-    private static final String  MAINPAGE                        = "http://sharerapid.cz/";
+    private static final String  MAINPAGE                        = "http://megarapid.cz/";
     private static Object        LOCK                            = new Object();
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanPremiumDownload = new AtomicInteger(1);
@@ -63,7 +63,7 @@ public class ShareRapidCz extends PluginForHost {
         // http://share-rapid.com/informace/
         String downloadlinklink = link.getDownloadURL();
         if (downloadlinklink != null) {
-            downloadlinklink = downloadlinklink.replaceAll("(share-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|share\\-free|srapid)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz|megarapid\\.cz)", "sharerapid.cz");
+            downloadlinklink = downloadlinklink.replaceAll("(share-rapid\\.(biz|com|info|cz|eu|info|net|sk)|((mediatack|rapidspool|e\\-stahuj|premium\\-rapidshare|qiuck|rapidshare\\-premium|share\\-credit|share\\-free|srapid)\\.cz)|((strelci|share\\-ms|)\\.net)|jirkasekyrka\\.com|((kadzet|universal\\-share)\\.com)|sharerapid\\.(biz|cz|net|org|sk)|stahuj\\-zdarma\\.eu|share\\-central\\.cz|rapids\\.cz|megarapid\\.cz)", "megarapid.cz");
         }
         link.setUrlDownload(downloadlinklink);
     }

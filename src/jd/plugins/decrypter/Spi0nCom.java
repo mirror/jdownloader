@@ -20,9 +20,11 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spi0n.com" }, urls = { "http://www\\.spi0n\\.com/[a-z0-9\\-_]+" }, flags = { 0 })
@@ -44,7 +46,7 @@ public class Spi0nCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.getPage(parameter);
-        if (!br.containsHTML("id=\"container\"")) {
+        if (!br.containsHTML("id=\"container\"") || !br.containsHTML("class=\"headline\"")) {
             logger.info("Link offline (no video on this page?!): " + parameter);
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
@@ -71,9 +73,23 @@ public class Spi0nCom extends PluginForDecrypt {
                 finallink = "directhttp://" + finallink.replace("http://www.", "http://");
             }
         }
+        /* Maybe its a picture gallery */
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            final String fpName = br.getRegex("class=\"headline\">([^<>\"]*?)<").getMatch(0);
+            final String[] pictures = br.getRegex("size\\-(large|full) wp\\-image\\-\\d+\" alt=\"[^<>\"/]+\" src=\"(http://(www\\.)?spi0n\\.com/wp\\-content/uploads/[^<>\"]*?)\"").getColumn(1);
+            if (fpName == null || pictures == null || pictures.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String pic : pictures) {
+                final DownloadLink fina = createDownloadlink("directhttp://" + pic);
+                fina.setAvailable(true);
+                decryptedLinks.add(fina);
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(decryptedLinks);
+            return decryptedLinks;
         }
         decryptedLinks.add(createDownloadlink(finallink));
 

@@ -81,6 +81,14 @@ public class FlickrCom extends PluginForDecrypt {
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
+        } else if (parameter.matches(FAVORITELINK) && br.containsHTML("id=\"no\\-faves\"")) {
+            /* Favourite link but user has no favourites */
+            final DownloadLink offline = createDownloadlink("http://flickrdecrypted.com/photos/xxoffline/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            offline.setName(new Regex(parameter, "flickr\\.com/photos/([^<>\"/]+)/favorites").getMatch(0));
+            offline.setAvailable(false);
+            offline.setProperty("offline", true);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
         }
         /* Login is not always needed but we force it to get all pictures */
         final boolean logged_in = getUserLogin();
