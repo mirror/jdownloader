@@ -34,6 +34,7 @@ import jd.plugins.Account;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -41,6 +42,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
@@ -465,132 +467,143 @@ public class ProxyController implements ProxySelectorInterface {
         } else if (allowInit) {
             noPSFirst = true;
             logger.info("Init Proxy Controller fresh");
-            final ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
-            try {
-                strategies.add(new DesktopProxySearchStrategy());
-                strategies.add(new FirefoxProxySearchStrategy());
-                strategies.add(new EnvProxySearchStrategy());
-                strategies.add(new JavaProxySearchStrategy());
-            } catch (final Throwable e) {
-                logger.log(e);
-            }
-            for (ProxySearchStrategy s : strategies) {
-                logger.info("Selector: " + s);
+            File crashTest = Application.getTempResource("proxyVoleRunningProxyController");
+            if (crashTest.exists()) {
+                logger.log(new WTFException("Proxy Vole Crashed"));
+
+            } else {
                 try {
-                    ProxySelector selector = s.getProxySelector();
-                    if (selector == null) {
-                        continue;
+                    final ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
+                    try {
+                        strategies.add(new DesktopProxySearchStrategy());
+                        strategies.add(new FirefoxProxySearchStrategy());
+                        strategies.add(new EnvProxySearchStrategy());
+                        strategies.add(new JavaProxySearchStrategy());
+                    } catch (final Throwable e) {
+                        logger.log(e);
                     }
-                    if (selector instanceof ProxyBypassListSelector) {
-                        Field field = ProxyBypassListSelector.class.getDeclaredField("delegate");
-                        field.setAccessible(true);
-                        selector = (ProxySelector) field.get(selector);
-                    }
-                    if (selector instanceof PacProxySelector) {
-                        Field field = PacProxySelector.class.getDeclaredField("pacScriptParser");
-                        field.setAccessible(true);
-                        PacScriptParser source = (PacScriptParser) field.get(selector);
-                        PacScriptSource pacSource = source.getScriptSource();
-                        if (pacSource != null && pacSource instanceof UrlPacScriptSource) {
-                            field = UrlPacScriptSource.class.getDeclaredField("scriptUrl");
-                            field.setAccessible(true);
-                            Object pacURL = field.get(pacSource);
-                            if (StringUtils.isNotEmpty((String) pacURL)) {
-                                PacProxySelectorImpl pac = new PacProxySelectorImpl((String) pacURL, null, null);
-                                if (proxies.add(pac)) {
-                                    logger.info("Add pac: " + pacURL);
+
+                    for (ProxySearchStrategy s : strategies) {
+                        logger.info("Selector: " + s);
+                        try {
+                            ProxySelector selector = s.getProxySelector();
+                            if (selector == null) {
+                                continue;
+                            }
+                            if (selector instanceof ProxyBypassListSelector) {
+                                Field field = ProxyBypassListSelector.class.getDeclaredField("delegate");
+                                field.setAccessible(true);
+                                selector = (ProxySelector) field.get(selector);
+                            }
+                            if (selector instanceof PacProxySelector) {
+                                Field field = PacProxySelector.class.getDeclaredField("pacScriptParser");
+                                field.setAccessible(true);
+                                PacScriptParser source = (PacScriptParser) field.get(selector);
+                                PacScriptSource pacSource = source.getScriptSource();
+                                if (pacSource != null && pacSource instanceof UrlPacScriptSource) {
+                                    field = UrlPacScriptSource.class.getDeclaredField("scriptUrl");
+                                    field.setAccessible(true);
+                                    Object pacURL = field.get(pacSource);
+                                    if (StringUtils.isNotEmpty((String) pacURL)) {
+                                        PacProxySelectorImpl pac = new PacProxySelectorImpl((String) pacURL, null, null);
+                                        if (proxies.add(pac)) {
+                                            logger.info("Add pac: " + pacURL);
+                                        }
+                                    }
+                                }
+                            } else {
+                                List<Proxy> sproxies = selector.select(new URI("http://google.com"));
+                                if (sproxies != null) {
+                                    for (Proxy p : sproxies) {
+                                        HTTPProxy httpProxy = null;
+                                        switch (p.type()) {
+                                        case DIRECT:
+                                            if (p.address() == null) {
+                                                if (proxies.add(new NoProxySelector())) {
+                                                    logger.info("Add None");
+                                                }
+                                            } else {
+                                                httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
+                                                SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(httpProxy);
+                                                if (proxies.add(direct)) {
+                                                    logger.info("Add Direct: " + direct);
+                                                }
+                                            }
+                                            break;
+                                        case HTTP:
+                                            httpProxy = new HTTPProxy(TYPE.HTTP, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
+                                            final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(httpProxy);
+                                            if (proxies.add(basic)) {
+                                                logger.info("Add Basic: " + basic);
+                                            }
+                                            break;
+                                        case SOCKS:
+                                            httpProxy = new HTTPProxy(TYPE.SOCKS5, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
+                                            final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(httpProxy);
+                                            if (proxies.add(socks)) {
+                                                logger.info("Add Socks: " + socks);
+                                            }
+                                            break;
+                                        }
+                                    }
                                 }
                             }
+                        } catch (Throwable e) {
+                            logger.log(e);
                         }
-                    } else {
-                        List<Proxy> sproxies = selector.select(new URI("http://google.com"));
-                        if (sproxies != null) {
-                            for (Proxy p : sproxies) {
-                                HTTPProxy httpProxy = null;
-                                switch (p.type()) {
+                        /* convert from old system */
+                        final List<HTTPProxy> reto = restoreFromOldConfig();
+                        for (final HTTPProxy proxyData : reto) {
+                            try {
+                                switch (proxyData.getType()) {
+                                case NONE:
+                                    final NoProxySelector none = new NoProxySelector(proxyData);
+                                    if (proxies.add(none)) {
+                                        logger.info("Restore None: " + none);
+                                    }
+                                    break;
                                 case DIRECT:
-                                    if (p.address() == null) {
-                                        if (proxies.add(new NoProxySelector())) {
-                                            logger.info("Add None");
-                                        }
-                                    } else {
-                                        httpProxy = new HTTPProxy(((InetSocketAddress) p.address()).getAddress());
-                                        SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(httpProxy);
-                                        if (proxies.add(direct)) {
-                                            logger.info("Add Direct: " + direct);
-                                        }
+                                    final SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(proxyData);
+                                    if (proxies.add(direct)) {
+                                        logger.info("Restore Direct: " + direct);
                                     }
                                     break;
                                 case HTTP:
-                                    httpProxy = new HTTPProxy(TYPE.HTTP, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                    final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(httpProxy);
+                                    final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(proxyData);
                                     if (proxies.add(basic)) {
-                                        logger.info("Add Basic: " + basic);
+                                        logger.info("Restore Basic: " + basic);
                                     }
                                     break;
-                                case SOCKS:
-                                    httpProxy = new HTTPProxy(TYPE.SOCKS5, ((InetSocketAddress) p.address()).getHostString(), ((InetSocketAddress) p.address()).getPort());
-                                    final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(httpProxy);
+                                case SOCKS4:
+                                case SOCKS5:
+                                    final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(proxyData);
                                     if (proxies.add(socks)) {
-                                        logger.info("Add Socks: " + socks);
+                                        logger.info("Restore Soskcs: " + socks);
                                     }
                                     break;
-                                }
-                            }
-                        }
-                    }
-                } catch (Throwable e) {
-                    logger.log(e);
-                }
-                /* convert from old system */
-                final List<HTTPProxy> reto = restoreFromOldConfig();
-                for (final HTTPProxy proxyData : reto) {
-                    try {
-                        switch (proxyData.getType()) {
-                        case NONE:
-                            final NoProxySelector none = new NoProxySelector(proxyData);
-                            if (proxies.add(none)) {
-                                logger.info("Restore None: " + none);
-                            }
-                            break;
-                        case DIRECT:
-                            final SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(proxyData);
-                            if (proxies.add(direct)) {
-                                logger.info("Restore Direct: " + direct);
-                            }
-                            break;
-                        case HTTP:
-                            final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(proxyData);
-                            if (proxies.add(basic)) {
-                                logger.info("Restore Basic: " + basic);
-                            }
-                            break;
-                        case SOCKS4:
-                        case SOCKS5:
-                            final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(proxyData);
-                            if (proxies.add(socks)) {
-                                logger.info("Restore Soskcs: " + socks);
-                            }
-                            break;
 
-                        default:
-                            continue;
+                                default:
+                                    continue;
+                                }
+                            } catch (final Throwable e) {
+                                logger.log(e);
+                            }
                         }
-                    } catch (final Throwable e) {
-                        logger.log(e);
-                    }
-                }
-                /* import proxies from system properties */
-                final List<HTTPProxy> sproxy = HTTPProxy.getFromSystemProperties();
-                for (final HTTPProxy proxyData : sproxy) {
-                    try {
-                        SingleBasicProxySelectorImpl proxy = new SingleBasicProxySelectorImpl(proxyData);
-                        if (proxies.add(proxy)) {
-                            logger.info("Add System Proxy: " + proxy);
+                        /* import proxies from system properties */
+                        final List<HTTPProxy> sproxy = HTTPProxy.getFromSystemProperties();
+                        for (final HTTPProxy proxyData : sproxy) {
+                            try {
+                                SingleBasicProxySelectorImpl proxy = new SingleBasicProxySelectorImpl(proxyData);
+                                if (proxies.add(proxy)) {
+                                    logger.info("Add System Proxy: " + proxy);
+                                }
+                            } catch (final Throwable e) {
+                                logger.log(e);
+                            }
                         }
-                    } catch (final Throwable e) {
-                        logger.log(e);
                     }
+                } finally {
+
                 }
             }
         }
