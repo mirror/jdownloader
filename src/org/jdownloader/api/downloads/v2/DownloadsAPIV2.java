@@ -5,6 +5,7 @@ import java.util.List;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 
 @ApiNamespace("downloadsV2")
 public interface DownloadsAPIV2 extends RemoteAPIInterface {
@@ -75,5 +76,7 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
      * @return
      */
     List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams) throws BadParameterException;
+
+    void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException;
 
 }

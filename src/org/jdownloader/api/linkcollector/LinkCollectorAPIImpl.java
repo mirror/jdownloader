@@ -56,9 +56,15 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             packages = toKeep;
         }
 
-        if (startWith > lc.getPackages().size() - 1) return result;
-        if (startWith < 0) startWith = 0;
-        if (maxResults < 0) maxResults = lc.getPackages().size();
+        if (startWith > lc.getPackages().size() - 1) {
+            return result;
+        }
+        if (startWith < 0) {
+            startWith = 0;
+        }
+        if (maxResults < 0) {
+            maxResults = lc.getPackages().size();
+        }
 
         for (int i = startWith; i < startWith + maxResults; i++) {
 
@@ -182,14 +188,22 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             }
         }
 
-        if (links.isEmpty()) return result;
+        if (links.isEmpty()) {
+            return result;
+        }
 
         int startWith = queryParams.getStartAt();
         int maxResults = queryParams.getMaxResults();
 
-        if (startWith > links.size() - 1) return result;
-        if (startWith < 0) startWith = 0;
-        if (maxResults < 0) maxResults = links.size();
+        if (startWith > links.size() - 1) {
+            return result;
+        }
+        if (startWith < 0) {
+            startWith = 0;
+        }
+        if (maxResults < 0) {
+            maxResults = links.size();
+        }
 
         for (int i = startWith; i < Math.min(startWith + maxResults, links.size()); i++) {
 
@@ -210,7 +224,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             if (queryParams._getQueryParam("url", Boolean.class, false)) {
                 infomap.put("url", cl.getURL());
             }
-            if (queryParams.fieldRequested("enabled")) infomap.put("enabled", cl.isEnabled());
+            if (queryParams.fieldRequested("enabled")) {
+                infomap.put("enabled", cl.isEnabled());
+            }
             infomap.put("packageUUID", cl.getParentNode().getUniqueID().getID());
 
             cls.setInfoMap(infomap);
@@ -252,7 +268,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         lcj.setCrawledLinkModifier(new CrawledLinkModifier() {
             private PackageInfo getPackageInfo(CrawledLink link) {
                 PackageInfo packageInfo = link.getDesiredPackageInfo();
-                if (packageInfo != null) return packageInfo;
+                if (packageInfo != null) {
+                    return packageInfo;
+                }
                 packageInfo = new PackageInfo();
                 link.setDesiredPackageInfo(packageInfo);
                 return packageInfo;
@@ -273,7 +291,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 }
                 DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
-                    if (StringUtils.isNotEmpty(downloadPassword)) dlLink.setDownloadPassword(downloadPassword);
+                    if (StringUtils.isNotEmpty(downloadPassword)) {
+                        dlLink.setDownloadPassword(downloadPassword);
+                    }
                 }
                 if (autostart) {
                     link.setAutoConfirmEnabled(true);
@@ -384,7 +404,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public boolean enableLinks(final List<Long> linkIds) {
-        if (linkIds == null) return true;
+        if (linkIds == null) {
+            return true;
+        }
         return enableLinks(linkIds, null);
     }
 
@@ -404,7 +426,9 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public boolean disableLinks(final List<Long> linkIds) {
-        if (linkIds == null) return true;
+        if (linkIds == null) {
+            return true;
+        }
         return disableLinks(linkIds, null);
     }
 

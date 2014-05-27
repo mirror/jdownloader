@@ -217,19 +217,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Plugin error" })
     String gui_treetable_error_plugin();
 
-    @Default(lngs = { "en" }, values = { "Low Priority" })
+    @Default(lngs = { "en" }, values = { "Low PriorityStorable" })
     String gui_treetable_tooltip_priority_1();
 
-    @Default(lngs = { "en" }, values = { "Default Priority" })
+    @Default(lngs = { "en" }, values = { "Default PriorityStorable" })
     String gui_treetable_tooltip_priority0();
 
-    @Default(lngs = { "en" }, values = { "High Priority" })
+    @Default(lngs = { "en" }, values = { "High PriorityStorable" })
     String gui_treetable_tooltip_priority1();
 
-    @Default(lngs = { "en" }, values = { "Higher Priority" })
+    @Default(lngs = { "en" }, values = { "Higher PriorityStorable" })
     String gui_treetable_tooltip_priority2();
 
-    @Default(lngs = { "en" }, values = { "Highest Priority" })
+    @Default(lngs = { "en" }, values = { "Highest PriorityStorable" })
     String gui_treetable_tooltip_priority3();
 
     @Default(lngs = { "en" }, values = { "File" })
@@ -507,7 +507,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Bytes Left" })
     String RemainingColumn_RemainingColumn();
 
-    @Default(lngs = { "en" }, values = { "Priority" })
+    @Default(lngs = { "en" }, values = { "PriorityStorable" })
     String PriorityColumn_PriorityColumn();
 
     @Default(lngs = { "en" }, values = { "Bytes Loaded" })
@@ -979,7 +979,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Move to" })
     String PackagizerFilterRuleDialog_layoutDialogContent_move();
 
-    @Default(lngs = { "en" }, values = { "Priority" })
+    @Default(lngs = { "en" }, values = { "PriorityStorable" })
     String PackagizerFilterRuleDialog_layoutDialogContent_priority();
 
     @Default(lngs = { "en" }, values = { "Package Name" })
@@ -1373,10 +1373,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Original Filetype" })
     String PackagizerFilterRuleDialog_createVariablesMenu_filetype_org();
 
-    @Default(lngs = { "en" }, values = { "Priority" })
+    @Default(lngs = { "en" }, values = { "PriorityStorable" })
     String settings_linkgrabber_filter_columns_exepriority();
 
-    @Default(lngs = { "en" }, values = { "Rules with higher Priority always overwrite lower ones." })
+    @Default(lngs = { "en" }, values = { "Rules with higher PriorityStorable always overwrite lower ones." })
     String FilterTableModel_getTooltipText_prio_();
 
     @Default(lngs = { "en" }, values = { "Condition" })
@@ -1508,7 +1508,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1/%s2 online" })
     String AvailabilityColumn_getStringValue_object_(int i, int size);
 
-    @Default(lngs = { "en" }, values = { "Set Priority" })
+    @Default(lngs = { "en" }, values = { "Set PriorityStorable" })
     String PriorityAction_PriorityAction_();
 
     @Default(lngs = { "en" }, values = { "Downloads will start soon. Click here to cancel countdown." })
@@ -3407,7 +3407,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto Extract Disable*" })
     String PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false_closed();
 
-    @Default(lngs = { "en" }, values = { "Mixed Priority" })
+    @Default(lngs = { "en" }, values = { "Mixed PriorityStorable" })
     String PackagePropertiesPanel_getLabel_mixed_priority();
 
     @Default(lngs = { "en" }, values = { "File name:" })
@@ -3611,7 +3611,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Show Checksum (MD5/SHA1)" })
     String LinkgrabberPropertiesHeader_checksum();
 
-    @Default(lngs = { "en" }, values = { "Show Comment & Priority" })
+    @Default(lngs = { "en" }, values = { "Show Comment & PriorityStorable" })
     String LinkgrabberPropertiesHeader_comment_and_priority();
 
     @Default(lngs = { "en" }, values = { "Show Archive Information" })

@@ -6,6 +6,7 @@ import java.util.List;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 
 @ApiNamespace("linkgrabberv2")
 public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
@@ -19,6 +20,8 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
     void removeLinks(long[] linkIds, long[] packageIds) throws BadParameterException;
 
     void setEnabled(boolean enabled, long[] linkIds, long[] packageIds) throws BadParameterException;
+
+    void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException;
 
     void renameLink(long linkId, String newName) throws BadParameterException;
 
