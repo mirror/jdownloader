@@ -16,16 +16,18 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -42,12 +44,11 @@ import jd.plugins.PluginForHost;
 public class PremiumTo extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-
     private static HashMap<String, Integer>                connectionLimits   = new HashMap<String, Integer>();
-
     private static AtomicBoolean                           shareOnlineLocked  = new AtomicBoolean(false);
-
     private static final String                            NOCHUNKS           = "NOCHUNKS";
+    private static Object                                  LOCK               = new Object();
+    private final String                                   lang               = System.getProperty("user.language");
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,66 +78,42 @@ public class PremiumTo extends PluginForHost {
         return false;
     }
 
+    private Browser prepBrowser(Browser prepBr) {
+        prepBr.setFollowRedirects(true);
+        prepBr.setAcceptLanguage("en, en-gb;q=0.8");
+        prepBr.setConnectTimeout(90 * 1000);
+        prepBr.setReadTimeout(90 * 1000);
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setAllowedResponseCodes(new int[] { 400 });
+        return prepBr;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
-        br.setDebug(true);
-        String username = Encoding.urlEncode(account.getUser());
-        String pass = Encoding.urlEncode(account.getPass());
-        String hosts = null;
-        String traffic = null;
-        br.setFollowRedirects(true);
-        br.setAcceptLanguage("en, en-gb;q=0.8");
         try {
-            br.postPageRaw("http://premium.to/login.php", "{\"u\":\"" + username + "\", \"p\":\"" + pass + "\", \"r\":true}");
-            if (br.getCookie("http://premium.to", "auth") != null) {
-                traffic = br.getPage("http://premium.to/traffic.php").trim() + " MB";
-                hosts = br.getPage("http://premium.to/hosts.php");
-            }
-        } catch (Exception e) {
-            // account.setTempDisabled(true);
+            login(account, true);
+        } catch (PluginException e) {
+            account.setProperty("multiHostSupport", Property.NULL);
             account.setValid(false);
-            ac.setProperty("multiHostSupport", Property.NULL);
-            ac.setStatus("invalid login. Wrong password?");
-            return ac;
+            throw e;
         }
-        if (br.getCookie("http://premium.to", "auth") == null) {
-            ac.setProperty("multiHostSupport", Property.NULL);
-            account.setValid(false);
-            return ac;
-        }
+        final String traffic = br.getPage("http://premium.to/traffic.php").trim() + " MB";
+        final String hosts = br.getPage("http://premium.to/hosts.php");
         ac.setTrafficLeft(traffic);
-        // String date = new Regex(page, "\"d\":\"(.*?)\",").getMatch(0);
         account.setValid(true);
-        /* expire date does currently not work */
-        // ac.setValidUntil(TimeFormatter.getMilliSeconds(date,
-        // "dd MMM yyyy", null));
         ArrayList<String> supportedHosts = new ArrayList<String>();
-        String hoster[] = new Regex(hosts.trim(), "(.+?)(;|$)").getColumn(0);
-        if (hoster != null) {
-            for (String host : hoster) {
-                if (hosts == null || host.length() == 0) {
+        String hosters[] = new Regex(hosts.trim(), "(.+?)(;|$)").getColumn(0);
+        if (hosters != null) {
+            for (String hoster : hosters) {
+                if (hoster == null || hoster.length() == 0) {
                     continue;
                 }
-                supportedHosts.add(host.trim());
+                supportedHosts.add(hoster.trim());
             }
         }
-        if (account.isValid()) {
-            if (supportedHosts.size() == 0) {
-                ac.setProperty("multiHostSupport", Property.NULL);
-                ac.setStatus("Account invalid");
-            } else {
-                ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via premium.to available");
-                ac.setProperty("multiHostSupport", supportedHosts);
-            }
-        } else {
-            account.setTempDisabled(false);
-            account.setValid(false);
-            ac.setProperty("multiHostSupport", Property.NULL);
-            ac.setStatus("Account invalid");
-        }
+        ac.setStatus("Premium Account");
+        ac.setProperty("multiHostSupport", supportedHosts);
         return ac;
     }
 
@@ -161,41 +138,72 @@ public class PremiumTo extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-
-        login(br, account);
-
+        login(account, false);
         String url = link.getDownloadURL();
         // allow resume and up to 10 chunks
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -10);
         dl.startDownload();
     }
 
-    private void login(Browser br, Account acc) throws IOException, PluginException {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
-        br.postPageRaw("http://premium.to/login.php", "{\"u\":\"" + user + "\", \"p\":\"" + pw + "\", \"r\":true}");
-        if (br.getCookie("http://premium.to", "auth") == null) {
-            resetAvailablePremium(acc);
-            acc.setValid(false);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+    private void login(Account account, boolean force) throws Exception {
+        final boolean redirect = br.isFollowingRedirects();
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                prepBrowser(br);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(this.getHost(), key, value);
+                        }
+                        return;
+                    }
+                }
+                br.postPageRaw("http://premium.to/login.php", "{\"u\":\"" + Encoding.urlEncode(account.getUser()) + "\", \"p\":\"" + Encoding.urlEncode(account.getPass()) + "\", \"r\":true}");
+                if (br.getHttpConnection().getResponseCode() == 400) {
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                if (br.getCookie("premium.to", "auth") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(this.getHost());
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            } finally {
+                br.setFollowRedirects(redirect);
+            }
         }
-        br.setFollowRedirects(true);
     }
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-
-        boolean dofollow = br.isFollowingRedirects();
         try {
-            br.setFollowRedirects(true);
-            br.setConnectTimeout(90 * 1000);
-            br.setReadTimeout(90 * 1000);
-            br.setDebug(true);
             dl = null;
-            String user = Encoding.urlEncode(acc.getUser());
-            String pw = Encoding.urlEncode(acc.getPass());
             String url = link.getDownloadURL().replaceFirst("https?://", "");
 
+            // this here is bullshit... multihoster side should do all the corrections.
             /* begin code from premium.to support */
             if (url.startsWith("http://")) {
                 url = url.substring(7);
@@ -217,6 +225,9 @@ public class PremiumTo extends PluginForHost {
                 url = url.replaceFirst("turbobit.net/", "tb.net/");
             } else if (url.startsWith("filefactory.com/")) {
                 url = url.replaceFirst("filefactory.com/", "ff.com/");
+            } else if (url.startsWith("k2s.cc/")) {
+                // doesn't work...
+                // url = url.replaceFirst("k2s.cc/", "keep2share.cc/");
             }
             /* end code from premium.to support */
             if (url.startsWith("oboom.com/")) {
@@ -224,7 +235,7 @@ public class PremiumTo extends PluginForHost {
             }
             url = Encoding.urlEncode(url);
             showMessage(link, "Phase 1/3: Login...");
-            login(br, acc);
+            login(acc, false);
             showMessage(link, "Phase 2/3: Get link");
 
             int connections = getConnections(link.getHost());
@@ -269,11 +280,11 @@ public class PremiumTo extends PluginForHost {
                 if (link.getLinkStatus().getRetryCount() >= 3) {
                     /* disable hoster for 1h */
                     tempUnavailableHoster(acc, link, 60 * 60 * 1000);
-                    /* reset retrycounter */
+                    /* reset retry counter */
                     link.getLinkStatus().setRetryCount(0);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+                String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
                 showMessage(link, msg);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
             }
@@ -288,7 +299,6 @@ public class PremiumTo extends PluginForHost {
                 }
             }
         } finally {
-            br.setFollowRedirects(dofollow);
             if (link.getHost().equals("share-online.biz")) {
                 shareOnlineLocked.set(false);
             }
@@ -303,7 +313,7 @@ public class PremiumTo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
 
         String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
 
@@ -344,10 +354,9 @@ public class PremiumTo extends PluginForHost {
             }
 
         } else {
-            // if accounts available try all whether the link belongs to it
-            // links with token should work anyway
+            // if accounts available try all whether the link belongs to it links with token should work anyway
             for (Account acc : accs) {
-                login(br, acc);
+                login(acc, false);
 
                 try {
                     con = br.openGetConnection(dlink);
@@ -424,10 +433,6 @@ public class PremiumTo extends PluginForHost {
 
     @Override
     public void reset() {
-    }
-
-    private void resetAvailablePremium(Account ac) {
-        ac.setProperty("multiHostSupport", Property.NULL);
     }
 
     @Override
