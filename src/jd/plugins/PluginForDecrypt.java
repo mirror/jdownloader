@@ -462,7 +462,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 break;
             case REFRESH:
                 // refresh is not supported from the pluginsystem right now.
-                break;
+                return null;
             case STOP_CURRENT_ACTION:
                 LinkCollector.getInstance().abort();
                 // Just to be sure
