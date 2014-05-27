@@ -373,53 +373,53 @@ public class OboomController implements TopRightPainter, AccountControllerListen
             Account renew = null;
             Account renewDeal = null;
             for (Account acc : AccountController.getInstance().list("oboom.com")) {
-                if (acc.isEnabled()) {
-                    long dealTime = acc.getLongProperty("DEAL", -1l);
-                    if (dealTime > 0) {
-                        hasDealAccount = true;
-                        AccountInfo accountInfo = acc.getAccountInfo();
-                        if (accountInfo != null) {
-                            long validUntil = accountInfo.getValidUntil();
-                            if (validUntil <= 0) {
-                                validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
-                            }
-                            long restPremium = validUntil - System.currentTimeMillis();
-                            if (restPremium < 24 * 60 * 60 * 1000l) {
-                                if (renewDeal == null) {
-                                    renewDeal = acc;
-                                }
-                                if (restPremium < 0) {
-                                    hasDealAccountToRenewAlreadyExpired = true;
-                                }
-                                // on day or less valid
-                                hasDealAccountToRenew = true;
-                            } else {
-                                hasOboomPremium = true;
-                            }
+
+                long dealTime = acc.getLongProperty("DEAL", -1l);
+                if (dealTime > 0) {
+                    hasDealAccount = true;
+                    AccountInfo accountInfo = acc.getAccountInfo();
+                    if (accountInfo != null) {
+                        long validUntil = accountInfo.getValidUntil();
+                        if (validUntil <= 0) {
+                            validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
                         }
-                    } else {
-                        AccountInfo accountInfo = acc.getAccountInfo();
-                        if (accountInfo != null) {
-                            long validUntil = accountInfo.getValidUntil();
-                            if (validUntil <= 0) {
-                                validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
+                        long restPremium = validUntil - System.currentTimeMillis();
+                        if (restPremium < 24 * 60 * 60 * 1000l) {
+                            if (renewDeal == null) {
+                                renewDeal = acc;
                             }
-                            long restPremium = validUntil - System.currentTimeMillis();
-                            if (restPremium < 24 * 60 * 60 * 1000l) {
-                                if (renew == null) {
-                                    renew = acc;
-                                }
-                                if (restPremium < 0) {
-                                    hasOtherAccountToRenewAlreadyExpired = true;
-                                }
-                                // on day or less valid
-                                hasOtherAccountToRenew = true;
-                            } else {
-                                hasOboomPremium = true;
+                            if (restPremium < 0) {
+                                hasDealAccountToRenewAlreadyExpired = true;
                             }
+                            // on day or less valid
+                            hasDealAccountToRenew = true;
+                        } else {
+                            hasOboomPremium = true;
+                        }
+                    }
+                } else {
+                    AccountInfo accountInfo = acc.getAccountInfo();
+                    if (accountInfo != null) {
+                        long validUntil = accountInfo.getValidUntil();
+                        if (validUntil <= 0) {
+                            validUntil = acc.getLongProperty("PREMIUM_UNIX", -1);
+                        }
+                        long restPremium = validUntil - System.currentTimeMillis();
+                        if (restPremium < 24 * 60 * 60 * 1000l) {
+                            if (renew == null) {
+                                renew = acc;
+                            }
+                            if (restPremium < 0) {
+                                hasOtherAccountToRenewAlreadyExpired = true;
+                            }
+                            // on day or less valid
+                            hasOtherAccountToRenew = true;
+                        } else {
+                            hasOboomPremium = true;
                         }
                     }
                 }
+
             }
             if (renewDeal != null) {
                 renew = renewDeal;

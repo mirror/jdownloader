@@ -100,7 +100,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     private Priority piority = Priority.HIGHEST;
 
-    @Customizer(name = "Download PriorityStorable:")
+    @Customizer(name = "Download Priority:")
     public Priority getPiority() {
         return piority;
     }

@@ -37,7 +37,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
     // protected void saveInEDT() {
     // if (currentPackage != null) {
     // if (priority.isShowing()) {
-    // PriorityStorable priop = priority.getSelectedItem();
+    // Priority priop = priority.getSelectedItem();
     // currentLink.setPriority(priop);
     // }
     // if (comment.isShowing()) {

@@ -42,7 +42,7 @@ public class AbstractResponse<T> {
     }
 
     public String toString() {
-        return getClass().getSimpleName() + ": Value:" + value + " PriorityStorable: " + priority + " Solved By: " + solver;
+        return getClass().getSimpleName() + ": Value:" + value + " Priority: " + priority + " Solved By: " + solver;
     }
 
     public Challenge<T> getChallenge() {
