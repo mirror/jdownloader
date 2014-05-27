@@ -103,7 +103,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             prev = prev.replaceAll(",|\\.", "");
         }
         final int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 
@@ -114,7 +116,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             int languageVersion = 1;
             String lang = new Regex(data, "/guide/(\\w+)/.+").getMatch(0);
             if (lang != null) {
-                if ("fr".equalsIgnoreCase(lang)) languageVersion = 2;
+                if ("fr".equalsIgnoreCase(lang)) {
+                    languageVersion = 2;
+                }
             }
             lang = language(languageVersion);
 
@@ -123,7 +127,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 String title = getTitle(br);
 
                 String tv_channel = br.getRegex("<li class=\"video\" data\\-vid=\"" + ID + "(_[A-Za-z0-9_\\-]+)\\-[A-Za-z]+\">").getMatch(0);
-                if (tv_channel == null) tv_channel = "_PLUS7";
+                if (tv_channel == null) {
+                    tv_channel = "_PLUS7";
+                }
                 String tvguideUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/" + lang + "/" + ID + tv_channel + "-" + lang + "/ALL/ALL.json";
                 String vsrRegex = "\"VSR\":\\{(.*?\\})\\}";
                 String strRegex = "\"(.*?)\"\\s*:\\s*\\{(.*?)\\}";
@@ -136,7 +142,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     valRegex = "\"([^\"]+)\":\"([^\"]+)\"";
                 }
                 br.getPage(tvguideUrl);
-                if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) return ret;
+                if (br.containsHTML("<statuscode>wrongParameter</statuscode>")) {
+                    return ret;
+                }
 
                 /* parsing json */
                 HashMap<String, HashMap<String, String>> streamValues = new HashMap<String, HashMap<String, String>>();
@@ -156,7 +164,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                             if (l != null) {
                                 l = "VO".equals(l) ? "1" : "2";
                                 if (i == 0) {
-                                    if (Integer.parseInt(l) != languageVersion) continue;
+                                    if (Integer.parseInt(l) != languageVersion) {
+                                        continue;
+                                    }
                                 } else {
                                     languageVersion = Integer.parseInt(l);
                                 }
@@ -174,13 +184,17 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         streamValues.put(ss[0], streamValue);
                     }
 
-                    if (streamValues.size() > 0) break;
+                    if (streamValues.size() > 0) {
+                        break;
+                    }
                 }
                 String VRA = br.getRegex("\"VRA\":\"([^\"]+)\"").getMatch(0);
                 String VRU = br.getRegex("\"VRU\":\"([^\"]+)\"").getMatch(0);
 
                 String extension = ".mp4";
-                if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) extension = ".mp3";
+                if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
+                    extension = ".mp3";
+                }
 
                 ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
                 HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
@@ -190,19 +204,29 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     streamValue = new HashMap<String, String>(next.getValue());
                     String streamType = next.getKey();
                     /* only http streams for the old stable */
-                    if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ") && isStableEnviroment()) continue;
+                    if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ") && isStableEnviroment()) {
+                        continue;
+                    }
 
                     String url = streamValue.get("url");
-                    if (url == null) url = streamValue.get("VUR");
+                    if (url == null) {
+                        url = streamValue.get("VUR");
+                    }
 
                     if (!streamType.matches("HTTP_REACH_EQ_\\d|SQ|EQ|HQ")) {
-                        if (!url.startsWith("mp4:")) url = "mp4:" + url;
+                        if (!url.startsWith("mp4:")) {
+                            url = "mp4:" + url;
+                        }
                         url = streamValue.get("streamer") + url;
                     }
                     String fmt = streamValue.get("quality");
-                    if (fmt == null) fmt = hbbtv(streamValue.get("VQU"));
+                    if (fmt == null) {
+                        fmt = hbbtv(streamValue.get("VQU"));
+                    }
                     String quality = fmt;
-                    if (fmt != null) fmt = fmt.split("\\-")[0].toLowerCase(Locale.ENGLISH).trim();
+                    if (fmt != null) {
+                        fmt = fmt.split("\\-")[0].toLowerCase(Locale.ENGLISH).trim();
+                    }
                     if (fmt != null) {
                         quality = quality.replaceAll("\\s", "");
                         /* best selection is done at the end */
@@ -235,7 +259,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     lastQualityFMT = fmt.toUpperCase(Locale.ENGLISH);
 
                     final String name = title + "@" + quality + "_" + language(languageVersion) + extension;
-                    DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + quality);
+                    final DownloadLink link;
+                    if (data.contains("?")) {
+                        link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + quality);
+                    } else {
+                        link = createDownloadlink(data.replace("http://", "decrypted://") + "?quality=" + quality);
+                    }
 
                     link.setFinalFileName(name);
                     link.setBrowserUrl(data);
@@ -333,20 +362,32 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     private String language(int id) {
-        if (id == 1) return "D";
+        if (id == 1) {
+            return "D";
+        }
         return "F";
     }
 
     private String hbbtv(String s) {
-        if (s == null) return null;
-        if ("SQ".equals(s)) return "HD";
-        if ("EQ".equals(s)) return "MD";
-        if ("HQ".equals(s)) return "SD";
+        if (s == null) {
+            return null;
+        }
+        if ("SQ".equals(s)) {
+            return "HD";
+        }
+        if ("EQ".equals(s)) {
+            return "MD";
+        }
+        if ("HQ".equals(s)) {
+            return "SD";
+        }
         return "unknown";
     }
 
     private String convertDateFormat(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         if (s.matches("\\d+/\\d+/\\d+ \\d+:\\d+:\\d+ \\+\\d+")) {
             SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss Z", Locale.getDefault());
             SimpleDateFormat convdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
@@ -370,10 +411,18 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private String getTitle(Browser br) {
         String title = br.getRegex("<title>(.*?) \\| ARTE</title>").getMatch(0);
         String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
-        if (title == null) title = br.getRegex("<h1 itemprop=\"name\" class=\"span\\d+\">([^<]+)</h1>").getMatch(0);
-        if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\| ARTE\">").getMatch(0);
-        if (title != null) title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
-        if (title == null) title = "UnknownTitle_" + System.currentTimeMillis();
+        if (title == null) {
+            title = br.getRegex("<h1 itemprop=\"name\" class=\"span\\d+\">([^<]+)</h1>").getMatch(0);
+        }
+        if (title == null) {
+            title = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\| ARTE\">").getMatch(0);
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title + (titleUT != null ? "__" + titleUT.replaceAll(":$", "") : "").trim());
+        }
+        if (title == null) {
+            title = "UnknownTitle_" + System.currentTimeMillis();
+        }
         return title;
     }
 
