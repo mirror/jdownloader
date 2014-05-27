@@ -185,104 +185,88 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
     @Override
     public void onClicked(MouseEvent e) {
-        if (getProMode.get()) {
-            if (closeBounds != null && closeBounds.contains(e.getPoint())) {
-                new Thread("DEAL_1") {
-                    public void run() {
-                        OboomController.track("GETPRO_HIDE");
-                        try {
+        if (closeBounds != null && closeBounds.contains(e.getPoint())) {
+            new Thread("DEAL_1") {
+                public void run() {
 
-                            Dialog.getInstance().showConfirmDialog(0, _GUI._.OboomController_run_hide_title(), _GUI._.OboomController_run_hide_msg(), null, _GUI._.lit_yes(), null);
-                            OboomController.track("GETPRO_HIDE/YES");
-                            CFG_GUI.SPECIAL_DEALS_ENABLED.setValue(false);
-
-                        } catch (DialogNoAnswerException e) {
-                            OboomController.track("GETPRO_HIDE/NO");
-                            CrossSystem.openURL("https://www.oboom.com/ref/501C81");
-                        }
-
-                    }
-                }.start();
-            } else {
-                new Thread("OSR") {
-                    public void run() {
-                        OboomController.track("GETPRO");
-                        ConfirmDialog d = null;
-                        final Account laccountToRenew = accountToRenew;
-                        if ((hasDealAccountToRenewAlreadyExpired || hasOtherAccountToRenewAlreadyExpired) && laccountToRenew != null) {
-                            d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title_expired(), _GUI._.OboomController_run_renew_msg_expired(laccountToRenew.getUser()), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
-                                @Override
-                                public ModalityType getModalityType() {
-                                    return ModalityType.MODELESS;
-                                }
-                            };
-                        } else if ((hasOtherAccountToRenew || hasDealAccountToRenew) && laccountToRenew != null) {
-                            d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title(), _GUI._.OboomController_run_renew_msg(laccountToRenew.getUser()), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
-                                @Override
-                                public ModalityType getModalityType() {
-                                    return ModalityType.MODELESS;
-                                }
-                            };
-                        } else {
-                            d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title_noaccount(), _GUI._.OboomController_run_renew_noaccount(), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
-                                @Override
-                                public ModalityType getModalityType() {
-                                    return ModalityType.MODELESS;
-                                }
-                            };
-                        }
-                        try {
-                            Dialog.getInstance().showDialog(d);
-                            OboomController.track("GETPRO_DIALOG/OK");
-                        } catch (DialogClosedException e) {
-                            OboomController.track("GETPRO_DIALOG/CLOSED");
-                        } catch (DialogCanceledException e) {
-                            OboomController.track("GETPRO_DIALOG/CANCELED");
-                        }
-                        CrossSystem.openURL("https://www.oboom.com/ref/501C81");
-
-                    }
-                }.start();
-            }
-        } else {
-            if (closeBounds != null && closeBounds.contains(e.getPoint())) {
-                new Thread("DEAL_1") {
-                    public void run() {
-
-                        OboomDialog d = new OboomDialog("tabclick_hide") {
-                            protected void packed() {
-                                new Thread("DEAL_HIDE") {
-                                    public void run() {
-                                        try {
-                                            Dialog.getInstance().showConfirmDialog(0, _GUI._.OboomController_run_hide_title(), _GUI._.OboomController_run_hide_msg(), null, _GUI._.lit_yes(), null);
-                                            OboomController.track("TabbedHideClick/YES");
-                                            CFG_GUI.SPECIAL_DEALS_ENABLED.setValue(false);
-                                        } catch (DialogNoAnswerException e) {
-                                            OboomController.track("TabbedHideClick/NO");
-                                        }
+                    OboomDialog d = new OboomDialog("tabclick_hide") {
+                        protected void packed() {
+                            new Thread("DEAL_HIDE") {
+                                public void run() {
+                                    try {
+                                        Dialog.getInstance().showConfirmDialog(0, _GUI._.OboomController_run_hide_title(), _GUI._.OboomController_run_hide_msg(), null, _GUI._.lit_yes(), null);
+                                        OboomController.track("TabbedHideClick/YES");
+                                        CFG_GUI.SPECIAL_DEALS_ENABLED.setValue(false);
+                                    } catch (DialogNoAnswerException e) {
+                                        OboomController.track("TabbedHideClick/NO");
                                     }
-                                }.start();
+                                }
+                            }.start();
 
-                            };
                         };
+                    };
+                    OboomController.track("TabbedHideClick");
+                    UIOManager.I().show(null, d);
 
-                        UIOManager.I().show(null, d);
-                        OboomController.track("TabbedHideClick");
-
-                    }
-                }.start();
-            } else {
-                new Thread("OSR") {
-                    public void run() {
-
-                        OboomDialog d = new OboomDialog("tabclick");
-
-                        UIOManager.I().show(null, d);
-                        OboomController.track("TabbedClick");
-                    }
-                }.start();
-            }
+                }
+            }.start();
+            return;
         }
+        if (getProMode.get()) {
+
+            new Thread("OSR") {
+                public void run() {
+                    OboomController.track("GETPRO");
+                    ConfirmDialog d = null;
+                    final Account laccountToRenew = accountToRenew;
+                    if ((hasDealAccountToRenewAlreadyExpired || hasOtherAccountToRenewAlreadyExpired) && laccountToRenew != null) {
+                        d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title_expired(), _GUI._.OboomController_run_renew_msg_expired(laccountToRenew.getUser()), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
+                            @Override
+                            public ModalityType getModalityType() {
+                                return ModalityType.MODELESS;
+                            }
+                        };
+                    } else if ((hasOtherAccountToRenew || hasDealAccountToRenew) && laccountToRenew != null) {
+                        d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title(), _GUI._.OboomController_run_renew_msg(laccountToRenew.getUser()), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
+                            @Override
+                            public ModalityType getModalityType() {
+                                return ModalityType.MODELESS;
+                            }
+                        };
+                    } else {
+                        d = new ConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.OboomController_run_renew_title_noaccount(), _GUI._.OboomController_run_renew_noaccount(), new AbstractIcon("logo_oboom_small", 32), _GUI._.lit_continue(), null) {
+                            @Override
+                            public ModalityType getModalityType() {
+                                return ModalityType.MODELESS;
+                            }
+                        };
+                    }
+                    try {
+                        Dialog.getInstance().showDialog(d);
+                        OboomController.track("GETPRO_DIALOG/OK");
+                    } catch (DialogClosedException e) {
+                        OboomController.track("GETPRO_DIALOG/CLOSED");
+                    } catch (DialogCanceledException e) {
+                        OboomController.track("GETPRO_DIALOG/CANCELED");
+                    }
+                    CrossSystem.openURL("https://www.oboom.com/ref/501C81");
+
+                }
+            }.start();
+
+        } else {
+
+            new Thread("OSR") {
+                public void run() {
+
+                    OboomDialog d = new OboomDialog("tabclick");
+
+                    UIOManager.I().show(null, d);
+                    OboomController.track("TabbedClick");
+                }
+            }.start();
+        }
+
     }
 
     public TopRightPainter start() {
@@ -338,7 +322,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
     }
 
     public static void track(final String string) {
-        StatsManager.I().track("specialdeals/oboom/" + string);
+        StatsManager.I().track("specialdeals/oboom/" + string + "/jd2");
     }
 
     public static void writeRegistry(long value) {

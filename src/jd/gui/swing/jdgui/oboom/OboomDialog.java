@@ -223,7 +223,7 @@ public class OboomDialog extends AbstractDialog<Integer> {
             } else if (br.containsHTML("403,\"EMAIL_FORBIDDEN\"")) {
                 OboomController.track("Error_EMAIL_FORBIDDEN");
                 Dialog.getInstance().showMessageDialog(0, _GUI._.lit_error_occured(), _GUI._.specialdeals_oboom_dialog_request_error_email_forbidden());
-                setOfferActive();
+                retry();
                 return;
             } else if (br.containsHTML("403,\"USED\"")) {
                 OboomController.track("Error_USED");
