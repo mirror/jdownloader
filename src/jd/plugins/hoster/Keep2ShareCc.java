@@ -55,7 +55,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://keep2share.cc/premium.html");
+        this.enablePremium("http://k2s.cc/premium.html");
     }
 
     @Override
@@ -64,7 +64,7 @@ public class Keep2ShareCc extends PluginForHost {
     }
 
     public static final String     DOWNLOADPOSSIBLE = ">To download this file with slow speed, use";
-    private final String           MAINPAGE         = "http://keep2share.cc";
+    private final String           MAINPAGE         = "http://k2s.cc";
     private final String           DOMAINS_PLAIN    = "((keep2share|k2s|k2share|keep2s|keep2)\\.cc)";
     private final String           DOMAINS_HTTP     = "(https?://(www\\.)?" + DOMAINS_PLAIN + ")";
 
@@ -78,7 +78,7 @@ public class Keep2ShareCc extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "keep2share.cc/"));
+        link.setUrlDownload(link.getDownloadURL().replace("keep2sharedecrypted.cc/", "k2s.cc/"));
     }
 
     private Browser prepBrowser(final Browser prepBr) {
@@ -132,7 +132,7 @@ public class Keep2ShareCc extends PluginForHost {
                 public void run() {
                     try {
                         String lng = System.getProperty("user.language");
-                        String domain = "keep2share.cc";
+                        String domain = "k2s.cc";
                         String message = null;
                         String title = null;
                         String tab = "                        ";
@@ -254,7 +254,7 @@ public class Keep2ShareCc extends PluginForHost {
                 }
                 Browser br2 = br.cloneBrowser();
                 // domain not transferable!
-                br2.getPage("http://static.keep2share.cc/ext/evercookie/evercookie.swf");
+                br2.getPage("http://static.k2s.cc/ext/evercookie/evercookie.swf");
                 // can be here also, raztoki 20130521!
                 dllink = getDllink();
                 if (dllink == null) {
@@ -418,12 +418,12 @@ public class Keep2ShareCc extends PluginForHost {
                 // Handle stupid login captcha
                 final String captchaLink = br.getRegex("\"(/auth/captcha\\.html\\?v=[a-z0-9]+)\"").getMatch(0);
                 if (captchaLink != null) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
-                    final String code = getCaptchaCode("http://keep2share.cc" + captchaLink, dummyLink);
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "k2s.cc", "http://k2s.cc", true);
+                    final String code = getCaptchaCode("http://k2s.cc" + captchaLink, dummyLink);
                     postData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
                 } else {
                     if (br.containsHTML("recaptcha/api/challenge") || br.containsHTML("Recaptcha.create")) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "keep2share.cc", "http://keep2share.cc", true);
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "k2s.cc", "http://k2s.cc", true);
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                         String challenge = br.getRegex("recaptcha/api/challenge\\?k=(.*?)\"").getMatch(0);
@@ -565,7 +565,7 @@ public class Keep2ShareCc extends PluginForHost {
             }
             String possibleDomain = getDomain(dllink);
             if (dllink != null && possibleDomain != null && !possibleDomain.contains(currentDomain)) {
-                newDomain = getDomain(dllink); // dllink = /prx-169.keep2share.cc/
+                newDomain = getDomain(dllink); // dllink = /prx-169.k2s.cc/
             } else if (!br.getURL().contains(currentDomain)) {
                 newDomain = getDomain(br.getURL());
             }
