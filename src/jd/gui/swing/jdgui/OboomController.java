@@ -524,7 +524,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         try {
             Dialog.getInstance().showDialog(d);
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
-            CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(plg.getPremiumUrl(), "PremiumExpireWarning"));
+            CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(plg.getPremiumUrl(), "PremiumExpireWarning/JD2"));
         } catch (DialogClosedException e) {
             e.printStackTrace();
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CLOSED");
