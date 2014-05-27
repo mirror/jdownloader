@@ -22,14 +22,16 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class FFmpeg {
-    
+
     private String[] execute(final int timeout, PluginProgress progess, File runin, String... cmds) throws InterruptedException, IOException {
         final ProcessBuilder pb = ProcessBuilderFactory.create(cmds);
-        if (runin != null) pb.directory(runin);
+        if (runin != null) {
+            pb.directory(runin);
+        }
         final StringBuilder inputStream = new StringBuilder();
         final StringBuilder errorStream = new StringBuilder();
         final Process process = pb.start();
-        
+
         final Thread reader1 = new Thread("ffmpegReader") {
             public void run() {
                 try {
@@ -39,7 +41,7 @@ public class FFmpeg {
                 }
             }
         };
-        
+
         final Thread reader2 = new Thread("ffmpegReader") {
             public void run() {
                 try {
@@ -72,22 +74,25 @@ public class FFmpeg {
                 }
             };
             timouter.start();
-            process.waitFor();
+            logger.info("ExitCode1: " + process.waitFor());
             processAlive.set(false);
             timouter.interrupt();
-            if (timeoutReached.get()) { throw new InterruptedException("Timeout!"); }
+            if (timeoutReached.get()) {
+                throw new InterruptedException("Timeout!");
+            }
             reader1.join();
             reader2.join();
             return new String[] { inputStream.toString(), errorStream.toString() };
         } else {
-            process.waitFor();
+            logger.info("ExitCode2: " + process.waitFor());
+
             reader1.join();
             reader2.join();
             return new String[] { inputStream.toString(), errorStream.toString() };
         }
-        
+
     }
-    
+
     private String readInputStreamToString(StringBuilder ret, final InputStream fis) throws IOException {
         BufferedReader f = null;
         try {
@@ -101,7 +106,8 @@ public class FFmpeg {
                             ret.append(sep);
                         } else if (line.startsWith("\uFEFF")) {
                             /*
-                             * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058 http://bugs.sun.com/view_bug.do?bug_id=6378911
+                             * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
+                             * http://bugs.sun.com/view_bug.do?bug_id=6378911
                              */
                             line = line.substring(1);
                         }
@@ -109,40 +115,46 @@ public class FFmpeg {
                     }
                 }
             }
-            if (ret == null) return null;
+            if (ret == null) {
+                return null;
+            }
             return ret.toString();
         } catch (IOException e) {
             throw e;
         } catch (Throwable e) {
-            if (e instanceof RuntimeException) throw (RuntimeException) e;
-            if (e instanceof Error) throw (Error) e;
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            if (e instanceof Error) {
+                throw (Error) e;
+            }
             throw new RuntimeException(e);
         }
     }
-    
+
     private FFmpegSetup config;
     private LogSource   logger;
     private String      path;
-    
+
     public String getPath() {
         return path;
     }
-    
+
     public void setPath(String path) {
         this.path = path;
     }
-    
+
     public FFmpeg() {
         config = JsonConfig.create(FFmpegSetup.class);
         logger = LogController.getInstance().getLogger(FFmpeg.class.getName());
         path = config.getBinaryPath();
     }
-    
+
     public FFmpeg(String path) {
         this();
         this.path = path;
     }
-    
+
     public boolean validateBinary() {
         String fp = getFullPath();
         logger.info("Validate FFmpeg Binary: " + fp);
@@ -150,17 +162,17 @@ public class FFmpeg {
             logger.info("Binary does not exist");
             return false;
         }
-        
+
         if (fp.toLowerCase(Locale.ENGLISH).endsWith("ffmpeg") || fp.toLowerCase(Locale.ENGLISH).endsWith("ffmpeg.exe")) {
-            
+
             // only check if the binary is ffmpeg
             for (int i = 0; i < 5; i++) {
                 try {
                     logger.info("Start ");
                     long t = System.currentTimeMillis();
                     String[] result = execute(-1, null, null, fp, "-version");
-                    logger.info(result[0]);
-                    logger.info(result[1]);
+                    logger.info("STD: " + result[0]);
+                    logger.info("ERR: " + result[1]);
                     logger.info("Done in" + (System.currentTimeMillis() - t));
                     boolean ret = result != null && result.length == 2 && result[0] != null && result[0].toLowerCase(Locale.ENGLISH).contains("ffmpeg");
                     if (ret) {
@@ -179,40 +191,44 @@ public class FFmpeg {
         logger.info("Binary is ok: " + false);
         return false;
     }
-    
+
     private String getFullPath() {
         try {
-            
-            if (StringUtils.isEmpty(path)) return null;
-            
+
+            if (StringUtils.isEmpty(path)) {
+                return null;
+            }
+
             File file = new File(path);
             if (!file.isAbsolute()) {
                 file = Application.getResource(path);
             }
-            if (!file.exists()) return null;
+            if (!file.exists()) {
+                return null;
+            }
             return file.getCanonicalPath();
         } catch (Exception e) {
             logger.log(e);
             return null;
-            
+
         }
     }
-    
+
     public boolean isAvailable() {
         return validateBinary();
     }
-    
+
     public boolean muxToMp4(FFMpegProgress progress, String out, String videoIn, String audioIn) throws InterruptedException, IOException, FFMpegException {
         logger.info("Merging " + videoIn + " + " + audioIn + " = " + out);
-        
+
         long lastModifiedVideo = new File(videoIn).lastModified();
         long lastModifiedAudio = new File(audioIn).lastModified();
-        
+
         ArrayList<String> commandLine = fillCommand(out, videoIn, audioIn, config.getMuxToMp4Command());
         if (runCommand(progress, commandLine)) {
-            
+
             try {
-                
+
                 if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     new File(out).setLastModified(Math.max(lastModifiedAudio, lastModifiedVideo));
                 }
@@ -222,9 +238,9 @@ public class FFmpeg {
             return true;
         }
         return false;
-        
+
     }
-    
+
     /**
      * @param out
      * @param videoIn
@@ -242,19 +258,19 @@ public class FFmpeg {
             param = param.replace("%out", out);
             commandLine.add(param);
         }
-        
+
         return commandLine;
     }
-    
+
     public boolean generateM4a(FFMpegProgress progress, String out, String audioIn) throws IOException, InterruptedException, FFMpegException {
-        
+
         long lastModifiedAudio = new File(audioIn).lastModified();
-        
+
         ArrayList<String> commandLine = fillCommand(out, null, audioIn, config.getDash2M4aCommand());
         if (runCommand(progress, commandLine)) {
-            
+
             try {
-                
+
                 if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
@@ -264,13 +280,13 @@ public class FFmpeg {
             return true;
         }
         return false;
-        
+
     }
-    
+
     public boolean runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
-        
+
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
-        
+
         final StringBuilder errorStream = new StringBuilder();
         final Process process = pb.start();
         try {
@@ -283,7 +299,7 @@ public class FFmpeg {
                     }
                 }
             };
-            
+
             final Thread reader2 = new Thread("ffmpegReader") {
                 public void run() {
                     try {
@@ -313,7 +329,9 @@ public class FFmpeg {
                     if (times != null && times.length > 0) {
                         long msDone = formatStringToMilliseconds(times[times.length - 1]);
                         System.out.println(msDone + "/" + ms);
-                        if (progress != null) progress.updateValues(msDone, ms);
+                        if (progress != null) {
+                            progress.updateValues(msDone, ms);
+                        }
                     }
                 }
                 if (lastLength != string.length()) {
@@ -323,9 +341,9 @@ public class FFmpeg {
                 try {
                     int exitCode = process.exitValue();
                     reader2.join();
-                    
+
                     logger.info(errorStream.toString());
-                    
+
                     boolean ret = exitCode == 0;
                     if (!ret) {
                         throw new FFMpegException("FFmpeg Failed");
@@ -345,19 +363,21 @@ public class FFmpeg {
             logger.log(e);
             throw e;
         } finally {
-            if (process != null) process.destroy();
+            if (process != null) {
+                process.destroy();
+            }
         }
     }
-    
+
     public boolean generateAac(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
-        
+
         long lastModifiedAudio = new File(audioIn).lastModified();
-        
+
         ArrayList<String> commandLine = fillCommand(out, null, audioIn, config.getDash2AacCommand());
         if (runCommand(progress, commandLine)) {
-            
+
             try {
-                
+
                 if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
@@ -367,28 +387,30 @@ public class FFmpeg {
             return true;
         }
         return false;
-        
+
     }
-    
+
     public static long formatStringToMilliseconds(final String text) {
         final String[] found = new Regex(text, "(\\d+):(\\d+):(\\d+)").getRow(0);
-        if (found == null) { return 0; }
+        if (found == null) {
+            return 0;
+        }
         int hours = Integer.parseInt(found[0]);
         int minutes = Integer.parseInt(found[1]);
         int seconds = Integer.parseInt(found[2]);
-        
+
         return hours * 60 * 60 * 1000 + minutes * 60 * 1000 + seconds * 1000;
     }
-    
+
     public boolean demuxAAC(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
-        
+
         long lastModifiedAudio = new File(audioIn).lastModified();
-        
+
         ArrayList<String> commandLine = fillCommand(out, null, audioIn, config.getDemux2AacCommand());
         if (runCommand(progress, commandLine)) {
-            
+
             try {
-                
+
                 if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     new File(out).setLastModified(lastModifiedAudio);
                 }
@@ -399,10 +421,10 @@ public class FFmpeg {
         }
         return false;
     }
-    
+
     public boolean demuxMp3(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
         long lastModifiedAudio = new File(audioIn).lastModified();
-        
+
         ArrayList<String> commandLine = fillCommand(out, null, audioIn, config.getDemux2Mp3Command());
         if (runCommand(progress, commandLine)) {
             try {
@@ -416,13 +438,13 @@ public class FFmpeg {
         }
         return false;
     }
-    
+
     public boolean demuxMp4(FFMpegProgress progress, String out, String audioIn) throws InterruptedException, IOException, FFMpegException {
         long lastModifiedAudio = new File(audioIn).lastModified();
-        
+
         ArrayList<String> commandLine = fillCommand(out, null, audioIn, config.getDemux2M4aCommand());
         if (runCommand(progress, commandLine)) {
-            
+
             try {
                 if (JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     new File(out).setLastModified(lastModifiedAudio);
@@ -434,5 +456,5 @@ public class FFmpeg {
         }
         return false;
     }
-    
+
 }
