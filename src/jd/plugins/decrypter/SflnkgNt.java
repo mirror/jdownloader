@@ -41,7 +41,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-//Similar to SafeUrlMe (safeurl.me) and XSharezCom (xsharez.com)
+//Similar to SafeUrlMe (safeurl.me)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(www\\.)?(safelinking\\.net/(p|d)/[a-z0-9]+|sflk\\.in/[A-Za-z0-9]+)" }, flags = { 0 })
 public class SflnkgNt extends PluginForDecrypt {
 
@@ -202,7 +202,9 @@ public class SflnkgNt extends PluginForDecrypt {
                 return 9;
             } else if (cType.equals("standard")) {
                 return 10;
-            } else if (cType.equals("cats")) { return 11; }
+            } else if (cType.equals("cats")) {
+                return 11;
+            }
             // Not detected or other case
             return 0;
         }
@@ -221,14 +223,20 @@ public class SflnkgNt extends PluginForDecrypt {
             if (protectedForm != null) {
                 boolean password = protectedForm.getRegex("type=\"password\" name=\"link-password\"").matches(); // password?
                 String captcha = br.getRegex("<div id=\"captcha\\-wrapper\">(.*?)</div></div>").getMatch(0); // captcha?
-                if (captcha != null) prepareCaptchaAdress(captcha, captchaRegex);
+                if (captcha != null) {
+                    prepareCaptchaAdress(captcha, captchaRegex);
+                }
 
                 for (int i = 0; i <= 5; i++) {
                     String data = "post-protect=1";
-                    if (password) data += "&link-password=" + getUserInput(null, param);
+                    if (password) {
+                        data += "&link-password=" + getUserInput(null, param);
+                    }
 
                     Browser captchaBr = null;
-                    if (!"notDetected".equals(cType)) captchaBr = br.cloneBrowser();
+                    if (!"notDetected".equals(cType)) {
+                        captchaBr = br.cloneBrowser();
+                    }
 
                     switch (getCaptchaTypeNumber()) {
                     case 1:
@@ -264,7 +272,9 @@ public class SflnkgNt extends PluginForDecrypt {
                         if (!captchaBr.containsHTML("\"error\":false")) {
                             logger.warning("Decrypter broken for link: " + parameter + "\n");
                             logger.warning("Qaptcha handling broken");
-                            if (password) { throw new DecrypterException("Decrypter for " + HOST + " is broken"); }
+                            if (password) {
+                                throw new DecrypterException("Decrypter for " + HOST + " is broken");
+                            }
                         }
                         data += "&iQapTcha=";
                         break;
@@ -296,8 +306,12 @@ public class SflnkgNt extends PluginForDecrypt {
                     }
                     break;
                 }
-                if (!"notDetected".equals(cType) && (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>"))) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-                if (password) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (!"notDetected".equals(cType) && (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>"))) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
+                if (password) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
             }
         }
 
@@ -315,10 +329,14 @@ public class SflnkgNt extends PluginForDecrypt {
             /* detect javascript */
             String javaScript = null;
             for (String js : br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0)) {
-                if (!new Regex(js, captchaRegex.get(cType)).matches()) continue;
+                if (!new Regex(js, captchaRegex.get(cType)).matches()) {
+                    continue;
+                }
                 javaScript = js;
             }
-            if (javaScript == null) return;
+            if (javaScript == null) {
+                return;
+            }
 
             /* execute javascript */
             Object result = new Object();
@@ -357,12 +375,16 @@ public class SflnkgNt extends PluginForDecrypt {
                     } catch (Throwable e) {
                         file = JDUtilities.getResourceFile("tmp/generalsafelinking/" + test.replaceAll("(:|/|\\?)", "") + format);
                     }
-                    if (file == null) return new ArrayList<DownloadLink>();
+                    if (file == null) {
+                        return new ArrayList<DownloadLink>();
+                    }
                     file.deleteOnExit();
                     brc.downloadConnection(file, con);
                     if (file != null && file.exists() && file.length() > 100) {
                         ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                        if (decryptedLinks.size() > 0) return decryptedLinks;
+                        if (decryptedLinks.size() > 0) {
+                            return decryptedLinks;
+                        }
                     } else {
                         return new ArrayList<DownloadLink>();
                     }
@@ -383,26 +405,36 @@ public class SflnkgNt extends PluginForDecrypt {
             /* Container handling (if no containers found, use webprotection) */
             if (br.containsHTML("\\.dlc")) {
                 this.decryptedLinks = loadcontainer(".dlc", param);
-                if (this.decryptedLinks != null && this.decryptedLinks.size() > 0) return this.decryptedLinks;
+                if (this.decryptedLinks != null && this.decryptedLinks.size() > 0) {
+                    return this.decryptedLinks;
+                }
             }
 
             if (br.containsHTML("\\.rsdf")) {
                 decryptedLinks = loadcontainer(".rsdf", param);
-                if (this.decryptedLinks != null && this.decryptedLinks.size() > 0) return this.decryptedLinks;
+                if (this.decryptedLinks != null && this.decryptedLinks.size() > 0) {
+                    return this.decryptedLinks;
+                }
             }
 
             if (br.containsHTML("\\.ccf")) {
                 this.decryptedLinks = loadcontainer(".ccf", param);
-                if (this.decryptedLinks != null && this.decryptedLinks.size() > 0) return this.decryptedLinks;
+                if (this.decryptedLinks != null && this.decryptedLinks.size() > 0) {
+                    return this.decryptedLinks;
+                }
             }
 
             /* Webprotection decryption */
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(parameter)) br.getPage(parameter);
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(parameter)) {
+                br.getPage(parameter);
+            }
 
             for (String[] s : br.getRegex("<div class=\"links\\-container result\\-form\">(.*?)</div>").getMatches()) {
                 for (String[] ss : new Regex(s[0], "<a href=\"(.*?)\"").getMatches()) {
                     for (String sss : ss) {
-                        if (parameter.equals(sss)) continue;
+                        if (parameter.equals(sss)) {
+                            continue;
+                        }
                         cryptedLinks.add(sss);
                     }
                 }

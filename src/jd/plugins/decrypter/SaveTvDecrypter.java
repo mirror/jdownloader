@@ -88,6 +88,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     // TODO: Find a better solution than "param3=string:984899" -> Maybe try to use API if it has a function to get the whole archive
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final String parameter = param.toString();
         if (!cfg.getBooleanProperty(CRAWLER_ACTIVATE, false)) {
@@ -209,7 +210,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                                     throw new DecrypterException("Decrypt aborted!");
                                 }
                             } catch (final DecrypterException e) {
-                                // Not available in old 0.9.581 Stable
+                                /* Not available in old 0.9.581 Stable */
                                 if (decryptAborted) {
                                     throw e;
                                 }
@@ -363,7 +364,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
                 dl.setProperty("category", 1);
             }
 
-            // Add remaining information
+            /* Add remaining information */
             dl.setProperty("plain_tv_station", tv_station);
             dl.setProperty("plainfilename", name);
             dl.setProperty("type", ".mp4");
@@ -374,7 +375,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             try {
                 distribute(dl);
             } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+                /* Not available in old 0.9.581 Stable */
             }
             decryptedLinks.add(dl);
         }
@@ -400,9 +401,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return true;
     }
 
-    // Sync this with the decrypter
+    /* Sync this with the decrypter */
     private void getPageSafe(final String url) throws Exception {
-        // Limits made by me:
+        // Limits made by me (pspzockerscene):
         // Max 6 logins possible
         // Max 3 accesses of the link possible
         // -> Max 9 total requests

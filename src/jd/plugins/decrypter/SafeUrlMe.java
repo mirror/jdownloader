@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-//Similar to SflnkgNt (safelinking.net) and XSharezCom (xsharez.com)
+//Similar to SflnkgNt (safelinking.net)
 //They only have fancycaptcha and reCaptcha, the other stuff is just here in case they add more captchatypes
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safeurl.me" }, urls = { "https?://(www\\.)?safeurl\\.me/(p|d)/[a-z0-9]+" }, flags = { 0 })
 public class SafeUrlMe extends PluginForDecrypt {
@@ -88,18 +88,26 @@ public class SafeUrlMe extends PluginForDecrypt {
             }
         } else {
             br.getPage(parameter);
-            if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist)")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
-            if (br.containsHTML(">Not yet checked</span>")) { throw new DecrypterException("Not yet checked"); }
+            if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist)")) {
+                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            }
+            if (br.containsHTML(">Not yet checked</span>")) {
+                throw new DecrypterException("Not yet checked");
+            }
 
             /* password */
             if (br.containsHTML(PASSWORDPROTECTEDTEXT)) {
                 for (int j = 0; j <= 5; j++) {
                     String password = "password=" + getUserInput(null, param);
                     br.postPage(parameter + "/unlock", password);
-                    if (br.containsHTML(PASSWORDPROTECTEDTEXT)) continue;
+                    if (br.containsHTML(PASSWORDPROTECTEDTEXT)) {
+                        continue;
+                    }
                     break;
                 }
-                if (br.containsHTML(PASSWORDPROTECTEDTEXT)) { throw new DecrypterException(DecrypterException.PASSWORD); }
+                if (br.containsHTML(PASSWORDPROTECTEDTEXT)) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
                 br.getPage(parameter);
             }
 
@@ -124,7 +132,9 @@ public class SafeUrlMe extends PluginForDecrypt {
                 String data = "captchaVerify=1";
 
                 Browser captchaBr = null;
-                if (!"notDetected".equals(cType)) captchaBr = br.cloneBrowser();
+                if (!"notDetected".equals(cType)) {
+                    captchaBr = br.cloneBrowser();
+                }
 
                 switch (CaptchaTyp.valueOf(cType)) {
                 case recaptcha:
@@ -178,7 +188,9 @@ public class SafeUrlMe extends PluginForDecrypt {
 
                 if (captchaRegex.containsKey(cType)) {
                     br.postPage(parameter, data);
-                    if (br.getHttpConnection().getResponseCode() == 500) logger.warning("Safeurl: 500 Internal Server Error. Link: " + parameter);
+                    if (br.getHttpConnection().getResponseCode() == 500) {
+                        logger.warning("Safeurl: 500 Internal Server Error. Link: " + parameter);
+                    }
                 }
 
                 if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType))) {
@@ -186,7 +198,9 @@ public class SafeUrlMe extends PluginForDecrypt {
                 }
                 break;
             }
-            if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>")) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
             if (br.containsHTML(">All links are dead\\.<|>Links dead<")) {
                 logger.info("All links are offline for link: " + parameter);
                 return decryptedLinks;
@@ -196,7 +210,9 @@ public class SafeUrlMe extends PluginForDecrypt {
             for (String s : br.getRegex("<textarea class=\"links\\-plain\\-text\"(.*?)</textarea>").getColumn(0)) {
                 for (String[] ss : new Regex(s, "(http.*?)[\r\n]+").getMatches()) {
                     for (String sss : ss) {
-                        if (parameter.equals(sss)) continue;
+                        if (parameter.equals(sss)) {
+                            continue;
+                        }
                         cryptedLinks.add(sss);
                     }
                 }

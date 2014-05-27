@@ -59,7 +59,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
         String parameter = Encoding.htmlDecode(param.toString()).replace("http://", "https://");
         int lastPage = 1;
-        // Check if link is for hosterplugin
+        /* Check if link is for hosterplugin */
         if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/"));
             decryptedLinks.add(dl);
