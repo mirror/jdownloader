@@ -1058,9 +1058,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @RequiresRestart("Restart is Required")
     @AboutConfig
-    HashMap<String, Long> getPremiumExpireWarningMap();
+    HashMap<String, Long> getPremiumExpireWarningMapV2();
 
-    void setPremiumExpireWarningMap(HashMap<String, Long> value);
+    void setPremiumExpireWarningMapV2(HashMap<String, Long> value);
 
     @AboutConfig
     @DefaultBooleanValue(true)
