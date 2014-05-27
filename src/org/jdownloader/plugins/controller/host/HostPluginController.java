@@ -92,13 +92,13 @@ public class HostPluginController extends PluginController<PluginForHost> {
             try {
                 if (noCache) {
                     /* try to load from cache, to speed up rescan */
-                    HashMap<String, ArrayList<LazyPlugin>> rescanCache = new HashMap<String, ArrayList<LazyPlugin>>();
+                    final HashMap<String, ArrayList<LazyPlugin>> rescanCache = new HashMap<String, ArrayList<LazyPlugin>>();
                     try {
                         List<LazyHostPlugin> cachedPlugins = null;
                         if (this.list != null) {
                             cachedPlugins = new ArrayList<LazyHostPlugin>(this.list.values());
                         } else {
-                            cachedPlugins = loadFromCache(true);
+                            cachedPlugins = loadFromCache(logger, true);
                         }
                         if (cachedPlugins != null) {
                             for (LazyHostPlugin plugin : cachedPlugins) {
@@ -132,12 +132,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 } else {
                     /* try to load from cache */
                     try {
-                        plugins = loadFromCache(false);
+                        plugins = loadFromCache(logger, false);
                     } catch (Throwable e) {
                         logger.severe("@HostPluginController: cache failed!");
                         logger.log(e);
                     }
-                    if (plugins.size() == 0) {
+                    if (plugins == null || plugins.size() == 0) {
                         try {
                             /* do a fresh scan */
                             plugins = update(logger, null);
@@ -233,40 +233,52 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return newList;
     }
 
-    private List<LazyHostPlugin> loadFromCache(boolean includeUpdateRequired) {
+    private List<LazyHostPlugin> loadFromCache(LogSource logger, boolean includeUpdateRequired) {
         boolean readL = lock.readLock();
-        final List<AbstractHostPlugin> l;
+        final List<AbstractHostPlugin> list;
         try {
-            l = JSonStorage.restoreFrom(Application.getTempResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
+            list = JSonStorage.restoreFrom(Application.getTempResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
             }, new ArrayList<AbstractHostPlugin>());
         } finally {
             lock.readUnlock(readL);
         }
-        List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(l.size());
-        LazyHostPlugin fallBackPlugin = null;
-        /* use this classLoader for all cached plugins to load */
-        for (AbstractHostPlugin ap : l) {
+        if (list == null || list.size() == 0) {
+            return null;
+        }
+        List<LazyHostPlugin> completeList = new ArrayList<LazyHostPlugin>(list.size());
+        for (AbstractHostPlugin ap : list) {
             if (ap.getCacheVersion() != AbstractHostPlugin.CACHEVERSION) {
                 throw new WTFException("Invalid CacheVersion found");
             }
-            LazyHostPlugin lhp;
-            lhp = new LazyHostPlugin(ap, null, null);
-            if ("UpdateRequired".equalsIgnoreCase(ap.getDisplayName())) {
-                /* we do not add fallBackPlugin to returned plugin List */
-                fallBackPlugin = lhp;
-            } else {
-                ret.add(lhp);
+            completeList.add(new LazyHostPlugin(ap, null, null));
+        }
+        LazyHostPlugin fallBackPlugin = null;
+        final HashMap<String, LazyHostPlugin> returnMap = new HashMap<String, LazyHostPlugin>();
+        for (LazyHostPlugin plugin : completeList) {
+            if (fallBackPlugin == null && "UpdateRequired".equalsIgnoreCase(plugin.getDisplayName())) {
+                fallBackPlugin = plugin;
+                continue;
+            }
+            LazyHostPlugin existingPlugin = returnMap.put(plugin.getDisplayName(), plugin);
+            if (existingPlugin != null) {
+                if (existingPlugin.getInterfaceVersion() > plugin.getInterfaceVersion()) {
+                    returnMap.put(plugin.getDisplayName(), existingPlugin);
+                    logger.finest("@HostPlugin(cache) keep:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " instead " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
+                } else {
+                    logger.finest("@HostPlugin(cache) replaced:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " with " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
+                }
             }
         }
-        for (LazyHostPlugin lhp : ret) {
+        completeList = new ArrayList<LazyHostPlugin>(returnMap.values());
+        for (LazyHostPlugin lhp : completeList) {
             /* set fallBackPlugin to all plugins */
             lhp.setFallBackPlugin(fallBackPlugin);
         }
         if (includeUpdateRequired && fallBackPlugin != null) {
-            ret.add(fallBackPlugin);
+            completeList.add(fallBackPlugin);
         }
         this.fallBackPlugin = fallBackPlugin;
-        return ret;
+        return completeList;
     }
 
     private List<LazyHostPlugin> update(LogSource logger, HashMap<String, ArrayList<LazyPlugin>> pluginCache) throws MalformedURLException {
@@ -420,8 +432,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
             if (existingPlugin != null) {
                 if (existingPlugin.getInterfaceVersion() > plugin.getInterfaceVersion()) {
                     returnMap.put(plugin.getDisplayName(), existingPlugin);
+                    logger.finest("@HostPlugin(update) keep:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " instead " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
                 } else {
-                    logger.finest("@HostPlugin replaced:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " with " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
+                    logger.finest("@HostPlugin(update) replaced:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " with " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
                 }
             }
         }
