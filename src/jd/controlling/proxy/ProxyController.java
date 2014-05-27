@@ -472,7 +472,10 @@ public class ProxyController implements ProxySelectorInterface {
                 logger.log(new WTFException("Proxy Vole Crashed"));
 
             } else {
+
                 try {
+                    crashTest.createNewFile();
+                    crashTest.deleteOnExit();
                     final ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
                     try {
                         strategies.add(new DesktopProxySearchStrategy());
@@ -602,8 +605,10 @@ public class ProxyController implements ProxySelectorInterface {
                             }
                         }
                     }
+                } catch (IOException e) {
+                    logger.log(e);
                 } finally {
-
+                    crashTest.delete();
                 }
             }
         }
