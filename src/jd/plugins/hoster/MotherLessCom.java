@@ -33,11 +33,16 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?(motherless\\.com/(movies|thumbs).*|(premium)?motherlesspictures(media)?\\.com/[a-zA-Z0-9/\\.]+|motherlessvideos\\.com/[a-zA-Z0-9/\\.]+)" }, flags = { 2 })
 public class MotherLessCom extends PluginForHost {
 
-    private final String       SUBSCRIBEFAILED     = "Failed to subscribe to the owner of the video";
-    private final String       ONLY4REGISTEREDTEXT = "This link is only downloadable for registered users.";
-    private String             DLLINK              = null;
-    public final static String notOnlineYet        = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
-    public final static String ua                  = RandomUserAgent.generate();
+    public static final String subscribedFailed       = "Failed to subscribe to the owner of the video";
+    public static final String contentRegistered      = "This link is only downloadable for registered users.";
+    public static final String contentSubscriberOnly  = "The upload is subscriber only. You can subscribe to the member from their";
+    public static final String contentSubscriberVideo = "Here's another video instead\\.";
+    public static final String contentSubscriberImage = "Here's another image instead\\.";
+    // offline can contain text which is displayed in contentScriber pages
+    public static final String OFFLINE                = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
+    public static final String notOnlineYet           = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
+    public static final String ua                     = RandomUserAgent.generate();
+    private String             DLLINK                 = null;
 
     public MotherLessCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -76,7 +81,9 @@ public class MotherLessCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (link.getFinalFileName() == null) link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        }
         dl.startDownload();
     }
 
@@ -124,17 +131,19 @@ public class MotherLessCom extends PluginForHost {
     }
 
     private void getVideoLink() {
-        DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.flv)\\'\\)").getMatch(0);
+        DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?\\.(flv|mp4))\\'\\)").getMatch(0);
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.flv)\"").getMatch(0);
+            DLLINK = br.getRegex("(http://s\\d+\\.motherlessmedia\\.com/dev[0-9]+/[^<>\"]*?\\.(flv|mp4))\"").getMatch(0);
         }
-        if (DLLINK != null && !DLLINK.contains("?start=0")) DLLINK += "?start=0";
+        if (DLLINK != null && !DLLINK.contains("?start=0")) {
+            DLLINK += "?start=0";
+        }
     }
 
     public void handleFree(DownloadLink link) throws Exception {
-        if (link.getStringProperty("onlyregistered") != null) {
-            logger.info(ONLY4REGISTEREDTEXT);
-            throw new PluginException(LinkStatus.ERROR_FATAL, ONLY4REGISTEREDTEXT);
+        if (link.getStringProperty("onlyregistered", null) != null) {
+            logger.info(contentRegistered);
+            throw new PluginException(LinkStatus.ERROR_FATAL, contentRegistered);
         }
         doFree(link);
     }
@@ -146,13 +155,19 @@ public class MotherLessCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Subscribers Only")) {
-            String profileToSubscribe = br.getRegex("You can subscribe to the member from[\t\n\r ]+their <a href=\"http://motherless\\.com/m/([^\\'\"]+)\"").getMatch(0);
-            if (profileToSubscribe == null) throw new PluginException(LinkStatus.ERROR_FATAL, SUBSCRIBEFAILED);
+            String profileToSubscribe = br.getRegex("You can subscribe to the member from[\t\n\r ]+their <a href=(\"|')(http://motherless\\.com)?/m/(.*?)\\1").getMatch(2);
+            if (profileToSubscribe == null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, subscribedFailed);
+            }
             br.getPage("http://motherless.com/subscribe/" + profileToSubscribe);
             String token = br.getRegex("name=\"_token\" value=\"(.*?)\"").getMatch(0);
-            if (token == null) throw new PluginException(LinkStatus.ERROR_FATAL, SUBSCRIBEFAILED);
+            if (token == null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, subscribedFailed);
+            }
             br.postPage("http://motherless.com/subscribe/" + profileToSubscribe, "_token=" + token);
-            if (!br.containsHTML("(>You are already subscribed to|>You are now subscribed to)")) throw new PluginException(LinkStatus.ERROR_FATAL, SUBSCRIBEFAILED);
+            if (!br.containsHTML("(>You are already subscribed to|>You are now subscribed to)")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, subscribedFailed);
+            }
             br.getPage(link.getDownloadURL());
         }
         doFree(link);
@@ -163,49 +178,77 @@ public class MotherLessCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", ua);
         br.postPage("https://motherless.com/login", "remember_me=1&__remember_me=0&botcheck=no+bots%21&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://motherless.com/", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://motherless.com/", "auth") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         // reset comment/message
-        if ("video".equals(parameter.getStringProperty("dltype"))) notOnlineYet(parameter, true);
-        if (parameter.getStringProperty("onlyregistered") != null) {
-            logger.info(ONLY4REGISTEREDTEXT);
-            parameter.getLinkStatus().setStatusText("This " + parameter.getStringProperty("dltype") + " link can only be downloaded by registered users");
-            return AvailableStatus.UNCHECKABLE;
+        if ("video".equals(parameter.getStringProperty("dltype", null))) {
+            notOnlineYet(parameter, true);
         }
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
         String betterName = null;
-        if ("offline".equals(parameter.getStringProperty("dltype"))) {
+        if ("offline".equals(parameter.getStringProperty("dltype", null))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if ("video".equals(parameter.getStringProperty("dltype"))) {
+        } else if ("video".equals(parameter.getStringProperty("dltype", null))) {
             br.getPage(parameter.getDownloadURL());
             if (br.containsHTML(notOnlineYet)) {
                 notOnlineYet(parameter, false);
                 return AvailableStatus.FALSE;
+            } else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.contentSubscriberOnly)) {
+                // requires account!
+                return AvailableStatus.UNCHECKABLE;
+            } else if (br.containsHTML(OFFLINE) || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
+                // should be last
+                // links can go offline between the time of adding && download, also decrypter doesn't check found content, will happen
+                // here..
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (br.containsHTML("<img src=\"/images/icons/exclamation\\.png\" style=\"margin\\-top: \\-5px;\" />[\t\n\r ]+404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             getVideoLink();
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             betterName = new Regex(parameter.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-            if (betterName != null) betterName += ".flv";
-        } else if ("image".equals(parameter.getStringProperty("dltype"))) {
+            if (betterName != null) {
+                String ext = new Regex(DLLINK, "\\.(flv|mp4)").getMatch(-1);
+                if (ext != null) {
+                    betterName += ext;
+                }
+            }
+        } else if ("image".equals(parameter.getStringProperty("dltype", null))) {
             br.getPage(parameter.getDownloadURL());
+            // links can go offline between the time of adding && download, also decrypter doesn't check found content, will happen here..
+            if (br.containsHTML(OFFLINE) || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             getPictureLink();
             // No link there but link to the full picture -> Offline
-            if (DLLINK == null && br.containsHTML("<div id=\"media\\-media\">[\t\n\r ]+<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null && br.containsHTML("<div id=\"media-media\">[\t\n\r ]+<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        if (DLLINK == null) DLLINK = parameter.getDownloadURL();
+        if (DLLINK == null) {
+            DLLINK = parameter.getDownloadURL();
+        }
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(DLLINK);
-            if (con.getContentType().contains("html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getContentType().contains("html")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String name = getFileNameFromHeader(con);
-            if (betterName == null) betterName = new Regex(name, "/([^/].*?\\.flv)").getMatch(0);
-            if (betterName != null) name = betterName;
+            if (betterName == null) {
+                betterName = new Regex(name, "/([^/].*?\\.(flv|mp4))").getMatch(0);
+            }
+            if (betterName != null) {
+                name = betterName;
+            }
             parameter.setName(betterName);
             parameter.setDownloadSize(con.getLongContentLength());
             return AvailableStatus.TRUE;
@@ -219,7 +262,9 @@ public class MotherLessCom extends PluginForHost {
 
     public static DownloadLink notOnlineYet(DownloadLink downloadLink, boolean reset) {
         String msg = null;
-        if (!reset) msg = "Not online yet... check again later";
+        if (!reset) {
+            msg = "Not online yet... check again later";
+        }
         downloadLink.getLinkStatus().setStatusText(msg);
         try {
             downloadLink.setComment(msg);
