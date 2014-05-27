@@ -23,9 +23,10 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Sendspace.com folder" }, urls = { "http://(www\\.)?sendspace\\.com/folder/[0-9a-zA-Z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?sendspace\\.com/folder/[0-9a-zA-Z]+" }, flags = { 0 })
 public class SendspaceComFolder extends PluginForDecrypt {
 
     public SendspaceComFolder(PluginWrapper wrapper) {
@@ -43,6 +44,12 @@ public class SendspaceComFolder extends PluginForDecrypt {
         String[] files = br.getRegex("<td class=\"dl\" nowrap><a href=\"(.*?)\" title=").getColumn(0);
         for (String file : files) {
             decryptedLinks.add(createDownloadlink(file));
+        }
+        final String fpName = br.getRegex("Folder: <b>(.*?)</b>").getMatch(0);
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
