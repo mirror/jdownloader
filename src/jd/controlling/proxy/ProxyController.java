@@ -470,12 +470,9 @@ public class ProxyController implements ProxySelectorInterface {
             File crashTest = Application.getTempResource("proxyVoleRunningProxyController");
             if (crashTest.exists()) {
                 logger.log(new WTFException("Proxy Vole Crashed"));
-
             } else {
-
                 try {
                     crashTest.createNewFile();
-                    crashTest.deleteOnExit();
                     final ArrayList<ProxySearchStrategy> strategies = new ArrayList<ProxySearchStrategy>();
                     try {
                         strategies.add(new DesktopProxySearchStrategy());
@@ -485,7 +482,6 @@ public class ProxyController implements ProxySelectorInterface {
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
-
                     for (ProxySearchStrategy s : strategies) {
                         logger.info("Selector: " + s);
                         try {
@@ -554,61 +550,61 @@ public class ProxyController implements ProxySelectorInterface {
                         } catch (Throwable e) {
                             logger.log(e);
                         }
-                        /* convert from old system */
-                        final List<HTTPProxy> reto = restoreFromOldConfig();
-                        for (final HTTPProxy proxyData : reto) {
-                            try {
-                                switch (proxyData.getType()) {
-                                case NONE:
-                                    final NoProxySelector none = new NoProxySelector(proxyData);
-                                    if (proxies.add(none)) {
-                                        logger.info("Restore None: " + none);
-                                    }
-                                    break;
-                                case DIRECT:
-                                    final SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(proxyData);
-                                    if (proxies.add(direct)) {
-                                        logger.info("Restore Direct: " + direct);
-                                    }
-                                    break;
-                                case HTTP:
-                                    final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(proxyData);
-                                    if (proxies.add(basic)) {
-                                        logger.info("Restore Basic: " + basic);
-                                    }
-                                    break;
-                                case SOCKS4:
-                                case SOCKS5:
-                                    final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(proxyData);
-                                    if (proxies.add(socks)) {
-                                        logger.info("Restore Soskcs: " + socks);
-                                    }
-                                    break;
-
-                                default:
-                                    continue;
-                                }
-                            } catch (final Throwable e) {
-                                logger.log(e);
-                            }
-                        }
-                        /* import proxies from system properties */
-                        final List<HTTPProxy> sproxy = HTTPProxy.getFromSystemProperties();
-                        for (final HTTPProxy proxyData : sproxy) {
-                            try {
-                                SingleBasicProxySelectorImpl proxy = new SingleBasicProxySelectorImpl(proxyData);
-                                if (proxies.add(proxy)) {
-                                    logger.info("Add System Proxy: " + proxy);
-                                }
-                            } catch (final Throwable e) {
-                                logger.log(e);
-                            }
-                        }
                     }
                 } catch (IOException e) {
                     logger.log(e);
                 } finally {
                     crashTest.delete();
+                }
+            }
+            /* convert from old system */
+            final List<HTTPProxy> reto = restoreFromOldConfig();
+            for (final HTTPProxy proxyData : reto) {
+                try {
+                    switch (proxyData.getType()) {
+                    case NONE:
+                        final NoProxySelector none = new NoProxySelector(proxyData);
+                        if (proxies.add(none)) {
+                            logger.info("Restore None: " + none);
+                        }
+                        break;
+                    case DIRECT:
+                        final SingleDirectGatewaySelector direct = new SingleDirectGatewaySelector(proxyData);
+                        if (proxies.add(direct)) {
+                            logger.info("Restore Direct: " + direct);
+                        }
+                        break;
+                    case HTTP:
+                        final SingleBasicProxySelectorImpl basic = new SingleBasicProxySelectorImpl(proxyData);
+                        if (proxies.add(basic)) {
+                            logger.info("Restore Basic: " + basic);
+                        }
+                        break;
+                    case SOCKS4:
+                    case SOCKS5:
+                        final SingleBasicProxySelectorImpl socks = new SingleBasicProxySelectorImpl(proxyData);
+                        if (proxies.add(socks)) {
+                            logger.info("Restore Soskcs: " + socks);
+                        }
+                        break;
+
+                    default:
+                        continue;
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                }
+            }
+            /* import proxies from system properties */
+            final List<HTTPProxy> sproxy = HTTPProxy.getFromSystemProperties();
+            for (final HTTPProxy proxyData : sproxy) {
+                try {
+                    SingleBasicProxySelectorImpl proxy = new SingleBasicProxySelectorImpl(proxyData);
+                    if (proxies.add(proxy)) {
+                        logger.info("Add System Proxy: " + proxy);
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
                 }
             }
         }
