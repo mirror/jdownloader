@@ -46,7 +46,8 @@ public class TurboBitNetFolder extends PluginForDecrypt {
         }
         // rows = 100 000 makes sure that we only get one page with all links
         try {
-            br.getPage("http://turbobit.net/downloadfolder/gridFile?id_folder=" + id + "&_search=false&nd=&rows=100000&page=1");
+            // br.getPage("http://turbobit.net/downloadfolder/gridFile?id_folder=" + id + "&_search=false&nd=&rows=100000&page=1");
+            br.getPage("http://turbobit.net/downloadfolder/gridFile?rootId=" + id + "?currentId=" + id + "&_search=false&nd=&rows=100000&page=1");
         } catch (final BrowserException e) {
             logger.info("Link offline (server error): " + parameter);
             return decryptedLinks;
@@ -60,8 +61,9 @@ public class TurboBitNetFolder extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleID : ids)
+        for (String singleID : ids) {
             decryptedLinks.add(createDownloadlink("http://turbobit.net/" + singleID + ".html"));
+        }
 
         return decryptedLinks;
     }
