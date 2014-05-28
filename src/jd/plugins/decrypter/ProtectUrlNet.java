@@ -69,9 +69,11 @@ public class ProtectUrlNet extends PluginForDecrypt {
                 postData += "password=" + passCode;
             }
             if (postData != null) {
+                String freak = br.getRegex("newCookie\\('(PURL_FreakWorld-[a-z0-9]+)','oui").getMatch(0);
+                if (freak != null) {
+                    br.setCookie(this.getHost(), freak, "oui");
+                }
                 br.setCookie(this.getHost(), "PURL_PopPub", "1");
-                // br.setCookie(this.getHost(), "PURL_FreakWorld-dgfedfgg", "oui");
-                br.setCookie(this.getHost(), "PURL_Flood", "1400685598");
                 br.setCookie(this.getHost(), "PURL_NavDossier", "Ooops");
                 br.postPage("http://protect-url.net/linkid.php", postData);
                 if (br.containsHTML(PASSWRONG)) {
@@ -87,6 +89,9 @@ public class ProtectUrlNet extends PluginForDecrypt {
         String fpName = br.getRegex("<b>Titre:</b>[\t\n\r ]+</td>[\t\n\r ]+<td style=\\'border:1px;font\\-weight:bold;font\\-size:90%;font\\-family:Arial,Helvetica,sans\\-serif;\\'>([^<>\"]*?)</td>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<img id=\\'gglload\\' src=\\'images/icon\\-magnify\\.png\\' style=\"vertical\\-align: middle;\"></span>([^<>\"]*?) </td>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<span class=\"notranslate\">(.*?)</span>").getMatch(0);
+            }
         }
         final String[] l = br.getRegex("monhtsec\\('(.*?)'\\)").getColumn(0);
         if (l != null && l.length != 0) {
