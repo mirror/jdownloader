@@ -56,8 +56,7 @@ public class MegaConz extends PluginForDecrypt {
         String folderID = getFolderID(parameter);
         String masterKey = getMasterKey(parameter);
         try {
-            /* seen +4.8 million bytes, current limit is 2mill */
-            br.setLoadLimit(br.getLoadLimit() * 4);
+            br.setLoadLimit(16 * 1024 * 1024);
         } catch (final Throwable e) {
         }
         br.getHeaders().put("APPID", "JDownloader");
