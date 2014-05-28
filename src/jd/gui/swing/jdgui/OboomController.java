@@ -188,25 +188,13 @@ public class OboomController implements TopRightPainter, AccountControllerListen
         if (closeBounds != null && closeBounds.contains(e.getPoint())) {
             new Thread("DEAL_1") {
                 public void run() {
-
-                    OboomDialog d = new OboomDialog("tabclick_hide") {
-                        protected void packed() {
-                            new Thread("DEAL_HIDE") {
-                                public void run() {
-                                    try {
-                                        Dialog.getInstance().showConfirmDialog(0, _GUI._.OboomController_run_hide_title(), _GUI._.OboomController_run_hide_msg(), null, _GUI._.lit_yes(), null);
-                                        OboomController.track("TabbedHideClick/YES");
-                                        CFG_GUI.SPECIAL_DEALS_ENABLED.setValue(false);
-                                    } catch (DialogNoAnswerException e) {
-                                        OboomController.track("TabbedHideClick/NO");
-                                    }
-                                }
-                            }.start();
-
-                        };
-                    };
-                    OboomController.track("TabbedHideClick");
-                    UIOManager.I().show(null, d);
+                    try {
+                        Dialog.getInstance().showConfirmDialog(0, _GUI._.OboomController_run_hide_title(), _GUI._.OboomController_run_hide_msg(), null, _GUI._.lit_yes(), null);
+                        OboomController.track("TabbedHideClick/YES");
+                        CFG_GUI.SPECIAL_DEALS_ENABLED.setValue(false);
+                    } catch (DialogNoAnswerException e) {
+                        OboomController.track("TabbedHideClick/NO");
+                    }
 
                 }
             }.start();
@@ -506,15 +494,12 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                 return 5 * 60 * 1000l;
             }
         };
-        StatsManager.I().track("PremiumExpireWarning/" + account.getHoster());
+
         try {
             Dialog.getInstance().showDialog(d);
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
             CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(plg.getPremiumUrl(), "PremiumExpireWarning/JD2"));
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CLOSED");
-        } catch (DialogCanceledException e) {
+        } catch (DialogNoAnswerException e) {
             e.printStackTrace();
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
         }
