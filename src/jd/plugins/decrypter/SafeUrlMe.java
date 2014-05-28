@@ -88,7 +88,7 @@ public class SafeUrlMe extends PluginForDecrypt {
             }
         } else {
             br.getPage(parameter);
-            if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist)")) {
+            if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist|Could not find links based on the given ID</div>)")) {
                 throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             }
             if (br.containsHTML(">Not yet checked</span>")) {
