@@ -13,15 +13,15 @@ install_force=Nainstalovat Vynucené vypnutí
 install_msg=Chcete připravit váš systém pro funkci vynuceného vypnutí?
 install_title=Nainstalovat Vynucené vypnutí
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader se zavře!</font></h2>
-interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Systém se přepne do Režimu spánku!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Systém se přepne do režimu spánku!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Systém se vypne!</font></h2>
-interaction_shutdown_dialog_msg_standby=<h2><font color="red">Systém se přepne do Úsporného režimu!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><font color="red">Systém se přepne do úsporného režimu!</font></h2>
 interaction_shutdown_dialog_title_closejd=Zavřít JDownloader?
 interaction_shutdown_dialog_title_hibernate=Hibernovat?
 interaction_shutdown_dialog_title_shutdown=Vypnout?
 interaction_shutdown_dialog_title_standby=Úsporný režim?
 jd_plugins_optional_jdshutdown=JD Shutdown
-jd_plugins_optional_jdshutdown_description=Automaticky vypne nebo uspí Váš počítač nebo zavře JD, když jsou všechna stahování dokončena.
+jd_plugins_optional_jdshutdown_description=Automaticky vypne, uspí nebo hibernuje váš počítač nebo zavře JDownloader, když jsou stahování dokončena.
 lit_shutdownn=Vypnutí
 show_admin=Pro nastavení Hibernace nebo Úsporného režimu jsou nutná administrátorská oprávnění
 shutdown_toggle_action_disabled2=Vypnout po stahování
