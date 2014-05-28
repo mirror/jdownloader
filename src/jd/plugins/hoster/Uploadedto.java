@@ -24,7 +24,6 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -989,15 +988,36 @@ public class Uploadedto extends PluginForHost {
 
     public static String getLoginSHA1Hash(String arg) throws PluginException {
         try {
+            arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
             arg = URLDecoder.decode(arg, "ISO-8859-1");
-            arg = arg.toLowerCase(Locale.ENGLISH);
+            arg = arg.replaceAll("[ \t\n\r\0\u000B]", "");
+            while (arg.startsWith("%20")) {
+                arg = arg.substring(3);
+            }
+            while (arg.endsWith("%20")) {
+                arg = arg.substring(0, arg.length() - 3);
+            }
+            arg = arg.replaceAll("(\\\\|\\\"|\0|')", "\\\\$1");
+            arg = asciiToLower(arg);
             final MessageDigest md = MessageDigest.getInstance("SHA1");
-            final byte[] digest = md.digest(arg.getBytes("UTF-8"));
+            final byte[] digest = md.digest(arg.getBytes("latin1"));
             return HexFormatter.byteArrayToHex(digest);
         } catch (final Throwable e) {
             e.printStackTrace();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+    }
+
+    private static String asciiToLower(String s) {
+        char[] c = new char[s.length()];
+        s.getChars(0, s.length(), c, 0);
+        int d = 'a' - 'A';
+        for (int i = 0; i < c.length; i++) {
+            if (c[i] >= 'A' && c[i] <= 'Z') {
+                c[i] = (char) (c[i] + d);
+            }
+        }
+        return new String(c);
     }
 
     private String api_getTokenType(Account account, String token, boolean liveToken) throws Exception {
