@@ -86,6 +86,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         logger.setAllowTimeoutFlush(false);
         LogController.setRebirthLogger(logger);
         ClassLoader oldClassLoader = null;
+        final LinkedHashMap<String, LazyHostPlugin> newList = new LinkedHashMap<String, LazyHostPlugin>();
         try {
             oldClassLoader = Thread.currentThread().getContextClassLoader();
             final long t = System.currentTimeMillis();
@@ -98,7 +99,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         if (this.list != null) {
                             cachedPlugins = new ArrayList<LazyHostPlugin>(this.list.values());
                         } else {
-                            cachedPlugins = loadFromCache(logger, true);
+                            cachedPlugins = loadFromCache(logger);
                         }
                         if (cachedPlugins != null) {
                             for (LazyHostPlugin plugin : cachedPlugins) {
@@ -132,7 +133,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 } else {
                     /* try to load from cache */
                     try {
-                        plugins = loadFromCache(logger, false);
+                        plugins = loadFromCache(logger);
                     } catch (Throwable e) {
                         logger.severe("@HostPluginController: cache failed!");
                         logger.log(e);
@@ -166,16 +167,33 @@ public class HostPluginController extends PluginController<PluginForHost> {
             } catch (final Throwable e) {
                 logger.log(e);
             }
+            LazyHostPlugin fallBackPlugin = null;
+            for (LazyHostPlugin plugin : plugins) {
+                plugin.setPluginClass(null);
+                plugin.setClassLoader(null);
+                if (fallBackPlugin == null && "UpdateRequired".equalsIgnoreCase(plugin.getDisplayName())) {
+                    fallBackPlugin = plugin;
+                    this.fallBackPlugin = plugin;
+                    continue;
+                }
+                final String id = plugin.getDisplayName().toLowerCase(Locale.ENGLISH);
+                final LazyHostPlugin existingPlugin = newList.put(id, plugin);
+                if (existingPlugin != null) {
+                    if (existingPlugin.getInterfaceVersion() > plugin.getInterfaceVersion()) {
+                        newList.put(id, existingPlugin);
+                        logger.finest("@HostPlugin keep:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " instead " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
+                    } else {
+                        logger.finest("@HostPlugin replaced:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " with " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
+                    }
+                }
+            }
+            for (LazyHostPlugin plugin : newList.values()) {
+                plugin.setFallBackPlugin(fallBackPlugin);
+            }
         } finally {
             logger.close();
             LogController.setRebirthLogger(null);
             Thread.currentThread().setContextClassLoader(oldClassLoader);
-        }
-        LinkedHashMap<String, LazyHostPlugin> newList = new LinkedHashMap<String, LazyHostPlugin>(plugins.size());
-        for (LazyHostPlugin plugin : plugins) {
-            plugin.setPluginClass(null);
-            plugin.setClassLoader(null);
-            newList.put(plugin.getDisplayName().toLowerCase(Locale.ENGLISH), plugin);
         }
         list = newList;
         System.gc();
@@ -233,7 +251,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return newList;
     }
 
-    private List<LazyHostPlugin> loadFromCache(LogSource logger, boolean includeUpdateRequired) {
+    private List<LazyHostPlugin> loadFromCache(LogSource logger) {
         boolean readL = lock.readLock();
         final List<AbstractHostPlugin> list;
         try {
@@ -252,32 +270,6 @@ public class HostPluginController extends PluginController<PluginForHost> {
             }
             completeList.add(new LazyHostPlugin(ap, null, null));
         }
-        LazyHostPlugin fallBackPlugin = null;
-        final HashMap<String, LazyHostPlugin> returnMap = new HashMap<String, LazyHostPlugin>();
-        for (LazyHostPlugin plugin : completeList) {
-            if (fallBackPlugin == null && "UpdateRequired".equalsIgnoreCase(plugin.getDisplayName())) {
-                fallBackPlugin = plugin;
-                continue;
-            }
-            LazyHostPlugin existingPlugin = returnMap.put(plugin.getDisplayName(), plugin);
-            if (existingPlugin != null) {
-                if (existingPlugin.getInterfaceVersion() > plugin.getInterfaceVersion()) {
-                    returnMap.put(plugin.getDisplayName(), existingPlugin);
-                    logger.finest("@HostPlugin(cache) keep:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " instead " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
-                } else {
-                    logger.finest("@HostPlugin(cache) replaced:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " with " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
-                }
-            }
-        }
-        completeList = new ArrayList<LazyHostPlugin>(returnMap.values());
-        for (LazyHostPlugin lhp : completeList) {
-            /* set fallBackPlugin to all plugins */
-            lhp.setFallBackPlugin(fallBackPlugin);
-        }
-        if (includeUpdateRequired && fallBackPlugin != null) {
-            completeList.add(fallBackPlugin);
-        }
-        this.fallBackPlugin = fallBackPlugin;
         return completeList;
     }
 
@@ -421,23 +413,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 logger.severe("@HostPlugin missing:" + simpleName);
             }
         }
-        final HashMap<String, LazyHostPlugin> returnMap = new HashMap<String, LazyHostPlugin>();
-        LazyHostPlugin fallBackPlugin = null;
-        for (LazyHostPlugin plugin : completeList) {
-            if (fallBackPlugin == null && "UpdateRequired".equalsIgnoreCase(plugin.getDisplayName())) {
-                fallBackPlugin = plugin;
-                continue;
-            }
-            LazyHostPlugin existingPlugin = returnMap.put(plugin.getDisplayName(), plugin);
-            if (existingPlugin != null) {
-                if (existingPlugin.getInterfaceVersion() > plugin.getInterfaceVersion()) {
-                    returnMap.put(plugin.getDisplayName(), existingPlugin);
-                    logger.finest("@HostPlugin(update) keep:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " instead " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
-                } else {
-                    logger.finest("@HostPlugin(update) replaced:" + existingPlugin.getClassname() + "|" + existingPlugin.getInterfaceVersion() + ":" + existingPlugin.getVersion() + " with " + plugin.getClassname() + "|" + plugin.getInterfaceVersion() + ":" + plugin.getVersion());
-                }
-            }
-        }
+
         this.fallBackPlugin = fallBackPlugin;
         Thread saveThread = new Thread("@HostPluginController:save") {
             public void run() {
@@ -452,11 +428,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         saveThread.setDaemon(true);
         saveThread.start();
         validateCache();
-        ArrayList<LazyHostPlugin> returnList = new ArrayList<LazyHostPlugin>(returnMap.values());
-        for (LazyHostPlugin plugin : returnList) {
-            plugin.setFallBackPlugin(fallBackPlugin);
-        }
-        return returnList;
+        return completeList;
     }
 
     private AtomicBoolean cacheInvalidated = new AtomicBoolean(false);

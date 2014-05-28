@@ -169,6 +169,7 @@ public class ProxyController implements ProxySelectorInterface {
                 @Override
                 protected Void run() throws RuntimeException {
                     switch (proxy.getType()) {
+                    case NONE:
                     case HTTP:
                     case SOCKS4:
                     case SOCKS5:
@@ -648,7 +649,7 @@ public class ProxyController implements ProxySelectorInterface {
             QUEUE.add(new QueueAction<Void, RuntimeException>() {
                 @Override
                 protected Void run() throws RuntimeException {
-                    if (_getList().remove(proxy)) {
+                    if (!AbstractProxySelectorImpl.Type.NONE.equals(proxy.getType()) && _getList().remove(proxy)) {
                         validateGateways();
                         eventSender.fireEvent(new ProxyEvent<AbstractProxySelectorImpl>(ProxyController.this, ProxyEvent.Types.REMOVED, proxy));
                     }
