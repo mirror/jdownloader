@@ -224,11 +224,17 @@ public abstract class PluginForDecrypt extends Plugin {
                 showException = false;
             } else if (DecrypterException.ACCOUNT.equals(e.getMessage())) {
                 showException = false;
+            } else if (e instanceof DecrypterException || e.getCause() instanceof DecrypterException) {
+                showException = false;
             } else {
                 /*
                  * damn, something must have gone really really bad, lets keep the log
                  */
                 exception = e;
+            }
+            if (showException == false && logger instanceof LogSource) {
+                /* make sure we use the right logger */
+                ((LogSource) logger).clear();
             }
             LogSource.exception(logger, e);
         } finally {
