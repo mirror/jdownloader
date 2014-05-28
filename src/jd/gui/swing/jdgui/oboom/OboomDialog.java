@@ -307,7 +307,7 @@ public class OboomDialog extends AbstractDialog<Integer> {
         new Thread("OSR") {
             public void run() {
 
-                OboomDialog d = new OboomDialog(source + "/retry");
+                OboomDialog d = new OboomDialog(source);
 
                 UIOManager.I().show(null, d);
             }

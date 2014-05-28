@@ -138,6 +138,7 @@ public class JSPermissionRestricter {
             }
             return new SandboxNativeJavaObject(scope, javaObject, staticType);
         }
+
     }
 
     public static class SandboxNativeJavaObject extends NativeJavaObject {

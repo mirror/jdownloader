@@ -216,7 +216,7 @@ public class OboomController implements TopRightPainter, AccountControllerListen
 
             new Thread("OSR") {
                 public void run() {
-                    OboomController.track("GETPRO");
+
                     ConfirmDialog d = null;
                     final Account laccountToRenew = accountToRenew;
                     if ((hasDealAccountToRenewAlreadyExpired || hasOtherAccountToRenewAlreadyExpired) && laccountToRenew != null) {
@@ -293,11 +293,12 @@ public class OboomController implements TopRightPainter, AccountControllerListen
                         };
                         if (newValue && CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup() && is2DaysOfferVisible() && !hasDealAccount) {
                             Thread.sleep(10000);
-
-                            OboomDialog d = new OboomDialog("autopopup");
-                            OboomController.track("Popup_10000");
-                            UIOManager.I().show(null, d);
-                            CFG_GUI.CFG.setSpecialDealOboomDialogVisibleOnStartup(false);
+                            if (CFG_GUI.CFG.isSpecialDealOboomDialogVisibleOnStartup()) {
+                                OboomDialog d = new OboomDialog("autopopup");
+                                OboomController.track("Popup_10000");
+                                UIOManager.I().show(null, d);
+                                CFG_GUI.CFG.setSpecialDealOboomDialogVisibleOnStartup(false);
+                            }
 
                         }
                     } catch (Throwable e) {

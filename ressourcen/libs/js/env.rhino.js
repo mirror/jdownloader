@@ -145,7 +145,7 @@ Envjs.eval = function(context, source, name){};
  * @param {Object} parser
  */
 Envjs.loadLocalScript = function(script){
-    //console.log("loading script %s", script);
+    console.log("loading script %s", script);
     var types,
     src,
     i,
@@ -161,14 +161,14 @@ Envjs.loadLocalScript = function(script){
                 break;
             }
             if(i+1 == types.length){
-                //console.log('wont load script type %s', script.type);
+                console.log('wont load script type %s', script.type);
                 return false;
             }
         }
     }
 
     try{
-        //console.log('handling inline scripts');
+        console.log('handling inline scripts');
         if(!script.src.length){
             Envjs.loadInlineScript(script);
             return true;
@@ -180,7 +180,7 @@ Envjs.loadLocalScript = function(script){
     }
 
 
-    //console.log("loading allowed external script %s", script.src);
+    console.log("loading allowed external script %s", script.src);
 
     //lets you register a function to execute
     //before the script is loaded
@@ -193,14 +193,14 @@ Envjs.loadLocalScript = function(script){
     }
     base = "" + script.ownerDocument.location;
     //filename = Envjs.uri(script.src.match(/([^\?#]*)/)[1], base );
-    //console.log('loading script from base %s', base);
+    console.log('loading script from base %s', base);
     filename = Envjs.uri(script.src, base);
     try {
         xhr = new XMLHttpRequest();
         xhr.open("GET", filename, false/*syncronous*/);
-        //console.log("loading external script %s", filename);
+        console.log("loading external script %s", filename);
         xhr.onreadystatechange = function(){
-            //console.log("readyState %s", xhr.readyState);
+            console.log("readyState %s", xhr.readyState);
             if(xhr.readyState === 4){
                 Envjs.eval(
                     script.ownerDocument.ownerWindow,
@@ -287,7 +287,7 @@ Envjs.cookieFile = function(){
  */
 Envjs.saveCookies = function(){
     var cookiejson = JSON.stringify(Envjs.cookies.peristent,null,'\t');
-    //console.log('persisting cookies %s', cookiejson);
+    console.log('persisting cookies %s', cookiejson);
     Envjs.writeToFile(cookiejson, Envjs.cookieFile());
 };
 
@@ -302,7 +302,7 @@ Envjs.loadCookies = function(){
         cookiejson = Envjs.readFromFile(Envjs.cookieFile())
         js = JSON.parse(cookiejson, null, '\t');
     }catch(e){
-        //console.log('failed to load cookies %s', e);
+        console.log('failed to load cookies %s', e);
         js = {};
     }
     return js;
@@ -419,20 +419,20 @@ Envjs.getCookies = function(url){
                 persisted = Envjs.loadCookies();
             }catch(e){
                 //fail gracefully
-                //console.log('%s', e);
+                console.log('%s', e);
             }   
             if(persisted){
                 __extend__(Envjs.cookies.persistent, persisted);
             }
-            //console.log('set cookies for doc %s', doc.baseURI);
+            console.log('set cookies for doc %s', doc.baseURI);
         }catch(e){
             console.log('cookies not loaded %s', e)
         };
     }
     var temporary = __cookieString__(Envjs.cookies.temporary, url),
         persistent =  __cookieString__(Envjs.cookies.persistent, url);
-    //console.log('temporary cookies: %s', temporary);  
-    //console.log('persistent cookies: %s', persistent);  
+    console.log('temporary cookies: %s', temporary);  
+    console.log('persistent cookies: %s', persistent);  
     return  temporary + persistent;
 };
 
@@ -483,7 +483,7 @@ function __mergeCookie__(target, cookie, properties){
                 0 :
                 now + cookie['max-age']
         };
-        //console.log('cookie is %o',target[cookie.domain][cookie.path][name]);
+        console.log('cookie is %o',target[cookie.domain][cookie.path][name]);
     }
 };
 
@@ -1084,7 +1084,7 @@ Envjs.getcwd = function() {
  * @param {Object} base  (semi-optional)  The base url used in resolving "path" above
  */
 Envjs.uri = function(path, base) {
-    //console.log('constructing uri from path %s and base %s', path, base);
+    console.log('constructing uri from path %s and base %s', path, base);
 
     // Semi-common trick is to make an iframe with src='javascript:false'
     //  (or some equivalent).  By returning '', the load is skipped
@@ -1216,7 +1216,7 @@ Envjs.loadFrame = function(frame, url){
         frame.contentDocument = frame.contentWindow.document;
         frame.contentDocument.async = false;
         if(url){
-            //console.log('envjs.loadFrame async %s', frame.contentDocument.async);
+            console.log('envjs.loadFrame async %s', frame.contentDocument.async);
             frame.contentWindow.location = url;
         }
     } catch(e) {
@@ -1315,8 +1315,7 @@ Envjs.loadInlineScript = function(script){
             'eval('+script.text.substring(0,16)+'...):'+new Date().getTime()
         );
     }
-    //console.log('evaluated at scope %s \n%s',
-    //    script.ownerDocument.ownerWindow.guid, script.text);
+    console.log('evaluated at scope %s \n%s',  script.ownerDocument.ownerWindow.guid, script.text);
 };
 
 
@@ -1344,12 +1343,12 @@ try{
 } catch(e){
     //sync unavailable on AppEngine
     Envjs.sync = function(fn){
-        //console.log('Threadless platform, sync is safe');
+        console.log('Threadless platform, sync is safe');
         return fn;
     };
 
     Envjs.spawn = function(fn){
-        //console.log('Threadless platform, spawn shares main thread.');
+        console.log('Threadless platform, spawn shares main thread.');
         return fn();
     };
 }
@@ -1454,6 +1453,7 @@ Envjs.writeToTempFile = function(text, suffix){
  * @param {Object} url
  */
 Envjs.readFromFile = function( url ){
+    console.log("Read: "+url);
     var fileReader = new java.io.FileReader(
         new java.io.File( 
             new java.net.URI( url )));
@@ -1603,7 +1603,7 @@ Envjs.connection = function(xhr, responseHandler, data){
         responseXML = null;
         
         try{
-            //console.log('contentEncoding %s', contentEncoding);
+            console.log('contentEncoding %s', contentEncoding);
             if( contentEncoding.equalsIgnoreCase("gzip") ||
                 contentEncoding.equalsIgnoreCase("decompress")){
                 //zipped content
@@ -1683,7 +1683,7 @@ Envjs.loadFrame = function(frame, url){
         frame.contentDocument = frame.contentWindow.document;
         frame.contentDocument.async = false;
         if(url){
-            //console.log('envjs.loadFrame async %s', frame.contentDocument.async);
+            console.log('envjs.loadFrame async %s', frame.contentDocument.async);
             frame.contentWindow.location = url;
         }
     } catch(e) {
@@ -2872,7 +2872,7 @@ __extend__(Node.prototype, {
         return !!node;
     },
     compareDocumentPosition : function(b){
-        //console.log("comparing document position %s %s", this, b);
+        console.log("comparing document position %s %s", this, b);
         var i,
             length,
             a = this,
@@ -3119,7 +3119,7 @@ __extend__(NamedNodeMap.prototype, {
     },
     getNamedItem : function(name) {
         var ret = null;
-        //console.log('NamedNodeMap getNamedItem %s', name);
+        console.log('NamedNodeMap getNamedItem %s', name);
         // test that Named Node exists
         var itemIndex = __findNamedItemIndex__(this, name);
 
@@ -3131,7 +3131,7 @@ __extend__(NamedNodeMap.prototype, {
         return ret;
     },
     setNamedItem : function(arg) {
-      //console.log('setNamedItem %s', arg);
+      console.log('setNamedItem %s', arg);
       // test for exceptions
       if (__ownerDocument__(this).implementation.errorChecking) {
             // throw Exception if arg was not created by this Document
@@ -3150,12 +3150,12 @@ __extend__(NamedNodeMap.prototype, {
             }
       }
 
-     //console.log('setNamedItem __findNamedItemIndex__ ');
+     console.log('setNamedItem __findNamedItemIndex__ ');
       // get item index
       var itemIndex = __findNamedItemIndex__(this, arg.name);
       var ret = null;
 
-     //console.log('setNamedItem __findNamedItemIndex__ %s', itemIndex);
+     console.log('setNamedItem __findNamedItemIndex__ %s', itemIndex);
       if (itemIndex > -1) {                          // found it!
             ret = this[itemIndex];                // use existing Attribute
 
@@ -3168,18 +3168,18 @@ __extend__(NamedNodeMap.prototype, {
             }
       } else {
             // add new NamedNode
-           //console.log('setNamedItem add new named node map (by index)');
+           console.log('setNamedItem add new named node map (by index)');
             Array.prototype.push.apply(this, [arg]);
-           //console.log('setNamedItem add new named node map (by name) %s %s', arg, arg.name);
+           console.log('setNamedItem add new named node map (by name) %s %s', arg, arg.name);
             this[arg.name] = arg;
-           //console.log('finsished setNamedItem add new named node map (by name) %s', arg.name);
+           console.log('finsished setNamedItem add new named node map (by name) %s', arg.name);
 
       }
 
-     //console.log('setNamedItem parentNode');
+     console.log('setNamedItem parentNode');
       arg.ownerElement = this.parentNode;            // update ownerElement
       // return old node or new node
-     //console.log('setNamedItem exit');
+     console.log('setNamedItem exit');
       return ret;
     },
     removeNamedItem : function(name) {
@@ -3225,7 +3225,7 @@ __extend__(NamedNodeMap.prototype, {
         return ret;
     },
     setNamedItemNS : function(arg) {
-        //console.log('setNamedItemNS %s', arg);
+        console.log('setNamedItemNS %s', arg);
         // test for exceptions
         if (__ownerDocument__(this).implementation.errorChecking) {
             // throw Exception if NamedNodeMap is readonly
@@ -3267,7 +3267,7 @@ __extend__(NamedNodeMap.prototype, {
 
         // return old node or null
         return ret;
-        //console.log('finished setNamedItemNS %s', arg);
+        console.log('finished setNamedItemNS %s', arg);
     },
     removeNamedItemNS : function(namespaceURI, localName) {
           var ret = null;
@@ -3889,7 +3889,7 @@ __extend__(Element.prototype, {
     setAttribute : function (name, value) {
         // if attribute exists, use it
         var attr = this.attributes.getNamedItem(name);
-       //console.log('attr %s', attr);
+       console.log('attr %s', attr);
         //I had to add this check because as the script initializes
         //the id may be set in the constructor, and the html element
         //overrides the id property with a getter/setter.
@@ -3897,7 +3897,7 @@ __extend__(Element.prototype, {
             if (attr===null||attr===undefined) {
                 // otherwise create it
                 attr = __ownerDocument__(this).createAttribute(name);
-               //console.log('attr %s', attr);
+               console.log('attr %s', attr);
             }
 
 
@@ -3919,7 +3919,7 @@ __extend__(Element.prototype, {
 
             // add/replace Attribute in NamedNodeMap
             this.attributes.setNamedItem(attr);
-           //console.log('element setNamedItem %s', attr);
+           console.log('element setNamedItem %s', attr);
         }else{
            console.warn('Element has no owner document '+this.tagName+
                 '\n\t cant set attribute ' + name + ' = '+value );
@@ -3968,7 +3968,7 @@ __extend__(Element.prototype, {
     },
     setAttributeNS : function(namespaceURI, qualifiedName, value) {
         // call NamedNodeMap.getNamedItem
-        //console.log('setAttributeNS %s %s %s', namespaceURI, qualifiedName, value);
+        console.log('setAttributeNS %s %s %s', namespaceURI, qualifiedName, value);
         var attr = this.attributes.getNamedItem(namespaceURI, qualifiedName);
 
         if (!attr) {  // if Attribute exists, use it
@@ -4921,12 +4921,12 @@ __extend__(Document.prototype,{
     createElementNS : function(namespaceURI, qualifiedName) {
         //we use this as a parser flag to ignore the xhtml
         //namespace assumed by the parser
-        //console.log('creating element %s %s', namespaceURI, qualifiedName);
+        console.log('creating element %s %s', namespaceURI, qualifiedName);
         if(this.baseURI === 'http://envjs.com/xml' &&
             namespaceURI === 'http://www.w3.org/1999/xhtml'){
             return this.createElement(qualifiedName);
         }
-        //console.log('createElementNS %s %s', namespaceURI, qualifiedName);
+        console.log('createElementNS %s %s', namespaceURI, qualifiedName);
         if (__ownerDocument__(this).implementation.errorChecking) {
             // throw Exception if the Namespace is invalid
             if (!__isValidNamespace__(this, namespaceURI, qualifiedName)) {
@@ -4944,11 +4944,11 @@ __extend__(Document.prototype,{
         node.prefix       = qname.prefix;
         node.nodeName     = qualifiedName;
 
-        //console.log('created element %s %s', namespaceURI, qualifiedName);
+        console.log('created element %s %s', namespaceURI, qualifiedName);
         return node;
     },
     createAttribute : function(name) {
-        //console.log('createAttribute %s ', name);
+        console.log('createAttribute %s ', name);
         // throw Exception if the name string contains an illegal character
         if (__ownerDocument__(this).implementation.errorChecking &&
             (!__isValidName__(name))) {
@@ -4965,7 +4965,7 @@ __extend__(Document.prototype,{
             namespaceURI === 'http://www.w3.org/1999/xhtml'){
             return this.createAttribute(qualifiedName);
         }
-        //console.log('createAttributeNS %s %s', namespaceURI, qualifiedName);
+        console.log('createAttributeNS %s %s', namespaceURI, qualifiedName);
         // test for exceptions
         if (this.implementation.errorChecking) {
             // throw Exception if the Namespace is invalid
@@ -4984,11 +4984,11 @@ __extend__(Document.prototype,{
         node.prefix       = qname.prefix;
         node.nodeName     = qualifiedName;
         node.nodeValue    = "";
-        //console.log('attribute %s %s %s', node.namespaceURI, node.prefix, node.nodeName);
+        console.log('attribute %s %s %s', node.namespaceURI, node.prefix, node.nodeName);
         return node;
     },
     createNamespace : function(qualifiedName) {
-        //console.log('createNamespace %s', qualifiedName);
+        console.log('createNamespace %s', qualifiedName);
         // create Namespace specifying 'this' as ownerDocument
         var node  = new Namespace(this);
         var qname = __parseQName__(qualifiedName);
@@ -5136,7 +5136,7 @@ __extend__(DOMParser.prototype,{
 
         __toDomNode__(e4, doc, doc);
 
-        //console.log('xml \n %s', doc.documentElement.xml);
+        console.log('xml \n %s', doc.documentElement.xml);
         return doc;
     }
 });
@@ -5151,7 +5151,7 @@ var __toDomNode__ = function(e4, parent, doc){
         element,
         kind,
         item;
-    //console.log('converting e4x node list \n %s', e4)
+    console.log('converting e4x node list \n %s', e4)
 
     // not using the for each(item in e4) since some engines can't
     // handle the syntax (i.e. says syntax error)
@@ -5163,13 +5163,13 @@ var __toDomNode__ = function(e4, parent, doc){
         xnode = e4[item];
 
         kind = xnode.nodeKind();
-        //console.log('treating node kind %s', kind);
+        console.log('treating node kind %s', kind);
         switch(kind){
         case 'element':
             // add node
-            //console.log('creating element %s %s', xnode.localName(), xnode.namespace());
+            console.log('creating element %s %s', xnode.localName(), xnode.namespace());
             if(xnode.namespace() && (xnode.namespace()+'') !== ''){
-                //console.log('createElementNS %s %s',xnode.namespace()+'', xnode.localName() );
+                console.log('createElementNS %s %s',xnode.namespace()+'', xnode.localName() );
                 domnode = doc.createElementNS(xnode.namespace()+'', xnode.localName());
             }else{
                 domnode = doc.createElement(xnode.name()+'');
@@ -5182,7 +5182,7 @@ var __toDomNode__ = function(e4, parent, doc){
             // add children
             children = xnode.children();
             length = children.length();
-            //console.log('recursing? %s', length ? 'yes' : 'no');
+            console.log('recursing? %s', length ? 'yes' : 'no');
             if (length > 0) {
                 __toDomNode__(children, domnode, doc);
             }
@@ -5198,7 +5198,7 @@ var __toDomNode__ = function(e4, parent, doc){
             //  valueOf seemed to work in both
             //
             if(xnode.namespace() && xnode.namespace().prefix){
-                //console.log("%s", xnode.namespace().prefix);
+                console.log("%s", xnode.namespace().prefix);
                 parent.setAttributeNS(xnode.namespace()+'',
                                       xnode.namespace().prefix+':'+xnode.localName(),
                                       xnode.valueOf());
@@ -5213,22 +5213,22 @@ var __toDomNode__ = function(e4, parent, doc){
             }
             break;
         case 'text':
-            //console.log('creating text node : %s', xnode);
+            console.log('creating text node : %s', xnode);
             domnode = doc.createTextNode(xnode+'');
             parent.appendChild(domnode);
             break;
         case 'comment':
-            //console.log('creating comment node : %s', xnode);
+            console.log('creating comment node : %s', xnode);
             value = xnode+'';
             domnode = doc.createComment(value.substring(4,value.length-3));
             parent.appendChild(domnode);
             break;
         case 'processing-instruction':
-            //console.log('creating processing-instruction node : %s', xnode);
+            console.log('creating processing-instruction node : %s', xnode);
             value = xnode+'';
             target = value.split(' ')[0].substring(2);
             value = value.split(' ').splice(1).join(' ').replace('?>','');
-            //console.log('creating processing-instruction data : %s', value);
+            console.log('creating processing-instruction data : %s', value);
             domnode = doc.createProcessingInstruction(target, value);
             parent.appendChild(domnode);
             break;
@@ -5588,29 +5588,27 @@ var $events = [{}];
 function __addEventListener__(target, type, fn, phase){
     phase = !!phase?"CAPTURING":"BUBBLING";
     if ( !target.uuid ) {
-        //console.log('event uuid %s %s', target, target.uuid);
+        console.log('event uuid %s %s', target, target.uuid);
         target.uuid = $events.length+'';
     }
     if ( !$events[target.uuid] ) {
-        //console.log('creating listener for target: %s %s', target, target.uuid);
+        console.log('creating listener for target: %s %s', target, target.uuid);
         $events[target.uuid] = {};
     }
     if ( !$events[target.uuid][type] ){
-        //console.log('creating listener for type: %s %s %s', target, target.uuid, type);
+        console.log('creating listener for type: %s %s %s', target, target.uuid, type);
         $events[target.uuid][type] = {
             CAPTURING:[],
             BUBBLING:[]
         };
     }
     if ( $events[target.uuid][type][phase].indexOf( fn ) < 0 ){
-        //console.log('adding event listener %s %s %s %s %s %s', target, target.uuid, type, phase,
-        //    $events[target.uuid][type][phase].length, $events[target.uuid][type][phase].indexOf( fn ));
-        //console.log('creating listener for function: %s %s %s', target, target.uuid, phase);
+        console.log('adding event listener %s %s %s %s %s %s', target, target.uuid, type, phase,  $events[target.uuid][type][phase].length, $events[target.uuid][type][phase].indexOf( fn ));
+        console.log('creating listener for function: %s %s %s', target, target.uuid, phase);
         $events[target.uuid][type][phase].push( fn );
-        //console.log('adding event listener %s %s %s %s %s %s', target, target.uuid, type, phase,
-        //    $events[target.uuid][type][phase].length, $events[target.uuid][type][phase].indexOf( fn ));
+        console.log('adding event listener %s %s %s %s %s %s', target, target.uuid, type, phase,    $events[target.uuid][type][phase].length, $events[target.uuid][type][phase].indexOf( fn ));
     }
-    //console.log('registered event listeners %s', $events.length);
+    console.log('registered event listeners %s', $events.length);
 }
 
 function __removeEventListener__(target, type, fn, phase){
@@ -5624,7 +5622,7 @@ function __removeEventListener__(target, type, fn, phase){
     }
     if(type == '*'){
         //used to clean all event listeners for a given node
-        //console.log('cleaning all event listeners for node %s %s',target, target.uuid);
+        console.log('cleaning all event listeners for node %s %s',target, target.uuid);
         delete $events[target.uuid];
         return;
     }else if ( !$events[target.uuid][type] ){
@@ -5632,7 +5630,7 @@ function __removeEventListener__(target, type, fn, phase){
     }
     $events[target.uuid][type][phase] =
     $events[target.uuid][type][phase].filter(function(f){
-        //console.log('removing event listener %s %s %s %s', target, type, phase, fn);
+        console.log('removing event listener %s %s %s %s', target, type, phase, fn);
         return f != fn;
     });
 }
@@ -5645,7 +5643,7 @@ function __dispatchEvent__(target, event, bubbles){
     }
     //the window scope defines the $event object, for IE(^^^) compatibility;
     //$event = event;
-    //console.log('dispatching event %s', event.uuid);
+    console.log('dispatching event %s', event.uuid);
     if (bubbles === undefined || bubbles === null) {
         bubbles = true;
     }
@@ -5654,31 +5652,29 @@ function __dispatchEvent__(target, event, bubbles){
         event.target = target;
     }
 
-    //console.log('dispatching? %s %s %s', target, event.type, bubbles);
+    console.log('dispatching? %s %s %s', target, event.type, bubbles);
     if ( event.type && (target.nodeType || target === window )) {
 
-        //console.log('dispatching event %s %s %s', target, event.type, bubbles);
+        console.log('dispatching event %s %s %s', target, event.type, bubbles);
         __captureEvent__(target, event);
 
         event.eventPhase = Event.AT_TARGET;
         if ( target.uuid && $events[target.uuid] && $events[target.uuid][event.type] ) {
             event.currentTarget = target;
-            //console.log('dispatching %s %s %s %s', target, event.type,
-            //  $events[target.uuid][event.type]['CAPTURING'].length);
+            console.log('dispatching %s %s %s %s', target, event.type, $events[target.uuid][event.type]['CAPTURING'].length);
             $events[target.uuid][event.type].CAPTURING.forEach(function(fn){
-                //console.log('AT_TARGET (CAPTURING) event %s', fn);
+                console.log('AT_TARGET (CAPTURING) event %s', fn);
                 var returnValue = fn( event );
-                //console.log('AT_TARGET (CAPTURING) return value %s', returnValue);
+                console.log('AT_TARGET (CAPTURING) return value %s', returnValue);
                 if(returnValue === false){
                     event.stopPropagation();
                 }
             });
-            //console.log('dispatching %s %s %s %s', target, event.type,
-            //  $events[target.uuid][event.type]['BUBBLING'].length);
+            console.log('dispatching %s %s %s %s', target, event.type, $events[target.uuid][event.type]['BUBBLING'].length);
             $events[target.uuid][event.type].BUBBLING.forEach(function(fn){
-                //console.log('AT_TARGET (BUBBLING) event %s', fn);
+                console.log('AT_TARGET (BUBBLING) event %s', fn);
                 var returnValue = fn( event );
-                //console.log('AT_TARGET (BUBBLING) return value %s', returnValue);
+                console.log('AT_TARGET (BUBBLING) return value %s', returnValue);
                 if(returnValue === false){
                     event.stopPropagation();
                 }
@@ -5695,12 +5691,12 @@ function __dispatchEvent__(target, event, bubbles){
             //with default behavior being executed in a browser but I could be
             //wrong as usual.  The goal is much more to filter at this point
             //what events have no need to be handled
-            //console.log('triggering default behavior for %s', event.type);
+            console.log('triggering default behavior for %s', event.type);
             if(event.type in Envjs.defaultEventBehaviors){
                 Envjs.defaultEventBehaviors[event.type](event);
             }
         }
-        //console.log('deleting event %s', event.uuid);
+        console.log('deleting event %s', event.uuid);
         event.target = null;
         event = null;
     }else{
@@ -6238,7 +6234,7 @@ setTimeout = function(fn, time){
                 }
             };
         }
-        //console.log("Creating timer number %s", num);
+        console.log("Creating timer number %s", num);
         $timers[num] = new Timer(tfn, time);
         $timers[num].start();
     });
@@ -6251,7 +6247,7 @@ setTimeout = function(fn, time){
  * @param {Object} time
  */
 setInterval = function(fn, time){
-    //console.log('setting interval %s %s', time, fn.toString().substring(0,64));
+    console.log('setting interval %s %s', time, fn.toString().substring(0,64));
     time = Timer.normalize(time);
     if ( time < 10 ) {
         time = 10;
@@ -6277,7 +6273,7 @@ setInterval = function(fn, time){
  * @param {Object} num
  */
 clearInterval = clearTimeout = function(num){
-    //console.log("clearing interval "+num);
+    console.log("clearing interval "+num);
     $timers.lock(function(){
         if ( $timers[num] ) {
             $timers[num].stop();
@@ -6298,7 +6294,7 @@ clearInterval = clearTimeout = function(num){
 // TODO: make a priority queue ...
 
 Envjs.wait = function(wait) {
-    //console.log('wait %s', wait);
+    console.log('wait %s', wait);
     var delta_wait,
         start = Date.now(),
         was_running = EVENT_LOOP_RUNNING;
@@ -6321,7 +6317,7 @@ Envjs.wait = function(wait) {
         nextfn;
 
     for (;;) {
-        //console.log('timer loop');
+        console.log('timer loop');
         earliest = sleep = goal = now = nextfn = null;
         $timers.lock(function(){
             for(index in $timers){
@@ -6341,7 +6337,7 @@ Envjs.wait = function(wait) {
         if ( earliest && sleep <= 0 ) {
             nextfn = earliest.fn;
             try {
-                //console.log('running stack %s', nextfn.toString().substring(0,64));
+                console.log('running stack %s', nextfn.toString().substring(0,64));
                 earliest.running = true;
                 nextfn();
             } catch (e) {
@@ -6387,7 +6383,7 @@ Envjs.wait = function(wait) {
         if ( !sleep || sleep > interval ) {
             sleep = interval;
         }
-        //console.log('sleeping %s', sleep);
+        console.log('sleeping %s', sleep);
         Envjs.sleep(sleep);
 
     }
@@ -6706,7 +6702,7 @@ __extend__(HTMLDocument.prototype, {
     },
     //document.head is non-standard
     get head(){
-        //console.log('get head');
+        console.log('get head');
         if (!this.documentElement) {
             this.appendChild(this.createElement('html'));
         }
@@ -6726,7 +6722,7 @@ __extend__(HTMLDocument.prototype, {
         return head;
     },
     get title(){
-        //console.log('get title');
+        console.log('get title');
         if (!this.documentElement) {
             this.appendChild(this.createElement('html'));
         }
@@ -6747,7 +6743,7 @@ __extend__(HTMLDocument.prototype, {
         return title.appendChild(this.createTextNode('Untitled Document')).nodeValue;
     },
     set title(titleStr){
-        //console.log('set title %s', titleStr);
+        console.log('set title %s', titleStr);
         if (!this.documentElement) {
             this.appendChild(this.createElement('html'));
         }
@@ -6756,7 +6752,7 @@ __extend__(HTMLDocument.prototype, {
     },
 
     get body(){
-        //console.log('get body');
+        console.log('get body');
         if (!this.documentElement) {
             this.appendChild(this.createElement('html'));
         }
@@ -6904,19 +6900,18 @@ Aspect.around({
     node = invocation.proceed(),
     doc = node.ownerDocument;
 
-    //console.log('element appended: %s %s %s', node+'', node.nodeName, node.namespaceURI);
+    console.log('element appended: %s %s %s', node+'', node.nodeName, node.namespaceURI);
     if((node.nodeType !== Node.ELEMENT_NODE)){
         //for now we are only handling element insertions.  probably
         //we will need to handle text node changes to script tags and
         //changes to src attributes
         return node;
     }
-    //console.log('appended html element %s %s %s',
-    //             node.namespaceURI, node.nodeName, node);
+    console.log('appended html element %s %s %s',            node.namespaceURI, node.nodeName, node);
     switch(doc.parsing){
         case true:
             //handled by parser if included
-            //console.log('html document in parse mode');
+            console.log('html document in parse mode');
             break;
         case false:
             switch(node.namespaceURI){
@@ -6933,7 +6928,7 @@ Aspect.around({
                         if((this.nodeName.toLowerCase() === 'head')){
                             try{
                                 okay = Envjs.loadLocalScript(node, null);
-                                //console.log('loaded script? %s %s', node.uuid, okay);
+                                console.log('loaded script? %s %s', node.uuid, okay);
                                 // only fire event if we actually had something to load
                                 if (node.src && node.src.length > 0){
                                     event = doc.createEvent('HTMLEvents');
@@ -6961,7 +6956,7 @@ Aspect.around({
                         }
                         try{
                             if (node.src && node.src.length > 0){
-                                //console.log("getting content document for (i)frame from %s", node.src);
+                                console.log("getting content document for (i)frame from %s", node.src);
                                 Envjs.loadFrame(node, Envjs.uri(node.src));
                                 event = node.contentDocument.createEvent('HTMLEvents');
                                 event.initEvent("load", false, false);
@@ -6972,7 +6967,7 @@ Aspect.around({
                                 try{
                                     if(Window){
                                         Envjs.loadFrame(node);
-                                        //console.log('src/html/document.js: triggering frame load');
+                                        console.log('src/html/document.js: triggering frame load');
                                         event = node.contentDocument.createEvent('HTMLEvents');
                                         event.initEvent("load", false, false);
                                         node.dispatchEvent( event, false );
@@ -7033,12 +7028,12 @@ Aspect.around({
         //to handle text node changes to script tags and changes to src
         //attributes
         if(node.nodeType !== Node.DOCUMENT_NODE && node.uuid){
-            //console.log('removing event listeners, %s', node, node.uuid);
+            console.log('removing event listeners, %s', node, node.uuid);
             node.removeEventListener('*', null, null);
         }
         return node;
     }
-    //console.log('appended html element %s %s %s', node.namespaceURI, node.nodeName, node);
+    console.log('appended html element %s %s %s', node.namespaceURI, node.nodeName, node);
 
     switch(doc.parsing){
         case true:
@@ -7056,13 +7051,13 @@ Aspect.around({
                 //by the uuid property of the node.  unforunately this
                 //means listeners hang out way after(forever ;)) the node
                 //has been removed and gone out of scope.
-                //console.log('removing event listeners, %s', node, node.uuid);
+                console.log('removing event listeners, %s', node, node.uuid);
                 node.removeEventListener('*', null, null);
                 switch(node.tagName.toLowerCase()){
                 case 'frame':
                 case 'iframe':
                     try{
-                        //console.log('removing iframe document');
+                        console.log('removing iframe document');
                         try{
                             Envjs.unloadFrame(node);
                         }catch(e){
@@ -10074,11 +10069,11 @@ __extend__(HTMLSelectElement.prototype, {
         var imax = options.length;
         for (var i=0; i < imax; ++i) {
             if (options[i].selected) {
-                //console.log('select get selectedIndex %s', i);
+                console.log('select get selectedIndex %s', i);
                 return i;
             }
         }
-        //console.log('select get selectedIndex %s', -1);
+        console.log('select get selectedIndex %s', -1);
         return -1;
     },
 
@@ -10868,7 +10863,7 @@ var __toDashed__ = function(camelCaseName) {
 };
 
 CSS2Properties = function(element){
-    //console.log('css2properties %s', __cssproperties__++);
+    console.log('css2properties %s', __cssproperties__++);
     this.styleIndex = __supportedStyles__;//non-standard
     this.type = element.tagName;//non-standard
     __setArray__(this, []);
@@ -10936,7 +10931,7 @@ __extend__(CSS2Properties.prototype, {
 
 
 var __cssTextToStyles__ = function(css2props, cssText) {
-    //console.log('__cssTextToStyles__ %s %s', css2props, cssText);
+    console.log('__cssTextToStyles__ %s %s', css2props, cssText);
     //var styleArray=[];
     var i, style, styles = cssText.split(';');
     for (i = 0; i < styles.length; ++i) {
@@ -11347,7 +11342,7 @@ __extend__(HTMLElement.prototype, {
  * This could be wrapped in a closure if desired.
  */
 var updateCss2Props = function(elem, values) {
-    //console.log('__updateCss2Props__ %s %s', elem, values);
+    console.log('__updateCss2Props__ %s %s', elem, values);
     if ( !elem.css2uuid ) {
         elem.css2uuid = $css2properties.length;
         $css2properties[elem.css2uuid] = new CSS2Properties(elem);
@@ -11358,7 +11353,7 @@ var updateCss2Props = function(elem, values) {
 var origSetAttribute =  HTMLElement.prototype.setAttribute;
 
 HTMLElement.prototype.setAttribute = function(name, value) {
-    //console.log("CSS set attribute: " + name + ", " + value);
+    console.log("CSS set attribute: " + name + ", " + value);
     origSetAttribute.apply(this, arguments);
     if (name === "style") {
         updateCss2Props(this, value);
@@ -11939,21 +11934,21 @@ __defineParser__(function(e){
 /*DOMParser = function(principle, documentURI, baseURI){};
 __extend__(DOMParser.prototype,{
     parseFromString: function(xmlstring, mimetype){
-        //console.log('DOMParser.parseFromString %s', mimetype);
+        console.log('DOMParser.parseFromString %s', mimetype);
         var xmldoc = new Document(new DOMImplementation());
         return XMLParser.parseDocument(xmlstring, xmldoc, mimetype);
     }
 });*/
 
 XMLParser.parseDocument = function(xmlstring, xmldoc, mimetype){
-    //console.log('XMLParser.parseDocument');
+    console.log('XMLParser.parseDocument');
     var tmpdoc = new Document(new DOMImplementation()),
         parent,
         importedNode,
         tmpNode;
 
     if(mimetype && mimetype == 'text/xml'){
-        //console.log('mimetype: text/xml');
+        console.log('mimetype: text/xml');
         tmpdoc.baseURI = 'http://envjs.com/xml';
         xmlstring = '<html><head></head><body>'+
             '<envjs_1234567890 xmlns="envjs_1234567890">'
@@ -11982,14 +11977,14 @@ var __fragmentCache__ = {length:0},
     __cachable__ = 255;
 
 HTMLParser.parseDocument = function(htmlstring, htmldoc){
-    //console.log('HTMLParser.parseDocument %s', htmldoc.async);
+    console.log('HTMLParser.parseDocument %s', htmldoc.async);
     htmldoc.parsing = true;
     Envjs.parseHtmlDocument(htmlstring, htmldoc, htmldoc.async, null, null);
     //Envjs.wait(-1);
     return htmldoc;
 };
 HTMLParser.parseFragment = function(htmlstring, element){
-    //console.log('HTMLParser.parseFragment')
+    console.log('HTMLParser.parseFragment')
     // fragment is allowed to be an element as well
     var tmpdoc,
         parent,
@@ -11998,12 +11993,12 @@ HTMLParser.parseFragment = function(htmlstring, element){
         length,
         i,
         docstring;
-    //console.log('parsing fragment: %s', htmlstring);
-    //console.log('__fragmentCache__.length %s', __fragmentCache__.length)
+    console.log('parsing fragment: %s', htmlstring);
+    console.log('__fragmentCache__.length %s', __fragmentCache__.length)
     if( htmlstring.length > __cachable__ && htmlstring in __fragmentCache__){
         tmpdoc = __fragmentCache__[htmlstring];
     }else{
-        //console.log('parsing html fragment \n%s', htmlstring);
+        console.log('parsing html fragment \n%s', htmlstring);
         tmpdoc = new HTMLDocument(new DOMImplementation());
 
 
@@ -12069,7 +12064,7 @@ var __clearFragmentCache__ = function(){
  */
 __extend__(Document.prototype, {
     loadXML : function(xmlString) {
-        //console.log('Parser::Document.loadXML');
+        console.log('Parser::Document.loadXML');
         // create Document
         if(this === document){
             //$debug("Setting internal window.document");
@@ -12096,17 +12091,17 @@ __extend__(Document.prototype, {
 __extend__(HTMLDocument.prototype, {
 
     open : function() {
-        //console.log('opening doc for write.');
+        console.log('opening doc for write.');
         if (! this._writebuffer) {
             this._writebuffer = [];
         }
     },
     close : function() {
-        //console.log('closing doc.');
+        console.log('closing doc.');
         if (this._writebuffer) {
             HTMLParser.parseDocument(this._writebuffer.join(''), this);
             this._writebuffer = null;
-            //console.log('finished writing doc.');
+            console.log('finished writing doc.');
         }
     },
 
@@ -12114,7 +12109,7 @@ __extend__(HTMLDocument.prototype, {
      * http://dev.w3.org/html5/spec/Overview.html#document.write
      */
     write: function(htmlstring) {
-        //console.log('writing doc.');
+        console.log('writing doc.');
         this.open();
         this._writebuffer.push(htmlstring);
     },
@@ -12138,14 +12133,14 @@ __extend__(HTMLDocument.prototype, {
  *
  */
 var __elementPopped__ = function(ns, name, node){
-    //console.log('popped html element %s %s %s', ns, name, node);
+    console.log('popped html element %s %s %s', ns, name, node);
     var doc = node.ownerDocument,
         okay,
         event;
     switch(doc.parsing){
         case false:
             //innerHTML so dont do loading patterns for parsing
-            //console.log('element popped (implies innerHTML) not in parsing mode %s', node.nodeName);
+            console.log('element popped (implies innerHTML) not in parsing mode %s', node.nodeName);
             break;
         case true:
             switch(doc+''){
@@ -12154,7 +12149,7 @@ var __elementPopped__ = function(ns, name, node){
                 case '[object HTMLDocument]':
                     switch(node.namespaceURI){
                         case "http://n.validator.nu/placeholder/":
-                            //console.log('got script during parsing %s', node.textContent);
+                            console.log('got script during parsing %s', node.textContent);
                             break;
                         case null:
                         case "":
@@ -12190,7 +12185,7 @@ var __elementPopped__ = function(ns, name, node){
                                     }
                                     try{
                                         if (node.src && node.src.length > 0){
-                                            //console.log("getting content document for (i)frame from %s", node.src);
+                                            console.log("getting content document for (i)frame from %s", node.src);
                                             Envjs.loadFrame(node, Envjs.uri(node.src));
                                             event = node.contentDocument.createEvent('HTMLEvents');
                                             event.initEvent("load", false, false);
@@ -12201,7 +12196,7 @@ var __elementPopped__ = function(ns, name, node){
                                             try{
                                                 if(Window){
                                                     Envjs.loadFrame(node);
-                                                    //console.log('src/html/document.js: triggering frame load');
+                                                    console.log('src/html/document.js: triggering frame load');
                                                     event = node.contentDocument.createEvent('HTMLEvents');
                                                     event.initEvent("load", false, false);
                                                     node.dispatchEvent( event, false );
@@ -12213,13 +12208,13 @@ var __elementPopped__ = function(ns, name, node){
                                     }
                                     /*try{
                                         if (node.src && node.src.length > 0){
-                                            //console.log("getting content document for (i)frame from %s", node.src);
+                                            console.log("getting content document for (i)frame from %s", node.src);
                                             Envjs.loadFrame(node, Envjs.uri(node.src));
                                             event = node.ownerDocument.createEvent('HTMLEvents');
                                             event.initEvent("load", false, false);
                                             node.dispatchEvent( event, false );
                                         }else{
-                                            //console.log('src/parser/htmldocument: triggering frame load (no src)');
+                                            console.log('src/parser/htmldocument: triggering frame load (no src)');
                                         }
                                     }catch(e){
                                         console.log('error loading html element %s %s %s %e', ns, name, node, e.toString());
@@ -12239,7 +12234,7 @@ var __elementPopped__ = function(ns, name, node){
                                     }
                                     break;
                                 case 'html':
-                                    //console.log('html popped');
+                                    console.log('html popped');
                                     doc.parsing = false;
                                     //DOMContentLoaded event
                                     try{
@@ -12272,7 +12267,7 @@ var __elementPopped__ = function(ns, name, node){
                                     }
                                     try{
                                         if(doc === window.document){
-                                            //console.log('triggering window.load')
+                                            console.log('triggering window.load')
                                             event = doc.createEvent('HTMLEvents');
                                             event.initEvent("load", false, false);
                                             try{
@@ -12282,12 +12277,12 @@ var __elementPopped__ = function(ns, name, node){
                                             }
                                         }
                                     }catch(e){
-                                        //console.log('%s', e);
+                                        console.log('%s', e);
                                         //swallow
                                     }
                                 default:
                                     if(node.getAttribute('onload')){
-                                        //console.log('%s onload', node);
+                                        console.log('%s onload', node);
                                         node.onload();
                                     }
                                     break;
@@ -12778,7 +12773,7 @@ var __param__= function( array ) {
  */
 
 Location = function(url, doc, history) {
-    //console.log('Location url %s', url);
+    console.log('Location url %s', url);
     var $url = url,
     $document = doc ? doc : null,
     $history = history ? history : null;
@@ -12926,7 +12921,7 @@ Location = function(url, doc, history) {
                 event,
                 cookie;
 
-            //console.log('assigning %s',url);
+            console.log('assigning %s',url);
 
             // update closure upvars
             $url = url;
@@ -12934,7 +12929,7 @@ Location = function(url, doc, history) {
 
             //we can only assign if this Location is associated with a document
             if ($document) {
-                //console.log('fetching %s (async? %s)', url, $document.async);
+                console.log('fetching %s (async? %s)', url, $document.async);
                 xhr = new XMLHttpRequest();
 
                 // TODO: make async flag a Envjs paramter
@@ -12943,12 +12938,12 @@ Location = function(url, doc, history) {
                 // TODO: is there a better way to test if a node is an HTMLDocument?
                 if ($document.toString() === '[object HTMLDocument]') {
                     //tell the xhr to not parse the document as XML
-                    //console.log('loading html document');
+                    console.log('loading html document');
                     xhr.onreadystatechange = function() {
-                        //console.log('readyState %s', xhr.readyState);
+                        console.log('readyState %s', xhr.readyState);
                         if (xhr.readyState === 4) {
                             $document.baseURI = new Location(url, $document);
-                            //console.log('new document baseURI %s', $document.baseURI);
+                            console.log('new document baseURI %s', $document.baseURI);
                             __exchangeHTMLDocument__($document, xhr.responseText, url);
                         }
                     };
@@ -12974,7 +12969,7 @@ Location = function(url, doc, history) {
         },
         reload: function(forceget) {
             //for now we have no caching so just proxy to assign
-            //console.log('reloading %s',$url);
+            console.log('reloading %s',$url);
             this.assign($url);
         },
         replace: function(url) {
@@ -13007,7 +13002,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
         html.appendChild(head);
         html.appendChild(body);
         doc.appendChild(html);
-        //console.log('default error document \n %s', doc.documentElement.outerHTML);
+        console.log('default error document \n %s', doc.documentElement.outerHTML);
 
         //DOMContentLoaded event
         if (doc.createEvent) {
@@ -13032,7 +13027,7 @@ var __exchangeHTMLDocument__ = function(doc, text, url) {
                 window.dispatchEvent( event, false );
             }
         } catch (e) {
-            //console.log('window load event failed %s', e);
+            console.log('window load event failed %s', e);
             //swallow
         }
     };  /* closes return {... */
@@ -13065,7 +13060,7 @@ XMLHttpRequest.DONE = 4;
 
 XMLHttpRequest.prototype = {
     open: function(method, url, async, user, password){
-        //console.log('openning xhr %s %s %s', method, url, async);
+        console.log('openning xhr %s %s %s', method, url, async);
         this.readyState = 1;
         this.async = (async === false)?false:true;
         this.method = method || "GET";
@@ -13094,7 +13089,7 @@ XMLHttpRequest.prototype = {
                     if ( parsedoc && _this.responseText.match(/^\s*</) ) {
                         domparser = domparser||new DOMParser();
                         try {
-                            //console.log("parsing response text into xml document");
+                            console.log("parsing response text into xml document");
                             doc = domparser.parseFromString(_this.responseText+"", 'text/xml');
                         } catch(e) {
                             //Envjs.error('response XML does not appear to be well formed xml', e);
@@ -13130,10 +13125,10 @@ XMLHttpRequest.prototype = {
             //      current thread and call onreadystatechange via
             //      setTimeout so the callback is essentially applied
             //      at the end of the current callstack
-            //console.log('requesting async: %s', this.url);
+            console.log('requesting async: %s', this.url);
             Envjs.runAsync(makeRequest);
         }else{
-            //console.log('requesting sync: %s', this.url);
+            console.log('requesting sync: %s', this.url);
             makeRequest();
         }
     },
@@ -13244,10 +13239,10 @@ __extend__(HTMLFrameElement.prototype,{
         var event;
         this.setAttribute('src', value);
         if (this.parentNode && value && value.length > 0){
-            //console.log('loading frame %s', value);
+            console.log('loading frame %s', value);
             Envjs.loadFrame(this, Envjs.uri(value));
 
-            //console.log('event frame load %s', value);
+            console.log('event frame load %s', value);
             event = this.ownerDocument.createEvent('HTMLEvents');
             event.initEvent("load", false, false);
             this.dispatchEvent( event, false );
@@ -13650,7 +13645,7 @@ var __top__ = function(_scope){
             break;
         }
         _parent = _parent.parent;
-        //console.log('scope %s _parent %s', scope, _parent);
+        console.log('scope %s _parent %s', scope, _parent);
     }
     return _parent || null;
 };
@@ -13672,7 +13667,7 @@ Window = function(scope, parent, opener){
 
     var $uuid = new Date().getTime()+'-'+Math.floor(Math.random()*1000000000000000);
     __windows__[$uuid] = scope;
-    //console.log('opening window %s', $uuid);
+    console.log('opening window %s', $uuid);
 
     // every window has one-and-only-one .document property which is always
     // an [object HTMLDocument].  also, only window.document objects are
@@ -13923,7 +13918,7 @@ Window = function(scope, parent, opener){
             return _window;
         },
         close: function(){
-            //console.log('closing window %s', __windows__[$uuid]);
+            console.log('closing window %s', __windows__[$uuid]);
             try{
                 delete __windows__[$uuid];
             }catch(e){
@@ -13956,7 +13951,7 @@ Window = function(scope, parent, opener){
 
 
 //finally pre-supply the window with the window-like environment
-//console.log('Default Window');
+console.log('Default Window');
 new Window(__this__, __this__);
 console.log('[ %s ]',window.navigator.userAgent);
 /**
@@ -13979,17 +13974,55 @@ __extend__(Envjs.defaultEventBehaviors,{
     }
 
 });
-
-
-Envjs.cookieFile = function(){
-    return 'file:///'+Envjs.homedir+'/.cookies';
-};
-
 /**
  * @author john resig & the envjs team
  * @uri http://www.envjs.com/
  * @copyright 2008-2010
  * @license MIT
  */
+
+
+
+//custom:
+
+Envjs.writeToFile = function(text, url){
+    Packages.jd.EnvTest.writeToFile(text,url);
+};
+
+/**
+ * Used to write to a local file
+ * @param {Object} text
+ * @param {Object} suffix
+ */
+Envjs.writeToTempFile = function(text, suffix){
+  
+    return    Packages.jd.EnvTest.writeToTempFile(text,suffix);
+};
+
+
+/**
+ * Used to read the contents of a local file
+ * @param {Object} url
+ */
+ 
+ 
+Envjs.readFromFile = function( url ){
+ 
+    return  Packages.jd.EnvTest.readFromFile(url)+"";
+};
+    
+
+/**
+ * Used to delete a local file
+ * @param {Object} url
+ */
+Envjs.deleteFile = function(url){
+    Packages.jd.EnvTest.deleteFile(url);
+};
+
+Envjs.cookieFile = function(){
+    return 'file:///'+Envjs.homedir+'/.cookies';
+};
 //CLOSURE_END
+
 }());
