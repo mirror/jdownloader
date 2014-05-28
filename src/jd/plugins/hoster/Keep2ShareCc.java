@@ -572,7 +572,6 @@ public class Keep2ShareCc extends PluginForHost {
             }
             if (newDomain != null) {
                 resetCookies(account, currentDomain, newDomain);
-                currentDomain = newDomain;
                 if (dllink == null) {
                     br.getPage(link.getDownloadURL().replace(currentDomain, newDomain));
                     dllink = br.getRedirectLocation();
@@ -580,7 +579,9 @@ public class Keep2ShareCc extends PluginForHost {
                         dllink = getDllinkPremium();
                     }
                 }
+                currentDomain = newDomain;
             }
+
             if (dllink == null) {
                 if (br.containsHTML("Traffic limit exceed\\!<")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
