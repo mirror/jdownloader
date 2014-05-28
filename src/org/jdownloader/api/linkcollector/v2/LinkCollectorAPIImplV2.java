@@ -27,20 +27,26 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
+    private LogSource logger;
+
     public LinkCollectorAPIImplV2() {
         RemoteAPIController.validateInterfaces(LinkCollectorAPIV2.class, LinkgrabberInterface.class);
+        logger = LogController.getInstance().getLogger(LinkCollectorAPIImplV2.class.getName());
     }
 
     @SuppressWarnings("unchecked")
@@ -302,6 +308,14 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     public void addLinks(final AddLinksQueryStorable query) {
 
         LinkCollector lc = LinkCollector.getInstance();
+        Priority p = Priority.DEFAULT;
+
+        try {
+            p = Priority.valueOf(query.getPriority().name());
+        } catch (Throwable e) {
+            logger.log(e);
+        }
+        final Priority fp = p;
         LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null/* add useragent? */), query.getLinks());
         HashSet<String> extPws = null;
         if (StringUtils.isNotEmpty(query.getExtractPassword())) {
@@ -329,6 +343,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     getPackageInfo(link).setName(query.getPackageName());
                     getPackageInfo(link).setUniqueId(null);
                 }
+                link.setPriority(fp);
                 if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
                     getPackageInfo(link).setDestinationFolder(query.getDestinationFolder());
                     getPackageInfo(link).setUniqueId(null);
