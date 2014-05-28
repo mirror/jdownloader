@@ -176,14 +176,17 @@ public class DownloadLinkCandidateSelector {
                 }
             }
         }
-        if (candidate.isForced()) {
-            return DownloadLinkCandidatePermission.OK_FORCED;
-        } else {
-            if (maxPluginConcurrentAccount <= 0 || maxPluginConcurrentHost <= 0 || maxConcurrentHost <= 0) {
-                return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
+
+        if (maxPluginConcurrentAccount <= 0 || maxPluginConcurrentHost <= 0) {
+            return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
+        } else if (maxConcurrentHost <= 0) {
+            if (candidate.isForced()) {
+                return DownloadLinkCandidatePermission.OK_FORCED;
             } else {
-                return DownloadLinkCandidatePermission.OK;
+                return DownloadLinkCandidatePermission.CONCURRENCY_LIMIT;
             }
+        } else {
+            return DownloadLinkCandidatePermission.OK;
         }
     }
 

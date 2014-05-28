@@ -84,7 +84,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         br.getHeaders().put("Accept-Charset", "utf-8,*");
-        br.getHeaders().put("Connection", "close");
+        // br.getHeaders().put("Connection", "close");
 
         parameter += "?lng=en";
 
@@ -177,7 +177,9 @@ public class ShrLnksBz extends PluginForDecrypt {
                 String nexturl = null;
                 if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) < 10000 || !auto) {
                     final Point p = UserIO.getInstance().requestClickPositionDialog(file, "share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                    if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                    if (p == null) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
                     nexturl = getNextUrl(p.x, p.y);
                 } else {
                     try {
@@ -185,11 +187,15 @@ public class ShrLnksBz extends PluginForDecrypt {
                         nexturl = getNextUrl(Integer.parseInt(code[0]), Integer.parseInt(code[1]));
                     } catch (final Exception e) {
                         final Point p = UserIO.getInstance().requestClickPositionDialog(file, "share-links.biz", JDL.L("plugins.decrypt.shrlnksbz.desc", "Read the combination in the background and click the corresponding combination in the overview!"));
-                        if (p == null) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                        if (p == null) {
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        }
                         nexturl = getNextUrl(p.x, p.y);
                     }
                 }
-                if (nexturl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (nexturl == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE + nexturl);
                 if (br.containsHTML("> Your choice was wrong\\.<")) {
@@ -212,7 +218,9 @@ public class ShrLnksBz extends PluginForDecrypt {
                 failed = false;
                 break;
             }
-            if (failed) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         }
         /* use cnl2 button if available */
         if (br.containsHTML("/cnl2/")) {
@@ -221,7 +229,9 @@ public class ShrLnksBz extends PluginForDecrypt {
                 final Browser cnlbr = new Browser();
                 String test = cnlbr.getPage(MAINPAGE + "get/cnl2/_" + flashVars);
                 String[] encVars = null;
-                if (test != null) encVars = test.split("\\;\\;");
+                if (test != null) {
+                    encVars = test.split("\\;\\;");
+                }
                 if (encVars == null || encVars.length < 3) {
                     logger.warning("CNL code broken!");
                 } else {
@@ -274,7 +284,9 @@ public class ShrLnksBz extends PluginForDecrypt {
         final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
         if (dlclink != null) {
             decryptedLinks = loadcontainer(br, MAINPAGE + "get/dlc/" + dlclink);
-            if (decryptedLinks != null && decryptedLinks.size() > 0) { return decryptedLinks; }
+            if (decryptedLinks != null && decryptedLinks.size() > 0) {
+                return decryptedLinks;
+            }
         }
         /* File package handling */
         int pages = 1;
@@ -369,7 +381,9 @@ public class ShrLnksBz extends PluginForDecrypt {
     private ArrayList<DownloadLink> loadcontainer(final Browser br, final String dlclinks) throws IOException, PluginException {
         final Browser brc = br.cloneBrowser();
 
-        if (dlclinks == null) { return new ArrayList<DownloadLink>(); }
+        if (dlclinks == null) {
+            return new ArrayList<DownloadLink>();
+        }
         String test = Encoding.htmlDecode(dlclinks);
         File file = null;
         URLConnectionAdapter con = null;
@@ -382,7 +396,9 @@ public class ShrLnksBz extends PluginForDecrypt {
                     test = test.replaceAll("(http://share-links\\.biz/|/|\\?)", "") + ".dlc";
                 }
                 file = JDUtilities.getResourceFile("tmp/sharelinks/" + test);
-                if (file == null) { return new ArrayList<DownloadLink>(); }
+                if (file == null) {
+                    return new ArrayList<DownloadLink>();
+                }
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
             } else {
@@ -391,7 +407,9 @@ public class ShrLnksBz extends PluginForDecrypt {
 
             if (file != null && file.exists() && file.length() > 100) {
                 final ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-                if (decryptedLinks.size() > 0) { return decryptedLinks; }
+                if (decryptedLinks.size() > 0) {
+                    return decryptedLinks;
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -424,7 +442,9 @@ public class ShrLnksBz extends PluginForDecrypt {
             logger.severe(e.getMessage());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (result == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return result.toString();
     }
 

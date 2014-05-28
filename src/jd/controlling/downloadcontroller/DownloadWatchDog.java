@@ -617,7 +617,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @return
      */
     public int getActiveDownloads() {
-        return getSession().getControllers().size();
+        int ret = 0;
+        for (SingleDownloadController controller : getSession().getControllers()) {
+            if (controller.isActive()) {
+                ret++;
+            }
+        }
+        return ret;
     }
 
     /**
@@ -1238,12 +1244,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             final DownloadLinkCandidatePermission permission = selector.getDownloadLinkCandidatePermission(candidate);
                             switch (permission) {
                             case OK:
+                            case OK_FORCED:
                                 if (selector.validateDownloadLinkCandidate(candidate)) {
                                     nextCandidates.add(candidate);
                                 }
-                                break;
-                            case OK_FORCED:
-                                nextCandidates.add(candidate);
                                 break;
                             case CONCURRENCY_FORBIDDEN:
                             case CONCURRENCY_LIMIT:
@@ -1799,7 +1803,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (DeleteOption.NO_DELETE == deleteTo) {
             return;
         }
-        ArrayList<File> deleteFiles = new ArrayList<File>();
+        final ArrayList<File> deleteFiles = new ArrayList<File>();
         try {
             for (File deleteFile : link.getDefaultPlugin().listProcessFiles(link)) {
                 if (deleteFile.exists() && deleteFile.isFile()) {
@@ -1831,6 +1835,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         logger.info("Could not recycle file: " + deleteFile + " for " + link + " exists: " + deleteFile.exists());
                     }
                     break;
+                case NO_DELETE:
+                    return;
                 }
             }
             /* try to delete folder (if its empty and NOT the default downloadfolder */
@@ -1962,8 +1968,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /*
                  * setNewSession
                  */
-                DownloadSession newDownloadSession;
-                session.set(newDownloadSession = new DownloadSession(currentSession));
+                session.set(new DownloadSession(currentSession));
                 if (runBeforeStartingDownloadWatchDog != null) {
                     try {
                         runBeforeStartingDownloadWatchDog.run();

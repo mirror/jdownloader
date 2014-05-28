@@ -130,7 +130,7 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DescriptionForConfigEntry("Download Speed limit in bytes.")
     @DefaultIntValue(50 * 1024)
-    @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
+    @SpinnerValidator(min = 1, max = Integer.MAX_VALUE)
     int getDownloadSpeedLimit();
 
     @AboutConfig

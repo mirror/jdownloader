@@ -71,7 +71,9 @@ public class SpeedlimitEditor extends MenuEditor implements DownloadWatchdogList
 
             @Override
             protected Object textToObject(String text) {
-                if (text != null && text.trim().matches("^[0-9]+$")) { return super.textToObject(text + " kb/s"); }
+                if (text != null && text.trim().matches("^[0-9]+$")) {
+                    return super.textToObject(text + " kb/s");
+                }
                 return super.textToObject(text);
             }
 
