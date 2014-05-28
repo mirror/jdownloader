@@ -113,8 +113,12 @@ public class TedCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         DLLINK = link.getStringProperty("directlink", null);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if ("subtitle".equals(link.getStringProperty("type", null))) maxChunks = 1;
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if ("subtitle".equals(link.getStringProperty("type", null))) {
+            maxChunks = 1;
+        }
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(DLLINK);
@@ -179,7 +183,7 @@ public class TedCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_MP3, JDL.L("plugins.hoster.tedcom.audio.grabmp3", "Grab MP3?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Subtitle settings (not finished yet): "));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Subtitle settings: "));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_ALL_AVAILABLE_SUBTITLES, JDL.L("plugins.hoster.tedcom.grabsubtitles.graballavailablesubtitles", "Grab all available subtitles?")).setDefaultValue(false);
         getConfig().addEntry(hq);

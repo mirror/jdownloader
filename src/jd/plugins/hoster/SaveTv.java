@@ -73,6 +73,7 @@ public class SaveTv extends PluginForHost {
 
     /* Static information */
     private final String         APIKEY                            = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
+    @SuppressWarnings("unused")
     private final String         APIPAGE                           = "http://api.save.tv/v2/Api.svc?wsdl";
     public static final double   QUALITY_H264_NORMAL_MB_PER_MINUTE = 12.605;
     public static final double   QUALITY_H264_MOBILE_MB_PER_MINUTE = 4.64;

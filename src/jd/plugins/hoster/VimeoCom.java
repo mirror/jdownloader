@@ -80,7 +80,9 @@ public class VimeoCom extends PluginForHost {
 
     private String[][] getQualities(Browser br, String ID, String title) throws Exception {
         PluginForDecrypt decrypter = JDUtilities.getPluginForDecrypt("vimeo.com");
-        if (decrypter == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (decrypter == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return ((jd.plugins.decrypter.VimeoComDecrypter) decrypter).getQualities(br, ID, title);
     }
 
@@ -123,7 +125,9 @@ public class VimeoCom extends PluginForHost {
             }
             br.getPage("http://vimeo.com/settings");
             String type = br.getRegex("acct_status\">.*?>(.*?)<").getMatch(0);
-            if (type == null) type = br.getRegex("user_type', '(.*?)'").getMatch(0);
+            if (type == null) {
+                type = br.getRegex("user_type', '(.*?)'").getMatch(0);
+            }
             if (type != null) {
                 ai.setStatus(type);
             } else {
@@ -168,7 +172,9 @@ public class VimeoCom extends PluginForHost {
 
     private void doDirect(DownloadLink downloadLink) throws Exception {
         finalURL = downloadLink.getStringProperty("directURL", null);
-        if (finalURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finalURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalURL, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
@@ -295,7 +301,9 @@ public class VimeoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        if (downloadLink.getBooleanProperty("offline", false)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getBooleanProperty("offline", false)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         finalURL = downloadLink.getStringProperty("directURL", null);
@@ -320,7 +328,9 @@ public class VimeoCom extends PluginForHost {
         /* fetch fresh directURL */
         final String name = getFormattedFilename(downloadLink);
         String ID = new Regex(downloadLink.getDownloadURL(), ".com/(\\d+)").getMatch(0);
-        if (ID == null || name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (ID == null || name == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         Browser br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -328,7 +338,9 @@ public class VimeoCom extends PluginForHost {
         br.getPage("http://vimeo.com/" + ID);
 
         /* Workaround for User from Iran */
-        if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) br.getPage("http://player.vimeo.com/config/" + ID);
+        if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {
+            br.getPage("http://player.vimeo.com/config/" + ID);
+        }
 
         handlePW(downloadLink, br, "http://vimeo.com/" + ID + "/password");
         String newURL = null;
@@ -340,13 +352,17 @@ public class VimeoCom extends PluginForHost {
         for (String quality[] : qualities) {
             String url = quality[0];
             if (name.equals(Encoding.htmlDecode(quality[1]))) {
-                if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
+                if (!url.startsWith("http://")) {
+                    url = "http://vimeo.com" + url;
+                }
                 newURL = url;
                 break;
             }
         }
 
-        if (newURL == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (newURL == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setProperty("directURL", newURL);
         downloadLink.setFinalFileName(downloadLink.getStringProperty("directName", null));
         return AvailableStatus.TRUE;
@@ -355,8 +371,12 @@ public class VimeoCom extends PluginForHost {
     private void handlePW(DownloadLink downloadLink, Browser br, String url) throws PluginException, IOException {
         if (br.containsHTML("This is a private video")) {
             String passCode = downloadLink.getStringProperty("pass", null);
-            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
-            if (passCode == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            }
+            if (passCode == null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
+            }
             final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
             br.setCookie(br.getHost(), "xsrft", xsrft);
             br.postPage(url, "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
@@ -372,11 +392,16 @@ public class VimeoCom extends PluginForHost {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
-        if (formattedFilename == null || formattedFilename.equals("")) formattedFilename = defaultCustomFilename;
-        if (!formattedFilename.contains("*videoname") || !formattedFilename.contains("*ext*")) formattedFilename = defaultCustomFilename;
+        if (formattedFilename == null || formattedFilename.equals("")) {
+            formattedFilename = defaultCustomFilename;
+        }
+        if (!formattedFilename.contains("*videoname") && !formattedFilename.contains("*ext*") && !formattedFilename.contains("*videoid*")) {
+            formattedFilename = defaultCustomFilename;
+        }
 
         final String date = downloadLink.getStringProperty("originaldate", null);
         final String channelName = downloadLink.getStringProperty("channel", null);
+        final String video_id = downloadLink.getStringProperty("direct_id", null);
 
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
@@ -397,16 +422,22 @@ public class VimeoCom extends PluginForHost {
                     formattedDate = "";
                 }
             }
-            if (formattedDate != null)
+            if (formattedDate != null) {
                 formattedFilename = formattedFilename.replace("*date*", formattedDate);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*date*", "");
+            }
         }
+        if (formattedFilename.contains("*videoid*")) {
+            formattedFilename = formattedFilename.replace("*videoid*", video_id);
+        }
+
         if (formattedFilename.contains("*channelname*")) {
-            if (channelName != null)
+            if (channelName != null) {
                 formattedFilename = formattedFilename.replace("*channelname*", channelName);
-            else
+            } else {
                 formattedFilename = formattedFilename.replace("*channelname*", "");
+            }
         }
         formattedFilename = formattedFilename.replace("*ext*", ".mp4");
         // Insert filename at the end to prevent errors with tags
@@ -429,7 +460,9 @@ public class VimeoCom extends PluginForHost {
         /* reset downloadtype back to free */
         link.setProperty("LASTTYPE", "FREE");
         String name = link.getStringProperty("directName", null);
-        if (name != null) link.setFinalFileName(name);
+        if (name != null) {
+            link.setFinalFileName(name);
+        }
     }
 
     @Override
@@ -462,6 +495,7 @@ public class VimeoCom extends PluginForHost {
         sb.append("*channelname* = name of the channel/uploader\r\n");
         sb.append("*date* = date when the video was posted - appears in the user-defined format above\r\n");
         sb.append("*videoname* = name of the video without extension\r\n");
+        sb.append("*videoid* = id of the video\r\n");
         sb.append("*ext* = the extension of the file, in this case usually '.mp4'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
     }

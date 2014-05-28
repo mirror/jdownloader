@@ -39,7 +39,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
     private static final String Q_MEDIUM        = "Q_MEDIUM";
     private static final String Q_BEST          = "Q_BEST";
     private static final String Q_SUBTITLES     = "Q_SUBTITLES";
-    private boolean             BEST            = false;
 
     private static final String TYPE_INVALID    = "http://([a-z0-9]+\\.)?wdr\\.de/mediathek/video/sendungen/index\\.html";
     private static final String TYPE_ROCKPALAST = "http://(www\\.)?wdr\\.de/tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp";
@@ -131,7 +130,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             HashMap<String, DownloadLink> best_map = new HashMap<String, DownloadLink>();
             final SubConfiguration cfg = SubConfiguration.getConfig("wdr.de");
-            BEST = cfg.getBooleanProperty(Q_BEST, false);
             final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
 
             String player_link = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
@@ -213,29 +211,31 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                     grab_medium = true;
                 }
 
-                if (cfg.getBooleanProperty(Q_LOW, false)) {
+                if (grab_low) {
                     selected_qualities.add(Q_LOW);
                 }
-                if (cfg.getBooleanProperty(Q_MEDIUM, false)) {
+                if (grab_medium) {
                     selected_qualities.add(Q_MEDIUM);
                 }
             }
             for (final String selected_quality : selected_qualities) {
                 final DownloadLink keep = best_map.get(selected_quality);
-                /* Add subtitle link for every quality so players will automatically find it */
-                if (grab_subtitle && subtitle_url != null) {
-                    final String subtitle_filename = plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
-                    final String resolution = keep.getStringProperty("plain_resolution", null);
-                    final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
-                    dl_subtitle.setProperty("mainlink", parameter);
-                    dl_subtitle.setProperty("direct_link", subtitle_url);
-                    dl_subtitle.setProperty("plain_filename", subtitle_filename);
-                    dl_subtitle.setProperty("streamingType", "subtitle");
-                    dl_subtitle.setAvailable(true);
-                    dl_subtitle.setFinalFileName(subtitle_filename);
-                    decryptedLinks.add(dl_subtitle);
+                if (keep != null) {
+                    /* Add subtitle link for every quality so players will automatically find it */
+                    if (grab_subtitle && subtitle_url != null) {
+                        final String subtitle_filename = plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
+                        final String resolution = keep.getStringProperty("plain_resolution", null);
+                        final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
+                        dl_subtitle.setProperty("mainlink", parameter);
+                        dl_subtitle.setProperty("direct_link", subtitle_url);
+                        dl_subtitle.setProperty("plain_filename", subtitle_filename);
+                        dl_subtitle.setProperty("streamingType", "subtitle");
+                        dl_subtitle.setAvailable(true);
+                        dl_subtitle.setFinalFileName(subtitle_filename);
+                        decryptedLinks.add(dl_subtitle);
+                    }
+                    decryptedLinks.add(keep);
                 }
-                decryptedLinks.add(keep);
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(plain_name);

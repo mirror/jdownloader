@@ -98,11 +98,17 @@ public class UlozTo extends PluginForHost {
         }
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
-        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>|<title>Ulož\\.to</title>|<title>404 - Page not found</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(PASSWORDPROTECTED)) {
             String filename = br.getRegex("<title>([^<>]+) \\| Uloz\\.to</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<p>The <strong>([^<>\"]*?)</strong>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                filename = br.getRegex("<p>The <strong>([^<>\"]*?)</strong>").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             downloadLink.getLinkStatus().setStatusText("This link is password protected");
         } else {
@@ -110,10 +116,16 @@ public class UlozTo extends PluginForHost {
             // For video links
             String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
             // For file links
-            if (filesize == null) filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (filesize == null) {
+                filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-            if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize != null) {
+                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -138,7 +150,9 @@ public class UlozTo extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
         requestFileInformation(downloadLink);
-        if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        }
         br.setFollowRedirects(true);
         String passCode = downloadLink.getStringProperty("pass", null);
         if (br.containsHTML(PASSWORDPROTECTED)) {
@@ -146,7 +160,9 @@ public class UlozTo extends PluginForHost {
                 passCode = getUserInput("Password?", downloadLink);
             }
             br.postPage(br.getURL() + "?do=passwordProtectedForm-submit", "password_send=Odeslat&password=" + Encoding.urlEncode(passCode));
-            if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            if (br.containsHTML(PASSWORDPROTECTED)) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
             downloadLink.setProperty("pass", passCode);
         }
         String dllink = null;
@@ -156,13 +172,17 @@ public class UlozTo extends PluginForHost {
         final Browser cbr = br.cloneBrowser();
         for (int i = 0; i <= 5; i++) {
             cbr.getPage("http://ulozto.net/reloadXapca.php?rnd=" + System.currentTimeMillis());
-            if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (cbr.getRequest().getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             final String hash = cbr.getRegex("\"hash\":\"([a-f0-9]+)\"").getMatch(0);
             final String timestamp = cbr.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             final String salt = cbr.getRegex("\"salt\":(\\d+)").getMatch(0);
             String captchaUrl = cbr.getRegex("\"image\":\"(http:[^<>\"]*?)\"").getMatch(0);
             Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
-            if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaForm == null || captchaUrl == null || hash == null || timestamp == null || salt == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             captchaUrl = captchaUrl.replace("\\", "");
 
             String code = null, ts = null, sign = null, cid = null;
@@ -188,14 +208,22 @@ public class UlozTo extends PluginForHost {
             }
 
             // if something failed
-            if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (code == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             captchaForm.put("captcha_value", code);
             captchaForm.remove(null);
             captchaForm.remove("freeDownload");
-            if (ts != null) captchaForm.put("ts", ts);
-            if (cid != null) captchaForm.put("cid", cid);
-            if (sign != null) captchaForm.put("sign", sign);
+            if (ts != null) {
+                captchaForm.put("ts", ts);
+            }
+            if (cid != null) {
+                captchaForm.put("cid", cid);
+            }
+            if (sign != null) {
+                captchaForm.put("sign", sign);
+            }
             captchaForm.put("timestamp", timestamp);
             captchaForm.put("salt", salt);
             captchaForm.put("hash", hash);
@@ -203,7 +231,7 @@ public class UlozTo extends PluginForHost {
 
             // If captcha fails, throrotws exception
             // If in automatic mode, clears saved data
-            if (br.containsHTML("\"errors\":\\[\"Error rewriting the text")) {
+            if (br.containsHTML("\"errors\":\\[\"Error rewriting the text|Rewrite the text from the picture")) {
                 if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
                     getPluginConfig().setProperty(CAPTCHA_ID, Property.NULL);
                     getPluginConfig().setProperty(CAPTCHA_TEXT, Property.NULL);
@@ -216,7 +244,9 @@ public class UlozTo extends PluginForHost {
             }
 
             dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) break;
+            if (dllink == null) {
+                break;
+            }
             dllink = dllink.replace("\\", "");
             URLConnectionAdapter con = null;
             try {
@@ -227,8 +257,12 @@ public class UlozTo extends PluginForHost {
                     break;
                 } else {
                     br2.followConnection();
-                    if (br2.containsHTML("Stránka nenalezena")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    if (br2.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+                    if (br2.containsHTML("Stránka nenalezena")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (br2.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+                    }
                     br.clearCookies("http://www.ulozto.net/");
                     handleDownloadUrl(downloadLink);
                     continue;
@@ -241,12 +275,16 @@ public class UlozTo extends PluginForHost {
             }
 
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (dllink.contains("/error404/?fid=file_not_found")) {
             logger.info("The user entered the correct captcha but this file is offline...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (failed) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -278,7 +316,9 @@ public class UlozTo extends PluginForHost {
                         passCode = getUserInput("Password?", parameter);
                     }
                     br.postPage(br.getURL() + "?do=passwordProtectedForm-submit", "password_send=Odeslat&password=" + Encoding.urlEncode(passCode));
-                    if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    if (br.containsHTML(PASSWORDPROTECTED)) {
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    }
                     parameter.setProperty("pass", passCode);
                 }
             }
@@ -325,7 +365,9 @@ public class UlozTo extends PluginForHost {
         br.getHeaders().put("Accept-Encoding", "identity");
         br.getHeaders().put("User-Agent", "UFM 1.5");
         br.getPage("http://api.uloz.to/login.php?kredit=1&uzivatel=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
-        if (br.containsHTML("ERROR")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.containsHTML("ERROR")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
     }
 
@@ -339,7 +381,9 @@ public class UlozTo extends PluginForHost {
             return ai;
         }
         final String trafficleft = br.toString().trim();
-        if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft + " KB"));
+        if (trafficleft != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft + " KB"));
+        }
         ai.setStatus("Premium User");
         account.setValid(true);
         return ai;
