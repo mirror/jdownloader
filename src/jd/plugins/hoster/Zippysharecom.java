@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -121,9 +122,20 @@ public class Zippysharecom extends PluginForHost {
         final ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             if (!fromFlash) {
+                // validate function name?
+                String v = new Regex(fun, "var ([a-z0-9]+) = function").getMatch(0);
+                if (v == null) {
+                    // prevent null value or static value been used against us.
+                    final Random r = new Random();
+                    final String soup = "abcdefghijklmnopqrstuvwxyz";
+                    v = "";
+                    for (int i = 0; i < 12; i++) {
+                        v = v + soup.charAt(r.nextInt(soup.length()));
+                    }
+                }
                 // document.getElementById('id').href
                 engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
-                engine.eval(fun + "if(typeof somffunction=='function'){somffunction();}\r\nvar result=document.getElementById('dlbutton').href;");
+                engine.eval(fun + "if(typeof " + v + "=='function'){" + v + "();}\r\nvar result=document.getElementById('dlbutton').href;");
                 result = engine.get("result");
 
             } else {
