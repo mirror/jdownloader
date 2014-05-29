@@ -869,6 +869,7 @@ ffmpeg_install_now=Inštalovať FFmpeg™
 filecolumn_title=Názov
 gui_btn_select=Hľadať
 gui_captchaWindow_askForInput=Zadajte Captcha pre %s1 k pokračovaniu!
+gui_column_nativeauth=Natívne overenie
 gui_column_pass=Heslo
 gui_column_port=Port
 gui_column_proxytype=Typ proxy
