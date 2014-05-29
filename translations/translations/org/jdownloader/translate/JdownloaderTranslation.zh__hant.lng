@@ -131,6 +131,7 @@ gui_settings_plugins_description=JDownloader 使用用於 %s1 網站的「外掛
 gui_settings_premium_description=輸入和管理您的所有付費帳號。
 gui_settings_premium_title=帳號管理
 gui_settings_proxy_description=如果存取網際網路時，需要提供一個代理伺服器，請在這裡輸入代理伺服器的資料。JDownloader 是能夠同時跳轉幾個代理伺服器，以避免 IP 等待時間。預設的代理伺服器用於所有連接，沒有 IP 限制。
+gui_settings_proxy_description_new=如何使用連線管理員：\r\n您可以加入多個代理伺服器或閘道到此清單中。使用篩選選項來啟用或停用對於某些網域的代理。對於免費下載，JDownloader 將嘗試使用所有可用的代理。對於收費下載，將使用第一個可用的代理。
 gui_settings_proxy_title=連線管理
 gui_settings_reconnect_title=重新連線
 gui_settings_reconnect_title_method=重新連線方法
