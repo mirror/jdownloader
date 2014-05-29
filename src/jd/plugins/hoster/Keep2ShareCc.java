@@ -451,6 +451,9 @@ public class Keep2ShareCc extends PluginForHost {
                 if (br.containsHTML(">Please fill in the form with your login credentials")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account invalid", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+                if (br.containsHTML(">Password cannot be blank.<")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password cannot be blank.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.getHeaders().put("X-Requested-With", null);
                 String url = br.getRegex("url\":\"(.*?)\"").getMatch(0);
                 if (url == null) {
