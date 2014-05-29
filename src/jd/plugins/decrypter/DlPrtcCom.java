@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,6 +66,8 @@ public class DlPrtcCom extends PluginForDecrypt {
     private Browser                        cbr            = new Browser();
     private static Object                  ctrlLock       = new Object();
 
+    private boolean                        debug          = false;
+
     @SuppressWarnings("unchecked")
     private Browser prepBrowser(final Browser prepBr) {
         // loading previous cookie session results in less captchas
@@ -93,6 +96,7 @@ public class DlPrtcCom extends PluginForDecrypt {
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.getHeaders().put("Pragma", null);
         prepBr.getHeaders().put("Accept-Charset", null);
+        prepBr.setRequestIntervalLimit(this.getHost(), 1500);
         return prepBr;
     }
 
@@ -143,7 +147,11 @@ public class DlPrtcCom extends PluginForDecrypt {
                     if (cbr.containsHTML(CAPTCHATEXT)) {
                         String[] test = cbr.getRegex("<img[^>]+src=\"(/template/images/[^\"]+)").getColumn(0);
                         if (test != null) {
+                            HashSet<String> dupe = new HashSet<String>();
                             for (final String t : test) {
+                                if (!dupe.add(t)) {
+                                    continue;
+                                }
                                 final Browser brAds = br.cloneBrowser();
                                 try {
                                     brAds.openGetConnection(t);
@@ -217,7 +225,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken 4 for link: " + parameter);
                 return null;
             }
-            final String[] links = new Regex(linktext, "href=\"([^\"\\']+)\"").getColumn(0);
+            final String[] links = new Regex(linktext, "href=(\"|')(.*?)\\1").getColumn(1);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken 5 for link: " + parameter);
                 return null;
@@ -239,7 +247,16 @@ public class DlPrtcCom extends PluginForDecrypt {
             // rmCookie(parameter);
             lastUsed.set(System.currentTimeMillis());
 
-            return decryptedLinks;
+            if (debug) {
+                int i = 0;
+                while (i != 10) {
+                    logger.info(parameter + " == " + decryptedLinks.size());
+                    i++;
+                }
+                return new ArrayList<DownloadLink>();
+            } else {
+                return decryptedLinks;
+            }
         }
 
     }
