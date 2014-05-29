@@ -65,20 +65,26 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         prepareBrowser(downloadLink);
-        if (br.containsHTML("(File has expired and does not exist anymore on this server|<title>Zippyshare.com \\- File does not exist</title>|File does not exist on this server)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(File has expired and does not exist anymore on this server|<title>Zippyshare.com \\- File does not exist</title>|File does not exist on this server)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String filename = br.getRegex("<title>Zippyshare\\.com \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex(Pattern.compile("Name:(\\s+)?</font>(\\s+)?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(2);
         }
-        if (filename != null && filename.contains("fileName?key=")) filename = null;
+        if (filename != null && filename.contains("fileName?key=")) {
+            filename = null;
+        }
         if (filename == null) {
             final String var = br.getRegex("var fulllink.*?'\\+(.*?)\\+'").getMatch(0);
             filename = br.getRegex("'\\+" + var + "\\+'/(.*?)';").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("document\\.getElementById\\(\\'dlbutton\\'\\)\\.href(.*?\";)").getMatch(0);
-            if (filename != null) filename = new Regex(filename, "/([^<>\"]*?)\";").getMatch(0);
+            if (filename != null) {
+                filename = new Regex(filename, "/([^<>\"]*?)\";").getMatch(0);
+            }
         }
 
         if (filename == null || filename.contains("/fileName?key=")) {
@@ -87,14 +93,18 @@ public class Zippysharecom extends PluginForHost {
                 filename = new Regex(url, "d/\\d+/\\d+/([^<>\"]*?)\\';").getMatch(0);
             } else {
                 url = br.getRegex("dlbutton'\\).href.*?=.*?\\+\"/(.*?)\"").getMatch(0);
-                if (url != null) filename = url;
+                if (url != null) {
+                    filename = url;
+                }
             }
         }
 
         if (filename == null) {
             filename = br.getRegex("\\+\"/(.*?)\";").getMatch(0);
         }
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));
         if (!br.containsHTML(">Share movie:")) {
             final String filesize = br.getRegex(Pattern.compile("Size:(\\s+)?</font>(\\s+)?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(2);
@@ -105,7 +115,7 @@ public class Zippysharecom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String execJS(final String fun, final boolean fromFlash) throws Exception {
+    private String execJS(String fun, final boolean fromFlash) throws Exception {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -113,7 +123,7 @@ public class Zippysharecom extends PluginForHost {
             if (!fromFlash) {
                 // document.getElementById('id').href
                 engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
-                engine.eval(fun + "if(typeof somdfunction=='function'){somdfunction();}\r\nvar result=document.getElementById('dlbutton').href;");
+                engine.eval(fun + "if(typeof somffunction=='function'){somffunction();}\r\nvar result=document.getElementById('dlbutton').href;");
                 result = engine.get("result");
 
             } else {
@@ -151,7 +161,9 @@ public class Zippysharecom extends PluginForHost {
                         function = function.replace("#", "%");
                     }
                 }
-                if (function == null) { return 0; }
+                if (function == null) {
+                    return 0;
+                }
             }
         }
         return Integer.parseInt(execJS(function, true));
@@ -175,14 +187,18 @@ public class Zippysharecom extends PluginForHost {
             if (flashContent != null) {
                 DLLINK = new Regex(flashContent, "url: '(.*?)'").getMatch(0);
                 final String seed = new Regex(flashContent, "seed: (\\d+)").getMatch(0);
-                if (DLLINK == null || seed == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (DLLINK == null || seed == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 int time = Integer.parseInt(seed);
                 try {
                     time = getHashfromFlash(flashurl, time);
                 } catch (final Throwable e) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
                 }
-                if (time == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (time == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 DLLINK = DLLINK + "&time=" + time;
                 // corrupted files?
                 if (DLLINK.startsWith("nulldownload")) {
@@ -193,7 +209,9 @@ public class Zippysharecom extends PluginForHost {
         } else if (br.containsHTML("Recaptcha\\.create\\(")) {
             final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"/]*?)\"").getMatch(0);
             final String shortenCode = br.getRegex("shortencode: \\'(\\d+)\\'").getMatch(0);
-            if (rcID == null || shortenCode == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (rcID == null || shortenCode == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId(rcID);
@@ -205,22 +223,17 @@ public class Zippysharecom extends PluginForHost {
                 final String c = getCaptchaCode(cf, downloadLink);
                 br.postPage(server + "rest/captcha/test", "challenge=" + Encoding.urlEncode(rc.getChallenge()) + "&response=" + Encoding.urlEncode(c) + "&shortencode=" + shortenCode);
                 if (br.toString().trim().equals("false")) {
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                     rc.reload();
                     continue;
-                } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                 }
                 break;
             }
-            if (br.toString().trim().equals("false")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            if (!br.toString().trim().equals("true")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.toString().trim().equals("false")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            if (!br.toString().trim().equals("true")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = server + "d/" + getDlCode(downloadLink.getDownloadURL()) + "/" + shortenCode + "/" + Encoding.urlEncode(downloadLink.getName());
         } else {
             DLLINK = br.getRegex("var fulllink = \\'(.*?)\\';").getMatch(0);
@@ -237,8 +250,12 @@ public class Zippysharecom extends PluginForHost {
                 if (DLLINK != null && math != null) {
                     math = math.replace(DLLINK, "var result = " + DLLINK);
                     String data = execJS(math, false);
-                    if (data == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (data.startsWith("/")) data = data.substring(1);
+                    if (data == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (data.startsWith("/")) {
+                        data = data.substring(1);
+                    }
                     DLLINK = mainpage + data;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -254,7 +271,9 @@ public class Zippysharecom extends PluginForHost {
         try {
             dl.startDownload();
         } catch (final PluginException e) {
-            if (e.getLinkStatus() != LinkStatus.ERROR_ALREADYEXISTS && downloadLink.getVerifiedFileSize() >= 0 && downloadLink.getDownloadCurrent() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server sends empty file)");
+            if (e.getLinkStatus() != LinkStatus.ERROR_ALREADYEXISTS && downloadLink.getVerifiedFileSize() >= 0 && downloadLink.getDownloadCurrent() == 0) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server sends empty file)");
+            }
             throw e;
         }
     }
@@ -270,12 +289,16 @@ public class Zippysharecom extends PluginForHost {
         br.getHeaders().put("User-Agent", agent.get());
         br.setCookie("http://www.zippyshare.com", "ziplocale", "en");
         br.getPage(downloadLink.getDownloadURL().replaceAll("locale=..", "locale=en"));
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        if (br.getRedirectLocation() != null) {
+            br.getPage(br.getRedirectLocation());
+        }
     }
 
     private String getDlCode(final String dlink) {
         String dlcode = new Regex(dlink, "zippyshare\\.com/v/(\\d+)").getMatch(0);
-        if (dlcode == null) dlcode = new Regex(dlink, "(\\d+)$").getMatch(0);
+        if (dlcode == null) {
+            dlcode = new Regex(dlink, "(\\d+)$").getMatch(0);
+        }
         return dlcode;
     }
 
