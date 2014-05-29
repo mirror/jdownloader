@@ -70,10 +70,14 @@ public class FilEarningCom extends PluginForHost {
         Regex fileInfo = br.getRegex("(?i)Download:\\&nbsp;<h1>(.+) \\(([\\d\\.]+ ?(MB|GB))\\)</h1>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Set final filename here because hoster tags files
         link.setFinalFileName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -89,16 +93,22 @@ public class FilEarningCom extends PluginForHost {
         br2.getPage(br.getRegex("src=\"\\.(/[\\w/]+/core\\.js)").getMatch(0));
         final String ttt = br.getRegex("var waitSecs = (\\d+);").getMatch(0);
         String fileid = br.getRegex("var file_id = '([^\\']+)\\';").getMatch(0);
-        if (fileid == null) fileid = new Regex(downloadLink.getDownloadURL(), "/(.+)\\.html").getMatch(0);
+        if (fileid == null) {
+            fileid = new Regex(downloadLink.getDownloadURL(), "/(.+)\\.html").getMatch(0);
+        }
         int tt = 60;
-        if (ttt != null) tt = Integer.parseInt(ttt);
+        if (ttt != null) {
+            tt = Integer.parseInt(ttt);
+        }
         if (tt > 240) {
             // 10 Minutes reconnect wait is not enough, let's wait 1 hour
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         }
         sleep(tt * 1001l, downloadLink);
         String form = br2.getRegex("(<form.*</form>)").getMatch(0);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         form = form.replace("' + base + '", "").replace("' + file_id + '", fileid).replace("' + timestamp + '", "" + System.currentTimeMillis());
         Form dlForm = new Form(form);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, true, 1);
@@ -106,7 +116,9 @@ public class FilEarningCom extends PluginForHost {
             br.followConnection();
             handleErrors();
             final String unknownError = br.getRegex("class=\"error\">(.*?)\"").getMatch(0);
-            if (unknownError != null) logger.warning("Unknown error occured: " + unknownError);
+            if (unknownError != null) {
+                logger.warning("Unknown error occured: " + unknownError);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -119,9 +131,15 @@ public class FilEarningCom extends PluginForHost {
 
     private void handleErrors() throws Exception {
         logger.info("Handling errors...");
-        if (br.containsHTML(">The file you have requested (cannot be found|does not exist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">Your download link is invalid or has expired, please try again\\.<")) throw new PluginException(LinkStatus.ERROR_RETRY, "Hoster issue?", 10 * 60 * 1000l);
-        if (br.containsHTML("(>You can only download a max of \\d+ files per hour as a free user\\!<|>Los usuarios de Cuenta Gratis pueden descargar)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        if (br.containsHTML(">The file you have requested (cannot be found|does not exist)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML(">Your download link is invalid or has expired, please try again\\.<")) {
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Hoster issue?", 10 * 60 * 1000l);
+        }
+        if (br.containsHTML("(>You can only download a max of \\d+ files per hour as a free user\\!<|>Los usuarios de Cuenta Gratis pueden descargar)")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        }
     }
 
     private static final String PREMIUMTEXT = ">Account type: <strong>Premium Member</strong>";
@@ -134,7 +152,9 @@ public class FilEarningCom extends PluginForHost {
             br.setCookiesExclusive(false);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {
@@ -149,7 +169,7 @@ public class FilEarningCom extends PluginForHost {
             br.setFollowRedirects(true);
             br.postPage(MAINPAGE + "/account/login", "task=dologin&return=http%3A%2F%2Fwww.filearning.com%2Fmembers%2Fmyfiles&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
 
-            if (!br.containsHTML(">Sign out</a></li>")) {
+            if (!br.containsHTML(">Logout</a>")) {
                 final String lang = System.getProperty("user.language");
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -185,7 +205,9 @@ public class FilEarningCom extends PluginForHost {
             return ai;
         }
         final String hostedFiles = br.getRegex(">Total Files: (\\d+)</a>").getMatch(0);
-        if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));
+        if (hostedFiles != null) {
+            ai.setFilesNum(Integer.parseInt(hostedFiles));
+        }
         if (account.getBooleanProperty("freeacc", false)) {
             try {
                 maxPrem.set(20);
@@ -238,7 +260,9 @@ public class FilEarningCom extends PluginForHost {
 
     private String getLink() {
         String getLink = br.getRegex("disabled=\"disabled\" onclick=\"document\\.location=\\'(.*?)\\';\"").getMatch(0);
-        if (getLink == null) getLink = br.getRegex("(\\'|\")(" + "http://(www\\.)?([a-z0-9]+\\.)?" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)(\\'|\")").getMatch(1);
+        if (getLink == null) {
+            getLink = br.getRegex("(\\'|\")(" + "http://(www\\.)?([a-z0-9]+\\.)?" + MAINPAGE.replaceAll("(http://|www\\.)", "") + "/get/[A-Za-z0-9]+/\\d+/[^<>\"/]+)(\\'|\")").getMatch(1);
+        }
         return getLink;
     }
 

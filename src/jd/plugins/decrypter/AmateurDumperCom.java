@@ -108,7 +108,9 @@ public class AmateurDumperCom extends PluginForDecrypt {
 
         }
         externID = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-        if (externID == null) externID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
@@ -120,6 +122,10 @@ public class AmateurDumperCom extends PluginForDecrypt {
         if (externID != null) {
             br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
             externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (externID == null && br.getRedirectLocation() != null) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             if (externID != null) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + externID);
                 dl.setFinalFileName(filename + ".flv");

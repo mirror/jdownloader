@@ -25,6 +25,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -87,7 +88,14 @@ public class UlozTo extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        handleDownloadUrl(downloadLink);
+        try {
+            handleDownloadUrl(downloadLink);
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection().getResponseCode() == 400) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
+        }
         // not sure if this is still needed with 2012/02/01 changes
         handleRedirect(downloadLink);
         // For age restricted links

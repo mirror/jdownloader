@@ -200,6 +200,8 @@ public class DeviantArtCom extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         } else {
             final Browser br2 = br.cloneBrowser();
+            /* Workaround for old downloadcore bug that can lead to incomplete files */
+            br2.getHeaders().put("Accept-Encoding", "identity");
             URLConnectionAdapter con = null;
             try {
                 con = br2.openGetConnection(getDllink());
@@ -270,7 +272,9 @@ public class DeviantArtCom extends PluginForHost {
         if (DLLINK == null) {
             getDllink();
         }
-        // Disable chunks as we only download pictures or small files
+        /* Workaround for old downloadcore bug that can lead to incomplete files */
+        /* Disable chunks as we only download pictures or small files */
+        br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
             handleServerErrors();
@@ -287,12 +291,14 @@ public class DeviantArtCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        // This will also log in
+        /* This will also log in */
         requestFileInformation(downloadLink);
         if (DLLINK == null) {
             getDllink();
         }
-        // Disable chunks as we only download pictures
+        /* Workaround for old downloadcore bug that can lead to incomplete files */
+        br.getHeaders().put("Accept-Encoding", "identity");
+        /* Disable chunks as we only download pictures */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html") && !HTMLALLOWED) {
             handleServerErrors();

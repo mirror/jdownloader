@@ -39,9 +39,11 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String externID = br.getRedirectLocation();
-        if (externID != null) {
+        if (externID != null && !externID.contains("amateurmasturbations.com/")) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
+        } else if (externID != null) {
+            br.getPage(externID);
         }
         externID = br.getRegex("(http://drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
@@ -71,7 +73,9 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
@@ -98,7 +102,9 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         String filename = br.getRegex("\" rel=\"bookmark\">(.*?)</a></h2>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\| (Amateur Masturbation|Real Masturbate)</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<div class=\"hed\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<div class=\"hed\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+            }
         }
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -106,7 +112,9 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         }
         filename = filename.trim();
         externID = br.getRegex("<p><a  href=\"(http://pictures\\.share\\-image\\.com/flv/.*?)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("\"(http://pictures\\.share\\-image\\.com/flv/video/.*?)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\"(http://pictures\\.share\\-image\\.com/flv/video/.*?)\"").getMatch(0);
+        }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             decryptedLinks.add(dl);

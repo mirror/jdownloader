@@ -86,7 +86,7 @@ public class UpToBoxCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("http://www.", "http//"));
     }
 
     @Override
@@ -137,7 +137,9 @@ public class UpToBoxCom extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File not found <|>Unfortunately, the file you want is not available)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File not found <|>Unfortunately, the file you want is not available)", Pattern.CASE_INSENSITIVE)).matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -178,11 +180,15 @@ public class UpToBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) link.setMD5Hash(md5hash.trim());
+        if (md5hash != null) {
+            link.setMD5Hash(md5hash.trim());
+        }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
-        if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null && !filesize.equals("")) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -197,7 +203,9 @@ public class UpToBoxCom extends PluginForHost {
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
-        if (dllink == null) dllink = getDllink();
+        if (dllink == null) {
+            dllink = getDllink();
+        }
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -209,7 +217,9 @@ public class UpToBoxCom extends PluginForHost {
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (int i = 0; i <= 3; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
@@ -222,7 +232,9 @@ public class UpToBoxCom extends PluginForHost {
                 // md5 can be on the subquent pages
                 if (downloadLink.getMD5Hash() == null) {
                     String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
+                    if (md5hash != null) {
+                        downloadLink.setMD5Hash(md5hash.trim());
+                    }
                 }
                 /* Captcha START */
                 if (correctedBR.contains(";background:#ccc;text-align")) {
@@ -289,7 +301,9 @@ public class UpToBoxCom extends PluginForHost {
                     try {
                         cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     } catch (final Exception e) {
-                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        }
                         throw e;
                     }
                     final String code = getCaptchaCode(cf, downloadLink);
@@ -298,8 +312,12 @@ public class UpToBoxCom extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
-                if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-                if (!skipWaittime) waitTime(timeBefore, downloadLink, true);
+                if (password) {
+                    passCode = handlePassword(passCode, dlForm, downloadLink);
+                }
+                if (!skipWaittime) {
+                    waitTime(timeBefore, downloadLink, true);
+                }
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
@@ -310,8 +328,9 @@ public class UpToBoxCom extends PluginForHost {
                 } else if (dllink == null && !br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else
+                } else {
                     break;
+                }
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -324,7 +343,9 @@ public class UpToBoxCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         try {
             // add a download slot
             controlFree(+1);
@@ -390,7 +411,9 @@ public class UpToBoxCom extends PluginForHost {
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
                         dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) break;
+                        if (dllink != null) {
+                            break;
+                        }
                     }
                 }
             }
@@ -402,16 +425,22 @@ public class UpToBoxCom extends PluginForHost {
     private void getPage(String page) throws Exception {
         for (int i = 1; i <= 3; i++) {
             br.getPage(page);
-            if (br.containsHTML("No htmlCode read")) continue;
+            if (br.containsHTML("No htmlCode read")) {
+                continue;
+            }
             break;
         }
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        if (br.containsHTML("No htmlCode read")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        }
         correctBR();
     }
 
     private void postPage(String page, String postdata) throws Exception {
         br.postPage(page, postdata);
-        if (correctedBR.contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        if (correctedBR.contains("No htmlCode read")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        }
         correctBR();
     }
 
@@ -430,16 +459,22 @@ public class UpToBoxCom extends PluginForHost {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            if (correctedBR.contains("\">Skipped countdown<")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
         }
         /** Wait time reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
             String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            if (tmphrs == null) {
+                tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
+            }
             String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin == null) tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            if (tmpmin == null) {
+                tmpmin = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
+            }
             String tmpsec = new Regex(WAIT, "\\s+(\\d+)\\s+seconds?").getMatch(0);
             String tmpdays = new Regex(WAIT, "\\s+(\\d+)\\s+days?").getMatch(0);
             if (tmphrs == null && tmpmin == null && tmpsec == null && tmpdays == null) {
@@ -447,19 +482,33 @@ public class UpToBoxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /** Not enough wait time to reconnect->Wait and try again */
-                if (waittime < 180000) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime); }
+                if (waittime < 180000) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime);
+                }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
-        if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-        if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (correctedBR.contains("You're using all download slots for IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
+        if (correctedBR.contains("Error happened when generating Download Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        }
         /** Error handling for only-premium links */
         if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>Le statut premium vous permet de t\\&eacute;l\\&eacutecharger)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
@@ -469,7 +518,9 @@ public class UpToBoxCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
@@ -477,16 +528,22 @@ public class UpToBoxCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (correctedBR.contains(MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        }
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -506,7 +563,9 @@ public class UpToBoxCom extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
             }
 
             decoded = p;
@@ -528,7 +587,9 @@ public class UpToBoxCom extends PluginForHost {
 
     private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         passCode = thelink.getStringProperty("pass", null);
-        if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
+        if (passCode == null) {
+            passCode = Plugin.getUserInput("Password?", thelink);
+        }
         pwform.put("password", passCode);
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return Encoding.urlEncode(passCode);
@@ -565,7 +626,9 @@ public class UpToBoxCom extends PluginForHost {
             return ai;
         }
         String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
-        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
+        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
+            ai.setUsedSpace(space[0][0] + " " + space[0][1]);
+        }
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
@@ -622,7 +685,9 @@ public class UpToBoxCom extends PluginForHost {
                 prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -638,11 +703,15 @@ public class UpToBoxCom extends PluginForHost {
                 getPage("https://login.uptobox.com/");
                 // Form loginform = br.getForm(0);
                 Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (!new Regex(correctedBR, "class=\"premium_time\"").matches()) {
                     account.setProperty("nopremium", true);
@@ -685,8 +754,12 @@ public class UpToBoxCom extends PluginForHost {
                 if (dllink == null) {
                     checkErrors(link, true, passCode);
                     Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, link);
+                    if (dlform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                        passCode = handlePassword(passCode, dlform, link);
+                    }
                     sendForm(dlform);
                     dllink = getDllink();
                     checkErrors(link, true, passCode);
@@ -705,7 +778,9 @@ public class UpToBoxCom extends PluginForHost {
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (passCode != null) link.setProperty("pass", passCode);
+            if (passCode != null) {
+                link.setProperty("pass", passCode);
+            }
             link.setProperty("premlink", dllink);
             dl.startDownload();
         }
@@ -730,17 +805,23 @@ public class UpToBoxCom extends PluginForHost {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /* Ticket Time */
         String regexed_wait = new Regex(correctedBR, "<span id=\"[a-z0-9]+\">(\\d+)</span>\\s*seconds").getMatch(0);
-        if (regexed_wait == null && forceWait)
+        if (regexed_wait == null && forceWait) {
             wait = 50;
-        else if (regexed_wait != null) wait = Integer.parseInt(regexed_wait);
+        } else if (regexed_wait != null) {
+            wait = Integer.parseInt(regexed_wait);
+        }
         /* Do not use fake waittime */
-        if (wait > 210 || wait < 3) wait = 60;
+        if (wait > 210 || wait < 3) {
+            wait = 60;
+        }
         /* Add some random seconds */
         wait += new Random().nextInt(10);
         /* Remove time, user needed to enter the captcha */
         wait -= passedTime;
         logger.info("Waittime detected, waiting " + regexed_wait + " - " + passedTime + " seconds from now on...");
-        if (wait > 0) sleep(wait * 1000l, downloadLink);
+        if (wait > 0) {
+            sleep(wait * 1000l, downloadLink);
+        }
     }
 
 }

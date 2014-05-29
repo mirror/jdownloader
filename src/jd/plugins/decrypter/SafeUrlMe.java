@@ -32,7 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 //Similar to SflnkgNt (safelinking.net)
 //They only have fancycaptcha and reCaptcha, the other stuff is just here in case they add more captchatypes
@@ -89,10 +88,12 @@ public class SafeUrlMe extends PluginForDecrypt {
         } else {
             br.getPage(parameter);
             if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist|Could not find links based on the given ID</div>)")) {
-                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
             if (br.containsHTML(">Not yet checked</span>")) {
-                throw new DecrypterException("Not yet checked");
+                logger.info("Link offline ('Not yet checked'): " + parameter);
+                return decryptedLinks;
             }
 
             /* password */
