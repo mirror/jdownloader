@@ -152,7 +152,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 subtitle_url = Encoding.htmlDecode(subtitle_url);
             }
             /* We know how their http links look - this way we can avoid HDS */
-            final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/medstdp/ww/(fsk\\d+/\\d+/\\d+)/,(\\d+_\\d+,\\d+_\\d+),\\.mp4\\.csmil/");
+            final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/medstdp/ww/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
             final String fsk_url = hds_convert.getMatch(0);
             final String quality_string = hds_convert.getMatch(1);
             if (fsk_url == null || quality_string == null) {

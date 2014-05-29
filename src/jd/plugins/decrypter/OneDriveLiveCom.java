@@ -35,20 +35,20 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,\\-]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+)|(1|s)drv\\.ms/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,\\-_]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+)|(1|s)drv\\.ms/[A-Za-z0-9]+)" }, flags = { 0 })
 public class OneDriveLiveCom extends PluginForDecrypt {
 
     public OneDriveLiveCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ALL                = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+)|(1|s)drv\\.ms/[A-Za-z0-9]+)";
-    private static final String TYPE_DRIVE_ALL          = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+))";
-    private static final String TYPE_ONEDRIVE_REDIRECT  = "https?://(www\\.)?onedrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+";
-    private static final String TYPE_SKYDRIVE_REDIRECT  = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+";
+    private static final String TYPE_ALL                = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+)|(1|s)drv\\.ms/[A-Za-z0-9]+)";
+    private static final String TYPE_DRIVE_ALL          = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+))";
+    private static final String TYPE_ONEDRIVE_REDIRECT  = "https?://(www\\.)?onedrive\\.live\\.com/redir\\?resid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+";
+    private static final String TYPE_SKYDRIVE_REDIRECT  = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+";
     private static final String TYPE_SKYDRIVE_SHORT     = "https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9]+";
-    private static final String TYPE_SKYDRIVE           = "https?://(www\\.)?skydrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+";
-    private static final String TYPE_ONEDRIVE           = "https?://(www\\.)?onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-]+";
+    private static final String TYPE_SKYDRIVE           = "https?://(www\\.)?skydrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+";
+    private static final String TYPE_ONEDRIVE           = "https?://(www\\.)?onedrive\\.live\\.com/\\?cid=[a-z0-9]+[A-Za-z0-9\\&\\!=#\\.,\\-_]+";
     private static final int    MAX_ENTRIES_PER_REQUEST = 1000;
     private static final String DOWNLOAD_ZIP            = "DOWNLOAD_ZIP_2";
 
@@ -86,13 +86,13 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 if (id == null) {
                     id = getLastID(parameter);
                 }
-                authkey = new Regex(redirect, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
+                authkey = new Regex(redirect, "\\&authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
             } else {
                 cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
                 id = getLastID(parameter);
             }
             if (authkey == null) {
-                authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9\\-]+)").getMatch(0);
+                authkey = new Regex(parameter, "\\&authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
             }
             if (cid == null || id == null) {
                 if (cid != null) {
@@ -220,6 +220,11 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 dl.setProperty("original_link", original_link);
                 dl.setProperty("plain_name", filename);
                 dl.setProperty("plain_size", filesize);
+                /*
+                 * Add this because urls cannot be used to differ between the links, also the RegEx to split the links might fail so the
+                 * same file gets added multiple times
+                 */
+                dl.setProperty("LINKDUPEID", "onedrivelive" + id + "_" + filename);
                 if (view_url != null) {
                     view_url = view_url.replace("\\", "");
                     dl.setProperty("plain_view_url", view_url);
