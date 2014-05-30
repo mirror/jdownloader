@@ -36,7 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(?!download|livestream)[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+(\\?documentId=\\d+)?" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(?!download|livestream).+" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
 
     private static final String Q_LOW        = "Q_LOW";
@@ -67,7 +67,7 @@ public class RDMdthk extends PluginForDecrypt {
             offline = true;
         }
         // Add offline link so user can see it
-        if (!br.containsHTML("var \\$jPlayer =") && !parameter.contains("/dossiers/") || offline) {
+        if (!br.containsHTML("data\\-ctrl\\-player=") && !parameter.contains("/dossiers/") || offline) {
             final DownloadLink dl = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=offline&network=default");
             dl.setAvailable(false);
             dl.setProperty("offline", true);

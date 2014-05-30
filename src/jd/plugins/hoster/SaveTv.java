@@ -502,15 +502,17 @@ public class SaveTv extends PluginForHost {
             logger.info("FORCE_ORIGINALFILENAME_MOVIES custom regex failed");
         }
         FORCE_ORIGINAL_FILENAME = (force_original_general || force_original_series || force_original_movies);
+        String availablecheck_filename;
         if (FORCE_ORIGINAL_FILENAME) {
-            final String originalfilename = getFakeOriginalFilename(link);
-            /* Reset from previous state so we can use the server filename as final filename */
-            link.setFinalFileName(null);
-            link.setName(originalfilename);
+            availablecheck_filename = getFakeOriginalFilename(link);
+            availablecheck_filename = fixCharIssues(availablecheck_filename);
         } else {
-            final String formattedFilename = getFormattedFilename(link);
-            link.setName(formattedFilename);
+            availablecheck_filename = getFormattedFilename(link);
         }
+        /* Reset from previous state so we can use the final filename as final filename later even if it has changed before */
+        link.setFinalFileName(null);
+        link.setName(availablecheck_filename);
+        link.setName(availablecheck_filename);
         return AvailableStatus.TRUE;
     }
 
@@ -547,6 +549,7 @@ public class SaveTv extends PluginForHost {
         synchronized (LOCK) {
             checkFeatureDialogAll();
             checkFeatureDialogCrawler();
+            checkEPGCharIssuesDialog();
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("save.tv");
         final boolean preferAdsFree = cfg.getBooleanProperty(PREFERADSFREE);
@@ -691,11 +694,14 @@ public class SaveTv extends PluginForHost {
             /* Avoid downloading (too small) trash data */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server-Fehler: Datei vom Server zu klein", 60 * 60 * 1000l);
         }
+        String final_filename;
         if (FORCE_ORIGINAL_FILENAME) {
-            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+            final_filename = getFileNameFromHeader(dl.getConnection());
+            final_filename = fixCharIssues(final_filename);
         } else {
-            downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+            final_filename = getFormattedFilename(downloadLink);
         }
+        downloadLink.setFinalFileName(final_filename);
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -1192,6 +1198,7 @@ public class SaveTv extends PluginForHost {
             formattedFilename = "¡" + formattedFilename;
         }
 
+        formattedFilename = fixCharIssues(formattedFilename);
         return formattedFilename;
     }
 
@@ -1280,6 +1287,23 @@ public class SaveTv extends PluginForHost {
         long cat = getLongProperty(dl, "category", 0l);
         final boolean belongsToCategoryMovie = (cat == 0 || cat == 1 || cat == 3 || cat == 7);
         return belongsToCategoryMovie;
+    }
+
+    /* Correct characters of serverside encoding failures */
+    private static String fixCharIssues(final String input) {
+        String output = input;
+        /* Part 1 */
+        output = output.replace("ÃŸ", "ß");
+        output = output.replace("Ã„", "Ä");
+        output = output.replace("Ãœ", "Ü");
+        output = output.replace("Ã–", "Ö");
+
+        /* Part 2 */
+        output = output.replace("Ã¶", "ö");
+        output = output.replace("Ã¤", "ä");
+        output = output.replace("Ã¼", "ü");
+        // output = output.replace("Ã?", "");
+        return output;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
@@ -1541,6 +1565,53 @@ public class SaveTv extends PluginForHost {
                         message += "- Und viele mehr...\r\n";
                         message += "\r\n";
                         message += "Diese einstellungen sind nur in der Version JDownloader 2 BETA verfügbar unter:\r\nEinstellungen -> Plugin Einstellungen -> save.tv";
+                        message += getMessageEnd();
+                        JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    private void checkEPGCharIssuesDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("epgissues_shown", Boolean.FALSE) == false) {
+                if (config.getProperty("epgissues_shown2") == null) {
+                    showEPGCharIssuesDialog();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("epgissues_shown", Boolean.TRUE);
+                config.setProperty("epgissues_shown2", "shown");
+                config.save();
+            }
+        }
+    }
+
+    private static void showEPGCharIssuesDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String message = "";
+                        String title = null;
+                        title = "Save.tv Plugin - 30.05.14 - EPG Dateinamen Probleme";
+                        message += "Hallo lieber save.tv Nutzer/liebe save.tv Nutzerin\r\n";
+                        message += "Das save.tv Plugin versucht ab sofort, die momentan bestehenden EPG Probleme (kaputte Dateinamen) zu beheben.\r\n";
+                        message += "Wir bitten darum, kaputte Dateinamen auch bei uns im Forum zu melden.\r\n";
+                        message += "Ideal wäre eine Auflistung mit den falschen Zeichen und den dazugehörigen korrekten Zeichen.\r\n";
                         message += getMessageEnd();
                         JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.PLAIN_MESSAGE, JOptionPane.INFORMATION_MESSAGE, null);
                     } catch (Throwable e) {

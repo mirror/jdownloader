@@ -83,22 +83,22 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String sendung = br.getRegex("<strong>([^<>\"]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
+        String sendung = br.getRegex("<strong>([^<>]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
         if (sendung == null) {
-            sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>\"]*?)<span class=\"hover\">").getMatch(0);
+            sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>]*?)<span class=\"hover\">").getMatch(0);
         }
         if (sendung == null) {
-            sendung = br.getRegex("<li class=\"active\" >[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatch(0);
+            sendung = br.getRegex("<li class=\"active\" >[\t\n\r ]+<strong>([^<>]*?)</strong>").getMatch(0);
         }
         if (sendung == null) {
-            sendung = br.getRegex("<div id=\"initialPagePart\">[\t\n\r ]+<h1>[\t\n\r ]+<span>([^<>\"]*?)<span class=\"hidden\">:</span>").getMatch(0);
+            sendung = br.getRegex("<div id=\"initialPagePart\">[\t\n\r ]+<h1>[\t\n\r ]+<span>([^<>]*?)<span class=\"hidden\">:</span>").getMatch(0);
         }
         if (sendung == null) {
-            sendung = br.getRegex("<title>([^<>\"]*?)\\- WDR Fernsehen</title>").getMatch(0);
+            sendung = br.getRegex("<title>([^<>]*?)\\- WDR Fernsehen</title>").getMatch(0);
         }
-        String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>\"]*?)<span class=\"hover\"").getMatch(0);
+        String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>]*?)<span class=\"hover\"").getMatch(0);
         if (episode_name == null) {
-            episode_name = br.getRegex("class=\"hover\">:([^<>\"]*?)</span>").getMatch(0);
+            episode_name = br.getRegex("class=\"hover\">:([^<>]*?)</span>").getMatch(0);
         }
         if (sendung == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -152,13 +152,15 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 subtitle_url = Encoding.htmlDecode(subtitle_url);
             }
             /* We know how their http links look - this way we can avoid HDS */
-            final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/medstdp/ww/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
-            final String fsk_url = hds_convert.getMatch(0);
-            final String quality_string = hds_convert.getMatch(1);
-            if (fsk_url == null || quality_string == null) {
+            final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/medstdp/([a-z]{2})/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
+            String region = hds_convert.getMatch(0);
+            final String fsk_url = hds_convert.getMatch(1);
+            final String quality_string = hds_convert.getMatch(2);
+            if (region == null || fsk_url == null || quality_string == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            region = correctRegionString(region);
             /* Avoid HDS */
             final String[] qualities = quality_string.split(",");
             if (qualities == null || qualities.length == 0) {
@@ -167,7 +169,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             }
             int counter = 0;
             for (final String single_quality_string : qualities) {
-                final String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/weltweit/" + fsk_url + "/" + single_quality_string + ".mp4";
+                final String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/" + single_quality_string + ".mp4";
                 String resolution;
                 String quality_name;
                 if (counter == 0) {
@@ -243,6 +245,16 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    final String correctRegionString(final String input) {
+        String output;
+        if (input.equals("de")) {
+            output = "de";
+        } else {
+            output = "weltweit";
+        }
+        return output;
     }
 
     private static String encodeUnicode(final String input) {
