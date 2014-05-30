@@ -1071,6 +1071,7 @@ propertiespanel_downloadpath=Uložiť do:
 propertiespanel_filename=Názov súboru:
 propertiespanel_packagename=Názov balíka:
 propertiespanel_passwod=Heslo sťahovania:
+proxytablemodel_problems=%s1
 quicksettings_SettingsMenuContainer=Rýchle nastavenia
 searchcategory_comment=Komentár
 searchcategory_comment_help=Prosím, zadajte komentár, ktorý hľadáte ...
