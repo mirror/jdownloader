@@ -62,7 +62,9 @@ public class TurboBitNetFolder extends PluginForDecrypt {
             return null;
         }
         for (String singleID : ids) {
-            decryptedLinks.add(createDownloadlink("http://turbobit.net/" + singleID + ".html"));
+            if (!singleID.equals(id)) {
+                decryptedLinks.add(createDownloadlink("http://turbobit.net/" + singleID + ".html"));
+            }
         }
 
         return decryptedLinks;
